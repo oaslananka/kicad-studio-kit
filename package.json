@@ -30,7 +30,7 @@
     "check": "pnpm run check:forbidden-refs && pnpm run check:version && pnpm -r run check"
   },
   "devDependencies": {
-    "@commitlint/cli": "21.0.0",
+    "@commitlint/cli": "21.0.1",
     "@commitlint/config-conventional": "21.0.0",
     "prettier": "3.8.3",
     "typescript": "5.9.3"

@@ -1844,7 +1844,7 @@
     "lines": 75
   },
   "devDependencies": {
-    "@commitlint/cli": "21.0.0",
+    "@commitlint/cli": "21.0.1",
     "@commitlint/config-conventional": "21.0.0",
     "@eslint/js": "9.39.4",
     "@go-task/cli": "3.50.0",
