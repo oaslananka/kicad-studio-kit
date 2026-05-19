@@ -1,0 +1,136 @@
+version: '3'
+
+tasks:
+  install:
+    desc: Deterministic dependency install
+    cmds:
+      - pnpm install --frozen-lockfile
+
+  format:
+    desc: Auto-fix formatting
+    cmds:
+      - pnpm run format
+
+  format:check:
+    desc: Check formatting without writing
+    cmds:
+      - pnpm run format:check
+
+  lint:
+    desc: ESLint + format check
+    cmds:
+      - task: format:check
+      - pnpm run lint
+
+  docs:check:
+    desc: Validate documentation links
+    cmds:
+      - pnpm run docs:check
+
+  workflows:lint:
+    desc: Lint GitHub Actions workflows
+    cmds:
+      - pnpm run workflows:lint
+
+  typecheck:
+    desc: TypeScript type-check
+    cmds:
+      - pnpm run typecheck
+
+  workspace-trust:
+    desc: Validate VS Code Workspace Trust declaration
+    cmds:
+      - pnpm run check:workspace-trust
+
+  test:
+    desc: Run unit and integration tests
+    cmds:
+      - pnpm test
+
+  test:unit:
+    desc: Run unit tests
+    cmds:
+      - pnpm run test:unit
+
+  test:unit:coverage:
+    desc: Run unit tests with coverage
+    cmds:
+      - pnpm run test:unit:coverage
+
+  test:integration:
+    desc: Run VS Code extension host integration tests
+    cmds:
+      - pnpm run test:integration
+
+  security:
+    desc: CI-safe dependency audit
+    cmds:
+      - pnpm run audit:ci
+
+  security:ci:
+    desc: CI-safe dependency audit
+    cmds:
+      - task: security
+
+  security:local:
+    desc: Heavy local security checks (requires gitleaks, osv-scanner, trivy, actionlint, zizmor)
+    cmds:
+      - cmd: bash scripts/local-security.sh
+        platforms: [linux, darwin]
+      - cmd: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/local-security.ps1
+        platforms: [windows]
+
+  build:
+    desc: Production webpack build
+    cmds:
+      - pnpm run build
+
+  package:
+    desc: Package the VSIX
+    cmds:
+      - pnpm run package
+
+  package:validate:
+    desc: Validate extension package metadata
+    cmds:
+      - pnpm run package:validate
+
+  bundle:size:
+    desc: Check generated bundle size limits
+    cmds:
+      - pnpm run check:bundle-size
+
+  release:dry-run:
+    desc: Validate release-please manifest mode
+    cmds:
+      - pnpm run release:dry-run
+
+  pre-push:
+    desc: Fast local pre-push gate
+    cmds:
+      - task: lint
+      - task: typecheck
+      - task: test:unit
+      - task: security
+
+  ci:
+    desc: Full CI pipeline (mirrors GitHub Actions)
+    cmds:
+      - task: lint
+      - task: docs:check
+      - task: workflows:lint
+      - task: typecheck
+      - task: workspace-trust
+      - task: test:unit:coverage
+      - task: build
+      - task: test:integration
+      - task: package
+      - task: package:validate
+      - task: security
+      - task: release:dry-run
+      - task: bundle:size
+
+  hooks:
+    desc: Install git hooks (run once after clone)
+    cmds:
+      - pnpm exec husky install

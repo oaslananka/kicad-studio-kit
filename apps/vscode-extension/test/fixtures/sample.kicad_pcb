@@ -1,0 +1,20 @@
+(kicad_pcb
+  (version 20240101)
+  (generator "KiCad Studio Test")
+  (general)
+  (layers
+    (0 "F.Cu" signal)
+    (31 "B.Cu" signal)
+    (44 "Edge.Cuts" user)
+  )
+  (net 1 "GND")
+  (footprint "Resistor_SMD:R_0402_1005Metric"
+    (layer "F.Cu")
+    (at 10 10 0)
+    (property "Reference" "R1")
+    (property "Value" "10k")
+    (uuid "11111111-1111-1111-1111-111111111111")
+    (pad "1" smd rect (at -0.5 0) (size 0.5 0.6) (layers "F.Cu" "F.Mask") (net 1 "GND"))
+  )
+  (segment (start 10 10) (end 20 10) (width 0.25) (layer "F.Cu") (net 1))
+)

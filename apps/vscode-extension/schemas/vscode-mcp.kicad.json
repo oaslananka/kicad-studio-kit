@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oaslananka.github.io/kicad-studio/schemas/vscode-mcp.kicad.json",
+  "title": "KiCad Studio MCP configuration",
+  "type": "object",
+  "properties": {
+    "servers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "anyOf": [
+          {
+            "required": ["command"]
+          },
+          {
+            "required": ["url"]
+          }
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["stdio", "http", "sse", "streamable-http"]
+          },
+          "command": {
+            "type": "string",
+            "pattern": "^(uvx|kicad-mcp-pro|[A-Za-z]:\\\\.*|/.*)$",
+            "description": "Use uvx, kicad-mcp-pro, or an absolute executable path."
+          },
+          "url": {
+            "type": "string",
+            "pattern": "^https?://",
+            "description": "HTTP, Streamable HTTP, or legacy SSE endpoint URL."
+          },
+          "args": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "env": {
+            "type": "object",
+            "properties": {
+              "KICAD_MCP_PROFILE": {
+                "type": "string",
+                "enum": [
+                  "full",
+                  "minimal",
+                  "schematic_only",
+                  "pcb_only",
+                  "manufacturing",
+                  "high_speed",
+                  "power",
+                  "simulation",
+                  "analysis",
+                  "agent_full",
+                  "pcb",
+                  "schematic"
+                ],
+                "description": "Prefer current profile ids. Legacy aliases pcb and schematic are accepted for older workspaces."
+              },
+              "KICAD_MCP_TRANSPORT": {
+                "type": "string",
+                "enum": ["stdio", "http", "sse", "streamable-http"]
+              },
+              "KICAD_MCP_PROJECT_DIR": {
+                "type": "string",
+                "description": "Use an absolute path for shared workspaces."
+              }
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "required": ["servers"],
+  "additionalProperties": true
+}

@@ -1,0 +1,18 @@
+(kicad_sch
+  (version 20260301)
+  (generator "KiCad Studio Fixture")
+  (paper "A4")
+  (symbol
+    (lib_id "Device:R")
+    (at 50 50 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "11111111-1111-1111-1111-111111111111")
+    (property "Reference" "R1" (at 50 44 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "10k" (at 50 56 0) (effects (font (size 1.27 1.27)))))
+  (wire (pts (xy 30 50) (xy 45 50)))
+  (wire (pts (xy 55 50) (xy 70 50)))
+  (arc (start 45 50) (mid 50 55) (end 55 50))
+  (label "NET_HOP" (at 70 50 0))
+)

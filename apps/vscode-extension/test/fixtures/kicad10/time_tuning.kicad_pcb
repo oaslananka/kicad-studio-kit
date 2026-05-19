@@ -1,0 +1,21 @@
+(kicad_pcb
+  (version 20260301)
+  (generator "KiCad Studio fixture")
+  (layers
+    (0 "F.Cu" signal)
+    (31 "B.Cu" signal)
+    (32 "B.Adhes" user)
+  )
+  (tuning_profile
+    (name "DDR4")
+    (layer "F.Cu")
+    (impedance "50")
+    (propagation_speed "150")
+  )
+  (tuning_profile
+    (name "USB_HS")
+    (layer "B.Cu")
+    (impedance "90")
+    (propagation_speed "145")
+  )
+)

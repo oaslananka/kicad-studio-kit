@@ -1,0 +1,5 @@
+self-hosted-runner:
+  labels:
+    - ubuntu-24.04
+    - windows-2025
+    - macos-15

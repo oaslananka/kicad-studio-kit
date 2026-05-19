@@ -1,0 +1,13 @@
+{
+  "board": {
+    "design_settings": {}
+  },
+  "meta": {
+    "filename": "demo.kicad_pro",
+    "version": 1
+  },
+  "schematic": {
+    "legacy_lib_dir": "",
+    "page_layout_descr_file": ""
+  }
+}

@@ -1,0 +1,6 @@
+{
+  ".": "1.0.0",
+  "apps/vscode-extension": "1.0.0",
+  "packages/mcp-server": "1.0.0",
+  "packages/mcp-npm": "1.0.0"
+}

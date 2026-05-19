@@ -1,0 +1,1 @@
+KiCanvas bundle sourced from https://github.com/theacodes/kicanvas under the MIT license.

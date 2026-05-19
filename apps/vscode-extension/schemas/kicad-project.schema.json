@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "KiCad Project",
+  "type": "object",
+  "properties": {
+    "board": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "boards": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "cvpcb": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "libraries": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "version": {
+          "type": ["integer", "string"]
+        }
+      },
+      "additionalProperties": true
+    },
+    "net_settings": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "pcbnew": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "schematic": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

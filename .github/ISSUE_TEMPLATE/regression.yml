@@ -1,0 +1,18 @@
+name: Regression
+description: Report a feature that worked in a previous version but is now broken
+labels: ['type:bug', 'regression']
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: In which version did it last work?
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What is broken now?
+    validations:
+      required: true

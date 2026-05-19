@@ -1,0 +1,8 @@
+(kicad_sch
+  (version 20260301)
+  (generator "KiCad Studio fixture")
+  (paper "A4")
+  (wire (pts (xy 50 50) (xy 90 50)))
+  (wire (pts (xy 70 30) (xy 70 70)))
+  (junction (at 70 50))
+)

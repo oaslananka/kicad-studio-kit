@@ -1,0 +1,52 @@
+name: Publish extension
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      publish_vscode:
+        type: boolean
+        default: true
+      publish_openvsx:
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    environment: extension-marketplaces
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm --filter kicadstudio run build
+      - run: corepack pnpm --filter kicadstudio run package
+      - name: Publish marketplaces
+        shell: bash
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+          PUBLISH_VSCODE: ${{ github.event_name == 'release' || inputs.publish_vscode }}
+          PUBLISH_OPENVSX: ${{ github.event_name == 'release' || inputs.publish_openvsx }}
+        run: |
+          set -euo pipefail
+          VSIX_PATH="$(find apps/vscode-extension -maxdepth 2 -type f -name '*.vsix' | sort | tail -n1)"
+          test -n "$VSIX_PATH"
+          if [[ "$PUBLISH_VSCODE" == "true" ]]; then
+            test -n "$VSCE_PAT"
+            corepack pnpm --filter kicadstudio exec vsce publish --packagePath "$VSIX_PATH" --pat "$VSCE_PAT"
+          fi
+          if [[ "$PUBLISH_OPENVSX" == "true" ]]; then
+            test -n "$OVSX_PAT"
+            corepack pnpm --filter kicadstudio exec ovsx publish "$VSIX_PATH" -p "$OVSX_PAT"
+          fi

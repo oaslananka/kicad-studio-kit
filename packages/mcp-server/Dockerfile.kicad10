@@ -1,0 +1,51 @@
+# syntax=docker/dockerfile:1.7
+
+FROM debian:bookworm-slim@sha256:67b30a61dc87758f0caf819646104f29ecbda97d920aaf5edc834128ac8493d3 AS kicad
+
+ARG KICAD_APPIMAGE_URL
+RUN test -n "${KICAD_APPIMAGE_URL}" || (echo "Set KICAD_APPIMAGE_URL to an official KiCad 10 x86_64 AppImage URL from https://www.kicad.org/download/linux/" && exit 1)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl fuse libfuse2 file \
+    && rm -rf /var/lib/apt/lists/*
+RUN curl -fL "${KICAD_APPIMAGE_URL}" -o /tmp/kicad.AppImage \
+    && chmod +x /tmp/kicad.AppImage \
+    && /tmp/kicad.AppImage --appimage-extract \
+    && mkdir -p /opt/kicad-appimage \
+    && cp -a squashfs-root/. /opt/kicad-appimage/
+
+FROM python:3.12-slim@sha256:6026d9374020066a85690cabdb66f5d06a2dd606e756c7082fccdaaaf6d048dd AS builder
+ARG UV_VERSION=0.11.12
+WORKDIR /app
+RUN python -m pip install --no-cache-dir "uv==${UV_VERSION}"
+COPY pyproject.toml uv.lock README.md LICENSE ./
+COPY src/ src/
+RUN uv sync --frozen --extra http --extra simulation --extra freerouting
+
+FROM python:3.12-slim@sha256:6026d9374020066a85690cabdb66f5d06a2dd606e756c7082fccdaaaf6d048dd AS runtime
+ARG KICAD_MCP_VERSION=0.0.0
+ARG VCS_REF=unknown
+WORKDIR /app
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends ca-certificates libgl1 libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system kicadmcp \
+    && useradd --system --gid kicadmcp --home-dir /app --shell /usr/sbin/nologin kicadmcp
+COPY --from=builder --chown=kicadmcp:kicadmcp /app/.venv .venv
+COPY --from=kicad /opt/kicad-appimage /opt/kicad-appimage
+COPY --chown=kicadmcp:kicadmcp src/ src/
+COPY --chown=kicadmcp:kicadmcp README.md LICENSE ./
+ENV PATH="/app/.venv/bin:/opt/kicad-appimage/usr/bin:$PATH"
+ENV KICAD_MCP_TRANSPORT=streamable-http
+ENV KICAD_MCP_HOST=127.0.0.1
+ENV KICAD_MCP_KICAD_CLI=/opt/kicad-appimage/usr/bin/kicad-cli
+LABEL io.modelcontextprotocol.server.name="io.github.oaslananka/kicad-mcp-pro" \
+    org.opencontainers.image.title="kicad-mcp-pro-kicad10" \
+    org.opencontainers.image.description="KiCad MCP Pro with KiCad 10 kicad-cli extracted from an official AppImage. Intended for CI, not shared hosting." \
+    org.opencontainers.image.source="https://github.com/oaslananka/kicad-studio-kit" \
+    org.opencontainers.image.version="${KICAD_MCP_VERSION}" \
+    org.opencontainers.image.revision="${VCS_REF}" \
+    org.opencontainers.image.licenses="MIT"
+EXPOSE 3334
+USER kicadmcp
+CMD ["kicad-mcp-pro", "--transport", "http"]

@@ -1,0 +1,20 @@
+{
+  "meta": {
+    "filename": "sample",
+    "version": 1
+  },
+  "schematic": {
+    "file": "sample.kicad_sch"
+  },
+  "board": {
+    "file": "sample.kicad_pcb"
+  },
+  "activeVariant": "Default",
+  "variants": [
+    {
+      "name": "Default",
+      "isDefault": true,
+      "componentOverrides": []
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+(version 1)
+(rule "kicad10_diff_pair_inner_layer"
+  (constraint diff_pair_gap (min 0.12mm) (opt 0.15mm) (max 0.20mm))
+  (constraint track_width (min 0.10mm) (max 0.25mm))
+  (condition "A.Layer == 'In1.Cu' && A.NetClass == 'USB_HS'")
+)

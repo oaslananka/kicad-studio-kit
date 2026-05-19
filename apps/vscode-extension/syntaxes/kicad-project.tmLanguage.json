@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "KiCad Project",
+  "scopeName": "source.kicad.pro",
+  "patterns": [
+    {
+      "name": "support.type.property-name.json",
+      "match": "\"[^\"]+\"(?=\\s*:)"
+    },
+    {
+      "name": "string.quoted.double.kicad",
+      "begin": "\"",
+      "end": "\""
+    },
+    {
+      "name": "constant.numeric.kicad",
+      "match": "-?\\b\\d+(?:\\.\\d+)?\\b"
+    },
+    {
+      "name": "constant.language.kicad",
+      "match": "\\b(?:true|false|null)\\b"
+    },
+    {
+      "name": "punctuation.bracket.kicad",
+      "match": "[{}\\[\\]]"
+    }
+  ]
+}

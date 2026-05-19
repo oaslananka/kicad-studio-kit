@@ -1,0 +1,143 @@
+{
+  "KiCad Symbol": {
+    "scope": "kicad-schematic,kicad-pcb",
+    "prefix": "ksymbol",
+    "body": [
+      "(symbol",
+      "  (lib_id \"${1:Library:Part}\")",
+      "  (at ${2:0} ${3:0} ${4:0})",
+      "  (unit 1)",
+      "  (in_bom yes)",
+      "  (on_board yes)",
+      "  (property \"Reference\" \"${5:R?}\" (at ${2:0} ${3:0} 0))",
+      "  (property \"Value\" \"${6:Value}\" (at ${2:0} ${3:0} 0))",
+      "  (uuid \"${7:00000000-0000-0000-0000-000000000000}\")",
+      ")"
+    ],
+    "description": "Insert a KiCad symbol block"
+  },
+  "KiCad Footprint": {
+    "scope": "kicad-pcb",
+    "prefix": "kfootprint",
+    "body": [
+      "(footprint \"${1:Library:Footprint}\"",
+      "  (layer \"${2:F.Cu}\")",
+      "  (uuid \"${3:00000000-0000-0000-0000-000000000000}\")",
+      "  (at ${4:0} ${5:0} ${6:0})",
+      "  (property \"Reference\" \"${7:REF**}\")",
+      "  (property \"Value\" \"${8:Value}\")",
+      ")"
+    ],
+    "description": "Insert a KiCad footprint block"
+  },
+  "KiCad Wire": {
+    "scope": "kicad-schematic",
+    "prefix": "kwire",
+    "body": [
+      "(wire",
+      "  (pts",
+      "    (xy ${1:0} ${2:0})",
+      "    (xy ${3:10} ${4:0})",
+      "  )",
+      "  (stroke (width ${5:0}) (type default))",
+      "  (uuid \"${6:00000000-0000-0000-0000-000000000000}\")",
+      ")"
+    ],
+    "description": "Insert a KiCad wire segment"
+  },
+  "KiCad Label": {
+    "scope": "kicad-schematic",
+    "prefix": "klabel",
+    "body": [
+      "(label \"${1:NET_NAME}\"",
+      "  (at ${2:0} ${3:0} ${4:0})",
+      "  (effects (font (size ${5:1.27} ${5:1.27})))",
+      "  (uuid \"${6:00000000-0000-0000-0000-000000000000}\")",
+      ")"
+    ],
+    "description": "Insert a KiCad schematic label"
+  },
+  "KiCad Sheet": {
+    "scope": "kicad-schematic",
+    "prefix": "ksheet",
+    "body": [
+      "(sheet",
+      "  (at ${1:0} ${2:0})",
+      "  (size ${3:25.4} ${4:19.05})",
+      "  (property \"Sheetname\" \"${5:Sheet}\" (at ${1:0} ${2:0} 0))",
+      "  (property \"Sheetfile\" \"${6:sheet.kicad_sch}\" (at ${1:0} ${2:0} 0))",
+      "  (uuid \"${7:00000000-0000-0000-0000-000000000000}\")",
+      ")"
+    ],
+    "description": "Insert a hierarchical schematic sheet"
+  },
+  "KiCad Track Segment": {
+    "scope": "kicad-pcb",
+    "prefix": "ksegment",
+    "body": [
+      "(segment",
+      "  (start ${1:0} ${2:0})",
+      "  (end ${3:10} ${4:0})",
+      "  (width ${5:0.25})",
+      "  (layer \"${6:F.Cu}\")",
+      "  (net ${7:0})",
+      "  (uuid \"${8:00000000-0000-0000-0000-000000000000}\")",
+      ")"
+    ],
+    "description": "Insert a KiCad PCB track segment"
+  },
+  "KiCad Via": {
+    "scope": "kicad-pcb",
+    "prefix": "kvia",
+    "body": [
+      "(via",
+      "  (at ${1:0} ${2:0})",
+      "  (size ${3:0.8})",
+      "  (drill ${4:0.4})",
+      "  (layers \"F.Cu\" \"B.Cu\")",
+      "  (net ${5:0})",
+      "  (uuid \"${6:00000000-0000-0000-0000-000000000000}\")",
+      ")"
+    ],
+    "description": "Insert a KiCad PCB via"
+  },
+  "KiCad Pad": {
+    "scope": "kicad-footprint,kicad-pcb",
+    "prefix": "kpad",
+    "body": [
+      "(pad \"${1:1}\" ${2:smd} ${3:rect}",
+      "  (at ${4:0} ${5:0} ${6:0})",
+      "  (size ${7:1.2} ${8:0.8})",
+      "  (layers \"${9:F.Cu}\" \"F.Paste\" \"F.Mask\")",
+      "  (net ${10:0} \"${11:Net-(Pad1)}\")",
+      "  (uuid \"${12:00000000-0000-0000-0000-000000000000}\")",
+      ")"
+    ],
+    "description": "Insert a KiCad footprint pad"
+  },
+  "KiCad Zone": {
+    "scope": "kicad-pcb",
+    "prefix": "kzone",
+    "body": [
+      "(zone",
+      "  (net ${1:0})",
+      "  (net_name \"${2:GND}\")",
+      "  (layer \"${3:F.Cu}\")",
+      "  (hatch edge 0.5)",
+      "  (priority ${4:0})",
+      "  (connect_pads (clearance ${5:0.2}))",
+      "  (fill yes)",
+      "  (polygon",
+      "    (pts",
+      "      (xy ${6:0} ${7:0})",
+      "      (xy ${8:20} ${7:0})",
+      "      (xy ${8:20} ${9:20})",
+      "      (xy ${6:0} ${9:20})",
+      "    )",
+      "  )",
+      "  (uuid \"${10:00000000-0000-0000-0000-000000000000}\")",
+      ")"
+    ],
+    "description": "Insert a KiCad copper zone"
+  }
+}

@@ -1,0 +1,9 @@
+(version 1)
+(rule "min_usb_clearance"
+  (constraint clearance (min 0.20mm))
+  (condition "A.NetClass == 'USB' || B.NetClass == 'USB'")
+)
+(rule "rf_keepout"
+  (constraint courtyard_clearance (min 1.00mm))
+  (condition "A.Footprint == 'RF_ANT' || B.Footprint == 'RF_ANT'")
+)

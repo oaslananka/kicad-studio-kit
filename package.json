@@ -1,0 +1,38 @@
+{
+  "name": "kicad-studio-kit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for KiCad Studio VS Code extension and KiCad MCP Pro server.",
+  "license": "MIT",
+  "packageManager": "pnpm@11.0.8",
+  "engines": {
+    "node": ">=24.11.0 <25",
+    "pnpm": ">=11.0.0 <12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oaslananka/kicad-studio-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/oaslananka/kicad-studio-kit/issues"
+  },
+  "homepage": "https://github.com/oaslananka/kicad-studio-kit",
+  "scripts": {
+    "format": "pnpm -r run format",
+    "format:check": "pnpm -r run format:check",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "build": "pnpm -r run build",
+    "check:forbidden-refs": "node scripts/check-no-forbidden-refs.mjs",
+    "check:version": "node scripts/check-version-consistency.mjs",
+    "check:publish": "node scripts/check-publish-preflight.mjs",
+    "check": "pnpm run check:forbidden-refs && pnpm run check:version && pnpm -r run check"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.0.0",
+    "@commitlint/config-conventional": "21.0.0",
+    "prettier": "3.8.3",
+    "typescript": "5.9.3"
+  }
+}

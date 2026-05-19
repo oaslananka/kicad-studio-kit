@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'none';
+    script-src 'nonce-{{scriptNonce}}' {{cspSource}};
+    style-src 'nonce-{{scriptNonce}}' {{cspSource}};
+    font-src {{cspSource}};
+    img-src {{cspSource}} data:;
+  ">
+  <title>KiCad PCB Viewer</title>
+  <link rel="stylesheet" href="{{viewerCssUri}}">
+  <style nonce="{{scriptNonce}}">
+    body { margin: 0; background: #0f172a; color: #e2e8f0; font: 13px/1.5 "Segoe UI", sans-serif; }
+    #viewer-shell { min-height: 100vh; }
+    #toolbar, #footer-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; }
+    button { color: #e2e8f0; background: #1e293b; border: 1px solid rgba(148,163,184,.25); border-radius: 8px; padding: 6px 10px; }
+    #loading-overlay, #error-overlay { color: #e2e8f0; text-align: center; }
+    #error-message { display: block; font-weight: 600; margin-bottom: 8px; }
+    #error-details {
+      max-width: min(900px, calc(100vw - 64px));
+      max-height: 45vh;
+      overflow: auto;
+      margin: 0;
+      padding: 12px;
+      border-radius: 10px;
+      text-align: left;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(148,163,184,.25);
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    #diagnostic-banner {
+      display: block;
+      padding: 8px 14px;
+      background: rgba(56, 189, 248, 0.12);
+      color: #bae6fd;
+      border-bottom: 1px solid rgba(148,163,184,.18);
+    }
+  </style>
+</head>
+<body>
+  <div id="viewer-shell">
+    <div id="diagnostic-banner">Interactive KiCanvas mode is active.</div>
+    <div id="toolbar">
+      <button id="btn-zoom-fit" aria-label="Fit to screen" title="Fit to Screen">⊡</button>
+      <button id="btn-zoom-in" aria-label="Zoom in" title="Zoom In">+</button>
+      <button id="btn-zoom-out" aria-label="Zoom out" title="Zoom Out">−</button>
+      <button id="btn-grid" aria-label="Toggle grid" title="Toggle Grid">#</button>
+      <span class="separator"></span>
+      <button id="btn-theme" aria-label="Toggle theme" title="Toggle Theme">◑</button>
+      <button id="btn-open-kicad" aria-label="Open in KiCad" title="Open in KiCad">↗</button>
+      <span id="status-text" class="status">Waiting for PCB…</span>
+    </div>
+    <div id="viewer-layout">
+      <aside id="side-panel">
+        <h3>Layers</h3>
+        <div id="layer-list" class="layer-list"></div>
+      </aside>
+      <div id="viewer-container">
+        <kicanvas-embed id="viewer" controls="full" controlslist="zoom pan select"></kicanvas-embed>
+        <div id="loading-overlay" hidden>
+          <div class="spinner" aria-hidden="true"></div>
+          <span>Loading board…</span>
+        </div>
+        <div id="error-overlay" hidden>
+          <span id="error-message"></span>
+          <pre id="error-details"></pre>
+        </div>
+      </div>
+      <aside id="info-panel">
+        <h3>Inspector</h3>
+        <div id="component-info" class="property-list">
+          No item selected
+        </div>
+      </aside>
+    </div>
+    <div id="footer-toolbar">
+      <button data-preset="All Cu" aria-label="Show all copper layers">All Cu</button>
+      <button data-preset="Front" aria-label="Show front layers">Front</button>
+      <button data-preset="Back" aria-label="Show back layers">Back</button>
+      <button data-preset="Fab" aria-label="Show fabrication layers">Fab</button>
+      <button data-preset="Assembly" aria-label="Show assembly layers">Assembly</button>
+      <button data-preset="User" aria-label="Show user layers">User</button>
+      <span class="status" id="layer-status">Layer toggles are read-only unless supported by the bundled KiCanvas build.</span>
+    </div>
+  </div>
+  <script id="initial-payload" nonce="{{scriptNonce}}" type="application/json">{{initialPayload}}</script>
+  <script nonce="{{scriptNonce}}" src="{{kicanvasUri}}"></script>
+  <script nonce="{{scriptNonce}}" src="{{viewerScriptUri}}"></script>
+</body>
+</html>

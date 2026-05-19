@@ -1,0 +1,178 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "KiCad Footprint",
+  "scopeName": "source.kicad.mod",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#string"
+    },
+    {
+      "include": "#uuid"
+    },
+    {
+      "include": "#number"
+    },
+    {
+      "include": "#boolean"
+    },
+    {
+      "include": "#controlKeywords"
+    },
+    {
+      "include": "#padTypes"
+    },
+    {
+      "include": "#padShapes"
+    },
+    {
+      "include": "#otherKeywords"
+    },
+    {
+      "include": "#footprintName"
+    },
+    {
+      "include": "#layerNames"
+    },
+    {
+      "include": "#support"
+    },
+    {
+      "include": "#parens"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "patterns": [
+        {
+          "name": "comment.line.kicad",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "string": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.kicad",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.kicad",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "uuid": {
+      "patterns": [
+        {
+          "name": "variable.other.kicad",
+          "match": "\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\b"
+        }
+      ]
+    },
+    "number": {
+      "patterns": [
+        {
+          "name": "constant.numeric.kicad",
+          "match": "(?<![A-Za-z0-9_])-?\\b\\d+(?:\\.\\d+)?\\b"
+        }
+      ]
+    },
+    "boolean": {
+      "patterns": [
+        {
+          "name": "constant.language.kicad",
+          "match": "\\b(?:yes|no|true|false|center|left|right|top|bottom|middle|mirror|normal|italic|bold|locked|smd|through_hole|blind|micro)\\b"
+        }
+      ]
+    },
+    "controlKeywords": {
+      "comment": "Structural nodes that define the footprint geometry and metadata",
+      "patterns": [
+        {
+          "name": "keyword.control.kicad",
+          "match": "\\b(?:footprint|module|pad|fp_line|fp_arc|fp_circle|fp_rect|fp_poly|fp_curve|fp_text|fp_text_box|zone|gr_line|gr_arc|gr_circle|gr_rect|gr_poly|gr_curve|gr_text|dimension|group|net|model|segment|via|track)\\b"
+        }
+      ]
+    },
+    "padTypes": {
+      "comment": "Pad connection type — second atom inside a (pad ...) node",
+      "patterns": [
+        {
+          "name": "support.type.pad-type.kicad",
+          "match": "\\b(?:smd|thru_hole|np_thru_hole|connect)\\b"
+        }
+      ]
+    },
+    "padShapes": {
+      "comment": "Pad geometry shape tokens",
+      "patterns": [
+        {
+          "name": "support.type.pad-shape.kicad",
+          "match": "\\b(?:circle|rect|oval|trapezoid|roundrect|chamfered_rect|custom)\\b"
+        }
+      ]
+    },
+    "otherKeywords": {
+      "comment": "Attribute keywords used inside footprint nodes",
+      "patterns": [
+        {
+          "name": "keyword.other.kicad",
+          "match": "\\b(?:at|size|angle|drill|shape|offset|layers|net_name|tstamp|uuid|clearance|zone_clearance|trace_width|thermal_gap|thermal_bridge_width|filled_polygon|fill_segments|hatch|connect_pads|min_thickness|pad_to_die_length|roundrect_rratio|chamfer_ratio|chamfer_corners|primitives|anchor|fill|stroke|color|effects|font|justify|reference|value|description|tags|attr|tedit|autoplace_cost90|autoplace_cost180|solder_mask_margin|solder_paste_margin|solder_paste_margin_ratio|courtyard_clearance|property|layer|start|end|mid|width|type|style|hide|number|name|locked|version|generator|generator_version|3d_model|offset|scale|rotate|filename|order|remove_unused_layers|keep_end_layers|zone_layer_connections|net|via_type|micro|blind)\\b"
+        }
+      ]
+    },
+    "footprintName": {
+      "comment": "Footprint identifier — first atom after the root (footprint / module keyword",
+      "patterns": [
+        {
+          "name": "entity.name.type.kicad",
+          "match": "(?<=\\(?:footprint|module\\)\\s)(?:\"[^\"]*\"|[^\\s()\"]+)"
+        },
+        {
+          "name": "entity.name.type.kicad",
+          "match": "(?<=\\(footprint\\s)(?:\"[^\"]*\"|[^\\s()\"]+)"
+        },
+        {
+          "name": "entity.name.type.kicad",
+          "match": "(?<=\\(module\\s)(?:\"[^\"]*\"|[^\\s()\"]+)"
+        }
+      ]
+    },
+    "layerNames": {
+      "comment": "Copper layers — highlighted distinctly for quick visual identification",
+      "patterns": [
+        {
+          "name": "constant.numeric.integer.kicad",
+          "match": "\"?\\b(?:F\\.Cu|B\\.Cu|\\*\\.Cu|In\\d+\\.Cu)\\b\"?"
+        },
+        {
+          "name": "entity.name.tag.kicad",
+          "match": "\"?\\b(?:F\\.SilkS|B\\.SilkS|F\\.Mask|B\\.Mask|Edge\\.Cuts|F\\.Fab|B\\.Fab|F\\.Courtyard|B\\.Courtyard|F\\.Adhes|B\\.Adhes|F\\.Paste|B\\.Paste|F\\.CrtYd|B\\.CrtYd|Dwgs\\.User|Cmts\\.User|Eco1\\.User|Eco2\\.User|Margin|B\\.Cu\\.Override|F\\.Cu\\.Override|User\\.[A-Za-z0-9_.]+)\\b\"?"
+        }
+      ]
+    },
+    "support": {
+      "comment": "Net and fill mode tokens",
+      "patterns": [
+        {
+          "name": "support.type.kicad",
+          "match": "\\b(?:net|netname|solid|hatched|no|auto|full|edge_clearance|thermal_spokes|thermal_relief|pad_clearance|pad_connection|thermal|zone_connection|none|line|filled|background)\\b"
+        }
+      ]
+    },
+    "parens": {
+      "patterns": [
+        {
+          "name": "punctuation.bracket.kicad",
+          "match": "[()]"
+        }
+      ]
+    }
+  }
+}

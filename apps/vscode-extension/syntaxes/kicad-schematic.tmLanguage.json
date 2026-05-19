@@ -1,0 +1,130 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "KiCad Schematic",
+  "scopeName": "source.kicad.sch",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#string"
+    },
+    {
+      "include": "#uuid"
+    },
+    {
+      "include": "#number"
+    },
+    {
+      "include": "#boolean"
+    },
+    {
+      "include": "#controlKeywords"
+    },
+    {
+      "include": "#otherKeywords"
+    },
+    {
+      "include": "#entities"
+    },
+    {
+      "include": "#support"
+    },
+    {
+      "include": "#parens"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "patterns": [
+        {
+          "name": "comment.line.kicad",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "string": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.kicad",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "match": "\\\\.",
+              "name": "constant.character.escape.kicad"
+            }
+          ]
+        }
+      ]
+    },
+    "uuid": {
+      "patterns": [
+        {
+          "name": "variable.other.kicad",
+          "match": "\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\b"
+        }
+      ]
+    },
+    "number": {
+      "patterns": [
+        {
+          "name": "constant.numeric.kicad",
+          "match": "(?<![A-Za-z0-9_])-?\\b\\d+(?:\\.\\d+)?\\b"
+        }
+      ]
+    },
+    "boolean": {
+      "patterns": [
+        {
+          "name": "constant.language.kicad",
+          "match": "\\b(?:yes|no|true|false|center|left|right|top|bottom|middle)\\b"
+        }
+      ]
+    },
+    "controlKeywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.kicad",
+          "match": "\\b(?:kicad_sch|version|symbol|wire|junction|no_connect|label|global_label|hierarchical_label|sheet|sheet_instances|symbol_instances)\\b"
+        }
+      ]
+    },
+    "otherKeywords": {
+      "patterns": [
+        {
+          "name": "keyword.other.kicad",
+          "match": "\\b(?:at|size|angle|mirror|fill|stroke|color|effects|font|justify|reference|value|footprint|uuid|property|pin|number|name|layer|start|end|mid|arc|circle|rect|polyline|bezier|image)\\b"
+        }
+      ]
+    },
+    "entities": {
+      "patterns": [
+        {
+          "name": "entity.name.type.kicad",
+          "match": "(?<=\\(lib_id\\s)(?:[^\\s()\"]+|\"[^\"]+\")"
+        },
+        {
+          "name": "entity.name.type.kicad",
+          "match": "(?<=\\(symbol\\s)(?:[^\\s()\"]+|\"[^\"]+\")"
+        }
+      ]
+    },
+    "support": {
+      "patterns": [
+        {
+          "name": "support.type.kicad",
+          "match": "\\b(?:net|netname|pin_type)\\b"
+        }
+      ]
+    },
+    "parens": {
+      "patterns": [
+        {
+          "name": "punctuation.bracket.kicad",
+          "match": "[()]"
+        }
+      ]
+    }
+  }
+}

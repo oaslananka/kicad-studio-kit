@@ -1,0 +1,22 @@
+(kicad_sch
+  (version 20250316)
+  (generator "pytest")
+  (uuid "50000000-0000-0000-0000-000000000001")
+  (paper "A4")
+  (lib_symbols)
+  (symbol
+    (lib_id "Connector_Generic:Conn_01x02")
+    (at 10.16 10.16 0)
+    (unit 1)
+    (property "Reference" "J1" (at 10.16 7.62 0))
+    (property "Value" "EdgeTooClose" (at 10.16 12.7 0))
+    (property "Footprint" "Connector_Generic:Conn_01x02" (at 10.16 15.24 0))
+    (uuid "50000000-0000-0000-0000-000000000002")
+  )
+  (global_label "SIG" (shape input) (at 7.62 10.16 0) (effects (font (size 1.27 1.27))) (uuid "50000000-0000-0000-0000-000000000003"))
+  (global_label "GND" (shape bidirectional) (at 7.62 12.7 0) (effects (font (size 1.27 1.27))) (uuid "50000000-0000-0000-0000-000000000004"))
+  (sheet_instances
+    (path "/" (page "1"))
+  )
+  (embedded_fonts no)
+)

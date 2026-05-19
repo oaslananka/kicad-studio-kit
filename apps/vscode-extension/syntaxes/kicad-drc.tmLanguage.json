@@ -1,0 +1,60 @@
+{
+  "scopeName": "source.kicad.dru",
+  "name": "KiCad DRC Rules",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "match": "[()]",
+      "name": "punctuation.section.parens.kicad"
+    },
+    {
+      "match": "\\b\\d+(?:\\.\\d+)?(?:mm|mil|inch)?\\b",
+      "name": "constant.numeric.kicad"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "match": "#.*$",
+          "name": "comment.line.number-sign.kicad"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "begin": "\"",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.begin.kicad"
+            }
+          },
+          "end": "\"",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.end.kicad"
+            }
+          },
+          "name": "string.quoted.double.kicad"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "match": "\\b(?:design_rules|rule|condition|constraint|severity|layer|clearance|min_width|min_hole|hole_to_hole|track_width)\\b",
+          "name": "keyword.control.kicad"
+        }
+      ]
+    }
+  }
+}

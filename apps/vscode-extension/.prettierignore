@@ -1,0 +1,7 @@
+coverage
+dist
+media/kicanvas
+node_modules
+out
+.vscode-test
+*.vsix

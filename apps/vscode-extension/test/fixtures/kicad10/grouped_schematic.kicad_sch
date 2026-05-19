@@ -1,0 +1,24 @@
+(kicad_sch
+  (version 20260301)
+  (generator "KiCad Studio fixture")
+  (paper "A4")
+  (uuid "11111111-1111-1111-1111-111111111111")
+  (lib_symbols)
+  (symbol
+    (lib_id "Device:R")
+    (at 100 100 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "22222222-2222-2222-2222-222222222222")
+    (property "Reference" "R1" (at 100 96 0))
+    (property "Value" "10k" (at 100 104 0))
+  )
+  (sheet_instances)
+  (group "Power Stage"
+    (uuid "33333333-3333-3333-3333-333333333333")
+    (members
+      "22222222-2222-2222-2222-222222222222"
+    )
+  )
+)

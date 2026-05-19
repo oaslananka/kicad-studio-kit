@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "filename": "variants.kicad_pro",
+    "version": 1
+  },
+  "activeVariant": "Default",
+  "variants": [
+    {
+      "name": "Default",
+      "isDefault": true,
+      "componentOverrides": []
+    },
+    {
+      "name": "No-RF",
+      "isDefault": false,
+      "componentOverrides": [
+        {
+          "reference": "U7",
+          "enabled": false
+        }
+      ]
+    }
+  ]
+}

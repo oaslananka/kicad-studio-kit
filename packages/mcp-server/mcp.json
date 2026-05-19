@@ -1,0 +1,52 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.oaslananka/kicad-mcp-pro",
+  "title": "KiCad MCP Pro",
+  "description": "A Model Context Protocol server for KiCad EDA workflows.",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/oaslananka/kicad-studio-kit",
+    "source": "github",
+    "subfolder": "packages/mcp-server"
+  },
+  "websiteUrl": "https://oaslananka.github.io/kicad-studio-kit",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "kicad-mcp-pro",
+      "version": "1.0.0",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      }
+    },
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@oaslananka/kicad-mcp-pro",
+      "version": "1.0.0",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      }
+    },
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/oaslananka/kicad-studio-kit/kicad-mcp-pro:1.0.0",
+      "version": "1.0.0",
+      "registry": "container",
+      "image": "ghcr.io/oaslananka/kicad-studio-kit/kicad-mcp-pro",
+      "runtimeHint": "docker",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ],
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": true
+  },
+  "license": "MIT"
+}

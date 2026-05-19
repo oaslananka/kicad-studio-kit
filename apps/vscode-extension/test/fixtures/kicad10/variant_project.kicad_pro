@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "filename": "variant_project.kicad_pro",
+    "version": 1
+  },
+  "activeVariant": "Assembly-A",
+  "variants": [
+    {
+      "name": "Assembly-A",
+      "isDefault": true,
+      "componentOverrides": []
+    },
+    {
+      "name": "Assembly-B",
+      "isDefault": false,
+      "componentOverrides": [
+        {
+          "reference": "R5",
+          "enabled": false
+        },
+        {
+          "reference": "U3",
+          "enabled": true,
+          "valueOverride": "ALT-REG"
+        }
+      ]
+    }
+  ]
+}

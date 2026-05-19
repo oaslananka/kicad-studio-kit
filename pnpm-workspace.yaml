@@ -1,0 +1,14 @@
+packages:
+  - "apps/vscode-extension"
+  - "packages/mcp-server"
+  - "packages/mcp-npm"
+
+allowBuilds:
+  '@go-task/cli': true
+  '@vscode/vsce-sign': true
+  keytar: true
+
+overrides:
+  diff: 8.0.4
+  mocha>serialize-javascript: 7.0.5
+  uuid: 14.0.0

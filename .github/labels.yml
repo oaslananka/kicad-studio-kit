@@ -1,0 +1,18 @@
+- name: extension
+  color: "1d76db"
+  description: VS Code extension changes
+- name: mcp-server
+  color: "0e8a16"
+  description: Python MCP server changes
+- name: mcp-npm
+  color: "5319e7"
+  description: npm wrapper changes
+- name: ci
+  color: "fbca04"
+  description: CI and workflow changes
+- name: docs
+  color: "0075ca"
+  description: Documentation changes
+- name: security
+  color: "d73a4a"
+  description: Security hardening or vulnerability handling

@@ -1,0 +1,18 @@
+(kicad_pcb
+  (version 20250314)
+  (generator "kicad")
+  (layers
+    (0 "F.Cu" signal)
+    (1 "In1.Cu" power)
+    (2 "In2.Cu" mixed)
+    (30 "In30.Cu" signal)
+    (31 "B.Cu" signal)
+    (44 "Edge.Cuts" user)
+  )
+  (net 0 "")
+  (footprint "Package_QFP:LQFP-48_7x7mm_P0.5mm"
+    (layer "F.Cu")
+    (property "Reference" "U1")
+    (property "Value" "MCU")
+  )
+)

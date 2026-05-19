@@ -1,0 +1,93 @@
+:root {
+  --bg: var(--vscode-editor-background);
+  --panel: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+  --panel-alt: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  --text: var(--vscode-foreground);
+  --muted: var(--vscode-descriptionForeground);
+  --accent: var(--vscode-focusBorder);
+  --success: var(--vscode-testing-iconPassed, #22c55e);
+  --warning: var(--vscode-editorWarning-foreground, #f59e0b);
+  --border: var(--vscode-panel-border, var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.35)));
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.5 "Segoe UI", system-ui, sans-serif;
+}
+
+#bom-app {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  height: 100vh;
+}
+
+#topbar,
+#statsbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+input,
+button {
+  border: 1px solid var(--border);
+  background: var(--vscode-input-background, var(--panel));
+  color: var(--text);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+button {
+  cursor: pointer;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-color: transparent;
+}
+
+button:hover {
+  background: var(--vscode-button-hoverBackground, var(--vscode-button-background));
+}
+
+#table-wrapper {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background: var(--panel-alt);
+  cursor: pointer;
+}
+
+.chip-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  text-decoration: none;
+  color: var(--vscode-textLink-foreground, var(--accent));
+  background: var(--vscode-textLink-activeForeground, transparent);
+  border: 1px solid var(--border);
+}
+
+.muted {
+  color: var(--muted);
+}
