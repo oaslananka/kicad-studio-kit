@@ -636,6 +636,7 @@ def _format_file_backed_diagnostics(
     project_path = cfg.project_dir if cfg.project_dir is not None else "(not configured)"
     return [
         "Diagnostics:",
+        "- Source: file-backed",
         f"- IPC endpoint: {_ipc_endpoint_label()}",
         f"- KiCad board from IPC: unavailable ({_first_error_line(ipc_error)})",
         f"- Active project path: {project_path}",
@@ -711,6 +712,112 @@ def _board_file_segments(content: str) -> list[dict[str, object]]:
             }
         )
     return segments
+
+
+def _quoted_values(text: str) -> list[str]:
+    return [match.group(1) for match in re.finditer(STRING_PATTERN, text)]
+
+
+def _board_file_vias(content: str) -> list[dict[str, object]]:
+    net_names = _board_file_nets(content)
+    vias: list[dict[str, object]] = []
+    for index, block in enumerate(_iter_blocks(content, "via"), start=1):
+        position = re.search(rf"\(at\s+({FLOAT_PATTERN})\s+({FLOAT_PATTERN})", block)
+        size = re.search(rf"\(size\s+({FLOAT_PATTERN})\)", block)
+        drill = re.search(rf"\(drill\s+({FLOAT_PATTERN})\)", block)
+        layers = re.search(r"\(layers\s+([^)]+)\)", block)
+        net = re.search(r"\(net\s+(\d+)\)", block)
+        via_type_match = re.match(r"\(via\s+([A-Za-z_-]+)", block.strip())
+        via_type = via_type_match.group(1) if via_type_match is not None else "through"
+        vias.append(
+            {
+                "index": index,
+                "position": (
+                    (float(position.group(1)), float(position.group(2))) if position else None
+                ),
+                "diameter_mm": float(size.group(1)) if size else None,
+                "drill_mm": float(drill.group(1)) if drill else None,
+                "layers": _quoted_values(layers.group(1)) if layers else [],
+                "net": net_names.get(net.group(1), f"net-{net.group(1)}")
+                if net is not None
+                else "(none)",
+                "type": via_type,
+            }
+        )
+    return vias
+
+
+def _board_file_zones(content: str) -> list[dict[str, object]]:
+    net_names = _board_file_nets(content)
+    zones: list[dict[str, object]] = []
+    for index, block in enumerate(_iter_blocks(content, "zone"), start=1):
+        name = re.search(rf"\(name\s+{STRING_PATTERN}\)", block)
+        net_name = re.search(rf"\(net_name\s+{STRING_PATTERN}\)", block)
+        net = re.search(r"\(net\s+(\d+)\)", block)
+        layer = re.search(rf"\(layer\s+{STRING_PATTERN}\)", block)
+        layers_match = re.search(r"\(layers\s+([^)]+)\)", block)
+        layers = _quoted_values(layers_match.group(1)) if layers_match else []
+        if not layers and layer is not None:
+            layers = [layer.group(1)]
+        zones.append(
+            {
+                "index": index,
+                "name": name.group(1) if name else "",
+                "net": net_name.group(1)
+                if net_name is not None
+                else (
+                    net_names.get(net.group(1), f"net-{net.group(1)}")
+                    if net is not None
+                    else "(none)"
+                ),
+                "layers": layers,
+            }
+        )
+    return zones
+
+
+def _file_layer_sort_key(name: str) -> tuple[int, str]:
+    normalized = name.replace(".", "_")
+    try:
+        return CANONICAL_LAYER_NAMES.index(normalized), name
+    except ValueError:
+        return len(CANONICAL_LAYER_NAMES) + 1, name
+
+
+def _board_file_layers(content: str) -> list[dict[str, object]]:
+    root_layers = re.search(r"(?m)^\s*\(layers\b", content)
+    if root_layers is not None:
+        block, _ = _extract_block(content, root_layers.start())
+        rows: list[dict[str, object]] = []
+        for match in re.finditer(rf"(?m)^\s*\((\d+)\s+{STRING_PATTERN}(?:\s+([^\s)]+))?", block):
+            rows.append(
+                {
+                    "index": int(match.group(1)),
+                    "name": match.group(2),
+                    "type": match.group(3) or "(unspecified)",
+                }
+            )
+        if rows:
+            return rows
+
+    inferred: set[str] = set()
+    for segment in _board_file_segments(content):
+        layer = str(segment.get("layer", "")).strip()
+        if layer and layer != "(unknown)":
+            inferred.add(layer)
+    for via in _board_file_vias(content):
+        inferred.update(str(layer) for layer in cast(list[object], via.get("layers", [])) if layer)
+    for zone in _board_file_zones(content):
+        inferred.update(str(layer) for layer in cast(list[object], zone.get("layers", [])) if layer)
+    for entry in _parse_board_footprint_blocks(content).values():
+        layer_name = str(entry.get("layer_name", "")).strip()
+        if layer_name:
+            inferred.add(layer_name)
+        inferred.update(_footprint_layers_from_block(str(entry.get("block", ""))))
+    return [
+        {"index": None, "name": layer, "type": "inferred"}
+        for layer in sorted(inferred, key=_file_layer_sort_key)
+    ]
 
 
 def _matches_file_layer_filter(layer_name: str, filter_layer: str) -> bool:
@@ -853,6 +960,35 @@ def _file_backed_footprints(
     return "\n".join(lines)
 
 
+def _file_backed_vias(ipc_error: BaseException) -> str:
+    loaded = _load_file_backed_board(ipc_error)
+    if isinstance(loaded, str):
+        return loaded
+    _, content, diagnostics = loaded
+    vias, total = _limit(_board_file_vias(content))
+    if total == 0:
+        return "\n".join(["No vias are present in the file-backed fallback.", *diagnostics])
+    lines = [f"Vias (file-backed fallback, {total} total):"]
+    for via in vias:
+        position = cast(tuple[float, float] | None, via["position"])
+        position_text = f"({position[0]:.2f}, {position[1]:.2f})" if position else "(unknown)"
+        diameter = via["diameter_mm"]
+        drill = via["drill_mm"]
+        diameter_text = (
+            f"{float(diameter):.3f} mm" if isinstance(diameter, int | float) else "(unknown)"
+        )
+        drill_text = f"{float(drill):.3f} mm" if isinstance(drill, int | float) else "(unknown)"
+        layers = cast(list[str], via["layers"])
+        layer_text = ",".join(layers) if layers else "(unknown)"
+        lines.append(
+            f"{via['index']}. {position_text} mm diameter={diameter_text} "
+            f"drill={drill_text} net={via['net']} type={via['type']} "
+            f"layers={layer_text} id=file:via:{via['index']}"
+        )
+    lines.extend(diagnostics)
+    return "\n".join(lines)
+
+
 def _file_backed_nets(ipc_error: BaseException) -> str:
     loaded = _load_file_backed_board(ipc_error)
     if isinstance(loaded, str):
@@ -863,6 +999,44 @@ def _file_backed_nets(ipc_error: BaseException) -> str:
         return "\n".join(["No nets are present in the file-backed fallback.", *diagnostics])
     lines = [f"Nets (file-backed fallback, {len(nets)} total):"]
     lines.extend(f"- {net or '(unnamed)'}" for net in nets)
+    lines.extend(diagnostics)
+    return "\n".join(lines)
+
+
+def _file_backed_zones(ipc_error: BaseException) -> str:
+    loaded = _load_file_backed_board(ipc_error)
+    if isinstance(loaded, str):
+        return loaded
+    _, content, diagnostics = loaded
+    zones, total = _limit(_board_file_zones(content))
+    if total == 0:
+        return "\n".join(["No zones are present in the file-backed fallback.", *diagnostics])
+    lines = [f"Zones (file-backed fallback, {total} total):"]
+    for zone in zones:
+        layers = cast(list[str], zone["layers"])
+        layer_text = ",".join(layers) if layers else "(unknown)"
+        lines.append(
+            f"{zone['index']}. name={zone['name'] or '(unnamed)'} "
+            f"net={zone['net']} layers={layer_text} id=file:zone:{zone['index']}"
+        )
+    lines.extend(diagnostics)
+    return "\n".join(lines)
+
+
+def _file_backed_layers(ipc_error: BaseException) -> str:
+    loaded = _load_file_backed_board(ipc_error)
+    if isinstance(loaded, str):
+        return loaded
+    _, content, diagnostics = loaded
+    layers = _board_file_layers(content)
+    if not layers:
+        return "\n".join(
+            ["No enabled layers were found in the file-backed fallback.", *diagnostics]
+        )
+    lines = [f"Enabled layers (file-backed fallback, {len(layers)} total):"]
+    for layer in layers:
+        prefix = f"{layer['index']}: " if layer["index"] is not None else ""
+        lines.append(f"- {prefix}{layer['name']} ({layer['type']})")
     lines.extend(diagnostics)
     return "\n".join(lines)
 
@@ -1960,6 +2134,7 @@ def register(mcp: FastMCP) -> None:
         return "\n".join(
             [
                 "Board summary:",
+                "- Source: live-gui",
                 f"- Tracks: {len(tracks)}",
                 f"- Vias: {len(vias)}",
                 f"- Footprints: {len(footprints)}",
@@ -2001,7 +2176,11 @@ def register(mcp: FastMCP) -> None:
         if not tracks:
             return f"Track page {page} is out of range. Available pages: 1-{page_count}."
 
-        lines = [f"Tracks ({total} total):", f"- Page {page}/{page_count} | Showing {len(tracks)}"]
+        lines = [
+            f"Tracks ({total} total):",
+            "- Source: live-gui",
+            f"- Page {page}/{page_count} | Showing {len(tracks)}",
+        ]
         for index, track in enumerate(tracks, start=1):
             lines.append(
                 f"{index}. "
@@ -2016,14 +2195,17 @@ def register(mcp: FastMCP) -> None:
         return "\n".join(lines)
 
     @mcp.tool()
-    @requires_kicad_running
+    @headless_compatible
     def pcb_get_vias() -> str:
         """List board vias."""
-        vias, total = _limit(cast(Iterable[Via], get_board().get_vias()))
+        try:
+            vias, total = _limit(cast(Iterable[Via], get_board().get_vias()))
+        except (KiCadConnectionError, OSError) as exc:
+            return _file_backed_vias(exc)
         if not vias:
             return "No vias are present on the active board."
 
-        lines = [f"Vias ({total} total):"]
+        lines = [f"Vias ({total} total):", "- Source: live-gui"]
         for index, via in enumerate(vias, start=1):
             lines.append(
                 f"{index}. "
@@ -2066,6 +2248,7 @@ def register(mcp: FastMCP) -> None:
 
         lines = [
             f"Footprints ({total} total):",
+            "- Source: live-gui",
             f"- Page {page}/{page_count} | Showing {len(footprints)}",
         ]
         for footprint in footprints:
@@ -2103,19 +2286,22 @@ def register(mcp: FastMCP) -> None:
             return _file_backed_nets(exc)
         if not nets:
             return "No nets are present on the active board."
-        lines = [f"Nets ({total} total):"]
+        lines = [f"Nets ({total} total):", "- Source: live-gui"]
         lines.extend(f"- {net.name or '(unnamed)'}" for net in nets)
         return "\n".join(lines)
 
     @mcp.tool()
-    @requires_kicad_running
+    @headless_compatible
     def pcb_get_zones() -> str:
         """List all board copper zones."""
-        zones, total = _limit(cast(Iterable[Any], get_board().get_zones()))
+        try:
+            zones, total = _limit(cast(Iterable[Any], get_board().get_zones()))
+        except (KiCadConnectionError, OSError) as exc:
+            return _file_backed_zones(exc)
         if not zones:
             return "No zones are present on the active board."
 
-        lines = [f"Zones ({total} total):"]
+        lines = [f"Zones ({total} total):", "- Source: live-gui"]
         for index, zone in enumerate(zones, start=1):
             line = f"{index}. name={zone.name or '(unnamed)'} net={zone.net.name or '(none)'}"
             if hasattr(zone, "layer"):
@@ -2156,12 +2342,15 @@ def register(mcp: FastMCP) -> None:
         return "\n".join(lines)
 
     @mcp.tool()
-    @requires_kicad_running
+    @headless_compatible
     def pcb_get_layers() -> str:
         """List enabled board layers."""
-        layers = get_board().get_enabled_layers()
+        try:
+            layers = get_board().get_enabled_layers()
+        except (KiCadConnectionError, OSError) as exc:
+            return _file_backed_layers(exc)
         names = [BoardLayer.Name(layer) for layer in layers]
-        return "Enabled layers:\n" + "\n".join(f"- {name}" for name in names)
+        return "Enabled layers:\n- Source: live-gui\n" + "\n".join(f"- {name}" for name in names)
 
     @mcp.tool()
     @headless_compatible
@@ -2358,6 +2547,7 @@ def register(mcp: FastMCP) -> None:
         )
 
     @mcp.tool()
+    @headless_compatible
     def pcb_get_design_rules() -> str:
         """Read the active board design rules file when available."""
         cfg = get_config()
@@ -2371,7 +2561,15 @@ def register(mcp: FastMCP) -> None:
         content = matches[0].read_text(encoding="utf-8", errors="ignore")
         if len(content) > cfg.max_text_response_chars:
             content = f"{content[: cfg.max_text_response_chars]}\n... [truncated]"
-        return content
+        return "\n".join(
+            [
+                "Design rules (file-backed):",
+                "- Source: file-backed",
+                f"- Design rules file: {matches[0]}",
+                "",
+                content,
+            ]
+        )
 
     @mcp.tool()
     @headless_compatible

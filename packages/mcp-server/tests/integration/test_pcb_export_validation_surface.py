@@ -449,6 +449,11 @@ async def test_pcb_read_tools_fall_back_to_configured_board_file(
             "(kicad_pcb\n"
             "\t(version 20250216)\n"
             '\t(generator "pytest")\n'
+            "\t(layers\n"
+            '\t\t(0 "F.Cu" signal)\n'
+            '\t\t(31 "B.Cu" signal)\n'
+            '\t\t(32 "B.Adhes" user "B.Adhesive")\n'
+            "\t)\n"
             '\t(net 0 "")\n'
             '\t(net 1 "/VIN")\n'
             '\t(net 2 "/LED_A")\n'
@@ -461,6 +466,8 @@ async def test_pcb_read_tools_fall_back_to_configured_board_file(
             '\t\t(pad "2" smd rect (at 1 0) (size 1 1) (layers "F.Cu") (net 2 "/LED_A"))\n'
             "\t)\n"
             '\t(segment (start 10 10) (end 20 10) (width 0.25) (layer "F.Cu") (net 1))\n'
+            '\t(via (at 20 10) (size 0.8) (drill 0.4) (layers "F.Cu" "B.Cu") (net 1))\n'
+            '\t(zone (net 1) (net_name "/VIN") (layer "F.Cu") (name "VIN_FILL"))\n'
             ")\n"
         ),
         encoding="utf-8",
@@ -487,6 +494,10 @@ async def test_pcb_read_tools_fall_back_to_configured_board_file(
         server, "pcb_get_footprints", {"page": 2, "page_size": 1}
     )
     nets = await call_tool_text(server, "pcb_get_nets", {})
+    vias = await call_tool_text(server, "pcb_get_vias", {})
+    zones = await call_tool_text(server, "pcb_get_zones", {})
+    layers = await call_tool_text(server, "pcb_get_layers", {})
+    rules = await call_tool_text(server, "pcb_get_design_rules", {})
 
     for text in (
         summary,
@@ -497,8 +508,12 @@ async def test_pcb_read_tools_fall_back_to_configured_board_file(
         footprints_filtered_out,
         footprints_out_of_range,
         nets,
+        vias,
+        zones,
+        layers,
     ):
         assert "file-backed fallback" in text
+        assert "- Source: file-backed" in text
         assert "Diagnostics:" in text
         assert "IPC endpoint:" in text
         assert f"Active project path: {sample_project}" in text
@@ -517,6 +532,15 @@ async def test_pcb_read_tools_fall_back_to_configured_board_file(
     assert "Footprint page 2 is out of range" in footprints_out_of_range
     assert "- /VIN" in nets
     assert "- /LED_A" in nets
+    assert "Vias (file-backed fallback, 1 total)" in vias
+    assert "diameter=0.800 mm" in vias
+    assert "Zones (file-backed fallback, 1 total)" in zones
+    assert "VIN_FILL" in zones
+    assert "Enabled layers (file-backed fallback, 3 total)" in layers
+    assert "F.Cu" in layers and "B.Cu" in layers
+    assert "Design rules (file-backed)" in rules
+    assert "- Source: file-backed" in rules
+    assert "(rules)" in rules
 
 
 @pytest.mark.anyio

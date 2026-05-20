@@ -158,8 +158,8 @@ def main(argv: list[str] | None = None) -> int:
         print("tools reference OK")
         return 0
 
-    GENERATED_PATH.write_text(generated, encoding="utf-8")
-    DOC_PATH.write_text(rendered_doc, encoding="utf-8")
+    GENERATED_PATH.write_text(generated, encoding="utf-8", newline="\n")
+    DOC_PATH.write_text(rendered_doc, encoding="utf-8", newline="\n")
     print(f"wrote {GENERATED_PATH.relative_to(ROOT)}")
     print(f"updated {DOC_PATH.relative_to(ROOT)}")
     return 0
