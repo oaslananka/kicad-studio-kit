@@ -40,9 +40,10 @@
     "check:version": "node scripts/check-version-consistency.mjs",
     "check:compatibility": "uv run --project packages/mcp-server --all-extras python packages/mcp-server/scripts/check_compatibility_matrix.py",
     "check:governance": "node scripts/sync-governance-project-items.mjs --self-test",
+    "check:testing-strategy": "node scripts/check-testing-strategy.mjs",
     "check:publish": "node scripts/check-publish-preflight.mjs",
     "governance:sync:dry-run": "node scripts/sync-governance-project-items.mjs --dry-run --chunk-size 10",
-    "check": "pnpm run check:forbidden-refs && pnpm run check:boundaries && pnpm run check:version && pnpm run check:compatibility && pnpm run check:governance && pnpm -r run check"
+    "check": "pnpm run check:forbidden-refs && pnpm run check:boundaries && pnpm run check:version && pnpm run check:compatibility && pnpm run check:governance && pnpm run check:testing-strategy && pnpm -r run check"
   },
   "devDependencies": {
     "@commitlint/cli": "21.0.0",
