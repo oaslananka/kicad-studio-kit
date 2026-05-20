@@ -6,7 +6,7 @@ This repository is managed as a two-product monorepo. GitHub Projects should be 
 
 | Field | Values |
 | --- | --- |
-| Product | `kicad-studio`, `kicad-mcp-pro`, `shared`, `repo` |
+| Product | `vscode-extension`, `mcp-server`, `mcp-npm`, `shared`, `repo` |
 | Area | `architecture`, `testing`, `mcp`, `viewer`, `diagnostics`, `release`, `security`, `docs`, `ci`, `ui-ux`, `compatibility` |
 | Priority | `P0`, `P1`, `P2`, `P3` |
 | Phase | `M0 foundation`, `M1 test foundation`, `M2 MCP compatibility`, `M3 premium UI/UX`, `M4 release hardening` |
@@ -55,12 +55,12 @@ Issues:
 
 - #34 MCP Streamable HTTP requires session header during ChatGPT connector setup
 - #35 MCP PCB read tools report no board open while KiCad PCB Editor has active board
-- #57 Add MCP adapter layer inside kicad-studio extension
-- #58 Add versioned server-info and capabilities contract to kicad-mcp-pro
+- #57 Add MCP adapter layer inside the KiCad Studio extension
+- #58 Add versioned server-info and capabilities contract to KiCad MCP Pro
 - #61 Add MCP compatibility dashboard
 - #72 Add MCP transport conformance suite
 - #73 Add read-only, write, manufacturing, and experimental modes
-- #74 Add kicad-mcp-pro doctor command
+- #74 Add KiCad MCP Pro doctor command
 - #75 Add file-backed fallback strategy for MCP PCB read tools
 - #76 Add real-pair E2E compatibility tests
 

@@ -30,7 +30,7 @@ Verify that:
 Not allowed:
 
 - The extension app importing MCP server implementation internals.
-- The MCP server app importing extension implementation internals.
+- The MCP server package importing extension implementation internals.
 - Shared packages importing from product apps.
 - Generic shared packages without a domain-specific purpose.
 

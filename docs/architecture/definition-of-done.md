@@ -35,7 +35,7 @@ Architecture changes must include:
 - Updated architecture documentation.
 - Boundary impact analysis.
 - Validation that product workspaces remain independently buildable.
-- No direct source imports between `apps/kicad-studio` and `apps/kicad-mcp-pro`.
+- No direct source imports between `apps/vscode-extension`, `packages/mcp-server`, and `packages/mcp-npm`.
 - Migration notes for renamed or moved paths.
 
 ## MCP protocol or capability changes
