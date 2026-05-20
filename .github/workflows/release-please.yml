@@ -39,12 +39,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mapfile -t branches < <(gh pr list \
+          set -euo pipefail
+
+          branch_output="$(gh pr list \
             --repo "$GITHUB_REPOSITORY" \
             --state open \
             --limit 100 \
             --json headRefName \
-            --jq '.[] | select(.headRefName | startswith("release-please--branches--main")) | .headRefName')
+            --jq '.[] | select(.headRefName | startswith("release-please--branches--main")) | .headRefName')"
+
+          branches=()
+          if [ -n "${branch_output}" ]; then
+            mapfile -t branches <<< "${branch_output}"
+          fi
 
           if [ "${#branches[@]}" -eq 0 ]; then
             echo "No open Release Please PR branches found."

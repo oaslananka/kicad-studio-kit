@@ -588,7 +588,10 @@ def test_release_and_publish_workflows_are_monorepo_ready() -> None:
     )
     assert "config-file: release-please-config.json" in release_please
     assert "manifest-file: .release-please-manifest.json" in release_please
+    assert "set -euo pipefail" in release_please
+    assert 'branch_output="$(gh pr list \\' in release_please
     assert 'startswith("release-please--branches--main")' in release_please
+    assert "mapfile -t branches < <(gh pr list" not in release_please
     assert "for branch in" in release_please
     assert "HEAD:${branch}" in release_please
     assert "--head release-please--branches--main" not in release_please
