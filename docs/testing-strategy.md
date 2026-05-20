@@ -1,0 +1,184 @@
+# Testing Strategy
+
+OASLANA-35 / GitHub issue #36 defines the maximum automated test strategy for
+KiCad Studio Kit. The goal is to make normal development depend on repeatable
+local and CI gates instead of manual VS Code or KiCad inspection after every
+change.
+
+This document is the canonical repository-level testing guide. Product-specific
+notes can add detail, but they should not weaken these gates.
+
+## Gate Summary
+
+| Gate                 | Trigger                                                              | Purpose                                                                                         | Required command                              |
+| -------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Fast PR gate         | Every pull request                                                   | Catch formatting, lint, type, unit, package, metadata, boundary, and compatibility regressions. | `corepack pnpm run check`                     |
+| Product gate         | Product-scoped changes                                               | Prove the touched product still builds, tests, and packages independently.                      | Product commands below                        |
+| Contract gate        | Protocol, compatibility, or cross-product changes                    | Prove extension and MCP assumptions remain aligned.                                             | `corepack pnpm run test:contract`             |
+| Fixture gate         | Parser, diagnostics, command-builder, or KiCad file behavior changes | Prove deterministic KiCad corpus behavior stays stable.                                         | `corepack pnpm run test:fixtures`             |
+| Nightly quality gate | Scheduled and manual workflow                                        | Re-run the repository gate plus contract and fixture gates outside the fast PR path.            | `.github/workflows/nightly-quality-gates.yml` |
+| Manual smoke         | Release candidate only                                               | Final human inspection where automation is not practical.                                       | PR notes must name the exact manual check     |
+
+## Test Layers
+
+| Layer                                 | Scope                                                                                                                                | Owner path                                                               | Runner or API                                                  | Gate                                                   |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ | -------------------------------------------------------------- | ------------------------------------------------------ |
+| Static checks                         | Format, lint, typecheck, metadata, product boundaries, version consistency, compatibility matrix, governance self-test.              | Root, `apps/vscode-extension`, `packages/mcp-server`, `packages/mcp-npm` | pnpm, TypeScript, Ruff, mypy, repository scripts               | Fast PR gate                                           |
+| Extension unit tests                  | Project discovery, command builders, diagnostics, state machines, MCP client behavior, webview HTML helpers, parsers.                | `apps/vscode-extension/test/unit/`                                       | Jest                                                           | Fast PR gate                                           |
+| Extension integration tests           | Activation, commands, context keys, diagnostics, project tree, status bar, custom editors, real-server flows.                        | `apps/vscode-extension/test/integration/`                                | `@vscode/test-electron` and VS Code Extension Development Host | Product gate, nightly gate when enabled                |
+| Extension webview and E2E tests       | Viewer state machine, fit and zoom behavior, layer panel, toolbar, loading, error, empty states.                                     | `apps/vscode-extension/test/e2e/`                                        | Playwright                                                     | Product gate or nightly gate based on environment      |
+| Visual regression                     | Schematic and PCB viewer surfaces, sidebars, themes, viewport sizes.                                                                 | `apps/vscode-extension/test/e2e/` snapshot suites                        | Playwright `toHaveScreenshot`                                  | Nightly gate until baselines are stable enough for PRs |
+| Accessibility and keyboard navigation | Activity bar views, custom editors, tree views, status actions, command flows.                                                       | Extension integration and Playwright suites                              | VS Code test host, Playwright accessibility snapshots          | Product gate or nightly gate                           |
+| MCP unit tests                        | Pure Python helpers, tool metadata, routers, server startup, semantic gates, release guards.                                         | `packages/mcp-server/tests/unit/`                                        | pytest                                                         | Fast PR gate                                           |
+| MCP integration tests                 | File-backed KiCad behavior, export/manufacturing tools, project quality gates, simulation and routing tools.                         | `packages/mcp-server/tests/integration/`                                 | pytest plus optional `kicad-cli`                               | Nightly gate unless the fixture is pure and fast       |
+| MCP E2E tests                         | Server startup, stdio, journal/rollback, release-gate workflows.                                                                     | `packages/mcp-server/tests/e2e/`                                         | pytest                                                         | Nightly gate                                           |
+| KiCad CLI contract tests              | KiCad 10 primary behavior plus supported 9.x and deprecated 8.x compatibility where supported.                                       | Shared fixtures and MCP integration tests                                | `kicad-cli`                                                    | Nightly/canary gate                                    |
+| MCP transport contract tests          | Streamable HTTP initialize flow, session handling, stateless behavior, `MCP-Protocol-Version`, tool discovery, errors, and timeouts. | MCP tests and future shared contract package                             | pytest/http client                                             | Contract gate                                          |
+| Real-pair tests                       | Built VS Code extension connected to built MCP server against fixture workspaces.                                                    | Future shared harness                                                    | VS Code test host plus local MCP server                        | Nightly gate                                           |
+| Real KiCad GUI IPC smoke              | KiCad application IPC behavior that cannot be proven headlessly.                                                                     | Dedicated smoke harness                                                  | KiCad GUI plus fixture workspace                               | Nightly only                                           |
+| Release candidate manual smoke        | Marketplace/package artifact sanity only.                                                                                            | PR/release notes                                                         | Human confirmation                                             | Release candidate only                                 |
+
+## Fast PR Gates
+
+Fast gates must be deterministic and must not depend on a manually opened KiCad
+or VS Code desktop session.
+
+Run the complete repository gate before opening or updating a PR that touches
+root tooling, CI, shared compatibility, release policy, or docs:
+
+```bash
+corepack enable
+corepack pnpm install --frozen-lockfile
+uv sync --all-extras --frozen --project packages/mcp-server
+corepack pnpm run check
+```
+
+Extension-only changes use:
+
+```bash
+corepack pnpm run check:kicad-studio
+corepack pnpm run test:kicad-studio
+corepack pnpm run build:kicad-studio
+corepack pnpm run package:kicad-studio
+```
+
+MCP server changes use:
+
+```bash
+uv sync --all-extras --frozen --project packages/mcp-server
+corepack pnpm run check:kicad-mcp-pro
+corepack pnpm run test:kicad-mcp-pro
+corepack pnpm run build:kicad-mcp-pro
+corepack pnpm run package:kicad-mcp-pro
+```
+
+npm wrapper changes use:
+
+```bash
+corepack pnpm run check:mcp-npm
+```
+
+Protocol, compatibility, or cross-product changes use:
+
+```bash
+corepack pnpm run test:contract
+corepack pnpm run test:fixtures
+```
+
+## Nightly Quality Gates
+
+The nightly gate catches slow and environment-sensitive regressions without
+making every PR wait for the heaviest checks. It must stay non-release: no tags,
+no publishing, no marketplace uploads, and no artifact promotion.
+
+The scheduled workflow is `.github/workflows/nightly-quality-gates.yml`. It
+runs on `workflow_dispatch` and a daily cron schedule. The workflow currently
+executes:
+
+```bash
+corepack pnpm run check
+corepack pnpm run test:contract
+corepack pnpm run test:fixtures
+```
+
+As the M1-M4 roadmap lands, extend this workflow in focused PRs:
+
+| Future gate                | Tracking issue | Required behavior                                                                                                              |
+| -------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Shared fixture corpus      | OASLANA-36     | Replace placeholder fixture coverage with a shared deterministic KiCad corpus and golden expected outputs.                     |
+| Unit test expansion        | OASLANA-37     | Cover project discovery, command builders, diagnostics, state machines, and MCP client behavior.                               |
+| MCP protocol contracts     | OASLANA-43     | Cover Streamable HTTP, session headers, stateless mode, tool discovery, errors, timeouts, and ChatGPT connector compatibility. |
+| MCP adapter layer tests    | OASLANA-56     | Verify extension UI and commands use the adapter boundary instead of direct MCP calls.                                         |
+| Server-info contract tests | OASLANA-57     | Verify advertised server-info, capability metadata, and compatibility ranges.                                                  |
+| Real-pair E2E              | OASLANA-75     | Build both products, start the server, launch the extension host, connect them, and validate capability handshakes.            |
+| VS Code canary             | OASLANA-81     | Run current stable, insiders, and minimum supported VS Code versions.                                                          |
+| KiCad canary               | OASLANA-82     | Run primary, supported, deprecated, and prerelease KiCad CLI lanes where practical.                                            |
+
+## Regression Coverage Map
+
+Every bug fix should add an automated regression when practical. If automation
+is not practical, the PR must explain why and include the manual smoke command
+or artifact.
+
+| Issue      | Risk covered                                                                    | Required test layer                                                        |
+| ---------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| OASLANA-35 | Missing repository-level testing strategy and quality gates.                    | `docs/testing-strategy.md` plus `corepack pnpm run check:testing-strategy` |
+| OASLANA-36 | KiCad file parser or quality-gate regressions that lack deterministic fixtures. | Shared KiCad fixture corpus and golden expected outputs                    |
+| OASLANA-37 | Extension helpers regressing without unit coverage.                             | Jest unit suites under `apps/vscode-extension/test/unit/`                  |
+| OASLANA-43 | MCP transport/session compatibility regressions.                                | MCP contract tests for Streamable HTTP and `MCP-Protocol-Version` behavior |
+| OASLANA-56 | Extension code bypassing the MCP adapter boundary.                              | Adapter unit tests plus integration tests for UI and command calls         |
+| OASLANA-57 | MCP server-info or capability metadata drift.                                   | Server-info and compatibility contract tests                               |
+| OASLANA-75 | Extension and MCP server passing independently but failing as a pair.           | Real-pair E2E tests                                                        |
+| OASLANA-16 | Schematic viewer rendering as a tiny low-resolution thumbnail.                  | Playwright viewer fit tests plus visual regression snapshots               |
+| OASLANA-20 | Project tree duplicate rows or unclear file state indicators.                   | Extension integration tests for project tree model and labels              |
+| OASLANA-68 | Stale state across project, diagnostics, viewer, MCP, and export surfaces.      | State-store unit tests plus integration checks for derived UI state        |
+| OASLANA-63 | Ownership or branch protection drift.                                           | CODEOWNERS/policy validation and PR checklist checks                       |
+| OASLANA-64 | Supply-chain regressions in both products and artifacts.                        | Security workflow, package validation, audit, and provenance checks        |
+| OASLANA-81 | VS Code runtime/API compatibility regressions.                                  | Scheduled VS Code stable/insiders/minimum canary lane                      |
+| OASLANA-82 | KiCad CLI/file-format compatibility regressions.                                | Scheduled KiCad version canary lane                                        |
+
+## Local Commands
+
+Use the narrowest command first while developing, then run the broader gate
+before pushing.
+
+| Change type                    | Narrow command                                                                                              | Broad command                                  |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Root docs or governance        | `corepack pnpm run check:testing-strategy`                                                                  | `corepack pnpm run check`                      |
+| Extension unit behavior        | `corepack pnpm --filter kicadstudio run test:unit -- <test file>`                                           | `corepack pnpm run check:kicad-studio`         |
+| Extension integration behavior | `corepack pnpm --filter kicadstudio run test:integration`                                                   | `corepack pnpm run check:kicad-studio`         |
+| Extension webview/E2E behavior | `corepack pnpm --filter kicadstudio run test:e2e`                                                           | Nightly quality gate once snapshots are stable |
+| MCP unit behavior              | `uv run --project packages/mcp-server --all-extras pytest packages/mcp-server/tests/unit/<test_file>.py -q` | `corepack pnpm run check:kicad-mcp-pro`        |
+| MCP full behavior              | `corepack pnpm --dir packages/mcp-server run test`                                                          | `corepack pnpm run check:kicad-mcp-pro`        |
+| Protocol or compatibility      | `corepack pnpm run test:contract`                                                                           | `corepack pnpm run check`                      |
+| Fixtures                       | `corepack pnpm run test:fixtures`                                                                           | `corepack pnpm run check`                      |
+
+## CI Ownership
+
+CI ownership follows product boundaries:
+
+- `.github/workflows/ci.yml` owns fast PR lanes for metadata, extension, MCP
+  server, npm wrapper, and forbidden reference checks.
+- `.github/workflows/security.yml`, `.github/workflows/gitleaks.yml`, and
+  `.github/workflows/codeql.yml` own security and static analysis lanes.
+- `.github/workflows/nightly-quality-gates.yml` owns the non-release scheduled
+  quality gate.
+- Product-specific validation remains inside each product package so the root
+  workflow can compose it without direct source imports between products.
+
+## Source Verification
+
+This strategy was checked against current primary sources:
+
+- VS Code extension testing docs for Extension Development Host and
+  `@vscode/test-electron`.
+- VS Code webview UX guidance for constrained webview usage and native UI
+  preference.
+- Playwright visual comparison docs for `toHaveScreenshot`, snapshot naming,
+  and snapshot update flow.
+- KiCad 10 command-line documentation for `kicad-cli` driven ERC, DRC, export,
+  and version checks.
+- Model Context Protocol 2025-06-18 transport docs for Streamable HTTP,
+  session handling, and `MCP-Protocol-Version`.
+- GitHub Actions workflow syntax docs for scheduled and manually dispatched
+  non-release quality gates.
