@@ -681,17 +681,16 @@ def test_version_synchronization_across_release_manifests() -> None:
         "packages/mcp-npm",
     }
     assert release_please["separate-pull-requests"] is True
-    assert {
-        "type": "linked-versions",
-        "groupName": "kicad-mcp-pro",
-        "components": ["mcp-server", "mcp-npm"],
-    } in release_please["plugins"]
-    assert "vscode-extension" not in {
+    linked_version_components = {
         component
         for plugin in release_please["plugins"]
-        if isinstance(plugin, dict) and plugin.get("type") == "linked-versions"
+        if isinstance(plugin, dict)
+        and plugin.get("type") == "linked-versions"
+        and plugin.get("groupName") == "kicad-mcp-pro"
         for component in plugin.get("components", [])
     }
+    assert linked_version_components == {"mcp-server", "mcp-npm"}
+    assert "vscode-extension" not in linked_version_components
     extra_files = release_please["packages"]["packages/mcp-server"]["extra-files"]
     assert ("mcp.json", "$.packages[2].version") in {
         (entry["path"], entry.get("jsonpath"))
@@ -708,6 +707,10 @@ def test_version_synchronization_across_release_manifests() -> None:
     assert "https://oaslananka.github.io/kicad-studio-kit" in wrapper["homepage"]
     assert "release:dry-run:kicad-studio" in root_package["scripts"]
     assert "release:dry-run:kicad-mcp-pro" in root_package["scripts"]
+    assert "release:dry-run" in root_package["scripts"]
+    assert "release:dry-run:kicad-studio" in root_package["scripts"]["release:dry-run"]
+    assert "release:dry-run:kicad-mcp-pro" in root_package["scripts"]["release:dry-run"]
+    assert "release:dry-run" in root_package["scripts"]["check"]
 
 
 def test_docs_workflow_deploys_only_from_canonical_repo() -> None:

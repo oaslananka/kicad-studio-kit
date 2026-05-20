@@ -55,6 +55,7 @@ add(
   readJson("packages/mcp-npm/package.json").version,
 );
 const manifest = readJson(".release-please-manifest.json");
+const releasePlease = readJson("release-please-config.json");
 for (const [key, value] of Object.entries(manifest)) {
   add(".release-please-manifest.json", key, value);
 }
@@ -119,11 +120,7 @@ function expectedFor(check) {
 const drift = checks
   .map((check) => ({ ...check, expected: expectedFor(check) }))
   .filter((check) => check.value !== check.expected);
-const expectedManifestKeys = new Set([
-  "apps/vscode-extension",
-  "packages/mcp-server",
-  "packages/mcp-npm",
-]);
+const expectedManifestKeys = new Set(Object.keys(releasePlease.packages ?? {}));
 const manifestKeys = new Set(Object.keys(manifest));
 const unexpectedManifestKeys = [...manifestKeys].filter(
   (key) => !expectedManifestKeys.has(key),

@@ -64,7 +64,12 @@ jobs:
             uv sync --all-extras --frozen --project packages/mcp-server
             corepack pnpm --dir packages/mcp-server run metadata:sync
 
-            changed="$(git diff --name-only)"
+            changed="$(
+              {
+                git diff --name-only
+                git ls-files --others --exclude-standard
+              } | sed '/^$/d'
+            )"
             if [ -z "${changed}" ]; then
               echo "No generated metadata changes for ${branch}."
               echo "::endgroup::"
