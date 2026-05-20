@@ -7,6 +7,7 @@ export class KiCadDiagnosticsAggregator implements vscode.DiagnosticCollection {
     string,
     Map<DiagnosticBucket, readonly vscode.Diagnostic[]>
   >();
+  private readonly uris = new Map<string, vscode.Uri>();
 
   constructor(private readonly backing: vscode.DiagnosticCollection) {}
 
@@ -42,7 +43,12 @@ export class KiCadDiagnosticsAggregator implements vscode.DiagnosticCollection {
       return;
     }
 
-    const key = uri.toString();
+    const key = keyForUri(uri);
+    const previousUri = this.uris.get(key);
+    if (previousUri && previousUri.toString() !== uri.toString()) {
+      this.backing.delete(previousUri);
+    }
+    this.uris.set(key, uri);
     const bucket = inferBucket(uri, diagnostics);
     const current =
       this.buckets.get(key) ??
@@ -53,12 +59,16 @@ export class KiCadDiagnosticsAggregator implements vscode.DiagnosticCollection {
   }
 
   delete(uri: vscode.Uri): void {
-    this.buckets.delete(uri.toString());
-    this.backing.delete(uri);
+    const key = keyForUri(uri);
+    this.buckets.delete(key);
+    const previousUri = this.uris.get(key) ?? uri;
+    this.uris.delete(key);
+    this.backing.delete(previousUri);
   }
 
   clear(): void {
     this.buckets.clear();
+    this.uris.clear();
     this.backing.clear();
   }
 
@@ -76,12 +86,12 @@ export class KiCadDiagnosticsAggregator implements vscode.DiagnosticCollection {
   }
 
   get(uri: vscode.Uri): readonly vscode.Diagnostic[] | undefined {
-    const buckets = this.buckets.get(uri.toString());
+    const buckets = this.buckets.get(keyForUri(uri));
     return buckets ? flattenBuckets(buckets) : undefined;
   }
 
   has(uri: vscode.Uri): boolean {
-    return this.buckets.has(uri.toString());
+    return this.buckets.has(keyForUri(uri));
   }
 
   dispose(): void {
@@ -93,9 +103,21 @@ export class KiCadDiagnosticsAggregator implements vscode.DiagnosticCollection {
   }
 
   private flush(uri: vscode.Uri): void {
-    const buckets = this.buckets.get(uri.toString());
+    const buckets = this.buckets.get(keyForUri(uri));
     this.backing.set(uri, buckets ? flattenBuckets(buckets) : undefined);
   }
+}
+
+function keyForUri(uri: vscode.Uri): string {
+  const fsPath = uri.fsPath;
+  if (fsPath) {
+    const normalized = fsPath.replace(/\\/g, '/');
+    if (process.platform === 'win32' || /^[a-zA-Z]:\//.test(normalized)) {
+      return normalized.toLowerCase();
+    }
+    return normalized;
+  }
+  return uri.toString();
 }
 
 function inferBucket(

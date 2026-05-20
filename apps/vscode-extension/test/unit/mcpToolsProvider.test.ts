@@ -83,4 +83,3 @@ function childrenByLabel(provider: McpToolsProvider, label: string) {
   expect(node).toBeDefined();
   return node!;
 }
-

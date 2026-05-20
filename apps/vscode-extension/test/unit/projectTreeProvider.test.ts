@@ -37,4 +37,3 @@ describe('KiCadProjectTreeProvider', () => {
     expect(rules.command).toEqual(expect.objectContaining({ command: 'vscode.open' }));
   });
 });
-

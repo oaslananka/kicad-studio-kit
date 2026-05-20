@@ -68,6 +68,31 @@ describe('KiCadDiagnosticsAggregator', () => {
     ).toEqual(['New ERC']);
   });
 
+  it('replaces stale diagnostics when Windows paths differ by casing or slash style', () => {
+    const backing = createBackingCollection();
+    const aggregator = new KiCadDiagnosticsAggregator(backing);
+    const staleUri = vscode.Uri.file(
+      'C:\\Users\\Admin\\Project\\KICAD_TEST.kicad_pcb'
+    );
+    const cleanUri = vscode.Uri.file(
+      'c:/users/admin/project/KICAD_TEST.kicad_pcb'
+    );
+    const stale = new vscode.Diagnostic(
+      new vscode.Range(0, 0, 0, 1),
+      'Old DRC',
+      0
+    );
+    stale.source = 'kicad-cli:drc';
+
+    aggregator.set(staleUri, [stale]);
+    aggregator.set(cleanUri, []);
+
+    expect(aggregator.get(staleUri)).toEqual([]);
+    expect(aggregator.get(cleanUri)).toEqual([]);
+    expect(backing.delete).toHaveBeenCalledWith(staleUri);
+    expect(backing.set).toHaveBeenLastCalledWith(cleanUri, []);
+  });
+
   it('infers buckets from file extension and supports delete and clear', () => {
     const backing = createBackingCollection();
     const aggregator = new KiCadDiagnosticsAggregator(backing);
