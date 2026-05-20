@@ -89,5 +89,7 @@ jobs:
           done
 
           echo "Timed out waiting for Pages deployment ${deployment_id}" >&2
-          gh api --method POST "/repos/${GITHUB_REPOSITORY}/pages/deployments/${deployment_id}/cancel" >/dev/null || true
+          if ! gh api --method POST "/repos/${GITHUB_REPOSITORY}/pages/deployments/${deployment_id}/cancel" >/dev/null; then
+            echo "Pages deployment cancel request failed for ${deployment_id}" >&2
+          fi
           exit 1
