@@ -16,4 +16,5 @@ Detailed architecture documents:
 - [Branch protection](architecture/branch-protection.md)
 - [Testing strategy](architecture/testing-strategy.md)
 - [Migration phases](architecture/migration-phases.md)
+- [M0 completion audit](architecture/m0-completion-audit.md)
 - [KiCad Studio and MCP integration](integration/kicad-studio-mcp.md)

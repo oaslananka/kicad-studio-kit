@@ -39,6 +39,8 @@ Related issues: #51, #59.
 
 Related issues: #52, #87.
 
+M0 completion evidence: [M0 completion audit](m0-completion-audit.md).
+
 ## Phase M1+ - Shared test assets
 
 - [ ] Add dedicated KiCad fixture corpus.
