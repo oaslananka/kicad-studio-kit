@@ -2,7 +2,7 @@
   "name": "kicadstudio",
   "displayName": "KiCad Studio",
   "description": "The complete KiCad development environment for VS Code — view schematics & PCBs, run DRC/ERC, export production files, search components, and get AI-powered design assistance.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "oaslananka",
   "engines": {
     "vscode": "^1.99.0",
