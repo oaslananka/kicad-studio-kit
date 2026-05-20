@@ -102,7 +102,7 @@ Issues:
 - #66 Add devcontainer and optional Codespaces prebuild
 - #67 Add ADR process
 - #80 Add dependency and platform lifecycle policy
-- #81 Configure Renovate and Dependabot update strategy
+- #81 Configure automated dependency update strategy
 - #82 Add VS Code scheduled canary CI
 - #83 Add KiCad scheduled canary CI
 - #84 Add dependency update risk classification
