@@ -55,6 +55,7 @@ corepack pnpm run test:contract
 - [Product boundaries](docs/architecture/product-boundaries.md)
 - [Release model](docs/architecture/release-model.md)
 - [Testing strategy](docs/testing-strategy.md)
+- [KiCad fixture corpus](docs/kicad-fixture-corpus.md)
 - [Integration model](docs/integration/kicad-studio-mcp.md)
 
 ## Examples

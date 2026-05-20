@@ -105,7 +105,7 @@ As the M1-M4 roadmap lands, extend this workflow in focused PRs:
 
 | Future gate                | Tracking issue | Required behavior                                                                                                              |
 | -------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Shared fixture corpus      | OASLANA-36     | Replace placeholder fixture coverage with a shared deterministic KiCad corpus and golden expected outputs.                     |
+| Shared fixture corpus      | OASLANA-36     | Maintain `apps/vscode-extension/test/fixtures/kicad/` with semantic fixture IDs and golden expected outputs.                   |
 | Unit test expansion        | OASLANA-37     | Cover project discovery, command builders, diagnostics, state machines, and MCP client behavior.                               |
 | MCP protocol contracts     | OASLANA-43     | Cover Streamable HTTP, session headers, stateless mode, tool discovery, errors, timeouts, and ChatGPT connector compatibility. |
 | MCP adapter layer tests    | OASLANA-56     | Verify extension UI and commands use the adapter boundary instead of direct MCP calls.                                         |
@@ -152,6 +152,26 @@ before pushing.
 | MCP full behavior              | `corepack pnpm --dir packages/mcp-server run test`                                                          | `corepack pnpm run check:kicad-mcp-pro`        |
 | Protocol or compatibility      | `corepack pnpm run test:contract`                                                                           | `corepack pnpm run check`                      |
 | Fixtures                       | `corepack pnpm run test:fixtures`                                                                           | `corepack pnpm run check`                      |
+
+## KiCad Fixture Corpus
+
+The canonical fixture corpus for OASLANA-36 lives at
+`apps/vscode-extension/test/fixtures/kicad/` and is documented in
+[`docs/kicad-fixture-corpus.md`](kicad-fixture-corpus.md).
+
+Use semantic fixture IDs from `manifest.json` rather than hard-coded directory
+walks in tests. Regenerate fixtures only through the explicit generator:
+
+```bash
+corepack pnpm run fixtures:kicad:generate
+```
+
+The fixture gate is deterministic and does not invoke KiCad, VS Code, or MCP
+servers implicitly:
+
+```bash
+corepack pnpm run test:fixtures
+```
 
 ## CI Ownership
 
