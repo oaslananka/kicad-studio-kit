@@ -200,7 +200,22 @@ async function createDrcRulesFile(
   }
 
   if (!fs.existsSync(target)) {
-    fs.writeFileSync(target, drcRulesTemplate(template), 'utf8');
+    const content = drcRulesTemplate(template);
+    const document = await vscode.workspace.openTextDocument({
+      content,
+      language: 'kicad-drc'
+    });
+    await vscode.window.showTextDocument(document, { preview: true });
+    const choice = await vscode.window.showInformationMessage(
+      `.kicad_dru will be created at ${target}.`,
+      { modal: true },
+      'Create File',
+      'Cancel'
+    );
+    if (choice !== 'Create File') {
+      return;
+    }
+    fs.writeFileSync(target, content, 'utf8');
   }
 
   const document = await vscode.workspace.openTextDocument(target);

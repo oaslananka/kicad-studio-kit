@@ -14,10 +14,10 @@ const P = {
   kicad: 500,
   drc: 490,
   erc: 480,
-  sep1: 475,  // separator between validation and AI/MCP group
+  sep1: 475, // separator between validation and AI/MCP group
   ai: 470,
   mcp: 460,
-  sep2: 455,  // separator before variant
+  sep2: 455, // separator before variant
   variant: 450
 } as const;
 
@@ -335,7 +335,19 @@ export class KiCadStatusBar implements vscode.Disposable {
     return [
       `${label}: ${summary.errors} error(s), ${summary.warnings} warning(s), ${summary.infos} info.`,
       `Source: ${summary.file}`,
+      `Updated: ${formatTimestamp(summary.capturedAt)}`,
       'Click to re-run and refresh Problems.'
     ].join('\n');
   }
+}
+
+function formatTimestamp(value: string | undefined): string {
+  if (!value) {
+    return 'not recorded';
+  }
+  const timestamp = new Date(value);
+  if (Number.isNaN(timestamp.getTime())) {
+    return value;
+  }
+  return timestamp.toLocaleString();
 }

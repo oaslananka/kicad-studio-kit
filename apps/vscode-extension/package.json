@@ -349,7 +349,7 @@
       },
       {
         "view": "kicadstudio.fixQueue",
-        "contents": "No pending AI fixes.\n\nRun **Quality Gates** to surface issues, or ask the AI Chat to analyse the design.",
+        "contents": "No pending AI fixes.\n\n[Run Quality Gates](command:kicadstudio.qualityGate.runAll)\n[Open AI Chat](command:kicadstudio.openAiChat)\n[Refresh Fix Queue](command:kicadstudio.refreshFixQueue)",
         "when": "kicadstudio.mcpConnected && !kicadstudio.mcpVsCodeStdio"
       },
       {
@@ -359,7 +359,7 @@
       },
       {
         "view": "kicadstudio.qualityGate",
-        "contents": "Connect `kicad-mcp-pro` to run quality gates and inspect release readiness.\n[Setup MCP Integration](command:kicadstudio.setupMcpIntegration)\n[Install kicad-mcp-pro](command:kicadstudio.mcp.install)",
+        "contents": "Connect `kicad-mcp-pro` over HTTP to run schematic, placement, PCB transfer, and manufacturing gates.\n[Setup MCP Integration](command:kicadstudio.setupMcpIntegration)\n[Install kicad-mcp-pro](command:kicadstudio.mcp.install)",
         "when": "!kicadstudio.mcpConnected && !kicadstudio.mcpVsCodeStdio"
       },
       {

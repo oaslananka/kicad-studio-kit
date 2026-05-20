@@ -14,11 +14,14 @@ class KiCadTreeItem extends vscode.TreeItem {
     if (node.uri) {
       this.resourceUri = node.uri;
     }
+    this.tooltip = node.uri?.fsPath ?? node.label;
+    this.iconPath = new vscode.ThemeIcon(iconForNode(node));
 
     if (
       node.uri &&
       (node.type === 'schematic' ||
         node.type === 'pcb' ||
+        node.type === 'drc-rule' ||
         node.type === 'file' ||
         node.type === 'jobset')
     ) {
@@ -83,7 +86,7 @@ export class KiCadProjectTreeProvider implements vscode.TreeDataProvider<Project
       models,
       fabFiles
     ] = await Promise.all([
-      collectFiles(rootPath, /\.(kicad_pro|kicad_sch|kicad_pcb)$/i),
+      collectFiles(rootPath, /\.(kicad_pro|kicad_sch|kicad_pcb|kicad_dru)$/i),
       collectFiles(rootPath, /\.kicad_jobset$/i),
       collectFiles(rootPath, /\.kicad_sym$/i),
       collectFiles(rootPath, /\.kicad_mod$/i),
@@ -102,7 +105,9 @@ export class KiCadProjectTreeProvider implements vscode.TreeDataProvider<Project
             ? 'schematic'
             : file.endsWith('.kicad_pcb')
               ? 'pcb'
-              : 'file',
+              : file.endsWith('.kicad_dru')
+                ? 'drc-rule'
+                : 'file',
           uri: vscode.Uri.file(file)
         })
       ),
@@ -169,6 +174,72 @@ export class KiCadProjectTreeProvider implements vscode.TreeDataProvider<Project
       uri: vscode.Uri.file(rootPath),
       children
     };
+  }
+}
+
+function iconForNode(node: ProjectTreeNode): string {
+  switch (node.type) {
+    case 'project':
+      return 'repo';
+    case 'schematic':
+      return 'symbol-class';
+    case 'pcb':
+      return 'circuit-board';
+    case 'drc-rule':
+      return 'law';
+    case 'jobset':
+      return 'play-circle';
+    case 'symbol-library':
+      return 'library';
+    case 'footprint-library':
+      return 'extensions';
+    case 'fab-output':
+      return 'package';
+    case 'model':
+      return 'symbol-structure';
+    case 'folder':
+      return 'folder';
+    case 'file':
+      return iconForFile(node.label);
+  }
+}
+
+function iconForFile(label: string): string {
+  const ext = path.extname(label).toLowerCase();
+  switch (ext) {
+    case '.kicad_pro':
+      return 'repo';
+    case '.kicad_sch':
+      return 'symbol-class';
+    case '.kicad_pcb':
+      return 'circuit-board';
+    case '.kicad_dru':
+      return 'law';
+    case '.kicad_sym':
+      return 'symbol-enum';
+    case '.kicad_mod':
+      return 'symbol-structure';
+    case '.kicad_jobset':
+      return 'play-circle';
+    case '.step':
+    case '.stp':
+    case '.wrl':
+      return 'symbol-structure';
+    case '.gbr':
+    case '.drl':
+      return 'layers';
+    case '.csv':
+    case '.xlsx':
+    case '.json':
+      return 'table';
+    case '.pdf':
+    case '.svg':
+    case '.html':
+      return 'preview';
+    case '.zip':
+      return 'file-zip';
+    default:
+      return 'file';
   }
 }
 

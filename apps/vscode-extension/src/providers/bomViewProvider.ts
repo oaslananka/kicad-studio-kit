@@ -17,7 +17,7 @@ export class BomViewProvider
   private readonly bomParser: BomParser;
   private readonly bomExporter = new BomExporter();
   private readonly disposables: vscode.Disposable[] = [];
-  private currentFile?: string;
+  private currentFile: string | undefined;
   private _refreshTimer: NodeJS.Timeout | undefined = undefined;
   /** URI of the last schematic opened in the custom viewer (webview panel). */
   private _lastViewedSchematicUri?: vscode.Uri;
@@ -102,8 +102,17 @@ export class BomViewProvider
     }
     this.manager.setLoading();
     this.currentFile = file;
-    const entries = this.bomParser.parse(readTextFileSync(file));
-    this.manager.setEntries(entries);
+    try {
+      const entries = this.bomParser.parse(readTextFileSync(file));
+      this.manager.setEntries(entries);
+    } catch (error) {
+      this.currentFile = undefined;
+      this.manager.setStatus(
+        error instanceof Error
+          ? `Could not load BOM from ${path.basename(file)}: ${error.message}`
+          : `Could not load BOM from ${path.basename(file)}.`
+      );
+    }
   }
 
   async exportJsonForCurrentFile(): Promise<string | undefined> {

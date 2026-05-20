@@ -77,8 +77,8 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
         ? vscode.TreeItemCollapsibleState.Expanded
         : vscode.TreeItemCollapsibleState.None
     );
-    item.description = `${gate.status} - ${gate.summary}`;
-    item.tooltip = gate.raw ?? gate.summary;
+    item.description = descriptionForGate(gate);
+    item.tooltip = tooltipForGate(gate);
     item.contextValue = `qualityGate-${gate.status.toLowerCase()}`;
     item.iconPath = new vscode.ThemeIcon(iconForStatus(gate.status));
     item.command = {
@@ -91,7 +91,7 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
 
   getChildren(element?: QualityGateElement): QualityGateElement[] {
     if (!element) {
-      return this.gates.map((gate) => ({ kind: 'gate', gate }));
+      return orderGates(this.gates).map((gate) => ({ kind: 'gate', gate }));
     }
     if (element.kind === 'gate') {
       return element.gate.violations.map((violation) => ({
@@ -116,7 +116,9 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
         this.mcpClient.runTransferQualityGate(),
         this.mcpClient.runManufacturingQualityGate()
       ]);
-      this.gates = mergeGates([...project, placement, transfer, manufacturing]);
+      this.gates = markRunTime(
+        mergeGates([...project, placement, transfer, manufacturing])
+      );
       await this.persist();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -140,8 +142,10 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
         : gate.id.includes('manufacturing')
           ? await this.mcpClient.runManufacturingQualityGate()
           : ((await this.mcpClient.runProjectQualityGate())[0] ?? gate);
-    this.gates = mergeGates(
-      this.gates.map((item) => (item.id === gate.id ? next : item))
+    this.gates = markRunTime(
+      mergeGates(
+        this.gates.map((item) => (item.id === gate.id ? next : item))
+      )
     );
     await this.persist();
     this.onDidChangeTreeDataEmitter.fire(undefined);
@@ -158,13 +162,15 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
         this.mcpClient.runTransferQualityGate()
       ])
         .then(async ([placement, transfer]) => {
-          this.gates = mergeGates(
-            this.gates.map((gate) =>
-              gate.id === placement.id
-                ? placement
-                : gate.id === transfer.id
-                  ? transfer
-                  : gate
+          this.gates = markRunTime(
+            mergeGates(
+              this.gates.map((gate) =>
+                gate.id === placement.id
+                  ? placement
+                  : gate.id === transfer.id
+                    ? transfer
+                    : gate
+              )
             )
           );
           await this.persist();
@@ -212,10 +218,33 @@ function pendingGate(id: string, label: string): QualityGateResult {
     id,
     label,
     status: 'PENDING',
-    summary: 'Run gate to populate results.',
+    summary: 'Click to run this gate or run all gates.',
     details: [],
     violations: []
   };
+}
+
+function descriptionForGate(gate: QualityGateResult): string {
+  const runText = gate.lastRun ? ` - ${formatTimestamp(gate.lastRun)}` : '';
+  return `${gate.status} - ${gate.summary}${runText}`;
+}
+
+function tooltipForGate(gate: QualityGateResult): string {
+  const lines = [
+    `${gate.label}: ${gate.status}`,
+    gate.summary,
+    gate.lastRun
+      ? `Last run: ${formatTimestamp(gate.lastRun)}`
+      : 'Last run: never',
+    gate.violations.length
+      ? `${gate.violations.length} violation(s). Expand for details.`
+      : 'No violation rows cached for this gate.',
+    'Click to run this gate.'
+  ];
+  if (gate.raw) {
+    lines.push('', gate.raw);
+  }
+  return lines.join('\n');
 }
 
 function iconForStatus(status: QualityGateStatus): string {
@@ -228,8 +257,38 @@ function iconForStatus(status: QualityGateStatus): string {
     case 'BLOCKED':
       return 'error';
     case 'PENDING':
-      return 'circle-outline';
+      return 'play-circle';
   }
+}
+
+function orderGates(gates: QualityGateResult[]): QualityGateResult[] {
+  const priority: Record<QualityGateStatus, number> = {
+    FAIL: 0,
+    BLOCKED: 1,
+    WARN: 2,
+    PENDING: 3,
+    PASS: 4
+  };
+  return [...gates].sort(
+    (a, b) =>
+      priority[a.status] - priority[b.status] ||
+      defaultGateOrder(a.id) - defaultGateOrder(b.id) ||
+      a.label.localeCompare(b.label)
+  );
+}
+
+function defaultGateOrder(id: string): number {
+  const index = DEFAULT_GATES.findIndex((gate) => gate.id === id);
+  return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+}
+
+function markRunTime(gates: QualityGateResult[]): QualityGateResult[] {
+  const capturedAt = new Date().toISOString();
+  return gates.map((gate) =>
+    gate.status === 'PENDING'
+      ? gate
+      : { ...gate, lastRun: gate.lastRun ?? capturedAt }
+  );
 }
 
 function mergeGates(gates: QualityGateResult[]): QualityGateResult[] {
@@ -258,4 +317,12 @@ function canonicalGateId(gate: QualityGateResult): string {
     return 'manufacturing';
   }
   return gate.id;
+}
+
+function formatTimestamp(value: string): string {
+  const timestamp = new Date(value);
+  if (Number.isNaN(timestamp.getTime())) {
+    return value;
+  }
+  return timestamp.toLocaleString();
 }

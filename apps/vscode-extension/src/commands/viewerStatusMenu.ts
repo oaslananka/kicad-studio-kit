@@ -24,10 +24,10 @@ export function buildStatusMenuItems(options: {
 }): StatusMenuItem[] {
   const { trusted, cli, snapshot } = options;
   const drcDetail = snapshot.drc
-    ? `${snapshot.drc.errors} errors, ${snapshot.drc.warnings} warnings, ${snapshot.drc.infos} info`
+    ? `${snapshot.drc.errors} errors, ${snapshot.drc.warnings} warnings, ${snapshot.drc.infos} info - ${formatTimestamp(snapshot.drc.capturedAt)}`
     : 'No DRC result yet';
   const ercDetail = snapshot.erc
-    ? `${snapshot.erc.errors} errors, ${snapshot.erc.warnings} warnings, ${snapshot.erc.infos} info`
+    ? `${snapshot.erc.errors} errors, ${snapshot.erc.warnings} warnings, ${snapshot.erc.infos} info - ${formatTimestamp(snapshot.erc.capturedAt)}`
     : 'No ERC result yet';
 
   const statusItem = trusted
@@ -128,5 +128,16 @@ function diagnosticScope(
   if (!summary) {
     return `${fallback}: no cached result yet.`;
   }
-  return `${fallback}: ${summary.file}`;
+  return `${fallback}: ${summary.file} - updated ${formatTimestamp(summary.capturedAt)}`;
+}
+
+function formatTimestamp(value: string | undefined): string {
+  if (!value) {
+    return 'not recorded';
+  }
+  const timestamp = new Date(value);
+  if (Number.isNaN(timestamp.getTime())) {
+    return value;
+  }
+  return timestamp.toLocaleString();
 }

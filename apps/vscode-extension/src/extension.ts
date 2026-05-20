@@ -49,6 +49,7 @@ import { registerMcpServerDefinitionProvider } from './lm/mcpServerDefinitionPro
 import { ContextBridge } from './mcp/contextBridge';
 import { McpClient } from './mcp/mcpClient';
 import { McpDetector } from './mcp/mcpDetector';
+import { McpToolsProvider } from './mcp/mcpToolsProvider';
 import { FixQueueProvider } from './mcp/fixQueueProvider';
 import { KiCadDiagnosticsAggregator } from './language/diagnosticsAggregator';
 import { KiCadDiagnosticsProvider } from './language/diagnosticsProvider';
@@ -151,6 +152,7 @@ export async function activate(
   });
   extensionMcpClient = mcpClient;
   const contextBridge = new ContextBridge(mcpClient);
+  const mcpToolsProvider = new McpToolsProvider(mcpClient);
   const variantProvider = new VariantProvider(mcpClient);
   const fixQueueProvider = new FixQueueProvider(mcpClient);
   const qualityGateProvider = new QualityGateProvider(context, mcpClient);
@@ -244,10 +246,7 @@ export async function activate(
       getTreeItem: (element: vscode.TreeItem) => element,
       getChildren: () => []
     }),
-    vscode.window.registerTreeDataProvider(MCP_TOOLS_VIEW_ID, {
-      getTreeItem: (element: vscode.TreeItem) => element,
-      getChildren: () => []
-    }),
+    vscode.window.registerTreeDataProvider(MCP_TOOLS_VIEW_ID, mcpToolsProvider),
     vscode.tasks.registerTaskProvider('kicad', new KiCadTaskProvider()),
     // Wire schematic viewer activation → BOM refresh so the BOM panel updates
     // when a .kicad_sch file is opened in the custom viewer (webview), not just
@@ -598,6 +597,7 @@ export async function activate(
         },
         mcpProfile: readConfiguredMcpProfile()
       });
+      mcpToolsProvider.refresh();
       return;
     }
 
@@ -636,6 +636,7 @@ export async function activate(
       mcpState: state,
       mcpProfile: readConfiguredMcpProfile()
     });
+    mcpToolsProvider.refresh();
 
     if (
       state.available &&

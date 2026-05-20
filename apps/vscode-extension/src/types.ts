@@ -204,6 +204,7 @@ export interface DiagnosticSummary {
   warnings: number;
   infos: number;
   source: 'drc' | 'erc' | 'syntax';
+  capturedAt?: string | undefined;
 }
 
 export interface KiCadTaskDefinition extends vscode.TaskDefinition {
@@ -223,8 +224,9 @@ export interface ProjectTreeNode {
     | 'jobset'
     | 'fab-output'
     | 'model'
-    | 'file'
-    | 'folder';
+      | 'file'
+      | 'folder'
+      | 'drc-rule';
   uri?: vscode.Uri | undefined;
   children?: ProjectTreeNode[] | undefined;
 }

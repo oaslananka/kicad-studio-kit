@@ -67,13 +67,15 @@ describe('buildStatusMenuItems', () => {
       expect.arrayContaining([
         expect.objectContaining({
           command: COMMANDS.runDRC,
-          description: '2 errors, 1 warnings, 0 info',
-          detail: 'Board design rules: /workspace/sample.kicad_pcb'
+          description: '2 errors, 1 warnings, 0 info - not recorded',
+          detail:
+            'Board design rules: /workspace/sample.kicad_pcb - updated not recorded'
         }),
         expect.objectContaining({
           command: COMMANDS.runERC,
-          description: '0 errors, 0 warnings, 1 info',
-          detail: 'Schematic electrical rules: /workspace/sample.kicad_sch'
+          description: '0 errors, 0 warnings, 1 info - not recorded',
+          detail:
+            'Schematic electrical rules: /workspace/sample.kicad_sch - updated not recorded'
         })
       ])
     );

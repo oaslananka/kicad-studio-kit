@@ -99,7 +99,14 @@ export class KiCadCheckService {
         infos += 1;
       }
     }
-    return { file, source, errors, warnings, infos };
+    return {
+      file,
+      source,
+      errors,
+      warnings,
+      infos,
+      capturedAt: new Date().toISOString()
+    };
   }
 
   private parseDiagnostics(
