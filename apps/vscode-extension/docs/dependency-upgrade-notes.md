@@ -1,24 +1,15 @@
-# Dependency Upgrade Notes
+# Dependency Maintenance Notes
 
-This branch consolidates the open Dependabot and Socket dependency wave into one maintainer-owned update.
+This monorepo uses Renovate as the dependency maintenance bot. Repository-local Renovate configuration was removed so GitHub does not open duplicate dependency pull requests against the same package and workflow surfaces.
 
-## Reviewed Dependency PRs
+## Current Cleanup
 
-| PR  | Scope                                                                                          | Decision                                                                                          |
-| --- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| #1  | `semver`, `@commitlint/*`, `@typescript-eslint/*`, `@vscode/vsce`, `prettier`, `@types/vscode` | Partially applied. Kept `@types/vscode` on `1.99.x` to match `engines.vscode: ^1.99.0`.           |
-| #2  | `webpack-cli` 6 to 7                                                                           | Applied; Node 24 satisfies the major's engine range and package validation covers build behavior. |
-| #3  | `jest-util` 29 to 30                                                                           | Postponed with Jest 30.                                                                           |
-| #4  | `@types/node` 20 to 25                                                                         | Rejected for now; runtime target remains Node 24.x. Updated to Node 24 typings instead.           |
-| #5  | `jest` and `@types/jest` 29 to 30                                                              | Postponed; Jest 30 migration needs a dedicated extension test-runner pass.                        |
-| #6  | `eslint` 9 to 10                                                                               | Postponed; ESLint 10 migration should be scheduled with config changes and CI parity.             |
-| #7  | `lint-staged` 16 to 17                                                                         | Applied; Node 24 satisfies the major's engine range.                                              |
-| #8  | `github/codeql-action` patch                                                                   | Reviewed as safe patch input; workflow pin updates remain controlled by workflow validation.      |
-| #10 | `actions/labeler` 5 to 6                                                                       | Reviewed as acceptable major input; no direct workflow change was required in this branch.        |
-| #11 | `c8` 10 to 11                                                                                  | Applied; Node 24 satisfies the major's engine range.                                              |
-| #12 | `@eslint/js` 9 to 10                                                                           | Postponed with ESLint 10.                                                                         |
-| #13 | `actions/checkout` pinned SHA update                                                           | Reviewed as safe patch input; existing pinned checkout usage remains intact.                      |
-| #14 | `actions/stale` 9 to 10                                                                        | Reviewed as acceptable major input; no direct workflow change was required in this branch.        |
+- Renovate covers npm, GitHub Actions, Dockerfile, and PEP 621 Python dependencies.
+- Renovate lock-file maintenance refreshes `pnpm-lock.yaml` and `packages/mcp-server/uv.lock` on the weekly maintenance window.
+- GitHub Action references remain pinned to immutable commit SHAs.
+- `@types/node` stays below `25` while the workspace runtime is Node 24.
+- `@types/vscode` stays aligned with `engines.vscode: ^1.99.0`.
+- Python dependency updates are applied through `pyproject.toml` plus `uv.lock`.
 
 ## Applied Updates
 
@@ -31,15 +22,15 @@ This branch consolidates the open Dependabot and Socket dependency wave into one
 | `@typescript-eslint/parser`        | `8.59.2`  |
 | `prettier`                         | `3.8.3`   |
 | `typescript`                       | `5.9.3`   |
-| `@types/node`                      | `24.12.2` |
+| `@types/node`                      | `24.12.3` |
 | `@types/vscode`                    | `1.99.1`  |
 | `webpack-cli`                      | `7.0.2`   |
 | `c8`                               | `11.0.0`  |
-| `lint-staged`                      | `17.0.2`  |
+| `lint-staged`                      | `17.0.4`  |
 | `@vscode/vsce`                     | `3.9.1`   |
-| `ovsx`                             | `0.10.11` |
-| `@cyclonedx/cyclonedx-npm`         | `4.2.1`   |
+| `ovsx`                             | `0.10.12` |
 | `actionlint`                       | `2.0.6`   |
+| `authlib`                          | `1.7.2`   |
 
 ## Postponed Major Updates
 
@@ -51,20 +42,8 @@ This branch consolidates the open Dependabot and Socket dependency wave into one
 | `@types/node` 25                          | Rejected for now because the runtime target is Node 24.x.                                                                                                                                          |
 | `@types/vscode` 1.118                     | Rejected for now because the extension minimum remains `engines.vscode: ^1.99.0`.                                                                                                                  |
 
-## Socket Review
+## Security Review
 
-Socket comments were reviewed on the dependency PRs visible in the organization repository. The visible comments were score summaries and did not show an actionable malicious package, install script, telemetry, new maintainer, license, or vulnerability blocker for the versions applied in this branch.
+The `authlib` lock entry was raised from the vulnerable `1.7.0` release to `1.7.2`, while the declared lower bound now requires the patched `>=1.7.1` series.
 
 No package with a new postinstall requirement was added.
-
-## Dependabot Cleanup
-
-`.github/dependabot.yml` now:
-
-- Groups safe npm patch/minor updates.
-- Separates test tooling major updates.
-- Separates lint tooling major updates.
-- Separates VS Code extension tooling.
-- Separates GitHub Actions updates.
-- Keeps security updates enabled.
-- Adds explicit comments for postponed major updates.

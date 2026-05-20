@@ -9,7 +9,7 @@ work. It favors small gates and measurable artifacts over large rewrites.
   macOS/Windows.
 - Keep `release:check` scoped to current release sections so historical changelog
   entries do not break normal CI.
-- Ensure org-mirror CI publishes stable `ops/*` status checks for personal repo
+- Keep CI status checks stable across the monorepo package matrix
   PR commits.
 - Require PR descriptions to include exact commands run and generated artifact
   paths for agent-authored changes.

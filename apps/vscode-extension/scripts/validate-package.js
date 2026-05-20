@@ -5,12 +5,14 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
+const repoRoot = path.resolve(root, '..', '..');
 const pkg = readJson('package.json');
 
 const expected = {
   repository: 'https://github.com/oaslananka/kicad-studio-kit',
   bugs: 'https://github.com/oaslananka/kicad-studio-kit/issues',
-  homepage: 'https://github.com/oaslananka/kicad-studio-kit',
+  homepage:
+    'https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension',
   publisher: 'oaslananka'
 };
 
@@ -21,7 +23,7 @@ assert(
 assert(pkg.bugs?.url === expected.bugs, 'bugs.url must point to org issues');
 assert(
   pkg.homepage === expected.homepage,
-  'homepage must point to the org repository'
+  'homepage must point to the extension package in the monorepo'
 );
 assert(
   pkg.publisher === expected.publisher,
@@ -92,8 +94,8 @@ assert(
 
 assert(pkg.packageManager?.startsWith('pnpm@'), 'packageManager must pin pnpm');
 assert(
-  fs.existsSync(path.join(root, 'pnpm-lock.yaml')),
-  'pnpm-lock.yaml must be committed'
+  fs.existsSync(path.join(repoRoot, 'pnpm-lock.yaml')),
+  'root pnpm-lock.yaml must be committed'
 );
 assert(
   !fs.existsSync(path.join(root, 'package-lock.json')),

@@ -6,8 +6,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DEFAULT_REPO = 'oaslananka/kicad-studio';
-const PERSONAL_REPO = 'oaslananka/kicad-studio';
+const DEFAULT_REPO = 'oaslananka/kicad-studio-kit';
 const STATES = [
   'no-release',
   'release-pr-open',
@@ -21,7 +20,6 @@ const STATES = [
   'vscode-marketplace-published',
   'open-vsx-published',
   'github-release-published',
-  'personal-mirror-synced',
   'post-release-smoke-success',
   'complete',
   'blocked'
@@ -110,7 +108,7 @@ Options:
 
 Environment:
   GH_TOKEN or GITHUB_TOKEN is optional for public repositories and recommended
-  for release, workflow, and mirror state inspection.`);
+  for release and workflow state inspection.`);
 }
 
 async function inspectReleaseState({ repo, tagName, token }) {
@@ -138,7 +136,6 @@ async function inspectReleaseState({ repo, tagName, token }) {
         apiErrors: [],
         openReleasePr: null,
         latestReleaseRun: null,
-        personalMirrorSynced: false,
         note: 'No GitHub token was available; remote state was not inspected.'
       };
 
@@ -152,7 +149,6 @@ async function inspectReleaseState({ repo, tagName, token }) {
 
   return {
     repo,
-    personalRepo: PERSONAL_REPO,
     packageName: packageJson.name,
     version: packageJson.version,
     tagName,
@@ -181,24 +177,22 @@ function parseRepo(repo) {
 }
 
 async function inspectRemote({ owner, name, repo, tagName, token }) {
-  const [tag, release, pulls, runs, canonicalMain, personalMain] =
-    await Promise.all([
-      githubJson(
-        `/repos/${repo}/git/ref/tags/${encodeURIComponent(tagName)}`,
-        token
-      ),
-      githubJson(
-        `/repos/${repo}/releases/tags/${encodeURIComponent(tagName)}`,
-        token
-      ),
-      githubJson(`/repos/${repo}/pulls?state=open&per_page=50`, token),
-      githubJson(
-        `/repos/${repo}/actions/workflows/release.yml/runs?per_page=10`,
-        token
-      ),
-      githubJson(`/repos/${owner}/${name}/commits/main`, token),
-      githubJson(`/repos/${PERSONAL_REPO}/commits/main`, token)
-    ]);
+  const [tag, release, pulls, runs, canonicalMain] = await Promise.all([
+    githubJson(
+      `/repos/${repo}/git/ref/tags/${encodeURIComponent(tagName)}`,
+      token
+    ),
+    githubJson(
+      `/repos/${repo}/releases/tags/${encodeURIComponent(tagName)}`,
+      token
+    ),
+    githubJson(`/repos/${repo}/pulls?state=open&per_page=50`, token),
+    githubJson(
+      `/repos/${repo}/actions/workflows/release.yml/runs?per_page=10`,
+      token
+    ),
+    githubJson(`/repos/${owner}/${name}/commits/main`, token)
+  ]);
 
   const openReleasePr = Array.isArray(pulls.data)
     ? (pulls.data.find(
@@ -215,8 +209,7 @@ async function inspectRemote({ owner, name, repo, tagName, token }) {
     apiErrorFor('release lookup', release),
     apiErrorFor('open pull requests lookup', pulls),
     apiErrorFor('release workflow runs lookup', runs),
-    apiErrorFor('canonical main lookup', canonicalMain),
-    apiErrorFor('personal mirror main lookup', personalMain)
+    apiErrorFor('canonical main lookup', canonicalMain)
   ].filter(Boolean);
 
   return {
@@ -253,12 +246,7 @@ async function inspectRemote({ owner, name, repo, tagName, token }) {
           createdAt: latestReleaseRun.created_at
         }
       : null,
-    personalMirrorSynced:
-      canonicalMain.ok &&
-      personalMain.ok &&
-      canonicalMain.data.sha === personalMain.data.sha,
-    canonicalMainSha: canonicalMain.data?.sha ?? null,
-    personalMainSha: personalMain.data?.sha ?? null
+    canonicalMainSha: canonicalMain.data?.sha ?? null
   };
 }
 
@@ -338,9 +326,6 @@ function collectBlockers({ checks, remote, tagName }) {
 }
 
 function selectCurrentState({ checks, remote }) {
-  if (remote.personalMirrorSynced && remote.release && !remote.release.draft) {
-    return 'personal-mirror-synced';
-  }
   if (
     remote.release?.assetNames?.some((name) => name.endsWith('.vsix')) ||
     checks.localVsixExists
@@ -378,7 +363,7 @@ function nextSafeCommand({ currentState, tagName, blockers, remote }) {
   if (currentState === 'dry-run-success' || currentState === 'vsix-built') {
     return 'Review release artifacts and keep publish authority in the release workflow outputs.';
   }
-  return 'Inspect post-release smoke and mirror state before closing the release.';
+  return 'Inspect post-release smoke state before closing the release.';
 }
 
 function readJson(file) {

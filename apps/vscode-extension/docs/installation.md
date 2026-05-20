@@ -43,5 +43,5 @@ If `kicad-mcp-pro` is installed:
 
 ## CI/CD Note
 
-- The `oaslananka` GitHub mirror owns the primary automated CI/CD workflows.
-- GitHub Actions in the personal mirror are manual fallback workflows only.
+- `oaslananka/kicad-studio-kit` owns the automated CI/CD workflows.
+- Dependency maintenance is handled by Renovate and normal pull request checks.

@@ -2,6 +2,17 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "include-component-in-tag": true,
   "separate-pull-requests": false,
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "kicad-studio-kit",
+      "components": [
+        "vscode-extension",
+        "mcp-server",
+        "mcp-npm"
+      ]
+    }
+  ],
   "packages": {
     "apps/vscode-extension": {
       "release-type": "node",

@@ -6,9 +6,19 @@ packages:
 allowBuilds:
   '@go-task/cli': true
   '@vscode/vsce-sign': true
-  keytar: true
+  unrs-resolver: true
+
+ignoredOptionalDependencies:
+  - keytar
 
 overrides:
+  '@vscode/vsce>keytar': '-'
+  encoding-sniffer: 1.0.2
+  exceljs>archiver: 8.0.0
+  exceljs>fast-csv: 5.0.7
+  exceljs>unzipper: 0.12.3
   diff: 8.0.4
+  glob: 13.0.6
   mocha>serialize-javascript: 7.0.5
+  test-exclude: 8.0.0
   uuid: 14.0.0

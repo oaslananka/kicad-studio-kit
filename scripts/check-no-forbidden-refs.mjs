@@ -23,6 +23,7 @@ const ignoredExts = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".whl", "
 const rawPatterns = [
   "dev" + "\\.azure\\.com",
   "visual" + "studio\\.com",
+  "Azure " + "DevOps",
   "azure-" + "pipelines",
   "azure-" + "pipelines-ci\\.yml",
   "\\." + "gitlab-ci\\.yml",
@@ -33,12 +34,20 @@ const rawPatterns = [
   "mirror-" + "to-ops",
   "showcase " + "mirror",
   "personal " + "showcase " + "mirror",
+  "personal " + "canonical",
+  "personal " + "repository",
+  "showcase-" + "only",
+  "mirror " + "automation",
+  "manual " + "fallback " + "surfaces",
   "public " + "lab",
   "lab " + "workflow",
   "kicad-" + "studio/actions",
   "kicad-" + "mcp-pro/actions",
   "github\\.com/oaslananka/kicad-" + "studio(?!-kit)",
   "github\\.com/oaslananka/kicad-" + "mcp-pro",
+  "oaslananka/kicad-" + "studio(?!-kit)",
+  "(?<![@.])oaslananka/kicad-" + "mcp-pro",
+  "depend" + "abot",
 ];
 const patterns = rawPatterns.map((pattern) => [
   pattern.replaceAll("\\", ""),

@@ -31,7 +31,8 @@ def test_checked_mcp_manifest_is_valid() -> None:
         "npx",
         "docker",
     ]
-    assert all(package["version"] == "1.0.0" for package in manifest["packages"])
+    assert all(package["version"] == manifest["version"] for package in manifest["packages"])
+    assert manifest["packages"][2]["identifier"].endswith(f":{manifest['version']}")
 
 
 def test_validator_rejects_missing_command(tmp_path: Path) -> None:

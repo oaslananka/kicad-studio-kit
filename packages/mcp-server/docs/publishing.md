@@ -9,7 +9,7 @@ attestation workflows are owned by that canonical repository.
 ## PyPI
 
 Python package releases use `.github/workflows/release-please.yml` in
-`oaslananka/kicad-mcp-pro`. The workflow builds the Python distributions,
+`oaslananka/kicad-studio-kit`. The workflow builds the Python distributions,
 creates release artifacts, generates SBOM and checksum files, signs artifacts
 with Sigstore, creates GitHub artifact attestations, and publishes to PyPI only
 when release-please reports that a release was created and the protected

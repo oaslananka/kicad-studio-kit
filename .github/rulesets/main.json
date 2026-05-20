@@ -37,7 +37,7 @@
             "context": "Full CI Pipeline (ubuntu-24.04)"
           },
           {
-            "context": "Full CI Pipeline (windows-2025)"
+            "context": "Full CI Pipeline (windows-2025-vs2026)"
           },
           {
             "context": "Full CI Pipeline (macos-15)"

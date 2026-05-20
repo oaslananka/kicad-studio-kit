@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = (env, argv) => ({
   target: 'node',
@@ -33,5 +34,10 @@ module.exports = (env, argv) => ({
         }
       }
     ]
-  }
+  },
+  plugins: [
+    new webpack.IgnorePlugin({
+      resourceRegExp: /^@aws-sdk\/client-s3$/
+    })
+  ]
 });

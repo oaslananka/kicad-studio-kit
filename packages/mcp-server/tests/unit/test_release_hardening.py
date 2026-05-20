@@ -576,12 +576,17 @@ def test_version_synchronization_across_release_manifests() -> None:
     init_py = (root / "src" / "kicad_mcp" / "__init__.py").read_text(encoding="utf-8")
 
     version = manifest["packages/mcp-server"]
-    assert manifest == {
-        ".": "1.0.0",
-        "apps/vscode-extension": "1.0.0",
-        "packages/mcp-server": "1.0.0",
-        "packages/mcp-npm": "1.0.0",
+    assert set(manifest) == {
+        ".",
+        "apps/vscode-extension",
+        "packages/mcp-server",
+        "packages/mcp-npm",
     }
+    assert {
+        "type": "linked-versions",
+        "groupName": "kicad-studio-kit",
+        "components": ["vscode-extension", "mcp-server", "mcp-npm"],
+    } in release_please["plugins"]
     extra_files = release_please["packages"]["packages/mcp-server"]["extra-files"]
     assert ("mcp.json", "$.packages[2].version") in {
         (entry["path"], entry.get("jsonpath"))
@@ -600,7 +605,7 @@ def test_docs_workflow_deploys_only_from_canonical_repo() -> None:
     workflow = _workflow("docs.yml")
     shell_suppression = "||" + " true"
 
-    assert "github.repository == 'oaslananka/kicad-mcp-pro'" not in workflow
+    assert "github.repository == 'oaslananka/kicad-studio-kit'" not in workflow
     assert "CANONICAL_PAGES_TOKEN" not in workflow
     assert "if: github.event_name != 'pull_request'" in workflow
     legacy_repo = "github.com/oaslananka/kicad-" + "mcp-pro.git"

@@ -1,19 +1,29 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
+    "config:best-practices",
+    "helpers:pinGitHubActionDigestsToSemver",
     ":dependencyDashboard",
     ":semanticCommits",
-    ":separateMajorReleases"
+    "group:allNonMajor"
   ],
   "timezone": "Europe/Istanbul",
   "labels": ["dependencies"],
-  "enabledManagers": ["npm", "github-actions", "dockerfile"],
+  "schedule": ["before 6am on monday"],
+  "prHourlyLimit": 3,
+  "prConcurrentLimit": 6,
+  "minimumReleaseAge": "3 days",
+  "enabledManagers": ["npm", "github-actions", "dockerfile", "pep621"],
   "rangeStrategy": "pin",
   "packageRules": [
     {
       "matchManagers": ["npm"],
-      "rangeStrategy": "pin",
+      "groupName": "npm dependencies",
+      "automerge": false
+    },
+    {
+      "matchManagers": ["pep621"],
+      "groupName": "python dependencies",
       "automerge": false
     },
     {
@@ -22,11 +32,21 @@
       "description": "Keep VS Code typings aligned with engines.vscode until the extension engine is intentionally raised."
     },
     {
+      "matchPackageNames": ["@types/node"],
+      "allowedVersions": "<25",
+      "description": "Keep Node typings aligned with the Node 24 runtime declared by the workspace."
+    },
+    {
       "matchManagers": ["github-actions"],
       "groupName": "github-actions",
       "automerge": false
     }
   ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security", "dependencies"]
+  },
+  "osvVulnerabilityAlerts": true,
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 6am on monday"]

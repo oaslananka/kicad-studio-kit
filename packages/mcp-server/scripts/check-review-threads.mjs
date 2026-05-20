@@ -20,8 +20,8 @@ const ACTIONABLE_BOT_TERMS = [
 const INFORMATIONAL_BOTS = new Set([
   "github-actions",
   "github-actions[bot]",
-  "dependabot",
-  "dependabot[bot]",
+  "renovate",
+  "renovate[bot]",
   "sentry",
   "sentry[bot]",
   "gemini-code-assist",
@@ -58,7 +58,7 @@ Options:
 
 function parseArgs(argv) {
   const args = {
-    repo: process.env.GITHUB_REPOSITORY || "oaslananka/kicad-mcp-pro",
+    repo: process.env.GITHUB_REPOSITORY || "oaslananka/kicad-studio-kit",
     jsonOut: "review-thread-summary.json",
     markdownOut: "review-thread-summary.md",
     failOnBlocked: false,

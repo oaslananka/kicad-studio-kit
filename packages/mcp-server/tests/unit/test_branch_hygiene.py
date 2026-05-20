@@ -44,7 +44,12 @@ def test_branch_hygiene_no_matches_exits_zero(tmp_path: Path) -> None:
     env["PATH"] = f"{bin_dir}{os.pathsep}{env['PATH']}"
 
     result = subprocess.run(
-        [sys.executable, "scripts/branch_hygiene_report.py", "--repo", "oaslananka/kicad-mcp-pro"],
+        [
+            sys.executable,
+            "scripts/branch_hygiene_report.py",
+            "--repo",
+            "oaslananka/kicad-studio-kit",
+        ],
         check=False,
         cwd=Path(__file__).resolve().parents[2],
         env=env,
@@ -69,7 +74,7 @@ def test_branch_hygiene_strict_no_matches_exits_one(tmp_path: Path) -> None:
             sys.executable,
             "scripts/branch_hygiene_report.py",
             "--repo",
-            "oaslananka/kicad-mcp-pro",
+            "oaslananka/kicad-studio-kit",
             "--strict",
         ],
         check=False,

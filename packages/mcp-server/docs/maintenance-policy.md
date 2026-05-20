@@ -22,7 +22,7 @@ skipping the scan.
 
 ## Dependency Updates
 
-Dependabot remains responsible for security updates and alerts. Renovate handles
+Renovate remains responsible for security updates and alerts. Renovate handles
 regular version update PRs using `renovate.json`.
 
 Patch and minor updates for development tooling and GitHub Actions may automerge

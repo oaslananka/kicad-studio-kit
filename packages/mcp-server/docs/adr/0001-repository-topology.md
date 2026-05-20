@@ -8,26 +8,26 @@
 
 The project now uses one canonical GitHub repository:
 
-- `oaslananka/kicad-mcp-pro` - canonical source of truth and release authority.
+- `oaslananka/kicad-studio-kit` - canonical source of truth and release authority.
 
 The former split-repository topology has been retired. CI/CD, release, registry,
 package-manager, and signing authority now live in the canonical repository.
 
 ## Decision
 
-Maintain a single canonical repository at `oaslananka/kicad-mcp-pro`. It
+Maintain a single canonical repository at `oaslananka/kicad-studio-kit`. It
 contains all source changes and runs CI, security scanning, release automation,
 docs deploy, publishing workflows, SBOM generation, Sigstore signing, and
 artifact attestations.
 
-Normal contributors open PRs against `oaslananka/kicad-mcp-pro`.
+Normal contributors open PRs against `oaslananka/kicad-studio-kit`.
 
 ## Consequences
 
 - Contributors have one public source of truth for code review and automation.
 - Public health indicators must point at the canonical repository workflows.
 - The `docs/autonomy.md` document must accurately describe this boundary.
-- Any future maintainer must have access to `oaslananka/kicad-mcp-pro`.
+- Any future maintainer must have access to `oaslananka/kicad-studio-kit`.
 
 ## Verification
 

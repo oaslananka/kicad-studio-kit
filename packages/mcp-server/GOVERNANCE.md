@@ -17,5 +17,6 @@ KiCad MCP Pro is maintained by `@oaslananka`. The project uses maintainer-led de
 
 ## Release Authority
 
-Automated GitHub CI/CD is owned by the canonical `oaslananka/kicad-mcp-pro`
-repository. Azure DevOps and GitLab remain manual fallback surfaces.
+Automated CI/CD is owned by the canonical `oaslananka/kicad-studio-kit`
+GitHub repository. Publishing uses GitHub Actions environments and trusted
+publishing where supported.
