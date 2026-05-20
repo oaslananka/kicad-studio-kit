@@ -126,8 +126,7 @@ Use this checklist before entering any external review form.
 - [ ] Do not submit while screenshot placeholders are still present for final production submission.
 - [ ] Do not submit with any secret value in logs or screenshots.
 - [ ] Do not submit with old organization namespace strings.
-- [ ] Confirm org CI uses GitHub-hosted `ubuntu-24.04` and personal release
-      workflows use the dedicated self-hosted Linux X64 runner.
+- [ ] Confirm CI and trusted publishing workflows use GitHub-hosted runners.
 - [ ] Do not submit before `PUBLIC_LISTING_READY.md` says `READY FOR SUBMISSION`.
 
 ## Final Evidence Controls

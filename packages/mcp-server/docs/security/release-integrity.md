@@ -1,7 +1,7 @@
 # Release Integrity
 
 Release integrity controls are emitted only from the canonical repository,
-`oaslananka/kicad-mcp-pro`.
+`oaslananka/kicad-studio-kit`.
 
 ## SBOM
 
@@ -59,14 +59,14 @@ Verify a local artifact:
 
 ```bash
 gh attestation verify dist/kicad_mcp_pro-<version>-py3-none-any.whl \
-  --repo oaslananka/kicad-mcp-pro
+  --repo oaslananka/kicad-studio-kit
 ```
 
 For source distributions:
 
 ```bash
 gh attestation verify dist/kicad_mcp_pro-<version>.tar.gz \
-  --repo oaslananka/kicad-mcp-pro
+  --repo oaslananka/kicad-studio-kit
 ```
 
 ## GHCR Image Digest and Provenance
@@ -87,7 +87,7 @@ Verify the image attestation with GitHub CLI:
 
 ```bash
 gh attestation verify oci://ghcr.io/oaslananka/kicad-studio-kit/kicad-mcp-pro@sha256:<digest> \
-  --repo oaslananka/kicad-mcp-pro
+  --repo oaslananka/kicad-studio-kit
 ```
 
 The Docker workflow publishes provenance only when the image is pushed.

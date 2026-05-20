@@ -43,7 +43,6 @@ const BOT_NAME_PATTERNS = [
   /\[bot\]$/i,
   /-bot$/i,
   /github-actions/i,
-  /dependabot/i,
   /renovate/i,
   /socket/i,
   /sentry/i,

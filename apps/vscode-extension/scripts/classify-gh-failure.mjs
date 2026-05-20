@@ -367,28 +367,6 @@ const FAILURE_CLASSES = [
     releasePublishMustStop: false
   },
   {
-    id: 'personal-mirror-tag-clobber',
-    patterns: [/divergent tag/i, /tag.*clobber/i, /clobber.*tag/i],
-    rootCause:
-      'A personal showcase tag differs from the canonical organization tag.',
-    recommendedFix:
-      'Do not overwrite automatically. Review the canonical and personal refs before any separate recovery.',
-    autoFixAllowed: false,
-    humanApprovalRequired: true,
-    releasePublishMustStop: false
-  },
-  {
-    id: 'personal-mirror-branch-divergence',
-    patterns: [/branch.*divergen/i, /main.*divergen/i, /non-fast-forward/i],
-    rootCause:
-      'The personal showcase main branch diverged from canonical main.',
-    recommendedFix:
-      'Review the canonical and personal refs before any separate recovery.',
-    autoFixAllowed: false,
-    humanApprovalRequired: true,
-    releasePublishMustStop: false
-  },
-  {
     id: 'flaky/infra failure',
     patterns: [/ECONNRESET/i, /ETIMEDOUT/i, /rate limit/i, /runner.*lost/i],
     rootCause:

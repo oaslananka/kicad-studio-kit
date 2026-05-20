@@ -75,5 +75,5 @@ The extension is activated from KiCad project, schematic, PCB, jobset, or DRC ru
 
 ## CI/CD
 
-- The `oaslananka` GitHub mirror owns the primary automated CI/CD workflows.
-- GitHub Actions in the personal mirror are manual fallback workflows only.
+- `oaslananka/kicad-studio-kit` owns the automated CI/CD workflows.
+- GitHub Actions run from the canonical repository only.

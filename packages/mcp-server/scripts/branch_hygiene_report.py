@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from urllib.parse import quote
 
-DEFAULT_REPO = "oaslananka/kicad-mcp-pro"
+DEFAULT_REPO = "oaslananka/kicad-studio-kit"
 PROTECTED_BRANCHES = {"main", "master", "develop", "gh-pages"}
 PROTECTED_PREFIXES = ("release/", "hotfix/")
 

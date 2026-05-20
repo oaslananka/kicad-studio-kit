@@ -18,7 +18,6 @@ or mutate refs.
 - `vscode-marketplace-published`
 - `open-vsx-published`
 - `github-release-published`
-- `personal-mirror-synced`
 - `post-release-smoke-success`
 - `complete`
 - `blocked`
@@ -35,7 +34,7 @@ The script checks:
 - local `SHA256SUMS.txt`
 - local `sbom.cdx.json`
 - latest Release workflow runs
-- canonical `main` and personal mirror `main` SHAs
+- canonical `main` SHA
 
 Remote inspection uses `GH_TOKEN` or `GITHUB_TOKEN` when available. Without a
 token, the script still reports local package state and records remote
@@ -44,12 +43,12 @@ inspection as a blocker.
 ## Usage
 
 ```bash
-node scripts/release-state.mjs --repo oaslananka/kicad-studio --json
+node scripts/release-state.mjs --repo oaslananka/kicad-studio-kit --json
 ```
 
 ```bash
 GH_TOKEN=<token> node scripts/release-state.mjs \
-  --repo oaslananka/kicad-studio \
+  --repo oaslananka/kicad-studio-kit \
   --summary-file release-state.json
 ```
 

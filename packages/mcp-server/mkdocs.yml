@@ -1,7 +1,7 @@
 site_name: KiCad MCP Pro
 site_url: https://oaslananka.github.io/kicad-studio-kit
 repo_url: https://github.com/oaslananka/kicad-studio-kit
-repo_name: oaslananka/kicad-mcp-pro
+repo_name: oaslananka/kicad-studio-kit
 theme:
   name: material
   palette:
@@ -82,7 +82,6 @@ nav:
       - Repository Operations: repository-operations.md
       - Doppler Setup: doppler-setup.md
       - Branch Protection: branch-protection.md
-      - Azure DevOps CI/CD: deployment/azure-devops.md
       - Docker: deployment/docker.md
       - HTTP Mode: deployment/http-mode.md
       - Security: deployment/security.md

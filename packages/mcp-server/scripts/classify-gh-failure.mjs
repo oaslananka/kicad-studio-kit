@@ -188,7 +188,7 @@ Options:
 }
 
 function parseArgs(argv) {
-  const args = { json: false, repo: process.env.GITHUB_REPOSITORY || "oaslananka/kicad-mcp-pro" };
+  const args = { json: false, repo: process.env.GITHUB_REPOSITORY || "oaslananka/kicad-studio-kit" };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--help" || arg === "-h") {

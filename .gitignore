@@ -25,6 +25,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .vscode-test/
+.codex-checkpoints/
 *.log
 
 # Secret-bearing local files

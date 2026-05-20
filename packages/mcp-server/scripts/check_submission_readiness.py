@@ -56,7 +56,7 @@ FORBIDDEN_NAMESPACE = tuple(
     )
 )
 ORG_CI_RUNNER = "ubuntu-24.04"
-PERSONAL_SELF_HOSTED_WORKFLOWS = {
+OBSOLETE_SELF_HOSTED_WORKFLOWS = {
     "docker-publish.yml",
     "homebrew-publish.yml",
     "mcp-registry.yml",
@@ -125,7 +125,7 @@ def _runner_check() -> CheckResult:
     hits: list[str] = []
     workflow_dir = REPO_ROOT / ".github" / "workflows"
     for path in [*workflow_dir.glob("*.yml"), *workflow_dir.glob("*.yaml")]:
-        if path.name in PERSONAL_SELF_HOSTED_WORKFLOWS:
+        if path.name in OBSOLETE_SELF_HOSTED_WORKFLOWS:
             hits.append(f"{path.relative_to(REPO_ROOT)} is an obsolete pre-monorepo workflow")
             continue
         payload = yaml.safe_load(_read_text(path)) or {}

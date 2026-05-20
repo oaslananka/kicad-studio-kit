@@ -7,7 +7,8 @@ const { pathToFileURL } = require('node:url');
 const { createLinter } = require('actionlint');
 
 const root = path.resolve(__dirname, '..');
-const workflowsDir = path.join(root, '.github', 'workflows');
+const repoRoot = path.resolve(root, '..', '..');
+const workflowsDir = path.join(repoRoot, '.github', 'workflows');
 const ignoredMessages = [
   // The npm WASM build lags GitHub's current permissions list. GitHub's
   // artifact attestation docs require attestations: write for provenance.

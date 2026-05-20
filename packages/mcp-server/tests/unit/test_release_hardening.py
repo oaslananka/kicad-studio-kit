@@ -600,7 +600,7 @@ def test_docs_workflow_deploys_only_from_canonical_repo() -> None:
     workflow = _workflow("docs.yml")
     shell_suppression = "||" + " true"
 
-    assert "github.repository == 'oaslananka/kicad-mcp-pro'" not in workflow
+    assert "github.repository == 'oaslananka/kicad-studio-kit'" not in workflow
     assert "CANONICAL_PAGES_TOKEN" not in workflow
     assert "if: github.event_name != 'pull_request'" in workflow
     legacy_repo = "github.com/oaslananka/kicad-" + "mcp-pro.git"

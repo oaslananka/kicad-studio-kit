@@ -4,7 +4,7 @@ KiCad MCP Pro follows a monthly minor release cadence and keeps roadmap items vi
 
 ## 3.1
 
-- Harden GitHub supply-chain automation: Dependabot, CodeQL, Gitleaks, Scorecard, SBOM, Sigstore, and artifact attestations.
+- Harden GitHub supply-chain automation: Renovate, CodeQL, Gitleaks, Scorecard, SBOM, Sigstore, and artifact attestations.
 - Expand cross-platform CI coverage for Windows and macOS unit smoke tests.
 - Publish a compact README and move long-form setup material into the docs site.
 

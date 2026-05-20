@@ -29,11 +29,10 @@ uv run pytest --cov=kicad_mcp_pro --cov-report=term-missing
 
 ## CI Matrix
 
-Daily CI runs in the `oaslananka/kicad-studio-kit` mirror on GitHub-hosted
-`ubuntu-24.04`. Python **3.12** is the required PR/push lane; Python **3.13**
-is covered by a nightly/manual workflow and dependency-focused PR paths. Release
-publishing remains on the personal repository's dedicated self-hosted Linux X64
-runner.
+CI runs in the canonical `oaslananka/kicad-studio-kit` GitHub repository on
+GitHub-hosted runners. Python **3.12** is the required PR/push lane for the MCP
+server, and package publishing uses the release workflows documented in
+`docs/publishing.md`.
 
 ## Fixtures
 

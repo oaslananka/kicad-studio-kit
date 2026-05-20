@@ -13,8 +13,8 @@ This matrix describes the supported runtime surface for KiCad MCP Pro.
 
 | Platform | Status | Notes |
 |---|---|---|
-| Linux X64 | Tested | Primary CI platform via GitHub-hosted `ubuntu-24.04` in the `oaslananka/kicad-studio-kit` mirror. |
-| Other platforms | Supported by package design | Local users may run the package elsewhere; release publishing stays on the personal repo's dedicated self-hosted Linux X64 runner. |
+| Linux X64 | Tested | Primary CI platform via GitHub-hosted `ubuntu-24.04` in `oaslananka/kicad-studio-kit`. |
+| Other platforms | Supported by package design | Local users may run the package elsewhere; release publishing uses GitHub-hosted runners where trusted publishing requires them. |
 
 ## KiCad Availability
 
