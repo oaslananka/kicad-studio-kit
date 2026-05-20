@@ -844,13 +844,26 @@ async function formatGeneratedFiles(files) {
     const extension = path.extname(filePath);
     const parser =
       extension === ".json" ? "json" : extension === ".md" ? "markdown" : null;
+    const config = parser
+      ? ((await prettier.resolveConfig(filePath)) ?? {})
+      : {};
     formatted.set(
       filePath,
-      parser ? await prettier.format(content, { parser }) : content,
+      parser
+        ? await prettier.format(content, {
+            ...config,
+            filepath: filePath,
+            parser,
+          })
+        : content,
     );
   }
 
   return formatted;
+}
+
+function normalizeLineEndings(content) {
+  return content.replace(/\r\n?/g, "\n");
 }
 
 function listActualFiles(directory) {
@@ -893,8 +906,10 @@ function checkCorpus(files) {
       continue;
     }
 
-    const actualContent = fs.readFileSync(filePath, "utf8");
-    if (actualContent !== expectedContent) {
+    const actualContent = normalizeLineEndings(
+      fs.readFileSync(filePath, "utf8"),
+    );
+    if (actualContent !== normalizeLineEndings(expectedContent)) {
       errors.push(
         `Generated file is stale: ${path.relative(repoRoot, filePath)}`,
       );
