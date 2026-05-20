@@ -23,48 +23,63 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-      - name: Detect open release PR
-        id: release-pr
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          branch="$(gh pr list \
-            --repo "$GITHUB_REPOSITORY" \
-            --head release-please--branches--main \
-            --state open \
-            --json headRefName \
-            --jq '.[0].headRefName // ""')"
-          echo "branch=${branch}" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        if: steps.release-pr.outputs.branch != ''
         with:
-          ref: ${{ steps.release-pr.outputs.branch }}
+          fetch-depth: 0
           persist-credentials: true
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
-        if: steps.release-pr.outputs.branch != ''
         with:
           node-version-file: .node-version
           package-manager-cache: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
-        if: steps.release-pr.outputs.branch != ''
         with:
           enable-cache: false
           version-file: packages/mcp-server/uv.toml
       - name: Synchronize generated release metadata
-        if: steps.release-pr.outputs.branch != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          corepack enable
-          corepack pnpm install --frozen-lockfile
-          uv sync --all-extras --frozen --project packages/mcp-server
-          corepack pnpm --dir packages/mcp-server run metadata:sync
-      - name: Commit generated release metadata
-        if: steps.release-pr.outputs.branch != ''
-        run: |
-          if git diff --quiet; then
+          mapfile -t branches < <(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --limit 100 \
+            --json headRefName \
+            --jq '.[] | select(.headRefName | startswith("release-please--branches--main")) | .headRefName')
+
+          if [ "${#branches[@]}" -eq 0 ]; then
+            echo "No open Release Please PR branches found."
             exit 0
           fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/mcp-server/mcp.json packages/mcp-server/server.json packages/mcp-server/uv.lock packages/mcp-npm/package.json
-          git commit -m "chore: synchronize release metadata"
-          git push origin "HEAD:${{ steps.release-pr.outputs.branch }}"
+
+          for branch in "${branches[@]}"; do
+            echo "::group::${branch}"
+            git fetch origin "${branch}"
+            git switch --force-create release-metadata-sync "origin/${branch}"
+
+            corepack enable
+            corepack pnpm install --frozen-lockfile
+            uv sync --all-extras --frozen --project packages/mcp-server
+            corepack pnpm --dir packages/mcp-server run metadata:sync
+
+            changed="$(git diff --name-only)"
+            if [ -z "${changed}" ]; then
+              echo "No generated metadata changes for ${branch}."
+              echo "::endgroup::"
+              continue
+            fi
+
+            unexpected="$(printf '%s\n' "${changed}" | grep -Ev '^(packages/mcp-server/(mcp\.json|server\.json|uv\.lock)|packages/mcp-npm/package\.json)$' || true)"
+            if [ -n "${unexpected}" ]; then
+              echo "Unexpected release metadata changes:" >&2
+              printf '%s\n' "${unexpected}" >&2
+              exit 1
+            fi
+
+            git add packages/mcp-server/mcp.json packages/mcp-server/server.json packages/mcp-server/uv.lock packages/mcp-npm/package.json
+            git commit -m "chore: synchronize release metadata"
+            git push origin "HEAD:${branch}"
+            echo "::endgroup::"
+          done

@@ -18,6 +18,22 @@ If `1.0.0` already exists on a target registry, the publish preflight must fail.
 
 Before publishing, run `corepack pnpm run check:compatibility` and confirm `compatibility.yaml` matches the release notes and [support matrix](support-matrix.md).
 
+## Product Dry Runs
+
+Run the product-specific dry-run before merging release PRs or release tooling changes:
+
+```bash
+corepack pnpm run release:dry-run:kicad-studio
+corepack pnpm run release:dry-run:kicad-mcp-pro
+corepack pnpm run release:dry-run
+```
+
+`release:dry-run:kicad-studio` validates the extension release-please package path, product changelog path, component tag naming, and that the extension is not linked to the MCP product version.
+
+`release:dry-run:kicad-mcp-pro` validates MCP metadata synchronization, MCP release preflight, compatibility metadata, and the npm launcher package dry-run. The Python package and npm launcher remain one versioned MCP product.
+
+Protocol or tool-schema changes must update compatibility metadata and release notes for both products before publishing.
+
 ## Required GitHub Environments
 
 - `extension-marketplaces`

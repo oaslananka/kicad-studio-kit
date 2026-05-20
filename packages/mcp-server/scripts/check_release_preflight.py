@@ -46,15 +46,18 @@ def _init_version() -> str:
 def _collect_versions() -> dict[str, str]:
     mcp = _read_json("mcp.json")
     server = _read_json("server.json")
+    wrapper = _read_repo_json("packages/mcp-npm/package.json")
     manifest = _read_repo_json(".release-please-manifest.json")
     versions = {
         "pyproject.toml": _project_version(),
         "src/kicad_mcp/__init__.py": _init_version(),
         "mcp.json": str(mcp.get("version", "")),
         "server.json": str(server.get("version", "")),
+        "packages/mcp-npm/package.json": str(wrapper.get("version", "")),
         ".release-please-manifest.json packages/mcp-server": str(
             manifest.get("packages/mcp-server", "")
         ),
+        ".release-please-manifest.json packages/mcp-npm": str(manifest.get("packages/mcp-npm", "")),
     }
     for source, data in (("mcp.json", mcp), ("server.json", server)):
         packages = data.get("packages")

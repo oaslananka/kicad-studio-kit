@@ -9,7 +9,14 @@ KiCad Studio Kit uses one repository and separate product release surfaces.
 | npm launcher         | `packages/mcp-npm/package.json`      | npm package       | `publish-npm.yml`          |
 | MCP Registry listing | `packages/mcp-server/server.json`    | registry metadata | `publish-mcp-registry.yml` |
 
-Release Please owns version proposals through `.release-please-manifest.json` and `release-please-config.json`. The current baseline keeps all public surfaces at `1.0.0`.
+Release Please owns version proposals through `.release-please-manifest.json` and `release-please-config.json`. The manifest tracks product package paths only; the private repository root is not a release surface.
+
+Release PRs are product-scoped:
+
+- `apps/vscode-extension` releases as the VS Code extension product.
+- `packages/mcp-server` and `packages/mcp-npm` release as the `kicad-mcp-pro` product and keep one version through the `linked-versions` plugin.
+
+The extension is intentionally not part of the `kicad-mcp-pro` linked-version group. A change that only affects the extension can produce only an extension release PR, and a change that only affects the MCP server product can produce only an MCP release PR.
 
 ## Compatibility gate
 
@@ -19,9 +26,11 @@ Before release, compatibility metadata must agree across the root matrix, extens
 corepack pnpm run check:version
 corepack pnpm run check:compatibility
 corepack pnpm run test:contract
+corepack pnpm run release:dry-run
 ```
 
 The extension declares the MCP server range it supports, and the MCP server advertises protocol/tool compatibility through its server metadata.
+Protocol or schema changes must update compatibility metadata and release notes for both products before either release PR is merged.
 
 ## Release ownership
 
