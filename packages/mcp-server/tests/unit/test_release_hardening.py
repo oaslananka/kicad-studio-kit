@@ -582,6 +582,11 @@ def test_version_synchronization_across_release_manifests() -> None:
         "packages/mcp-server",
         "packages/mcp-npm",
     }
+    assert {
+        "type": "linked-versions",
+        "groupName": "kicad-studio-kit",
+        "components": ["vscode-extension", "mcp-server", "mcp-npm"],
+    } in release_please["plugins"]
     extra_files = release_please["packages"]["packages/mcp-server"]["extra-files"]
     assert ("mcp.json", "$.packages[2].version") in {
         (entry["path"], entry.get("jsonpath"))
