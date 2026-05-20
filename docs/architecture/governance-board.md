@@ -4,14 +4,14 @@ This repository is managed as a two-product monorepo. GitHub Projects should be 
 
 ## Required project fields
 
-| Field | Values |
-| --- | --- |
-| Product | `vscode-extension`, `mcp-server`, `mcp-npm`, `shared`, `repo` |
-| Area | `architecture`, `testing`, `mcp`, `viewer`, `diagnostics`, `release`, `security`, `docs`, `ci`, `ui-ux`, `compatibility` |
-| Priority | `P0`, `P1`, `P2`, `P3` |
-| Phase | `M0 foundation`, `M1 test foundation`, `M2 MCP compatibility`, `M3 premium UI/UX`, `M4 release hardening` |
-| Status | `Backlog`, `Ready`, `In Progress`, `Review`, `Blocked`, `Done` |
-| Risk | `low`, `medium`, `high` |
+| Field    | Values                                                                                                                   |
+| -------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Product  | `vscode-extension`, `mcp-server`, `mcp-npm`, `shared`, `repo`                                                            |
+| Area     | `architecture`, `testing`, `mcp`, `viewer`, `diagnostics`, `release`, `security`, `docs`, `ci`, `ui-ux`, `compatibility` |
+| Priority | `P0`, `P1`, `P2`, `P3`                                                                                                   |
+| Phase    | `M0 foundation`, `M1 test foundation`, `M2 MCP compatibility`, `M3 premium UI/UX`, `M4 release hardening`                |
+| Status   | `Backlog`, `Ready`, `In Progress`, `Review`, `Blocked`, `Done`                                                           |
+| Risk     | `low`, `medium`, `high`                                                                                                  |
 
 ## Milestone mapping
 
@@ -126,3 +126,43 @@ Issues:
 4. Protocol changes must update schemas, contract tests, compatibility metadata, and docs.
 5. Bug fixes require regression tests unless explicitly documented as not automatable.
 6. Release-impacting changes must update release notes or state why no release note is needed.
+
+## Chunked Project v2 sync
+
+Use the repository-local sync tool when assigning many issues to the GitHub
+Project v2 board. It uses the existing Project v2 board and fields, adds missing
+issue items, and updates selected single-select fields. It does not recreate
+labels, milestones, or the project itself. This keeps each run small enough for
+hosted connectors and avoids repeating bootstrap work.
+
+Dry-run the next chunk:
+
+```bash
+corepack pnpm run governance:sync:dry-run
+```
+
+Run a real chunk after `gh auth` has Project scopes:
+
+```bash
+node scripts/sync-governance-project-items.mjs \
+  --project-number 1 \
+  --owner oaslananka \
+  --repo kicad-studio-kit \
+  --owner-type user \
+  --chunk-size 10
+```
+
+If the result includes `next_cursor`, continue with:
+
+```bash
+node scripts/sync-governance-project-items.mjs \
+  --project-number 1 \
+  --cursor <next_cursor> \
+  --chunk-size 10
+```
+
+The JSON result includes `processed_issue_numbers`,
+`remaining_issue_numbers`, `next_cursor`, and per-field failures with
+`issue_number` and `field`. Re-running a chunk is idempotent because the tool
+first looks for an existing Project v2 item for the issue before calling
+`addProjectV2ItemById`.
