@@ -120,7 +120,7 @@ Issues:
 
 ## Board operating rules
 
-1. Foundation issues must be marked Ready before UI/MCP feature work is started.
+1. M0 foundation issues must be Done, or explicitly waived in the PR notes, before broad UI/MCP feature work starts.
 2. Mixed-purpose PRs should be rejected or split.
 3. Folder moves must not be combined with feature fixes.
 4. Protocol changes must update schemas, contract tests, compatibility metadata, and docs.

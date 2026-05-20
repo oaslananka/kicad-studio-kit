@@ -10,6 +10,7 @@ Identify the PR type:
 - Shared package or protocol schema
 - VS Code extension feature or bug fix
 - MCP server feature or bug fix
+- npm launcher wrapper feature or bug fix
 - Cross-product compatibility
 - CI, release, security, or docs
 
@@ -44,7 +45,7 @@ Allowed integration paths:
 
 ## Review checklist
 
-- Independent build and test workflows still work for both products.
+- Independent build and test workflows still work for the extension, MCP server, and npm wrapper.
 - Old paths are removed from docs, scripts, workflows, release config, and tests.
 - Compatibility metadata and support docs are updated when version support changes.
 - Protocol changes are covered by contract tests.
@@ -60,6 +61,8 @@ Repository-wide changes should run the root check.
 Extension-only changes should run extension lint, typecheck, tests, and build.
 
 MCP-only changes should run MCP tests, command help/version checks, and package build.
+
+Npm-wrapper-only changes should run wrapper install checks, `npm pack --dry-run`, and CLI help/version checks.
 
 Protocol or integration changes should run contract and fixture tests.
 
