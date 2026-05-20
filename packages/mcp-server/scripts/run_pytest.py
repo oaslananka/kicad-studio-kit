@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -26,12 +25,9 @@ SUITES = {
 
 def _basetemp(suite: str) -> Path:
     temp_root = Path(tempfile.gettempdir()).resolve()
-    path = (temp_root / f"kicad-mcp-pro-pytest-{suite}").resolve()
+    path = Path(tempfile.mkdtemp(prefix=f"kicad-mcp-pro-pytest-{suite}-", dir=temp_root)).resolve()
     if temp_root != path and temp_root not in path.parents:
         raise RuntimeError(f"Refusing unsafe pytest temp path outside {temp_root}: {path}")
-    if path.exists():
-        shutil.rmtree(path)
-    path.mkdir(parents=True, exist_ok=True)
     return path
 
 

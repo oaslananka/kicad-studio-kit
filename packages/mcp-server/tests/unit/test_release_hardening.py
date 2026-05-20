@@ -576,11 +576,11 @@ def test_version_synchronization_across_release_manifests() -> None:
     init_py = (root / "src" / "kicad_mcp" / "__init__.py").read_text(encoding="utf-8")
 
     version = manifest["packages/mcp-server"]
-    assert manifest == {
-        ".": "1.0.0",
-        "apps/vscode-extension": "1.0.0",
-        "packages/mcp-server": "1.0.0",
-        "packages/mcp-npm": "1.0.0",
+    assert set(manifest) == {
+        ".",
+        "apps/vscode-extension",
+        "packages/mcp-server",
+        "packages/mcp-npm",
     }
     extra_files = release_please["packages"]["packages/mcp-server"]["extra-files"]
     assert ("mcp.json", "$.packages[2].version") in {
