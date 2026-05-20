@@ -33,7 +33,61 @@ jobs:
       - run: cp docs/*.md site/
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
+        id: upload-pages
         with:
           path: site
-      - uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128
+      - name: Deploy GitHub Pages
         if: github.event_name != 'pull_request'
+        env:
+          ARTIFACT_ID: ${{ steps.upload-pages.outputs.artifact_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          oidc_response="$(curl -fsSL \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}")"
+          oidc_token="$(jq -r '.value' <<< "${oidc_response}")"
+
+          deployment_response="$(gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
+            "/repos/${GITHUB_REPOSITORY}/pages/deployments" \
+            -F artifact_id="${ARTIFACT_ID}" \
+            -F environment="github-pages" \
+            -F pages_build_version="${GITHUB_SHA}" \
+            -F oidc_token="${oidc_token}")"
+
+          deployment_id="$(jq -r '.id' <<< "${deployment_response}")"
+          status_url="$(jq -r '.status_url' <<< "${deployment_response}")"
+          status_path="${status_url#https://api.github.com}"
+          page_url="$(jq -r '.page_url // empty' <<< "${deployment_response}")"
+
+          echo "Created Pages deployment ${deployment_id}"
+          if [[ -n "${page_url}" ]]; then
+            echo "Page URL: ${page_url}"
+          fi
+
+          deadline=$((SECONDS + 600))
+          while (( SECONDS < deadline )); do
+            status="$(gh api "${status_path}" --jq '.status')"
+            case "${status}" in
+              succeed)
+                echo "Pages deployment succeeded."
+                exit 0
+                ;;
+              deployment_failed|deployment_content_failed|deployment_cancelled|deployment_lost)
+                echo "Pages deployment failed with status: ${status}" >&2
+                exit 1
+                ;;
+              *)
+                echo "Pages deployment status: ${status}"
+                sleep 5
+                ;;
+            esac
+          done
+
+          echo "Timed out waiting for Pages deployment ${deployment_id}" >&2
+          gh api --method POST "/repos/${GITHUB_REPOSITORY}/pages/deployments/${deployment_id}/cancel" >/dev/null || true
+          exit 1
