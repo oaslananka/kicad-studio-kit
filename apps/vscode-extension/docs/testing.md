@@ -39,6 +39,9 @@ pnpm run test:unit:coverage
 
 - Extension tests run inside a **VS Code extension host** via `@vscode/test-electron`.
 - Tests that open KiCad files need fixtures in `test/fixtures/`.
+- Shared deterministic regression fixtures live in `test/fixtures/kicad/` and
+  are regenerated from the repository root with
+  `corepack pnpm run fixtures:kicad:generate`.
 - Never import `vscode` in Jest unit tests; mock it via `__mocks__/vscode.ts`.
 
 ## Adding a Test

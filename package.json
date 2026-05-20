@@ -30,7 +30,9 @@
     "test:kicad-studio": "pnpm --filter kicadstudio run test",
     "test:kicad-mcp-pro": "pnpm --dir packages/mcp-server run test:unit",
     "test:contract": "pnpm run check:compatibility && pnpm --dir packages/mcp-server run mcp:manifest:check",
-    "test:fixtures": "pnpm --dir packages/mcp-server run test:unit",
+    "fixtures:kicad:generate": "node scripts/generate-kicad-fixture-corpus.mjs --write",
+    "check:fixtures": "node scripts/generate-kicad-fixture-corpus.mjs --check",
+    "test:fixtures": "pnpm run check:fixtures",
     "build:kicad-studio": "pnpm --filter kicadstudio run build",
     "build:kicad-mcp-pro": "pnpm --dir packages/mcp-server run build",
     "package:kicad-studio": "pnpm --filter kicadstudio run package",
@@ -43,7 +45,7 @@
     "check:testing-strategy": "node scripts/check-testing-strategy.mjs",
     "check:publish": "node scripts/check-publish-preflight.mjs",
     "governance:sync:dry-run": "node scripts/sync-governance-project-items.mjs --dry-run --chunk-size 10",
-    "check": "pnpm run check:forbidden-refs && pnpm run check:boundaries && pnpm run check:version && pnpm run check:compatibility && pnpm run check:governance && pnpm run check:testing-strategy && pnpm -r run check"
+    "check": "pnpm run check:forbidden-refs && pnpm run check:boundaries && pnpm run check:version && pnpm run check:compatibility && pnpm run check:governance && pnpm run check:fixtures && pnpm run check:testing-strategy && pnpm -r run check"
   },
   "devDependencies": {
     "@commitlint/cli": "21.0.0",
