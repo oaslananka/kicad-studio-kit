@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from . import __version__
 from .compatibility import MCP_PROTOCOL_VERSION, compatibility_summary
 from .config import get_config
+from .server_info import get_server_info_contract
 from .tools.router import (
     EXPERIMENTAL_TOOL_NAMES,
     PROFILE_CATEGORIES,
@@ -59,6 +60,7 @@ def get_wellknown_metadata() -> dict[str, object]:
         "categories": ["eda", "pcb", "kicad"],
         "description": "Project-aware PCB and schematic workflows for KiCad",
         "profiles": available_profiles(),
+        "serverInfoContract": get_server_info_contract(),
         "compatibility": compatibility_summary(),
         "kicad_version_required": (
             "10.0.x primary, 9.x supported, 8.x deprecated file-level fallback"

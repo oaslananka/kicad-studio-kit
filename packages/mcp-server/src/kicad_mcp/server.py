@@ -762,7 +762,7 @@ def _register_profile_components(
 ) -> None:
     """Register all profile-specific MCP surfaces on an already-created server."""
     from .prompts import workflows
-    from .resources import analysis, board_state, studio_context
+    from .resources import analysis, board_state, server_info, studio_context
     from .tools import (
         dfm,
         emc_compliance,
@@ -816,6 +816,7 @@ def _register_profile_components(
 
     analysis.register(server)
     board_state.register(server)
+    server_info.register(server)
     studio_context.register(server)
     workflows.register(server)
 

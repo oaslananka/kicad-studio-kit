@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oaslananka.github.io/kicad-studio-kit/schemas/kicad-mcp-server-info.schema.json",
+  "title": "KiCad MCP Pro server-info contract",
+  "description": "Stable capability discovery payload. Breaking contract changes must increment the schemaVersion major.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "server",
+    "version",
+    "mcpProtocolVersion",
+    "toolSchemaVersion",
+    "compatibilityRange",
+    "transport",
+    "kicad",
+    "capabilities",
+    "diagnostics"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "server": {
+      "const": "kicad-mcp-pro"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mcpProtocolVersion": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "toolSchemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "compatibilityRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kicadStudio", "kicadMcpPro"],
+      "properties": {
+        "kicadStudio": {
+          "$ref": "#/$defs/productRangeWithRecommendation"
+        },
+        "kicadMcpPro": {
+          "$ref": "#/$defs/productRange"
+        }
+      }
+    },
+    "transport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "streamableHttp",
+        "statelessHttp",
+        "legacySse",
+        "authRequired",
+        "endpoint"
+      ],
+      "properties": {
+        "type": {
+          "enum": ["stdio", "streamable-http"]
+        },
+        "streamableHttp": {
+          "type": "boolean"
+        },
+        "statelessHttp": {
+          "type": "boolean"
+        },
+        "legacySse": {
+          "type": "boolean"
+        },
+        "authRequired": {
+          "type": "boolean"
+        },
+        "endpoint": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "kicad": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cliFound",
+        "cliPath",
+        "cliVersion",
+        "ipcAvailable",
+        "livePcbContext"
+      ],
+      "properties": {
+        "cliFound": {
+          "type": "boolean"
+        },
+        "cliPath": {
+          "type": "string"
+        },
+        "cliVersion": {
+          "type": ["string", "null"]
+        },
+        "ipcAvailable": {
+          "type": "boolean"
+        },
+        "livePcbContext": {
+          "type": "boolean"
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fileBackedDrc",
+        "fileBackedErc",
+        "fileBackedExports",
+        "livePcbRead",
+        "livePcbWrite",
+        "chatgptConnectorCompatible",
+        "cliExports"
+      ],
+      "properties": {
+        "fileBackedDrc": {
+          "type": "boolean"
+        },
+        "fileBackedErc": {
+          "type": "boolean"
+        },
+        "fileBackedExports": {
+          "type": "boolean"
+        },
+        "livePcbRead": {
+          "type": "boolean"
+        },
+        "livePcbWrite": {
+          "type": "boolean"
+        },
+        "chatgptConnectorCompatible": {
+          "type": "boolean"
+        },
+        "cliExports": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ipc2581",
+            "odb",
+            "svg",
+            "dxf",
+            "step",
+            "render",
+            "spiceNetlist"
+          ],
+          "properties": {
+            "ipc2581": {
+              "type": "boolean"
+            },
+            "odb": {
+              "type": "boolean"
+            },
+            "svg": {
+              "type": "boolean"
+            },
+            "dxf": {
+              "type": "boolean"
+            },
+            "step": {
+              "type": "boolean"
+            },
+            "render": {
+              "type": "boolean"
+            },
+            "spiceNetlist": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "productRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "testedAgainst"],
+      "properties": {
+        "required": {
+          "type": "string",
+          "minLength": 1
+        },
+        "testedAgainst": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "productRangeWithRecommendation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "recommended", "testedAgainst"],
+      "properties": {
+        "required": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recommended": {
+          "type": "string",
+          "minLength": 1
+        },
+        "testedAgainst": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

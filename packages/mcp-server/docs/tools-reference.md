@@ -131,7 +131,7 @@ Built-in prompt helpers for the critic/fixer loop:
 
 Machine-maintained catalog. Refresh with `pnpm run docs:tools`.
 
-Total public tools: 248.
+Total public tools: 249.
 
 | Tool | Profile(s) | Read-Only | Destructive | Open-World | Headless | Requires KiCad Running | Summary |
 |---|---|---:|---:|---:|---:|---:|---|
@@ -176,6 +176,7 @@ Total public tools: 248.
 | `get_unconnected_nets` | agent_full, analysis, builder, critic, full, high_speed, manufacturing, pcb, power, release_manager, schematic | yes | no | no | yes | no | Return only unconnected net issues from DRC. This KiCad MCP Pro tool supports production EDA automation workflows for... |
 | `kicad_create_new_project` | all | no | no | no | yes | no | Create a new minimal KiCad project structure and activate it. |
 | `kicad_get_project_info` | all | yes | no | no | yes | no | Show the currently configured KiCad project paths. This KiCad MCP Pro tool supports production EDA automation workflo... |
+| `kicad_get_server_info` | all | yes | no | no | yes | no | Return versioned server information and capability diagnostics for clients. This KiCad MCP Pro tool supports producti... |
 | `kicad_get_tools_in_category` | all | yes | no | no | no | no | Get the tool names available in a specific category. This KiCad MCP Pro tool supports production EDA automation workf... |
 | `kicad_get_version` | all | yes | no | no | yes | no | Get KiCad version information and current connection status. This KiCad MCP Pro tool supports production EDA automati... |
 | `kicad_help` | all | no | no | no | yes | no | Show a concise startup guide and all tool categories. This KiCad MCP Pro tool supports production EDA automation work... |
@@ -427,6 +428,7 @@ Total public tools: 248.
 - `get_unconnected_nets`: profiles=agent_full, analysis, builder, critic, full, high_speed, manufacturing, pcb, power, release_manager, schematic; readOnly=yes; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
 - `kicad_create_new_project`: profiles=all; readOnly=no; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
 - `kicad_get_project_info`: profiles=all; readOnly=yes; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
+- `kicad_get_server_info`: profiles=all; readOnly=yes; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
 - `kicad_get_tools_in_category`: profiles=all; readOnly=yes; destructive=no; openWorld=no; headless=no; requiresKiCadRunning=no.
 - `kicad_get_version`: profiles=all; readOnly=yes; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
 - `kicad_help`: profiles=all; readOnly=no; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
