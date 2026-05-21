@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { StudioContext } from '../types';
-import { McpClient } from './mcpClient';
+import type { ContextMcpAdapter } from './mcpToolAdapter';
 
 export type ContextPushReason = 'save' | 'focus' | 'cursor' | 'drc' | 'default';
 
@@ -22,7 +22,7 @@ export class ContextBridge {
     | undefined;
   private flushTimer: NodeJS.Timeout | undefined;
 
-  constructor(private readonly client: McpClient) {}
+  constructor(private readonly adapter: ContextMcpAdapter) {}
 
   dispose(): void {
     if (this.flushTimer) {
@@ -71,7 +71,7 @@ export class ContextBridge {
     }
 
     this.lastContextHash = next.hash;
-    void this.client.pushContext(next.context);
+    void this.adapter.pushStudioContext(next.context);
   }
 }
 

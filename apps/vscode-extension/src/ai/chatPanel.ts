@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { AI_CHAT_MAX_HISTORY, COMMANDS, SETTINGS } from '../constants';
 import { AIStreamAbortedError } from '../errors';
-import { McpClient } from '../mcp/mcpClient';
+import type { ChatMcpAdapter } from '../mcp/mcpToolAdapter';
 import { extractMcpToolCalls } from '../mcp/toolCallParser';
 import type { McpToolCall } from '../types';
 import { Logger } from '../utils/logger';
@@ -26,6 +26,7 @@ interface ChatMessage {
   timestamp: number;
   toolCalls?: McpToolCall[];
   applied?: boolean;
+  toolApplyError?: string;
 }
 
 const CHAT_HISTORY_KEY = 'kicadstudio.aiChat.history';
@@ -60,7 +61,7 @@ export class KiCadChatPanel implements vscode.Disposable {
     context: vscode.ExtensionContext,
     providers: AIProviderRegistry,
     logger: Logger,
-    mcpClient?: McpClient
+    mcpAdapter?: ChatMcpAdapter
   ): KiCadChatPanel {
     if (KiCadChatPanel.instance) {
       KiCadChatPanel.instance.panel.reveal(vscode.ViewColumn.Beside);
@@ -84,7 +85,7 @@ export class KiCadChatPanel implements vscode.Disposable {
       panel,
       providers,
       logger,
-      mcpClient
+      mcpAdapter
     );
     KiCadChatPanel.instance = instance;
     context.subscriptions.push(instance);
@@ -96,7 +97,7 @@ export class KiCadChatPanel implements vscode.Disposable {
     panel: vscode.WebviewPanel,
     private readonly providers: AIProviderRegistry,
     private readonly logger: Logger,
-    private readonly mcpClient?: McpClient
+    private readonly mcpAdapter?: ChatMcpAdapter
   ) {
     this.panel = panel;
     const selection = providers.getSelection();
@@ -271,8 +272,8 @@ export class KiCadChatPanel implements vscode.Disposable {
     ]
       .filter(Boolean)
       .join('\n\n');
-    const mcpState = this.mcpClient
-      ? await this.mcpClient.testConnection()
+    const mcpState = this.mcpAdapter
+      ? await this.mcpAdapter.testConnection()
       : undefined;
     const systemPrompt = buildSystemPrompt(aiLanguage, {
       ...activeContext.projectContext,
@@ -412,17 +413,18 @@ export class KiCadChatPanel implements vscode.Disposable {
     if (!target?.toolCalls?.length) {
       return;
     }
-    if (!this.mcpClient) {
+    if (!this.mcpAdapter) {
       void vscode.window.showWarningMessage(
         'MCP client is not available in this session.'
       );
       return;
     }
+    const mcpAdapter = this.mcpAdapter;
 
     const previews = await Promise.all(
       target.toolCalls.map(async (toolCall) => {
         try {
-          return `${toolCall.name}: ${await this.mcpClient?.previewToolCall(toolCall)}`;
+          return `${toolCall.name}: ${await mcpAdapter.previewToolCall(toolCall)}`;
         } catch {
           return `${toolCall.name}: preview unavailable`;
         }
@@ -439,10 +441,29 @@ export class KiCadChatPanel implements vscode.Disposable {
     }
 
     for (const toolCall of target.toolCalls) {
-      await this.mcpClient.callTool(toolCall.name, toolCall.arguments);
+      try {
+        await mcpAdapter.executeToolCall(toolCall);
+      } catch (error) {
+        const message = messageFromUnknown(error);
+        const errorText = `MCP tool call failed for ${toolCall.name}: ${message}`;
+        target.toolApplyError = errorText;
+        this.logger.error(
+          `AI chat MCP tool call failed: ${toolCall.name} (${toolArgumentContext(toolCall)})`,
+          error
+        );
+        await this.persistHistory();
+        await this.panel.webview.postMessage({
+          type: 'assistantReplace',
+          message: target
+        });
+        await this.postStatus(errorText);
+        void vscode.window.showErrorMessage(errorText);
+        return;
+      }
     }
 
     target.applied = true;
+    delete target.toolApplyError;
     await this.persistHistory();
     await this.panel.webview.postMessage({
       type: 'assistantReplace',
@@ -470,4 +491,13 @@ export class KiCadChatPanel implements vscode.Disposable {
     this.disposables.forEach((disposable) => disposable.dispose());
     KiCadChatPanel.instance = undefined;
   }
+}
+
+function messageFromUnknown(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function toolArgumentContext(toolCall: McpToolCall): string {
+  const keys = Object.keys(toolCall.arguments ?? {});
+  return keys.length ? `argument keys: ${keys.join(', ')}` : 'no arguments';
 }

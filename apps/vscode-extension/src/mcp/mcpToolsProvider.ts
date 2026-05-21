@@ -5,7 +5,7 @@ import type {
   McpConnectionState,
   McpInstallStatus
 } from '../types';
-import type { McpClient } from './mcpClient';
+import type { McpConnectionAdapter } from './mcpToolAdapter';
 import { readConfiguredMcpProfile } from '../commands/mcpProfilePicker';
 
 type McpToolsNode = {
@@ -24,7 +24,9 @@ export class McpToolsProvider implements vscode.TreeDataProvider<McpToolsNode> {
   >();
   readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
 
-  constructor(private readonly mcpClient: Pick<McpClient, 'getState'>) {}
+  constructor(
+    private readonly mcpAdapter: Pick<McpConnectionAdapter, 'getState'>
+  ) {}
 
   refresh(): void {
     this.onDidChangeTreeDataEmitter.fire(undefined);
@@ -56,7 +58,7 @@ export class McpToolsProvider implements vscode.TreeDataProvider<McpToolsNode> {
       return element.children;
     }
     return buildMcpToolNodes(
-      this.mcpClient.getState(),
+      this.mcpAdapter.getState(),
       readConfiguredMcpProfile()
     );
   }
@@ -208,17 +210,108 @@ function serverNode(state: McpConnectionState): McpToolsNode {
 }
 
 function capabilityNode(capabilities: McpCapabilityCard): McpToolsNode {
+  const diagnostics = capabilities.diagnostics ?? [];
+  const description = `${capabilities.tools.length} tools, ${capabilities.resources.length} resources, ${capabilities.prompts.length} prompts${
+    diagnostics.length
+      ? `, ${diagnostics.length} diagnostic${diagnostics.length === 1 ? '' : 's'}`
+      : ''
+  }`;
+  const details = capabilities.serverInfo
+    ? [
+        capabilityDiagnosticsGroup(diagnostics),
+        kicadRuntimeNode(capabilities.serverInfo),
+        operationModesNode(capabilities.serverInfo)
+      ]
+    : diagnostics.length
+      ? [capabilityDiagnosticsGroup(diagnostics)]
+      : [];
   return {
     label: 'Capabilities',
-    description: `${capabilities.tools.length} tools, ${capabilities.resources.length} resources, ${capabilities.prompts.length} prompts`,
-    tooltip: 'Server-advertised MCP capability counts.',
+    description,
+    tooltip: diagnostics.length
+      ? diagnostics.join('\n')
+      : 'Server-advertised MCP capability counts.',
     icon: 'symbol-namespace',
     children: [
+      ...details,
       capabilityGroup('Tools', capabilities.tools),
       capabilityGroup('Resources', capabilities.resources),
       capabilityGroup('Prompts', capabilities.prompts)
     ]
   };
+}
+
+function capabilityDiagnosticsGroup(values: string[]): McpToolsNode {
+  return {
+    label: 'Capability diagnostics',
+    description: values.length ? `${values.length}` : 'none',
+    tooltip: values.length ? values.join('\n') : 'No capability diagnostics.',
+    icon: values.length ? 'warning' : 'pass',
+    children: values.map((value) => ({
+      label: value,
+      icon: 'warning'
+    }))
+  };
+}
+
+function kicadRuntimeNode(
+  serverInfo: NonNullable<McpCapabilityCard['serverInfo']>
+): McpToolsNode {
+  const cliStatus = serverInfo.kicad.cliFound
+    ? (serverInfo.kicad.cliVersion ?? 'version unknown')
+    : 'CLI unavailable';
+  return {
+    label: 'KiCad runtime',
+    description: serverInfo.kicad.livePcbContext ? 'live PCB' : 'degraded',
+    tooltip: [
+      `CLI: ${cliStatus}`,
+      `Path: ${serverInfo.kicad.cliPath}`,
+      `IPC: ${serverInfo.kicad.ipcAvailable ? 'available' : 'unavailable'}`,
+      `Live PCB: ${serverInfo.kicad.livePcbContext ? 'available' : 'unavailable'}`
+    ].join('\n'),
+    icon: serverInfo.kicad.livePcbContext ? 'circuit-board' : 'warning'
+  };
+}
+
+function operationModesNode(
+  serverInfo: NonNullable<McpCapabilityCard['serverInfo']>
+): McpToolsNode {
+  const modes = [
+    capabilityFlag('File-backed DRC', serverInfo.capabilities.fileBackedDrc),
+    capabilityFlag('File-backed ERC', serverInfo.capabilities.fileBackedErc),
+    capabilityFlag(
+      'File-backed exports',
+      serverInfo.capabilities.fileBackedExports
+    ),
+    capabilityFlag('Live PCB read', serverInfo.capabilities.livePcbRead),
+    capabilityFlag('Live PCB write', serverInfo.capabilities.livePcbWrite),
+    capabilityFlag(
+      'ChatGPT connector',
+      serverInfo.capabilities.chatgptConnectorCompatible
+    )
+  ];
+  return {
+    label: 'Operation modes',
+    description: `${modes.filter((mode) => mode.enabled).length}/${modes.length} available`,
+    tooltip: modes
+      .map(
+        (mode) => `${mode.label}: ${mode.enabled ? 'available' : 'unavailable'}`
+      )
+      .join('\n'),
+    icon: 'checklist',
+    children: modes.map((mode) => ({
+      label: mode.label,
+      description: mode.enabled ? 'available' : 'unavailable',
+      icon: mode.enabled ? 'pass' : 'circle-slash'
+    }))
+  };
+}
+
+function capabilityFlag(
+  label: string,
+  enabled: boolean
+): { label: string; enabled: boolean } {
+  return { label, enabled };
 }
 
 function capabilityGroup(label: string, values: string[]): McpToolsNode {

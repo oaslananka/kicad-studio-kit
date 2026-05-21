@@ -8,6 +8,7 @@ import type {
   McpConnectionState,
   McpInstallStatus,
   McpServerCard,
+  McpServerInfoContract,
   McpToolCall,
   QualityGateResult,
   StructuredMcpError,
@@ -166,7 +167,8 @@ export class McpClient {
         available: install.found,
         connected: true,
         install,
-        server: this.state.server
+        server: this.state.server,
+        message: this.state.message
       });
     } catch (error) {
       this.logger.debug(
@@ -553,17 +555,29 @@ export class McpClient {
     const initializeVersion = normalizeMcpVersion(
       initializeServerInfo?.version
     );
-    const metadataVersion = shouldReadWellKnownServerVersion(
+    const metadata = shouldReadWellKnownServerMetadata(
       initializeServerInfo,
       initializeVersion
     )
-      ? await this.readWellKnownServerVersion()
+      ? await this.readWellKnownServerMetadata()
       : undefined;
-    const version = metadataVersion ?? initializeVersion;
-    const compat = getMcpCompatStatus(version);
+    const version = metadata?.version ?? initializeVersion;
+    const serverInfo = metadata?.serverInfo;
+    const diagnostics = serverInfo ? serverInfoDiagnostics(serverInfo) : [];
+    const baseCompat = getMcpCompatStatus(version);
+    const compat =
+      baseCompat === 'incompatible'
+        ? baseCompat
+        : diagnostics.length
+          ? 'warn'
+          : baseCompat;
     const card: McpServerCard = {
       version,
-      capabilities: normalizeCapabilities(initializeResult?.capabilities),
+      capabilities: normalizeCapabilities(
+        initializeResult?.capabilities,
+        serverInfo,
+        diagnostics
+      ),
       compat,
       capturedAt: new Date().toISOString()
     };
@@ -607,13 +621,20 @@ export class McpClient {
       available: this.lastInstall.found,
       connected: true,
       install: this.lastInstall,
-      server: card
+      server: card,
+      message: diagnostics.length ? diagnostics.join(' ') : undefined
     });
   }
 
-  private async readWellKnownServerVersion(): Promise<string | undefined> {
-    const { readWellKnownMcpServerVersion } = await import('./serverMetadata');
-    return readWellKnownMcpServerVersion(this.getEndpoint(), this.logger);
+  private async readWellKnownServerMetadata(): Promise<
+    | {
+        version: string;
+        serverInfo?: McpServerInfoContract | undefined;
+      }
+    | undefined
+  > {
+    const { readWellKnownMcpServerMetadata } = await import('./serverMetadata');
+    return readWellKnownMcpServerMetadata(this.getEndpoint(), this.logger);
   }
 
   private setState(state: McpConnectionState): McpConnectionState {
@@ -765,6 +786,17 @@ function shouldReadWellKnownServerVersion(
   return KNOWN_MCP_SDK_VERSION_HINTS.has(version);
 }
 
+function shouldReadWellKnownServerMetadata(
+  serverInfo: InitializeResult['serverInfo'],
+  version: string
+): boolean {
+  const name = `${serverInfo?.name ?? ''} ${serverInfo?.title ?? ''}`;
+  return (
+    /kicad[- ]mcp[- ]pro/i.test(name) ||
+    shouldReadWellKnownServerVersion(serverInfo, version)
+  );
+}
+
 class McpStructuredError extends Error {
   readonly code: string;
   readonly hint: string | undefined;
@@ -862,13 +894,38 @@ function parseSseJsonRpc<T>(payload: string): JsonRpcResponse<T> {
   return JSON.parse(lastEvent) as JsonRpcResponse<T>;
 }
 
-function normalizeCapabilities(value: unknown): McpCapabilityCard {
+function normalizeCapabilities(
+  value: unknown,
+  serverInfo?: McpServerInfoContract | undefined,
+  diagnostics: string[] = []
+): McpCapabilityCard {
   const record = isRecord(value) ? value : {};
   return {
     tools: normalizeCapabilityNames(record['tools']),
     resources: normalizeCapabilityNames(record['resources']),
-    prompts: normalizeCapabilityNames(record['prompts'])
+    prompts: normalizeCapabilityNames(record['prompts']),
+    ...(serverInfo ? { serverInfo } : {}),
+    ...(diagnostics.length ? { diagnostics } : {})
   };
+}
+
+function serverInfoDiagnostics(serverInfo: McpServerInfoContract): string[] {
+  const diagnostics = [...serverInfo.diagnostics];
+  if (!serverInfo.kicad.cliFound) {
+    diagnostics.push(
+      'KiCad CLI is unavailable; file-backed DRC/ERC/export operations are disabled.'
+    );
+  }
+  if (!serverInfo.kicad.livePcbContext) {
+    diagnostics.push('Live KiCad PCB context is unavailable.');
+  }
+  if (!serverInfo.capabilities.fileBackedExports) {
+    diagnostics.push('File-backed export operations are unavailable.');
+  }
+  if (!serverInfo.transport.streamableHttp) {
+    diagnostics.push('Streamable HTTP transport is unavailable.');
+  }
+  return [...new Set(diagnostics)];
 }
 
 function normalizeCapabilityNames(value: unknown): string[] {
@@ -899,10 +956,39 @@ function cloneConnectionState(state: McpConnectionState): McpConnectionState {
           capabilities: {
             tools: [...state.server.capabilities.tools],
             resources: [...state.server.capabilities.resources],
-            prompts: [...state.server.capabilities.prompts]
+            prompts: [...state.server.capabilities.prompts],
+            ...(state.server.capabilities.serverInfo
+              ? {
+                  serverInfo: cloneServerInfoContract(
+                    state.server.capabilities.serverInfo
+                  )
+                }
+              : {}),
+            ...(state.server.capabilities.diagnostics
+              ? { diagnostics: [...state.server.capabilities.diagnostics] }
+              : {})
           }
         }
       : undefined
+  };
+}
+
+function cloneServerInfoContract(
+  serverInfo: McpServerInfoContract
+): McpServerInfoContract {
+  return {
+    ...serverInfo,
+    compatibilityRange: {
+      kicadStudio: { ...serverInfo.compatibilityRange.kicadStudio },
+      kicadMcpPro: { ...serverInfo.compatibilityRange.kicadMcpPro }
+    },
+    transport: { ...serverInfo.transport },
+    kicad: { ...serverInfo.kicad },
+    capabilities: {
+      ...serverInfo.capabilities,
+      cliExports: { ...serverInfo.capabilities.cliExports }
+    },
+    diagnostics: [...serverInfo.diagnostics]
   };
 }
 

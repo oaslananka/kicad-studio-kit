@@ -33,7 +33,63 @@ describe('McpToolsProvider', () => {
           capabilities: {
             tools: ['pcb_validate', 'sch_validate'],
             resources: ['project://active'],
-            prompts: ['manufacturing-review']
+            prompts: ['manufacturing-review'],
+            serverInfo: {
+              schemaVersion: '1.0.0',
+              server: 'kicad-mcp-pro',
+              version: '1.0.0',
+              mcpProtocolVersion: '2025-11-25',
+              toolSchemaVersion: '1.0.0',
+              compatibilityRange: {
+                kicadStudio: {
+                  required: '>=1.0.0 <2.0.0',
+                  recommended: '>=1.0.0 <2.0.0',
+                  testedAgainst: '1.0.0'
+                },
+                kicadMcpPro: {
+                  required: '>=1.0.0 <2.0.0',
+                  testedAgainst: '1.0.0'
+                }
+              },
+              transport: {
+                type: 'streamable-http',
+                streamableHttp: true,
+                statelessHttp: true,
+                legacySse: false,
+                authRequired: false,
+                endpoint: 'http://127.0.0.1:27185/mcp'
+              },
+              kicad: {
+                cliFound: true,
+                cliPath: '/usr/bin/kicad-cli',
+                cliVersion: 'KiCad 10.0.3',
+                ipcAvailable: false,
+                livePcbContext: false
+              },
+              capabilities: {
+                fileBackedDrc: true,
+                fileBackedErc: true,
+                fileBackedExports: true,
+                livePcbRead: false,
+                livePcbWrite: false,
+                chatgptConnectorCompatible: false,
+                cliExports: {
+                  ipc2581: false,
+                  odb: false,
+                  svg: false,
+                  dxf: false,
+                  step: false,
+                  render: false,
+                  spiceNetlist: false
+                }
+              },
+              diagnostics: [
+                'Live KiCad PCB context is unavailable: No PCB is open.'
+              ]
+            },
+            diagnostics: [
+              'Live KiCad PCB context is unavailable: No PCB is open.'
+            ]
           }
         }
       })
@@ -56,7 +112,20 @@ describe('McpToolsProvider', () => {
       provider.getTreeItem(
         children.find((item) => item.label === 'Capabilities') as never
       ).description
-    ).toBe('2 tools, 1 resources, 1 prompts');
+    ).toBe('2 tools, 1 resources, 1 prompts, 1 diagnostic');
+    expect(
+      provider
+        .getChildren(
+          children.find((item) => item.label === 'Capabilities') as never
+        )
+        .map((item) => item.label)
+    ).toEqual(
+      expect.arrayContaining([
+        'Capability diagnostics',
+        'KiCad runtime',
+        'Operation modes'
+      ])
+    );
   });
 
   it('renders disconnected state as an actionable retry row', () => {

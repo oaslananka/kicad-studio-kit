@@ -36,9 +36,7 @@ export function registerMcpCommands(
           }
           if (choice === 'Open Repository') {
             await vscode.env.openExternal(
-              vscode.Uri.parse(
-                'https://github.com/oaslananka/kicad-studio-kit'
-              )
+              vscode.Uri.parse('https://github.com/oaslananka/kicad-studio-kit')
             );
           }
           return;
@@ -243,7 +241,7 @@ export function registerMcpCommands(
     registerTrustedCommand(
       COMMANDS.openDesignIntent,
       () => {
-        DesignIntentPanel.createOrShow(extensionContext, services.mcpClient);
+        DesignIntentPanel.createOrShow(extensionContext, services.mcpAdapter);
       },
       'Design Intent'
     ),
@@ -284,7 +282,7 @@ export function registerMcpCommands(
       async () => {
         await DrcRuleEditorPanel.createOrShow(
           extensionContext,
-          services.mcpClient
+          services.mcpAdapter
         );
       },
       'DRC Rule MCP Editing'

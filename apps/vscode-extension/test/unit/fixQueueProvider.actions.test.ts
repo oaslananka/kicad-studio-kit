@@ -54,7 +54,8 @@ describe('FixQueueProvider code-action support', () => {
         }
       ]),
       previewToolCall: jest.fn(),
-      callTool: jest.fn().mockResolvedValue({})
+      applyFixTool: jest.fn().mockResolvedValue(undefined),
+      applyFixById: jest.fn().mockResolvedValue(undefined)
     };
     const provider = new FixQueueProvider(client as never);
     (window.showInformationMessage as jest.Mock).mockResolvedValue('Apply');
@@ -65,7 +66,9 @@ describe('FixQueueProvider code-action support', () => {
     expect(workspace.openTextDocument).toHaveBeenCalledWith(
       expect.objectContaining({ content: 'diff' })
     );
-    expect(client.callTool).toHaveBeenCalledWith('apply_fix', { id: 'fix-1' });
+    expect(client.applyFixTool).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'fix-1' })
+    );
   });
 
   it('builds tree items for severities and stops bulk apply on failure', async () => {
@@ -89,7 +92,7 @@ describe('FixQueueProvider code-action support', () => {
         }
       ]),
       previewToolCall: jest.fn().mockResolvedValue('preview'),
-      callTool: jest
+      applyFixTool: jest
         .fn()
         .mockRejectedValueOnce(new Error('stop'))
         .mockResolvedValue({})
@@ -108,7 +111,7 @@ describe('FixQueueProvider code-action support', () => {
     (window.showWarningMessage as jest.Mock).mockResolvedValue('Apply All');
     await provider.applyAll();
 
-    expect(client.callTool).toHaveBeenCalledTimes(1);
+    expect(client.applyFixTool).toHaveBeenCalledTimes(1);
     expect(first?.status).toBe('failed');
   });
 

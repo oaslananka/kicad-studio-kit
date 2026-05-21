@@ -7,7 +7,7 @@ import type {
   VariantOverride
 } from '../types';
 import { findFirstWorkspaceFile } from '../utils/pathUtils';
-import type { McpClient } from '../mcp/mcpClient';
+import type { VariantMcpAdapter } from '../mcp/mcpToolAdapter';
 import { createNonce } from '../utils/nonce';
 
 interface VariantDocument {
@@ -48,7 +48,7 @@ export class VariantProvider implements vscode.TreeDataProvider<
   private variants: KiCadVariant[] = [];
   private projectFile: string | undefined;
 
-  constructor(private readonly mcpClient?: McpClient | undefined) {}
+  constructor(private readonly mcpAdapter?: VariantMcpAdapter | undefined) {}
 
   refresh(): void {
     void this.loadVariants().then(() =>
@@ -223,13 +223,13 @@ export class VariantProvider implements vscode.TreeDataProvider<
   }
 
   private async syncActiveVariantToMcp(name: string): Promise<void> {
-    if (!this.mcpClient) {
+    if (!this.mcpAdapter) {
       return;
     }
     try {
-      const state = await this.mcpClient.testConnection();
+      const state = await this.mcpAdapter.testConnection();
       if (state.connected) {
-        await this.mcpClient.callTool('variant_set_active', { name });
+        await this.mcpAdapter.setActiveVariant(name);
       }
     } catch {
       // Variant switching should remain local when MCP is unavailable.

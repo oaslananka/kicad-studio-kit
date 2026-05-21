@@ -237,7 +237,7 @@
         {
           "id": "kicadstudio.qualityGate",
           "name": "Quality Gates",
-          "when": "kicadstudio.hasProject",
+          "when": "kicadstudio.mcpConnected && kicadstudio.hasProject",
           "icon": "assets/views/quality-gates.svg"
         },
         {
@@ -1901,8 +1901,10 @@
     "test:unit": "jest --runInBand",
     "test:unit:coverage": "jest --runInBand --coverage",
     "test:integration": "pnpm run compile-tests && node ./out/test/runTest.js",
-    "test:integration:real": "pnpm run compile-tests && node ./out/test/integration/realServer/quickstart.flow.test.js && node ./out/test/integration/realServer/qualityGate.flow.test.js && node ./out/test/integration/realServer/contextBridge.flow.test.js",
+    "test:integration:real": "pnpm run compile-tests && node ./out/test/integration/realServer/quickstart.flow.test.js && node ./out/test/integration/realServer/qualityGate.flow.test.js && node ./out/test/integration/realServer/contextBridge.flow.test.js && node ./out/test/integration/realServer/compatibility.flow.test.js",
+    "test:integration:real:host": "pnpm run build && pnpm run compile-tests && node ./out/test/runRealPairHostTest.js",
     "test:e2e": "playwright test test/e2e/",
+    "test:e2e:real": "playwright test test/e2e/realPair.test.ts",
     "check:bundle-size": "node scripts/check-bundle-size.js",
     "bundle-kicanvas": "node scripts/bundle-kicanvas.js",
     "package": "node scripts/package-extension.js",

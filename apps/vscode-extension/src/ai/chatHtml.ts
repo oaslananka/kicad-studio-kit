@@ -209,6 +209,12 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       display: grid;
       gap: 5px;
     }
+    .tool-error {
+      margin: 0 9px 9px;
+      color: var(--danger);
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
     footer {
       display: grid;
       gap: 8px;
@@ -473,6 +479,12 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
         list.appendChild(row);
       }
       details.appendChild(list);
+      if (message.toolApplyError) {
+        const error = document.createElement('div');
+        error.className = 'tool-error';
+        error.textContent = text(message.toolApplyError);
+        details.appendChild(error);
+      }
       if (!message.applied) {
         const actions = document.createElement('div');
         actions.className = 'tool-actions';

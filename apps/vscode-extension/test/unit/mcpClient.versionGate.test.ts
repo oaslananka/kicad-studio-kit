@@ -13,10 +13,12 @@ function createJsonResponse(body: unknown) {
   };
 }
 
-function initializeResult(version: string | undefined) {
+function initializeResult(version: string | undefined, name?: string) {
   return {
     result: {
-      ...(version ? { serverInfo: { version } } : {}),
+      ...(version
+        ? { serverInfo: { ...(name ? { name } : {}), version } }
+        : {}),
       capabilities: {
         tools: [{ name: 'project_quality_gate_report' }],
         resources: [{ name: 'kicad://project/fix_queue' }],
@@ -31,6 +33,66 @@ function wellKnownResult(version: string) {
     serverInfo: {
       name: 'kicad-mcp-pro',
       version
+    }
+  };
+}
+
+function wellKnownServerInfoResult() {
+  return {
+    serverInfo: {
+      name: 'kicad-mcp-pro',
+      version: '1.0.0'
+    },
+    serverInfoContract: {
+      schemaVersion: '1.0.0',
+      server: 'kicad-mcp-pro',
+      version: '1.0.0',
+      mcpProtocolVersion: '2025-11-25',
+      toolSchemaVersion: '1.0.0',
+      compatibilityRange: {
+        kicadStudio: {
+          required: '>=1.0.0 <2.0.0',
+          recommended: '>=1.0.0 <2.0.0',
+          testedAgainst: '1.0.0'
+        },
+        kicadMcpPro: {
+          required: '>=1.0.0 <2.0.0',
+          testedAgainst: '1.0.0'
+        }
+      },
+      transport: {
+        type: 'streamable-http',
+        streamableHttp: true,
+        statelessHttp: true,
+        legacySse: false,
+        authRequired: false,
+        endpoint: 'http://127.0.0.1:27185/mcp'
+      },
+      kicad: {
+        cliFound: true,
+        cliPath: '/usr/bin/kicad-cli',
+        cliVersion: 'KiCad 10.0.3',
+        ipcAvailable: false,
+        livePcbContext: false
+      },
+      capabilities: {
+        fileBackedDrc: true,
+        fileBackedErc: true,
+        fileBackedExports: true,
+        livePcbRead: false,
+        livePcbWrite: false,
+        chatgptConnectorCompatible: false,
+        cliExports: {
+          ipc2581: false,
+          odb: false,
+          svg: false,
+          dxf: false,
+          step: false,
+          render: false,
+          spiceNetlist: false
+        }
+      },
+      diagnostics: ['Live KiCad PCB context is unavailable: No PCB is open.']
     }
   };
 }
@@ -125,6 +187,46 @@ describe('McpClient version gate', () => {
     expect(state.kind).toBe('Connected');
     expect(state.server?.version).toBe('1.0.0');
     expect(state.server?.compat).toBe('ok');
+  });
+
+  it('captures degraded server-info diagnostics from the HTTP server card', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse(initializeResult('1.27.0')))
+      .mockResolvedValueOnce(createJsonResponse(wellKnownServerInfoResult()))
+      .mockResolvedValueOnce(
+        createJsonResponse({ result: { tools: [] } })
+      ) as typeof fetch;
+
+    const state = await createClient().testConnection();
+
+    expect(state.kind).toBe('Connected');
+    expect(state.connected).toBe(true);
+    expect(state.server?.compat).toBe('warn');
+    expect(state.message).toContain('Live KiCad PCB context is unavailable');
+    expect(state.server?.capabilities.serverInfo?.kicad.livePcbContext).toBe(
+      false
+    );
+    expect(
+      state.server?.capabilities.serverInfo?.capabilities.livePcbRead
+    ).toBe(false);
+  });
+
+  it('reads server-info diagnostics when initialize identifies kicad-mcp-pro', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse(initializeResult('1.0.0', 'kicad-mcp-pro'))
+      )
+      .mockResolvedValueOnce(createJsonResponse(wellKnownServerInfoResult()))
+      .mockResolvedValueOnce(
+        createJsonResponse({ result: { tools: [] } })
+      ) as typeof fetch;
+
+    const state = await createClient().testConnection();
+
+    expect(state.server?.compat).toBe('warn');
+    expect(state.server?.capabilities.serverInfo?.schemaVersion).toBe('1.0.0');
   });
 
   it('blocks tool calls after an incompatible initialize response', async () => {

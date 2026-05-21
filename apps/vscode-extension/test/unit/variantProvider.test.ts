@@ -113,11 +113,11 @@ describe('VariantProvider', () => {
   });
 
   it('syncs the active variant to MCP when a client is provided', async () => {
-    const mcpClient = {
+    const mcpAdapter = {
       testConnection: jest.fn().mockResolvedValue({ connected: true }),
-      callTool: jest.fn().mockResolvedValue({})
+      setActiveVariant: jest.fn().mockResolvedValue(undefined)
     };
-    const provider = new VariantProvider(mcpClient as never);
+    const provider = new VariantProvider(mcpAdapter as never);
 
     await provider.setActive({
       name: 'No-RF',
@@ -125,15 +125,13 @@ describe('VariantProvider', () => {
       componentOverrides: []
     });
 
-    expect(mcpClient.callTool).toHaveBeenCalledWith('variant_set_active', {
-      name: 'No-RF'
-    });
+    expect(mcpAdapter.setActiveVariant).toHaveBeenCalledWith('No-RF');
   });
 
   it('keeps variant switching local when MCP is disconnected or throws', async () => {
     const disconnectedClient = {
       testConnection: jest.fn().mockResolvedValue({ connected: false }),
-      callTool: jest.fn()
+      setActiveVariant: jest.fn()
     };
     const disconnectedProvider = new VariantProvider(
       disconnectedClient as never
@@ -145,11 +143,11 @@ describe('VariantProvider', () => {
       componentOverrides: []
     });
 
-    expect(disconnectedClient.callTool).not.toHaveBeenCalled();
+    expect(disconnectedClient.setActiveVariant).not.toHaveBeenCalled();
 
     const throwingClient = {
       testConnection: jest.fn().mockRejectedValue(new Error('offline')),
-      callTool: jest.fn()
+      setActiveVariant: jest.fn()
     };
     const throwingProvider = new VariantProvider(throwingClient as never);
 
@@ -160,6 +158,7 @@ describe('VariantProvider', () => {
         componentOverrides: []
       })
     ).resolves.toBeUndefined();
+    expect(throwingClient.setActiveVariant).not.toHaveBeenCalled();
   });
 
   it('builds tree items for variants and override rows', async () => {

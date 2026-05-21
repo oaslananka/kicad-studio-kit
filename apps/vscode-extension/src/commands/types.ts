@@ -11,6 +11,7 @@ import type { AIProviderRegistry } from '../ai/aiProvider';
 import type { ErrorAnalyzer } from '../ai/errorAnalyzer';
 import type { CircuitExplainer } from '../ai/circuitExplainer';
 import type { McpClient } from '../mcp/mcpClient';
+import type { StudioMcpAdapter } from '../mcp/mcpToolAdapter';
 import type { KiCadLibraryIndexer } from '../library/libraryIndexer';
 import type { LibrarySearchProvider } from '../library/librarySearchProvider';
 import type { VariantProvider } from '../variants/variantProvider';
@@ -40,6 +41,7 @@ export interface CommandServices {
   errorAnalyzer: ErrorAnalyzer;
   circuitExplainer: CircuitExplainer;
   mcpClient: McpClient;
+  mcpAdapter: StudioMcpAdapter;
   mcpLogger: McpLogger;
   qualityGateProvider: QualityGateProvider;
   libraryIndexer: KiCadLibraryIndexer;

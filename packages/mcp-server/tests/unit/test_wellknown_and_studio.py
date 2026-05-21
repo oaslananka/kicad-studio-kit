@@ -36,6 +36,34 @@ def test_wellknown_routes_return_identical_payload(monkeypatch, sample_project) 
     assert dotted.json()["transport"]["endpoint"] == "http://127.0.0.1:3334/mcp"
 
 
+def test_wellknown_metadata_does_not_probe_live_kicad(monkeypatch, sample_project) -> None:
+    _ = sample_project
+    monkeypatch.setenv("KICAD_MCP_TRANSPORT", "http")
+    monkeypatch.setattr(
+        "kicad_mcp.server_info.get_kicad",
+        lambda: (_ for _ in ()).throw(AssertionError("IPC should not be probed")),
+    )
+    monkeypatch.setattr(
+        "kicad_mcp.server_info.get_board",
+        lambda: (_ for _ in ()).throw(AssertionError("Board should not be probed")),
+    )
+
+    metadata = get_wellknown_metadata()
+
+    assert metadata["serverInfoContract"]["kicad"]["ipcAvailable"] is False
+    assert metadata["serverInfoContract"]["kicad"]["livePcbContext"] is False
+
+
+def test_wellknown_metadata_brackets_ipv6_endpoint(monkeypatch, sample_project) -> None:
+    _ = sample_project
+    monkeypatch.setenv("KICAD_MCP_TRANSPORT", "http")
+    monkeypatch.setenv("KICAD_MCP_HOST", "::1")
+
+    metadata = get_wellknown_metadata()
+
+    assert metadata["transport"]["endpoint"] == "http://[::1]:3334/mcp"
+
+
 def test_streamable_http_legacy_sse_routes_are_opt_in(sample_project) -> None:
     _ = sample_project
     cfg = get_config()

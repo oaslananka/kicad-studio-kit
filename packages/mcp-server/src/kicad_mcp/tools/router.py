@@ -64,6 +64,7 @@ TOOL_CATEGORIES: dict[str, ToolCategory] = {
             "kicad_scan_directory",
             "kicad_create_new_project",
             "kicad_get_version",
+            "kicad_get_server_info",
             "kicad_list_tool_categories",
             "kicad_get_tools_in_category",
             "kicad_help",

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { asRecord, hasType } from '../utils/webviewMessages';
-import { McpClient } from './mcpClient';
+import type { DesignIntentMcpAdapter } from './mcpToolAdapter';
 import { createNonce } from '../utils/nonce';
 
 export class DesignIntentPanel {
@@ -8,7 +8,7 @@ export class DesignIntentPanel {
 
   static createOrShow(
     context: vscode.ExtensionContext,
-    mcpClient: McpClient
+    mcpAdapter: DesignIntentMcpAdapter
   ): void {
     if (DesignIntentPanel.currentPanel) {
       DesignIntentPanel.currentPanel.reveal(vscode.ViewColumn.Beside);
@@ -39,28 +39,40 @@ export class DesignIntentPanel {
       }
 
       if (message.type === 'load') {
-        const intent = await mcpClient.callTool(
-          'project_get_design_intent',
-          {}
-        );
-        await panel.webview.postMessage({
-          type: 'loaded',
-          data: intent ?? {}
-        });
+        try {
+          const intent = await mcpAdapter.getDesignIntent();
+          await panel.webview.postMessage({
+            type: 'loaded',
+            data: intent ?? {}
+          });
+        } catch (error) {
+          await this.postError(panel, 'Unable to load design intent', error);
+        }
         return;
       }
 
       if (message.type === 'save') {
         const record = asRecord(message);
-        await mcpClient.callTool(
-          'project_set_design_intent',
-          asRecord(record?.['data']) ?? {}
-        );
-        void vscode.window.showInformationMessage(
-          'Design intent saved. AI can now use your project intent as context.'
-        );
+        try {
+          await mcpAdapter.setDesignIntent(asRecord(record?.['data']) ?? {});
+          void vscode.window.showInformationMessage(
+            'Design intent saved. AI can now use your project intent as context.'
+          );
+        } catch (error) {
+          await this.postError(panel, 'Unable to save design intent', error);
+        }
       }
     });
+  }
+
+  private static async postError(
+    panel: vscode.WebviewPanel,
+    prefix: string,
+    error: unknown
+  ): Promise<void> {
+    const message = messageFromUnknown(error);
+    await panel.webview.postMessage({ type: 'error', error: message });
+    await vscode.window.showErrorMessage(`${prefix}: ${message}`);
   }
 
   private static getFormHtml(): string {
@@ -122,10 +134,15 @@ export class DesignIntentPanel {
     button:hover {
       background: var(--vscode-button-hoverBackground, var(--vscode-button-background));
     }
+    #status {
+      min-height: 18px;
+      color: var(--vscode-errorForeground);
+    }
   </style>
 </head>
 <body>
   <h1>KiCad Design Intent</h1>
+  <p id="status" role="status" aria-live="polite"></p>
   <form id="intent-form" aria-label="Design intent form">
     <label for="powerTreeRefs">Power tree references
       <textarea id="powerTreeRefs" name="powerTreeRefs" placeholder="U1, U2, L1, FB1"
@@ -185,6 +202,9 @@ export class DesignIntentPanel {
     window.addEventListener('message', (event) => {
       const message = event.data;
       if (message.type !== 'loaded' || !message.data) {
+        if (message.type === 'error') {
+          document.getElementById('status').textContent = message.error || 'MCP request failed.';
+        }
         return;
       }
       for (const [key, value] of Object.entries(message.data)) {
@@ -200,4 +220,8 @@ export class DesignIntentPanel {
 </body>
 </html>`;
   }
+}
+
+function messageFromUnknown(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

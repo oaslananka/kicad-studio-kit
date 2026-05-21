@@ -4,12 +4,14 @@
 
 kicad-studio uses **Jest** for unit tests and **Playwright** for E2E/integration.
 
-| Layer       | Runner     | Path                | When            |
-| ----------- | ---------- | ------------------- | --------------- |
-| Unit        | Jest       | `src/**/__tests__/` | Every PR (CI)   |
-| Integration | Jest       | `test/integration/` | Every PR (CI)   |
-| E2E         | Playwright | `test/e2e/`         | CI Linux only   |
-| Mutation    | Stryker    | `src/**`            | Weekly (Sunday) |
+| Layer       | Runner     | Path                           | When                       |
+| ----------- | ---------- | ------------------------------ | -------------------------- |
+| Unit        | Jest       | `src/**/__tests__/`            | Every PR (CI)              |
+| Integration | Jest       | `test/integration/`            | Every PR (CI)              |
+| Real pair   | Node + MCP | `test/integration/realServer/` | Every PR (CI Linux)        |
+| Real host   | VS Code    | `test/realPairSuite/`          | Every PR (CI Linux)        |
+| E2E         | Playwright | `test/e2e/`                    | Local/manual desktop smoke |
+| Mutation    | Stryker    | `src/**`                       | Weekly (Sunday)            |
 
 ## Running Tests Locally
 
@@ -19,6 +21,15 @@ pnpm install --frozen-lockfile
 
 # Unit + integration (fast)
 pnpm test
+
+# Local extension + MCP server compatibility
+pnpm run test:integration:real
+
+# VS Code Extension Development Host + local MCP server command path
+xvfb-run -a pnpm run test:integration:real:host
+
+# VS Code host + local MCP server smoke (Linux needs xvfb)
+xvfb-run -a pnpm run test:e2e:real
 
 # E2E (requires display; use xvfb on Linux)
 xvfb-run -a pnpm exec task e2e # Linux
@@ -30,8 +41,15 @@ pnpm run test:unit:coverage
 
 ## CI Behavior
 
-- All 3 OS (ubuntu, windows, macos) run the full Jest suite.
-- E2E runs via `xvfb-run` on Linux only.
+- All 3 OS (ubuntu, windows, macos) run the full unit/build/package suite.
+- Real-pair compatibility runs on ubuntu-24.04 against the local
+  `packages/mcp-server` checkout through `uv run --project packages/mcp-server`.
+- Real-pair CI launches a VS Code Extension Development Host under `xvfb-run`
+  and runs KiCad Studio commands against the local MCP endpoint.
+- Playwright real-pair smoke captures VS Code host screenshots/logs for failure
+  diagnosis without using workbench DOM text as the MCP source of truth.
+- Real-pair failures upload server stdout/stderr, harness metadata, Playwright
+  screenshots, traces, and videos from `apps/vscode-extension/test-results`.
 - Coverage is generated on ubuntu-24.04 during CI.
 - Mutation score is tracked weekly; see Actions tab.
 

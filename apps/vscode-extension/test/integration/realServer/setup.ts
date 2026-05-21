@@ -8,7 +8,7 @@ import * as fs from 'node:fs';
 import * as net from 'node:net';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { MCP_COMPAT, isMcpVersionSupported } from '../../../src/mcp/compat';
+import { isMcpVersionSupported } from '../../../src/mcp/compat';
 import { MCP_PROTOCOL_VERSION } from '../../../src/mcp/compatibilityMatrix';
 
 interface JsonRpcEnvelope<T> {
@@ -28,17 +28,21 @@ interface InitializeResult {
   serverInfo?: {
     version?: string;
   };
+  capabilities?: unknown;
 }
 
 export interface RealServerHarness {
   endpoint: string;
   projectDir: string;
   initializeResult: InitializeResult;
+  artifactDir: string;
+  serverCommand: string;
   callTool(
     name: string,
     args: Record<string, unknown>
   ): Promise<Record<string, unknown> | undefined>;
   listTools(): Promise<string[]>;
+  readResource(uri: string): Promise<string>;
   teardown(): Promise<void>;
 }
 
@@ -52,12 +56,15 @@ export function realServerSkipReason(): string | undefined {
   ) {
     return 'Real-server tests are skipped for pull requests from forks.';
   }
-  const uvx = spawnSync('uvx', ['--version'], { encoding: 'utf8' });
-  if (uvx.error || uvx.status !== 0) {
-    return 'uvx is not available on PATH.';
+  const uv = spawnSync('uv', ['--version'], { encoding: 'utf8' });
+  if (uv.error || uv.status !== 0) {
+    return 'uv is not available on PATH.';
   }
   if (!fs.existsSync(defaultFixtureProject())) {
     return 'Vendored benchmark fixture is missing.';
+  }
+  if (!fs.existsSync(localMcpServerProject())) {
+    return 'Local packages/mcp-server checkout is missing.';
   }
   return undefined;
 }
@@ -83,11 +90,16 @@ async function startRealServer(): Promise<RealServerHarness> {
   const tempRoot = fs.mkdtempSync(
     path.join(os.tmpdir(), 'kicadstudio-real-mcp-')
   );
+  const artifactDir = resolveArtifactDir(tempRoot);
+  fs.mkdirSync(artifactDir, { recursive: true });
   const projectDir = path.join(tempRoot, 'project');
   copyDirectory(defaultFixtureProject(), projectDir);
   const port = await findFreePort();
   const endpoint = `http://127.0.0.1:${port}/mcp`;
-  const server = spawn('uvx', [`kicad-mcp-pro==${MCP_COMPAT.testedAgainst}`], {
+  const { command, args, cwd } = localServerCommand();
+  const serverCommand = [command, ...args].join(' ');
+  const server = spawn(command, args, {
+    cwd,
     env: {
       ...process.env,
       KICAD_MCP_TRANSPORT: 'streamable-http',
@@ -99,10 +111,14 @@ async function startRealServer(): Promise<RealServerHarness> {
     },
     stdio: 'pipe'
   });
+  const stdout: string[] = [];
   const stderr: string[] = [];
   let exited:
     | { code: number | null; signal: NodeJS.Signals | null }
     | undefined;
+  server.stdout.on('data', (chunk: Buffer) => {
+    stdout.push(chunk.toString('utf8'));
+  });
   server.stderr.on('data', (chunk: Buffer) => {
     stderr.push(chunk.toString('utf8'));
   });
@@ -137,6 +153,14 @@ async function startRealServer(): Promise<RealServerHarness> {
       };
     });
   } catch (error) {
+    writeServerArtifacts(artifactDir, {
+      command: serverCommand,
+      endpoint,
+      projectDir,
+      stdout,
+      stderr,
+      error
+    });
     await stopServer(server);
     fs.rmSync(tempRoot, { recursive: true, force: true });
     throw error;
@@ -147,6 +171,8 @@ async function startRealServer(): Promise<RealServerHarness> {
     endpoint,
     projectDir,
     initializeResult,
+    artifactDir,
+    serverCommand,
     async callTool(name, args) {
       const result = await postJsonRpc<Record<string, unknown>>(
         endpoint,
@@ -175,11 +201,69 @@ async function startRealServer(): Promise<RealServerHarness> {
         .map((tool) => tool.name)
         .filter((name): name is string => typeof name === 'string');
     },
+    async readResource(uri) {
+      const result = await postJsonRpc<{
+        contents?: Array<{ text?: string }>;
+      }>(
+        endpoint,
+        'resources/read',
+        { uri },
+        sessionId
+      );
+      sessionId = result.sessionId ?? sessionId;
+      if (result.json.error) {
+        throw new Error(
+          result.json.error.message ?? `MCP resource ${uri} failed`
+        );
+      }
+      return (
+        result.json.result?.contents?.find(
+          (item) => typeof item.text === 'string'
+        )?.text ?? ''
+      );
+    },
     async teardown() {
+      writeServerArtifacts(artifactDir, {
+        command: serverCommand,
+        endpoint,
+        projectDir,
+        stdout,
+        stderr
+      });
       await stopServer(server);
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }
   };
+}
+
+function localServerCommand(): {
+  command: string;
+  args: string[];
+  cwd: string;
+} {
+  const project = localMcpServerProject();
+  return {
+    command: 'uv',
+    args: [
+      'run',
+      '--project',
+      project,
+      '--all-extras',
+      '--frozen',
+      'kicad-mcp-pro',
+      'serve'
+    ],
+    cwd: project
+  };
+}
+
+function localMcpServerProject(): string {
+  return path.resolve(extensionRoot(), '..', '..', 'packages', 'mcp-server');
+}
+
+function resolveArtifactDir(tempRoot: string): string {
+  const configured = process.env['REAL_SERVER_ARTIFACT_DIR'];
+  return configured ? path.resolve(configured) : path.join(tempRoot, 'artifacts');
 }
 
 async function readWellKnownVersion(
@@ -218,17 +302,38 @@ async function readWellKnownVersion(
 }
 
 function defaultFixtureProject(): string {
-  return path.resolve(
-    __dirname,
-    '..',
-    '..',
-    '..',
-    '..',
+  return path.join(
+    extensionRoot(),
     'test',
     'fixtures',
     'benchmark_projects',
     'pass_minimal_mcu_board'
   );
+}
+
+function extensionRoot(): string {
+  let cursor = __dirname;
+  for (let depth = 0; depth < 8; depth += 1) {
+    const manifest = path.join(cursor, 'package.json');
+    if (fs.existsSync(manifest)) {
+      try {
+        const parsed = JSON.parse(fs.readFileSync(manifest, 'utf8')) as {
+          name?: unknown;
+        };
+        if (parsed.name === 'kicadstudio') {
+          return cursor;
+        }
+      } catch {
+        // Keep walking when an intermediate package.json cannot be parsed.
+      }
+    }
+    const next = path.dirname(cursor);
+    if (next === cursor) {
+      break;
+    }
+    cursor = next;
+  }
+  throw new Error(`Unable to locate kicadstudio package root from ${__dirname}`);
 }
 
 async function waitForInitialize(
@@ -352,6 +457,49 @@ function copyDirectory(source: string, target: string): void {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function writeServerArtifacts(
+  artifactDir: string,
+  details: {
+    command: string;
+    endpoint: string;
+    projectDir: string;
+    stdout: string[];
+    stderr: string[];
+    error?: unknown;
+  }
+): void {
+  fs.mkdirSync(artifactDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(artifactDir, 'server-stdout.log'),
+    details.stdout.join(''),
+    'utf8'
+  );
+  fs.writeFileSync(
+    path.join(artifactDir, 'server-stderr.log'),
+    details.stderr.join(''),
+    'utf8'
+  );
+  fs.writeFileSync(
+    path.join(artifactDir, 'harness.json'),
+    JSON.stringify(
+      {
+        command: details.command,
+        endpoint: details.endpoint,
+        projectDir: details.projectDir,
+        error:
+          details.error instanceof Error
+            ? { name: details.error.name, message: details.error.message }
+            : details.error
+              ? String(details.error)
+              : undefined
+      },
+      null,
+      2
+    ),
+    'utf8'
+  );
 }
 
 async function stopServer(
