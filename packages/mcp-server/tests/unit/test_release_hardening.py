@@ -118,7 +118,9 @@ def test_stateful_streamable_http_requires_session_header_after_initialize(
     assert initialized.status_code == 200
     assert session_id
     assert missing_session.status_code == 400
-    assert "Missing session ID" in missing_session.text
+    assert missing_session.json()["error"]["message"] == (
+        "Bad Request: Missing MCP-Session-Id header."
+    )
     assert accepted_notification.status_code == 202
     assert listed.status_code == 200
     assert listed.json()["result"]["tools"]
@@ -350,13 +352,20 @@ def test_http_mcp_endpoint_requires_bearer_token(sample_project: Path) -> None:
     server = build_server("minimal")
     client = TestClient(server.streamable_http_app())
 
-    response = client.post(
+    missing_token = client.post(
         "/mcp",
         json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
     )
+    invalid_token = client.post(
+        "/mcp",
+        headers={"Accept": "application/json", "Authorization": "Bearer invalid-token"},
+        json={"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
+    )
 
-    assert response.status_code == 401
-    assert response.json()["error"] == "invalid_token"
+    assert missing_token.status_code == 401
+    assert missing_token.json()["error"] == "invalid_token"
+    assert invalid_token.status_code == 401
+    assert invalid_token.json()["error"] == "invalid_token"
 
 
 def test_token_rotation_rejects_non_string_token(sample_project: Path) -> None:

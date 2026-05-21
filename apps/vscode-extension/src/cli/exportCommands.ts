@@ -21,6 +21,7 @@ import { zipDirectory } from '../utils/zipUtils';
 import { KiCadCliDetector } from './kicadCliDetector';
 import { ExportPresetStore } from './exportPresets';
 import { KiCadCliRunner } from './kicadCliRunner';
+import type { ExportStateStore, ExportSurfaceKind } from '../state/stateStores';
 
 export type ExportCommandKind =
   | 'export-gerbers'
@@ -386,7 +387,8 @@ export class KiCadExportService {
     private readonly bomParser: BomParser,
     private readonly bomExporter: BomExporter,
     private readonly presets: ExportPresetStore,
-    private readonly logger: Logger
+    private readonly logger: Logger,
+    private readonly exportState?: ExportStateStore | undefined
   ) {}
 
   async exportGerbers(resource?: vscode.Uri): Promise<void> {
@@ -941,12 +943,23 @@ export class KiCadExportService {
       format === 'csv'
         ? inferOutputPath(file, outputDir, '-bom', '.csv')
         : inferOutputPath(file, outputDir, '-bom', '.xlsx');
-
-    if (format === 'csv') {
-      await this.bomExporter.exportCsv(entries, outputFile);
-    } else {
-      await this.bomExporter.exportXlsx(entries, outputFile);
+    const uri = vscode.Uri.file(file);
+    this.exportState?.begin('bom', uri, `Exporting BOM ${format.toUpperCase()}.`);
+    try {
+      if (format === 'csv') {
+        await this.bomExporter.exportCsv(entries, outputFile);
+      } else {
+        await this.bomExporter.exportXlsx(entries, outputFile);
+      }
+    } catch (error) {
+      this.exportState?.fail('bom', uri, error);
+      throw error;
     }
+    this.exportState?.complete(
+      'bom',
+      uri,
+      `BOM ${format.toUpperCase()} exported.`
+    );
     await this.showOutputFolder(outputDir);
   }
 
@@ -965,6 +978,9 @@ export class KiCadExportService {
     if (!outputDir) {
       return;
     }
+    const uri = vscode.Uri.file(file);
+    const surfaceKind = exportSurfaceFor(kind);
+    this.exportState?.begin(surfaceKind, uri, title);
     const buildOptions = await this.getBuildOptions(
       file,
       kind === 'export-gerbers' || kind === 'export-gerbers-with-drill'
@@ -975,8 +991,10 @@ export class KiCadExportService {
       title
     );
     if (!exported) {
+      this.exportState?.fail(surfaceKind, uri, `${title} failed.`);
       return;
     }
+    this.exportState?.complete(surfaceKind, uri, `${title} completed.`);
     await this.showOutputFolder(outputDir);
   }
 
@@ -1332,6 +1350,13 @@ export class KiCadExportService {
       ...(gerberLayers.length ? { gerberLayers } : {})
     };
   }
+}
+
+function exportSurfaceFor(kind: ExportCommandKind): ExportSurfaceKind {
+  if (kind === 'export-netlist') {
+    return 'netlist';
+  }
+  return kind === 'export-sch-bom' ? 'bom' : 'export';
 }
 
 function collectFilesWithExtension(root: string, extension: string): string[] {

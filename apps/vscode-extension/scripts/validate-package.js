@@ -38,6 +38,26 @@ assert(
   pkg.main === './dist/extension.js',
   'extension entrypoint drifted unexpectedly'
 );
+assert(
+  JSON.stringify(pkg.extensionKind) === JSON.stringify(['workspace']),
+  'extensionKind must stay ["workspace"] until ADR-0006 accepts a web target'
+);
+assert(
+  pkg.browser === undefined,
+  'browser entrypoint must stay absent until ADR-0006 accepts a web target'
+);
+for (const scriptName of Object.keys(pkg.scripts ?? {})) {
+  assert(
+    !scriptName.includes('web'),
+    `web build script must not be introduced before ADR-0006 accepts it: ${scriptName}`
+  );
+}
+for (const file of ['web/extension.js', 'src/web/extension.ts']) {
+  assert(
+    !fs.existsSync(path.join(root, file)),
+    `web extension entrypoint must not exist before ADR-0006 accepts it: ${file}`
+  );
+}
 
 const requiredRuntimeFiles = [
   'dist/extension.js',

@@ -57,6 +57,9 @@
   "homepage": "https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension",
   "license": "MIT",
   "main": "./dist/extension.js",
+  "extensionKind": [
+    "workspace"
+  ],
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
@@ -237,7 +240,7 @@
         {
           "id": "kicadstudio.qualityGate",
           "name": "Quality Gates",
-          "when": "kicadstudio.mcpConnected && kicadstudio.hasProject",
+          "when": "kicadstudio.hasProject",
           "icon": "assets/views/quality-gates.svg"
         },
         {
@@ -1893,7 +1896,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "audit:ci": "pnpm audit --audit-level high",
     "check:staged": "lint-staged",
-    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run build",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run build && pnpm run package:validate",
     "check:workspace-trust": "node scripts/check-untrusted-workspace.js",
     "check:ci": "pnpm run audit:ci && pnpm run format:check && pnpm run docs:check && pnpm run workflows:lint && pnpm run lint && pnpm run typecheck && pnpm run check:workspace-trust && pnpm run test:unit:coverage && pnpm run build && pnpm run test:integration && pnpm run package && pnpm run package:validate && pnpm run release:dry-run && pnpm run check:bundle-size",
     "compile-tests": "tsc -p tsconfig.test.json",

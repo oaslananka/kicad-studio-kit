@@ -35,10 +35,12 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse, Response
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from typer.models import OptionInfo
 
 from . import __version__
 from .capabilities import all_records as all_capability_records
+from .compatibility import MCP_PROTOCOL_VERSION
 from .config import LOOPBACK_HOSTS, KiCadMCPConfig, get_config, reset_config
 from .connection import KiCadConnectionError, get_board
 from .diagnostics import DiagnosticReport, build_doctor_report, build_health_report
@@ -552,6 +554,7 @@ class KiCadFastMCP(FastMCP):
     def streamable_http_app(self) -> Starlette:
         app = super().streamable_http_app()
         cfg = get_config()
+        app.add_middleware(_StreamableHttpContractMiddleware)
         if cfg.legacy_sse:
             sse_routes = self.sse_app().routes
             existing_paths = {getattr(route, "path", None) for route in app.routes}
@@ -648,6 +651,229 @@ class KiCadFastMCP(FastMCP):
                 elapsed_ms=elapsed_ms,
                 error_code=error_code,
             )
+
+
+class _StreamableHttpContractMiddleware:
+    """Normalize the public Streamable HTTP contract before FastMCP handles it."""
+
+    _SESSION_CACHE_LIMIT = 256
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+        self._session_ids: set[str] = set()
+        self._session_order: deque[str] = deque()
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        cfg = get_config()
+        if (
+            scope["type"] != "http"
+            or scope.get("method") != "POST"
+            or scope.get("path") != cfg.mount_path
+        ):
+            await self.app(scope, receive, send)
+            return
+
+        body, replay_receive = await _buffer_request_body(receive)
+        headers = _scope_headers(scope)
+
+        # Let FastMCP's auth layer preserve its existing 401/403 error shape.
+        if cfg.auth_token and not secrets.compare_digest(
+            _scope_bearer_token(headers), cfg.auth_token
+        ):
+            await self.app(scope, replay_receive, send)
+            return
+
+        rpc_id, rpc_method = _json_rpc_metadata(body)
+        if not _accept_header_includes(headers.get("accept", ""), "application/json"):
+            await _streamable_http_error_response(
+                code=-32003,
+                message=(
+                    "Bad Request: Accept header must include application/json and "
+                    "text/event-stream."
+                ),
+                rpc_id=rpc_id,
+                status_code=400,
+                scope=scope,
+                receive=replay_receive,
+                send=send,
+            )
+            return
+        if not _accept_header_includes(headers.get("accept", ""), "text/event-stream"):
+            await _streamable_http_error_response(
+                code=-32003,
+                message=(
+                    "Bad Request: Accept header must include application/json and "
+                    "text/event-stream."
+                ),
+                rpc_id=rpc_id,
+                status_code=400,
+                scope=scope,
+                receive=replay_receive,
+                send=send,
+            )
+            return
+
+        protocol_version = headers.get("mcp-protocol-version")
+        if protocol_version and protocol_version != MCP_PROTOCOL_VERSION:
+            await _streamable_http_error_response(
+                code=-32002,
+                message=(
+                    f"Unsupported MCP-Protocol-Version: {protocol_version}. "
+                    f"Expected {MCP_PROTOCOL_VERSION}."
+                ),
+                rpc_id=rpc_id,
+                status_code=400,
+                scope=scope,
+                receive=replay_receive,
+                send=send,
+            )
+            return
+
+        session_id = headers.get("mcp-session-id", "")
+        if cfg.stateful_http and rpc_method and rpc_method != "initialize":
+            if not session_id:
+                await _streamable_http_error_response(
+                    code=-32000,
+                    message="Bad Request: Missing MCP-Session-Id header.",
+                    rpc_id=rpc_id,
+                    status_code=400,
+                    scope=scope,
+                    receive=replay_receive,
+                    send=send,
+                )
+                return
+            if not self._has_session(session_id):
+                await _streamable_http_error_response(
+                    code=-32001,
+                    message="Session not found for MCP-Session-Id.",
+                    rpc_id=rpc_id,
+                    status_code=404,
+                    scope=scope,
+                    receive=replay_receive,
+                    send=send,
+                )
+                return
+
+        async def send_wrapper(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                response_session_id = _message_header(message, "mcp-session-id")
+                if response_session_id:
+                    self._remember_session(response_session_id)
+            await send(message)
+
+        await self.app(scope, replay_receive, send_wrapper)
+
+    def _has_session(self, session_id: str) -> bool:
+        return session_id in self._session_ids
+
+    def _remember_session(self, session_id: str) -> None:
+        if session_id in self._session_ids:
+            return
+        if len(self._session_order) >= self._SESSION_CACHE_LIMIT:
+            self._session_ids.discard(self._session_order.popleft())
+        self._session_order.append(session_id)
+        self._session_ids.add(session_id)
+
+
+async def _buffer_request_body(receive: Receive) -> tuple[bytes, Receive]:
+    messages: list[Message] = []
+    chunks: list[bytes] = []
+    more_body = True
+    while more_body:
+        message = await receive()
+        messages.append(message)
+        if message["type"] != "http.request":
+            break
+        body = message.get("body", b"")
+        if isinstance(body, bytes):
+            chunks.append(body)
+        more_body = bool(message.get("more_body", False))
+
+    iterator = iter(messages)
+
+    async def replay_receive() -> Message:
+        return next(iterator, {"type": "http.request", "body": b"", "more_body": False})
+
+    return b"".join(chunks), replay_receive
+
+
+def _scope_headers(scope: Scope) -> dict[str, str]:
+    headers: dict[str, str] = {}
+    for key, value in scope.get("headers", []):
+        name = key.decode("latin-1").casefold()
+        decoded_value = value.decode("latin-1")
+        if name in headers:
+            headers[name] = f"{headers[name]}, {decoded_value}"
+        else:
+            headers[name] = decoded_value
+    return headers
+
+
+def _scope_bearer_token(headers: dict[str, str]) -> str:
+    authorization = headers.get("authorization", "")
+    prefix = "Bearer "
+    if not authorization.startswith(prefix):
+        return ""
+    return authorization[len(prefix) :].strip()
+
+
+def _accept_header_includes(value: str, media_type: str) -> bool:
+    media_main, media_subtype = media_type.casefold().split("/", 1)
+    for item in value.split(","):
+        item_type = item.split(";", 1)[0].strip().casefold()
+        if not item_type:
+            continue
+        if item_type == "*/*":
+            return True
+        if item_type == media_type:
+            return True
+        if item_type == f"{media_main}/*":
+            return True
+        if item_type == f"*/{media_subtype}":
+            return True
+    return False
+
+
+def _json_rpc_metadata(body: bytes) -> tuple[object | None, str | None]:
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except Exception:
+        return None, None
+    if not isinstance(payload, dict):
+        return None, None
+    rpc_id = payload.get("id")
+    rpc_method = payload.get("method")
+    return rpc_id, rpc_method if isinstance(rpc_method, str) else None
+
+
+def _message_header(message: Message, header_name: str) -> str:
+    expected = header_name.casefold().encode("latin-1")
+    headers = message.get("headers", [])
+    if not isinstance(headers, list):
+        return ""
+    for key, value in headers:
+        if not isinstance(key, bytes) or not isinstance(value, bytes):
+            continue
+        if key.lower() == expected:
+            return value.decode("latin-1")
+    return ""
+
+
+async def _streamable_http_error_response(
+    *,
+    code: int,
+    message: str,
+    rpc_id: object | None,
+    status_code: int,
+    scope: Scope,
+    receive: Receive,
+    send: Send,
+) -> None:
+    response = JSONResponse(
+        {"jsonrpc": "2.0", "error": {"code": code, "message": message}, "id": rpc_id},
+        status_code=status_code,
+    )
+    await response(scope, receive, send)
 
 
 class _OriginValidationMiddleware(BaseHTTPMiddleware):

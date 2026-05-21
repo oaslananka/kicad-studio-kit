@@ -239,6 +239,34 @@ describe('McpClient', () => {
     );
   });
 
+  it('sends the negotiated MCP protocol version on HTTP requests', async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse(
+          { result: {} },
+          { headers: { 'MCP-Session-Id': 'protocol-session' } }
+        )
+      )
+      .mockResolvedValueOnce(createJsonResponse({ result: { tools: [] } }));
+    global.fetch = fetchMock as typeof fetch;
+
+    await expect(createClient().testConnection()).resolves.toEqual(
+      expect.objectContaining({ connected: true })
+    );
+
+    expect(fetchMock.mock.calls[0]?.[1]?.headers).toEqual(
+      expect.objectContaining({
+        'MCP-Protocol-Version': '2025-11-25'
+      })
+    );
+    expect(fetchMock.mock.calls[1]?.[1]?.headers).toEqual(
+      expect.objectContaining({
+        'MCP-Protocol-Version': '2025-11-25'
+      })
+    );
+  });
+
   it('refuses non-loopback MCP endpoints by default', async () => {
     __setConfiguration({
       'kicadstudio.mcp.endpoint': 'https://mcp.example.com',
@@ -533,6 +561,101 @@ describe('McpClient', () => {
 
     await expect(createClient().testConnection()).resolves.toEqual(
       expect.objectContaining({ available: true, connected: true })
+    );
+  });
+
+  it.each([400, 401, 403, 404, 421, 500])(
+    'marks MCP degraded when tools/list fails with HTTP %i after initialize',
+    async (status) => {
+      const fetchMock = jest
+        .fn()
+        .mockResolvedValueOnce(
+          createJsonResponse(
+            { result: {} },
+            { headers: { 'MCP-Session-Id': 'degraded-session' } }
+          )
+        )
+        .mockResolvedValue(
+          createJsonResponse(
+            {
+              jsonrpc: '2.0',
+              id: null,
+              error: {
+                code: -32000,
+                message: 'MCP protocol contract failed'
+              }
+            },
+            { status }
+          )
+        );
+      global.fetch = fetchMock as typeof fetch;
+
+      const state = await createClient(createExtensionContextMock(), {
+        maxRetries: 1
+      }).testConnection();
+
+      expect(state).toEqual(
+        expect.objectContaining({
+          kind: 'Degraded',
+          available: true,
+          connected: false
+        })
+      );
+      expect(state.message).toContain('MCP protocol contract failed');
+      expect(state.message).toContain(
+        status === 404 ? 'does not expose Streamable HTTP' : `HTTP ${status}`
+      );
+    }
+  );
+
+  it('does not mark cached server metadata as degraded when initialize fails before a live handshake', async () => {
+    const context = createExtensionContextMock();
+    await context.globalState.update('kicadstudio.mcp.lastServerCard', {
+      version: '1.0.0',
+      compat: 'compatible',
+      capabilities: { tools: [], resources: [], prompts: [] },
+      capturedAt: '2026-05-21T00:00:00.000Z'
+    });
+    global.fetch = jest.fn().mockRejectedValue(new Error('ECONNREFUSED'));
+
+    const state = await createClient(context, {
+      maxRetries: 1
+    }).testConnection();
+
+    expect(state).toEqual(
+      expect.objectContaining({
+        kind: 'Disconnected',
+        available: true,
+        connected: false,
+        message: 'ECONNREFUSED'
+      })
+    );
+  });
+
+  it('marks MCP degraded when tools/list returns a JSON-RPC error after initialize', async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse(
+          { result: {} },
+          { headers: { 'MCP-Session-Id': 'degraded-jsonrpc-session' } }
+        )
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          error: {
+            message: 'Invalid JSON-RPC request'
+          }
+        })
+      );
+    global.fetch = fetchMock as typeof fetch;
+
+    await expect(createClient().testConnection()).resolves.toEqual(
+      expect.objectContaining({
+        kind: 'Degraded',
+        connected: false,
+        message: 'MCP protocol contract failed: Invalid JSON-RPC request'
+      })
     );
   });
 

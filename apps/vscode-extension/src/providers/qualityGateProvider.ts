@@ -2,11 +2,13 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { COMMANDS } from '../constants';
 import type {
+  McpConnectionState,
   QualityGateResult,
   QualityGateStatus,
   QualityGateViolation
 } from '../types';
 import type { QualityGateMcpAdapter } from '../mcp/mcpToolAdapter';
+import type { McpStateStore } from '../state/stateStores';
 
 type QualityGateElement =
   | {
@@ -37,7 +39,8 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
 
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly mcpAdapter: QualityGateMcpAdapter
+    private readonly mcpAdapter: QualityGateMcpAdapter,
+    private readonly mcpState?: Pick<McpStateStore, 'getState'> | undefined
   ) {
     this.gates = this.readCachedGates() ?? DEFAULT_GATES;
   }
@@ -91,7 +94,12 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
 
   getChildren(element?: QualityGateElement): QualityGateElement[] {
     if (!element) {
-      return orderGates(this.gates).map((gate) => ({ kind: 'gate', gate }));
+      const state = this.mcpState?.getState();
+      const gates =
+        state && !supportsHttpQualityGates(state)
+          ? blockedGates(this.gates, state)
+          : this.gates;
+      return orderGates(gates).map((gate) => ({ kind: 'gate', gate }));
     }
     if (element.kind === 'gate') {
       return element.gate.violations.map((violation) => ({
@@ -109,6 +117,10 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
   }
 
   async runAll(): Promise<void> {
+    if (this.blockUnavailableRunAction()) {
+      return;
+    }
+
     try {
       const [project, placement, transfer, manufacturing] = await Promise.all([
         this.mcpAdapter.runProjectQualityGate(),
@@ -135,6 +147,10 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
   }
 
   async runGate(gate: QualityGateResult): Promise<void> {
+    if (this.blockUnavailableRunAction()) {
+      return;
+    }
+
     const next = gate.id.includes('placement')
       ? await this.mcpAdapter.runPlacementQualityGate()
       : gate.id.includes('transfer')
@@ -209,6 +225,16 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
       vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? 'workspace';
     return `kicadstudio.qualityGate.${path.basename(root)}`;
   }
+
+  private blockUnavailableRunAction(): boolean {
+    const state = this.mcpState?.getState();
+    if (!state || supportsHttpQualityGates(state)) {
+      return false;
+    }
+
+    void vscode.window.showInformationMessage(qualityGateBlockMessage(state));
+    return true;
+  }
 }
 
 function pendingGate(id: string, label: string): QualityGateResult {
@@ -220,6 +246,31 @@ function pendingGate(id: string, label: string): QualityGateResult {
     details: [],
     violations: []
   };
+}
+
+function blockedGates(
+  gates: QualityGateResult[],
+  state: McpConnectionState
+): QualityGateResult[] {
+  const summary = qualityGateBlockMessage(state);
+  return gates.map((gate) => ({
+    ...gate,
+    status: 'BLOCKED',
+    summary: state.message ? `${summary} ${state.message}` : summary,
+    violations: []
+  }));
+}
+
+function qualityGateBlockMessage(state: McpConnectionState): string {
+  return state.kind === 'VsCodeStdio'
+    ? 'HTTP MCP connection required for Quality Gates.'
+    : state.kind === 'Incompatible'
+      ? 'Compatible kicad-mcp-pro server required.'
+      : 'Connect kicad-mcp-pro before running Quality Gates.';
+}
+
+function supportsHttpQualityGates(state: McpConnectionState): boolean {
+  return state.kind === 'Connected' && state.connected;
 }
 
 function descriptionForGate(gate: QualityGateResult): string {

@@ -104,6 +104,20 @@ function buildMcpToolNodes(
 }
 
 function stateNode(state: McpConnectionState): McpToolsNode {
+  if (state.kind === 'Degraded') {
+    return {
+      label: 'MCP degraded',
+      description: state.server?.version ?? 'protocol contract failed',
+      tooltip:
+        state.message ??
+        'The MCP endpoint initialized but failed the Streamable HTTP contract check.',
+      icon: 'warning',
+      command: {
+        command: COMMANDS.retryMcp,
+        title: 'Retry MCP Connection'
+      }
+    };
+  }
   if (state.kind === 'Incompatible') {
     return {
       label: 'MCP incompatible',

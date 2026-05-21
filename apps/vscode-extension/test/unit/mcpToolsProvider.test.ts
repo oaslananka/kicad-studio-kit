@@ -148,6 +148,27 @@ describe('McpToolsProvider', () => {
       'HTTP 503'
     );
   });
+
+  it('renders degraded state as an actionable protocol warning row', () => {
+    const provider = new McpToolsProvider({
+      getState: () => ({
+        kind: 'Degraded',
+        available: true,
+        connected: false,
+        message: 'MCP protocol contract failed: HTTP 421'
+      })
+    } as never);
+
+    const state = childrenByLabel(provider, 'MCP degraded');
+    const diagnostic = childrenByLabel(provider, 'Last diagnostic');
+
+    expect(provider.getTreeItem(state as never).command).toEqual(
+      expect.objectContaining({ command: 'kicadstudio.mcp.retry' })
+    );
+    expect(provider.getTreeItem(diagnostic as never).description).toBe(
+      'MCP protocol contract failed: HTTP 421'
+    );
+  });
 });
 
 function childrenByLabel(provider: McpToolsProvider, label: string) {

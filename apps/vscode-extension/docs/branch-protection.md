@@ -1,6 +1,8 @@
 # Branch Protection
 
-Branch protection rules are defined in `.github/rulesets/main.json`.
+The canonical branch protection policy is documented in
+`docs/architecture/branch-protection.md`. Import the matching ruleset from
+`.github/rulesets/main.json`.
 
 To apply them via GitHub CLI:
 
@@ -9,4 +11,9 @@ To apply them via GitHub CLI:
 gh api -X POST /repos/oaslananka/kicad-studio-kit/rulesets --input .github/rulesets/main.json
 ```
 
-Note: If the ruleset already exists, use `PATCH` instead of `POST` and include the ruleset ID.
+If the ruleset already exists, update it by id:
+
+```bash
+gh api /repos/oaslananka/kicad-studio-kit/rulesets
+gh api -X PUT /repos/oaslananka/kicad-studio-kit/rulesets/<id> --input .github/rulesets/main.json
+```

@@ -9,6 +9,7 @@ import { SExpressionParser } from '../language/sExpressionParser';
 import { readTextFileSync } from '../utils/fileUtils';
 import { asRecord, asString, hasType } from '../utils/webviewMessages';
 import { createNonce } from '../utils/nonce';
+import type { ExportStateStore } from '../state/stateStores';
 
 export class BomViewProvider
   implements vscode.WebviewViewProvider, vscode.Disposable
@@ -24,7 +25,8 @@ export class BomViewProvider
 
   constructor(
     private readonly context: vscode.ExtensionContext,
-    parser: SExpressionParser
+    parser: SExpressionParser,
+    private readonly exportState?: ExportStateStore | undefined
   ) {
     this.bomParser = new BomParser(parser);
     this.disposables.push(
@@ -97,16 +99,25 @@ export class BomViewProvider
   async refresh(): Promise<void> {
     const file = await this.findSchematicFile();
     if (!file) {
+      this.exportState?.complete('bom', undefined, 'No schematic opened.');
       this.manager.setStatus('Open a .kicad_sch schematic file to load the Bill of Materials.');
       return;
     }
+    const uri = vscode.Uri.file(file);
+    this.exportState?.begin('bom', uri, 'Loading Bill of Materials.');
     this.manager.setLoading();
     this.currentFile = file;
     try {
       const entries = this.bomParser.parse(readTextFileSync(file));
       this.manager.setEntries(entries);
+      this.exportState?.complete(
+        'bom',
+        uri,
+        `Bill of Materials loaded from ${path.basename(file)}.`
+      );
     } catch (error) {
       this.currentFile = undefined;
+      this.exportState?.fail('bom', uri, error);
       this.manager.setStatus(
         error instanceof Error
           ? `Could not load BOM from ${path.basename(file)}: ${error.message}`

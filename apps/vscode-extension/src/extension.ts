@@ -68,7 +68,15 @@ import { PcbEditorProvider } from './providers/pcbEditorProvider';
 import { KiCadProjectTreeProvider } from './providers/projectTreeProvider';
 import { QualityGateProvider } from './providers/qualityGateProvider';
 import { SchematicEditorProvider } from './providers/schematicEditorProvider';
+import { ValidationViewProvider } from './providers/validationViewProvider';
 import { KiCadStatusBar } from './statusbar/kicadStatusBar';
+import {
+  DiagnosticStateStore,
+  ExportStateStore,
+  McpStateStore,
+  ProjectStateStore,
+  ViewerStateStore
+} from './state/stateStores';
 import { KiCadTaskProvider } from './tasks/kicadTaskProvider';
 import { VariantProvider } from './variants/variantProvider';
 import { readConfiguredMcpProfile } from './commands/mcpProfilePicker';
@@ -108,6 +116,10 @@ export async function activate(
   const cliRunner = new KiCadCliRunner(cliDetector, logger);
   const importService = new KiCadImportService(cliRunner, cliDetector, logger);
   const statusBar = new KiCadStatusBar(context);
+  const projectState = new ProjectStateStore();
+  const viewerState = new ViewerStateStore();
+  const mcpState = new McpStateStore();
+  const exportState = new ExportStateStore();
   const bomParser = new BomParser(parser);
   const bomExporter = new BomExporter();
   const presetStore = new ExportPresetStore(context);
@@ -117,30 +129,37 @@ export async function activate(
     bomParser,
     bomExporter,
     presetStore,
-    logger
+    logger,
+    exportState
   );
   const diagnosticsCollection = new KiCadDiagnosticsAggregator(
     vscode.languages.createDiagnosticCollection(DIAGNOSTIC_COLLECTION_NAME)
   );
+  const diagnosticState = new DiagnosticStateStore(diagnosticsCollection);
   const diagnosticsProvider = new KiCadDiagnosticsProvider(
     parser,
     diagnosticsCollection
   );
   const checkService = new KiCadCheckService(cliRunner, parser, logger);
   const treeProvider = new KiCadProjectTreeProvider();
-  const bomViewProvider = new BomViewProvider(context, parser);
+  const validationViewProvider = new ValidationViewProvider(diagnosticState);
+  const bomViewProvider = new BomViewProvider(context, parser, exportState);
   const netlistViewProvider = new NetlistViewProvider(
     context,
     parser,
     cliRunner,
-    logger
+    logger,
+    exportState
   );
   const schematicEditorProvider = new SchematicEditorProvider(
     context,
-    async (resource) => exportService.renderViewerSvg(resource)
+    async (resource) => exportService.renderViewerSvg(resource),
+    viewerState
   );
-  const pcbEditorProvider = new PcbEditorProvider(context, async (resource) =>
-    exportService.renderViewerSvg(resource)
+  const pcbEditorProvider = new PcbEditorProvider(
+    context,
+    async (resource) => exportService.renderViewerSvg(resource),
+    viewerState
   );
   const gitDiffDetector = new GitDiffDetector(parser);
   const diffEditorProvider = new DiffEditorProvider(context, gitDiffDetector);
@@ -154,10 +173,14 @@ export async function activate(
   extensionMcpClient = mcpClient;
   const mcpToolAdapter = new McpToolAdapter(mcpClient);
   const contextBridge = new ContextBridge(mcpToolAdapter);
-  const mcpToolsProvider = new McpToolsProvider(mcpToolAdapter);
+  const mcpToolsProvider = new McpToolsProvider(mcpState);
   const variantProvider = new VariantProvider(mcpToolAdapter);
-  const fixQueueProvider = new FixQueueProvider(mcpToolAdapter);
-  const qualityGateProvider = new QualityGateProvider(context, mcpToolAdapter);
+  const fixQueueProvider = new FixQueueProvider(mcpToolAdapter, mcpState);
+  const qualityGateProvider = new QualityGateProvider(
+    context,
+    mcpToolAdapter,
+    mcpState
+  );
   const drcRulesProvider = new DrcRulesProvider(parser);
   const errorAnalyzer = new ErrorAnalyzer(aiProviders, logger);
   const circuitExplainer = new CircuitExplainer(aiProviders, logger);
@@ -179,6 +202,11 @@ export async function activate(
   context.subscriptions.push(
     logger,
     statusBar,
+    projectState,
+    diagnosticState,
+    viewerState,
+    mcpState,
+    exportState,
     contextBridge,
     diagnosticsCollection,
     libraryIndexer,
@@ -186,6 +214,19 @@ export async function activate(
     pcbEditorProvider,
     bomViewProvider,
     netlistViewProvider,
+    validationViewProvider,
+    diagnosticState.onDidChange((state) => {
+      statusBar.update({ drc: state.drc, erc: state.erc });
+    }),
+    mcpState.onDidChange((state) => {
+      statusBar.update({
+        mcpState: state,
+        mcpProfile: readConfiguredMcpProfile()
+      });
+      mcpToolsProvider.refresh();
+      qualityGateProvider.refresh();
+      void fixQueueProvider.refresh().catch(() => undefined);
+    }),
     vscode.window.registerCustomEditorProvider(
       SCHEMATIC_EDITOR_VIEW_TYPE,
       schematicEditorProvider,
@@ -240,10 +281,10 @@ export async function activate(
       getTreeItem: (element: vscode.TreeItem) => element,
       getChildren: () => []
     }),
-    vscode.window.registerTreeDataProvider(VALIDATION_VIEW_ID, {
-      getTreeItem: (element: vscode.TreeItem) => element,
-      getChildren: () => []
-    }),
+    vscode.window.registerTreeDataProvider(
+      VALIDATION_VIEW_ID,
+      validationViewProvider
+    ),
     vscode.window.registerTreeDataProvider(LIBRARY_VIEW_ID, {
       getTreeItem: (element: vscode.TreeItem) => element,
       getChildren: () => []
@@ -352,6 +393,7 @@ export async function activate(
     fixQueueProvider,
     qualityGateProvider,
     diagnosticsCollection,
+    diagnosticState,
     statusBar,
     componentSearch,
     aiProviders,
@@ -390,6 +432,7 @@ export async function activate(
       libraryIndexer,
       variantProvider,
       diagnosticsCollection,
+      diagnosticState,
       getStudioContext: buildStudioContext,
       setLatestDrcRun: (value) => {
         latestDrcRun = value;
@@ -469,10 +512,16 @@ export async function activate(
     const kicadVersionMajor = Number(cli?.version.split('.')[0] ?? '0');
     const hasVariants = await workspaceHasVariants();
     const mcpProfile = readConfiguredMcpProfile();
+    const projectSnapshot = projectState.update({
+      activeResource: activeUri,
+      hasProject,
+      hasVariants,
+      workspaceTrusted: trusted
+    });
     await vscode.commands.executeCommand(
       'setContext',
       CONTEXT_KEYS.hasProject,
-      hasProject
+      projectSnapshot.hasProject
     );
     await vscode.commands.executeCommand(
       'setContext',
@@ -502,7 +551,7 @@ export async function activate(
     await vscode.commands.executeCommand(
       'setContext',
       CONTEXT_KEYS.hasVariants,
-      hasVariants
+      projectSnapshot.hasVariants
     );
     await vscode.commands.executeCommand(
       'setContext',
@@ -540,12 +589,10 @@ export async function activate(
       const result = shouldRunDrc
         ? await checkService.runDRC(document.fileName)
         : await checkService.runERC(document.fileName);
-      diagnosticsCollection.set(
+      diagnosticState.applyValidationResult(
         vscode.Uri.file(document.fileName),
-        result.diagnostics
-      );
-      statusBar.update(
-        shouldRunDrc ? { drc: result.summary } : { erc: result.summary }
+        result.diagnostics,
+        result.summary
       );
       if (shouldRunDrc) {
         latestDrcRun = {
@@ -591,16 +638,12 @@ export async function activate(
   async function refreshMcpState(): Promise<void> {
     if (!isWorkspaceTrusted()) {
       await setRestrictedMcpContexts();
-      statusBar.update({
-        mcpState: {
-          kind: 'Disconnected',
-          available: false,
-          connected: false,
-          message: 'MCP integration is disabled in Restricted Mode.'
-        },
-        mcpProfile: readConfiguredMcpProfile()
+      mcpState.update({
+        kind: 'Disconnected',
+        available: false,
+        connected: false,
+        message: 'MCP integration is disabled in Restricted Mode.'
       });
-      mcpToolsProvider.refresh();
       return;
     }
 
@@ -635,11 +678,7 @@ export async function activate(
       CONTEXT_KEYS.mcpVsCodeStdio,
       state.kind === 'VsCodeStdio'
     );
-    statusBar.update({
-      mcpState: state,
-      mcpProfile: readConfiguredMcpProfile()
-    });
-    mcpToolsProvider.refresh();
+    mcpState.update(state);
 
     if (
       state.available &&

@@ -1,5 +1,11 @@
 import { QualityGateProvider } from '../../src/providers/qualityGateProvider';
-import { createExtensionContextMock, env, workspace } from './vscodeMock';
+import { McpStateStore } from '../../src/state/stateStores';
+import {
+  createExtensionContextMock,
+  env,
+  window,
+  workspace
+} from './vscodeMock';
 
 describe('QualityGateProvider', () => {
   beforeEach(() => {
@@ -17,6 +23,67 @@ describe('QualityGateProvider', () => {
     expect(children).toHaveLength(5);
     expect(provider.getTreeItem(children[0] as never).description).toContain(
       'PENDING'
+    );
+  });
+
+  it('blocks cached gates while MCP is outside the HTTP connected state', () => {
+    const mcpState = new McpStateStore();
+    mcpState.update({
+      kind: 'VsCodeStdio',
+      available: true,
+      connected: true,
+      message: 'HTTP quality gates are unavailable in VS Code stdio.'
+    });
+    const provider = new QualityGateProvider(
+      createExtensionContextMock() as never,
+      {} as never,
+      mcpState
+    );
+
+    const children = provider.getChildren();
+
+    expect(children).toHaveLength(5);
+    expect(
+      children.every((item) => item.kind === 'gate' && item.gate.status === 'BLOCKED')
+    ).toBe(true);
+    expect(provider.getTreeItem(children[0] as never).description).toContain(
+      'BLOCKED'
+    );
+  });
+
+  it('blocks run actions while HTTP quality gates are unavailable', async () => {
+    const mcpState = new McpStateStore();
+    mcpState.update({
+      kind: 'Disconnected',
+      available: true,
+      connected: false,
+      message: 'MCP connection closed.'
+    });
+    const client = {
+      runProjectQualityGate: jest.fn(),
+      runPlacementQualityGate: jest.fn(),
+      runTransferQualityGate: jest.fn(),
+      runManufacturingQualityGate: jest.fn()
+    };
+    const provider = new QualityGateProvider(
+      createExtensionContextMock() as never,
+      client as never,
+      mcpState
+    );
+
+    await provider.runAll();
+    await provider.runGate({
+      id: 'schematic',
+      label: 'Schematic',
+      status: 'PENDING',
+      summary: '',
+      details: [],
+      violations: []
+    });
+
+    expect(client.runProjectQualityGate).not.toHaveBeenCalled();
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Connect kicad-mcp-pro')
     );
   });
 

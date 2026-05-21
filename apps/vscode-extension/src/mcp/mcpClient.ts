@@ -174,6 +174,16 @@ export class McpClient {
       this.logger.debug(
         `MCP connection test failed: ${error instanceof Error ? error.message : String(error)}`
       );
+      if (this.state.connected && this.state.server) {
+        return this.setState({
+          kind: 'Degraded',
+          available: install.found,
+          connected: false,
+          install,
+          server: this.state.server,
+          message: `MCP protocol contract failed: ${error instanceof Error ? error.message : String(error)}`
+        });
+      }
       // HTTP endpoint unreachable — fall back to VS Code stdio detection.
       if (hasVsCodeMcpJsonWithKicad()) {
         return this.setState({
@@ -643,6 +653,7 @@ export class McpClient {
     return {
       'Content-Type': 'application/json',
       Accept: 'application/json, text/event-stream',
+      'MCP-Protocol-Version': MCP_PROTOCOL_VERSION,
       ...(this.sessionId ? { 'MCP-Session-Id': this.sessionId } : {})
     };
   }

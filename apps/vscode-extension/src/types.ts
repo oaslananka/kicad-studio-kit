@@ -304,6 +304,7 @@ export type McpConnectionKind =
   | 'Disconnected'
   | 'Connecting'
   | 'Connected'
+  | 'Degraded'
   | 'Incompatible'
   | 'VsCodeStdio';
 

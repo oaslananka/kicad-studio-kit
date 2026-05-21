@@ -30,6 +30,8 @@ Issues:
 - #68 Add machine-readable compatibility matrix
 - #79 Define coding-agent execution policy and issue resolution order
 
+Completion evidence: [M0 completion audit](m0-completion-audit.md).
+
 ### M1 — Test Foundation
 
 Testing infrastructure and deterministic fixture coverage.

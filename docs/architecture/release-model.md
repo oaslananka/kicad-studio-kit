@@ -18,6 +18,8 @@ Release PRs are product-scoped:
 
 The extension is intentionally not part of the `kicad-mcp-pro` linked-version group. A change that only affects the extension can produce only an extension release PR, and a change that only affects the MCP server product can produce only an MCP release PR.
 
+Conventional Commit scopes are part of the release boundary. Use `kicad-studio` for extension-only changes, `kicad-mcp-pro` for MCP server or npm launcher changes, `repo` for repository governance and release policy, and `deps` for dependency-only updates. A single commit that touches both product directories must either be split or use `kicad-studio/kicad-mcp-pro` so CI can reject changelog cross-contamination before Release Please runs.
+
 ## Compatibility gate
 
 Before release, compatibility metadata must agree across the root matrix, extension, MCP server, and MCP Registry manifests:

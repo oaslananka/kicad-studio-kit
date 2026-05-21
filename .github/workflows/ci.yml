@@ -33,6 +33,8 @@ jobs:
       - run: corepack pnpm run check:forbidden-refs
       - run: corepack pnpm run check:boundaries
       - run: corepack pnpm run check:version
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - run: corepack pnpm run check:compatibility
       - run: corepack pnpm run check:governance
 
@@ -58,7 +60,8 @@ jobs:
       - run: corepack pnpm --filter kicadstudio run test:unit:coverage
       - run: corepack pnpm --filter kicadstudio run build
       - run: corepack pnpm --filter kicadstudio run package
-      - run: corepack pnpm --filter kicadstudio run package:validate
+      - name: Verify extension package and no VS Code Web target
+        run: corepack pnpm --filter kicadstudio run package:validate
 
   mcp-server:
     strategy:
