@@ -352,13 +352,20 @@ def test_http_mcp_endpoint_requires_bearer_token(sample_project: Path) -> None:
     server = build_server("minimal")
     client = TestClient(server.streamable_http_app())
 
-    response = client.post(
+    missing_token = client.post(
         "/mcp",
         json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
     )
+    invalid_token = client.post(
+        "/mcp",
+        headers={"Accept": "application/json", "Authorization": "Bearer invalid-token"},
+        json={"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
+    )
 
-    assert response.status_code == 401
-    assert response.json()["error"] == "invalid_token"
+    assert missing_token.status_code == 401
+    assert missing_token.json()["error"] == "invalid_token"
+    assert invalid_token.status_code == 401
+    assert invalid_token.json()["error"] == "invalid_token"
 
 
 def test_token_rotation_rejects_non_string_token(sample_project: Path) -> None:

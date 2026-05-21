@@ -656,10 +656,12 @@ class KiCadFastMCP(FastMCP):
 class _StreamableHttpContractMiddleware:
     """Normalize the public Streamable HTTP contract before FastMCP handles it."""
 
+    _SESSION_CACHE_LIMIT = 256
+
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
         self._session_ids: set[str] = set()
-        self._lock = threading.Lock()
+        self._session_order: deque[str] = deque()
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         cfg = get_config()
@@ -675,7 +677,9 @@ class _StreamableHttpContractMiddleware:
         headers = _scope_headers(scope)
 
         # Let FastMCP's auth layer preserve its existing 401/403 error shape.
-        if cfg.auth_token and not _scope_bearer_token(headers):
+        if cfg.auth_token and not secrets.compare_digest(
+            _scope_bearer_token(headers), cfg.auth_token
+        ):
             await self.app(scope, replay_receive, send)
             return
 
@@ -760,12 +764,15 @@ class _StreamableHttpContractMiddleware:
         await self.app(scope, replay_receive, send_wrapper)
 
     def _has_session(self, session_id: str) -> bool:
-        with self._lock:
-            return session_id in self._session_ids
+        return session_id in self._session_ids
 
     def _remember_session(self, session_id: str) -> None:
-        with self._lock:
-            self._session_ids.add(session_id)
+        if session_id in self._session_ids:
+            return
+        if len(self._session_order) >= self._SESSION_CACHE_LIMIT:
+            self._session_ids.discard(self._session_order.popleft())
+        self._session_order.append(session_id)
+        self._session_ids.add(session_id)
 
 
 async def _buffer_request_body(receive: Receive) -> tuple[bytes, Receive]:
@@ -791,10 +798,15 @@ async def _buffer_request_body(receive: Receive) -> tuple[bytes, Receive]:
 
 
 def _scope_headers(scope: Scope) -> dict[str, str]:
-    return {
-        key.decode("latin-1").casefold(): value.decode("latin-1")
-        for key, value in scope.get("headers", [])
-    }
+    headers: dict[str, str] = {}
+    for key, value in scope.get("headers", []):
+        name = key.decode("latin-1").casefold()
+        decoded_value = value.decode("latin-1")
+        if name in headers:
+            headers[name] = f"{headers[name]}, {decoded_value}"
+        else:
+            headers[name] = decoded_value
+    return headers
 
 
 def _scope_bearer_token(headers: dict[str, str]) -> str:
@@ -858,7 +870,7 @@ async def _streamable_http_error_response(
     send: Send,
 ) -> None:
     response = JSONResponse(
-        {"jsonrpc": "2.0", "error": {"code": code, "message": message}, "id": None},
+        {"jsonrpc": "2.0", "error": {"code": code, "message": message}, "id": rpc_id},
         status_code=status_code,
     )
     await response(scope, receive, send)
