@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
@@ -100,3 +101,25 @@ def test_no_pcbnew_guard_detects_imports(tmp_path: Path, monkeypatch: pytest.Mon
 
     assert module._violations(good) == []
     assert module.main() == 1
+
+
+def test_workflow_lint_uses_workspace_actionlint_fallback(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _load_script("check_workflows.py")
+    workflows = tmp_path / ".github" / "workflows"
+    workflows.mkdir(parents=True)
+    (workflows / "example.yml").write_text(
+        "name: Example\non: workflow_dispatch\njobs: {}\n",
+        encoding="utf-8",
+    )
+    commands: list[list[str]] = []
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module.shutil, "which", lambda _command: None)
+    monkeypatch.setattr(module, "_run", commands.append)
+    monkeypatch.setattr(sys, "argv", ["check_workflows.py", "--actionlint"])
+
+    module.main()
+
+    assert commands == [["corepack", "pnpm", "--filter", "kicadstudio", "run", "workflows:lint"]]

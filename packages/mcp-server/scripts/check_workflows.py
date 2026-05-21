@@ -34,11 +34,11 @@ def main() -> None:
         binary = shutil.which("actionlint")
         if binary is None:
             print(
-                "actionlint is required for workflow linting. Install from "
-                "https://github.com/rhysd/actionlint or use the GitHub workflow.",
+                "actionlint binary not found; using the workspace actionlint linter.",
                 file=sys.stderr,
             )
-            raise SystemExit(127)
+            _run(["corepack", "pnpm", "--filter", "kicadstudio", "run", "workflows:lint"])
+            return
         _run([binary, *(str(path) for path in workflows)])
 
 
