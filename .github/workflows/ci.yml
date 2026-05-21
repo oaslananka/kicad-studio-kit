@@ -89,6 +89,42 @@ jobs:
       - run: corepack pnpm --dir packages/mcp-server run mcp:manifest:check
       - run: corepack pnpm --dir packages/mcp-server run package:check
 
+  real-pair-compatibility:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+        with:
+          enable-cache: true
+          version-file: packages/mcp-server/uv.toml
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - run: uv sync --all-extras --frozen --project packages/mcp-server
+      - name: Run real-pair compatibility tests
+        env:
+          REAL_SERVER_ARTIFACT_DIR: apps/vscode-extension/test-results/real-server
+        run: corepack pnpm --filter kicadstudio run test:integration:real
+      - name: Run real-pair VS Code host smoke
+        env:
+          REAL_SERVER_ARTIFACT_DIR: apps/vscode-extension/test-results/real-server
+        run: xvfb-run -a corepack pnpm --filter kicadstudio run test:e2e:real
+      - name: Upload real-pair failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: real-pair-compatibility-artifacts
+          path: |
+            apps/vscode-extension/test-results/real-server
+            apps/vscode-extension/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
   mcp-npm:
     strategy:
       fail-fast: false
