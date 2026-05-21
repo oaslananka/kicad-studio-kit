@@ -232,6 +232,29 @@ describe('createKiCanvasViewerHtml', () => {
     expect(html).toContain('.split(new RegExp(');
   });
 
+  it('lets fallback fit upscale CLI SVGs whose viewBox is smaller than the viewport', () => {
+    const html = createKiCanvasViewerHtml({
+      title: 'Viewer',
+      fileName: 'sample.kicad_sch',
+      fileType: 'schematic',
+      status: 'Opening interactive renderer...',
+      cspSource: 'vscode-resource:',
+      kicanvasUri: 'vscode-resource:/media/kicanvas/kicanvas.js',
+      base64: 'Zm9v',
+      disabledReason: ''
+    });
+
+    const fitSection = html.slice(
+      html.indexOf('function fitSvgFallback'),
+      html.indexOf('function applyFallbackPresentation')
+    );
+
+    expect(fitSection).toContain('fallbackSvgFitScale = Math.min(');
+    expect(fitSection).not.toMatch(
+      /availableHeight \/ fallbackSvgSize\.height,\s*1\s*\)/
+    );
+  });
+
   it('includes worker-safe CSP and typed inline sources', () => {
     const html = createKiCanvasViewerHtml({
       title: 'Viewer',

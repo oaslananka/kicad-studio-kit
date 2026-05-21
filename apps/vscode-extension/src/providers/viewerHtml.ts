@@ -1100,8 +1100,7 @@ export function createKiCanvasViewerHtml(
       const availableHeight = Math.max(1, fallbackSvgWrapper.clientHeight - 40);
       fallbackSvgFitScale = Math.min(
         availableWidth / fallbackSvgSize.width,
-        availableHeight / fallbackSvgSize.height,
-        1
+        availableHeight / fallbackSvgSize.height
       );
       fallbackSvgScale = fallbackSvgFitScale;
       applyFallbackSvgScale(resetScroll !== false);
