@@ -16,6 +16,16 @@ const PRODUCTS = {
   "kicad-studio": ["apps/vscode-extension"],
   "kicad-mcp-pro": ["packages/mcp-server", "packages/mcp-npm"],
 };
+const REPO_RELEASE_GOVERNANCE_PREFIXES = [
+  ".github/",
+  "docs/",
+  "scripts/",
+  "apps/vscode-extension/docs/",
+  "apps/vscode-extension/scripts/",
+  "packages/mcp-server/docs/",
+  "packages/mcp-server/scripts/",
+  "packages/mcp-server/tests/unit/test_release_",
+];
 const EXPECTED_PACKAGES = {
   "apps/vscode-extension": {
     product: "kicad-studio",
@@ -196,10 +206,11 @@ export function validateCommitScopeCoverage(commits, options = {}) {
       touchedProducts.has("kicad-studio") &&
       touchedProducts.has("kicad-mcp-pro") &&
       (!parsed.scopes.includes("kicad-studio") ||
-        !parsed.scopes.includes("kicad-mcp-pro"))
+        !parsed.scopes.includes("kicad-mcp-pro")) &&
+      !isRepoScopedReleaseGovernanceCommit(parsed, commit.files)
     ) {
       errors.push(
-        `${shortSha(commit.sha)} touches both product directories; split the commit or use scope kicad-studio/kicad-mcp-pro`,
+        `${shortSha(commit.sha)} touches both product directories; split the commit, use scope kicad-studio/kicad-mcp-pro, or keep repo-scoped commits limited to release governance paths`,
       );
     }
   }
@@ -462,6 +473,16 @@ function productsForFiles(files) {
     }
   }
   return products;
+}
+
+function isRepoScopedReleaseGovernanceCommit(parsed, files) {
+  return parsed.scopes.includes("repo") && files.every(isRepoReleaseGovernancePath);
+}
+
+function isRepoReleaseGovernancePath(file) {
+  return REPO_RELEASE_GOVERNANCE_PREFIXES.some((prefix) =>
+    file.startsWith(prefix),
+  );
 }
 
 function readProductVersions(repoRoot) {
