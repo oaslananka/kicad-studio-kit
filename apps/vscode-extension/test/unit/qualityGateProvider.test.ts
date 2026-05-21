@@ -1,6 +1,11 @@
 import { QualityGateProvider } from '../../src/providers/qualityGateProvider';
 import { McpStateStore } from '../../src/state/stateStores';
-import { createExtensionContextMock, env, workspace } from './vscodeMock';
+import {
+  createExtensionContextMock,
+  env,
+  window,
+  workspace
+} from './vscodeMock';
 
 describe('QualityGateProvider', () => {
   beforeEach(() => {
@@ -43,6 +48,42 @@ describe('QualityGateProvider', () => {
     ).toBe(true);
     expect(provider.getTreeItem(children[0] as never).description).toContain(
       'BLOCKED'
+    );
+  });
+
+  it('blocks run actions while HTTP quality gates are unavailable', async () => {
+    const mcpState = new McpStateStore();
+    mcpState.update({
+      kind: 'Disconnected',
+      available: true,
+      connected: false,
+      message: 'MCP connection closed.'
+    });
+    const client = {
+      runProjectQualityGate: jest.fn(),
+      runPlacementQualityGate: jest.fn(),
+      runTransferQualityGate: jest.fn(),
+      runManufacturingQualityGate: jest.fn()
+    };
+    const provider = new QualityGateProvider(
+      createExtensionContextMock() as never,
+      client as never,
+      mcpState
+    );
+
+    await provider.runAll();
+    await provider.runGate({
+      id: 'schematic',
+      label: 'Schematic',
+      status: 'PENDING',
+      summary: '',
+      details: [],
+      violations: []
+    });
+
+    expect(client.runProjectQualityGate).not.toHaveBeenCalled();
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Connect kicad-mcp-pro')
     );
   });
 

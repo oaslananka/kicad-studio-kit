@@ -301,17 +301,26 @@ export abstract class BaseKiCanvasEditorProvider
   }
 
   protected async refreshDocument(uri: vscode.Uri): Promise<void> {
+    const visiblePanels: vscode.WebviewPanel[] = [];
+    for (const panel of this.panels.get(uri.toString()) ?? []) {
+      if (panel.visible) {
+        visiblePanels.push(panel);
+        continue;
+      }
+      const info = this.panelInfo.get(panel);
+      if (info) {
+        info.pendingRefresh = true;
+      }
+    }
+
+    if (!visiblePanels.length) {
+      return;
+    }
+
     this.viewerState.beginReload(uri);
     try {
       const payload = await this.buildViewerPayload(uri);
-      for (const panel of this.panels.get(uri.toString()) ?? []) {
-        if (!panel.visible) {
-          const info = this.panelInfo.get(panel);
-          if (info) {
-            info.pendingRefresh = true;
-          }
-          continue;
-        }
+      for (const panel of visiblePanels) {
         await panel.webview.postMessage({
           type: 'refresh',
           payload: {

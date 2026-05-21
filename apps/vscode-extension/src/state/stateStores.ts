@@ -255,7 +255,16 @@ export class McpStateStore implements vscode.Disposable {
               ...snapshot.server.capabilities,
               diagnostics: snapshot.server.capabilities.diagnostics?.map((value) =>
                 redactSensitiveText(value)
-              )
+              ),
+              serverInfo: snapshot.server.capabilities.serverInfo
+                ? {
+                    ...snapshot.server.capabilities.serverInfo,
+                    diagnostics:
+                      snapshot.server.capabilities.serverInfo.diagnostics?.map(
+                        (value) => redactSensitiveText(value)
+                      ) ?? []
+                  }
+                : undefined
             }
           }
         : undefined
@@ -418,34 +427,35 @@ function cloneServerCard(
 }
 
 function cloneCapabilities(capabilities: McpCapabilityCard): McpCapabilityCard {
+  const serverInfo = capabilities.serverInfo;
   return {
     ...capabilities,
-    tools: [...capabilities.tools],
-    resources: [...capabilities.resources],
-    prompts: [...capabilities.prompts],
+    tools: [...(capabilities.tools ?? [])],
+    resources: [...(capabilities.resources ?? [])],
+    prompts: [...(capabilities.prompts ?? [])],
     diagnostics: capabilities.diagnostics
       ? [...capabilities.diagnostics]
       : undefined,
-    serverInfo: capabilities.serverInfo
+    serverInfo: serverInfo
       ? {
-          ...capabilities.serverInfo,
+          ...serverInfo,
           compatibilityRange: {
             kicadStudio: {
-              ...capabilities.serverInfo.compatibilityRange.kicadStudio
+              ...serverInfo.compatibilityRange?.kicadStudio
             },
             kicadMcpPro: {
-              ...capabilities.serverInfo.compatibilityRange.kicadMcpPro
+              ...serverInfo.compatibilityRange?.kicadMcpPro
             }
           },
-          transport: { ...capabilities.serverInfo.transport },
-          kicad: { ...capabilities.serverInfo.kicad },
+          transport: { ...serverInfo.transport },
+          kicad: { ...serverInfo.kicad },
           capabilities: {
-            ...capabilities.serverInfo.capabilities,
+            ...serverInfo.capabilities,
             cliExports: {
-              ...capabilities.serverInfo.capabilities.cliExports
+              ...serverInfo.capabilities?.cliExports
             }
           },
-          diagnostics: [...capabilities.serverInfo.diagnostics]
+          diagnostics: [...(serverInfo.diagnostics ?? [])]
         }
       : undefined
   };

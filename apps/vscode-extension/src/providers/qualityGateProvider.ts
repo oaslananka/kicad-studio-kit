@@ -117,6 +117,10 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
   }
 
   async runAll(): Promise<void> {
+    if (this.blockUnavailableRunAction()) {
+      return;
+    }
+
     try {
       const [project, placement, transfer, manufacturing] = await Promise.all([
         this.mcpAdapter.runProjectQualityGate(),
@@ -143,6 +147,10 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
   }
 
   async runGate(gate: QualityGateResult): Promise<void> {
+    if (this.blockUnavailableRunAction()) {
+      return;
+    }
+
     const next = gate.id.includes('placement')
       ? await this.mcpAdapter.runPlacementQualityGate()
       : gate.id.includes('transfer')
@@ -217,6 +225,16 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
       vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? 'workspace';
     return `kicadstudio.qualityGate.${path.basename(root)}`;
   }
+
+  private blockUnavailableRunAction(): boolean {
+    const state = this.mcpState?.getState();
+    if (!state || supportsHttpQualityGates(state)) {
+      return false;
+    }
+
+    void vscode.window.showInformationMessage(qualityGateBlockMessage(state));
+    return true;
+  }
 }
 
 function pendingGate(id: string, label: string): QualityGateResult {
@@ -234,18 +252,21 @@ function blockedGates(
   gates: QualityGateResult[],
   state: McpConnectionState
 ): QualityGateResult[] {
-  const summary =
-    state.kind === 'VsCodeStdio'
-      ? 'HTTP MCP connection required for Quality Gates.'
-      : state.kind === 'Incompatible'
-        ? 'Compatible kicad-mcp-pro server required.'
-        : 'Connect kicad-mcp-pro before running Quality Gates.';
+  const summary = qualityGateBlockMessage(state);
   return gates.map((gate) => ({
     ...gate,
     status: 'BLOCKED',
     summary: state.message ? `${summary} ${state.message}` : summary,
     violations: []
   }));
+}
+
+function qualityGateBlockMessage(state: McpConnectionState): string {
+  return state.kind === 'VsCodeStdio'
+    ? 'HTTP MCP connection required for Quality Gates.'
+    : state.kind === 'Incompatible'
+      ? 'Compatible kicad-mcp-pro server required.'
+      : 'Connect kicad-mcp-pro before running Quality Gates.';
 }
 
 function supportsHttpQualityGates(state: McpConnectionState): boolean {

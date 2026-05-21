@@ -4,6 +4,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { SchematicEditorProvider } from '../../src/providers/schematicEditorProvider';
 import { PcbEditorProvider } from '../../src/providers/pcbEditorProvider';
+import { ViewerStateStore } from '../../src/state/stateStores';
 import { __setConfiguration, window, workspace } from './vscodeMock';
 
 type ProviderCtor = new (
@@ -144,6 +145,37 @@ describe.each([
         })
       })
     );
+  });
+
+  it('keeps hidden viewers out of loading state until refresh becomes visible', async () => {
+    const viewerState = new ViewerStateStore();
+    const provider = new (ContextProvider as never as {
+      new (
+        context: vscode.ExtensionContext,
+        svgFallbackProvider: undefined,
+        viewerState: ViewerStateStore
+      ): InstanceType<typeof ContextProvider>;
+    })(
+      {
+        extensionUri: vscode.Uri.file('/extension')
+      } as vscode.ExtensionContext,
+      undefined,
+      viewerState
+    );
+    const panel = createPanel();
+    const document = {
+      uri: vscode.Uri.file(tempFile)
+    } as vscode.CustomDocument;
+
+    await provider.resolveCustomEditor(
+      document,
+      panel as unknown as vscode.WebviewPanel
+    );
+    panel.visible = false;
+
+    await (provider as any).refreshDocument(document.uri);
+
+    expect(viewerState.getSnapshot()).toEqual({ viewers: [] });
   });
 
   it('uses file metadata before full reads for oversized KiCad files', async () => {

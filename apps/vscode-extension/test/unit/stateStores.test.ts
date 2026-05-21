@@ -131,10 +131,23 @@ describe('extension state stores', () => {
     const exports = new ExportStateStore();
 
     mcp.update({
-      kind: 'Disconnected',
+      kind: 'Connected',
       available: true,
-      connected: false,
-      message: 'Authorization: Bearer sk-mcp-secret'
+      connected: true,
+      message: 'Authorization: Bearer sk-mcp-secret',
+      server: {
+        version: '1.0.0',
+        compat: 'ok',
+        capturedAt: '2026-05-21T00:00:00.000Z',
+        capabilities: {
+          tools: [],
+          resources: [],
+          prompts: [],
+          serverInfo: {
+            diagnostics: ['password=raw-server-secret']
+          }
+        }
+      } as never
     });
     exports.fail(
       'bom',
@@ -146,6 +159,9 @@ describe('extension state stores', () => {
     expect(mcp.getDiagnosticBundleSnapshot().message).not.toContain(
       'sk-mcp-secret'
     );
+    expect(
+      mcp.getDiagnosticBundleSnapshot().server?.capabilities.serverInfo?.diagnostics
+    ).toEqual(['password=***']);
     expect(exports.getDiagnosticBundleSnapshot()).toEqual({
       surfaces: [
         expect.objectContaining({
