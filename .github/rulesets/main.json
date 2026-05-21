@@ -34,34 +34,55 @@
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
           {
-            "context": "Full CI Pipeline (ubuntu-24.04)"
+            "context": "metadata"
           },
           {
-            "context": "Full CI Pipeline (windows-2025-vs2026)"
+            "context": "forbidden-refs"
           },
           {
-            "context": "Full CI Pipeline (macos-15)"
+            "context": "vscode-extension (ubuntu-24.04)"
           },
           {
-            "context": "Trivy (filesystem scan)"
+            "context": "vscode-extension (windows-2025-vs2026)"
           },
           {
-            "context": "pnpm audit"
+            "context": "vscode-extension (macos-15)"
           },
           {
-            "context": "Workflow security (zizmor)"
+            "context": "mcp-server (ubuntu-24.04)"
           },
           {
-            "context": "CodeQL (javascript-typescript)"
+            "context": "mcp-server (windows-2025-vs2026)"
           },
           {
-            "context": "Gitleaks"
+            "context": "mcp-server (macos-15)"
           },
           {
-            "context": "Scorecard analysis"
+            "context": "mcp-npm (ubuntu-24.04)"
           },
           {
-            "context": "Review Thread Gate"
+            "context": "mcp-npm (windows-2025-vs2026)"
+          },
+          {
+            "context": "mcp-npm (macos-15)"
+          },
+          {
+            "context": "real-pair-compatibility"
+          },
+          {
+            "context": "analyze (javascript-typescript)"
+          },
+          {
+            "context": "analyze (python)"
+          },
+          {
+            "context": "security"
+          },
+          {
+            "context": "scan"
+          },
+          {
+            "context": "build"
           }
         ]
       }

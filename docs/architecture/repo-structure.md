@@ -37,4 +37,6 @@ npm launcher changes belong under `packages/mcp-npm` unless they update Python p
 
 ## Shared work
 
-Shared contracts are repository-level assets until a dedicated shared package exists. When a shared package is added, it must live under `packages/` and must not import from any product workspace.
+Shared contracts live under repository-level compatibility metadata and
+`packages/protocol-schemas`. Shared packages must stay under `packages/` and
+must not import from any product workspace.
