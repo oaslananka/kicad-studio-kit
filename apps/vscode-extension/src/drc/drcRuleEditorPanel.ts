@@ -10,14 +10,27 @@ export class DrcRuleEditorPanel {
     context: vscode.ExtensionContext,
     mcpAdapter: DrcRulesMcpAdapter
   ): Promise<void> {
-    const state = await mcpAdapter.testConnection();
+    let state: Awaited<ReturnType<DrcRulesMcpAdapter['testConnection']>>;
+    try {
+      state = await mcpAdapter.testConnection();
+    } catch (error) {
+      await showDrcRuleEditorError(
+        'Unable to check MCP connection for DRC rule editing',
+        error
+      );
+      return;
+    }
     if (!state.connected) {
       const choice = await vscode.window.showWarningMessage(
         'DRC rule editing requires a connected kicad-mcp-pro server.',
         'Setup MCP'
       );
       if (choice === 'Setup MCP') {
-        await vscode.commands.executeCommand('kicadstudio.setupMcpIntegration');
+        try {
+          await vscode.commands.executeCommand('kicadstudio.setupMcpIntegration');
+        } catch (error) {
+          await showDrcRuleEditorError('Unable to open MCP setup', error);
+        }
       }
       return;
     }
@@ -65,15 +78,23 @@ export class DrcRuleEditorPanel {
     }
 
     if (message.type === 'upsert') {
-      await this.mcpAdapter.upsertDrcRule({
-        name,
-        condition: asString(payload['condition']) ?? '',
-        constraint: asString(payload['constraint']) ?? ''
-      });
+      try {
+        await this.mcpAdapter.upsertDrcRule({
+          name,
+          condition: asString(payload['condition']) ?? '',
+          constraint: asString(payload['constraint']) ?? ''
+        });
+      } catch (error) {
+        await showDrcRuleEditorError(`Unable to save DRC rule ${name}`, error);
+      }
       return;
     }
 
-    await this.mcpAdapter.deleteDrcRule(name);
+    try {
+      await this.mcpAdapter.deleteDrcRule(name);
+    } catch (error) {
+      await showDrcRuleEditorError(`Unable to delete DRC rule ${name}`, error);
+    }
   }
 
   private renderHtml(_context: vscode.ExtensionContext): string {
@@ -123,4 +144,15 @@ export class DrcRuleEditorPanel {
 </body>
 </html>`;
   }
+}
+
+async function showDrcRuleEditorError(
+  prefix: string,
+  error: unknown
+): Promise<void> {
+  await vscode.window.showErrorMessage(`${prefix}: ${messageFromUnknown(error)}`);
+}
+
+function messageFromUnknown(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

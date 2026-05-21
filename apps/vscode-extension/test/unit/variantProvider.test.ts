@@ -158,6 +158,7 @@ describe('VariantProvider', () => {
         componentOverrides: []
       })
     ).resolves.toBeUndefined();
+    expect(throwingClient.setActiveVariant).not.toHaveBeenCalled();
   });
 
   it('builds tree items for variants and override rows', async () => {

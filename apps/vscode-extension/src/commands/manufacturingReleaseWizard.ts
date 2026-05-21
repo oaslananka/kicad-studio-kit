@@ -18,34 +18,34 @@ export async function runManufacturingReleaseWizard(
     return;
   }
 
-  const gates = await services.mcpAdapter.runProjectQualityGate();
-  const blocking = gates.filter((gate) =>
-    ['FAIL', 'BLOCKED'].includes(gate.status)
-  );
-  if (blocking.length) {
-    telemetry.trackEvent('wizard.blocked');
-    void vscode.window.showWarningMessage(formatBlockedMessage(blocking));
-    return;
-  }
-
-  const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  const defaultOutput = root
-    ? path.join(
-        root,
-        'output',
-        `release-${variant || 'default'}-${new Date()
-          .toISOString()
-          .replace(/[:.]/g, '-')}`
-      )
-    : '';
-  await vscode.window.showInputBox({
-    title: 'Manufacturing release output folder',
-    value: defaultOutput,
-    prompt:
-      'kicad-mcp-pro 1.0.0 uses its configured output directory; this path is recorded for user confirmation.'
-  });
-
   try {
+    const gates = await services.mcpAdapter.runProjectQualityGate();
+    const blocking = gates.filter((gate) =>
+      ['FAIL', 'BLOCKED'].includes(gate.status)
+    );
+    if (blocking.length) {
+      telemetry.trackEvent('wizard.blocked');
+      void vscode.window.showWarningMessage(formatBlockedMessage(blocking));
+      return;
+    }
+
+    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const defaultOutput = root
+      ? path.join(
+          root,
+          'output',
+          `release-${variant || 'default'}-${new Date()
+            .toISOString()
+            .replace(/[:.]/g, '-')}`
+        )
+      : '';
+    await vscode.window.showInputBox({
+      title: 'Manufacturing release output folder',
+      value: defaultOutput,
+      prompt:
+        'kicad-mcp-pro 1.0.0 uses its configured output directory; this path is recorded for user confirmation.'
+    });
+
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,

@@ -26,6 +26,7 @@ interface ChatMessage {
   timestamp: number;
   toolCalls?: McpToolCall[];
   applied?: boolean;
+  toolApplyError?: string;
 }
 
 const CHAT_HISTORY_KEY = 'kicadstudio.aiChat.history';
@@ -440,10 +441,29 @@ export class KiCadChatPanel implements vscode.Disposable {
     }
 
     for (const toolCall of target.toolCalls) {
-      await mcpAdapter.executeToolCall(toolCall);
+      try {
+        await mcpAdapter.executeToolCall(toolCall);
+      } catch (error) {
+        const message = messageFromUnknown(error);
+        const errorText = `MCP tool call failed for ${toolCall.name}: ${message}`;
+        target.toolApplyError = errorText;
+        this.logger.error(
+          `AI chat MCP tool call failed: ${toolCall.name} (${toolArgumentContext(toolCall)})`,
+          error
+        );
+        await this.persistHistory();
+        await this.panel.webview.postMessage({
+          type: 'assistantReplace',
+          message: target
+        });
+        await this.postStatus(errorText);
+        void vscode.window.showErrorMessage(errorText);
+        return;
+      }
     }
 
     target.applied = true;
+    delete target.toolApplyError;
     await this.persistHistory();
     await this.panel.webview.postMessage({
       type: 'assistantReplace',
@@ -471,4 +491,13 @@ export class KiCadChatPanel implements vscode.Disposable {
     this.disposables.forEach((disposable) => disposable.dispose());
     KiCadChatPanel.instance = undefined;
   }
+}
+
+function messageFromUnknown(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function toolArgumentContext(toolCall: McpToolCall): string {
+  const keys = Object.keys(toolCall.arguments ?? {});
+  return keys.length ? `argument keys: ${keys.join(', ')}` : 'no arguments';
 }

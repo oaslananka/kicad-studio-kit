@@ -110,6 +110,39 @@ describe('DesignIntentPanel', () => {
     });
   });
 
+  it('reports MCP load and save failures to the webview and user', async () => {
+    const { mcpClient, messageHandler } = createPanel({
+      getDesignIntent: jest.fn().mockRejectedValue(new Error('load failed')),
+      setDesignIntent: jest.fn().mockRejectedValue(new Error('save failed'))
+    });
+
+    await expect(messageHandler({ type: 'load' })).resolves.toBeUndefined();
+
+    expect(mcpClient.getDesignIntent).toHaveBeenCalledWith();
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'error',
+      error: 'load failed'
+    });
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'Unable to load design intent: load failed'
+    );
+
+    await expect(
+      messageHandler({ type: 'save', data: { notes: 'Keep sensors clustered' } })
+    ).resolves.toBeUndefined();
+
+    expect(mcpClient.setDesignIntent).toHaveBeenCalledWith({
+      notes: 'Keep sensors clustered'
+    });
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'error',
+      error: 'save failed'
+    });
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'Unable to save design intent: save failed'
+    );
+  });
+
   it('saves only object-shaped design intent payloads through MCP', async () => {
     const { mcpClient, messageHandler } = createPanel({
       getDesignIntent: jest.fn(),

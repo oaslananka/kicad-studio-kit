@@ -39,7 +39,7 @@ export function mapMcpError(error: unknown): McpMappedError {
   }
 
   if (/stdio/i.test(message)) {
-    return { kind: 'stdio', message, retryable: false, code, hint };
+    return { kind: 'stdio', message, retryable: true, code, hint };
   }
   if (/incompatible/i.test(message)) {
     return { kind: 'incompatible', message, retryable: false, code, hint };

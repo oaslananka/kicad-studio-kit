@@ -172,6 +172,9 @@ describe('McpToolAdapter', () => {
     expect(
       mapMcpError(new Error('MCP request timed out after 5000ms.'))
     ).toEqual(expect.objectContaining({ kind: 'timeout', retryable: true }));
+    expect(mapMcpError(new Error('stdio transport closed'))).toEqual(
+      expect.objectContaining({ kind: 'stdio', retryable: true })
+    );
     expect(mapMcpError(new Error('HTTP 400'))).toEqual(
       expect.objectContaining({ kind: 'bad-request', status: 400 })
     );
