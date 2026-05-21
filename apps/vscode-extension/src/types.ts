@@ -224,9 +224,9 @@ export interface ProjectTreeNode {
     | 'jobset'
     | 'fab-output'
     | 'model'
-      | 'file'
-      | 'folder'
-      | 'drc-rule';
+    | 'file'
+    | 'folder'
+    | 'drc-rule';
   uri?: vscode.Uri | undefined;
   children?: ProjectTreeNode[] | undefined;
 }
@@ -304,6 +304,7 @@ export type McpConnectionKind =
   | 'Disconnected'
   | 'Connecting'
   | 'Connected'
+  | 'Degraded'
   | 'Incompatible'
   | 'VsCodeStdio';
 

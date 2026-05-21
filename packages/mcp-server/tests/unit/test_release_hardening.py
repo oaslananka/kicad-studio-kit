@@ -118,7 +118,9 @@ def test_stateful_streamable_http_requires_session_header_after_initialize(
     assert initialized.status_code == 200
     assert session_id
     assert missing_session.status_code == 400
-    assert "Missing session ID" in missing_session.text
+    assert missing_session.json()["error"]["message"] == (
+        "Bad Request: Missing MCP-Session-Id header."
+    )
     assert accepted_notification.status_code == 202
     assert listed.status_code == 200
     assert listed.json()["result"]["tools"]

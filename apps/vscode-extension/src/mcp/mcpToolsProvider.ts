@@ -18,9 +18,7 @@ type McpToolsNode = {
   children?: McpToolsNode[] | undefined;
 };
 
-export class McpToolsProvider
-  implements vscode.TreeDataProvider<McpToolsNode>
-{
+export class McpToolsProvider implements vscode.TreeDataProvider<McpToolsNode> {
   private readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<
     McpToolsNode | undefined
   >();
@@ -85,7 +83,12 @@ function buildMcpToolNodes(
   ];
 
   if (state.server) {
-    nodes.splice(3, 0, serverNode(state), capabilityNode(state.server.capabilities));
+    nodes.splice(
+      3,
+      0,
+      serverNode(state),
+      capabilityNode(state.server.capabilities)
+    );
   }
   if (state.message) {
     nodes.splice(1, 0, {
@@ -99,6 +102,20 @@ function buildMcpToolNodes(
 }
 
 function stateNode(state: McpConnectionState): McpToolsNode {
+  if (state.kind === 'Degraded') {
+    return {
+      label: 'MCP degraded',
+      description: state.server?.version ?? 'protocol contract failed',
+      tooltip:
+        state.message ??
+        'The MCP endpoint initialized but failed the Streamable HTTP contract check.',
+      icon: 'warning',
+      command: {
+        command: COMMANDS.retryMcp,
+        title: 'Retry MCP Connection'
+      }
+    };
+  }
   if (state.kind === 'Incompatible') {
     return {
       label: 'MCP incompatible',
@@ -139,7 +156,9 @@ function stateNode(state: McpConnectionState): McpToolsNode {
     description: state.available ? 'detected, not connected' : 'not detected',
     icon: state.available ? 'warning' : 'circle-slash',
     command: {
-      command: state.available ? COMMANDS.retryMcp : COMMANDS.setupMcpIntegration,
+      command: state.available
+        ? COMMANDS.retryMcp
+        : COMMANDS.setupMcpIntegration,
       title: state.available ? 'Retry MCP Connection' : 'Setup MCP Integration'
     }
   };
@@ -206,7 +225,9 @@ function capabilityGroup(label: string, values: string[]): McpToolsNode {
   return {
     label,
     description: values.length ? `${values.length}` : 'none',
-    tooltip: values.length ? values.join('\n') : `No ${label.toLowerCase()} advertised.`,
+    tooltip: values.length
+      ? values.join('\n')
+      : `No ${label.toLowerCase()} advertised.`,
     icon: values.length ? 'list-tree' : 'circle-slash',
     children: values.slice(0, 25).map((value) => ({
       label: value,

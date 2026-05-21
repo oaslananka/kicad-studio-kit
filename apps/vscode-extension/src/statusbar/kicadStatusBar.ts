@@ -46,14 +46,22 @@ export class KiCadStatusBar implements vscode.Disposable {
   private activeVariant: string | undefined;
 
   constructor(_context: vscode.ExtensionContext) {
-    this.kicadItem = this.make(P.kicad, COMMANDS.showStatusMenu, 'KiCad Studio');
+    this.kicadItem = this.make(
+      P.kicad,
+      COMMANDS.showStatusMenu,
+      'KiCad Studio'
+    );
     this.drcItem = this.make(P.drc, COMMANDS.runDRC, 'Run DRC');
     this.ercItem = this.make(P.erc, COMMANDS.runERC, 'Run ERC');
     this.sep1Item = this.makeSeparator(P.sep1);
     this.aiItem = this.make(P.ai, COMMANDS.openAiChat, 'Open AI Chat');
     this.mcpItem = this.make(P.mcp, COMMANDS.setupMcpIntegration, 'KiCad MCP');
     this.sep2Item = this.makeSeparator(P.sep2);
-    this.variantItem = this.make(P.variant, COMMANDS.setActiveVariant, 'Switch Variant');
+    this.variantItem = this.make(
+      P.variant,
+      COMMANDS.setActiveVariant,
+      'Switch Variant'
+    );
 
     this.sep1Item.show();
     // sep2 is hidden until a variant is active (renderVariant controls it)
@@ -224,7 +232,8 @@ export class KiCadStatusBar implements vscode.Disposable {
       this.aiItem.backgroundColor = undefined;
     } else if (this.aiHealthy === false) {
       this.aiItem.text = '$(warning) AI';
-      this.aiItem.tooltip = 'AI provider configured but last check failed. Click to open chat.';
+      this.aiItem.tooltip =
+        'AI provider configured but last check failed. Click to open chat.';
       this.aiItem.command = COMMANDS.openAiChat;
       this.aiItem.backgroundColor = new vscode.ThemeColor(
         'statusBarItem.warningBackground'
@@ -249,6 +258,17 @@ export class KiCadStatusBar implements vscode.Disposable {
       );
       return;
     }
+    if (this.mcpKind === 'Degraded') {
+      this.mcpItem.text = '$(warning) MCP';
+      this.mcpItem.tooltip =
+        this.mcpMessage ??
+        'MCP initialized but failed the Streamable HTTP contract check. Click to retry.';
+      this.mcpItem.command = COMMANDS.retryMcp;
+      this.mcpItem.backgroundColor = new vscode.ThemeColor(
+        'statusBarItem.warningBackground'
+      );
+      return;
+    }
     if (this.mcpKind === 'VsCodeStdio' || this.mcpConnected) {
       this.mcpItem.text = `$(plug) MCP${profile}`;
       this.mcpItem.tooltip =
@@ -262,7 +282,8 @@ export class KiCadStatusBar implements vscode.Disposable {
     if (this.mcpAvailable) {
       this.mcpItem.text = '$(plug) MCP';
       this.mcpItem.tooltip =
-        this.mcpMessage ?? 'kicad-mcp-pro detected but not connected. Click to retry.';
+        this.mcpMessage ??
+        'kicad-mcp-pro detected but not connected. Click to retry.';
       this.mcpItem.command = COMMANDS.retryMcp;
       this.mcpItem.backgroundColor = new vscode.ThemeColor(
         'statusBarItem.warningBackground'
@@ -270,7 +291,8 @@ export class KiCadStatusBar implements vscode.Disposable {
       return;
     }
     this.mcpItem.text = '$(plug) MCP';
-    this.mcpItem.tooltip = 'kicad-mcp-pro not detected. Click to install / set up.';
+    this.mcpItem.tooltip =
+      'kicad-mcp-pro not detected. Click to install / set up.';
     this.mcpItem.command = COMMANDS.installMcp;
     this.mcpItem.backgroundColor = undefined;
   }

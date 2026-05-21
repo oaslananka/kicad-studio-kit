@@ -141,6 +141,23 @@ describe('KiCadStatusBar', () => {
     bar.dispose();
   });
 
+  it('shows MCP degraded state when the protocol contract fails', () => {
+    const bar = new KiCadStatusBar({} as never);
+    bar.update({
+      mcpState: {
+        kind: 'Degraded',
+        available: true,
+        connected: false,
+        message: 'MCP protocol contract failed: HTTP 421'
+      }
+    });
+    const items = getItems();
+    expect(items[IDX.mcp]!.text).toContain('warning');
+    expect(items[IDX.mcp]!.tooltip).toContain('HTTP 421');
+    expect(items[IDX.mcp]!.backgroundColor).toBeDefined();
+    bar.dispose();
+  });
+
   it('shows MCP warn compat state as connected with version in tooltip', () => {
     const bar = new KiCadStatusBar({} as never);
     bar.update({
