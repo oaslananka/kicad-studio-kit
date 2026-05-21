@@ -70,6 +70,15 @@ export interface DrcRulesMcpAdapter {
   deleteDrcRule(name: string): Promise<void>;
 }
 
+export interface DrcErcMcpAdapter {
+  runDrc(
+    args?: Record<string, unknown>
+  ): Promise<Record<string, unknown> | undefined>;
+  runErc(
+    args?: Record<string, unknown>
+  ): Promise<Record<string, unknown> | undefined>;
+}
+
 export interface DesignIntentMcpAdapter {
   getDesignIntent(): Promise<Record<string, unknown> | undefined>;
   setDesignIntent(intent: Record<string, unknown>): Promise<void>;
@@ -97,6 +106,7 @@ export interface StudioMcpAdapter
     ChatMcpAdapter,
     VariantMcpAdapter,
     DrcRulesMcpAdapter,
+    DrcErcMcpAdapter,
     DesignIntentMcpAdapter,
     BomNetlistMcpAdapter {}
 
@@ -202,6 +212,18 @@ export class McpToolAdapter implements StudioMcpAdapter {
 
   async deleteDrcRule(name: string): Promise<void> {
     await this.client.callTool('drc_rule_delete', { name });
+  }
+
+  runDrc(
+    args: Record<string, unknown> = {}
+  ): Promise<Record<string, unknown> | undefined> {
+    return this.client.callTool('run_drc', args);
+  }
+
+  runErc(
+    args: Record<string, unknown> = {}
+  ): Promise<Record<string, unknown> | undefined> {
+    return this.client.callTool('run_erc', args);
   }
 
   getDesignIntent(): Promise<Record<string, unknown> | undefined> {

@@ -117,6 +117,8 @@ describe('McpToolAdapter', () => {
       constraint: 'clearance min 0.35mm'
     });
     await adapter.deleteDrcRule('power_clearance');
+    await adapter.runDrc({ save_report: true });
+    await adapter.runErc({ save_report: true });
     await adapter.getDesignIntent();
     await adapter.setDesignIntent({ notes: 'Keep sensors clustered' });
     await adapter.exportBom({ variant: 'Assembly-A' });
@@ -138,6 +140,12 @@ describe('McpToolAdapter', () => {
     });
     expect(client.callTool).toHaveBeenCalledWith('drc_rule_delete', {
       name: 'power_clearance'
+    });
+    expect(client.callTool).toHaveBeenCalledWith('run_drc', {
+      save_report: true
+    });
+    expect(client.callTool).toHaveBeenCalledWith('run_erc', {
+      save_report: true
     });
     expect(client.callTool).toHaveBeenCalledWith(
       'project_get_design_intent',
