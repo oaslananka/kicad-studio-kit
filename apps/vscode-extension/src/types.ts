@@ -224,9 +224,9 @@ export interface ProjectTreeNode {
     | 'jobset'
     | 'fab-output'
     | 'model'
-      | 'file'
-      | 'folder'
-      | 'drc-rule';
+    | 'file'
+    | 'folder'
+    | 'drc-rule';
   uri?: vscode.Uri | undefined;
   children?: ProjectTreeNode[] | undefined;
 }
@@ -307,10 +307,66 @@ export type McpConnectionKind =
   | 'Incompatible'
   | 'VsCodeStdio';
 
+export interface McpServerInfoCompatibilityRange {
+  kicadStudio: {
+    required: string;
+    recommended: string;
+    testedAgainst: string;
+  };
+  kicadMcpPro: {
+    required: string;
+    testedAgainst: string;
+  };
+}
+
+export interface McpServerInfoContract {
+  schemaVersion: string;
+  server: 'kicad-mcp-pro';
+  version: string;
+  mcpProtocolVersion: string;
+  toolSchemaVersion: string;
+  compatibilityRange: McpServerInfoCompatibilityRange;
+  transport: {
+    type: 'stdio' | 'streamable-http' | 'sse';
+    streamableHttp: boolean;
+    statelessHttp: boolean;
+    legacySse: boolean;
+    authRequired: boolean;
+    endpoint: string | null;
+  };
+  kicad: {
+    cliFound: boolean;
+    cliPath: string;
+    cliVersion: string | null;
+    ipcAvailable: boolean;
+    livePcbContext: boolean;
+  };
+  capabilities: {
+    fileBackedDrc: boolean;
+    fileBackedErc: boolean;
+    fileBackedExports: boolean;
+    livePcbRead: boolean;
+    livePcbWrite: boolean;
+    chatgptConnectorCompatible: boolean;
+    cliExports: {
+      ipc2581: boolean;
+      odb: boolean;
+      svg: boolean;
+      dxf: boolean;
+      step: boolean;
+      render: boolean;
+      spiceNetlist: boolean;
+    };
+  };
+  diagnostics: string[];
+}
+
 export interface McpCapabilityCard {
   tools: string[];
   resources: string[];
   prompts: string[];
+  serverInfo?: McpServerInfoContract | undefined;
+  diagnostics?: string[] | undefined;
 }
 
 export interface McpServerCard {

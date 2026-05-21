@@ -13,7 +13,7 @@ def test_wellknown_payload_contains_required_server_card_fields() -> None:
     assert payload["version"]
     assert payload["protocolVersion"]
     assert payload["serverInfo"]["title"] == "KiCad MCP Pro"
-    assert payload["transport"]["type"] in {"stdio", "streamable-http"}
+    assert payload["transport"]["type"] in {"stdio", "streamable-http", "sse"}
     assert payload["capabilities"]["tools"] is True
     assert payload["capabilities"]["resources"] is True
     assert payload["capabilities"]["prompts"] is True
