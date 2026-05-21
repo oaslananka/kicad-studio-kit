@@ -726,7 +726,7 @@ class _StreamableHttpContractMiddleware:
             return
 
         session_id = headers.get("mcp-session-id", "")
-        if cfg.stateful_http and rpc_method != "initialize":
+        if cfg.stateful_http and rpc_method and rpc_method != "initialize":
             if not session_id:
                 await _streamable_http_error_response(
                     code=-32000,

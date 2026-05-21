@@ -172,7 +172,7 @@ export class McpClient {
       this.logger.debug(
         `MCP connection test failed: ${error instanceof Error ? error.message : String(error)}`
       );
-      if (this.state.server) {
+      if (this.state.connected && this.state.server) {
         return this.setState({
           kind: 'Degraded',
           available: install.found,

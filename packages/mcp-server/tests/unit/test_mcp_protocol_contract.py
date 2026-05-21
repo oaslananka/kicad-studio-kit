@@ -109,6 +109,29 @@ def test_stateful_session_errors_are_structured_and_spec_aligned(
     assert listed.status_code == 200
 
 
+def test_stateful_malformed_json_rpc_is_not_masked_by_session_check(
+    sample_project: Path,
+) -> None:
+    _ = sample_project
+    cfg = get_config()
+    cfg.transport = "streamable-http"
+    cfg.stateful_http = True
+    server = build_server("minimal")
+
+    with TestClient(server.streamable_http_app(), base_url="http://127.0.0.1:3334") as client:
+        response = client.post(
+            "/mcp",
+            headers=HTTP_HEADERS,
+            json={"jsonrpc": "2.0", "id": 9, "params": {}},
+        )
+
+    payload = response.json()
+    assert response.status_code == 400
+    assert payload["jsonrpc"] == "2.0"
+    assert payload["error"]["code"] != -32000
+    assert payload["error"]["message"] != "Bad Request: Missing MCP-Session-Id header."
+
+
 def test_streamable_http_rejects_unsupported_protocol_version_header(
     sample_project: Path,
 ) -> None:

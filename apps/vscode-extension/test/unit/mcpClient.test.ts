@@ -608,6 +608,30 @@ describe('McpClient', () => {
     }
   );
 
+  it('does not mark cached server metadata as degraded when initialize fails before a live handshake', async () => {
+    const context = createExtensionContextMock();
+    await context.globalState.update('kicadstudio.mcp.lastServerCard', {
+      version: '1.0.0',
+      compat: 'compatible',
+      capabilities: { tools: [], resources: [], prompts: [] },
+      capturedAt: '2026-05-21T00:00:00.000Z'
+    });
+    global.fetch = jest.fn().mockRejectedValue(new Error('ECONNREFUSED'));
+
+    const state = await createClient(context, {
+      maxRetries: 1
+    }).testConnection();
+
+    expect(state).toEqual(
+      expect.objectContaining({
+        kind: 'Disconnected',
+        available: true,
+        connected: false,
+        message: 'ECONNREFUSED'
+      })
+    );
+  });
+
   it('marks MCP degraded when tools/list returns a JSON-RPC error after initialize', async () => {
     const fetchMock = jest
       .fn()
