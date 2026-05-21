@@ -25,7 +25,7 @@ GitHub Release artifacts are produced by `.github/workflows/release-please.yml`.
 Expected release assets include:
 
 - Python wheel and source distribution under `dist/`
-- `SHA256SUMS.txt`
+- `SHA256SUMS.txt` from the `python-release-evidence` workflow artifact
 - `bom.json` SBOM
 - Sigstore signing artifacts
 - GitHub artifact attestations attached to the release workflow run

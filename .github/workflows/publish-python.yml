@@ -16,6 +16,11 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
@@ -28,10 +33,31 @@ jobs:
         working-directory: packages/mcp-server
       - run: uv build
         working-directory: packages/mcp-server
+      - run: uv run --all-extras python scripts/check_package_metadata.py
+        working-directory: packages/mcp-server
+      - name: Generate Python checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p packages/mcp-server/release-evidence
+          (
+            cd packages/mcp-server/dist
+            sha256sum -- *.whl *.tar.gz
+          ) > packages/mcp-server/release-evidence/SHA256SUMS.txt
+      - name: Attest Python distributions
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
+        with:
+          subject-checksums: packages/mcp-server/release-evidence/SHA256SUMS.txt
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: python-dist
-          path: packages/mcp-server/dist/*
+          path: |
+            packages/mcp-server/dist/*.whl
+            packages/mcp-server/dist/*.tar.gz
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: python-release-evidence
+          path: packages/mcp-server/release-evidence/SHA256SUMS.txt
 
   publish-testpypi:
     if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'

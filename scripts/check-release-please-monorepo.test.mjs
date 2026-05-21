@@ -92,6 +92,43 @@ test("commit scope gate rejects a single-scope commit that changes both products
   );
 });
 
+test("commit scope gate allows repo-scoped release governance across products", () => {
+  assert.deepEqual(
+    validateCommitScopeCoverage([
+      {
+        sha: "24e4414",
+        subject: "ci(repo): add supply-chain release evidence",
+        files: [
+          ".github/workflows/publish-extension.yml",
+          ".github/workflows/publish-python.yml",
+          ".github/workflows/security.yml",
+          "apps/vscode-extension/scripts/lint-workflows.js",
+          "docs/release.md",
+          "docs/security.md",
+          "packages/mcp-server/scripts/check_workflows.py",
+          "packages/mcp-server/tests/unit/test_release_hardening.py",
+          "packages/mcp-server/tests/unit/test_release_preflight_guard.py",
+        ],
+      },
+    ]),
+    [],
+  );
+
+  assert.match(
+    validateCommitScopeCoverage([
+      {
+        sha: "9876543",
+        subject: "ci(repo): update product runtime behavior",
+        files: [
+          "apps/vscode-extension/src/mcp/client.ts",
+          "packages/mcp-server/src/kicad_mcp/server.py",
+        ],
+      },
+    ]).join("\n"),
+    /touches both product directories/,
+  );
+});
+
 test("commit scope gate ignores normal merge commit subjects", () => {
   assert.deepEqual(
     validateCommitScopeCoverage([

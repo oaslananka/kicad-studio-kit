@@ -624,6 +624,37 @@ def test_release_and_publish_workflows_are_monorepo_ready() -> None:
     assert "releases/latest" not in publish_mcp
 
 
+def test_security_and_publish_workflows_emit_supply_chain_evidence() -> None:
+    security = _workflow("security.yml")
+    publish_python = _workflow("publish-python.yml")
+    publish_extension = _workflow("publish-extension.yml")
+
+    assert "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294" in security
+    assert "fail-on-severity: high" in security
+    assert "show-patched-versions: true" in security
+
+    assert "corepack pnpm --filter kicadstudio run release:assets" in publish_extension
+    assert "apps/vscode-extension/SHA256SUMS.txt" in publish_extension
+    assert "apps/vscode-extension/sbom.cdx.json" in publish_extension
+    assert "subject-checksums: apps/vscode-extension/SHA256SUMS.txt" in publish_extension
+
+    assert "Generate Python checksums" in publish_python
+    assert "packages/mcp-server/release-evidence/SHA256SUMS.txt" in publish_python
+    assert "packages/mcp-server/dist/SHA256SUMS.txt" not in publish_python
+    assert (
+        "subject-checksums: packages/mcp-server/release-evidence/SHA256SUMS.txt" in publish_python
+    )
+    assert "name: python-release-evidence" in publish_python
+    assert "\n          path: packages/mcp-server/dist/*\n" not in publish_python
+    assert "packages/mcp-server/dist/*.whl" in publish_python
+    assert "packages/mcp-server/dist/*.tar.gz" in publish_python
+
+    for workflow in (publish_python, publish_extension):
+        assert "attestations: write" in workflow
+        assert "artifact-metadata: write" in workflow
+        assert "actions/attest@" in workflow
+
+
 def test_docker_metadata_contains_mcp_oci_label_and_no_mutable_image_tags() -> None:
     root = Path(__file__).resolve().parents[2]
     dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")

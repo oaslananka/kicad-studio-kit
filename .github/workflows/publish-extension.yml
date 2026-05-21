@@ -19,6 +19,11 @@ jobs:
   publish:
     runs-on: ubuntu-24.04
     environment: extension-marketplaces
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
@@ -31,6 +36,22 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm --filter kicadstudio run build
       - run: corepack pnpm --filter kicadstudio run package
+      - run: corepack pnpm --filter kicadstudio run package:validate
+      - run: corepack pnpm --filter kicadstudio run release:assets
+      - name: Attest extension assets
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
+        with:
+          subject-checksums: apps/vscode-extension/SHA256SUMS.txt
+          sbom-path: apps/vscode-extension/sbom.cdx.json
+      - name: Store extension release evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: extension-release-evidence
+          path: |
+            apps/vscode-extension/*.vsix
+            apps/vscode-extension/SHA256SUMS.txt
+            apps/vscode-extension/sbom.cdx.json
+          retention-days: 14
       - name: Publish marketplaces
         shell: bash
         env:
