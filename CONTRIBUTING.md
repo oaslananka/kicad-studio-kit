@@ -60,9 +60,12 @@ CODEOWNERS review should match the changed paths:
 - `apps/vscode-extension/` for KiCad Studio extension work.
 - `packages/mcp-server/` for KiCad MCP Pro server and MCP Registry metadata.
 - `packages/mcp-npm/` for npm launcher work.
+- `packages/protocol-schemas/` for protocol schemas and compatibility review.
 - `examples/` for user-facing KiCad examples.
 
-Branch protection policy is documented in [docs/architecture/branch-protection.md](docs/architecture/branch-protection.md).
+Branch protection policy is documented in
+[docs/architecture/branch-protection.md](docs/architecture/branch-protection.md)
+and encoded for import in [`.github/rulesets/main.json`](.github/rulesets/main.json).
 
 ## Regression coverage
 

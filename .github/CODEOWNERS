@@ -4,4 +4,5 @@
 /apps/vscode-extension/ @oaslananka
 /packages/mcp-server/ @oaslananka
 /packages/mcp-npm/ @oaslananka
+/packages/protocol-schemas/ @oaslananka
 /examples/ @oaslananka
