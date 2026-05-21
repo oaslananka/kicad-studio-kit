@@ -9,6 +9,7 @@ KiCad Studio Kit is the canonical monorepo for the KiCad Studio VS Code extensio
 - [Release model](architecture/release-model.md)
 - [Branch protection](architecture/branch-protection.md)
 - [Testing strategy](testing-strategy.md)
+- [ADR 0006: VS Code Web compatibility](adr/0006-vscode-web-compatibility.md)
 - [KiCad fixture corpus](kicad-fixture-corpus.md)
 - [KiCad Studio and MCP integration](integration/kicad-studio-mcp.md)
 

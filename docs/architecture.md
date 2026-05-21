@@ -16,4 +16,5 @@ Detailed architecture documents:
 - [Branch protection](architecture/branch-protection.md)
 - [Testing strategy](architecture/testing-strategy.md)
 - [Migration phases](architecture/migration-phases.md)
+- [ADR 0006: VS Code Web compatibility](adr/0006-vscode-web-compatibility.md)
 - [KiCad Studio and MCP integration](integration/kicad-studio-mcp.md)
