@@ -27,6 +27,12 @@ workflows:
 - `scan`
 - `build`
 
+Every required check above must keep reporting on every pull request. Do not add
+path filters, branch filters, or commit-message skip behavior to a workflow that
+owns one of these required contexts. If product CI later becomes path-filtered,
+keep an always-on required gate that reports for every pull request and update
+this document plus `.github/rulesets/main.json` together.
+
 Scorecard should stay enabled as a repository health signal. It can be required once the repository has stable branch protection and token permissions.
 
 ## Review ownership
@@ -49,5 +55,9 @@ Enable CODEOWNERS review. Path ownership is declared in `.github/CODEOWNERS`:
 - Require signed commits if the account policy supports it.
 - Disallow force pushes and branch deletion for `main`.
 - Restrict who can bypass required pull requests and required checks.
+
+The strict up-to-date rule currently favors a current green `main` integration
+point over merge throughput. Re-evaluate it with the required-check set if the
+repository adopts a merge queue or concurrent merge volume grows.
 
 Release PR #16 remains user-owned. Do not merge release automation while product/release policy work is still being reviewed.
