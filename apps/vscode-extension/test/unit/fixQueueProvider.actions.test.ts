@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { FixQueueProvider } from '../../src/mcp/fixQueueProvider';
+import { McpStateStore } from '../../src/state/stateStores';
 import { window, workspace } from './vscodeMock';
 
 describe('FixQueueProvider code-action support', () => {
@@ -142,5 +143,33 @@ describe('FixQueueProvider code-action support', () => {
     };
     const provider = new FixQueueProvider(client as never);
     await expect(provider.refresh()).rejects.toThrow('unexpected server crash');
+  });
+
+  it('does not keep stale fixes when MCP cannot serve the queue', async () => {
+    const mcpState = new McpStateStore();
+    mcpState.update({
+      kind: 'Incompatible',
+      available: true,
+      connected: false,
+      message: 'Upgrade required.'
+    });
+    const client = {
+      fetchFixQueue: jest.fn().mockResolvedValue([
+        {
+          id: 'fix-stale',
+          description: 'Stale fix',
+          severity: 'warning',
+          tool: 'apply_fix',
+          args: {},
+          status: 'pending'
+        }
+      ])
+    };
+    const provider = new FixQueueProvider(client as never, mcpState);
+
+    await provider.refresh();
+
+    expect(client.fetchFixQueue).not.toHaveBeenCalled();
+    expect(provider.getChildren()).toEqual([]);
   });
 });

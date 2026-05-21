@@ -20,11 +20,7 @@ export function registerCheckCommands(
         }
         try {
           const result = await services.checkService.runDRC(file);
-          services.diagnosticsCollection.set(
-            vscode.Uri.file(file),
-            result.diagnostics
-          );
-          services.statusBar.update({ drc: result.summary });
+          applyValidationResult(services, file, result);
           services.setLatestDrcRun({
             file,
             diagnostics: result.diagnostics,
@@ -69,11 +65,7 @@ export function registerCheckCommands(
         }
         try {
           const result = await services.checkService.runERC(file);
-          services.diagnosticsCollection.set(
-            vscode.Uri.file(file),
-            result.diagnostics
-          );
-          services.statusBar.update({ erc: result.summary });
+          applyValidationResult(services, file, result);
           if (result.diagnostics.length > 0) {
             await vscode.commands.executeCommand(
               'workbench.actions.view.problems'
@@ -90,4 +82,36 @@ export function registerCheckCommands(
       'Run ERC'
     )
   ];
+}
+
+function applyValidationResult(
+  services: CommandServices,
+  file: string,
+  result: {
+    diagnostics: readonly vscode.Diagnostic[];
+    summary: {
+      file: string;
+      errors: number;
+      warnings: number;
+      infos: number;
+      source: 'drc' | 'erc' | 'syntax';
+      capturedAt?: string | undefined;
+    };
+  }
+): void {
+  const uri = vscode.Uri.file(file);
+  if (services.diagnosticState) {
+    services.diagnosticState.applyValidationResult(
+      uri,
+      result.diagnostics,
+      result.summary
+    );
+    return;
+  }
+  services.diagnosticsCollection.set(uri, result.diagnostics);
+  services.statusBar.update(
+    result.summary.source === 'drc'
+      ? { drc: result.summary }
+      : { erc: result.summary }
+  );
 }

@@ -1,4 +1,5 @@
 import { QualityGateProvider } from '../../src/providers/qualityGateProvider';
+import { McpStateStore } from '../../src/state/stateStores';
 import { createExtensionContextMock, env, workspace } from './vscodeMock';
 
 describe('QualityGateProvider', () => {
@@ -17,6 +18,31 @@ describe('QualityGateProvider', () => {
     expect(children).toHaveLength(5);
     expect(provider.getTreeItem(children[0] as never).description).toContain(
       'PENDING'
+    );
+  });
+
+  it('blocks cached gates while MCP is outside the HTTP connected state', () => {
+    const mcpState = new McpStateStore();
+    mcpState.update({
+      kind: 'VsCodeStdio',
+      available: true,
+      connected: true,
+      message: 'HTTP quality gates are unavailable in VS Code stdio.'
+    });
+    const provider = new QualityGateProvider(
+      createExtensionContextMock() as never,
+      {} as never,
+      mcpState
+    );
+
+    const children = provider.getChildren();
+
+    expect(children).toHaveLength(5);
+    expect(
+      children.every((item) => item.kind === 'gate' && item.gate.status === 'BLOCKED')
+    ).toBe(true);
+    expect(provider.getTreeItem(children[0] as never).description).toContain(
+      'BLOCKED'
     );
   });
 

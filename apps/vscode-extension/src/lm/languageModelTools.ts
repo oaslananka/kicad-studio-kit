@@ -16,6 +16,7 @@ import { isWorkspaceTrusted } from '../utils/workspaceTrust';
 import { KiCadCheckService } from '../cli/checkCommands';
 import { KiCadCliDetector } from '../cli/kicadCliDetector';
 import { KiCadCliRunner } from '../cli/kicadCliRunner';
+import type { DiagnosticStateStore } from '../state/stateStores';
 import {
   createLanguageModelTextPart,
   createLanguageModelToolResult,
@@ -71,6 +72,7 @@ export interface LanguageModelToolServices {
   libraryIndexer: KiCadLibraryIndexer;
   variantProvider: VariantProvider;
   diagnosticsCollection: vscode.DiagnosticCollection;
+  diagnosticState?: DiagnosticStateStore | undefined;
   getStudioContext(): Promise<StudioContext>;
   setLatestDrcRun(value: {
     file: string;
@@ -176,10 +178,7 @@ function createRunDrcTool(
       }
 
       const result = await services.checkService.runDRC(file);
-      services.diagnosticsCollection.set(
-        vscode.Uri.file(file),
-        result.diagnostics
-      );
+      applyValidationResult(services, file, result);
       services.setLatestDrcRun({
         file,
         diagnostics: result.diagnostics,
@@ -216,10 +215,7 @@ function createRunErcTool(
       }
 
       const result = await services.checkService.runERC(file);
-      services.diagnosticsCollection.set(
-        vscode.Uri.file(file),
-        result.diagnostics
-      );
+      applyValidationResult(services, file, result);
 
       return buildToolResult(
         `ERC completed for ${path.basename(file)}: ${formatSummary(result.summary)}.`,
@@ -231,6 +227,26 @@ function createRunErcTool(
       );
     }
   };
+}
+
+function applyValidationResult(
+  services: LanguageModelToolServices,
+  file: string,
+  result: {
+    diagnostics: readonly vscode.Diagnostic[];
+    summary: DiagnosticSummary;
+  }
+): void {
+  const uri = vscode.Uri.file(file);
+  if (services.diagnosticState) {
+    services.diagnosticState.applyValidationResult(
+      uri,
+      result.diagnostics,
+      result.summary
+    );
+    return;
+  }
+  services.diagnosticsCollection.set(uri, result.diagnostics);
 }
 
 function createExportGerbersTool(

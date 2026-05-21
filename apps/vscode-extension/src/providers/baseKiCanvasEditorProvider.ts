@@ -9,6 +9,7 @@ import {
   WEBVIEW_MESSAGE_DEBOUNCE_MS
 } from '../constants';
 import type { ViewerMetadata, ViewerState } from '../types';
+import { ViewerStateStore } from '../state/stateStores';
 import { bufferToBase64 } from '../utils/fileUtils';
 import {
   asNumber,
@@ -72,7 +73,6 @@ export abstract class BaseKiCanvasEditorProvider
   private readonly disposables: vscode.Disposable[] = [];
   private readonly refreshDebounce = new Map<string, NodeJS.Timeout>();
   private readonly fileCache = new Map<string, CachedFilePayload>();
-  private readonly stateByUri = new Map<string, ViewerState>();
   private theme = vscode.workspace
     .getConfiguration()
     .get<string>(SETTINGS.viewerTheme, 'kicad');
@@ -83,7 +83,8 @@ export abstract class BaseKiCanvasEditorProvider
 
   constructor(
     protected readonly context: vscode.ExtensionContext,
-    private readonly svgFallbackProvider?: ViewerSvgFallbackProvider
+    private readonly svgFallbackProvider?: ViewerSvgFallbackProvider,
+    private readonly viewerState = new ViewerStateStore()
   ) {
     this.disposables.push(
       vscode.workspace.onDidSaveTextDocument((document) => {
@@ -127,14 +128,14 @@ export abstract class BaseKiCanvasEditorProvider
             this.fileType,
             theme
           ),
-          restoreState: info.state ?? this.stateByUri.get(info.uri.toString())
+          restoreState: info.state ?? this.viewerState.getState(info.uri)
         }
       });
     }
   }
 
   getViewerState(uri: vscode.Uri): ViewerState | undefined {
-    return this.stateByUri.get(uri.toString());
+    return this.viewerState.getState(uri);
   }
 
   protected buildViewerMetadata(
@@ -213,7 +214,7 @@ export abstract class BaseKiCanvasEditorProvider
             const nextState = readViewerState(message.payload);
             if (info && nextState) {
               info.state = nextState;
-              this.stateByUri.set(document.uri.toString(), info.state);
+              this.viewerState.updateState(document.uri, info.state);
             }
           }
           if (message.type === 'selectionChanged') {
@@ -224,7 +225,7 @@ export abstract class BaseKiCanvasEditorProvider
                 ...(info.state ?? { zoom: 1, grid: false, theme: this.theme }),
                 ...payload
               };
-              this.stateByUri.set(document.uri.toString(), info.state);
+              this.viewerState.updateState(document.uri, info.state);
             }
           }
           if (message.type === 'exportPng') {
@@ -249,7 +250,7 @@ export abstract class BaseKiCanvasEditorProvider
                 ...(info.state ?? { zoom: 1, grid: false, theme: this.theme }),
                 selectedReference: reference ?? info.state?.selectedReference
               };
-              this.stateByUri.set(document.uri.toString(), info.state);
+              this.viewerState.updateState(document.uri, info.state);
             }
           }
           if (message.type === 'requestSvgFallback') {
@@ -290,6 +291,7 @@ export abstract class BaseKiCanvasEditorProvider
       );
       await this.postFile(webviewPanel, document.uri);
     } catch (error) {
+      this.viewerState.recordError(document.uri, error);
       webviewPanel.webview.html = createViewerErrorHtml(
         path.basename(document.uri.fsPath),
         error,
@@ -299,22 +301,28 @@ export abstract class BaseKiCanvasEditorProvider
   }
 
   protected async refreshDocument(uri: vscode.Uri): Promise<void> {
-    const payload = await this.buildViewerPayload(uri);
-    for (const panel of this.panels.get(uri.toString()) ?? []) {
-      if (!panel.visible) {
-        const info = this.panelInfo.get(panel);
-        if (info) {
-          info.pendingRefresh = true;
+    this.viewerState.beginReload(uri);
+    try {
+      const payload = await this.buildViewerPayload(uri);
+      for (const panel of this.panels.get(uri.toString()) ?? []) {
+        if (!panel.visible) {
+          const info = this.panelInfo.get(panel);
+          if (info) {
+            info.pendingRefresh = true;
+          }
+          continue;
         }
-        continue;
+        await panel.webview.postMessage({
+          type: 'refresh',
+          payload: {
+            ...payload,
+            restoreState: this.panelInfo.get(panel)?.state
+          }
+        });
       }
-      await panel.webview.postMessage({
-        type: 'refresh',
-        payload: {
-          ...payload,
-          restoreState: this.panelInfo.get(panel)?.state
-        }
-      });
+    } catch (error) {
+      this.viewerState.recordError(uri, error);
+      throw error;
     }
   }
 
@@ -362,7 +370,7 @@ export abstract class BaseKiCanvasEditorProvider
     const mtimeMs = stat.mtime;
     const cached = this.fileCache.get(cacheKey);
     if (cached && cached.mtimeMs === mtimeMs) {
-      const restoreState = this.stateByUri.get(cacheKey);
+      const restoreState = this.viewerState.getState(uri);
       return {
         fileName,
         base64: cached.base64,
@@ -422,7 +430,7 @@ export abstract class BaseKiCanvasEditorProvider
       ),
       ...(nextPayload.metadata ? { metadata: nextPayload.metadata } : {}),
       ...(() => {
-        const restoreState = this.stateByUri.get(cacheKey);
+        const restoreState = this.viewerState.getState(uri);
         return restoreState ? { restoreState } : {};
       })()
     };
@@ -440,7 +448,7 @@ export abstract class BaseKiCanvasEditorProvider
     this.panelInfo.set(panel, {
       uri,
       pendingRefresh: false,
-      state: this.stateByUri.get(uri.toString())
+      state: this.viewerState.getState(uri)
     });
   }
 

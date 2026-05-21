@@ -8,6 +8,7 @@ import { KiCadCliRunner } from '../cli/kicadCliRunner';
 import { Logger } from '../utils/logger';
 import { createNonce } from '../utils/nonce';
 import { findSiblingProjectFile } from '../utils/pathUtils';
+import type { ExportStateStore } from '../state/stateStores';
 
 export class NetlistViewProvider
   implements vscode.WebviewViewProvider, vscode.Disposable
@@ -21,7 +22,8 @@ export class NetlistViewProvider
     private readonly context: vscode.ExtensionContext,
     private readonly parser: SExpressionParser,
     private readonly runner?: KiCadCliRunner,
-    private readonly logger?: Logger
+    private readonly logger?: Logger,
+    private readonly exportState?: ExportStateStore | undefined
   ) {
     this.disposables.push(
       vscode.window.onDidChangeActiveTextEditor(() => this.scheduleRefresh(250)),
@@ -70,6 +72,7 @@ export class NetlistViewProvider
     const file = await this.findSchematicFile();
     if (!file) {
       this._lastFile = '';
+      this.exportState?.complete('netlist', undefined, 'No schematic opened.');
       await this.postNetlist([], 'No schematic opened.');
       return;
     }
@@ -77,7 +80,13 @@ export class NetlistViewProvider
       return;
     }
     this._lastFile = file;
+    const uri = vscode.Uri.file(file);
     if (!this.runner) {
+      this.exportState?.fail(
+        'netlist',
+        uri,
+        'kicad-cli is not configured, so real net/node extraction is unavailable.'
+      );
       await this.postNetlist(
         [],
         'kicad-cli is not configured, so real net/node extraction is unavailable.'
@@ -85,11 +94,18 @@ export class NetlistViewProvider
       return;
     }
     try {
+      this.exportState?.begin('netlist', uri, 'Exporting KiCad netlist.');
       await this.postNetlist(
         await this.buildNetlistFromCli(file),
         `Netlist from ${path.basename(file)}`
       );
+      this.exportState?.complete(
+        'netlist',
+        uri,
+        `Netlist loaded from ${path.basename(file)}.`
+      );
     } catch (error) {
+      this.exportState?.fail('netlist', uri, error);
       this.logger?.warn(
         `Netlist extraction failed: ${error instanceof Error ? error.message : String(error)}`
       );

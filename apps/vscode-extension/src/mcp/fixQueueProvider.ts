@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import { COMMANDS } from '../constants';
-import type { FixItem } from '../types';
+import type { FixItem, McpConnectionState } from '../types';
 import { isRecoverableMcpUnavailableError } from './mcpErrorMapper';
 import type { FixQueueMcpAdapter } from './mcpToolAdapter';
+import type { McpStateStore } from '../state/stateStores';
 
 class FixQueueTreeItem extends vscode.TreeItem {
   constructor(public readonly item: FixItem) {
@@ -32,13 +33,20 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixItem> {
   readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
   private items: FixItem[] = [];
 
-  constructor(private readonly adapter: FixQueueMcpAdapter) {}
+  constructor(
+    private readonly adapter: FixQueueMcpAdapter,
+    private readonly mcpState?: Pick<McpStateStore, 'getState'> | undefined
+  ) {}
 
   getTreeItem(element: FixItem): vscode.TreeItem {
     return new FixQueueTreeItem(element);
   }
 
   getChildren(): FixItem[] {
+    const state = this.mcpState?.getState();
+    if (state && !supportsHttpFixQueue(state)) {
+      return [];
+    }
     return this.items;
   }
 
@@ -60,6 +68,12 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixItem> {
   }
 
   async refresh(): Promise<void> {
+    const state = this.mcpState?.getState();
+    if (state && !supportsHttpFixQueue(state)) {
+      this.items = [];
+      this.onDidChangeTreeDataEmitter.fire(undefined);
+      return;
+    }
     try {
       this.items = await this.adapter.fetchFixQueue();
     } catch (err) {
@@ -155,4 +169,8 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixItem> {
 
 function normalizePath(value: string): string {
   return value.replace(/\\/g, '/').toLowerCase();
+}
+
+function supportsHttpFixQueue(state: McpConnectionState): boolean {
+  return state.kind === 'Connected' && state.connected;
 }

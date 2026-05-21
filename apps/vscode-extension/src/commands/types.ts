@@ -21,6 +21,7 @@ import type { QualityGateProvider } from '../providers/qualityGateProvider';
 import type { KiCadProjectTreeProvider } from '../providers/projectTreeProvider';
 import type { Logger } from '../utils/logger';
 import type { DiagnosticSummary } from '../types';
+import type { DiagnosticStateStore } from '../state/stateStores';
 
 /**
  * Shared service dependencies that are passed to all command registration
@@ -35,6 +36,7 @@ export interface CommandServices {
   diffEditorProvider: DiffEditorProvider;
   fixQueueProvider: FixQueueProvider;
   diagnosticsCollection: vscode.DiagnosticCollection;
+  diagnosticState?: DiagnosticStateStore | undefined;
   statusBar: KiCadStatusBar;
   componentSearch: ComponentSearchService;
   aiProviders: AIProviderRegistry;
