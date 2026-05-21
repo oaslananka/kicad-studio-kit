@@ -16,7 +16,7 @@
 | Surface      | Primary    | Supported             | Deprecated | Gate                                     |
 | ------------ | ---------- | --------------------- | ---------- | ---------------------------------------- |
 | KiCad        | 10.0.x     | 9.x                   | 8.x        | `compatibility.yaml` + release preflight |
-| VS Code      | current    | `engines.vscode` 1.99 | none       | extension manifest + matrix validation   |
+| VS Code      | current    | `engines.vscode` 1.99 | none       | extension manifest + VS Code canary      |
 | MCP protocol | 2025-11-25 | 2025-11-25            | older      | well-known server card + matrix          |
 | Node         | 24.x       | `>=24.11.0 <25`       | older      | root and extension package metadata      |
 | pnpm         | 11.x       | `>=11.0.0 <12`        | older      | root package metadata                    |

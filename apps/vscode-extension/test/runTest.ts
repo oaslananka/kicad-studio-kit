@@ -4,12 +4,22 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { downloadAndUnzipVSCode } from '@vscode/test-electron';
+import {
+  resolveVsCodeTestSuite,
+  resolveVsCodeTestVersion
+} from './vscodeTestRuntime';
 
 async function main(): Promise<void> {
   const extensionDevelopmentPath = path.resolve(__dirname, '..', '..');
-  const extensionTestsPath = path.resolve(__dirname, 'suite', 'index');
+  const extensionTestsPath = path.resolve(
+    __dirname,
+    resolveVsCodeTestSuite(),
+    'index'
+  );
   const workspacePath = path.resolve(__dirname, '..', '..', 'test', 'fixtures');
-  const vscodeExecutablePath = await downloadAndUnzipVSCode('1.115.0');
+  const vscodeExecutablePath = await downloadAndUnzipVSCode(
+    resolveVsCodeTestVersion()
+  );
   const userDataDir = await mkdtemp(
     path.join(tmpdir(), 'kicadstudio-vscode-user-')
   );
