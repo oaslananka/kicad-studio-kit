@@ -18,6 +18,7 @@ notes can add detail, but they should not weaken these gates.
 | Fixture gate         | Parser, diagnostics, command-builder, or KiCad file behavior changes | Prove deterministic KiCad corpus behavior stays stable.                                         | `corepack pnpm run test:fixtures`             |
 | Nightly quality gate | Scheduled and manual workflow                                        | Re-run the repository gate plus contract and fixture gates outside the fast PR path.            | `.github/workflows/nightly-quality-gates.yml` |
 | VS Code canary       | Scheduled and manual workflow                                        | Check supported VS Code host lanes before runtime/API changes reach users.                      | `.github/workflows/vscode-canary.yml`         |
+| KiCad canary         | Scheduled and manual workflow                                        | Check supported KiCad CLI lanes against real fixture exports without publishing packages.       | `.github/workflows/kicad-canary.yml`          |
 | Manual smoke         | Release candidate only                                               | Final human inspection where automation is not practical.                                       | PR notes must name the exact manual check     |
 
 ## Test Layers
@@ -115,6 +116,20 @@ As the M1-M4 roadmap lands, extend this workflow in focused PRs:
 | VS Code canary             | OASLANA-81     | Run current stable, insiders, and minimum supported VS Code versions.                                                          |
 | KiCad canary               | OASLANA-82     | Run primary, supported, deprecated, and prerelease KiCad CLI lanes where practical.                                            |
 
+## KiCad Canary
+
+`.github/workflows/kicad-canary.yml` runs real `kicad-cli` compatibility lanes
+from `compatibility.yaml` every week and on manual dispatch. Required and
+scheduled lanes run by default; manual dispatch can opt into deprecated lanes
+that remain documented but should not block normal scheduled canaries.
+
+Each lane writes command logs, KiCad reports, manufacturing export outputs,
+`summary.json`, and `failing-fixtures.txt` into an artifact named after the
+lane. Manufacturing exports are enabled only when the matrix feature gate lists
+that KiCad range. Primary-lane failures fail the workflow and create or update a
+compatibility issue with the `release-blocker` label; prerelease and deprecated
+lanes report artifacts and issue comments without blocking the default branch.
+
 ## VS Code Canary
 
 `.github/workflows/vscode-canary.yml` launches a focused extension host smoke
@@ -201,6 +216,8 @@ CI ownership follows product boundaries:
 - `.github/workflows/nightly-quality-gates.yml` owns the non-release scheduled
   quality gate.
 - `.github/workflows/vscode-canary.yml` owns scheduled/manual VS Code
+  compatibility lanes sourced from `compatibility.yaml`.
+- `.github/workflows/kicad-canary.yml` owns scheduled/manual real KiCad CLI
   compatibility lanes sourced from `compatibility.yaml`.
 - Product-specific validation remains inside each product package so the root
   workflow can compose it without direct source imports between products.

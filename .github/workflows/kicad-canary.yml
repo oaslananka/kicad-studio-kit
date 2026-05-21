@@ -1,0 +1,128 @@
+name: KiCad Canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      include-manual-lanes:
+        description: Include deprecated compatibility lanes marked manual.
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    - cron: "41 5 * * 4"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kicad-canary-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  matrix:
+    runs-on: ubuntu-24.04
+    outputs:
+      lanes: ${{ steps.lanes.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+        with:
+          enable-cache: true
+          version-file: packages/mcp-server/uv.toml
+      - run: uv sync --all-extras --frozen --project packages/mcp-server
+      - name: Build KiCad canary matrix
+        id: lanes
+        env:
+          INCLUDE_MANUAL_LANES: ${{ inputs['include-manual-lanes'] || 'false' }}
+        run: |
+          args=()
+          if [ "$INCLUDE_MANUAL_LANES" = "true" ]; then
+            args+=(--include-manual)
+          fi
+          matrix="$(uv run --project packages/mcp-server --all-extras python packages/mcp-server/scripts/kicad_canary.py matrix "${args[@]}")"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  cli:
+    needs: matrix
+    runs-on: ubuntu-24.04
+    continue-on-error: ${{ matrix.continue_on_error }}
+    permissions:
+      contents: read
+      issues: write
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.matrix.outputs.lanes) }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+        with:
+          enable-cache: true
+          version-file: packages/mcp-server/uv.toml
+      - run: uv sync --all-extras --frozen --project packages/mcp-server
+      - name: Install KiCad lane
+        env:
+          KICAD_PACKAGE: ${{ matrix.package }}
+          KICAD_PPA: ${{ matrix.ppa }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes software-properties-common
+          sudo add-apt-repository --yes "$KICAD_PPA"
+          sudo apt-get update
+          sudo apt-get install --yes "$KICAD_PACKAGE"
+      - name: Run KiCad CLI canary
+        env:
+          KICAD_CANARY_RANGE: ${{ matrix.range }}
+        run: |
+          uv run --project packages/mcp-server --all-extras python packages/mcp-server/scripts/kicad_canary.py run \
+            --artifacts "artifacts/kicad-canary/${{ matrix.id }}" \
+            --kicad-range "$KICAD_CANARY_RANGE"
+      - name: Upload KiCad canary artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: kicad-canary-${{ matrix.id }}
+          path: artifacts/kicad-canary/${{ matrix.id }}
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Open or update compatibility issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KICAD_CANARY_CI: ${{ matrix.ci }}
+          KICAD_CANARY_ID: ${{ matrix.id }}
+          KICAD_CANARY_RANGE: ${{ matrix.range }}
+          KICAD_CANARY_STATE: ${{ matrix.state }}
+        run: |
+          body="$(mktemp)"
+          {
+            echo "KiCad canary lane \`$KICAD_CANARY_ID\` failed."
+            echo
+            echo "- Compatibility range: \`$KICAD_CANARY_RANGE\`"
+            echo "- Lifecycle state: \`$KICAD_CANARY_STATE\`"
+            echo "- CI mode: \`$KICAD_CANARY_CI\`"
+            echo "- Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "- Artifact: \`kicad-canary-$KICAD_CANARY_ID\`"
+            echo
+            echo "Inspect \`summary.json\`, command logs, generated reports, and \`failing-fixtures.txt\` in the uploaded artifact before changing support status."
+          } > "$body"
+          issue_number="$(gh issue list --state open --label compatibility --search 'KiCad canary compatibility failure in:title' --json number --jq '.[0].number // empty')"
+          if [ -n "$issue_number" ]; then
+            gh issue comment "$issue_number" --body-file "$body"
+            if [ "$KICAD_CANARY_STATE" = "primary" ]; then
+              gh issue edit "$issue_number" --add-label release-blocker
+            fi
+          else
+            labels="compatibility,needs:reproduction,ci,product:repo"
+            if [ "$KICAD_CANARY_STATE" = "primary" ]; then
+              labels="$labels,release-blocker"
+            fi
+            gh issue create \
+              --title "KiCad canary compatibility failure" \
+              --label "$labels" \
+              --body-file "$body"
+          fi
