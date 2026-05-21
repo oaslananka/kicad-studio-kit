@@ -10,6 +10,7 @@ const ignoredDirs = new Set([
   ".pytest_cache",
   ".mypy_cache",
   ".ruff_cache",
+  ".vscode-test",
   "__pycache__",
   "coverage",
   "htmlcov",

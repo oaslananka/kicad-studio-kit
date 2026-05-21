@@ -80,6 +80,12 @@ export class KiCadProjectTreeProvider implements vscode.TreeDataProvider<Project
     const outputDirName = vscode.workspace
       .getConfiguration()
       .get<string>('kicadstudio.defaultOutputDir', 'fab');
+    const resolvedRootPath = path.resolve(rootPath);
+    const resolvedOutputPath = path.resolve(rootPath, outputDirName);
+    const sourceFileOptions =
+      resolvedOutputPath === resolvedRootPath
+        ? undefined
+        : { ignoredDirectoryPaths: [resolvedOutputPath] };
     const [
       projectFiles,
       jobsetFiles,
@@ -88,13 +94,17 @@ export class KiCadProjectTreeProvider implements vscode.TreeDataProvider<Project
       models,
       fabFiles
     ] = await Promise.all([
-      collectFiles(rootPath, /\.(kicad_pro|kicad_sch|kicad_pcb|kicad_dru)$/i),
-      collectFiles(rootPath, /\.kicad_jobset$/i),
-      collectFiles(rootPath, /\.kicad_sym$/i),
-      collectFiles(rootPath, /\.kicad_mod$/i),
-      collectFiles(rootPath, /\.(step|stp|wrl)$/i),
       collectFiles(
-        path.join(rootPath, outputDirName),
+        rootPath,
+        /\.(kicad_pro|kicad_sch|kicad_pcb|kicad_dru)$/i,
+        sourceFileOptions
+      ),
+      collectFiles(rootPath, /\.kicad_jobset$/i, sourceFileOptions),
+      collectFiles(rootPath, /\.kicad_sym$/i, sourceFileOptions),
+      collectFiles(rootPath, /\.kicad_mod$/i, sourceFileOptions),
+      collectFiles(rootPath, /\.(step|stp|wrl)$/i, sourceFileOptions),
+      collectFiles(
+        resolvedOutputPath,
         /\.(gbr|drl|pdf|svg|zip|glb|csv|xlsx|json|html|net)$/i
       )
     ]);
@@ -419,15 +429,24 @@ function iconForFile(label: string): string {
 
 async function collectFiles(
   rootPath: string,
-  pattern: RegExp
+  pattern: RegExp,
+  options: {
+    ignoredDirectoryPaths?: readonly string[];
+  } = {}
 ): Promise<string[]> {
+  const resolvedRootPath = path.resolve(rootPath);
   try {
-    await fs.promises.access(rootPath);
+    await fs.promises.access(resolvedRootPath);
   } catch {
     return [];
   }
 
   const result: string[] = [];
+  const ignoredDirectoryPaths = new Set(
+    (options.ignoredDirectoryPaths ?? []).map((entry) =>
+      pathComparisonKey(path.resolve(resolvedRootPath, entry))
+    )
+  );
   const visit = async (currentPath: string): Promise<void> => {
     let entries: fs.Dirent[];
     try {
@@ -439,37 +458,84 @@ async function collectFiles(
       const absolute = path.join(currentPath, entry.name);
       if (entry.isDirectory()) {
         if (
-          [
-            // Version control / dependency management
-            '.git',
-            'node_modules',
-            // Build/coverage artefacts
-            'dist',
-            'out',
-            'build',
-            'coverage',
-            '.nyc_output',
-            // Extension development dirs (not KiCad design files)
-            'src',
-            'test',
-            'scripts',
-            'media',
-            'docs',
-            // Hidden/tooling dirs
-            '.vscode',
-            '.github',
-            '.husky'
-          ].includes(entry.name)
+          shouldIgnoreDirectory(entry.name, absolute, ignoredDirectoryPaths)
         ) {
           continue;
         }
         await visit(absolute);
-      } else if (pattern.test(entry.name)) {
+      } else if (!shouldIgnoreFile(entry.name) && pattern.test(entry.name)) {
         result.push(absolute);
       }
     }
   };
 
-  await visit(rootPath);
+  await visit(resolvedRootPath);
   return result.sort();
 }
+
+function shouldIgnoreDirectory(
+  name: string,
+  absolutePath: string,
+  ignoredDirectoryPaths: ReadonlySet<string>
+): boolean {
+  const normalizedName = name.toLowerCase();
+  if (
+    ignoredDirectoryPaths.has(pathComparisonKey(absolutePath)) ||
+    IGNORED_DIRECTORY_NAMES.has(normalizedName) ||
+    normalizedName.endsWith('-backups')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function shouldIgnoreFile(name: string): boolean {
+  const normalizedName = name.toLowerCase();
+  return (
+    normalizedName.endsWith('.bak') ||
+    normalizedName.endsWith('.backup') ||
+    normalizedName.endsWith('.lck') ||
+    normalizedName.endsWith('.lock') ||
+    normalizedName.endsWith('.tmp') ||
+    normalizedName.endsWith('~')
+  );
+}
+
+function pathComparisonKey(filePath: string): string {
+  const normalizedPath = path.normalize(filePath);
+  return CASE_INSENSITIVE_PLATFORM_PATHS
+    ? normalizedPath.toLowerCase()
+    : normalizedPath;
+}
+
+const CASE_INSENSITIVE_PLATFORM_PATHS =
+  process.platform === 'win32' || process.platform === 'darwin';
+
+const IGNORED_DIRECTORY_NAMES = new Set([
+  // Version control / dependency management
+  '.git',
+  'node_modules',
+  // Build/coverage artefacts
+  'dist',
+  'out',
+  'build',
+  'coverage',
+  '.nyc_output',
+  'generated',
+  'temp',
+  'tmp',
+  'backups',
+  'backup',
+  // Extension development dirs (not KiCad design files)
+  'src',
+  'test',
+  'scripts',
+  'media',
+  'docs',
+  // Hidden/tooling and editor history dirs
+  '.vscode',
+  '.github',
+  '.husky',
+  '.history',
+  '.code-backups'
+]);
