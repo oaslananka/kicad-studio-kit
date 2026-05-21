@@ -4,13 +4,19 @@ from __future__ import annotations
 
 import argparse
 import pathlib
-import shutil
 import subprocess
-import sys
 
 import yaml
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
+WORKSPACE_ACTIONLINT_COMMAND = [
+    "corepack",
+    "pnpm",
+    "--filter",
+    "kicadstudio",
+    "run",
+    "workflows:lint",
+]
 
 
 def _run(command: list[str]) -> None:
@@ -31,15 +37,7 @@ def main() -> None:
     print(f"Parsed {len(workflows)} workflow file(s).")
 
     if args.actionlint:
-        binary = shutil.which("actionlint")
-        if binary is None:
-            print(
-                "actionlint binary not found; using the workspace actionlint linter.",
-                file=sys.stderr,
-            )
-            _run(["corepack", "pnpm", "--filter", "kicadstudio", "run", "workflows:lint"])
-            return
-        _run([binary, *(str(path) for path in workflows)])
+        _run(WORKSPACE_ACTIONLINT_COMMAND)
 
 
 if __name__ == "__main__":

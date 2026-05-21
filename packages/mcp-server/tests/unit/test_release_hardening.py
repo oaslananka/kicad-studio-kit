@@ -630,8 +630,15 @@ def test_security_and_publish_workflows_emit_supply_chain_evidence() -> None:
     assert "subject-checksums: apps/vscode-extension/SHA256SUMS.txt" in publish_extension
 
     assert "Generate Python checksums" in publish_python
-    assert "packages/mcp-server/dist/SHA256SUMS.txt" in publish_python
-    assert "subject-checksums: packages/mcp-server/dist/SHA256SUMS.txt" in publish_python
+    assert "packages/mcp-server/release-evidence/SHA256SUMS.txt" in publish_python
+    assert "packages/mcp-server/dist/SHA256SUMS.txt" not in publish_python
+    assert (
+        "subject-checksums: packages/mcp-server/release-evidence/SHA256SUMS.txt" in publish_python
+    )
+    assert "name: python-release-evidence" in publish_python
+    assert "\n          path: packages/mcp-server/dist/*\n" not in publish_python
+    assert "packages/mcp-server/dist/*.whl" in publish_python
+    assert "packages/mcp-server/dist/*.tar.gz" in publish_python
 
     for workflow in (publish_python, publish_extension):
         assert "attestations: write" in workflow

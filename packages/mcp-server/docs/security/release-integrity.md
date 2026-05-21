@@ -16,11 +16,15 @@ it with the Python distributions being audited.
 
 ## SHA256SUMS
 
-Release checksums are published as:
+Release checksums are published as workflow evidence, separate from the PyPI
+distribution upload directory:
 
 ```text
-dist/SHA256SUMS.txt
+packages/mcp-server/release-evidence/SHA256SUMS.txt
 ```
+
+In workflow artifacts, download `python-release-evidence` next to the
+`python-dist` wheel and source distribution artifacts before verification.
 
 Verify a downloaded artifact:
 

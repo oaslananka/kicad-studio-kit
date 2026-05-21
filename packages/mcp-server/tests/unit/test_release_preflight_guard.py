@@ -15,7 +15,11 @@ def _load_script(name: str) -> object:
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    sys.path.insert(0, str(script.parent))
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.path.remove(str(script.parent))
     return module
 
 
@@ -116,10 +120,32 @@ def test_workflow_lint_uses_workspace_actionlint_fallback(
     )
     commands: list[list[str]] = []
     monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
-    monkeypatch.setattr(module.shutil, "which", lambda _command: None)
     monkeypatch.setattr(module, "_run", commands.append)
     monkeypatch.setattr(sys, "argv", ["check_workflows.py", "--actionlint"])
 
     module.main()
 
+    assert commands == [["corepack", "pnpm", "--filter", "kicadstudio", "run", "workflows:lint"]]
+
+
+def test_workflow_lint_does_not_branch_on_local_actionlint_binary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _load_script("check_workflows.py")
+    script_text = (ROOT / "scripts" / "check_workflows.py").read_text(encoding="utf-8")
+    workflows = tmp_path / ".github" / "workflows"
+    workflows.mkdir(parents=True)
+    (workflows / "example.yml").write_text(
+        "name: Example\non: workflow_dispatch\njobs: {}\n",
+        encoding="utf-8",
+    )
+    commands: list[list[str]] = []
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "_run", commands.append)
+    monkeypatch.setattr(sys, "argv", ["check_workflows.py", "--actionlint"])
+
+    module.main()
+
+    assert "shutil.which" not in script_text
     assert commands == [["corepack", "pnpm", "--filter", "kicadstudio", "run", "workflows:lint"]]

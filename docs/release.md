@@ -20,8 +20,10 @@ The publish workflows keep release evidence product-scoped:
   CycloneDX SBOM, then creates GitHub artifact attestations for the checksummed
   extension package.
 - `publish-python.yml` validates the wheel and source distribution, emits
-  `SHA256SUMS.txt`, and creates GitHub artifact attestations for those
-  distributions before PyPI trusted publishing.
+  `packages/mcp-server/release-evidence/SHA256SUMS.txt`, uploads that checksum
+  as `python-release-evidence`, and creates GitHub artifact attestations for the
+  wheel and source distribution before PyPI trusted publishing. The `python-dist`
+  artifact intentionally contains only `*.whl` and `*.tar.gz` files.
 - `publish-npm.yml` uses npm provenance for the MCP launcher package.
 
 Release dry-runs also validate `compatibility.yaml` through the MCP server release preflight. Update [docs/support-matrix.md](support-matrix.md) and release notes whenever KiCad, VS Code, MCP, Node, pnpm, Python, or tool-schema support changes.
