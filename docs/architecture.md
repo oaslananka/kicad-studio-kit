@@ -14,6 +14,8 @@ Detailed architecture documents:
 - [Product boundaries](architecture/product-boundaries.md)
 - [Release model](architecture/release-model.md)
 - [Branch protection](architecture/branch-protection.md)
+- [Governance board model](architecture/governance-board.md)
+- [Definition of done](architecture/definition-of-done.md)
 - [Testing strategy](architecture/testing-strategy.md)
 - [Migration phases](architecture/migration-phases.md)
 - [M0 completion audit](architecture/m0-completion-audit.md)
