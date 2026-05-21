@@ -17,6 +17,7 @@ notes can add detail, but they should not weaken these gates.
 | Contract gate        | Protocol, compatibility, or cross-product changes                    | Prove extension and MCP assumptions remain aligned.                                             | `corepack pnpm run test:contract`             |
 | Fixture gate         | Parser, diagnostics, command-builder, or KiCad file behavior changes | Prove deterministic KiCad corpus behavior stays stable.                                         | `corepack pnpm run test:fixtures`             |
 | Nightly quality gate | Scheduled and manual workflow                                        | Re-run the repository gate plus contract and fixture gates outside the fast PR path.            | `.github/workflows/nightly-quality-gates.yml` |
+| VS Code canary       | Scheduled and manual workflow                                        | Check supported VS Code host lanes before runtime/API changes reach users.                      | `.github/workflows/vscode-canary.yml`         |
 | Manual smoke         | Release candidate only                                               | Final human inspection where automation is not practical.                                       | PR notes must name the exact manual check     |
 
 ## Test Layers
@@ -114,6 +115,22 @@ As the M1-M4 roadmap lands, extend this workflow in focused PRs:
 | VS Code canary             | OASLANA-81     | Run current stable, insiders, and minimum supported VS Code versions.                                                          |
 | KiCad canary               | OASLANA-82     | Run primary, supported, deprecated, and prerelease KiCad CLI lanes where practical.                                            |
 
+## VS Code Canary
+
+`.github/workflows/vscode-canary.yml` launches a focused extension host smoke
+suite every week and on manual dispatch against the VS Code lanes from
+`compatibility.yaml`: current stable, the minimum `engines.vscode` host, and
+insiders. The smoke suite covers activation, commands, context-gated views,
+custom editor/webview bootstrap, diagnostics lifecycle access, and project/MCP
+view registration. Unit smokes keep the mock MCP Tools and provider paths in
+the same lane. The stable and minimum lanes fail the workflow; the insiders
+lane keeps reporting prerelease breakage without blocking stable support.
+
+Each lane uploads the Extension Development Host logs and available test
+artifacts. A failing lane opens or updates a compatibility issue. Stable-lane
+failures add the `release-blocker` label because the release gate lists VS Code
+stable compatibility as required.
+
 ## Regression Coverage Map
 
 Every bug fix should add an automated regression when practical. If automation
@@ -183,6 +200,8 @@ CI ownership follows product boundaries:
   `.github/workflows/codeql.yml` own security and static analysis lanes.
 - `.github/workflows/nightly-quality-gates.yml` owns the non-release scheduled
   quality gate.
+- `.github/workflows/vscode-canary.yml` owns scheduled/manual VS Code
+  compatibility lanes sourced from `compatibility.yaml`.
 - Product-specific validation remains inside each product package so the root
   workflow can compose it without direct source imports between products.
 

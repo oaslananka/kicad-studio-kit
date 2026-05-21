@@ -1,0 +1,106 @@
+name: VS Code Canary
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 4 * * 2"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vscode-canary-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  matrix:
+    runs-on: ubuntu-24.04
+    outputs:
+      lanes: ${{ steps.lanes.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+        with:
+          enable-cache: true
+          version-file: packages/mcp-server/uv.toml
+      - run: uv sync --all-extras --frozen --project packages/mcp-server
+      - name: Build VS Code canary matrix
+        id: lanes
+        run: |
+          matrix="$(uv run --project packages/mcp-server --all-extras python packages/mcp-server/scripts/vscode_canary.py matrix)"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  extension-host:
+    needs: matrix
+    runs-on: ubuntu-24.04
+    continue-on-error: ${{ matrix.continue_on_error }}
+    permissions:
+      contents: read
+      issues: write
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.lanes) }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Run VS Code canary unit smokes
+        run: corepack pnpm --filter kicadstudio run test:unit
+      - name: Run VS Code extension host canary
+        env:
+          KICADSTUDIO_VSCODE_TEST_SUITE: canary
+          KICADSTUDIO_VSCODE_VERSION: ${{ matrix.version }}
+        run: xvfb-run -a corepack pnpm --filter kicadstudio run test:integration
+      - name: Upload VS Code canary artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: vscode-canary-${{ matrix.id }}
+          path: |
+            apps/vscode-extension/test-results
+            apps/vscode-extension/.vscode-test/logs
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Open or update compatibility issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VSCODE_CANARY_ID: ${{ matrix.id }}
+          VSCODE_CANARY_STATE: ${{ matrix.state }}
+          VSCODE_CANARY_VERSION: ${{ matrix.version }}
+        run: |
+          body="$(mktemp)"
+          {
+            echo "VS Code canary lane \`$VSCODE_CANARY_ID\` failed."
+            echo
+            echo "- Tested version selector: \`$VSCODE_CANARY_VERSION\`"
+            echo "- Lifecycle state: \`$VSCODE_CANARY_STATE\`"
+            echo "- Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "- Artifact: \`vscode-canary-$VSCODE_CANARY_ID\`"
+            echo
+            echo "Inspect the extension-host logs and uploaded test artifacts before changing the VS Code support matrix."
+          } > "$body"
+          issue_number="$(gh issue list --state open --label compatibility --search 'VS Code canary compatibility failure in:title' --json number --jq '.[0].number // empty')"
+          if [ -n "$issue_number" ]; then
+            gh issue comment "$issue_number" --body-file "$body"
+            if [ "$VSCODE_CANARY_STATE" = "primary" ]; then
+              gh issue edit "$issue_number" --add-label release-blocker
+            fi
+          else
+            labels="compatibility,needs:reproduction,ci,product:repo"
+            if [ "$VSCODE_CANARY_STATE" = "primary" ]; then
+              labels="$labels,release-blocker"
+            fi
+            gh issue create \
+              --title "VS Code canary compatibility failure" \
+              --label "$labels" \
+              --body-file "$body"
+          fi
