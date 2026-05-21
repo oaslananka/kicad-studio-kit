@@ -33,6 +33,8 @@ jobs:
       - run: corepack pnpm run check:forbidden-refs
       - run: corepack pnpm run check:boundaries
       - run: corepack pnpm run check:version
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - run: corepack pnpm run check:compatibility
       - run: corepack pnpm run check:governance
 
