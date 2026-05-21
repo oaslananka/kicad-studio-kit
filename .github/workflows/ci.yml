@@ -110,6 +110,10 @@ jobs:
         env:
           REAL_SERVER_ARTIFACT_DIR: apps/vscode-extension/test-results/real-server
         run: corepack pnpm --filter kicadstudio run test:integration:real
+      - name: Run real-pair extension host test
+        env:
+          REAL_SERVER_ARTIFACT_DIR: apps/vscode-extension/test-results/real-server
+        run: xvfb-run -a corepack pnpm --filter kicadstudio run test:integration:real:host
       - name: Run real-pair VS Code host smoke
         env:
           REAL_SERVER_ARTIFACT_DIR: apps/vscode-extension/test-results/real-server
