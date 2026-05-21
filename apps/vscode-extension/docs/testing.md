@@ -4,13 +4,13 @@
 
 kicad-studio uses **Jest** for unit tests and **Playwright** for E2E/integration.
 
-| Layer       | Runner     | Path                | When            |
-| ----------- | ---------- | ------------------- | --------------- |
-| Unit        | Jest       | `src/**/__tests__/` | Every PR (CI)   |
-| Integration | Jest       | `test/integration/` | Every PR (CI)   |
-| Real pair   | Node + MCP | `test/integration/realServer/` | Every PR (CI Linux) |
-| E2E         | Playwright | `test/e2e/`         | Local/manual desktop smoke |
-| Mutation    | Stryker    | `src/**`            | Weekly (Sunday) |
+| Layer       | Runner     | Path                           | When                       |
+| ----------- | ---------- | ------------------------------ | -------------------------- |
+| Unit        | Jest       | `src/**/__tests__/`            | Every PR (CI)              |
+| Integration | Jest       | `test/integration/`            | Every PR (CI)              |
+| Real pair   | Node + MCP | `test/integration/realServer/` | Every PR (CI Linux)        |
+| E2E         | Playwright | `test/e2e/`                    | Local/manual desktop smoke |
+| Mutation    | Stryker    | `src/**`                       | Weekly (Sunday)            |
 
 ## Running Tests Locally
 
