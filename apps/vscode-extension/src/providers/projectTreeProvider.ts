@@ -14,8 +14,10 @@ class KiCadTreeItem extends vscode.TreeItem {
     if (node.uri) {
       this.resourceUri = node.uri;
     }
-    this.tooltip = node.uri?.fsPath ?? node.label;
-    this.iconPath = new vscode.ThemeIcon(iconForNode(node));
+    const diagnostics = diagnosticsForNode(node);
+    this.description = descriptionForNode(node, diagnostics);
+    this.tooltip = tooltipForNode(node, diagnostics);
+    this.iconPath = new vscode.ThemeIcon(iconForNode(node, diagnostics));
 
     if (
       node.uri &&
@@ -98,18 +100,21 @@ export class KiCadProjectTreeProvider implements vscode.TreeDataProvider<Project
     ]);
 
     const children: ProjectTreeNode[] = [
-      ...projectFiles.map(
-        (file): ProjectTreeNode => ({
-          label: path.basename(file),
-          type: file.endsWith('.kicad_sch')
-            ? 'schematic'
-            : file.endsWith('.kicad_pcb')
-              ? 'pcb'
-              : file.endsWith('.kicad_dru')
-                ? 'drc-rule'
-                : 'file',
-          uri: vscode.Uri.file(file)
-        })
+      groupProjectNodes(
+        'Project Files',
+        projectFiles.filter((file) => hasExtension(file, '.kicad_pro'))
+      ),
+      groupProjectNodes(
+        'Schematic Sheets',
+        projectFiles.filter((file) => hasExtension(file, '.kicad_sch'))
+      ),
+      groupProjectNodes(
+        'PCB',
+        projectFiles.filter((file) => hasExtension(file, '.kicad_pcb'))
+      ),
+      groupProjectNodes(
+        'Design Rules',
+        projectFiles.filter((file) => hasExtension(file, '.kicad_dru'))
       ),
       {
         label: 'Jobsets',
@@ -177,7 +182,176 @@ export class KiCadProjectTreeProvider implements vscode.TreeDataProvider<Project
   }
 }
 
-function iconForNode(node: ProjectTreeNode): string {
+interface TreeDiagnostics {
+  errors: number;
+  warnings: number;
+  total: number;
+}
+
+function groupProjectNodes(label: string, files: string[]): ProjectTreeNode {
+  return {
+    label,
+    type: 'folder',
+    children: files.map(projectFileNode)
+  };
+}
+
+function projectFileNode(file: string): ProjectTreeNode {
+  const extension = normalizedExtension(file);
+  return {
+    label: path.basename(file),
+    type: extension === '.kicad_sch'
+      ? 'schematic'
+      : extension === '.kicad_pcb'
+        ? 'pcb'
+        : extension === '.kicad_dru'
+          ? 'drc-rule'
+          : 'file',
+    uri: vscode.Uri.file(file)
+  };
+}
+
+function diagnosticsForNode(node: ProjectTreeNode): TreeDiagnostics {
+  if (node.children && node.children.length > 0) {
+    return node.children.reduce<TreeDiagnostics>(
+      (state, child) => {
+        const childDiagnostics = diagnosticsForNode(child);
+        return {
+          errors: state.errors + childDiagnostics.errors,
+          warnings: state.warnings + childDiagnostics.warnings,
+          total: state.total + childDiagnostics.total
+        };
+      },
+      { errors: 0, warnings: 0, total: 0 }
+    );
+  }
+
+  if (!node.uri || node.type === 'project' || node.type === 'folder') {
+    return { errors: 0, warnings: 0, total: 0 };
+  }
+
+  const diagnostics = vscode.languages.getDiagnostics(node.uri);
+  return diagnostics.reduce(
+    (state, diagnostic) => ({
+      errors:
+        state.errors +
+        (diagnostic.severity === vscode.DiagnosticSeverity.Error ? 1 : 0),
+      warnings:
+        state.warnings +
+        (diagnostic.severity === vscode.DiagnosticSeverity.Warning ? 1 : 0),
+      total: state.total + 1
+    }),
+    { errors: 0, warnings: 0, total: 0 }
+  );
+}
+
+function descriptionForNode(
+  node: ProjectTreeNode,
+  diagnostics: TreeDiagnostics
+): string {
+  const description = roleForNode(node);
+  const diagnosticState = diagnosticSummary(diagnostics);
+  return diagnosticState ? `${description} | ${diagnosticState}` : description;
+}
+
+function tooltipForNode(
+  node: ProjectTreeNode,
+  diagnostics: TreeDiagnostics
+): string {
+  const diagnosticState = diagnosticSummary(diagnostics);
+  const detail = [
+    `Role: ${roleForNode(node)}`,
+    node.uri ? `Path: ${node.uri.fsPath}` : undefined,
+    node.children
+      ? `State: ${node.children.length} visible item${node.children.length === 1 ? '' : 's'}${diagnosticState ? ` | ${diagnosticState}` : ''}`
+      : `State: ${diagnosticState ?? 'No diagnostics reported'}`,
+    node.uri && node.type !== 'project'
+      ? 'Source control: VS Code file decorations reflect working tree changes.'
+      : undefined
+  ].filter(Boolean);
+
+  return detail.join('\n');
+}
+
+function hasExtension(file: string, extension: string): boolean {
+  return normalizedExtension(file) === extension;
+}
+
+function normalizedExtension(file: string): string {
+  return path.extname(file).toLowerCase();
+}
+
+function diagnosticSummary(diagnostics: TreeDiagnostics): string | undefined {
+  if (diagnostics.errors > 0) {
+    return `${diagnostics.errors} error${diagnostics.errors === 1 ? '' : 's'}`;
+  }
+  if (diagnostics.warnings > 0) {
+    return `${diagnostics.warnings} warning${diagnostics.warnings === 1 ? '' : 's'}`;
+  }
+  if (diagnostics.total > 0) {
+    return `${diagnostics.total} diagnostic${diagnostics.total === 1 ? '' : 's'}`;
+  }
+  return undefined;
+}
+
+function roleForNode(node: ProjectTreeNode): string {
+  switch (node.type) {
+    case 'project':
+      return 'KiCad workspace';
+    case 'schematic':
+      return 'Schematic sheet';
+    case 'pcb':
+      return 'PCB layout';
+    case 'drc-rule':
+      return 'Design rules';
+    case 'jobset':
+      return node.children ? 'Jobset group' : 'Jobset';
+    case 'symbol-library':
+      return 'Schematic library group';
+    case 'footprint-library':
+      return 'Footprint library group';
+    case 'fab-output':
+      return 'Fabrication output group';
+    case 'model':
+      return '3D model group';
+    case 'folder':
+      return `${node.label} group`;
+    case 'file':
+      return roleForFile(node.label);
+  }
+}
+
+function roleForFile(label: string): string {
+  switch (path.extname(label).toLowerCase()) {
+    case '.kicad_pro':
+      return 'KiCad project file';
+    case '.kicad_sym':
+      return 'Symbol library';
+    case '.kicad_mod':
+      return 'Footprint library';
+    case '.gbr':
+    case '.drl':
+      return 'Fabrication output';
+    case '.step':
+    case '.stp':
+    case '.wrl':
+      return '3D model';
+    default:
+      return 'KiCad file';
+  }
+}
+
+function iconForNode(
+  node: ProjectTreeNode,
+  diagnostics: TreeDiagnostics
+): string {
+  if (diagnostics.errors > 0) {
+    return 'error';
+  }
+  if (diagnostics.warnings > 0) {
+    return 'warning';
+  }
+
   switch (node.type) {
     case 'project':
       return 'repo';
