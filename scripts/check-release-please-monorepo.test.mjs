@@ -4,9 +4,13 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  listCommits,
+  listCommitsForPullRequest,
   parseConventionalSubject,
+  resolveExecutable,
   runSyntheticReleasePleaseDryRun,
   validateCommitScopeCoverage,
+  validateLinkedVersionGroups,
   validatePrTitle,
   validateRepositoryPolicy,
 } from "./check-release-please-monorepo.mjs";
@@ -88,6 +92,22 @@ test("commit scope gate rejects a single-scope commit that changes both products
   );
 });
 
+test("commit scope gate ignores normal merge commit subjects", () => {
+  assert.deepEqual(
+    validateCommitScopeCoverage([
+      {
+        sha: "1234567",
+        subject: "Merge branch 'main' into codex/OASLANA-113-release-please-validation",
+        files: [
+          "apps/vscode-extension/src/extension.ts",
+          "packages/mcp-server/src/kicad_mcp/server.py",
+        ],
+      },
+    ]),
+    [],
+  );
+});
+
 test("conventional subject parser supports multiple scopes", () => {
   assert.deepEqual(parseConventionalSubject("feat(kicad-studio): add tree"), {
     type: "feat",
@@ -104,9 +124,105 @@ test("conventional subject parser supports multiple scopes", () => {
   );
 });
 
-test("release-please dry-run snapshot keeps MCP-only changes out of extension release", async () => {
-  const snapshot = await runSyntheticReleasePleaseDryRun(REPO_ROOT);
+test("linked version groups validate all configured component versions", () => {
+  const errors = validateLinkedVersionGroups(
+    {
+      packages: {
+        "packages/a": { component: "component-a" },
+        "packages/b": { component: "component-b" },
+        "packages/c": { component: "component-c" },
+      },
+      plugins: [
+        {
+          type: "linked-versions",
+          groupName: "suite",
+          components: ["component-a", "component-b"],
+        },
+      ],
+    },
+    {
+      "packages/a": "1.2.3",
+      "packages/b": "1.2.4",
+      "packages/c": "9.9.9",
+    },
+  );
 
+  assert.equal(errors.length, 1);
+  assert.match(
+    errors[0],
+    /linked-versions group suite must keep component-a, component-b at the same manifest version/,
+  );
+});
+
+test("commit range discovery fails explicitly when git log cannot read the range", () => {
+  assert.throws(
+    () => listCommits(REPO_ROOT, "missing-ref-for-release-policy..HEAD"),
+    /git log --format=%H%x00%s missing-ref-for-release-policy\.\.HEAD failed/,
+  );
+});
+
+test("PR commit discovery fails closed when PR SHAs cannot be fetched", () => {
+  assert.throws(
+    () =>
+      listCommitsForPullRequest(REPO_ROOT, {
+        number: 999999,
+        base: {
+          sha: "0000000000000000000000000000000000000001",
+        },
+        head: {
+          sha: "0000000000000000000000000000000000000002",
+        },
+      }),
+    /Unable to fetch pull request commit 0000000/,
+  );
+});
+
+test("Windows command resolution only appends .cmd for package manager shims", () => {
+  assert.equal(resolveExecutable("pnpm", "win32"), "pnpm.cmd");
+  assert.equal(resolveExecutable("npm", "win32"), "npm.cmd");
+  assert.equal(resolveExecutable("git", "win32"), "git");
+  assert.equal(resolveExecutable("gh", "win32"), "gh");
+  assert.equal(resolveExecutable("pnpm", "linux"), "pnpm");
+});
+
+const MCP_RELEASE_PLEASE_FIXTURE = `
+Would open 1 pull requests
+title: chore(main): release kicad-mcp-pro libraries
+<summary>mcp-server:
+<summary>mcp-npm:
+  .release-please-manifest.json: [class ReleasePleaseManifest]
+  packages/mcp-npm/CHANGELOG.md: [class Changelog]
+  packages/mcp-npm/package.json: [class PackageJson]
+  packages/mcp-server/CHANGELOG.md: [class Changelog]
+  packages/mcp-server/pyproject.toml: [class PythonFile]
+`;
+
+const ROOT_ONLY_RELEASE_PLEASE_FIXTURE = `
+Would open 0 pull requests
+`;
+
+test("release-please dry-run snapshot keeps MCP-only changes out of extension release", async () => {
+  const calls = [];
+  const snapshot = await runSyntheticReleasePleaseDryRun(REPO_ROOT, {
+    token: "test-token",
+    spawnReleasePlease: (command, args) => {
+      calls.push({ command, args });
+      return {
+        status: 0,
+        stdout: MCP_RELEASE_PLEASE_FIXTURE,
+        stderr: "",
+      };
+    },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].command, /pnpm(?:\.cmd)?$/);
+  assert.deepEqual(calls[0].args.slice(0, 4), [
+    "--filter",
+    "kicadstudio",
+    "exec",
+    "release-please",
+  ]);
   assert.equal(snapshot.pullRequestCount, 1);
   assert.deepEqual(snapshot.titles, [
     "chore(main): release kicad-mcp-pro libraries",
@@ -127,6 +243,12 @@ test("release-please dry-run snapshot keeps MCP-only changes out of extension re
 test("release-please dry-run snapshot ignores root-only changes", async () => {
   const snapshot = await runSyntheticReleasePleaseDryRun(REPO_ROOT, {
     scenario: "root-only",
+    token: "test-token",
+    spawnReleasePlease: () => ({
+      status: 0,
+      stdout: ROOT_ONLY_RELEASE_PLEASE_FIXTURE,
+      stderr: "",
+    }),
   });
 
   assert.equal(snapshot.pullRequestCount, 0);

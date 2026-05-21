@@ -115,11 +115,7 @@ export function validateRepositoryPolicy(repoRoot = REPO_ROOT) {
       );
     }
   }
-  if (manifest["packages/mcp-server"] !== manifest["packages/mcp-npm"]) {
-    errors.push(
-      "packages/mcp-server and packages/mcp-npm manifest versions must stay linked",
-    );
-  }
+  errors.push(...validateLinkedVersionGroups(config, manifest));
 
   const linkedComponents = new Set(
     (config.plugins ?? [])
@@ -183,6 +179,9 @@ export function validateCommitScopeCoverage(commits, options = {}) {
   for (const commit of commits) {
     const parsed = parseConventionalSubject(commit.subject);
     if (!parsed) {
+      if (isMergeCommitSubject(commit.subject)) {
+        continue;
+      }
       errors.push(
         `${shortSha(commit.sha)} subject must use Conventional Commits format`,
       );
@@ -207,11 +206,72 @@ export function validateCommitScopeCoverage(commits, options = {}) {
   return errors;
 }
 
+export function validateLinkedVersionGroups(config, manifest) {
+  const errors = [];
+  const componentPaths = new Map(
+    Object.entries(config.packages ?? {})
+      .filter(([, packageConfig]) => packageConfig?.component)
+      .map(([packagePath, packageConfig]) => [
+        packageConfig.component,
+        packagePath,
+      ]),
+  );
+
+  for (const plugin of config.plugins ?? []) {
+    if (plugin?.type !== "linked-versions") {
+      continue;
+    }
+
+    const groupName = plugin.groupName ?? "(unnamed)";
+    const components = plugin.components ?? [];
+    const groupEntries = [];
+
+    for (const component of components) {
+      const packagePath = componentPaths.get(component);
+      if (!packagePath) {
+        errors.push(
+          `linked-versions group ${groupName} component ${component} must match a configured package component`,
+        );
+        continue;
+      }
+      groupEntries.push({
+        component,
+        packagePath,
+        version: manifest[packagePath],
+      });
+    }
+
+    for (const entry of groupEntries) {
+      if (entry.version === undefined) {
+        errors.push(
+          `linked-versions group ${groupName} component ${entry.component} package ${entry.packagePath} is missing from .release-please-manifest.json`,
+        );
+      }
+    }
+
+    const versionedEntries = groupEntries.filter(
+      (entry) => entry.version !== undefined,
+    );
+    const versions = new Set(versionedEntries.map((entry) => entry.version));
+    if (versions.size > 1) {
+      const componentsWithVersions = versionedEntries
+        .map((entry) => `${entry.component}@${entry.version}`)
+        .join(", ");
+      errors.push(
+        `linked-versions group ${groupName} must keep ${components.join(", ")} at the same manifest version, found ${componentsWithVersions}`,
+      );
+    }
+  }
+
+  return errors;
+}
+
 export async function runSyntheticReleasePleaseDryRun(
   repoRoot = REPO_ROOT,
   options = {},
 ) {
-  const token = readGitHubToken();
+  const token = options.token ?? readGitHubToken();
+  const spawnReleasePlease = options.spawnReleasePlease ?? spawnSync;
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "kicad-rp-dry-run-"));
   try {
     createSyntheticReleaseRepo(repoRoot, tempRoot);
@@ -264,8 +324,8 @@ export async function runSyntheticReleasePleaseDryRun(
       ]);
     }
 
-    const result = spawnSync(
-      executable("pnpm"),
+    const result = spawnReleasePlease(
+      resolveExecutable("pnpm"),
       [
         "--filter",
         "kicadstudio",
@@ -452,35 +512,64 @@ function createSyntheticReleaseRepo(repoRoot, tempRoot) {
   git(tempRoot, ["tag", "mcp-npm-v1.0.0"]);
 }
 
-function listCommitsForPullRequest(repoRoot, pullRequest) {
+export function listCommitsForPullRequest(repoRoot, pullRequest) {
   const baseSha = pullRequest.base?.sha;
   const headSha = pullRequest.head?.sha;
   if (!baseSha || !headSha) {
     return [];
   }
-  git(repoRoot, ["fetch", "--no-tags", "--depth=200", "origin", baseSha], {
-    allowFailure: true,
+  ensurePullRequestCommit(repoRoot, baseSha, {
+    number: pullRequest.number,
+    side: "base",
   });
-  git(repoRoot, ["fetch", "--no-tags", "--depth=200", "origin", headSha], {
-    allowFailure: true,
+  ensurePullRequestCommit(repoRoot, headSha, {
+    number: pullRequest.number,
+    side: "head",
   });
   return listCommits(repoRoot, `${baseSha}..${headSha}`);
 }
 
-function listLocalBranchCommits(repoRoot) {
-  const mergeBase = git(repoRoot, ["merge-base", "HEAD", "origin/main"], {
-    allowFailure: true,
-  });
-  if (!mergeBase) {
-    return [];
+function ensurePullRequestCommit(repoRoot, sha, { number, side }) {
+  if (gitCommitExists(repoRoot, sha)) {
+    return;
   }
+
+  const refs = [sha];
+  if (side === "head" && number) {
+    refs.push(`pull/${number}/head`);
+  }
+
+  const errors = [];
+  for (const ref of refs) {
+    const result = runGit(repoRoot, [
+      "fetch",
+      "--no-tags",
+      "--depth=200",
+      "origin",
+      ref,
+    ]);
+    if (result.status === 0 && gitCommitExists(repoRoot, sha)) {
+      return;
+    }
+    errors.push(`git fetch origin ${ref}: ${result.stderr.trim()}`);
+  }
+
+  throw new Error(
+    `Unable to fetch pull request commit ${shortSha(sha)} (${side}) from origin:\n${errors.join("\n")}`,
+  );
+}
+
+function gitCommitExists(repoRoot, sha) {
+  return runGit(repoRoot, ["cat-file", "-e", `${sha}^{commit}`]).status === 0;
+}
+
+function listLocalBranchCommits(repoRoot) {
+  const mergeBase = git(repoRoot, ["merge-base", "HEAD", "origin/main"]);
   return listCommits(repoRoot, `${mergeBase.trim()}..HEAD`);
 }
 
-function listCommits(repoRoot, range) {
-  const lines = git(repoRoot, ["log", "--format=%H%x00%s", range], {
-    allowFailure: true,
-  })
+export function listCommits(repoRoot, range) {
+  const lines = git(repoRoot, ["log", "--format=%H%x00%s", range])
     .split("\n")
     .filter(Boolean);
   return lines.map((line) => {
@@ -491,9 +580,6 @@ function listCommits(repoRoot, range) {
       files: git(
         repoRoot,
         ["diff-tree", "--no-commit-id", "--name-only", "-r", sha],
-        {
-          allowFailure: true,
-        },
       )
         .split("\n")
         .filter(Boolean),
@@ -519,7 +605,7 @@ function readGitHubToken() {
   if (envToken) {
     return envToken;
   }
-  const result = spawnSync(executable("gh"), ["auth", "token"], {
+  const result = spawnSync(resolveExecutable("gh"), ["auth", "token"], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -554,11 +640,7 @@ function sameList(left, right) {
 }
 
 function git(cwd, args, options = {}) {
-  const result = spawnSync(executable("git"), args, {
-    cwd,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  const result = runGit(cwd, args);
   if (result.status !== 0) {
     if (options.allowFailure) {
       return "";
@@ -568,8 +650,19 @@ function git(cwd, args, options = {}) {
   return result.stdout.trim();
 }
 
-function executable(command) {
-  return process.platform === "win32" ? `${command}.cmd` : command;
+function runGit(cwd, args) {
+  return spawnSync(resolveExecutable("git"), args, {
+    cwd,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+}
+
+export function resolveExecutable(command, platform = process.platform) {
+  if (platform !== "win32") {
+    return command;
+  }
+  return ["npm", "pnpm"].includes(command) ? `${command}.cmd` : command;
 }
 
 function shortSha(sha) {
@@ -581,6 +674,10 @@ function isReleasePlease(headRefName = "", title = "") {
     headRefName.startsWith("release-please--") ||
     /^chore\(main\): release /.test(title)
   );
+}
+
+function isMergeCommitSubject(subject) {
+  return /^Merge (branch|remote-tracking branch|pull request) /.test(subject);
 }
 
 function redactSecrets(output) {
