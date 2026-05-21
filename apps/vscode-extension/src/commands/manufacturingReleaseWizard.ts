@@ -10,7 +10,7 @@ import { telemetry } from '../utils/telemetry';
 import type { CommandServices } from './types';
 
 export async function runManufacturingReleaseWizard(
-  services: Pick<CommandServices, 'variantProvider' | 'mcpClient' | 'context'>
+  services: Pick<CommandServices, 'variantProvider' | 'mcpAdapter' | 'context'>
 ): Promise<void> {
   telemetry.trackEvent('wizard.start');
   const variant = await chooseVariant(services);
@@ -18,7 +18,7 @@ export async function runManufacturingReleaseWizard(
     return;
   }
 
-  const gates = await services.mcpClient.runProjectQualityGate();
+  const gates = await services.mcpAdapter.runProjectQualityGate();
   const blocking = gates.filter((gate) =>
     ['FAIL', 'BLOCKED'].includes(gate.status)
   );
@@ -53,7 +53,7 @@ export async function runManufacturingReleaseWizard(
         cancellable: false
       },
       async () => {
-        await services.mcpClient.exportManufacturingPackage(
+        await services.mcpAdapter.exportManufacturingPackage(
           variant || undefined
         );
       }

@@ -71,7 +71,7 @@ export function registerAiCommands(
         extensionContext,
         services.aiProviders,
         services.logger,
-        services.mcpClient
+        services.mcpAdapter
       );
       await panel.submitPrompt(
         'Analyze the latest DRC results and prioritize fixes.',
@@ -88,7 +88,7 @@ export function registerAiCommands(
         extensionContext,
         services.aiProviders,
         services.logger,
-        services.mcpClient
+        services.mcpAdapter
       );
     }),
 

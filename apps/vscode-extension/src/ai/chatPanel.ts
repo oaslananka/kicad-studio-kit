@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { AI_CHAT_MAX_HISTORY, COMMANDS, SETTINGS } from '../constants';
 import { AIStreamAbortedError } from '../errors';
-import { McpClient } from '../mcp/mcpClient';
+import type { ChatMcpAdapter } from '../mcp/mcpToolAdapter';
 import { extractMcpToolCalls } from '../mcp/toolCallParser';
 import type { McpToolCall } from '../types';
 import { Logger } from '../utils/logger';
@@ -60,7 +60,7 @@ export class KiCadChatPanel implements vscode.Disposable {
     context: vscode.ExtensionContext,
     providers: AIProviderRegistry,
     logger: Logger,
-    mcpClient?: McpClient
+    mcpAdapter?: ChatMcpAdapter
   ): KiCadChatPanel {
     if (KiCadChatPanel.instance) {
       KiCadChatPanel.instance.panel.reveal(vscode.ViewColumn.Beside);
@@ -84,7 +84,7 @@ export class KiCadChatPanel implements vscode.Disposable {
       panel,
       providers,
       logger,
-      mcpClient
+      mcpAdapter
     );
     KiCadChatPanel.instance = instance;
     context.subscriptions.push(instance);
@@ -96,7 +96,7 @@ export class KiCadChatPanel implements vscode.Disposable {
     panel: vscode.WebviewPanel,
     private readonly providers: AIProviderRegistry,
     private readonly logger: Logger,
-    private readonly mcpClient?: McpClient
+    private readonly mcpAdapter?: ChatMcpAdapter
   ) {
     this.panel = panel;
     const selection = providers.getSelection();
@@ -271,8 +271,8 @@ export class KiCadChatPanel implements vscode.Disposable {
     ]
       .filter(Boolean)
       .join('\n\n');
-    const mcpState = this.mcpClient
-      ? await this.mcpClient.testConnection()
+    const mcpState = this.mcpAdapter
+      ? await this.mcpAdapter.testConnection()
       : undefined;
     const systemPrompt = buildSystemPrompt(aiLanguage, {
       ...activeContext.projectContext,
@@ -412,17 +412,18 @@ export class KiCadChatPanel implements vscode.Disposable {
     if (!target?.toolCalls?.length) {
       return;
     }
-    if (!this.mcpClient) {
+    if (!this.mcpAdapter) {
       void vscode.window.showWarningMessage(
         'MCP client is not available in this session.'
       );
       return;
     }
+    const mcpAdapter = this.mcpAdapter;
 
     const previews = await Promise.all(
       target.toolCalls.map(async (toolCall) => {
         try {
-          return `${toolCall.name}: ${await this.mcpClient?.previewToolCall(toolCall)}`;
+          return `${toolCall.name}: ${await mcpAdapter.previewToolCall(toolCall)}`;
         } catch {
           return `${toolCall.name}: preview unavailable`;
         }
@@ -439,7 +440,7 @@ export class KiCadChatPanel implements vscode.Disposable {
     }
 
     for (const toolCall of target.toolCalls) {
-      await this.mcpClient.callTool(toolCall.name, toolCall.arguments);
+      await mcpAdapter.executeToolCall(toolCall);
     }
 
     target.applied = true;

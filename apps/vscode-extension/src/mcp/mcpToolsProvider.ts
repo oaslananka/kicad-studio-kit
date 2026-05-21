@@ -5,7 +5,7 @@ import type {
   McpConnectionState,
   McpInstallStatus
 } from '../types';
-import type { McpClient } from './mcpClient';
+import type { McpConnectionAdapter } from './mcpToolAdapter';
 import { readConfiguredMcpProfile } from '../commands/mcpProfilePicker';
 
 type McpToolsNode = {
@@ -18,15 +18,15 @@ type McpToolsNode = {
   children?: McpToolsNode[] | undefined;
 };
 
-export class McpToolsProvider
-  implements vscode.TreeDataProvider<McpToolsNode>
-{
+export class McpToolsProvider implements vscode.TreeDataProvider<McpToolsNode> {
   private readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<
     McpToolsNode | undefined
   >();
   readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
 
-  constructor(private readonly mcpClient: Pick<McpClient, 'getState'>) {}
+  constructor(
+    private readonly mcpAdapter: Pick<McpConnectionAdapter, 'getState'>
+  ) {}
 
   refresh(): void {
     this.onDidChangeTreeDataEmitter.fire(undefined);
@@ -58,7 +58,7 @@ export class McpToolsProvider
       return element.children;
     }
     return buildMcpToolNodes(
-      this.mcpClient.getState(),
+      this.mcpAdapter.getState(),
       readConfiguredMcpProfile()
     );
   }
@@ -85,7 +85,12 @@ function buildMcpToolNodes(
   ];
 
   if (state.server) {
-    nodes.splice(3, 0, serverNode(state), capabilityNode(state.server.capabilities));
+    nodes.splice(
+      3,
+      0,
+      serverNode(state),
+      capabilityNode(state.server.capabilities)
+    );
   }
   if (state.message) {
     nodes.splice(1, 0, {
@@ -139,7 +144,9 @@ function stateNode(state: McpConnectionState): McpToolsNode {
     description: state.available ? 'detected, not connected' : 'not detected',
     icon: state.available ? 'warning' : 'circle-slash',
     command: {
-      command: state.available ? COMMANDS.retryMcp : COMMANDS.setupMcpIntegration,
+      command: state.available
+        ? COMMANDS.retryMcp
+        : COMMANDS.setupMcpIntegration,
       title: state.available ? 'Retry MCP Connection' : 'Setup MCP Integration'
     }
   };
@@ -206,7 +213,9 @@ function capabilityGroup(label: string, values: string[]): McpToolsNode {
   return {
     label,
     description: values.length ? `${values.length}` : 'none',
-    tooltip: values.length ? values.join('\n') : `No ${label.toLowerCase()} advertised.`,
+    tooltip: values.length
+      ? values.join('\n')
+      : `No ${label.toLowerCase()} advertised.`,
     icon: values.length ? 'list-tree' : 'circle-slash',
     children: values.slice(0, 25).map((value) => ({
       label: value,

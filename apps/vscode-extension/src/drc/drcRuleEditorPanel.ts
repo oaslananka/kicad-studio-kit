@@ -1,16 +1,16 @@
 import * as vscode from 'vscode';
 import { createNonce } from '../utils/nonce';
 import { asRecord, asString, hasType } from '../utils/webviewMessages';
-import type { McpClient } from '../mcp/mcpClient';
+import type { DrcRulesMcpAdapter } from '../mcp/mcpToolAdapter';
 
 export class DrcRuleEditorPanel {
   private static currentPanel: DrcRuleEditorPanel | undefined;
 
   static async createOrShow(
     context: vscode.ExtensionContext,
-    mcpClient: McpClient
+    mcpAdapter: DrcRulesMcpAdapter
   ): Promise<void> {
-    const state = await mcpClient.testConnection();
+    const state = await mcpAdapter.testConnection();
     if (!state.connected) {
       const choice = await vscode.window.showWarningMessage(
         'DRC rule editing requires a connected kicad-mcp-pro server.',
@@ -36,14 +36,14 @@ export class DrcRuleEditorPanel {
     DrcRuleEditorPanel.currentPanel = new DrcRuleEditorPanel(
       panel,
       context,
-      mcpClient
+      mcpAdapter
     );
   }
 
   private constructor(
     private readonly panel: vscode.WebviewPanel,
     context: vscode.ExtensionContext,
-    private readonly mcpClient: McpClient
+    private readonly mcpAdapter: DrcRulesMcpAdapter
   ) {
     this.panel.webview.html = this.renderHtml(context);
     this.panel.onDidDispose(() => {
@@ -65,7 +65,7 @@ export class DrcRuleEditorPanel {
     }
 
     if (message.type === 'upsert') {
-      await this.mcpClient.callTool('drc_rule_upsert', {
+      await this.mcpAdapter.upsertDrcRule({
         name,
         condition: asString(payload['condition']) ?? '',
         constraint: asString(payload['constraint']) ?? ''
@@ -73,7 +73,7 @@ export class DrcRuleEditorPanel {
       return;
     }
 
-    await this.mcpClient.callTool('drc_rule_delete', { name });
+    await this.mcpAdapter.deleteDrcRule(name);
   }
 
   private renderHtml(_context: vscode.ExtensionContext): string {

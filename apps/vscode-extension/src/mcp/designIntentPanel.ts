@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { asRecord, hasType } from '../utils/webviewMessages';
-import { McpClient } from './mcpClient';
+import type { DesignIntentMcpAdapter } from './mcpToolAdapter';
 import { createNonce } from '../utils/nonce';
 
 export class DesignIntentPanel {
@@ -8,7 +8,7 @@ export class DesignIntentPanel {
 
   static createOrShow(
     context: vscode.ExtensionContext,
-    mcpClient: McpClient
+    mcpAdapter: DesignIntentMcpAdapter
   ): void {
     if (DesignIntentPanel.currentPanel) {
       DesignIntentPanel.currentPanel.reveal(vscode.ViewColumn.Beside);
@@ -39,10 +39,7 @@ export class DesignIntentPanel {
       }
 
       if (message.type === 'load') {
-        const intent = await mcpClient.callTool(
-          'project_get_design_intent',
-          {}
-        );
+        const intent = await mcpAdapter.getDesignIntent();
         await panel.webview.postMessage({
           type: 'loaded',
           data: intent ?? {}
@@ -52,10 +49,7 @@ export class DesignIntentPanel {
 
       if (message.type === 'save') {
         const record = asRecord(message);
-        await mcpClient.callTool(
-          'project_set_design_intent',
-          asRecord(record?.['data']) ?? {}
-        );
+        await mcpAdapter.setDesignIntent(asRecord(record?.['data']) ?? {});
         void vscode.window.showInformationMessage(
           'Design intent saved. AI can now use your project intent as context.'
         );

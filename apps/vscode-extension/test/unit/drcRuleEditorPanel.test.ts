@@ -52,7 +52,8 @@ describe('DrcRuleEditorPanel', () => {
     (window.createWebviewPanel as jest.Mock).mockReturnValue(panelMock.panel);
     const mcpClient = {
       testConnection: jest.fn().mockResolvedValue({ connected: true }),
-      callTool: jest.fn().mockResolvedValue({})
+      upsertDrcRule: jest.fn().mockResolvedValue(undefined),
+      deleteDrcRule: jest.fn().mockResolvedValue(undefined)
     };
 
     await DrcRuleEditorPanel.createOrShow(
@@ -76,14 +77,12 @@ describe('DrcRuleEditorPanel', () => {
       }
     });
 
-    expect(mcpClient.callTool).toHaveBeenCalledWith('drc_rule_upsert', {
+    expect(mcpClient.upsertDrcRule).toHaveBeenCalledWith({
       name: 'power_clearance',
       condition: "A.NetClass == 'POWER'",
       constraint: 'clearance min 0.35mm'
     });
-    expect(mcpClient.callTool).toHaveBeenCalledWith('drc_rule_delete', {
-      name: 'power_clearance'
-    });
+    expect(mcpClient.deleteDrcRule).toHaveBeenCalledWith('power_clearance');
     expect(panelMock.panel.webview.html).toContain('KiCad DRC Rule Editor');
   });
 });

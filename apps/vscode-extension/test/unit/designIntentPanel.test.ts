@@ -40,7 +40,12 @@ describe('DesignIntentPanel', () => {
     disposePanel?.();
   });
 
-  function createPanel(mcpClient = { callTool: jest.fn() }) {
+  function createPanel(
+    mcpClient = {
+      getDesignIntent: jest.fn(),
+      setDesignIntent: jest.fn()
+    }
+  ) {
     DesignIntentPanel.createOrShow(
       createExtensionContextMock() as never,
       mcpClient as never
@@ -78,15 +83,13 @@ describe('DesignIntentPanel', () => {
       notes: 'Keep sensors clustered'
     };
     const { mcpClient, messageHandler } = createPanel({
-      callTool: jest.fn().mockResolvedValue(intent)
+      getDesignIntent: jest.fn().mockResolvedValue(intent),
+      setDesignIntent: jest.fn()
     });
 
     await messageHandler({ type: 'load' });
 
-    expect(mcpClient.callTool).toHaveBeenCalledWith(
-      'project_get_design_intent',
-      {}
-    );
+    expect(mcpClient.getDesignIntent).toHaveBeenCalledWith();
     expect(panel.webview.postMessage).toHaveBeenCalledWith({
       type: 'loaded',
       data: intent
@@ -95,7 +98,8 @@ describe('DesignIntentPanel', () => {
 
   it('posts an empty intent object when MCP returns no saved design intent', async () => {
     const { messageHandler } = createPanel({
-      callTool: jest.fn().mockResolvedValue(undefined)
+      getDesignIntent: jest.fn().mockResolvedValue(undefined),
+      setDesignIntent: jest.fn()
     });
 
     await messageHandler({ type: 'load' });
@@ -108,7 +112,8 @@ describe('DesignIntentPanel', () => {
 
   it('saves only object-shaped design intent payloads through MCP', async () => {
     const { mcpClient, messageHandler } = createPanel({
-      callTool: jest.fn().mockResolvedValue(undefined)
+      getDesignIntent: jest.fn(),
+      setDesignIntent: jest.fn().mockResolvedValue(undefined)
     });
     const data = {
       powerTreeRefs: 'U1,U2',
@@ -117,31 +122,27 @@ describe('DesignIntentPanel', () => {
 
     await messageHandler({ type: 'save', data });
 
-    expect(mcpClient.callTool).toHaveBeenCalledWith(
-      'project_set_design_intent',
-      data
-    );
+    expect(mcpClient.setDesignIntent).toHaveBeenCalledWith(data);
     expect(window.showInformationMessage).toHaveBeenCalledWith(
       'Design intent saved. AI can now use your project intent as context.'
     );
 
     await messageHandler({ type: 'save', data: 'not an object' });
 
-    expect(mcpClient.callTool).toHaveBeenLastCalledWith(
-      'project_set_design_intent',
-      {}
-    );
+    expect(mcpClient.setDesignIntent).toHaveBeenLastCalledWith({});
   });
 
   it('ignores unknown or malformed webview messages', async () => {
     const { mcpClient, messageHandler } = createPanel({
-      callTool: jest.fn()
+      getDesignIntent: jest.fn(),
+      setDesignIntent: jest.fn()
     });
 
     await messageHandler({ type: 'delete', data: {} });
     await messageHandler('load');
 
-    expect(mcpClient.callTool).not.toHaveBeenCalled();
+    expect(mcpClient.getDesignIntent).not.toHaveBeenCalled();
+    expect(mcpClient.setDesignIntent).not.toHaveBeenCalled();
     expect(panel.webview.postMessage).not.toHaveBeenCalled();
   });
 
@@ -150,7 +151,7 @@ describe('DesignIntentPanel', () => {
 
     DesignIntentPanel.createOrShow(
       createExtensionContextMock() as never,
-      { callTool: jest.fn() } as never
+      { getDesignIntent: jest.fn(), setDesignIntent: jest.fn() } as never
     );
 
     expect(window.createWebviewPanel).toHaveBeenCalledTimes(1);
@@ -180,7 +181,7 @@ describe('DesignIntentPanel', () => {
 
     DesignIntentPanel.createOrShow(
       createExtensionContextMock() as never,
-      { callTool: jest.fn() } as never
+      { getDesignIntent: jest.fn(), setDesignIntent: jest.fn() } as never
     );
 
     expect(window.createWebviewPanel).toHaveBeenCalledTimes(2);

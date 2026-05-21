@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import { COMMANDS } from '../constants';
 import type { FixItem } from '../types';
-import { McpClient } from './mcpClient';
+import { isRecoverableMcpUnavailableError } from './mcpErrorMapper';
+import type { FixQueueMcpAdapter } from './mcpToolAdapter';
 
 class FixQueueTreeItem extends vscode.TreeItem {
   constructor(public readonly item: FixItem) {
@@ -31,7 +32,7 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixItem> {
   readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
   private items: FixItem[] = [];
 
-  constructor(private readonly mcpClient: McpClient) {}
+  constructor(private readonly adapter: FixQueueMcpAdapter) {}
 
   getTreeItem(element: FixItem): vscode.TreeItem {
     return new FixQueueTreeItem(element);
@@ -60,17 +61,12 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixItem> {
 
   async refresh(): Promise<void> {
     try {
-      this.items = await this.mcpClient.fetchFixQueue();
+      this.items = await this.adapter.fetchFixQueue();
     } catch (err) {
       // Swallow errors when MCP is connected via VS Code stdio (HTTP not
       // available) or when the server is temporarily unreachable, so the
       // tree view degrades gracefully instead of surfacing a raw error toast.
-      const msg = err instanceof Error ? err.message : String(err);
-      if (
-        !msg.includes('stdio') &&
-        !msg.includes('fetch') &&
-        !msg.includes('ECONNREFUSED')
-      ) {
+      if (!isRecoverableMcpUnavailableError(err)) {
         throw err;
       }
       this.items = [];
@@ -84,7 +80,7 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixItem> {
       await this.applyFix(item);
       return;
     }
-    await this.mcpClient.callTool('apply_fix', { id });
+    await this.adapter.applyFixById(id);
     await this.refresh();
   }
 
@@ -125,7 +121,7 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixItem> {
   ): Promise<void> {
     const preview =
       item.preview ??
-      (await this.mcpClient.previewToolCall({
+      (await this.adapter.previewToolCall({
         name: item.tool,
         arguments: item.args
       }));
@@ -150,10 +146,7 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixItem> {
       return;
     }
 
-    await this.mcpClient.callTool(
-      item.tool || 'apply_fix',
-      item.tool ? item.args : { id: item.id }
-    );
+    await this.adapter.applyFixTool(item);
     item.status = 'done';
     this.onDidChangeTreeDataEmitter.fire(undefined);
     void vscode.window.showInformationMessage(`Applied: ${item.description}`);

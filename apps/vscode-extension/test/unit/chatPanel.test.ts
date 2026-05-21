@@ -32,6 +32,10 @@ function createPanelMock() {
   };
 }
 
+function flushPromises(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 describe('KiCadChatPanel', () => {
   beforeEach(() => {
     jest.restoreAllMocks();
@@ -376,7 +380,7 @@ describe('KiCadChatPanel', () => {
         connected: true
       })),
       previewToolCall: jest.fn(async () => 'Update fabrication profile'),
-      callTool: jest.fn(async () => ({}))
+      executeToolCall: jest.fn(async () => ({}))
     };
     const registry = {
       getSelection: () => ({
@@ -427,12 +431,17 @@ describe('KiCadChatPanel', () => {
       type: 'applyToolCalls',
       timestamp: assistantMessage?.timestamp
     });
+    await flushPromises();
     expect(mcpClient.previewToolCall).toHaveBeenCalled();
+    expect(mcpClient.executeToolCall).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'project_set_design_intent' })
+    );
 
     await panelMock.send({
       type: 'ignoreToolCalls',
       timestamp: assistantMessage?.timestamp
     });
+    await flushPromises();
     expect(
       history.find((entry) => entry.timestamp === assistantMessage?.timestamp)
         ?.applied
