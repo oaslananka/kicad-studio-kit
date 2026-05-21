@@ -1,23 +1,36 @@
 import * as vscode from 'vscode';
 import { createNonce } from '../utils/nonce';
 import { asRecord, asString, hasType } from '../utils/webviewMessages';
-import type { McpClient } from '../mcp/mcpClient';
+import type { DrcRulesMcpAdapter } from '../mcp/mcpToolAdapter';
 
 export class DrcRuleEditorPanel {
   private static currentPanel: DrcRuleEditorPanel | undefined;
 
   static async createOrShow(
     context: vscode.ExtensionContext,
-    mcpClient: McpClient
+    mcpAdapter: DrcRulesMcpAdapter
   ): Promise<void> {
-    const state = await mcpClient.testConnection();
+    let state: Awaited<ReturnType<DrcRulesMcpAdapter['testConnection']>>;
+    try {
+      state = await mcpAdapter.testConnection();
+    } catch (error) {
+      await showDrcRuleEditorError(
+        'Unable to check MCP connection for DRC rule editing',
+        error
+      );
+      return;
+    }
     if (!state.connected) {
       const choice = await vscode.window.showWarningMessage(
         'DRC rule editing requires a connected kicad-mcp-pro server.',
         'Setup MCP'
       );
       if (choice === 'Setup MCP') {
-        await vscode.commands.executeCommand('kicadstudio.setupMcpIntegration');
+        try {
+          await vscode.commands.executeCommand('kicadstudio.setupMcpIntegration');
+        } catch (error) {
+          await showDrcRuleEditorError('Unable to open MCP setup', error);
+        }
       }
       return;
     }
@@ -36,14 +49,14 @@ export class DrcRuleEditorPanel {
     DrcRuleEditorPanel.currentPanel = new DrcRuleEditorPanel(
       panel,
       context,
-      mcpClient
+      mcpAdapter
     );
   }
 
   private constructor(
     private readonly panel: vscode.WebviewPanel,
     context: vscode.ExtensionContext,
-    private readonly mcpClient: McpClient
+    private readonly mcpAdapter: DrcRulesMcpAdapter
   ) {
     this.panel.webview.html = this.renderHtml(context);
     this.panel.onDidDispose(() => {
@@ -65,15 +78,23 @@ export class DrcRuleEditorPanel {
     }
 
     if (message.type === 'upsert') {
-      await this.mcpClient.callTool('drc_rule_upsert', {
-        name,
-        condition: asString(payload['condition']) ?? '',
-        constraint: asString(payload['constraint']) ?? ''
-      });
+      try {
+        await this.mcpAdapter.upsertDrcRule({
+          name,
+          condition: asString(payload['condition']) ?? '',
+          constraint: asString(payload['constraint']) ?? ''
+        });
+      } catch (error) {
+        await showDrcRuleEditorError(`Unable to save DRC rule ${name}`, error);
+      }
       return;
     }
 
-    await this.mcpClient.callTool('drc_rule_delete', { name });
+    try {
+      await this.mcpAdapter.deleteDrcRule(name);
+    } catch (error) {
+      await showDrcRuleEditorError(`Unable to delete DRC rule ${name}`, error);
+    }
   }
 
   private renderHtml(_context: vscode.ExtensionContext): string {
@@ -123,4 +144,15 @@ export class DrcRuleEditorPanel {
 </body>
 </html>`;
   }
+}
+
+async function showDrcRuleEditorError(
+  prefix: string,
+  error: unknown
+): Promise<void> {
+  await vscode.window.showErrorMessage(`${prefix}: ${messageFromUnknown(error)}`);
+}
+
+function messageFromUnknown(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

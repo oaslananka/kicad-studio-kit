@@ -32,6 +32,10 @@ function createPanelMock() {
   };
 }
 
+function flushPromises(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 describe('KiCadChatPanel', () => {
   beforeEach(() => {
     jest.restoreAllMocks();
@@ -376,7 +380,7 @@ describe('KiCadChatPanel', () => {
         connected: true
       })),
       previewToolCall: jest.fn(async () => 'Update fabrication profile'),
-      callTool: jest.fn(async () => ({}))
+      executeToolCall: jest.fn(async () => ({}))
     };
     const registry = {
       getSelection: () => ({
@@ -427,15 +431,105 @@ describe('KiCadChatPanel', () => {
       type: 'applyToolCalls',
       timestamp: assistantMessage?.timestamp
     });
+    await flushPromises();
     expect(mcpClient.previewToolCall).toHaveBeenCalled();
+    expect(mcpClient.executeToolCall).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'project_set_design_intent' })
+    );
 
     await panelMock.send({
       type: 'ignoreToolCalls',
       timestamp: assistantMessage?.timestamp
     });
+    await flushPromises();
     expect(
       history.find((entry) => entry.timestamp === assistantMessage?.timestamp)
         ?.applied
     ).toBe(true);
+  });
+
+  it('surfaces MCP apply failures without unhandled rejections', async () => {
+    const context = createExtensionContextMock();
+    const panelMock = createPanelMock();
+    (vscode.window.createWebviewPanel as jest.Mock).mockReturnValue(
+      panelMock.panel
+    );
+    const logger = createLogger();
+    const mcpClient = {
+      testConnection: jest.fn(async () => ({
+        available: true,
+        connected: true
+      })),
+      previewToolCall: jest.fn(async () => 'Update fabrication profile'),
+      executeToolCall: jest.fn(async () => {
+        throw new Error('MCP apply failed');
+      })
+    };
+    const registry = {
+      getSelection: () => ({
+        provider: 'openai',
+        model: 'gpt-5.4',
+        openAIApiMode: 'responses'
+      }),
+      getProviderForSelection: jest.fn(async () => ({
+        name: 'OpenAI',
+        isConfigured: () => true,
+        analyze: jest.fn(
+          async () => `Recommended change
+
+\`\`\`mcp
+{"name":"project_set_design_intent","arguments":{"fabricationProfile":"jlcpcb"}}
+\`\`\``
+        ),
+        testConnection: jest.fn(async () => ({ ok: true, latencyMs: 10 }))
+      }))
+    };
+    (vscode.window.showInformationMessage as jest.Mock).mockReset();
+    (vscode.window.showInformationMessage as jest.Mock).mockResolvedValue(
+      'Apply'
+    );
+
+    const chat = KiCadChatPanel.createOrShow(
+      context as never,
+      registry as never,
+      logger as never,
+      mcpClient as never
+    );
+
+    await chat.submitPrompt('suggest a change', 'ctx');
+    const history = (chat as any).history as Array<{
+      role: string;
+      timestamp: number;
+      toolCalls?: Array<{ name: string }>;
+      applied?: boolean;
+    }>;
+    const assistantMessage = history.find(
+      (entry) => entry.role === 'assistant' && entry.toolCalls?.length
+    );
+
+    await expect(
+      panelMock.send({
+        type: 'applyToolCalls',
+        timestamp: assistantMessage?.timestamp
+      })
+    ).resolves.toBeUndefined();
+    await flushPromises();
+
+    expect(mcpClient.executeToolCall).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('project_set_design_intent'),
+      expect.any(Error)
+    );
+    expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining('MCP apply failed')
+    );
+    expect(panelMock.panel.webview.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'assistantReplace',
+        message: expect.objectContaining({
+          toolApplyError: expect.stringContaining('MCP tool call failed')
+        })
+      })
+    );
   });
 });

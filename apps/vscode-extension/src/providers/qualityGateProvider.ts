@@ -6,7 +6,7 @@ import type {
   QualityGateStatus,
   QualityGateViolation
 } from '../types';
-import type { McpClient } from '../mcp/mcpClient';
+import type { QualityGateMcpAdapter } from '../mcp/mcpToolAdapter';
 
 type QualityGateElement =
   | {
@@ -37,7 +37,7 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
 
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly mcpClient: McpClient
+    private readonly mcpAdapter: QualityGateMcpAdapter
   ) {
     this.gates = this.readCachedGates() ?? DEFAULT_GATES;
   }
@@ -111,10 +111,10 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
   async runAll(): Promise<void> {
     try {
       const [project, placement, transfer, manufacturing] = await Promise.all([
-        this.mcpClient.runProjectQualityGate(),
-        this.mcpClient.runPlacementQualityGate(),
-        this.mcpClient.runTransferQualityGate(),
-        this.mcpClient.runManufacturingQualityGate()
+        this.mcpAdapter.runProjectQualityGate(),
+        this.mcpAdapter.runPlacementQualityGate(),
+        this.mcpAdapter.runTransferQualityGate(),
+        this.mcpAdapter.runManufacturingQualityGate()
       ]);
       this.gates = markRunTime(
         mergeGates([...project, placement, transfer, manufacturing])
@@ -136,16 +136,14 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
 
   async runGate(gate: QualityGateResult): Promise<void> {
     const next = gate.id.includes('placement')
-      ? await this.mcpClient.runPlacementQualityGate()
+      ? await this.mcpAdapter.runPlacementQualityGate()
       : gate.id.includes('transfer')
-        ? await this.mcpClient.runTransferQualityGate()
+        ? await this.mcpAdapter.runTransferQualityGate()
         : gate.id.includes('manufacturing')
-          ? await this.mcpClient.runManufacturingQualityGate()
-          : ((await this.mcpClient.runProjectQualityGate())[0] ?? gate);
+          ? await this.mcpAdapter.runManufacturingQualityGate()
+          : ((await this.mcpAdapter.runProjectQualityGate())[0] ?? gate);
     this.gates = markRunTime(
-      mergeGates(
-        this.gates.map((item) => (item.id === gate.id ? next : item))
-      )
+      mergeGates(this.gates.map((item) => (item.id === gate.id ? next : item)))
     );
     await this.persist();
     this.onDidChangeTreeDataEmitter.fire(undefined);
@@ -158,8 +156,8 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
     this.drcTimer = setTimeout(() => {
       this.drcTimer = undefined;
       void Promise.all([
-        this.mcpClient.runPlacementQualityGate(),
-        this.mcpClient.runTransferQualityGate()
+        this.mcpAdapter.runPlacementQualityGate(),
+        this.mcpAdapter.runTransferQualityGate()
       ])
         .then(async ([placement, transfer]) => {
           this.gates = markRunTime(

@@ -49,6 +49,7 @@ import { registerMcpServerDefinitionProvider } from './lm/mcpServerDefinitionPro
 import { ContextBridge } from './mcp/contextBridge';
 import { McpClient } from './mcp/mcpClient';
 import { McpDetector } from './mcp/mcpDetector';
+import { McpToolAdapter } from './mcp/mcpToolAdapter';
 import { McpToolsProvider } from './mcp/mcpToolsProvider';
 import { FixQueueProvider } from './mcp/fixQueueProvider';
 import { KiCadDiagnosticsAggregator } from './language/diagnosticsAggregator';
@@ -151,11 +152,12 @@ export async function activate(
     logger: mcpLogger
   });
   extensionMcpClient = mcpClient;
-  const contextBridge = new ContextBridge(mcpClient);
-  const mcpToolsProvider = new McpToolsProvider(mcpClient);
-  const variantProvider = new VariantProvider(mcpClient);
-  const fixQueueProvider = new FixQueueProvider(mcpClient);
-  const qualityGateProvider = new QualityGateProvider(context, mcpClient);
+  const mcpToolAdapter = new McpToolAdapter(mcpClient);
+  const contextBridge = new ContextBridge(mcpToolAdapter);
+  const mcpToolsProvider = new McpToolsProvider(mcpToolAdapter);
+  const variantProvider = new VariantProvider(mcpToolAdapter);
+  const fixQueueProvider = new FixQueueProvider(mcpToolAdapter);
+  const qualityGateProvider = new QualityGateProvider(context, mcpToolAdapter);
   const drcRulesProvider = new DrcRulesProvider(parser);
   const errorAnalyzer = new ErrorAnalyzer(aiProviders, logger);
   const circuitExplainer = new CircuitExplainer(aiProviders, logger);
@@ -359,6 +361,7 @@ export async function activate(
     libraryIndexer,
     librarySearch,
     mcpClient,
+    mcpAdapter: mcpToolAdapter,
     mcpLogger,
     variantProvider,
     drcRulesProvider,

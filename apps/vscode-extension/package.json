@@ -57,6 +57,9 @@
   "homepage": "https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension",
   "license": "MIT",
   "main": "./dist/extension.js",
+  "extensionKind": [
+    "workspace"
+  ],
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
@@ -237,7 +240,7 @@
         {
           "id": "kicadstudio.qualityGate",
           "name": "Quality Gates",
-          "when": "kicadstudio.hasProject",
+          "when": "kicadstudio.mcpConnected && kicadstudio.hasProject",
           "icon": "assets/views/quality-gates.svg"
         },
         {
@@ -1893,7 +1896,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "audit:ci": "pnpm audit --audit-level high",
     "check:staged": "lint-staged",
-    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run build",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run build && pnpm run package:validate",
     "check:workspace-trust": "node scripts/check-untrusted-workspace.js",
     "check:ci": "pnpm run audit:ci && pnpm run format:check && pnpm run docs:check && pnpm run workflows:lint && pnpm run lint && pnpm run typecheck && pnpm run check:workspace-trust && pnpm run test:unit:coverage && pnpm run build && pnpm run test:integration && pnpm run package && pnpm run package:validate && pnpm run release:dry-run && pnpm run check:bundle-size",
     "compile-tests": "tsc -p tsconfig.test.json",
@@ -1901,8 +1904,10 @@
     "test:unit": "jest --runInBand",
     "test:unit:coverage": "jest --runInBand --coverage",
     "test:integration": "pnpm run compile-tests && node ./out/test/runTest.js",
-    "test:integration:real": "pnpm run compile-tests && node ./out/test/integration/realServer/quickstart.flow.test.js && node ./out/test/integration/realServer/qualityGate.flow.test.js && node ./out/test/integration/realServer/contextBridge.flow.test.js",
+    "test:integration:real": "pnpm run compile-tests && node ./out/test/integration/realServer/quickstart.flow.test.js && node ./out/test/integration/realServer/qualityGate.flow.test.js && node ./out/test/integration/realServer/contextBridge.flow.test.js && node ./out/test/integration/realServer/compatibility.flow.test.js",
+    "test:integration:real:host": "pnpm run build && pnpm run compile-tests && node ./out/test/runRealPairHostTest.js",
     "test:e2e": "playwright test test/e2e/",
+    "test:e2e:real": "playwright test test/e2e/realPair.test.ts",
     "check:bundle-size": "node scripts/check-bundle-size.js",
     "bundle-kicanvas": "node scripts/bundle-kicanvas.js",
     "package": "node scripts/package-extension.js",

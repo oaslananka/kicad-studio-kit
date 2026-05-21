@@ -19,4 +19,5 @@ Detailed architecture documents:
 - [Testing strategy](architecture/testing-strategy.md)
 - [Migration phases](architecture/migration-phases.md)
 - [M0 completion audit](architecture/m0-completion-audit.md)
+- [ADR 0006: VS Code Web compatibility](adr/0006-vscode-web-compatibility.md)
 - [KiCad Studio and MCP integration](integration/kicad-studio-mcp.md)

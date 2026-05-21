@@ -9,7 +9,9 @@
   },
   "include": [
     "test/runTest.ts",
+    "test/runRealPairHostTest.ts",
     "test/suite/**/*.ts",
+    "test/realPairSuite/**/*.ts",
     "test/integration/**/*.ts",
     "src/**/*.d.ts"
   ],
