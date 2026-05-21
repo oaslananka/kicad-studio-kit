@@ -22,9 +22,17 @@ export interface VsCodeSession {
   close(): Promise<void>;
 }
 
-export async function launchVsCodeWithFixtures(): Promise<VsCodeSession> {
+export interface VsCodeLaunchOptions {
+  settings?: Record<string, unknown>;
+  workspaceSourcePath?: string;
+}
+
+export async function launchVsCodeWithFixtures(
+  options: VsCodeLaunchOptions = {}
+): Promise<VsCodeSession> {
   const rootDir = path.resolve(__dirname, '..', '..');
-  const fixturesDir = path.join(rootDir, 'test', 'fixtures');
+  const fixturesDir =
+    options.workspaceSourcePath ?? path.join(rootDir, 'test', 'fixtures');
   const workspacePath = fs.mkdtempSync(
     path.join(os.tmpdir(), 'kicadstudio-e2e-workspace-')
   );
@@ -36,7 +44,7 @@ export async function launchVsCodeWithFixtures(): Promise<VsCodeSession> {
   );
   const logs: string[] = [];
   copyDirectory(fixturesDir, workspacePath);
-  writeUserSettings(userDataDir);
+  writeUserSettings(userDataDir, options.settings);
 
   const executablePath = await downloadAndUnzipVSCode(VSCODE_VERSION);
   const remoteDebuggingPort = await getFreePort();
@@ -50,6 +58,8 @@ export async function launchVsCodeWithFixtures(): Promise<VsCodeSession> {
       `--user-data-dir=${userDataDir}`,
       `--extensions-dir=${extensionsDir}`,
       `--extensionDevelopmentPath=${rootDir}`,
+      '--no-sandbox',
+      '--disable-gpu-sandbox',
       '--disable-workspace-trust',
       '--skip-welcome',
       workspacePath
@@ -184,7 +194,10 @@ async function removeDirectoryWithRetry(directory: string): Promise<void> {
   }
 }
 
-function writeUserSettings(userDataDir: string): void {
+function writeUserSettings(
+  userDataDir: string,
+  overrides: Record<string, unknown> = {}
+): void {
   const settingsPath = path.join(userDataDir, 'User', 'settings.json');
   fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
   fs.writeFileSync(
@@ -193,7 +206,8 @@ function writeUserSettings(userDataDir: string): void {
       {
         'git.enabled': false,
         'kicadstudio.mcp.autoDetect': false,
-        'workbench.startupEditor': 'none'
+        'workbench.startupEditor': 'none',
+        ...overrides
       },
       null,
       2
