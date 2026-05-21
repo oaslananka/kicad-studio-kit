@@ -107,7 +107,10 @@ function readWellKnownServerInfoContract(
       }
     },
     transport: {
-      type: transport['type'] === 'stdio' ? 'stdio' : 'streamable-http',
+      type:
+        transport['type'] === 'stdio' || transport['type'] === 'sse'
+          ? transport['type']
+          : 'streamable-http',
       streamableHttp: Boolean(transport['streamableHttp']),
       statelessHttp: Boolean(transport['statelessHttp']),
       legacySse: Boolean(transport['legacySse']),

@@ -327,7 +327,7 @@ export interface McpServerInfoContract {
   toolSchemaVersion: string;
   compatibilityRange: McpServerInfoCompatibilityRange;
   transport: {
-    type: 'stdio' | 'streamable-http';
+    type: 'stdio' | 'streamable-http' | 'sse';
     streamableHttp: boolean;
     statelessHttp: boolean;
     legacySse: boolean;

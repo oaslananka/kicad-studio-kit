@@ -6,8 +6,7 @@ from datetime import UTC, datetime
 
 from . import __version__
 from .compatibility import MCP_PROTOCOL_VERSION, compatibility_summary
-from .config import get_config
-from .server_info import get_server_info_contract
+from .server_info import get_server_info_contract, get_transport_metadata
 from .tools.router import (
     EXPERIMENTAL_TOOL_NAMES,
     PROFILE_CATEGORIES,
@@ -20,13 +19,8 @@ _SERVER_CARD_LAST_UPDATED = datetime.now(UTC).isoformat()
 
 def get_wellknown_metadata() -> dict[str, object]:
     """Return server discovery metadata for ``/.well-known/mcp-server``."""
-    cfg = get_config()
     protocol_version = MCP_PROTOCOL_VERSION
-    transport_type = "stdio" if cfg.transport == "stdio" else "streamable-http"
-    endpoint = None
-    if transport_type != "stdio":
-        host = cfg.host if cfg.host not in {"0.0.0.0", "::"} else "127.0.0.1"  # noqa: S104
-        endpoint = f"http://{host}:{cfg.port}{cfg.mount_path}"
+    transport = get_transport_metadata()
     return {
         "$schema": "https://static.modelcontextprotocol.io/schemas/mcp-server-card/v1.json",
         "version": __version__,
@@ -37,8 +31,8 @@ def get_wellknown_metadata() -> dict[str, object]:
             "version": __version__,
         },
         "transport": {
-            "type": transport_type,
-            "endpoint": endpoint,
+            "type": transport["type"],
+            "endpoint": transport["endpoint"],
         },
         "capabilities": {
             "tools": True,
@@ -60,7 +54,7 @@ def get_wellknown_metadata() -> dict[str, object]:
         "categories": ["eda", "pcb", "kicad"],
         "description": "Project-aware PCB and schematic workflows for KiCad",
         "profiles": available_profiles(),
-        "serverInfoContract": get_server_info_contract(),
+        "serverInfoContract": get_server_info_contract(probe_live_context=False),
         "compatibility": compatibility_summary(),
         "kicad_version_required": (
             "10.0.x primary, 9.x supported, 8.x deprecated file-level fallback"

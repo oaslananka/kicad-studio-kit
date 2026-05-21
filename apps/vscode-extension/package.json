@@ -237,7 +237,7 @@
         {
           "id": "kicadstudio.qualityGate",
           "name": "Quality Gates",
-          "when": "kicadstudio.mcpConnected && kicadstudio.hasProject",
+          "when": "kicadstudio.hasProject",
           "icon": "assets/views/quality-gates.svg"
         },
         {

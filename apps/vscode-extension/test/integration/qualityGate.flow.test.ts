@@ -17,7 +17,7 @@ suite('Quality Gate Integration', () => {
       sidebarViews.some(
         (view) =>
           view.id === 'kicadstudio.qualityGate' &&
-          view.when === 'kicadstudio.mcpConnected && kicadstudio.hasProject'
+          view.when === 'kicadstudio.hasProject'
       )
     );
 

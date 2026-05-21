@@ -63,7 +63,7 @@
       ],
       "properties": {
         "type": {
-          "enum": ["stdio", "streamable-http"]
+          "enum": ["stdio", "streamable-http", "sse"]
         },
         "streamableHttp": {
           "type": "boolean"
