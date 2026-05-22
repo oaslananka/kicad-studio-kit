@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import re
-import subprocess
 from typing import Any, cast
 
 from ..config import get_config
 from ..utils.sexpr import _extract_block
+from . import export_support
 from .board_file import STRING_PATTERN
 from .schematic import parse_schematic_file
+
+subprocess = export_support.subprocess
 
 
 def _parse_netlist_text(content: str) -> dict[tuple[str, str], str]:
@@ -47,22 +49,11 @@ def _export_schematic_net_map() -> tuple[dict[tuple[str, str], str], str]:
         ["sch", "export", "netlist", "--output", str(out_file), str(cfg.sch_file)],
         ["sch", "export", "netlist", "--input", str(cfg.sch_file), "--output", str(out_file)],
     ]
-    last_stderr = "unknown error"
-    for variant in variants:
-        try:
-            result = subprocess.run(
-                [str(cfg.kicad_cli), *variant],
-                capture_output=True,
-                text=True,
-                timeout=cfg.cli_timeout,
-                check=False,
-            )
-        except OSError as exc:
-            return {}, f"Netlist export failed, so pad net names were skipped: {exc}"
-        if result.returncode == 0 and out_file.exists():
-            content = out_file.read_text(encoding="utf-8", errors="ignore")
-            return _parse_netlist_text(content), ""
-        last_stderr = result.stderr.strip() or last_stderr
+    code, _stdout, stderr = export_support._run_cli_variants(variants)
+    if code == 0 and out_file.exists():
+        content = out_file.read_text(encoding="utf-8", errors="ignore")
+        return _parse_netlist_text(content), ""
+    last_stderr = stderr.strip() or "unknown error"
     return {}, f"Netlist export failed, so pad net names were skipped: {last_stderr}"
 
 

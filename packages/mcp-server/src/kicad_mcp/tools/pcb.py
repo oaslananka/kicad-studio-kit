@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import math
 import re
-import subprocess
+import time
 import uuid
 from collections.abc import Callable, Iterable
 from pathlib import Path
@@ -59,6 +59,7 @@ from ..models.pcb import (
     StackupLayerSpec,
     SyncPcbFromSchematicInput,
 )
+from ..utils import telemetry as otel
 from ..utils.cache import clear_ttl_cache, ttl_cache
 from ..utils.impedance import TraceType, copper_thickness_mm, trace_impedance
 from ..utils.layers import CANONICAL_LAYER_NAMES, resolve_layer, resolve_layer_name
@@ -72,6 +73,7 @@ from ..utils.placement import (
 )
 from ..utils.sexpr import _extract_block, _sexpr_string
 from ..utils.units import _coord_nm, mm_to_nm, nm_to_mm
+from .export_support import _run_cli_variants
 from .metadata import headless_compatible, requires_kicad_running
 from .schematic import parse_schematic_file
 
@@ -1230,38 +1232,45 @@ def _footprint_pad_net_map(block: str) -> dict[str, str]:
 
 
 def _parse_board_footprint_blocks(content: str) -> dict[str, dict[str, Any]]:
+    started = time.perf_counter()
     footprints: dict[str, dict[str, Any]] = {}
-    cursor = 0
-    while cursor < len(content):
-        if content[cursor:].startswith("(footprint"):
-            block, length = _extract_block(content, cursor)
-            if block:
-                ref_match = re.search(rf'\(property\s+"Reference"\s+{STRING_PATTERN}', block)
-                value_match = re.search(rf'\(property\s+"Value"\s+{STRING_PATTERN}', block)
-                name_match = re.match(rf"\(footprint\s+{STRING_PATTERN}", block.lstrip())
-                if ref_match and name_match:
-                    root_at = _parse_root_at(block)
-                    width_mm, height_mm = _bbox_from_block(block)
-                    layer_match = re.search(r'\(layer\s+"([^"]+)"\)', block)
-                    footprints[ref_match.group(1)] = {
-                        "name": name_match.group(1),
-                        "block": block,
-                        "start": cursor,
-                        "end": cursor + length,
-                        "value": value_match.group(1) if value_match else "",
-                        "x_mm": root_at[0] if root_at else None,
-                        "y_mm": root_at[1] if root_at else None,
-                        "rotation": root_at[2] if root_at else 0,
-                        "width_mm": width_mm,
-                        "height_mm": height_mm,
-                        "layer_name": layer_match.group(1) if layer_match else "F.Cu",
-                        "net_names": _footprint_net_names(block),
-                        "pad_nets": _footprint_pad_net_map(block),
-                    }
-                cursor += length
-                continue
-        cursor += 1
-    return footprints
+    with otel.pcb_parse_span() as span:
+        cursor = 0
+        while cursor < len(content):
+            if content[cursor:].startswith("(footprint"):
+                block, length = _extract_block(content, cursor)
+                if block:
+                    ref_match = re.search(rf'\(property\s+"Reference"\s+{STRING_PATTERN}', block)
+                    value_match = re.search(rf'\(property\s+"Value"\s+{STRING_PATTERN}', block)
+                    name_match = re.match(rf"\(footprint\s+{STRING_PATTERN}", block.lstrip())
+                    if ref_match and name_match:
+                        root_at = _parse_root_at(block)
+                        width_mm, height_mm = _bbox_from_block(block)
+                        layer_match = re.search(r'\(layer\s+"([^"]+)"\)', block)
+                        footprints[ref_match.group(1)] = {
+                            "name": name_match.group(1),
+                            "block": block,
+                            "start": cursor,
+                            "end": cursor + length,
+                            "value": value_match.group(1) if value_match else "",
+                            "x_mm": root_at[0] if root_at else None,
+                            "y_mm": root_at[1] if root_at else None,
+                            "rotation": root_at[2] if root_at else 0,
+                            "width_mm": width_mm,
+                            "height_mm": height_mm,
+                            "layer_name": layer_match.group(1) if layer_match else "F.Cu",
+                            "net_names": _footprint_net_names(block),
+                            "pad_nets": _footprint_pad_net_map(block),
+                        }
+                    cursor += length
+                    continue
+            cursor += 1
+        otel.finish_pcb_parse_span(
+            span,
+            footprint_count=len(footprints),
+            elapsed_seconds=time.perf_counter() - started,
+        )
+        return footprints
 
 
 def _replace_root_at(block: str, *, x_mm: float, y_mm: float, rotation: int) -> str:
@@ -1964,22 +1973,11 @@ def _export_schematic_net_map() -> tuple[dict[tuple[str, str], str], str]:
         ["sch", "export", "netlist", "--output", str(out_file), str(cfg.sch_file)],
         ["sch", "export", "netlist", "--input", str(cfg.sch_file), "--output", str(out_file)],
     ]
-    last_stderr = "unknown error"
-    for variant in variants:
-        try:
-            result = subprocess.run(
-                [str(cfg.kicad_cli), *variant],
-                capture_output=True,
-                text=True,
-                timeout=cfg.cli_timeout,
-                check=False,
-            )
-        except OSError as exc:
-            return {}, f"Netlist export failed, so pad net names were skipped: {exc}"
-        if result.returncode == 0 and out_file.exists():
-            content = out_file.read_text(encoding="utf-8", errors="ignore")
-            return _parse_netlist_text(content), ""
-        last_stderr = result.stderr.strip() or last_stderr
+    code, _stdout, stderr = _run_cli_variants(variants)
+    if code == 0 and out_file.exists():
+        content = out_file.read_text(encoding="utf-8", errors="ignore")
+        return _parse_netlist_text(content), ""
+    last_stderr = stderr.strip() or "unknown error"
     return {}, f"Netlist export failed, so pad net names were skipped: {last_stderr}"
 
 

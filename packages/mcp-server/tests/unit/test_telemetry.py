@@ -1,90 +1,186 @@
 from __future__ import annotations
 
-import structlog
+import subprocess
+from collections.abc import Iterable
+from pathlib import Path
+from typing import Any
 
-from kicad_mcp.telemetry.events import (
-    emit_human_gate_reached,
-    emit_quality_gate,
-    emit_rollback,
-    emit_tool_call_end,
-    emit_tool_call_start,
-)
+import pytest
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import InMemoryMetricReader, MetricsData
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from starlette.testclient import TestClient
+
+from kicad_mcp.compatibility import MCP_PROTOCOL_VERSION
+from kicad_mcp.config import KiCadMCPConfig, get_config
+from kicad_mcp.server import _apply_cli_env, build_server
+from kicad_mcp.tools import board_file, export_support
+from kicad_mcp.utils.telemetry import configure_telemetry, reset_telemetry
+from tests.conftest import call_tool_text
+
+HTTP_HEADERS = {
+    "Accept": "application/json, text/event-stream",
+    "Content-Type": "application/json",
+}
 
 
-def test_emit_tool_call_start_returns_timestamp() -> None:
-    start = emit_tool_call_start(
-        run_id="run-1",
-        tool_name="sch_add_symbol",
-        call_id="call-1",
-        profile="schematic_only",
-        dry_run=True,
-        kicad_version="10.0.0",
-        project_id="project-1",
+@pytest.fixture()
+def telemetry_exporters() -> Iterable[
+    tuple[InMemorySpanExporter, InMemoryMetricReader, MeterProvider]
+]:
+    span_exporter = InMemorySpanExporter()
+    tracer_provider = TracerProvider()
+    tracer_provider.add_span_processor(SimpleSpanProcessor(span_exporter))
+    metric_reader = InMemoryMetricReader()
+    meter_provider = MeterProvider(metric_readers=[metric_reader])
+    configure_telemetry(
+        KiCadMCPConfig(telemetry_enabled=True),
+        tracer_provider=tracer_provider,
+        meter_provider=meter_provider,
+    )
+    yield span_exporter, metric_reader, meter_provider
+    reset_telemetry()
+    tracer_provider.shutdown()
+    meter_provider.shutdown()
+
+
+def _metric_points(metrics_data: MetricsData, name: str) -> list[Any]:
+    points: list[Any] = []
+    for resource_metric in metrics_data.resource_metrics:
+        for scope_metric in resource_metric.scope_metrics:
+            for metric in scope_metric.metrics:
+                if metric.name == name:
+                    points.extend(metric.data.data_points)
+    return points
+
+
+def _metric_attributes(points: list[Any]) -> list[dict[str, object]]:
+    return [dict(point.attributes or {}) for point in points]
+
+
+def test_telemetry_config_enables_standard_otlp_env_and_cli_flag(
+    sample_project: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    del sample_project
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector.local:4318")
+    monkeypatch.setenv("OTEL_SERVICE_NAME", "kicad-mcp-test")
+    endpoint_cfg = KiCadMCPConfig()
+
+    assert endpoint_cfg.telemetry_enabled is True
+    assert endpoint_cfg.otel_endpoint == "http://collector.local:4318"
+    assert endpoint_cfg.otel_service_name == "kicad-mcp-test"
+
+    monkeypatch.delenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+    _apply_cli_env(telemetry=True)
+
+    assert get_config().telemetry_enabled is True
+
+
+@pytest.mark.anyio
+async def test_tool_telemetry_exports_safe_spans_and_metrics(
+    sample_project: Path,
+    telemetry_exporters: tuple[InMemorySpanExporter, InMemoryMetricReader, MeterProvider],
+) -> None:
+    span_exporter, metric_reader, meter_provider = telemetry_exporters
+    server = build_server("minimal")
+
+    await call_tool_text(server, "kicad_set_project", {"project_dir": str(sample_project)})
+    meter_provider.force_flush()
+
+    tool_spans = [span for span in span_exporter.get_finished_spans() if span.name == "mcp.tool"]
+    tool_metrics = _metric_attributes(
+        _metric_points(metric_reader.get_metrics_data(), "mcp_tool_invocations_total")
+    )
+    duration_metrics = _metric_attributes(
+        _metric_points(metric_reader.get_metrics_data(), "mcp_tool_duration_seconds")
     )
 
-    assert isinstance(start, float)
+    assert tool_spans
+    assert tool_spans[0].attributes["rpc.system"] == "mcp"
+    assert tool_spans[0].attributes["rpc.method"] == "tools/call"
+    assert tool_spans[0].attributes["mcp.tool.name"] == "kicad_set_project"
+    assert str(sample_project) not in str(tool_spans[0].attributes)
+    assert {"tool": "kicad_set_project", "status": "ok"} in tool_metrics
+    assert {"tool": "kicad_set_project"} in duration_metrics
 
 
-def test_emit_functions_run_without_error() -> None:
-    rollback_ref = "rollback-reference"
-    emit_tool_call_end(
-        run_id="run-1",
-        tool_name="sch_add_symbol",
-        call_id="call-1",
-        ok=True,
-        changed=False,
-        dry_run=True,
-        warning_count=1,
-        artifact_count=0,
-        duration_ms=12.345,
-        human_gate_required=False,
+def test_cli_and_pcb_parser_telemetry_avoid_paths_and_content(
+    sample_project: Path,
+    telemetry_exporters: tuple[InMemorySpanExporter, InMemoryMetricReader, MeterProvider],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    span_exporter, metric_reader, meter_provider = telemetry_exporters
+    private_output = sample_project / "private" / "board.gbr"
+
+    def fake_run(
+        args: list[str],
+        *,
+        capture_output: bool,
+        text: bool,
+        timeout: float,
+        check: bool,
+    ) -> subprocess.CompletedProcess[str]:
+        del capture_output, text, timeout, check
+        return subprocess.CompletedProcess(args=args, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(export_support.subprocess, "run", fake_run)
+
+    export_support._run_cli("pcb", "export", "gerbers", "--output", str(private_output))
+    board_file._parse_board_footprint_blocks(
+        '(kicad_pcb (footprint "R_0603" (property "Reference" "R1")))'
     )
-    emit_quality_gate(
-        run_id="run-1",
-        gate_id="gate-1",
-        gate_name="project_quality_gate_report",
-        passed=True,
-    )
-    emit_rollback(
-        run_id="run-1",
-        rollback_token=rollback_ref,
-        restored_files=["demo.kicad_sch"],
-    )
-    emit_human_gate_reached(
-        run_id="run-1",
-        tool_name="export_manufacturing_package",
-        reason="release approval",
-    )
+    meter_provider.force_flush()
 
-
-def test_structlog_capture_receives_event(monkeypatch) -> None:
-    events: list[tuple[str, dict[str, object]]] = []
-
-    class CapturingLogger:
-        def info(self, event: str, **kwargs: object) -> None:
-            events.append((event, kwargs))
-
-        def warning(self, event: str, **kwargs: object) -> None:
-            events.append((event, kwargs))
-
-    monkeypatch.setattr(structlog, "get_logger", lambda _name: CapturingLogger())
-    from kicad_mcp.telemetry import events as telemetry_events
-
-    monkeypatch.setattr(telemetry_events, "logger", CapturingLogger())
-
-    telemetry_events.emit_human_gate_reached(
-        run_id="run-1",
-        tool_name="export_manufacturing_package",
-        reason="approval required",
+    cli_spans = [span for span in span_exporter.get_finished_spans() if span.name == "kicad.cli"]
+    parser_spans = [
+        span for span in span_exporter.get_finished_spans() if span.name == "kicad.pcb.parse"
+    ]
+    cli_metrics = _metric_attributes(
+        _metric_points(metric_reader.get_metrics_data(), "kicad_cli_invocations_total")
     )
 
-    assert events == [
-        (
-            "human_gate_required",
-            {
-                "run_id": "run-1",
-                "tool_name": "export_manufacturing_package",
-                "reason": "approval required",
+    assert cli_spans
+    assert cli_spans[0].attributes["process.executable.name"] == "kicad-cli"
+    assert cli_spans[0].attributes["kicad.cli.command"] == "pcb export gerbers"
+    assert str(private_output) not in str(cli_spans[0].attributes)
+    assert parser_spans
+    assert "R1" not in str(parser_spans[0].attributes)
+    assert {"command": "pcb export gerbers", "status": "ok"} in cli_metrics
+
+
+def test_streamable_http_session_metric_tracks_active_sessions(
+    sample_project: Path,
+    telemetry_exporters: tuple[InMemorySpanExporter, InMemoryMetricReader, MeterProvider],
+) -> None:
+    del sample_project
+    _span_exporter, metric_reader, meter_provider = telemetry_exporters
+    cfg = get_config()
+    cfg.transport = "streamable-http"
+    cfg.stateful_http = True
+    server = build_server("minimal")
+
+    with TestClient(server.streamable_http_app(), base_url="http://127.0.0.1:3334") as client:
+        initialized = client.post(
+            "/mcp",
+            headers=HTTP_HEADERS,
+            json={
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": MCP_PROTOCOL_VERSION,
+                    "capabilities": {},
+                    "clientInfo": {"name": "telemetry-test", "version": "1.0.0"},
+                },
             },
         )
-    ]
+    meter_provider.force_flush()
+
+    session_points = _metric_points(metric_reader.get_metrics_data(), "mcp_session_active")
+
+    assert initialized.status_code == 200
+    assert initialized.headers.get("mcp-session-id")
+    assert [point.value for point in session_points] == [1]

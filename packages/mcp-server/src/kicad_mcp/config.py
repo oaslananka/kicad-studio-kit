@@ -84,6 +84,11 @@ class KiCadMCPConfig(BaseSettings):
     legacy_sse: bool = Field(default=False)
     stateful_http: bool = Field(default=False)
     enable_metrics: bool = Field(default=False)
+    telemetry_enabled: bool = Field(default=False)
+    otel_endpoint: str | None = Field(default=None)
+    otel_headers: str = Field(default="")
+    otel_service_name: str = Field(default="kicad-mcp-pro")
+    otel_protocol: Literal["http/protobuf", "grpc"] = Field(default="http/protobuf")
     studio_watch_dir: Path | None = Field(default=None)
     profile: Literal[
         "full",
@@ -147,6 +152,10 @@ class KiCadMCPConfig(BaseSettings):
             "workspace_root": ("KICAD_MCP_WORKSPACE_ROOT",),
             "ipc_retries": ("KICAD_MCP_RETRIES",),
             "headless": ("KICAD_MCP_HEADLESS",),
+            "otel_endpoint": ("OTEL_EXPORTER_OTLP_ENDPOINT",),
+            "otel_headers": ("OTEL_EXPORTER_OTLP_HEADERS",),
+            "otel_service_name": ("OTEL_SERVICE_NAME",),
+            "otel_protocol": ("OTEL_EXPORTER_OTLP_PROTOCOL",),
         }
         updated = dict(values)
         for field_name, env_names in aliases.items():
@@ -165,6 +174,9 @@ class KiCadMCPConfig(BaseSettings):
             timeout_ms = os.environ.get("KICAD_MCP_TIMEOUT_MS")
             if timeout_ms not in (None, ""):
                 updated["ipc_connection_timeout"] = float(str(timeout_ms)) / 1000.0
+
+        if updated.get("otel_endpoint") not in (None, ""):
+            updated["telemetry_enabled"] = True
 
         return updated
 
@@ -240,7 +252,7 @@ class KiCadMCPConfig(BaseSettings):
             return "WARNING" if normalized == "WARN" else normalized
         return value
 
-    @field_validator("log_format", "profile", mode="before")
+    @field_validator("log_format", "profile", "otel_protocol", mode="before")
     @classmethod
     def _normalize_lowercase_literals(cls, value: object) -> object:
         if isinstance(value, str):
@@ -402,6 +414,11 @@ class KiCadMCPConfig(BaseSettings):
             "headless": self.headless,
             "log_level": self.log_level,
             "log_format": self.log_format,
+            "telemetry_enabled": self.telemetry_enabled,
+            "otel_endpoint": {"configured": self.otel_endpoint is not None},
+            "otel_headers": {"configured": bool(self.otel_headers)},
+            "otel_service_name": self.otel_service_name,
+            "otel_protocol": self.otel_protocol,
             "transport": self.transport,
             "auth_token": {"configured": self.auth_token is not None},
             "kicad_token": {"configured": self.kicad_token is not None},

@@ -49,6 +49,7 @@ from .tools import router
 from .tools.fixers import validate_callable_imports
 from .tools.metadata import infer_tool_annotations
 from .tools.router import EXPERIMENTAL_TOOL_NAMES, available_profiles, categories_for_profile
+from .utils import telemetry as otel
 from .utils.logging import setup_logging
 from .wellknown import get_wellknown_metadata
 
@@ -650,38 +651,41 @@ class KiCadFastMCP(FastMCP):
         limiter = _tool_limiter(name)
         result: object
         _log_tool_call_started(name, arguments)
-        try:
-            await self._ensure_registered_async()
-            if limiter is None:
-                result = await super().call_tool(name, arguments)
-            else:
-                async with limiter:
+        with otel.tool_span(name) as span:
+            try:
+                await self._ensure_registered_async()
+                if limiter is None:
                     result = await super().call_tool(name, arguments)
-            failure_message = _tool_failure_message(name, result)
-            if failure_message is not None:
-                result = _structured_tool_error_from_message(failure_message, tool_name=name)
-            status, error_code = _status_from_result(result)
-            return result
-        except ToolError as exc:
-            result = _structured_tool_error(exc, tool_name=name)
-            status, error_code = _status_from_result(result)
-            return result
-        finally:
-            elapsed_ms = (time.perf_counter() - started) * 1000.0
-            _record_tool_metric(name, status, elapsed_ms)
-            _log_tool_call_finished(
-                name,
-                status=status,
-                elapsed_ms=elapsed_ms,
-                error_code=error_code,
-            )
-            _audit_tool_call(
-                tool_name=name,
-                arguments=arguments,
-                status=status,
-                elapsed_ms=elapsed_ms,
-                error_code=error_code,
-            )
+                else:
+                    async with limiter:
+                        result = await super().call_tool(name, arguments)
+                failure_message = _tool_failure_message(name, result)
+                if failure_message is not None:
+                    result = _structured_tool_error_from_message(failure_message, tool_name=name)
+                status, error_code = _status_from_result(result)
+                return result
+            except ToolError as exc:
+                result = _structured_tool_error(exc, tool_name=name)
+                status, error_code = _status_from_result(result)
+                return result
+            finally:
+                elapsed_ms = (time.perf_counter() - started) * 1000.0
+                _record_tool_metric(name, status, elapsed_ms)
+                otel.record_tool_invocation(name, status, elapsed_ms / 1000.0)
+                otel.finish_tool_span(span, status=status, error_code=error_code)
+                _log_tool_call_finished(
+                    name,
+                    status=status,
+                    elapsed_ms=elapsed_ms,
+                    error_code=error_code,
+                )
+                _audit_tool_call(
+                    tool_name=name,
+                    arguments=arguments,
+                    status=status,
+                    elapsed_ms=elapsed_ms,
+                    error_code=error_code,
+                )
 
 
 class _StreamableHttpContractMiddleware:
@@ -704,8 +708,23 @@ class _StreamableHttpContractMiddleware:
         headers = _scope_headers(scope)
         if method == "DELETE":
             session_id = headers.get("mcp-session-id", "")
-            with structlog.contextvars.bound_contextvars(mcp_session_id=session_id or None):
-                await self.app(scope, receive, send)
+            delete_response_status: int | None = None
+
+            async def delete_request_send(message: Message) -> None:
+                nonlocal delete_response_status
+                if message["type"] == "http.response.start":
+                    status_value = message.get("status")
+                    delete_response_status = status_value if isinstance(status_value, int) else None
+                await send(message)
+
+            with otel.mcp_request_span(
+                http_method=str(method),
+                mount_path=cfg.mount_path,
+                session_present=bool(session_id),
+            ) as request_span:
+                with structlog.contextvars.bound_contextvars(mcp_session_id=session_id or None):
+                    await self.app(scope, receive, delete_request_send)
+                otel.finish_mcp_request_span(request_span, status_code=delete_response_status)
             if session_id:
                 self._forget_session(session_id)
                 logger.info("mcp_session_destroyed", mcp_session_id=session_id)
@@ -724,6 +743,17 @@ class _StreamableHttpContractMiddleware:
             return
 
         rpc_id, rpc_method = _json_rpc_metadata(body)
+        post_response_status: int | None = None
+        original_send = send
+
+        async def post_request_send(message: Message) -> None:
+            nonlocal post_response_status
+            if message["type"] == "http.response.start":
+                status_value = message.get("status")
+                post_response_status = status_value if isinstance(status_value, int) else None
+            await original_send(message)
+
+        send = post_request_send
         if rpc_method == "initialize":
             logger.info(
                 "mcp_transport_initialize",
@@ -812,11 +842,18 @@ class _StreamableHttpContractMiddleware:
                     )
             await send(message)
 
-        with structlog.contextvars.bound_contextvars(
-            request_id=rpc_id,
-            mcp_session_id=session_id or None,
-        ):
-            await self.app(scope, replay_receive, send_wrapper)
+        with otel.mcp_request_span(
+            http_method=str(method),
+            mount_path=cfg.mount_path,
+            session_present=bool(session_id),
+        ) as request_span:
+            otel.annotate_mcp_request(request_span, rpc_method=rpc_method)
+            with structlog.contextvars.bound_contextvars(
+                request_id=rpc_id,
+                mcp_session_id=session_id or None,
+            ):
+                await self.app(scope, replay_receive, send_wrapper)
+            otel.finish_mcp_request_span(request_span, status_code=post_response_status)
 
     def _has_session(self, session_id: str) -> bool:
         return session_id in self._session_ids
@@ -826,11 +863,15 @@ class _StreamableHttpContractMiddleware:
             return
         if len(self._session_order) >= self._SESSION_CACHE_LIMIT:
             self._session_ids.discard(self._session_order.popleft())
+            otel.record_session_delta(-1)
         self._session_order.append(session_id)
         self._session_ids.add(session_id)
+        otel.record_session_delta(1)
 
     def _forget_session(self, session_id: str) -> None:
-        self._session_ids.discard(session_id)
+        if session_id in self._session_ids:
+            self._session_ids.discard(session_id)
+            otel.record_session_delta(-1)
         with contextlib.suppress(ValueError):
             self._session_order.remove(session_id)
 
@@ -1113,6 +1154,7 @@ def _register_profile_components(
 def build_server(profile: str | None = None, *, defer_registration: bool = False) -> FastMCP:
     """Build a FastMCP server instance for the active profile."""
     cfg = get_config()
+    otel.ensure_telemetry_configured(cfg)
     cfg._validate_http_transport_security()
     selected_profile = profile or cfg.profile
     enabled = set(categories_for_profile(selected_profile))
@@ -1251,6 +1293,7 @@ def _apply_cli_env(
     log_file: str | None = None,
     profile: str | None = None,
     experimental: bool | None = None,
+    telemetry: bool | None = None,
 ) -> None:
     cli_env = {
         "KICAD_MCP_TRANSPORT": transport,
@@ -1269,6 +1312,8 @@ def _apply_cli_env(
             os.environ[key] = value
     if experimental is not None and not isinstance(experimental, OptionInfo):
         os.environ["KICAD_MCP_ENABLE_EXPERIMENTAL_TOOLS"] = "true" if experimental else "false"
+    if telemetry is not None and not isinstance(telemetry, OptionInfo):
+        os.environ["KICAD_MCP_TELEMETRY_ENABLED"] = "true" if telemetry else "false"
 
 
 def _run_server_from_options(
@@ -1282,6 +1327,7 @@ def _run_server_from_options(
     log_file: str | None = None,
     profile: str | None = None,
     experimental: bool | None = None,
+    telemetry: bool | None = None,
 ) -> None:
     """Apply CLI overrides and start the MCP server."""
     _apply_cli_env(
@@ -1294,10 +1340,12 @@ def _run_server_from_options(
         log_file=log_file,
         profile=profile,
         experimental=experimental,
+        telemetry=telemetry,
     )
     with contextlib.redirect_stdout(sys.stderr):
         reset_config()
         cfg = get_config()
+        otel.configure_telemetry(cfg)
         setup_logging(
             cfg.log_level,
             cfg.log_format,
@@ -1356,6 +1404,9 @@ def main_callback(
         None, help=f"Server profile: {', '.join(available_profiles())}"
     ),
     experimental: bool | None = typer.Option(None, help="Enable experimental tools"),
+    telemetry: bool | None = typer.Option(
+        None, "--telemetry/--no-telemetry", help="Enable OpenTelemetry export"
+    ),
 ) -> None:
     """Start the KiCad MCP Pro server when no subcommand is supplied."""
     _apply_cli_env(
@@ -1368,6 +1419,7 @@ def main_callback(
         log_file=log_file,
         profile=profile,
         experimental=experimental,
+        telemetry=telemetry,
     )
     current_context = click.get_current_context(silent=True)
     if current_context is not None and current_context.invoked_subcommand is not None:
@@ -1388,6 +1440,9 @@ def serve(
         None, help=f"Server profile: {', '.join(available_profiles())}"
     ),
     experimental: bool | None = typer.Option(None, help="Enable experimental tools"),
+    telemetry: bool | None = typer.Option(
+        None, "--telemetry/--no-telemetry", help="Enable OpenTelemetry export"
+    ),
 ) -> None:
     """Start the MCP server explicitly."""
     _run_server_from_options(
@@ -1400,6 +1455,7 @@ def serve(
         log_file=log_file,
         profile=profile,
         experimental=experimental,
+        telemetry=telemetry,
     )
 
 

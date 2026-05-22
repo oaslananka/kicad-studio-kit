@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import math
 import re
+import time
 from collections.abc import Iterable
 from typing import Any
 
+from ..utils import telemetry as otel
 from ..utils.sexpr import _extract_block
 
 BOARD_FILE_VERSION = "20250216"
@@ -134,38 +136,45 @@ def _footprint_pad_net_map(block: str) -> dict[str, str]:
 
 
 def _parse_board_footprint_blocks(content: str) -> dict[str, dict[str, Any]]:
+    started = time.perf_counter()
     footprints: dict[str, dict[str, Any]] = {}
-    cursor = 0
-    while cursor < len(content):
-        if content[cursor:].startswith("(footprint"):
-            block, length = _extract_block(content, cursor)
-            if block:
-                ref_match = re.search(rf'\(property\s+"Reference"\s+{STRING_PATTERN}', block)
-                value_match = re.search(rf'\(property\s+"Value"\s+{STRING_PATTERN}', block)
-                name_match = re.match(rf"\(footprint\s+{STRING_PATTERN}", block.lstrip())
-                if ref_match and name_match:
-                    root_at = _parse_root_at(block)
-                    width_mm, height_mm = _bbox_from_block(block)
-                    layer_match = re.search(r'\(layer\s+"([^"]+)"\)', block)
-                    footprints[ref_match.group(1)] = {
-                        "name": name_match.group(1),
-                        "block": block,
-                        "start": cursor,
-                        "end": cursor + length,
-                        "value": value_match.group(1) if value_match else "",
-                        "x_mm": root_at[0] if root_at else None,
-                        "y_mm": root_at[1] if root_at else None,
-                        "rotation": root_at[2] if root_at else 0,
-                        "width_mm": width_mm,
-                        "height_mm": height_mm,
-                        "layer_name": layer_match.group(1) if layer_match else "F.Cu",
-                        "net_names": _footprint_net_names(block),
-                        "pad_nets": _footprint_pad_net_map(block),
-                    }
-                cursor += length
-                continue
-        cursor += 1
-    return footprints
+    with otel.pcb_parse_span() as span:
+        cursor = 0
+        while cursor < len(content):
+            if content[cursor:].startswith("(footprint"):
+                block, length = _extract_block(content, cursor)
+                if block:
+                    ref_match = re.search(rf'\(property\s+"Reference"\s+{STRING_PATTERN}', block)
+                    value_match = re.search(rf'\(property\s+"Value"\s+{STRING_PATTERN}', block)
+                    name_match = re.match(rf"\(footprint\s+{STRING_PATTERN}", block.lstrip())
+                    if ref_match and name_match:
+                        root_at = _parse_root_at(block)
+                        width_mm, height_mm = _bbox_from_block(block)
+                        layer_match = re.search(r'\(layer\s+"([^"]+)"\)', block)
+                        footprints[ref_match.group(1)] = {
+                            "name": name_match.group(1),
+                            "block": block,
+                            "start": cursor,
+                            "end": cursor + length,
+                            "value": value_match.group(1) if value_match else "",
+                            "x_mm": root_at[0] if root_at else None,
+                            "y_mm": root_at[1] if root_at else None,
+                            "rotation": root_at[2] if root_at else 0,
+                            "width_mm": width_mm,
+                            "height_mm": height_mm,
+                            "layer_name": layer_match.group(1) if layer_match else "F.Cu",
+                            "net_names": _footprint_net_names(block),
+                            "pad_nets": _footprint_pad_net_map(block),
+                        }
+                    cursor += length
+                    continue
+            cursor += 1
+        otel.finish_pcb_parse_span(
+            span,
+            footprint_count=len(footprints),
+            elapsed_seconds=time.perf_counter() - started,
+        )
+        return footprints
 
 
 def _edge_cuts_bounds(content: str) -> tuple[float, float, float, float] | None:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -68,17 +68,19 @@ async def get_prompt_text(server: object, name: str, arguments: dict[str, object
 
 
 @pytest.fixture(autouse=True)
-def reset_globals(monkeypatch: pytest.MonkeyPatch) -> None:
+def reset_globals(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """Reset cached config and KiCad connection state before every test."""
     from kicad_mcp.config import reset_config
     from kicad_mcp.connection import reset_connection
     from kicad_mcp.discovery import stop_studio_project_watcher
     from kicad_mcp.utils.cache import clear_ttl_cache
+    from kicad_mcp.utils.telemetry import reset_telemetry
 
     reset_config()
     reset_connection()
     stop_studio_project_watcher()
     clear_ttl_cache()
+    reset_telemetry(shutdown_managed=True)
     monkeypatch.delenv("KICAD_MCP_PROJECT_DIR", raising=False)
     monkeypatch.delenv("KICAD_MCP_PROJECT_FILE", raising=False)
     monkeypatch.delenv("KICAD_MCP_PCB_FILE", raising=False)
@@ -108,6 +110,17 @@ def reset_globals(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("KICAD_MCP_LOG_BACKUP_COUNT", raising=False)
     monkeypatch.delenv("KICAD_MCP_PROFILE", raising=False)
     monkeypatch.delenv("KICAD_MCP_ENABLE_EXPERIMENTAL_TOOLS", raising=False)
+    monkeypatch.delenv("KICAD_MCP_TELEMETRY_ENABLED", raising=False)
+    monkeypatch.delenv("KICAD_MCP_OTEL_ENDPOINT", raising=False)
+    monkeypatch.delenv("KICAD_MCP_OTEL_HEADERS", raising=False)
+    monkeypatch.delenv("KICAD_MCP_OTEL_SERVICE_NAME", raising=False)
+    monkeypatch.delenv("KICAD_MCP_OTEL_PROTOCOL", raising=False)
+    monkeypatch.delenv("OTEL_EXPORTER_OTLP_ENDPOINT", raising=False)
+    monkeypatch.delenv("OTEL_EXPORTER_OTLP_HEADERS", raising=False)
+    monkeypatch.delenv("OTEL_EXPORTER_OTLP_PROTOCOL", raising=False)
+    monkeypatch.delenv("OTEL_SERVICE_NAME", raising=False)
+    yield
+    reset_telemetry(shutdown_managed=True)
 
 
 @pytest.fixture

@@ -7,7 +7,7 @@ This statement is the formal safety answer for public directory reviewers.
 - KiCad MCP Pro is a local MCP server for KiCad workflows.
 - Default transport is stdio.
 - The server does not require a hosted backend.
-- The server does not collect telemetry.
+- Telemetry is disabled by default; OpenTelemetry export requires explicit operator configuration.
 - The server does not phone home.
 - The server does not store user data remotely.
 
@@ -45,7 +45,7 @@ This statement is the formal safety answer for public directory reviewers.
 - [ ] Wildcard CORS is not an acceptable production configuration.
 - [ ] No cookies are set by the local stdio server.
 - [ ] No IP addresses are collected by the local stdio server.
-- [ ] No usage telemetry is collected by the server itself.
+- [ ] Usage telemetry is disabled by default and optional OpenTelemetry export is explicit.
 - [ ] Optional third-party integrations follow their own privacy policies.
 
 ## Reproducible Builds

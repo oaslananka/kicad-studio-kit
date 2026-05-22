@@ -149,7 +149,7 @@ Replace the five screenshots in `docs/assets/screenshots/` with real 1920x1080 c
 - Confirm external forms use `oaslananka` account ownership only.
 - Confirm all screenshots avoid private data.
 - Confirm all demo media avoids private paths and hostnames.
-- Confirm privacy language says no telemetry is collected by the server itself.
+- Confirm privacy language says telemetry is disabled by default and optional OpenTelemetry export is explicit.
 - Confirm safety language says KiCad CLI is the required subprocess.
 - Confirm optional Freerouting Docker is described as opt-in.
 - Confirm support path points to GitHub issues.

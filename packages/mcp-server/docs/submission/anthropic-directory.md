@@ -39,7 +39,7 @@ Use this document when submitting KiCad MCP Pro to the Anthropic Connector Direc
 
 - [ ] Default reviewer path is local stdio.
 - [ ] The server processes KiCad project files on the reviewer machine.
-- [ ] No telemetry is sent by the server itself.
+- [ ] Telemetry is disabled by default; optional OpenTelemetry export requires explicit operator configuration.
 - [ ] No network egress is required for the default stdio workflow.
 - [ ] KiCad CLI is the only required subprocess for default operation.
 - [ ] Optional Freerouting Docker is separate and operator-enabled.
@@ -129,7 +129,7 @@ Use this document when submitting KiCad MCP Pro to the Anthropic Connector Direc
 - [ ] Confirm the safety answer mentions explicit user intent for file writes.
 - [ ] Confirm the safety answer mentions `project_quality_gate` before manufacturing export.
 - [ ] Confirm the safety answer mentions no server-operated backend in default mode.
-- [ ] Confirm the safety answer mentions no telemetry collection by the server itself.
+- [ ] Confirm the safety answer mentions telemetry is disabled by default and optional OpenTelemetry export is explicit.
 - [ ] Confirm the reviewer fixture path exists locally before sending prompts.
 - [ ] Confirm each reviewer prompt names the fixture project exactly once.
 - [ ] Confirm wrong-path failures are documented as client configuration issues.
