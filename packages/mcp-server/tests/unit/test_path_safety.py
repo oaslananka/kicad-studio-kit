@@ -141,6 +141,9 @@ def test_mcp_path_safety_rejects_windows_unc_paths_on_non_windows_hosts(tmp_path
     with pytest.raises(UnsafePathError, match=scenario["expectedNonWindowsError"]):
         relative_subpath(scenario["rawPath"])
 
+    with pytest.raises(UnsafePathError, match=scenario["expectedNonWindowsError"]):
+        resolve_under(tmp_path, Path(scenario["rawPath"]))
+
 
 def test_mcp_path_safety_handles_long_paths_or_surfaces_platform_limit(
     tmp_path: Path, fake_cli: Path

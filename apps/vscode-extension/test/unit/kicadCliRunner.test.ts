@@ -352,6 +352,7 @@ describe('KiCadCliRunner', () => {
     const projectRoot = path.join(tempDir, 'project #&%+ Türkçe');
     const boardFile = path.join(projectRoot, 'board #&%+.kicad_pcb');
     const outputDir = path.join(projectRoot, 'fab reports');
+    const referenceUrl = 'https://example.test/path#board';
     fs.mkdirSync(projectRoot, { recursive: true });
     fs.writeFileSync(boardFile, '', 'utf8');
     __setConfiguration({});
@@ -385,7 +386,15 @@ describe('KiCadCliRunner', () => {
 
     const runner = new KiCadCliRunner(detector as never, logger as never);
     await runner.run({
-      command: ['pcb', 'drc', boardFile, '--output', outputDir],
+      command: [
+        'pcb',
+        'drc',
+        boardFile,
+        '--output',
+        outputDir,
+        '--reference',
+        referenceUrl
+      ],
       cwd: projectRoot,
       progressTitle: 'DRC',
       onProgress
@@ -406,6 +415,7 @@ describe('KiCadCliRunner', () => {
     expect(logOutput).not.toContain(projectRoot);
     expect(logOutput).not.toContain(boardFile);
     expect(logOutput).not.toContain(outputDir);
+    expect(logOutput).toContain(referenceUrl);
   });
 
   it('fails fast when no kicad-cli installation can be detected', async () => {

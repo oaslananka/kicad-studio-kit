@@ -25,6 +25,7 @@ interface PathRegressionScenario {
 }
 
 const scenarios = pathRegressionCases.scenarios as PathRegressionScenario[];
+const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 const fixtureScenarios = scenarios.filter(
   (scenario) =>
     scenario.expectedGroups &&
@@ -113,7 +114,7 @@ describe('cross-platform path regression suite', () => {
 
   it('is covered by the existing Linux, Windows, and macOS unit-test CI matrix', () => {
     const workflow = fs.readFileSync(
-      path.join(process.cwd(), '..', '..', '.github', 'workflows', 'ci.yml'),
+      path.join(REPO_ROOT, '.github', 'workflows', 'ci.yml'),
       'utf8'
     );
 

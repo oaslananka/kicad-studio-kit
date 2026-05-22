@@ -53,10 +53,10 @@ def relative_subpath(raw_path: str | Path) -> Path:
 
 def reject_foreign_windows_path(raw_path: str | Path) -> None:
     """Reject Windows drive/UNC paths before POSIX treats backslashes as filename bytes."""
-    if os.name == "nt" or not isinstance(raw_path, str):
+    if os.name == "nt":
         return
 
-    windows_path = PureWindowsPath(raw_path)
+    windows_path = PureWindowsPath(str(raw_path))
     if windows_path.is_absolute() or windows_path.drive:
         raise UnsafePathError(
             "Windows drive or UNC paths are not valid on this platform; provide a path "

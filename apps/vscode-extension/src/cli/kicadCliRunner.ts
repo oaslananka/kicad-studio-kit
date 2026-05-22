@@ -15,6 +15,9 @@ import { redactSensitiveText } from '../utils/secrets';
 import { KiCadCliDetector } from './kicadCliDetector';
 
 const CLI_OUTPUT_LIMIT_BYTES = 10 * 1024 * 1024;
+const FILE_LIKE_CLI_ARG_PATTERN =
+  /\.(?:kicad_(?:pro|sch|pcb|dru|jobset)|gbr|drl|pdf|svg|zip|csv|xlsx|json|html|net)$/i;
+const URL_LIKE_CLI_ARG_PATTERN = /^[a-z][a-z0-9+.-]*:\/\//i;
 
 /**
  * Runs kicad-cli commands with progress reporting and request de-duplication.
@@ -417,13 +420,23 @@ function isSensitiveCliPath(value: string): boolean {
   if (!value) {
     return false;
   }
+  if (URL_LIKE_CLI_ARG_PATTERN.test(value)) {
+    return false;
+  }
   return (
     path.isAbsolute(value) ||
     path.win32.isAbsolute(value) ||
-    /[/\\]/.test(value) ||
-    /\.(?:kicad_(?:pro|sch|pcb|dru|jobset)|gbr|drl|pdf|svg|zip|csv|xlsx|json|html|net)$/i.test(
-      value
-    )
+    FILE_LIKE_CLI_ARG_PATTERN.test(value) ||
+    isRelativeLocalPath(value)
+  );
+}
+
+function isRelativeLocalPath(value: string): boolean {
+  return (
+    !value.startsWith('-') &&
+    !/\s/.test(value) &&
+    /[/\\]/.test(value) &&
+    !URL_LIKE_CLI_ARG_PATTERN.test(value)
   );
 }
 
