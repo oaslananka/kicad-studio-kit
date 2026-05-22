@@ -145,6 +145,15 @@ def test_mcp_path_safety_rejects_windows_unc_paths_on_non_windows_hosts(tmp_path
         resolve_under(tmp_path, Path(scenario["rawPath"]))
 
 
+def test_mcp_path_safety_accepts_posix_colon_relative_paths(tmp_path: Path) -> None:
+    if os.name == "nt":
+        pytest.skip("Colon-separated relative paths are POSIX-specific.")
+
+    expected = tmp_path / "a:b" / "board.kicad_pcb"
+
+    assert resolve_under(tmp_path, "a:b/board.kicad_pcb") == expected.resolve()
+
+
 def test_mcp_path_safety_handles_long_paths_or_surfaces_platform_limit(
     tmp_path: Path, fake_cli: Path
 ) -> None:

@@ -57,7 +57,7 @@ def reject_foreign_windows_path(raw_path: str | Path) -> None:
         return
 
     windows_path = PureWindowsPath(str(raw_path))
-    if windows_path.is_absolute() or windows_path.drive:
+    if windows_path.is_absolute():
         raise UnsafePathError(
             "Windows drive or UNC paths are not valid on this platform; provide a path "
             "inside the configured workspace root using this operating system's path format."
