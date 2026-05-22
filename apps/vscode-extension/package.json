@@ -830,6 +830,42 @@
         "command": "kicadstudio.importGeda",
         "title": "%kicadstudio.contributes.commands.85.title%",
         "category": "%kicadstudio.contributes.commands.85.category%"
+      },
+      {
+        "command": "kicadstudio.pcm.refresh",
+        "title": "%kicadstudio.contributes.commands.86.title%",
+        "category": "%kicadstudio.contributes.commands.86.category%",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "kicadstudio.pcm.filter",
+        "title": "%kicadstudio.contributes.commands.87.title%",
+        "category": "%kicadstudio.contributes.commands.87.category%",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "kicadstudio.pcm.install",
+        "title": "%kicadstudio.contributes.commands.88.title%",
+        "category": "%kicadstudio.contributes.commands.88.category%",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "kicadstudio.pcm.update",
+        "title": "%kicadstudio.contributes.commands.89.title%",
+        "category": "%kicadstudio.contributes.commands.89.category%",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "kicadstudio.pcm.updateAll",
+        "title": "%kicadstudio.contributes.commands.90.title%",
+        "category": "%kicadstudio.contributes.commands.90.category%",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "kicadstudio.pcm.uninstall",
+        "title": "%kicadstudio.contributes.commands.91.title%",
+        "category": "%kicadstudio.contributes.commands.91.category%",
+        "icon": "$(trash)"
       }
     ],
     "menus": {
@@ -917,6 +953,38 @@
           "when": "view == kicadstudio.drcRules && kicadstudio.workspaceTrusted",
           "command": "kicadstudio.drcRule.importTemplate",
           "group": "navigation"
+        },
+        {
+          "when": "view == kicadstudio.library",
+          "command": "kicadstudio.pcm.refresh",
+          "group": "navigation"
+        },
+        {
+          "when": "view == kicadstudio.library",
+          "command": "kicadstudio.pcm.filter",
+          "group": "navigation"
+        },
+        {
+          "when": "view == kicadstudio.library && kicadstudio.workspaceTrusted",
+          "command": "kicadstudio.pcm.updateAll",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "when": "view == kicadstudio.library && viewItem == pcmPackageAvailable && kicadstudio.workspaceTrusted",
+          "command": "kicadstudio.pcm.install",
+          "group": "inline"
+        },
+        {
+          "when": "view == kicadstudio.library && viewItem == pcmPackageUpdate && kicadstudio.workspaceTrusted",
+          "command": "kicadstudio.pcm.update",
+          "group": "inline"
+        },
+        {
+          "when": "view == kicadstudio.library && (viewItem == pcmPackageInstalled || viewItem == pcmPackageUpdate) && kicadstudio.workspaceTrusted",
+          "command": "kicadstudio.pcm.uninstall",
+          "group": "inline"
         }
       ],
       "commandPalette": [
@@ -1093,6 +1161,28 @@
           "command": "kicadstudio.reindexLibraries"
         },
         {
+          "command": "kicadstudio.pcm.refresh"
+        },
+        {
+          "command": "kicadstudio.pcm.filter"
+        },
+        {
+          "command": "kicadstudio.pcm.install",
+          "when": "kicadstudio.workspaceTrusted"
+        },
+        {
+          "command": "kicadstudio.pcm.update",
+          "when": "kicadstudio.workspaceTrusted"
+        },
+        {
+          "command": "kicadstudio.pcm.updateAll",
+          "when": "kicadstudio.workspaceTrusted"
+        },
+        {
+          "command": "kicadstudio.pcm.uninstall",
+          "when": "kicadstudio.workspaceTrusted"
+        },
+        {
           "command": "kicadstudio.showStatusMenu"
         },
         {
@@ -1257,6 +1347,26 @@
           "type": "boolean",
           "default": true,
           "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.componentSearch.enableLCSC.description%"
+        },
+        "kicadstudio.pcm.repositoryUrls": {
+          "type": "array",
+          "default": [
+            "https://repository.kicad.org/repository.json"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.pcm.repositoryUrls.description%"
+        },
+        "kicadstudio.pcm.configDir": {
+          "type": "string",
+          "default": "",
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.pcm.configDir.description%"
+        },
+        "kicadstudio.pcm.thirdPartyDir": {
+          "type": "string",
+          "default": "",
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.pcm.thirdPartyDir.description%"
         },
         "kicadstudio.ai.provider": {
           "type": "string",

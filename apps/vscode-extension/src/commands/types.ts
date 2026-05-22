@@ -14,6 +14,8 @@ import type { McpClient } from '../mcp/mcpClient';
 import type { StudioMcpAdapter } from '../mcp/mcpToolAdapter';
 import type { KiCadLibraryIndexer } from '../library/libraryIndexer';
 import type { LibrarySearchProvider } from '../library/librarySearchProvider';
+import type { PcmLibraryProvider } from '../library/pcmLibraryProvider';
+import type { PcmService } from '../library/pcmService';
 import type { VariantProvider } from '../variants/variantProvider';
 import type { DrcRulesProvider } from '../drc/drcRulesProvider';
 import type { McpLogger } from '../mcp/mcpLogger';
@@ -52,6 +54,8 @@ export interface CommandServices {
   qualityGateProvider: QualityGateProvider;
   libraryIndexer: KiCadLibraryIndexer;
   librarySearch: LibrarySearchProvider;
+  pcmService: PcmService;
+  pcmLibraryProvider: PcmLibraryProvider;
   variantProvider: VariantProvider;
   drcRulesProvider: DrcRulesProvider;
   treeProvider: KiCadProjectTreeProvider;

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ComponentSearchService } from '../../src/components/componentSearch';
 import { ComponentSearchCache } from '../../src/components/componentSearchCache';
 import { openDatasheet } from '../../src/components/datasheetOpener';
+import { COMMANDS } from '../../src/constants';
 import { __setConfiguration, createExtensionContextMock } from './vscodeMock';
 
 function createPanelMock() {
@@ -524,5 +525,85 @@ describe('ComponentSearchCache', () => {
     );
 
     await expect(service.searchQuery('pin header', [])).resolves.toEqual([]);
+  });
+
+  it('offers one-click PCM install when a picked component matches an uninstalled PCM library', async () => {
+    const context = createExtensionContextMock();
+    const cache = new ComponentSearchCache(
+      context.globalState as unknown as vscode.Memento
+    );
+    const panelMock = createPanelMock();
+    const pcmPackage = {
+      repositoryId: 'fixture',
+      repositoryName: 'Fixture Repository',
+      repositoryUrl: 'file:///fixture/repository.json',
+      metadata: {
+        name: 'Precision Symbols',
+        description: 'Precision opamp symbols',
+        descriptionFull: '',
+        identifier: 'com.example.precision-symbols',
+        type: 'library',
+        category: 'symbols',
+        license: 'MIT',
+        tags: ['opamp'],
+        resources: {},
+        versions: [],
+        raw: {}
+      },
+      latestVersion: {
+        version: '1.0.0',
+        versionEpoch: 0,
+        status: 'stable',
+        kicadVersion: '8.0',
+        platforms: []
+      },
+      contentTypes: ['symbols'],
+      state: 'available'
+    };
+    const result = {
+      source: 'octopart' as const,
+      mpn: 'OPA192',
+      manufacturer: 'TI',
+      description: 'Precision opamp',
+      category: 'opamp',
+      offers: [],
+      specs: []
+    };
+    const service = new ComponentSearchService(
+      { search: jest.fn().mockResolvedValue([result]) } as never,
+      { search: jest.fn().mockResolvedValue([]) } as never,
+      cache,
+      undefined,
+      {
+        getPackages: jest.fn().mockReturnValue([pcmPackage]),
+        findInstallCandidateForResult: jest
+          .fn()
+          .mockResolvedValue(pcmPackage),
+        findPackages: jest.fn().mockResolvedValue([])
+      } as never
+    );
+
+    (vscode.window.createWebviewPanel as jest.Mock).mockReturnValue(
+      panelMock.panel
+    );
+    (vscode.window.showQuickPick as jest.Mock)
+      .mockResolvedValueOnce([{ label: 'Octopart / Nexar', value: 'octopart' }])
+      .mockResolvedValueOnce({
+        label: 'OPA192',
+        description: 'TI • octopart',
+        detail: 'Precision opamp',
+        result
+      });
+    (vscode.window.showInputBox as jest.Mock).mockResolvedValue('OPA192');
+    (vscode.window.showInformationMessage as jest.Mock).mockResolvedValue(
+      'Install PCM Library'
+    );
+
+    await service.search();
+
+    expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
+      COMMANDS.installPcmPackage,
+      pcmPackage
+    );
   });
 });

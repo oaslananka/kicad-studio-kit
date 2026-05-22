@@ -164,6 +164,7 @@ export interface ComponentSearchResult {
   datasheetUrl?: string | undefined;
   imageUrl?: string | undefined;
   lcscPartNumber?: string | undefined;
+  pcmPackageId?: string | undefined;
   offers: ComponentOffer[];
   specs: Array<{
     name: string;

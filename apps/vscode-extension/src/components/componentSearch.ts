@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { SEARCH_DEBOUNCE_MS, SETTINGS } from '../constants';
+import { COMMANDS, SEARCH_DEBOUNCE_MS, SETTINGS } from '../constants';
 import type { ComponentSearchResult } from '../types';
 import { asRecord, asString, hasType } from '../utils/webviewMessages';
 import { openDatasheet } from './datasheetOpener';
@@ -8,6 +8,7 @@ import { LcscClient } from './lcscClient';
 import { OctopartClient } from './octopartClient';
 import { createNonce } from '../utils/nonce';
 import type { KiCadLibraryIndexer } from '../library/libraryIndexer';
+import type { PcmService } from '../library/pcmService';
 import { injectWebviewLocalization } from '../webviewI18n';
 
 export class ComponentSearchService {
@@ -17,7 +18,8 @@ export class ComponentSearchService {
     private readonly octopart: OctopartClient,
     private readonly lcsc: LcscClient,
     private readonly cache: ComponentSearchCache,
-    private readonly libraryIndexer?: KiCadLibraryIndexer | undefined
+    private readonly libraryIndexer?: KiCadLibraryIndexer | undefined,
+    private readonly pcmService?: PcmService | undefined
   ) {}
 
   async search(): Promise<void> {
@@ -71,6 +73,7 @@ export class ComponentSearchService {
     }
 
     await this.showDetails(picked.result);
+    await this.offerPcmInstall(picked.result);
   }
 
   async searchQuery(
@@ -98,6 +101,9 @@ export class ComponentSearchService {
     if (!results.length) {
       results.push(...(await this.searchLocalLibrary(query)));
     }
+    if (!results.length) {
+      results.push(...(await this.searchPcmPackages(query)));
+    }
 
     return results;
   }
@@ -115,7 +121,7 @@ export class ComponentSearchService {
       });
       this.detailsPanel.webview.onDidReceiveMessage(
         async (message: unknown) => {
-          if (!hasType(message, ['datasheet', 'copy-mpn'])) {
+          if (!hasType(message, ['datasheet', 'copy-mpn', 'pcm-install'])) {
             return;
           }
 
@@ -127,6 +133,9 @@ export class ComponentSearchService {
           }
           if (message.type === 'copy-mpn' && mpn) {
             await vscode.env.clipboard.writeText(mpn);
+          }
+          if (message.type === 'pcm-install') {
+            await this.installPcmPackageForResult(result);
           }
         }
       );
@@ -169,12 +178,14 @@ export class ComponentSearchService {
   <p><strong>Source:</strong> ${escapeHtml(result.source)}</p>
   <button id="datasheet">Open Datasheet</button>
   <button id="copy">Copy MPN</button>
+  ${result.pcmPackageId ? '<button id="pcm-install">Install PCM Library</button>' : ''}
   <h2>Offers</h2>
   <pre>${escapeHtml(JSON.stringify(result.offers, null, 2))}</pre>
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     document.getElementById('datasheet').addEventListener('click', () => vscode.postMessage({ type: 'datasheet', url: ${JSON.stringify(result.datasheetUrl ?? '')} }));
     document.getElementById('copy').addEventListener('click', () => vscode.postMessage({ type: 'copy-mpn', mpn: ${JSON.stringify(result.mpn)} }));
+    document.getElementById('pcm-install')?.addEventListener('click', () => vscode.postMessage({ type: 'pcm-install' }));
   </script>
 </body>
     </html>`,
@@ -258,6 +269,72 @@ export class ComponentSearchService {
     } catch {
       return [];
     }
+  }
+
+  private async searchPcmPackages(
+    query: string
+  ): Promise<ComponentSearchResult[]> {
+    if (!this.pcmService) {
+      return [];
+    }
+    try {
+      return (await this.pcmService.findPackages(query))
+        .filter((pkg) => pkg.state !== 'installed')
+        .slice(0, 5)
+        .map((pkg) => ({
+          source: 'local' as const,
+          mpn: query,
+          manufacturer: 'KiCad PCM',
+          description: `${pkg.metadata.name}: ${pkg.metadata.description || 'PCM package available'}`,
+          category: pkg.contentTypes.join(', '),
+          offers: [],
+          specs: [
+            { name: 'PCM package', value: pkg.metadata.identifier },
+            { name: 'Repository', value: pkg.repositoryName },
+            ...(pkg.latestVersion
+              ? [{ name: 'Version', value: pkg.latestVersion.version }]
+              : [])
+          ],
+          pcmPackageId: pkg.metadata.identifier
+        }));
+    } catch {
+      return [];
+    }
+  }
+
+  private async offerPcmInstall(result: ComponentSearchResult): Promise<void> {
+    if (!this.pcmService) {
+      return;
+    }
+    const candidate =
+      (result.pcmPackageId
+        ? this.pcmService
+            .getPackages()
+            .find((pkg) => pkg.metadata.identifier === result.pcmPackageId)
+        : undefined) ??
+      (await this.pcmService.findInstallCandidateForResult(result));
+    if (!candidate || candidate.state === 'installed') {
+      return;
+    }
+    const action = await vscode.window.showInformationMessage(
+      `${candidate.metadata.name} is available from KiCad PCM.`,
+      'Install PCM Library'
+    );
+    if (action === 'Install PCM Library') {
+      await vscode.commands.executeCommand(COMMANDS.installPcmPackage, candidate);
+    }
+  }
+
+  private async installPcmPackageForResult(
+    result: ComponentSearchResult
+  ): Promise<void> {
+    if (!this.pcmService || !result.pcmPackageId) {
+      return;
+    }
+    await vscode.commands.executeCommand(
+      COMMANDS.installPcmPackage,
+      result.pcmPackageId
+    );
   }
 }
 

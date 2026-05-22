@@ -1,0 +1,72 @@
+{
+  "packages": [
+    {
+      "$schema": "https://go.kicad.org/pcm/schemas/v2",
+      "name": "Precision Symbols",
+      "description": "Precision analog symbol library",
+      "description_full": "Symbols for precision analog components used by Component Search tests.",
+      "identifier": "com.example.precision-symbols",
+      "type": "library",
+      "category": "symbols",
+      "author": {
+        "name": "Fixture Author",
+        "contact": {
+          "web": "https://example.com"
+        }
+      },
+      "license": "MIT",
+      "resources": {
+        "Homepage": "https://example.com/precision-symbols"
+      },
+      "tags": [
+        "precision",
+        "opamp",
+        "symbols"
+      ],
+      "versions": [
+        {
+          "version": "1.0.0",
+          "download_url": "https://example.com/precision-symbols-1.0.0.zip",
+          "download_sha256": "5892af8e75052cfaeb35e1ad1f1f264dc6eae385e9d84806263b49627f82383a",
+          "status": "stable",
+          "kicad_version": "8.0"
+        },
+        {
+          "version": "1.1.0",
+          "download_url": "https://example.com/precision-symbols-1.1.0.zip",
+          "download_sha256": "4405019ec564de26cbbd8c93629a6f182812aa1b22e782deb5b28eac402ba9d4",
+          "status": "stable",
+          "kicad_version": "8.0"
+        }
+      ]
+    },
+    {
+      "$schema": "https://go.kicad.org/pcm/schemas/v2",
+      "name": "Night PCB Theme",
+      "description": "Dark KiCad color theme",
+      "description_full": "A color theme fixture for PCM filtering tests.",
+      "identifier": "com.example.night-theme",
+      "type": "colortheme",
+      "author": {
+        "name": "Fixture Author",
+        "contact": {
+          "web": "https://example.com"
+        }
+      },
+      "license": "CC0-1.0",
+      "resources": {},
+      "tags": [
+        "theme"
+      ],
+      "versions": [
+        {
+          "version": "1.0.0",
+          "download_url": "https://example.com/night-theme.zip",
+          "download_sha256": "5892af8e75052cfaeb35e1ad1f1f264dc6eae385e9d84806263b49627f82383a",
+          "status": "stable",
+          "kicad_version": "8.0"
+        }
+      ]
+    }
+  ]
+}

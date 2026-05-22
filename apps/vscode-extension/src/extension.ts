@@ -43,6 +43,8 @@ import { registerAllCommands } from './commands';
 import { GitDiffDetector } from './git/gitDiffDetector';
 import { KiCadLibraryIndexer } from './library/libraryIndexer';
 import { LibrarySearchProvider } from './library/librarySearchProvider';
+import { PcmLibraryProvider } from './library/pcmLibraryProvider';
+import { PcmService } from './library/pcmService';
 import { registerLanguageModelChatProvider } from './lm/languageModelChatProvider';
 import { registerLanguageModelTools } from './lm/languageModelTools';
 import { registerMcpServerDefinitionProvider } from './lm/mcpServerDefinitionProvider';
@@ -212,11 +214,20 @@ export async function activate(
     cliRunner,
     context.extensionUri
   );
+  const pcmService = new PcmService(
+    context,
+    cliDetector,
+    cliRunner,
+    libraryIndexer,
+    logger
+  );
+  const pcmLibraryProvider = new PcmLibraryProvider(pcmService);
   const componentSearch = new ComponentSearchService(
     new OctopartClient(context.secrets),
     new LcscClient(),
     new ComponentSearchCache(context.globalState),
-    libraryIndexer
+    libraryIndexer,
+    pcmService
   );
 
   context.subscriptions.push(
@@ -230,6 +241,8 @@ export async function activate(
     contextBridge,
     diagnosticsCollection,
     libraryIndexer,
+    pcmService,
+    pcmLibraryProvider,
     schematicEditorProvider,
     pcbEditorProvider,
     bomViewProvider,
@@ -305,10 +318,7 @@ export async function activate(
       VALIDATION_VIEW_ID,
       validationViewProvider
     ),
-    vscode.window.registerTreeDataProvider(LIBRARY_VIEW_ID, {
-      getTreeItem: (element: vscode.TreeItem) => element,
-      getChildren: () => []
-    }),
+    vscode.window.registerTreeDataProvider(LIBRARY_VIEW_ID, pcmLibraryProvider),
     vscode.window.registerTreeDataProvider(MCP_TOOLS_VIEW_ID, mcpToolsProvider),
     vscode.tasks.registerTaskProvider('kicad', new KiCadTaskProvider()),
     // Wire schematic viewer activation → BOM refresh so the BOM panel updates
@@ -374,12 +384,22 @@ export async function activate(
         event.affectsConfiguration(SETTINGS.aiOpenAIApiMode) ||
         event.affectsConfiguration(SETTINGS.mcpEndpoint) ||
         event.affectsConfiguration(SETTINGS.mcpAutoDetect) ||
-        event.affectsConfiguration(SETTINGS.mcpProfile)
+        event.affectsConfiguration(SETTINGS.mcpProfile) ||
+        event.affectsConfiguration(SETTINGS.pcmRepositoryUrls) ||
+        event.affectsConfiguration(SETTINGS.pcmConfigDir) ||
+        event.affectsConfiguration(SETTINGS.pcmThirdPartyDir)
       ) {
         cliDetector.clearCache();
         aiHealthy = undefined;
         void refreshContexts();
         void refreshMcpState();
+      }
+      if (
+        event.affectsConfiguration(SETTINGS.pcmRepositoryUrls) ||
+        event.affectsConfiguration(SETTINGS.pcmConfigDir) ||
+        event.affectsConfiguration(SETTINGS.pcmThirdPartyDir)
+      ) {
+        void pcmLibraryProvider.refresh();
       }
       if (event.affectsConfiguration(SETTINGS.logLevel)) {
         logger.refreshLevel();
@@ -423,6 +443,8 @@ export async function activate(
     importService,
     libraryIndexer,
     librarySearch,
+    pcmService,
+    pcmLibraryProvider,
     mcpClient,
     mcpAdapter: mcpToolAdapter,
     mcpLogger,

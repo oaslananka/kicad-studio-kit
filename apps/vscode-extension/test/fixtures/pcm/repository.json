@@ -1,0 +1,17 @@
+{
+  "$schema": "https://go.kicad.org/pcm/schemas/v2#/definitions/Repository",
+  "name": "KiCad Studio PCM Fixture Repository",
+  "maintainer": {
+    "name": "Fixture Maintainer",
+    "contact": {
+      "web": "https://example.com"
+    }
+  },
+  "packages": {
+    "url": "packages.json",
+    "sha256": "21daa67edf01ae0556278cf4d07b99b2568effdb7114db040cb0f1eed3815679",
+    "update_timestamp": 1777374145,
+    "update_time_utc": "2026-04-28 11:02:25"
+  },
+  "schema_version": 2
+}
