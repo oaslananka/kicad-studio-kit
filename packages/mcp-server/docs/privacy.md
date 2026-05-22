@@ -11,7 +11,9 @@
 
 KiCad MCP Pro is a **local stdio MCP server** that runs entirely on your machine.
 It communicates with KiCad via the KiCad CLI and local file system.
-No data is transmitted to external servers by the server itself.
+No data is transmitted to external servers by default. Operators may explicitly
+configure OpenTelemetry export to their own OTLP collector for operational
+monitoring.
 
 ---
 
@@ -21,12 +23,15 @@ No data is transmitted to external servers by the server itself.
 |-----------|-----------|-------|
 | Personal information | **No** | |
 | File contents (schematics, PCBs) | **No** | Processed locally only |
-| Usage telemetry | **No** | |
+| Usage telemetry | **No by default** | Optional OpenTelemetry export must be explicitly configured |
 | IP addresses | **No** | |
 | Cookies | **No** | |
 
 KiCad MCP Pro does not have a backend, does not phone home, and does not store
-any user data.
+any user data. Optional OpenTelemetry export sends only operational spans and
+metrics to the collector configured by the operator; exported attributes omit
+project paths, design contents, request arguments, CLI output, and collector
+headers.
 
 ---
 
@@ -35,7 +40,8 @@ any user data.
 All tool calls (DRC, export, schematic parsing, etc.) are executed by spawning
 `kicad-cli` on the **user's local machine**. Results are returned to the calling
 MCP client (e.g. Claude Desktop) over a local stdio transport. Nothing leaves
-the user's machine through this server.
+the user's machine through this server unless the operator explicitly enables
+OpenTelemetry export to a collector they control.
 
 ---
 

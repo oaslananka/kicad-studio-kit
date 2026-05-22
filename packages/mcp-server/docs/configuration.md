@@ -36,6 +36,10 @@ interop aliases for launchers and editors:
 | `KICAD_MCP_RETRIES` | IPC connection retries |
 | `KICAD_MCP_HEADLESS` | Headless preference |
 | `KICAD_MCP_WORKSPACE_ROOT` | Workspace root for path safety |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OpenTelemetry OTLP collector endpoint |
+| `OTEL_EXPORTER_OTLP_HEADERS` | OpenTelemetry OTLP exporter headers |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` or `grpc` |
+| `OTEL_SERVICE_NAME` | OpenTelemetry service name |
 
 Diagnostics only report whether tokens are configured. Token values are never
 printed.
@@ -65,6 +69,43 @@ session destruction lifecycle events. KiCad path fields, secret-like fields, and
 oversized payload text are redacted before records reach stderr or rotated log
 files. Structured errors include type and message by default; stack output is
 limited to debug logging.
+
+## OpenTelemetry
+
+OpenTelemetry is disabled by default. It is enabled when
+`OTEL_EXPORTER_OTLP_ENDPOINT` is set or when the server is started with
+`--telemetry`:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318 kicad-mcp-pro --telemetry
+```
+
+The exporter supports OTLP/HTTP and OTLP/gRPC through
+`OTEL_EXPORTER_OTLP_PROTOCOL`:
+
+```bash
+OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+```
+
+Set `OTEL_EXPORTER_OTLP_HEADERS` for collector authentication and
+`OTEL_SERVICE_NAME` to override the default `kicad-mcp-pro` service name. The
+same opt-in switch is available as `KICAD_MCP_TELEMETRY_ENABLED=true` for
+launchers that cannot pass CLI flags.
+
+The server emits spans for MCP request handling, MCP tool calls, KiCad CLI
+subprocess execution, and file-backed PCB parsing. It also emits these metrics:
+
+| Metric | Labels |
+|---|---|
+| `mcp_tool_invocations_total` | `tool`, `status` |
+| `mcp_tool_duration_seconds` | `tool` |
+| `mcp_session_active` | none |
+| `kicad_cli_invocations_total` | `command`, `status` |
+| `kicad_cli_duration_seconds` | `command` |
+
+Telemetry attributes intentionally avoid project paths, board contents,
+schematic contents, CLI output, request arguments, and collector headers.
 
 ## Workspace Safety
 

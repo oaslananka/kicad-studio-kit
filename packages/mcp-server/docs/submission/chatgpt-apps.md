@@ -25,7 +25,7 @@ Use this document for the ChatGPT Apps submission path.
 - [ ] Name: `KiCad MCP Pro`.
 - [ ] Short description: `KiCad PCB and schematic automation through local MCP.`
 - [ ] Short description length: 58 characters, below the 80 character limit.
-- [ ] Long description: `KiCad MCP Pro connects ChatGPT-compatible MCP clients to local KiCad projects for project setup, schematic review, PCB inspection, validation gates, DFM checks, and gated manufacturing export. It runs locally over stdio by default and does not collect telemetry.`
+- [ ] Long description: `KiCad MCP Pro connects ChatGPT-compatible MCP clients to local KiCad projects for project setup, schematic review, PCB inspection, validation gates, DFM checks, and gated manufacturing export. It runs locally over stdio by default, and OpenTelemetry export is disabled unless explicitly configured by the operator.`
 - [ ] Long description length: below 500 characters.
 - [ ] Category: `Developer Tools`.
 - [ ] Support URL: `https://github.com/oaslananka/kicad-studio-kit/issues`.
@@ -116,7 +116,7 @@ Use this document for the ChatGPT Apps submission path.
 - [ ] Confirm machine-readable prompts match `tests/reviewer/prompts.json`.
 - [ ] Confirm the app does not claim hosted data residency for stdio mode.
 - [ ] Confirm the app describes default processing as local-only.
-- [ ] Confirm the app does not claim telemetry exists.
+- [ ] Confirm the app says OpenTelemetry export is disabled by default and operator-configured only.
 - [ ] Confirm the app does not request OAuth for local stdio review.
 - [ ] Confirm optional HTTP mode is described as a separate configured deployment path.
 - [ ] Confirm HTTP mode notes mention bearer auth for production.
@@ -133,7 +133,7 @@ Use this document for the ChatGPT Apps submission path.
 - [ ] Confirm the README demo GIF exists before dashboard reviewers open the repository.
 - [ ] Confirm the README demo GIF contains no real hostnames or local filesystem paths.
 - [ ] Confirm the privacy page states personal information is not collected.
-- [ ] Confirm the privacy page states telemetry is not collected.
+- [ ] Confirm the privacy page states telemetry is disabled by default and optional OpenTelemetry export is explicit.
 - [ ] Confirm the privacy page explains optional third-party integrations separately.
 - [ ] Confirm the safety statement explains filesystem scope restrictions.
 - [ ] Confirm the safety statement explains subprocess scope.

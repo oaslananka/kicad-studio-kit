@@ -8,6 +8,7 @@ The server can run in `streamable-http` mode in addition to `stdio`.
 - Discovery endpoint: `/.well-known/mcp-server`
 - Optional bearer-token auth
 - Optional `/metrics` endpoint when `KICAD_MCP_ENABLE_METRICS=true`
+- Optional OpenTelemetry OTLP export when `OTEL_EXPORTER_OTLP_ENDPOINT` is set or `--telemetry` is passed
 - Optional CORS allowlist using explicit `http://`, `https://`, or `vscode-webview://` origins only
 - Wildcard CORS (`*`) is rejected intentionally
 - Stateless HTTP by default, with opt-in stateful HTTP for session-aware clients
@@ -31,6 +32,9 @@ send it on subsequent Streamable HTTP requests.
 - `KICAD_MCP_STATEFUL_HTTP=true`
 - `KICAD_MCP_ENABLE_METRICS=true`
 - `KICAD_MCP_LEGACY_SSE=true`
+- `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318`
+- `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`
+- `OTEL_SERVICE_NAME=kicad-mcp-pro`
 
 ## Discovery, Metrics, and Token Rotation
 
@@ -39,6 +43,10 @@ send it on subsequent Streamable HTTP requests.
   profile before listing tools.
 - `GET /metrics` emits in-memory Prometheus text metrics for tool calls and sliding-window
   p50/p95 latency when metrics are enabled.
+- OpenTelemetry emits MCP request, tool, KiCad CLI, and PCB parser spans plus
+  tool/session/CLI metrics to the configured OTLP collector. Attributes do not
+  include project paths, board contents, schematic contents, request arguments,
+  CLI output, or collector headers.
 - `POST /.well-known/mcp-server/token-rotate` rotates the in-memory bearer token. The request
   must authenticate with the current token and send JSON like `{"new_token": "..."}`.
 

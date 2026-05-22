@@ -36,7 +36,7 @@ Use this checklist before entering any external review form.
 - [ ] Confirm README references the demo media slot `docs/assets/demo.gif`.
 - [ ] Confirm README links to `PUBLIC_LISTING.md`.
 - [ ] Confirm README links to the privacy policy.
-- [ ] Confirm `docs/privacy.md` states no telemetry is collected.
+- [ ] Confirm `docs/privacy.md` states telemetry is disabled by default and optional OpenTelemetry export is explicit.
 - [ ] Confirm `docs/assets/icon.svg` exists and is the canonical vector icon.
 - [ ] Confirm `docs/assets/icon-512.png` is 512x512.
 - [ ] Confirm `docs/assets/screenshots/` contains five 1920x1080 image slots.

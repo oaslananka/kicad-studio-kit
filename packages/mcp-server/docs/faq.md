@@ -18,7 +18,10 @@ Profiles reduce the tool surface for agents. `pcb_only`, `schematic_only`, `manu
 
 ## Is telemetry enabled?
 
-No. Telemetry is not collected by default. If opt-in anonymous telemetry is added later, it must be explicit, documented, and disabled by default.
+No. Telemetry is disabled by default. Operators can explicitly opt in to
+OpenTelemetry by setting `OTEL_EXPORTER_OTLP_ENDPOINT` or passing `--telemetry`;
+the exported attributes are operational only and intentionally omit project
+paths, design contents, request arguments, CLI output, and collector headers.
 
 ## Where should I ask questions?
 
