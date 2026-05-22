@@ -17,6 +17,7 @@ const requiredSections = [
   "## Gate Summary",
   "## Test Layers",
   "## Fast PR Gates",
+  "## Performance Budgets",
   "## Nightly Quality Gates",
   "## Regression Coverage Map",
   "## Local Commands",
@@ -38,8 +39,10 @@ const requiredPhrases = [
   "corepack pnpm run build:kicad-mcp-pro",
   "corepack pnpm run package:kicad-mcp-pro",
   "corepack pnpm run check:mcp-npm",
+  "corepack pnpm run check:performance-budgets",
   "corepack pnpm run test:contract",
   "corepack pnpm run test:fixtures",
+  "docs/performance-baselines.md",
   "@vscode/test-electron",
   "Playwright",
   "toHaveScreenshot",
@@ -66,6 +69,7 @@ const roadmapIssueIds = [
   "OASLANA-64",
   "OASLANA-81",
   "OASLANA-82",
+  "OASLANA-124",
 ];
 
 function readText(filePath) {

@@ -13,6 +13,7 @@ notes can add detail, but they should not weaken these gates.
 | Gate                 | Trigger                                                              | Purpose                                                                                         | Required command                              |
 | -------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | Fast PR gate         | Every pull request                                                   | Catch formatting, lint, type, unit, package, metadata, boundary, and compatibility regressions. | `corepack pnpm run check`                     |
+| Performance budget   | Every pull request                                                   | Report shared baseline drift and fail measured lanes that exceed the regression budget.           | `corepack pnpm run check:performance-budgets` |
 | Product gate         | Product-scoped changes                                               | Prove the touched product still builds, tests, and packages independently.                      | Product commands below                        |
 | Contract gate        | Protocol, compatibility, or cross-product changes                    | Prove extension and MCP assumptions remain aligned.                                             | `corepack pnpm run test:contract`             |
 | Fixture gate         | Parser, diagnostics, command-builder, or KiCad file behavior changes | Prove deterministic KiCad corpus behavior stays stable.                                         | `corepack pnpm run test:fixtures`             |
@@ -34,6 +35,7 @@ notes can add detail, but they should not weaken these gates.
 | MCP unit tests                        | Pure Python helpers, tool metadata, routers, server startup, semantic gates, release guards.                                         | `packages/mcp-server/tests/unit/`                                        | pytest                                                         | Fast PR gate                                           |
 | MCP integration tests                 | File-backed KiCad behavior, export/manufacturing tools, project quality gates, simulation and routing tools.                         | `packages/mcp-server/tests/integration/`                                 | pytest plus optional `kicad-cli`                               | Nightly gate unless the fixture is pure and fast       |
 | MCP E2E tests                         | Server startup, stdio, journal/rollback, release-gate workflows.                                                                     | `packages/mcp-server/tests/e2e/`                                         | pytest                                                         | Nightly gate                                           |
+| Performance budgets                  | Shared activation, scan, viewer, validation, MCP, and memory baselines plus PR budget reports.                                       | `performance/baselines.json`, `performance-results/`                     | Node checker, benchmark producers, GitHub workflow artifacts   | Fast PR gate                                           |
 | KiCad CLI contract tests              | KiCad 10 primary behavior plus supported 9.x and deprecated 8.x compatibility where supported.                                       | Shared fixtures and MCP integration tests                                | `kicad-cli`                                                    | Nightly/canary gate                                    |
 | MCP transport contract tests          | Streamable HTTP initialize flow, session handling, stateless behavior, `MCP-Protocol-Version`, tool discovery, errors, and timeouts. | MCP tests and future shared contract package                             | pytest/http client                                             | Contract gate                                          |
 | Real-pair tests                       | Built VS Code extension connected to built MCP server against fixture workspaces.                                                    | Future shared harness                                                    | VS Code test host plus local MCP server                        | Nightly gate                                           |
@@ -85,6 +87,23 @@ Protocol, compatibility, or cross-product changes use:
 ```bash
 corepack pnpm run test:contract
 corepack pnpm run test:fixtures
+```
+
+## Performance Budgets
+
+`performance/baselines.json` is the shared performance budget catalog for
+activation, project scan, viewer, validation, MCP, and memory regressions. The
+policy and benchmark-producer contract live in
+[`docs/performance-baselines.md`](performance-baselines.md).
+
+Every PR runs the performance catalog check through the root gate and the CI
+`performance-budgets` job records benchmark measurements plus the budget report
+as workflow artifacts. A measured metric warns after 10 percent drift and fails
+after 20 percent drift. Use the dedicated budget check while changing baseline
+metadata:
+
+```bash
+corepack pnpm run check:performance-budgets
 ```
 
 ## Nightly Quality Gates
@@ -168,6 +187,7 @@ or artifact.
 | OASLANA-64 | Supply-chain regressions in both products and artifacts.                        | Security workflow, package validation, audit, and provenance checks        |
 | OASLANA-81 | VS Code runtime/API compatibility regressions.                                  | Scheduled VS Code stable/insiders/minimum canary lane                      |
 | OASLANA-82 | KiCad CLI/file-format compatibility regressions.                                | Scheduled KiCad version canary lane                                        |
+| OASLANA-124 | Performance regressions without shared limits or PR evidence.                  | Shared baselines, CI budget report artifacts, and drift thresholds         |
 
 ## Local Commands
 
@@ -177,6 +197,7 @@ before pushing.
 | Change type                    | Narrow command                                                                                              | Broad command                                  |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
 | Root docs or governance        | `corepack pnpm run check:testing-strategy`                                                                  | `corepack pnpm run check`                      |
+| Performance baselines          | `corepack pnpm run check:performance-budgets`                                                               | CI `performance-budgets` artifact lane         |
 | Extension unit behavior        | `corepack pnpm --filter kicadstudio run test:unit -- <test file>`                                           | `corepack pnpm run check:kicad-studio`         |
 | Extension integration behavior | `corepack pnpm --filter kicadstudio run test:integration`                                                   | `corepack pnpm run check:kicad-studio`         |
 | Extension webview/E2E behavior | `corepack pnpm --filter kicadstudio run test:e2e`                                                           | Nightly quality gate once snapshots are stable |
@@ -210,7 +231,7 @@ corepack pnpm run test:fixtures
 CI ownership follows product boundaries:
 
 - `.github/workflows/ci.yml` owns fast PR lanes for metadata, extension, MCP
-  server, npm wrapper, and forbidden reference checks.
+  server, MCP performance budgets, npm wrapper, and forbidden reference checks.
 - `.github/workflows/security.yml`, `.github/workflows/gitleaks.yml`, and
   `.github/workflows/codeql.yml` own security and static analysis lanes.
 - `.github/workflows/nightly-quality-gates.yml` owns the non-release scheduled
