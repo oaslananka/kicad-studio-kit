@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { createNonce } from '../utils/nonce';
+import { injectWebviewLocalization } from '../webviewI18n';
 
 export interface SettingsViewState {
   settings: Record<string, unknown>;
@@ -21,7 +22,8 @@ export function buildSettingsHtml(options: SettingsHtmlOptions): string {
   const nonce = createNonce();
   const stateJson = JSON.stringify(options.state).replace(/</g, '\\u003c');
 
-  return `<!DOCTYPE html>
+  return injectWebviewLocalization(
+    `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -425,5 +427,7 @@ export function buildSettingsHtml(options: SettingsHtmlOptions): string {
     vscode.postMessage({ type: 'requestApiKeyStatus' });
   </script>
 </body>
-</html>`;
+</html>`,
+    nonce
+  );
 }

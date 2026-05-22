@@ -27,6 +27,22 @@ function createMemento() {
   };
 }
 
+function interpolateL10nMessage(message: string, args: unknown[]): string {
+  const namedArgs = args[0];
+  if (namedArgs && typeof namedArgs === 'object' && !Array.isArray(namedArgs)) {
+    const values = namedArgs as Record<string, unknown>;
+    return message.replace(/\{([^}]+)\}/gu, (placeholder, key: string) => {
+      const value = values[key];
+      return typeof value === 'undefined' ? placeholder : String(value);
+    });
+  }
+
+  return message.replace(/\{(\d+)\}/gu, (placeholder, index: string) => {
+    const value = args[Number(index)];
+    return typeof value === 'undefined' ? placeholder : String(value);
+  });
+}
+
 export function createExtensionContextMock() {
   const workspaceState = createMemento();
   const globalState = createMemento();
@@ -189,10 +205,29 @@ export const tasks = {
 };
 
 export const env = {
+  language: 'en',
   clipboard: {
     writeText: jest.fn()
   },
   openExternal: jest.fn()
+};
+
+export const l10n = {
+  t: jest.fn(
+    (
+      messageOrOptions:
+        | string
+        | { message: string; args?: Record<string, unknown> },
+      ...args: unknown[]
+    ): string => {
+      if (typeof messageOrOptions === 'string') {
+        return interpolateL10nMessage(messageOrOptions, args);
+      }
+      return interpolateL10nMessage(messageOrOptions.message, [
+        messageOrOptions.args ?? {}
+      ]);
+    }
+  )
 };
 
 export const ProgressLocation = {

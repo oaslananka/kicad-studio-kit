@@ -47,6 +47,7 @@ from .config import LOOPBACK_HOSTS, KiCadMCPConfig, get_config, reset_config
 from .connection import KiCadConnectionError, get_board
 from .diagnostics import DiagnosticReport, build_doctor_report, build_health_report
 from .discovery import ensure_studio_project_watcher, find_kicad_version
+from .i18n import SERVER_DESCRIPTION, localize, option_help
 from .ipc.capabilities import KiCadIpcCapabilityState, get_ipc_capability_state
 from .tools import router
 from .tools.fixers import validate_callable_imports
@@ -57,9 +58,9 @@ from .utils.logging import setup_logging
 from .wellknown import get_wellknown_metadata
 
 logger = structlog.get_logger(__name__)
-app = typer.Typer(help="KiCad MCP Pro server for PCB and schematic workflows.")
-tools_app = typer.Typer(help="Inspect registered MCP tools.")
-mcp_config_app = typer.Typer(help="Generate MCP client configuration snippets.")
+app = typer.Typer(help=localize(SERVER_DESCRIPTION))
+tools_app = typer.Typer(help=localize("Inspect registered MCP tools."))
+mcp_config_app = typer.Typer(help=localize("Generate MCP client configuration snippets."))
 app.add_typer(tools_app, name="tools")
 app.add_typer(mcp_config_app, name="mcp-config")
 AnyFunction = Callable[..., object]
@@ -1427,19 +1428,23 @@ def _run_server_from_options(
 
 @app.callback(invoke_without_command=True)
 def main_callback(
-    transport: str | None = typer.Option(None, help="Transport: stdio, http, sse, streamable-http"),
-    host: str | None = typer.Option(None, help="HTTP bind host"),
-    port: int | None = typer.Option(None, help="HTTP bind port"),
-    project_dir: str | None = typer.Option(None, help="Active KiCad project directory"),
-    log_level: str | None = typer.Option(None, help="Log level"),
-    log_format: str | None = typer.Option(None, help="Log format: text or json"),
-    log_file: str | None = typer.Option(None, help="Rotating log file path"),
+    transport: str | None = typer.Option(
+        None, help=option_help("Transport: stdio, http, sse, streamable-http")
+    ),
+    host: str | None = typer.Option(None, help=option_help("HTTP bind host")),
+    port: int | None = typer.Option(None, help=option_help("HTTP bind port")),
+    project_dir: str | None = typer.Option(
+        None, help=option_help("Active KiCad project directory")
+    ),
+    log_level: str | None = typer.Option(None, help=option_help("Log level")),
+    log_format: str | None = typer.Option(None, help=option_help("Log format: text or json")),
+    log_file: str | None = typer.Option(None, help=option_help("Rotating log file path")),
     profile: str | None = typer.Option(
         None, help=f"Server profile: {', '.join(available_profiles())}"
     ),
-    experimental: bool | None = typer.Option(None, help="Enable experimental tools"),
+    experimental: bool | None = typer.Option(None, help=option_help("Enable experimental tools")),
     telemetry: bool | None = typer.Option(
-        None, "--telemetry/--no-telemetry", help="Enable OpenTelemetry export"
+        None, "--telemetry/--no-telemetry", help=option_help("Enable OpenTelemetry export")
     ),
 ) -> None:
     """Start the KiCad MCP Pro server when no subcommand is supplied."""
@@ -1463,19 +1468,23 @@ def main_callback(
 
 @app.command()
 def serve(
-    transport: str | None = typer.Option(None, help="Transport: stdio, http, sse, streamable-http"),
-    host: str | None = typer.Option(None, help="HTTP bind host"),
-    port: int | None = typer.Option(None, help="HTTP bind port"),
-    project_dir: str | None = typer.Option(None, help="Active KiCad project directory"),
-    log_level: str | None = typer.Option(None, help="Log level"),
-    log_format: str | None = typer.Option(None, help="Log format: text or json"),
-    log_file: str | None = typer.Option(None, help="Rotating log file path"),
+    transport: str | None = typer.Option(
+        None, help=option_help("Transport: stdio, http, sse, streamable-http")
+    ),
+    host: str | None = typer.Option(None, help=option_help("HTTP bind host")),
+    port: int | None = typer.Option(None, help=option_help("HTTP bind port")),
+    project_dir: str | None = typer.Option(
+        None, help=option_help("Active KiCad project directory")
+    ),
+    log_level: str | None = typer.Option(None, help=option_help("Log level")),
+    log_format: str | None = typer.Option(None, help=option_help("Log format: text or json")),
+    log_file: str | None = typer.Option(None, help=option_help("Rotating log file path")),
     profile: str | None = typer.Option(
         None, help=f"Server profile: {', '.join(available_profiles())}"
     ),
-    experimental: bool | None = typer.Option(None, help="Enable experimental tools"),
+    experimental: bool | None = typer.Option(None, help=option_help("Enable experimental tools")),
     telemetry: bool | None = typer.Option(
-        None, "--telemetry/--no-telemetry", help="Enable OpenTelemetry export"
+        None, "--telemetry/--no-telemetry", help=option_help("Enable OpenTelemetry export")
     ),
 ) -> None:
     """Start the MCP server explicitly."""
@@ -1568,7 +1577,9 @@ def _strict_diagnostic_command(builder: Callable[[], DiagnosticReport], *, as_js
 
 @app.command()
 def health(
-    json_output: bool = typer.Option(False, "--json", help="Emit machine-readable JSON."),
+    json_output: bool = typer.Option(
+        False, "--json", help=option_help("Emit machine-readable JSON.")
+    ),
 ) -> None:
     """Report fast package and configuration health without requiring KiCad IPC."""
     _diagnostic_command(build_health_report, as_json=json_output)
@@ -1576,11 +1587,13 @@ def health(
 
 @app.command()
 def doctor(
-    json_output: bool = typer.Option(False, "--json", help="Emit machine-readable JSON."),
+    json_output: bool = typer.Option(
+        False, "--json", help=option_help("Emit machine-readable JSON.")
+    ),
     strict: bool = typer.Option(
         False,
         "--strict",
-        help="Use stable non-zero exit codes for degraded runtime states.",
+        help=option_help("Use stable non-zero exit codes for degraded runtime states."),
     ),
 ) -> None:
     """Run deeper diagnostics without treating unavailable KiCad as fatal."""

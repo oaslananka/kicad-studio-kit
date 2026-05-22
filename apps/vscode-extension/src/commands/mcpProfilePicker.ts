@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { SETTINGS } from '../constants';
+import { localize } from '../i18n';
 import {
   KICAD_MCP_PROFILES,
   type KicadMcpProfileId
@@ -15,12 +16,12 @@ export async function pickMcpProfile(
     KICAD_MCP_PROFILES.map((profile) => ({
       label: profile.label,
       description: profile.id,
-      detail: `${profile.blurb} (as of MCP 1.0.0)`,
+      detail: localize('mcpProfileDetail', { blurb: profile.blurb }),
       profile
     })),
     {
-      title: 'Select kicad-mcp-pro profile',
-      placeHolder: 'Choose the MCP profile to use for this workspace'
+      title: localize('selectMcpProfile'),
+      placeHolder: localize('chooseMcpProfile')
     }
   );
   if (!choice) {
@@ -29,11 +30,11 @@ export async function pickMcpProfile(
 
   await writeProfile(choice.profile.id);
   const restart = await vscode.window.showInformationMessage(
-    `MCP profile set to ${choice.profile.id}. Restart the MCP connection now?`,
-    'Restart',
-    'Later'
+    localize('mcpProfileSetRestart', { profile: choice.profile.id }),
+    localize('restart'),
+    localize('later')
   );
-  if (restart === 'Restart') {
+  if (restart === localize('restart')) {
     await services.mcpClient.retryNow();
     await services.refreshMcpState();
   }

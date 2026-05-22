@@ -53,6 +53,11 @@ def test_server_info_contract_matches_protocol_schema(monkeypatch, sample_projec
     _validate_contract(payload)
     assert payload["schemaVersion"] == "1.1.0"
     assert payload["server"] == "kicad-mcp-pro"
+    assert payload["description"] == "KiCad MCP Pro server for PCB and schematic workflows."
+    assert payload["localizedDescriptions"] == {
+        "en": "KiCad MCP Pro server for PCB and schematic workflows.",
+        "tr": "PCB ve şematik iş akışları için KiCad MCP Pro sunucusu.",
+    }
     assert payload["mcpProtocolVersion"] == "2025-11-25"
     assert payload["toolSchemaVersion"] == "1.0.0"
     assert payload["compatibilityRange"] == {

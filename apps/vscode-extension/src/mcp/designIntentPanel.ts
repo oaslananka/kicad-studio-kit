@@ -2,6 +2,10 @@ import * as vscode from 'vscode';
 import { asRecord, hasType } from '../utils/webviewMessages';
 import type { DesignIntentMcpAdapter } from './mcpToolAdapter';
 import { createNonce } from '../utils/nonce';
+import {
+  injectWebviewLocalization,
+  localizeWebviewMessage
+} from '../webviewI18n';
 
 export class DesignIntentPanel {
   private static currentPanel: vscode.WebviewPanel | undefined;
@@ -17,7 +21,7 @@ export class DesignIntentPanel {
 
     const panel = vscode.window.createWebviewPanel(
       'kicadstudio.designIntent',
-      'KiCad Design Intent',
+      localizeWebviewMessage('KiCad Design Intent'),
       vscode.ViewColumn.Beside,
       {
         enableScripts: true,
@@ -77,7 +81,8 @@ export class DesignIntentPanel {
 
   private static getFormHtml(): string {
     const nonce = createNonce();
-    return `<!DOCTYPE html>
+    return injectWebviewLocalization(
+      `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -218,7 +223,9 @@ export class DesignIntentPanel {
     vscode.postMessage({ type: 'load' });
   </script>
 </body>
-</html>`;
+</html>`,
+      nonce
+    );
   }
 }
 

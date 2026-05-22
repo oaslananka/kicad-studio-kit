@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { COMMANDS } from '../constants';
+import { localize } from '../i18n';
 import type { DiagnosticSummary } from '../types';
 import type { DiagnosticStateStore } from '../state/stateStores';
 
@@ -33,7 +34,7 @@ export class ValidationViewProvider
     item.iconPath = new vscode.ThemeIcon(iconFor(element.summary));
     item.command = {
       command: element.label === 'DRC' ? COMMANDS.runDRC : COMMANDS.runERC,
-      title: `Run ${element.label}`
+      title: localize('runValidation', { label: element.label })
     };
     return item;
   }
@@ -54,21 +55,28 @@ export class ValidationViewProvider
 
 function describe(summary: DiagnosticSummary | undefined): string {
   if (!summary) {
-    return 'PENDING - no cached result';
+    return localize('diagnosticPendingNoCachedResult');
   }
-  return `${statusFor(summary)} - ${summary.errors} errors, ${summary.warnings} warnings`;
+  return localize('diagnosticSummary', {
+    status: statusFor(summary),
+    errors: summary.errors,
+    warnings: summary.warnings
+  });
 }
 
 function tooltip(row: ValidationRow): string {
   if (!row.summary) {
-    return `${row.label} has not been run yet.`;
+    return localize('diagnosticNotRun', { label: row.label });
   }
   return [
-    `${row.label}: ${statusFor(row.summary)}`,
+    localize('diagnosticStatusTooltip', {
+      label: row.label,
+      status: statusFor(row.summary)
+    }),
     row.summary.file,
-    `${row.summary.errors} errors`,
-    `${row.summary.warnings} warnings`,
-    `${row.summary.infos} info`
+    localize('diagnosticErrors', { count: row.summary.errors }),
+    localize('diagnosticWarnings', { count: row.summary.warnings }),
+    localize('diagnosticInfos', { count: row.summary.infos })
   ].join('\n');
 }
 

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { createNonce } from '../utils/nonce';
+import { injectWebviewLocalization } from '../webviewI18n';
 
 export interface ChatHtmlOptions {
   webview: vscode.Webview;
@@ -19,7 +20,8 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
     )
     .toString();
 
-  return `<!DOCTYPE html>
+  return injectWebviewLocalization(
+    `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -338,6 +340,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
   <script nonce="${nonce}" src="${markdownUri}"></script>
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
+    const l10n = globalThis.kicadStudioL10n || { t: (value) => value, apply: () => {} };
     const state = { history: [], busy: false, contextVisible: false, scrollPending: false };
     const nodes = {
       messages: document.getElementById('messages'),
@@ -379,13 +382,13 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
     function setStatus(value) {
-      nodes.status.textContent = value || 'Ready';
+      nodes.status.textContent = value || l10n.t('Ready');
     }
     function setBusy(busy) {
       state.busy = !!busy;
       nodes.send.disabled = state.busy;
       nodes.cancel.disabled = !state.busy;
-      nodes.send.textContent = state.busy ? '…' : 'Send';
+      nodes.send.textContent = state.busy ? '…' : l10n.t('Send');
     }
     function clearMessages() {
       for (const item of [...nodes.messages.querySelectorAll('.message')]) {
@@ -433,7 +436,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       ta.select();
       document.execCommand('copy');
       ta.remove();
-      setStatus('Copied message.');
+      setStatus(l10n.t('Copied message.'));
     }
     function renderBody(body, message, streaming) {
       body.replaceChildren();
@@ -442,7 +445,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
         if (!content) {
           const typing = document.createElement('span');
           typing.className = 'typing-indicator';
-          typing.textContent = 'Thinking…';
+          typing.textContent = l10n.t('Thinking…');
           body.appendChild(typing);
           return;
         }
@@ -469,13 +472,13 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       const details = document.createElement('details');
       details.open = !message.applied;
       const summary = document.createElement('summary');
-      summary.textContent = message.applied ? 'Tool calls handled' : 'Suggested MCP tool calls';
+      summary.textContent = message.applied ? l10n.t('Tool calls handled') : l10n.t('Suggested MCP tool calls');
       details.appendChild(summary);
       const list = document.createElement('div');
       list.className = 'tool-list';
       for (const tool of tools) {
         const row = document.createElement('code');
-        row.textContent = tool && typeof tool.name === 'string' ? tool.name : 'tool';
+        row.textContent = tool && typeof tool.name === 'string' ? tool.name : l10n.t('tool');
         list.appendChild(row);
       }
       details.appendChild(list);
@@ -489,8 +492,8 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
         const actions = document.createElement('div');
         actions.className = 'tool-actions';
         actions.append(
-          actionButton('Apply', 'Apply suggested MCP tool calls', () => vscode.postMessage({ type: 'applyToolCalls', timestamp: message.timestamp })),
-          actionButton('Ignore', 'Mark suggested MCP tool calls as handled', () => vscode.postMessage({ type: 'ignoreToolCalls', timestamp: message.timestamp }))
+          actionButton(l10n.t('Apply'), l10n.t('Apply suggested MCP tool calls'), () => vscode.postMessage({ type: 'applyToolCalls', timestamp: message.timestamp })),
+          actionButton(l10n.t('Ignore'), l10n.t('Mark suggested MCP tool calls as handled'), () => vscode.postMessage({ type: 'ignoreToolCalls', timestamp: message.timestamp }))
         );
         details.appendChild(actions);
       }
@@ -500,14 +503,14 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       const actions = document.createElement('div');
       actions.className = 'actions';
       actions.append(
-        actionButton('Copy', 'Copy message', () => copyText(text(message.content))),
-        actionButton('Edit', 'Edit this prompt', () => {
+        actionButton(l10n.t('Copy'), l10n.t('Copy message'), () => copyText(text(message.content))),
+        actionButton(l10n.t('Edit'), l10n.t('Edit this prompt'), () => {
           nodes.prompt.value = text(message.content);
           nodes.prompt.focus();
           estimateTokens();
         }),
-        actionButton('+1', 'Mark helpful', () => setStatus('Reaction saved.')),
-        actionButton('-1', 'Mark not helpful', () => setStatus('Reaction saved.'))
+        actionButton('+1', l10n.t('Mark helpful'), () => setStatus(l10n.t('Reaction saved.'))),
+        actionButton('-1', l10n.t('Mark not helpful'), () => setStatus(l10n.t('Reaction saved.')))
       );
       container.appendChild(actions);
     }
@@ -524,7 +527,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       head.className = 'message-head';
       const role = document.createElement('span');
       role.className = 'role';
-      role.textContent = message.role === 'user' ? 'You' : 'Assistant';
+      role.textContent = message.role === 'user' ? l10n.t('You') : l10n.t('Assistant');
       const time = document.createElement('span');
       time.className = 'time';
       time.textContent = fmtTime(message.timestamp);
@@ -579,11 +582,11 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
     }
     function exportTranscript() {
       const lines = state.history.map((message) => {
-        const role = message.role === 'user' ? 'User' : 'Assistant';
+        const role = message.role === 'user' ? l10n.t('User') : l10n.t('Assistant');
         return '## ' + role + ' - ' + new Date(message.timestamp).toISOString() + '\\n\\n' + text(message.content);
       });
       copyText(lines.join('\\n\\n'));
-      setStatus('Transcript copied.');
+      setStatus(l10n.t('Transcript copied.'));
     }
 
     document.getElementById('settings').addEventListener('click', () => vscode.postMessage({ type: 'openSettings' }));
@@ -598,7 +601,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
     nodes.toggleContext.addEventListener('click', () => {
       state.contextVisible = !state.contextVisible;
       nodes.extraContext.classList.toggle('visible', state.contextVisible);
-      nodes.toggleContext.textContent = state.contextVisible ? 'Hide context' : 'Attach context';
+      nodes.toggleContext.textContent = state.contextVisible ? l10n.t('Hide context') : l10n.t('Attach context');
       if (state.contextVisible) {
         nodes.extraContext.focus();
       }
@@ -623,7 +626,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
         nodes.empty.style.display = state.history.length ? 'none' : 'block';
         setBusy(!!message.busy);
         if (!message.busy) {
-          setStatus('Ready');
+          setStatus(l10n.t('Ready'));
         }
         estimateTokens();
       } else if (message.type === 'appendMessage') {
@@ -648,11 +651,11 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
         // Full render with markdown now that streaming is complete.
         renderMessage(message.message, false);
       } else if (message.type === 'status') {
-        setStatus(message.text || 'Ready');
+        setStatus(message.text || l10n.t('Ready'));
       } else if (message.type === 'busy') {
         setBusy(!!message.busy);
         if (!message.busy) {
-          setStatus('Ready');
+          setStatus(l10n.t('Ready'));
         }
       } else if (message.type === 'contextInfo') {
         nodes.contextInfo.textContent = message.text || '';
@@ -663,5 +666,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
     vscode.postMessage({ type: 'ready' });
   </script>
 </body>
-</html>`;
+</html>`,
+    nonce
+  );
 }

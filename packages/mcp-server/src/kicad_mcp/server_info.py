@@ -12,6 +12,7 @@ from .compatibility import MCP_PROTOCOL_VERSION, MCP_TOOL_SCHEMA_VERSION, compat
 from .config import get_config
 from .connection import get_board, get_kicad
 from .discovery import CliCapabilities, get_cli_capabilities
+from .i18n import SERVER_DESCRIPTION, localize, localized_message_variants
 from .ipc.capabilities import get_ipc_capability_state
 from .ipc.client import KiCadIpcClient
 
@@ -47,6 +48,8 @@ def get_server_info_contract(*, probe_live_context: bool = True) -> dict[str, ob
     return {
         "schemaVersion": SERVER_INFO_SCHEMA_VERSION,
         "server": "kicad-mcp-pro",
+        "description": localize(SERVER_DESCRIPTION),
+        "localizedDescriptions": localized_message_variants(SERVER_DESCRIPTION),
         "version": __version__,
         "mcpProtocolVersion": MCP_PROTOCOL_VERSION,
         "toolSchemaVersion": _as_semver(MCP_TOOL_SCHEMA_VERSION),

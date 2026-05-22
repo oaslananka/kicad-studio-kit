@@ -5,6 +5,7 @@ import { bufferToBase64 } from '../utils/fileUtils';
 import { GitDiffDetector } from '../git/gitDiffDetector';
 import { asRecord, asString, hasType } from '../utils/webviewMessages';
 import { createNonce } from '../utils/nonce';
+import { injectWebviewLocalization } from '../webviewI18n';
 
 /**
  * Panel manager for visual schematic/PCB Git diffs. Panels are keyed by
@@ -219,7 +220,8 @@ export class DiffEditorProvider {
   private fallbackHtml(webview: vscode.Webview): string {
     const csp = webview.cspSource;
     const nonce = createNonce();
-    return /* html */ `<!DOCTYPE html>
+    return injectWebviewLocalization(
+      /* html */ `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -244,6 +246,7 @@ export class DiffEditorProvider {
   <ul id="diff-list"></ul>
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
+    const l10n = globalThis.kicadStudioL10n || { t: (value) => value };
     const summaryEl = document.getElementById('summary');
     const listEl    = document.getElementById('diff-list');
     document.getElementById('refresh-btn').addEventListener('click', () => {
@@ -251,7 +254,7 @@ export class DiffEditorProvider {
     });
     window.addEventListener('message', ({ data }) => {
       if (data.type === 'loading') {
-        summaryEl.textContent = 'Loading diff…';
+        summaryEl.textContent = l10n.t('Loading diff…');
         listEl.innerHTML = '';
       } else if (data.type === 'error') {
         summaryEl.textContent = '⚠ ' + data.payload.message;
@@ -268,7 +271,9 @@ export class DiffEditorProvider {
     });
   </script>
 </body>
-</html>`;
+</html>`,
+      nonce
+    );
   }
 
   private async resolveTarget(

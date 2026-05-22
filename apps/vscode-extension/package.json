@@ -1,7 +1,7 @@
 {
   "name": "kicadstudio",
-  "displayName": "KiCad Studio",
-  "description": "The complete KiCad development environment for VS Code — view schematics & PCBs, run DRC/ERC, export production files, search components, and get AI-powered design assistance.",
+  "displayName": "%kicadstudio.displayName%",
+  "description": "%kicadstudio.description%",
   "version": "1.0.0",
   "publisher": "oaslananka",
   "engines": {
@@ -63,7 +63,7 @@
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
-      "description": "KiCad Studio provides read-only language and viewer features in Restricted Mode. Commands that launch kicad-cli, KiCad, or external export/import tooling require workspace trust."
+      "description": "%kicadstudio.capabilities.untrustedWorkspaces.description%"
     }
   },
   "activationEvents": [
@@ -78,8 +78,8 @@
       {
         "id": "kicad-schematic",
         "aliases": [
-          "KiCad Schematic",
-          "kicad_sch"
+          "%kicadstudio.contributes.languages.0.aliases.0%",
+          "%kicadstudio.contributes.languages.0.aliases.1%"
         ],
         "extensions": [
           ".kicad_sch"
@@ -93,8 +93,8 @@
       {
         "id": "kicad-pcb",
         "aliases": [
-          "KiCad PCB",
-          "kicad_pcb"
+          "%kicadstudio.contributes.languages.1.aliases.0%",
+          "%kicadstudio.contributes.languages.1.aliases.1%"
         ],
         "extensions": [
           ".kicad_pcb"
@@ -108,7 +108,7 @@
       {
         "id": "kicad-symbol",
         "aliases": [
-          "KiCad Symbol Library"
+          "%kicadstudio.contributes.languages.2.aliases.0%"
         ],
         "extensions": [
           ".kicad_sym"
@@ -118,7 +118,7 @@
       {
         "id": "kicad-footprint",
         "aliases": [
-          "KiCad Footprint"
+          "%kicadstudio.contributes.languages.3.aliases.0%"
         ],
         "extensions": [
           ".kicad_mod"
@@ -128,7 +128,7 @@
       {
         "id": "kicad-project",
         "aliases": [
-          "KiCad Project"
+          "%kicadstudio.contributes.languages.4.aliases.0%"
         ],
         "extensions": [
           ".kicad_pro",
@@ -139,7 +139,7 @@
       {
         "id": "kicad-drc",
         "aliases": [
-          "KiCad DRC Rules"
+          "%kicadstudio.contributes.languages.5.aliases.0%"
         ],
         "extensions": [
           ".kicad_dru"
@@ -196,7 +196,7 @@
     "customEditors": [
       {
         "viewType": "kicadstudio.schematicViewer",
-        "displayName": "KiCad Schematic Viewer",
+        "displayName": "%kicadstudio.contributes.customEditors.0.displayName%",
         "selector": [
           {
             "filenamePattern": "*.kicad_sch"
@@ -206,7 +206,7 @@
       },
       {
         "viewType": "kicadstudio.pcbViewer",
-        "displayName": "KiCad PCB Viewer",
+        "displayName": "%kicadstudio.contributes.customEditors.1.displayName%",
         "selector": [
           {
             "filenamePattern": "*.kicad_pcb"
@@ -219,7 +219,7 @@
       "activitybar": [
         {
           "id": "kicadstudio-sidebar",
-          "title": "KiCad Studio",
+          "title": "%kicadstudio.contributes.viewsContainers.activitybar.0.title%",
           "icon": "assets/icon-dark.png"
         }
       ]
@@ -228,66 +228,66 @@
       "kicadstudio-sidebar": [
         {
           "id": "kicadstudio.projectTree",
-          "name": "KiCad Project",
+          "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.0.name%",
           "icon": "assets/views/project-tree.svg"
         },
         {
           "id": "kicadstudio.validation",
-          "name": "Validation",
+          "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.1.name%",
           "when": "kicadstudio.hasProject",
           "icon": "assets/views/validation.svg"
         },
         {
           "id": "kicadstudio.qualityGate",
-          "name": "Quality Gates",
+          "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.2.name%",
           "when": "kicadstudio.hasProject",
           "icon": "assets/views/quality-gates.svg"
         },
         {
           "id": "kicadstudio.bomView",
-          "name": "Bill of Materials",
+          "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.3.name%",
           "type": "webview",
           "when": "kicadstudio.hasProject",
           "icon": "assets/views/bom.svg"
         },
         {
           "id": "kicadstudio.netlistView",
-          "name": "Netlist",
+          "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.4.name%",
           "type": "webview",
           "when": "kicadstudio.hasProject",
           "icon": "assets/views/netlist.svg"
         },
         {
           "id": "kicadstudio.variants",
-          "name": "Variants",
+          "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.5.name%",
           "when": "kicadstudio.hasProject && kicadstudio.kicad10Plus",
           "icon": "assets/views/variants.svg"
         },
         {
           "id": "kicadstudio.library",
-          "name": "Library",
+          "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.6.name%",
           "icon": "assets/views/library.svg"
         },
         {
           "id": "kicadstudio.drcRules",
-          "name": "DRC Rules",
+          "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.7.name%",
           "when": "kicadstudio.hasProject",
           "icon": "assets/views/drc-rules.svg"
         },
         {
           "id": "kicadstudio.fixQueue",
-          "name": "AI Fix Queue",
+          "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.8.name%",
           "when": "kicadstudio.mcpConnected",
           "icon": "assets/views/fix-queue.svg"
         },
         {
           "id": "kicadstudio.componentSearch",
-          "name": "Component Search",
+          "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.9.name%",
           "icon": "assets/views/component-search.svg"
         },
         {
           "id": "kicadstudio.mcpTools",
-          "name": "MCP & Tools",
+          "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.10.name%",
           "icon": "assets/views/mcp-tools.svg"
         }
       ]
@@ -295,541 +295,541 @@
     "viewsWelcome": [
       {
         "view": "kicadstudio.projectTree",
-        "contents": "Open a folder containing a `.kicad_pro`, `.kicad_sch`, or `.kicad_pcb` file to start using KiCad Studio.\n[Open Folder](command:workbench.action.files.openFolder)\n[Open Settings Panel](command:kicadstudio.openSettings)"
+        "contents": "%kicadstudio.contributes.viewsWelcome.0.contents%"
       },
       {
         "view": "kicadstudio.validation",
-        "contents": "Catch layout and electrical violations before manufacturing.\n\n[Run DRC](command:kicadstudio.runDRC)\n[Run ERC](command:kicadstudio.runERC)\n\nResults appear in the **Problems** panel below.",
+        "contents": "%kicadstudio.contributes.viewsWelcome.1.contents%",
         "when": "kicadstudio.hasProject && kicadstudio.workspaceTrusted"
       },
       {
         "view": "kicadstudio.validation",
-        "contents": "Workspace is in Restricted Mode — DRC/ERC are disabled.\n\n[Manage Workspace Trust](command:workbench.action.manageTrust)",
+        "contents": "%kicadstudio.contributes.viewsWelcome.2.contents%",
         "when": "kicadstudio.hasProject && !kicadstudio.workspaceTrusted"
       },
       {
         "view": "kicadstudio.validation",
-        "contents": "Open a KiCad project to run design rule checks.\n[Open Folder](command:workbench.action.files.openFolder)",
+        "contents": "%kicadstudio.contributes.viewsWelcome.3.contents%",
         "when": "!kicadstudio.hasProject"
       },
       {
         "view": "kicadstudio.bomView",
-        "contents": "Open a KiCad project to view the Bill of Materials.\n[Open Folder](command:workbench.action.files.openFolder)",
+        "contents": "%kicadstudio.contributes.viewsWelcome.4.contents%",
         "when": "!kicadstudio.hasProject"
       },
       {
         "view": "kicadstudio.netlistView",
-        "contents": "Open a KiCad project to inspect the netlist.\n[Open Folder](command:workbench.action.files.openFolder)",
+        "contents": "%kicadstudio.contributes.viewsWelcome.5.contents%",
         "when": "!kicadstudio.hasProject"
       },
       {
         "view": "kicadstudio.variants",
-        "contents": "Open a KiCad 10 project to browse and switch design variants."
+        "contents": "%kicadstudio.contributes.viewsWelcome.6.contents%"
       },
       {
         "view": "kicadstudio.library",
-        "contents": "[Search Symbols](command:kicadstudio.searchLibrarySymbol)\n[Search Footprints](command:kicadstudio.searchLibraryFootprint)\n[Reindex Libraries](command:kicadstudio.reindexLibraries)"
+        "contents": "%kicadstudio.contributes.viewsWelcome.7.contents%"
       },
       {
         "view": "kicadstudio.mcpTools",
-        "contents": "[Retry Connection](command:kicadstudio.mcp.retry)\n[Install kicad-mcp-pro](command:kicadstudio.mcp.install)\n[Open Log](command:kicadstudio.mcp.openLog)",
+        "contents": "%kicadstudio.contributes.viewsWelcome.8.contents%",
         "when": "!kicadstudio.mcpConnected && !kicadstudio.mcpVsCodeStdio"
       },
       {
         "view": "kicadstudio.mcpTools",
-        "contents": "kicad-mcp-pro connected.\n[Open Log](command:kicadstudio.mcp.openLog)\n[Pick Profile](command:kicadstudio.mcp.pickProfile)",
+        "contents": "%kicadstudio.contributes.viewsWelcome.9.contents%",
         "when": "kicadstudio.mcpConnected"
       },
       {
         "view": "kicadstudio.mcpTools",
-        "contents": "Connected via VS Code stdio.\n[Open Log](command:kicadstudio.mcp.openLog)\n[Switch to HTTP Mode](command:kicadstudio.mcp.launchHttp)",
+        "contents": "%kicadstudio.contributes.viewsWelcome.10.contents%",
         "when": "kicadstudio.mcpVsCodeStdio"
       },
       {
         "view": "kicadstudio.fixQueue",
-        "contents": "Connect `kicad-mcp-pro` to see actionable AI fixes here.\n[Setup MCP Integration](command:kicadstudio.setupMcpIntegration)",
+        "contents": "%kicadstudio.contributes.viewsWelcome.11.contents%",
         "when": "!kicadstudio.mcpConnected && !kicadstudio.mcpVsCodeStdio"
       },
       {
         "view": "kicadstudio.fixQueue",
-        "contents": "No pending AI fixes.\n\n[Run Quality Gates](command:kicadstudio.qualityGate.runAll)\n[Open AI Chat](command:kicadstudio.openAiChat)\n[Refresh Fix Queue](command:kicadstudio.refreshFixQueue)",
+        "contents": "%kicadstudio.contributes.viewsWelcome.12.contents%",
         "when": "kicadstudio.mcpConnected && !kicadstudio.mcpVsCodeStdio"
       },
       {
         "view": "kicadstudio.fixQueue",
-        "contents": "kicad-mcp-pro is connected via VS Code stdio.\n\nAI fixes require the HTTP transport.\n[Switch to HTTP Mode](command:kicadstudio.mcp.launchHttp)\n\nOr open the **AI Chat** panel and use MCP tools there instead.",
+        "contents": "%kicadstudio.contributes.viewsWelcome.13.contents%",
         "when": "kicadstudio.mcpVsCodeStdio"
       },
       {
         "view": "kicadstudio.qualityGate",
-        "contents": "Connect `kicad-mcp-pro` over HTTP to run schematic, placement, PCB transfer, and manufacturing gates.\n[Setup MCP Integration](command:kicadstudio.setupMcpIntegration)\n[Install kicad-mcp-pro](command:kicadstudio.mcp.install)",
+        "contents": "%kicadstudio.contributes.viewsWelcome.14.contents%",
         "when": "!kicadstudio.mcpConnected && !kicadstudio.mcpVsCodeStdio"
       },
       {
         "view": "kicadstudio.qualityGate",
-        "contents": "kicad-mcp-pro is connected via VS Code stdio.\n\nQuality Gates require the HTTP transport (port 27185).\n[Switch to HTTP Mode](command:kicadstudio.mcp.launchHttp)",
+        "contents": "%kicadstudio.contributes.viewsWelcome.15.contents%",
         "when": "kicadstudio.mcpVsCodeStdio"
       },
       {
         "view": "kicadstudio.drcRules",
-        "contents": "No `.kicad_dru` rule file found in the active project.\n\n[Create .kicad_dru](command:kicadstudio.drcRule.createDefault)\n[Import starter template](command:kicadstudio.drcRule.importTemplate)\n[Add DRC Rule with AI](command:kicadstudio.drcRule.addWithMcp)\n[Open KiCad design rules docs](command:kicadstudio.qualityGate.openDocs)",
+        "contents": "%kicadstudio.contributes.viewsWelcome.16.contents%",
         "when": "kicadstudio.hasProject"
       },
       {
         "view": "kicadstudio.drcRules",
-        "contents": "Open a KiCad project to manage custom DRC rules.\n[Open Folder](command:workbench.action.files.openFolder)",
+        "contents": "%kicadstudio.contributes.viewsWelcome.17.contents%",
         "when": "!kicadstudio.hasProject"
       },
       {
         "view": "kicadstudio.componentSearch",
-        "contents": "Search for components by part number, keyword, or footprint across local KiCad libraries, LCSC, and Octopart/Nexar.\n[Search Component](command:kicadstudio.searchComponent)\n\nStore your Octopart/Nexar API key to enable cloud search:\n[Set Octopart/Nexar API Key](command:kicadstudio.setOctopartApiKey)\n\nConfigure AI provider keys for AI-assisted matching:\n[Set AI API Key](command:kicadstudio.setAiApiKey)"
+        "contents": "%kicadstudio.contributes.viewsWelcome.18.contents%"
       }
     ],
     "commands": [
       {
         "command": "kicadstudio.openSchematic",
-        "title": "KiCad: Open as Schematic Viewer",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.0.title%",
+        "category": "%kicadstudio.contributes.commands.0.category%"
       },
       {
         "command": "kicadstudio.openPCB",
-        "title": "KiCad: Open as PCB Viewer",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.1.title%",
+        "category": "%kicadstudio.contributes.commands.1.category%"
       },
       {
         "command": "kicadstudio.openInKiCad",
-        "title": "KiCad: Open in KiCad Application",
-        "category": "KiCad",
+        "title": "%kicadstudio.contributes.commands.2.title%",
+        "category": "%kicadstudio.contributes.commands.2.category%",
         "icon": "$(link-external)"
       },
       {
         "command": "kicadstudio.showStatusMenu",
-        "title": "KiCad: Show Status Menu",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.3.title%",
+        "category": "%kicadstudio.contributes.commands.3.category%"
       },
       {
         "command": "kicadstudio.detectCli",
-        "title": "KiCad: Detect kicad-cli",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.4.title%",
+        "category": "%kicadstudio.contributes.commands.4.category%"
       },
       {
         "command": "kicadstudio.exportGerbers",
-        "title": "KiCad: Export Gerber Files",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.5.title%",
+        "category": "%kicadstudio.contributes.commands.5.category%"
       },
       {
         "command": "kicadstudio.exportGerbersWithDrill",
-        "title": "KiCad: Export Gerbers + Drill Files",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.6.title%",
+        "category": "%kicadstudio.contributes.commands.6.category%"
       },
       {
         "command": "kicadstudio.exportPDF",
-        "title": "KiCad: Export PDF (Schematic)",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.7.title%",
+        "category": "%kicadstudio.contributes.commands.7.category%"
       },
       {
         "command": "kicadstudio.exportPCBPDF",
-        "title": "KiCad: Export PDF (PCB)",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.8.title%",
+        "category": "%kicadstudio.contributes.commands.8.category%"
       },
       {
         "command": "kicadstudio.exportSVG",
-        "title": "KiCad: Export SVG",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.9.title%",
+        "category": "%kicadstudio.contributes.commands.9.category%"
       },
       {
         "command": "kicadstudio.exportIPC2581",
-        "title": "KiCad: Export IPC-2581",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.10.title%",
+        "category": "%kicadstudio.contributes.commands.10.category%"
       },
       {
         "command": "kicadstudio.exportODB",
-        "title": "KiCad: Export ODB++",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.11.title%",
+        "category": "%kicadstudio.contributes.commands.11.category%"
       },
       {
         "command": "kicadstudio.export3DGLB",
-        "title": "KiCad: Export 3D Model (GLB)",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.12.title%",
+        "category": "%kicadstudio.contributes.commands.12.category%"
       },
       {
         "command": "kicadstudio.export3DBREP",
-        "title": "KiCad: Export 3D Model (BREP)",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.13.title%",
+        "category": "%kicadstudio.contributes.commands.13.category%"
       },
       {
         "command": "kicadstudio.export3DPLY",
-        "title": "KiCad: Export 3D Model (PLY)",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.14.title%",
+        "category": "%kicadstudio.contributes.commands.14.category%"
       },
       {
         "command": "kicadstudio.exportGenCAD",
-        "title": "KiCad: Export GenCAD",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.15.title%",
+        "category": "%kicadstudio.contributes.commands.15.category%"
       },
       {
         "command": "kicadstudio.exportIPCD356",
-        "title": "KiCad: Export IPC-D-356 Netlist",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.16.title%",
+        "category": "%kicadstudio.contributes.commands.16.category%"
       },
       {
         "command": "kicadstudio.exportDXF",
-        "title": "KiCad: Export DXF",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.17.title%",
+        "category": "%kicadstudio.contributes.commands.17.category%"
       },
       {
         "command": "kicadstudio.exportPickAndPlace",
-        "title": "KiCad: Export Pick and Place",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.18.title%",
+        "category": "%kicadstudio.contributes.commands.18.category%"
       },
       {
         "command": "kicadstudio.exportFootprintSVG",
-        "title": "KiCad: Export Footprint SVG",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.19.title%",
+        "category": "%kicadstudio.contributes.commands.19.category%"
       },
       {
         "command": "kicadstudio.exportSymbolSVG",
-        "title": "KiCad: Export Symbol SVG",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.20.title%",
+        "category": "%kicadstudio.contributes.commands.20.category%"
       },
       {
         "command": "kicadstudio.exportManufacturingPackage",
-        "title": "KiCad: Export Manufacturing Package",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.21.title%",
+        "category": "%kicadstudio.contributes.commands.21.category%"
       },
       {
         "command": "kicadstudio.exportBOMCSV",
-        "title": "KiCad: Export Bill of Materials (CSV)",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.22.title%",
+        "category": "%kicadstudio.contributes.commands.22.category%"
       },
       {
         "command": "kicadstudio.exportBOMXLSX",
-        "title": "KiCad: Export Bill of Materials (XLSX)",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.23.title%",
+        "category": "%kicadstudio.contributes.commands.23.category%"
       },
       {
         "command": "kicadstudio.exportNetlist",
-        "title": "KiCad: Export Netlist",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.24.title%",
+        "category": "%kicadstudio.contributes.commands.24.category%"
       },
       {
         "command": "kicadstudio.runJobset",
-        "title": "KiCad: Run Jobset",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.25.title%",
+        "category": "%kicadstudio.contributes.commands.25.category%"
       },
       {
         "command": "kicadstudio.exportInteractiveBOM",
-        "title": "KiCad: Export Interactive HTML BOM",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.26.title%",
+        "category": "%kicadstudio.contributes.commands.26.category%"
       },
       {
         "command": "kicadstudio.runDRC",
-        "title": "KiCad: Run Design Rule Check (DRC)",
-        "category": "KiCad Check"
+        "title": "%kicadstudio.contributes.commands.27.title%",
+        "category": "%kicadstudio.contributes.commands.27.category%"
       },
       {
         "command": "kicadstudio.runERC",
-        "title": "KiCad: Run Electrical Rule Check (ERC)",
-        "category": "KiCad Check"
+        "title": "%kicadstudio.contributes.commands.28.title%",
+        "category": "%kicadstudio.contributes.commands.28.category%"
       },
       {
         "command": "kicadstudio.searchComponent",
-        "title": "KiCad: Search Component (Octopart/Nexar, LCSC)",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.29.title%",
+        "category": "%kicadstudio.contributes.commands.29.category%"
       },
       {
         "command": "kicadstudio.showDiff",
-        "title": "KiCad: Show Visual Diff (Git)",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.30.title%",
+        "category": "%kicadstudio.contributes.commands.30.category%"
       },
       {
         "command": "kicadstudio.aiAnalyzeError",
-        "title": "KiCad: AI Analyze Selected Error",
-        "category": "KiCad AI"
+        "title": "%kicadstudio.contributes.commands.31.title%",
+        "category": "%kicadstudio.contributes.commands.31.category%"
       },
       {
         "command": "kicadstudio.aiProactiveDRC",
-        "title": "KiCad: AI Analyze Latest DRC Results",
-        "category": "KiCad AI"
+        "title": "%kicadstudio.contributes.commands.32.title%",
+        "category": "%kicadstudio.contributes.commands.32.category%"
       },
       {
         "command": "kicadstudio.aiExplainCircuit",
-        "title": "KiCad: AI Explain Selected Block",
-        "category": "KiCad AI"
+        "title": "%kicadstudio.contributes.commands.33.title%",
+        "category": "%kicadstudio.contributes.commands.33.category%"
       },
       {
         "command": "kicadstudio.openAiChat",
-        "title": "KiCad: Open AI Chat",
-        "category": "KiCad AI",
+        "title": "%kicadstudio.contributes.commands.34.title%",
+        "category": "%kicadstudio.contributes.commands.34.category%",
         "icon": "$(comment-discussion)"
       },
       {
         "command": "kicadstudio.openSettings",
-        "title": "KiCad: Open Settings Panel",
-        "category": "KiCad",
+        "title": "%kicadstudio.contributes.commands.35.title%",
+        "category": "%kicadstudio.contributes.commands.35.category%",
         "icon": "$(settings-gear)"
       },
       {
         "command": "kicadstudio.testAiConnection",
-        "title": "KiCad: Test AI Connection",
-        "category": "KiCad AI",
+        "title": "%kicadstudio.contributes.commands.36.title%",
+        "category": "%kicadstudio.contributes.commands.36.category%",
         "icon": "$(pulse)"
       },
       {
         "command": "kicadstudio.searchLibrarySymbol",
-        "title": "KiCad: Search Symbol Library",
-        "category": "KiCad Library",
+        "title": "%kicadstudio.contributes.commands.37.title%",
+        "category": "%kicadstudio.contributes.commands.37.category%",
         "icon": "$(search)"
       },
       {
         "command": "kicadstudio.searchLibraryFootprint",
-        "title": "KiCad: Search Footprint Library",
-        "category": "KiCad Library",
+        "title": "%kicadstudio.contributes.commands.38.title%",
+        "category": "%kicadstudio.contributes.commands.38.category%",
         "icon": "$(circuit-board)"
       },
       {
         "command": "kicadstudio.reindexLibraries",
-        "title": "KiCad: Reindex Libraries",
-        "category": "KiCad Library",
+        "title": "%kicadstudio.contributes.commands.39.title%",
+        "category": "%kicadstudio.contributes.commands.39.category%",
         "icon": "$(refresh)"
       },
       {
         "command": "kicadstudio.refreshProjectTree",
-        "title": "KiCad: Refresh Project Tree",
-        "category": "KiCad",
+        "title": "%kicadstudio.contributes.commands.40.title%",
+        "category": "%kicadstudio.contributes.commands.40.category%",
         "icon": "$(refresh)"
       },
       {
         "command": "kicadstudio.saveExportPreset",
-        "title": "KiCad: Save Export Preset",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.41.title%",
+        "category": "%kicadstudio.contributes.commands.41.category%"
       },
       {
         "command": "kicadstudio.runExportPreset",
-        "title": "KiCad: Run Export Preset",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.42.title%",
+        "category": "%kicadstudio.contributes.commands.42.category%"
       },
       {
         "command": "kicadstudio.setOctopartApiKey",
-        "title": "KiCad: Set Octopart/Nexar API Key",
-        "category": "KiCad Setup"
+        "title": "%kicadstudio.contributes.commands.43.title%",
+        "category": "%kicadstudio.contributes.commands.43.category%"
       },
       {
         "command": "kicadstudio.setAiApiKey",
-        "title": "KiCad: Set AI API Key",
-        "category": "KiCad Setup"
+        "title": "%kicadstudio.contributes.commands.44.title%",
+        "category": "%kicadstudio.contributes.commands.44.category%"
       },
       {
         "command": "kicadstudio.clearAiKey",
-        "title": "KiCad: Clear AI Provider Key",
-        "category": "KiCad Setup"
+        "title": "%kicadstudio.contributes.commands.45.title%",
+        "category": "%kicadstudio.contributes.commands.45.category%"
       },
       {
         "command": "kicadstudio.clearSecrets",
-        "title": "KiCad: Clear Stored Secrets",
-        "category": "KiCad Setup"
+        "title": "%kicadstudio.contributes.commands.46.title%",
+        "category": "%kicadstudio.contributes.commands.46.category%"
       },
       {
         "command": "kicadstudio.showStoredSecrets",
-        "title": "KiCad: Show Stored Secret Keys",
-        "category": "KiCad Setup"
+        "title": "%kicadstudio.contributes.commands.47.title%",
+        "category": "%kicadstudio.contributes.commands.47.category%"
       },
       {
         "command": "kicadstudio.manageChatProvider",
-        "title": "KiCad: Manage Chat Provider",
-        "category": "KiCad AI"
+        "title": "%kicadstudio.contributes.commands.48.title%",
+        "category": "%kicadstudio.contributes.commands.48.category%"
       },
       {
         "command": "kicadstudio.export3DPdf",
-        "title": "KiCad: Export 3D PDF",
-        "category": "KiCad Export"
+        "title": "%kicadstudio.contributes.commands.49.title%",
+        "category": "%kicadstudio.contributes.commands.49.category%"
       },
       {
         "command": "kicadstudio.setupMcpIntegration",
-        "title": "KiCad: Setup MCP Integration",
-        "category": "KiCad Setup"
+        "title": "%kicadstudio.contributes.commands.50.title%",
+        "category": "%kicadstudio.contributes.commands.50.category%"
       },
       {
         "command": "kicadstudio.mcp.install",
-        "title": "KiCad: Install kicad-mcp-pro",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.51.title%",
+        "category": "%kicadstudio.contributes.commands.51.category%"
       },
       {
         "command": "kicadstudio.mcp.retry",
-        "title": "KiCad: Retry MCP Connection",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.52.title%",
+        "category": "%kicadstudio.contributes.commands.52.category%"
       },
       {
         "command": "kicadstudio.mcp.launchHttp",
-        "title": "KiCad: Launch kicad-mcp-pro (HTTP mode)",
-        "category": "KiCad Setup"
+        "title": "%kicadstudio.contributes.commands.53.title%",
+        "category": "%kicadstudio.contributes.commands.53.category%"
       },
       {
         "command": "kicadstudio.mcp.openUpgradeGuide",
-        "title": "KiCad: Open MCP Upgrade Guide",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.54.title%",
+        "category": "%kicadstudio.contributes.commands.54.category%"
       },
       {
         "command": "kicadstudio.mcp.pickProfile",
-        "title": "KiCad: Pick MCP Profile",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.55.title%",
+        "category": "%kicadstudio.contributes.commands.55.category%"
       },
       {
         "command": "kicadstudio.mcp.openLog",
-        "title": "KiCad: Open MCP Log",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.56.title%",
+        "category": "%kicadstudio.contributes.commands.56.category%"
       },
       {
         "command": "kicadstudio.mcp.saveLog",
-        "title": "KiCad: Save MCP Log",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.57.title%",
+        "category": "%kicadstudio.contributes.commands.57.category%"
       },
       {
         "command": "kicadstudio.mcp.clearLog",
-        "title": "KiCad: Clear MCP Log",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.58.title%",
+        "category": "%kicadstudio.contributes.commands.58.category%"
       },
       {
         "command": "kicadstudio.openDesignIntent",
-        "title": "KiCad: Open Design Intent",
-        "category": "KiCad MCP"
+        "title": "%kicadstudio.contributes.commands.59.title%",
+        "category": "%kicadstudio.contributes.commands.59.category%"
       },
       {
         "command": "kicadstudio.refreshFixQueue",
-        "title": "KiCad: Refresh AI Fix Queue",
-        "category": "KiCad MCP",
+        "title": "%kicadstudio.contributes.commands.60.title%",
+        "category": "%kicadstudio.contributes.commands.60.category%",
         "icon": "$(refresh)"
       },
       {
         "command": "kicadstudio.applyFixQueueItem",
-        "title": "KiCad: Apply AI Fix",
-        "category": "KiCad MCP"
+        "title": "%kicadstudio.contributes.commands.61.title%",
+        "category": "%kicadstudio.contributes.commands.61.category%"
       },
       {
         "command": "kicadstudio.fixQueue.apply",
-        "title": "KiCad: Apply Fix Queue Item",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.62.title%",
+        "category": "%kicadstudio.contributes.commands.62.category%"
       },
       {
         "command": "kicadstudio.fixQueue.applyAll",
-        "title": "KiCad: Apply All Fix Queue Items",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.63.title%",
+        "category": "%kicadstudio.contributes.commands.63.category%"
       },
       {
         "command": "kicadstudio.qualityGate.runAll",
-        "title": "KiCad: Run All Quality Gates",
-        "category": "KiCad",
+        "title": "%kicadstudio.contributes.commands.64.title%",
+        "category": "%kicadstudio.contributes.commands.64.category%",
         "icon": "$(run-all)"
       },
       {
         "command": "kicadstudio.qualityGate.runThis",
-        "title": "KiCad: Run This Quality Gate",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.65.title%",
+        "category": "%kicadstudio.contributes.commands.65.category%"
       },
       {
         "command": "kicadstudio.qualityGate.showRaw",
-        "title": "KiCad: Show Quality Gate Raw Output",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.66.title%",
+        "category": "%kicadstudio.contributes.commands.66.category%"
       },
       {
         "command": "kicadstudio.qualityGate.openDocs",
-        "title": "KiCad: Open Quality Gate Documentation",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.67.title%",
+        "category": "%kicadstudio.contributes.commands.67.category%"
       },
       {
         "command": "kicadstudio.manufacturing.release",
-        "title": "KiCad: Manufacturing Release Wizard",
-        "category": "KiCad"
+        "title": "%kicadstudio.contributes.commands.68.title%",
+        "category": "%kicadstudio.contributes.commands.68.category%"
       },
       {
         "command": "kicadstudio.variant.create",
-        "title": "KiCad: New Variant",
-        "category": "KiCad Variants",
+        "title": "%kicadstudio.contributes.commands.69.title%",
+        "category": "%kicadstudio.contributes.commands.69.category%",
         "icon": "$(add)"
       },
       {
         "command": "kicadstudio.variant.setActive",
-        "title": "KiCad: Set Active Variant",
-        "category": "KiCad Variants"
+        "title": "%kicadstudio.contributes.commands.70.title%",
+        "category": "%kicadstudio.contributes.commands.70.category%"
       },
       {
         "command": "kicadstudio.variant.diffBom",
-        "title": "KiCad: Compare Variant BOMs",
-        "category": "KiCad Variants"
+        "title": "%kicadstudio.contributes.commands.71.title%",
+        "category": "%kicadstudio.contributes.commands.71.category%"
       },
       {
         "command": "kicadstudio.variant.refresh",
-        "title": "KiCad: Refresh Variants",
-        "category": "KiCad Variants",
+        "title": "%kicadstudio.contributes.commands.72.title%",
+        "category": "%kicadstudio.contributes.commands.72.category%",
         "icon": "$(refresh)"
       },
       {
         "command": "kicadstudio.drcRule.reveal",
-        "title": "KiCad: Reveal DRC Rule",
-        "category": "KiCad DRC"
+        "title": "%kicadstudio.contributes.commands.73.title%",
+        "category": "%kicadstudio.contributes.commands.73.category%"
       },
       {
         "command": "kicadstudio.drcRule.createDefault",
-        "title": "KiCad: Create .kicad_dru File",
-        "category": "KiCad DRC",
+        "title": "%kicadstudio.contributes.commands.74.title%",
+        "category": "%kicadstudio.contributes.commands.74.category%",
         "icon": "$(new-file)"
       },
       {
         "command": "kicadstudio.drcRule.importTemplate",
-        "title": "KiCad: Import .kicad_dru Starter Template",
-        "category": "KiCad DRC",
+        "title": "%kicadstudio.contributes.commands.75.title%",
+        "category": "%kicadstudio.contributes.commands.75.category%",
         "icon": "$(file-code)"
       },
       {
         "command": "kicadstudio.drcRule.addWithMcp",
-        "title": "KiCad: Add DRC Rule with MCP",
-        "category": "KiCad DRC",
+        "title": "%kicadstudio.contributes.commands.76.title%",
+        "category": "%kicadstudio.contributes.commands.76.category%",
         "icon": "$(add)"
       },
       {
         "command": "kicadstudio.exportViewerSvg",
-        "title": "KiCad: Export Viewer SVG",
-        "category": "KiCad Viewer"
+        "title": "%kicadstudio.contributes.commands.77.title%",
+        "category": "%kicadstudio.contributes.commands.77.category%"
       },
       {
         "command": "kicadstudio.importPads",
-        "title": "KiCad: Import PADS Board",
-        "category": "KiCad Import"
+        "title": "%kicadstudio.contributes.commands.78.title%",
+        "category": "%kicadstudio.contributes.commands.78.category%"
       },
       {
         "command": "kicadstudio.importAltium",
-        "title": "KiCad: Import Altium Board",
-        "category": "KiCad Import"
+        "title": "%kicadstudio.contributes.commands.79.title%",
+        "category": "%kicadstudio.contributes.commands.79.category%"
       },
       {
         "command": "kicadstudio.importEagle",
-        "title": "KiCad: Import Eagle Board",
-        "category": "KiCad Import"
+        "title": "%kicadstudio.contributes.commands.80.title%",
+        "category": "%kicadstudio.contributes.commands.80.category%"
       },
       {
         "command": "kicadstudio.importCadstar",
-        "title": "KiCad: Import CADSTAR Board",
-        "category": "KiCad Import"
+        "title": "%kicadstudio.contributes.commands.81.title%",
+        "category": "%kicadstudio.contributes.commands.81.category%"
       },
       {
         "command": "kicadstudio.importFabmaster",
-        "title": "KiCad: Import Fabmaster Board",
-        "category": "KiCad Import"
+        "title": "%kicadstudio.contributes.commands.82.title%",
+        "category": "%kicadstudio.contributes.commands.82.category%"
       },
       {
         "command": "kicadstudio.importPcad",
-        "title": "KiCad: Import P-CAD Board",
-        "category": "KiCad Import"
+        "title": "%kicadstudio.contributes.commands.83.title%",
+        "category": "%kicadstudio.contributes.commands.83.category%"
       },
       {
         "command": "kicadstudio.importSolidworks",
-        "title": "KiCad: Import SolidWorks PCB",
-        "category": "KiCad Import"
+        "title": "%kicadstudio.contributes.commands.84.title%",
+        "category": "%kicadstudio.contributes.commands.84.category%"
       },
       {
         "command": "kicadstudio.importGeda",
-        "title": "KiCad: Import gEDA/Lepton PCB",
-        "category": "KiCad Import"
+        "title": "%kicadstudio.contributes.commands.85.title%",
+        "category": "%kicadstudio.contributes.commands.85.category%"
       }
     ],
     "menus": {
@@ -1145,22 +1145,22 @@
       }
     ],
     "configuration": {
-      "title": "KiCad Studio",
+      "title": "%kicadstudio.contributes.configuration.title%",
       "properties": {
         "kicadstudio.kicadCliPath": {
           "type": "string",
           "default": "",
-          "description": "Path to kicad-cli executable or a Flatpak command (e.g. 'flatpak run --command=kicad-cli org.kicad.KiCad'). Leave empty for auto-detection."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.kicadCliPath.description%"
         },
         "kicadstudio.kicadPath": {
           "type": "string",
           "default": "",
-          "description": "Path to KiCad installation directory (used to open files in KiCad)."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.kicadPath.description%"
         },
         "kicadstudio.defaultOutputDir": {
           "type": "string",
           "default": "fab",
-          "description": "Default output directory for exports (relative to project root)."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.defaultOutputDir.description%"
         },
         "kicadstudio.gerber.precision": {
           "type": "number",
@@ -1169,12 +1169,12 @@
             5,
             6
           ],
-          "description": "Gerber file precision (number of digits)."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.gerber.precision.description%"
         },
         "kicadstudio.gerber.useProtelExtension": {
           "type": "boolean",
           "default": false,
-          "description": "Use Protel file extensions for Gerber files."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.gerber.useProtelExtension.description%"
         },
         "kicadstudio.ipc2581.version": {
           "type": "string",
@@ -1183,7 +1183,7 @@
             "B",
             "C"
           ],
-          "description": "IPC-2581 standard version."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.ipc2581.version.description%"
         },
         "kicadstudio.ipc2581.units": {
           "type": "string",
@@ -1192,12 +1192,12 @@
             "mm",
             "in"
           ],
-          "description": "Units for IPC-2581 export."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.ipc2581.units.description%"
         },
         "kicadstudio.bom.groupIdentical": {
           "type": "boolean",
           "default": true,
-          "description": "Group identical components in BOM."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.bom.groupIdentical.description%"
         },
         "kicadstudio.bom.fields": {
           "type": "array",
@@ -1210,12 +1210,12 @@
             "Manufacturer",
             "Description"
           ],
-          "description": "BOM fields to include and their order."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.bom.fields.description%"
         },
         "kicadstudio.cli.defineVars": {
           "type": "object",
           "default": {},
-          "description": "Optional KiCad CLI --define-var values that are passed to compatible kicad-cli commands."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.cli.defineVars.description%"
         },
         "kicadstudio.viewer.theme": {
           "type": "string",
@@ -1225,38 +1225,38 @@
             "light",
             "kicad"
           ],
-          "description": "Color theme for schematic and PCB viewers."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.viewer.theme.description%"
         },
         "kicadstudio.viewer.autoRefresh": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically refresh viewer when file is saved."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.viewer.autoRefresh.description%"
         },
         "kicadstudio.viewer.largeFileThresholdBytes": {
           "type": "number",
           "default": 10485760,
           "minimum": 1,
-          "description": "Maximum file size for fully interactive embedded viewing before KiCad Studio falls back to metadata-only mode."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.viewer.largeFileThresholdBytes.description%"
         },
         "kicadstudio.viewer.syncThemeWithVscode": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically sync viewer colors with the active VS Code theme."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.viewer.syncThemeWithVscode.description%"
         },
         "kicadstudio.viewer.enableLayerPanel": {
           "type": "boolean",
           "default": true,
-          "description": "Show layer visibility controls when PCB metadata is available."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.viewer.enableLayerPanel.description%"
         },
         "kicadstudio.viewer.enableSnapshotExport": {
           "type": "boolean",
           "default": true,
-          "description": "Enable PNG and SVG export actions inside the embedded viewer."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.viewer.enableSnapshotExport.description%"
         },
         "kicadstudio.componentSearch.enableLCSC": {
           "type": "boolean",
           "default": true,
-          "description": "Enable LCSC component search."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.componentSearch.enableLCSC.description%"
         },
         "kicadstudio.ai.provider": {
           "type": "string",
@@ -1271,17 +1271,17 @@
             "local",
             "codex"
           ],
-          "description": "AI provider for circuit analysis and error explanation."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.ai.provider.description%"
         },
         "kicadstudio.ai.model": {
           "type": "string",
           "default": "",
-          "description": "Optional AI model override. Leave empty to use the provider default when the provider has one."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.ai.model.description%"
         },
         "kicadstudio.ai.localEndpoint": {
           "type": "string",
           "default": "",
-          "description": "OpenAI-compatible local chat endpoint base URL. KiCad Studio enables the local provider only after this endpoint is configured."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.ai.localEndpoint.description%"
         },
         "kicadstudio.ai.openaiApiMode": {
           "type": "string",
@@ -1290,7 +1290,7 @@
             "responses",
             "chat-completions"
           ],
-          "description": "OpenAI API mode. Responses is the default for new work; Chat Completions is retained for compatibility."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.ai.openaiApiMode.description%"
         },
         "kicadstudio.ai.geminiApiMode": {
           "type": "string",
@@ -1298,26 +1298,26 @@
           "enum": [
             "rest"
           ],
-          "description": "Gemini API mode (REST only; Vertex AI not yet supported)."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.ai.geminiApiMode.description%"
         },
         "kicadstudio.ai.maxTokens": {
           "type": "number",
           "default": 4096,
           "minimum": 512,
           "maximum": 65536,
-          "description": "Maximum tokens for AI responses. Higher values allow more detailed analysis."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.ai.maxTokens.description%"
         },
         "kicadstudio.ai.streamingEnabled": {
           "type": "boolean",
           "default": true,
-          "description": "Stream AI responses in the chat panel as they arrive."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.ai.streamingEnabled.description%"
         },
         "kicadstudio.ai.timeout": {
           "type": "number",
           "default": 120,
           "minimum": 30,
           "maximum": 600,
-          "description": "AI request timeout in seconds."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.ai.timeout.description%"
         },
         "kicadstudio.ai.language": {
           "type": "string",
@@ -1333,12 +1333,12 @@
             "ko",
             "pt-BR"
           ],
-          "description": "Language for AI-generated answers. Extension UI language follows VS Code locale packs."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.ai.language.description%"
         },
         "kicadstudio.ai.allowTools": {
           "type": "boolean",
           "default": true,
-          "description": "Allow KiCad Studio to register language-model tools when the host VS Code build supports them."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.ai.allowTools.description%"
         },
         "kicadstudio.logLevel": {
           "type": "string",
@@ -1349,49 +1349,49 @@
             "error"
           ],
           "default": "info",
-          "description": "KiCad Studio log verbosity"
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.logLevel.description%"
         },
         "kicadstudio.drc.autoRunOnSave": {
           "type": "boolean",
           "default": false,
-          "description": "Automatically run DRC when PCB file is saved."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.drc.autoRunOnSave.description%"
         },
         "kicadstudio.erc.autoRunOnSave": {
           "type": "boolean",
           "default": false,
-          "description": "Automatically run ERC when schematic file is saved."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.erc.autoRunOnSave.description%"
         },
         "kicadstudio.mcp.autoDetect": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically detect kicad-mcp-pro and offer to create .vscode/mcp.json."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.mcp.autoDetect.description%"
         },
         "kicadstudio.mcp.endpoint": {
           "type": "string",
           "default": "http://127.0.0.1:27185",
-          "description": "Loopback kicad-mcp-pro HTTP endpoint when the server is running in HTTP mode."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.mcp.endpoint.description%"
         },
         "kicadstudio.mcp.allowRemoteEndpoint": {
           "type": "boolean",
           "default": false,
-          "description": "Allow KiCad Studio to connect to a non-loopback MCP HTTP endpoint. Keep disabled unless you intentionally trust that remote server."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.mcp.allowRemoteEndpoint.description%"
         },
         "kicadstudio.mcp.allowLegacySse": {
           "type": "boolean",
           "default": false,
-          "description": "Allow a best-effort fallback to the legacy /sse MCP transport when Streamable HTTP is unavailable."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.mcp.allowLegacySse.description%"
         },
         "kicadstudio.mcp.timeout": {
           "type": "number",
           "default": 15,
           "minimum": 1,
           "maximum": 120,
-          "description": "MCP HTTP request timeout in seconds."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.mcp.timeout.description%"
         },
         "kicadstudio.mcp.pushContext": {
           "type": "boolean",
           "default": true,
-          "description": "Push active file, DRC summary, and lasso selection context to kicad-mcp-pro."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.mcp.pushContext.description%"
         },
         "kicadstudio.mcp.profile": {
           "type": "string",
@@ -1408,24 +1408,24 @@
             "analysis",
             "agent_full"
           ],
-          "description": "Preferred kicad-mcp-pro profile when no workspace .vscode/mcp.json overrides it."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.mcp.profile.description%"
         },
         "kicadstudio.mcp.logSize": {
           "type": "number",
           "default": 200,
           "minimum": 1,
           "maximum": 1000,
-          "description": "Number of recent MCP request/response log entries retained in memory."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.mcp.logSize.description%"
         },
         "kicadstudio.exportPresets": {
           "type": "array",
           "default": [],
-          "description": "Saved export presets managed by the extension."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.exportPresets.description%"
         },
         "kicadstudio.telemetry.enabled": {
           "type": "boolean",
           "default": false,
-          "description": "Enable local KiCad Studio telemetry hooks. This build does not send telemetry to a network backend."
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.telemetry.enabled.description%"
         }
       }
     },
@@ -1439,15 +1439,15 @@
         "properties": {
           "task": {
             "type": "string",
-            "description": "KiCad task type"
+            "description": "%kicadstudio.contributes.taskDefinitions.0.properties.task.description%"
           },
           "file": {
             "type": "string",
-            "description": "Target .kicad_pcb or .kicad_sch file"
+            "description": "%kicadstudio.contributes.taskDefinitions.0.properties.file.description%"
           },
           "outputDir": {
             "type": "string",
-            "description": "Output directory"
+            "description": "%kicadstudio.contributes.taskDefinitions.0.properties.outputDir.description%"
           }
         }
       }
@@ -1465,15 +1465,15 @@
     "walkthroughs": [
       {
         "id": "kicadstudio.gettingStarted",
-        "title": "Getting Started with KiCad Studio",
-        "description": "Set up KiCad Studio for your first project.",
+        "title": "%kicadstudio.contributes.walkthroughs.0.title%",
+        "description": "%kicadstudio.contributes.walkthroughs.0.description%",
         "steps": [
           {
             "id": "kicadstudio.step.detectCli",
-            "title": "Detect kicad-cli",
-            "description": "KiCad Studio uses kicad-cli for exports and checks. [Detect automatically](command:kicadstudio.detectCli)",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.0.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.0.description%",
             "media": {
-              "altText": "kicad-cli detection",
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.0.media.altText%",
               "image": "assets/screenshots/schematic-viewer.png"
             },
             "completionEvents": [
@@ -1482,10 +1482,10 @@
           },
           {
             "id": "kicadstudio.step.openProject",
-            "title": "Open a KiCad Project",
-            "description": "Open a folder containing a .kicad_pro file. [Open folder](command:workbench.action.files.openFolder)",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.1.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.1.description%",
             "media": {
-              "altText": "project tree",
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.1.media.altText%",
               "image": "assets/screenshots/schematic-viewer.png"
             },
             "completionEvents": [
@@ -1494,10 +1494,10 @@
           },
           {
             "id": "kicadstudio.step.viewer",
-            "title": "View your Schematic",
-            "description": "Click any .kicad_sch file to open the interactive viewer.",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.2.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.2.description%",
             "media": {
-              "altText": "schematic viewer",
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.2.media.altText%",
               "image": "assets/screenshots/schematic-viewer.png"
             },
             "completionEvents": [
@@ -1506,10 +1506,10 @@
           },
           {
             "id": "kicadstudio.step.variants",
-            "title": "Browse KiCad 10 Variants",
-            "description": "Use the Variants sidebar to create, activate, and compare design variants in KiCad 10 projects.",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.3.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.3.description%",
             "media": {
-              "altText": "variants view",
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.3.media.altText%",
               "image": "assets/screenshots/schematic-viewer.png"
             },
             "completionEvents": [
@@ -1518,10 +1518,10 @@
           },
           {
             "id": "kicadstudio.step.mcp",
-            "title": "Connect kicad-mcp-pro",
-            "description": "Bootstrap optional MCP integration to unlock fix queues, design intent forms, and tool-backed AI workflows. [Setup MCP](command:kicadstudio.setupMcpIntegration)",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.4.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.4.description%",
             "media": {
-              "altText": "mcp setup",
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.4.media.altText%",
               "image": "assets/screenshots/ai-assistant.png"
             },
             "completionEvents": [
@@ -1530,10 +1530,10 @@
           },
           {
             "id": "kicadstudio.step.configureAi",
-            "title": "Configure AI",
-            "description": "Open the Settings Panel to choose Claude, OpenAI, Gemini, or GitHub Copilot and store provider keys securely. [Open Settings Panel](command:kicadstudio.openSettings)",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.5.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.5.description%",
             "media": {
-              "altText": "settings panel",
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.5.media.altText%",
               "image": "assets/screenshots/ai-assistant.png"
             },
             "completionEvents": [
@@ -1542,10 +1542,10 @@
           },
           {
             "id": "kicadstudio.step.ai",
-            "title": "Analyze DRC with AI",
-            "description": "Run DRC, then ask the AI chat to summarize and prioritize the findings.",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.6.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.6.description%",
             "media": {
-              "altText": "ai assistant",
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.6.media.altText%",
               "image": "assets/screenshots/ai-assistant.png"
             },
             "completionEvents": [
@@ -1554,10 +1554,10 @@
           },
           {
             "id": "kicadstudio.step.exports",
-            "title": "Create Manufacturing Outputs",
-            "description": "Export fabrication packages, 3D assets, or KiCad 10 3D PDF files from the Command Palette.",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.7.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.7.description%",
             "media": {
-              "altText": "pcb viewer",
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.7.media.altText%",
               "image": "assets/screenshots/pcb-viewer.png"
             },
             "completionEvents": [
@@ -1568,13 +1568,13 @@
       },
       {
         "id": "kicadstudio.mcpQuickstart",
-        "title": "MCP-assisted KiCad release",
-        "description": "Install kicad-mcp-pro, choose a focused profile, run quality gates, and prepare a gated release.",
+        "title": "%kicadstudio.contributes.walkthroughs.1.title%",
+        "description": "%kicadstudio.contributes.walkthroughs.1.description%",
         "steps": [
           {
             "id": "kicadstudio.mcpQuickstart.install",
-            "title": "Install kicad-mcp-pro",
-            "description": "Install the optional MCP server for AI-assisted KiCad review and release workflows.\n[Install kicad-mcp-pro](command:kicadstudio.mcp.install)",
+            "title": "%kicadstudio.contributes.walkthroughs.1.steps.0.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.1.steps.0.description%",
             "media": {
               "markdown": "media/walkthroughs/mcp-install.md"
             },
@@ -1584,8 +1584,8 @@
           },
           {
             "id": "kicadstudio.mcpQuickstart.configure",
-            "title": "Generate .vscode/mcp.json",
-            "description": "Create a workspace MCP configuration once kicad-mcp-pro is available.\n[Setup MCP Integration](command:kicadstudio.setupMcpIntegration)",
+            "title": "%kicadstudio.contributes.walkthroughs.1.steps.1.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.1.steps.1.description%",
             "media": {
               "markdown": "media/walkthroughs/mcp-configure.md"
             },
@@ -1595,8 +1595,8 @@
           },
           {
             "id": "kicadstudio.mcpQuickstart.profile",
-            "title": "Pick a profile",
-            "description": "Select the smallest MCP profile that fits this project.\n[Pick MCP Profile](command:kicadstudio.mcp.pickProfile)",
+            "title": "%kicadstudio.contributes.walkthroughs.1.steps.2.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.1.steps.2.description%",
             "media": {
               "markdown": "media/walkthroughs/mcp-profile.md"
             },
@@ -1606,8 +1606,8 @@
           },
           {
             "id": "kicadstudio.mcpQuickstart.gates",
-            "title": "Run quality gates",
-            "description": "Open the Quality Gates view and run the current project checks.\n[Run All Quality Gates](command:kicadstudio.qualityGate.runAll)",
+            "title": "%kicadstudio.contributes.walkthroughs.1.steps.3.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.1.steps.3.description%",
             "media": {
               "markdown": "media/walkthroughs/mcp-quality-gates.md"
             },
@@ -1617,8 +1617,8 @@
           },
           {
             "id": "kicadstudio.mcpQuickstart.release",
-            "title": "Release a board",
-            "description": "Use the manufacturing release wizard after the quality gates are clean.\n[Open Release Wizard](command:kicadstudio.manufacturing.release)",
+            "title": "%kicadstudio.contributes.walkthroughs.1.steps.4.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.1.steps.4.description%",
             "media": {
               "markdown": "media/walkthroughs/mcp-release.md"
             },
@@ -1632,7 +1632,7 @@
     "mcpServerDefinitionProviders": [
       {
         "id": "kicadstudio.mcpServer",
-        "label": "KiCad MCP Pro (bundled)"
+        "label": "%kicadstudio.contributes.mcpServerDefinitionProviders.0.label%"
       }
     ],
     "languageModelTools": [
@@ -1644,9 +1644,9 @@
           "pcb"
         ],
         "toolReferenceName": "runDrc",
-        "displayName": "Run KiCad DRC",
-        "userDescription": "Run KiCad DRC for the current or specified board.",
-        "modelDescription": "Runs KiCad DRC on a .kicad_pcb file and returns a diagnostic summary plus machine-readable diagnostics. Use this when the user asks to check PCB design-rule violations.",
+        "displayName": "%kicadstudio.contributes.languageModelTools.0.displayName%",
+        "userDescription": "%kicadstudio.contributes.languageModelTools.0.userDescription%",
+        "modelDescription": "%kicadstudio.contributes.languageModelTools.0.modelDescription%",
         "canBeReferencedInPrompt": true,
         "icon": "$(beaker)",
         "when": "kicadstudio.hasProject",
@@ -1655,7 +1655,7 @@
           "properties": {
             "pcbPath": {
               "type": "string",
-              "description": "Optional absolute path to the .kicad_pcb file. When omitted, KiCad Studio uses the active board or the first board in the workspace."
+              "description": "%kicadstudio.contributes.languageModelTools.0.inputSchema.properties.pcbPath.description%"
             }
           }
         }
@@ -1668,9 +1668,9 @@
           "schematic"
         ],
         "toolReferenceName": "runErc",
-        "displayName": "Run KiCad ERC",
-        "userDescription": "Run KiCad ERC for the current or specified schematic.",
-        "modelDescription": "Runs KiCad ERC on a .kicad_sch file and returns a diagnostic summary plus machine-readable diagnostics. Use this when the user asks to check schematic electrical-rule violations.",
+        "displayName": "%kicadstudio.contributes.languageModelTools.1.displayName%",
+        "userDescription": "%kicadstudio.contributes.languageModelTools.1.userDescription%",
+        "modelDescription": "%kicadstudio.contributes.languageModelTools.1.modelDescription%",
         "canBeReferencedInPrompt": true,
         "icon": "$(check-all)",
         "when": "kicadstudio.hasProject",
@@ -1679,7 +1679,7 @@
           "properties": {
             "schPath": {
               "type": "string",
-              "description": "Optional absolute path to the .kicad_sch file. When omitted, KiCad Studio uses the active schematic or the first schematic in the workspace."
+              "description": "%kicadstudio.contributes.languageModelTools.1.inputSchema.properties.schPath.description%"
             }
           }
         }
@@ -1692,9 +1692,9 @@
           "manufacturing"
         ],
         "toolReferenceName": "exportGerbers",
-        "displayName": "Export KiCad Gerbers",
-        "userDescription": "Export Gerber fabrication files for the current or specified PCB.",
-        "modelDescription": "Exports Gerber fabrication files for a KiCad board into the configured KiCad Studio output directory. Use this only when the user explicitly wants manufacturing files created.",
+        "displayName": "%kicadstudio.contributes.languageModelTools.2.displayName%",
+        "userDescription": "%kicadstudio.contributes.languageModelTools.2.userDescription%",
+        "modelDescription": "%kicadstudio.contributes.languageModelTools.2.modelDescription%",
         "canBeReferencedInPrompt": true,
         "icon": "$(package)",
         "when": "kicadstudio.hasProject",
@@ -1703,11 +1703,11 @@
           "properties": {
             "pcbPath": {
               "type": "string",
-              "description": "Optional absolute path to the .kicad_pcb file to export."
+              "description": "%kicadstudio.contributes.languageModelTools.2.inputSchema.properties.pcbPath.description%"
             },
             "variant": {
               "type": "string",
-              "description": "Optional KiCad 10 variant name to pass to supported kicad-cli exports."
+              "description": "%kicadstudio.contributes.languageModelTools.2.inputSchema.properties.variant.description%"
             }
           }
         }
@@ -1719,9 +1719,9 @@
           "editor"
         ],
         "toolReferenceName": "openFile",
-        "displayName": "Open File",
-        "userDescription": "Open a local file or URI in the editor.",
-        "modelDescription": "Opens a file or URI in VS Code so the user and subsequent tools can inspect it. Use when a chat request needs a specific document opened.",
+        "displayName": "%kicadstudio.contributes.languageModelTools.3.displayName%",
+        "userDescription": "%kicadstudio.contributes.languageModelTools.3.userDescription%",
+        "modelDescription": "%kicadstudio.contributes.languageModelTools.3.modelDescription%",
         "canBeReferencedInPrompt": true,
         "icon": "$(go-to-file)",
         "when": "kicadstudio.hasProject",
@@ -1730,7 +1730,7 @@
           "properties": {
             "uri": {
               "type": "string",
-              "description": "Absolute file path or URI to open."
+              "description": "%kicadstudio.contributes.languageModelTools.3.inputSchema.properties.uri.description%"
             }
           },
           "required": [
@@ -1746,9 +1746,9 @@
           "search"
         ],
         "toolReferenceName": "searchComponent",
-        "displayName": "Search Components",
-        "userDescription": "Search online component sources configured in KiCad Studio.",
-        "modelDescription": "Searches Octopart/Nexar and LCSC through KiCad Studio and returns matching parts. Use when the user asks for component sourcing or part suggestions.",
+        "displayName": "%kicadstudio.contributes.languageModelTools.4.displayName%",
+        "userDescription": "%kicadstudio.contributes.languageModelTools.4.userDescription%",
+        "modelDescription": "%kicadstudio.contributes.languageModelTools.4.modelDescription%",
         "canBeReferencedInPrompt": true,
         "icon": "$(search)",
         "when": "kicadstudio.hasProject",
@@ -1757,7 +1757,7 @@
           "properties": {
             "query": {
               "type": "string",
-              "description": "Part number, manufacturer part number, value, or descriptive query to search."
+              "description": "%kicadstudio.contributes.languageModelTools.4.inputSchema.properties.query.description%"
             }
           },
           "required": [
@@ -1773,9 +1773,9 @@
           "library"
         ],
         "toolReferenceName": "searchSymbol",
-        "displayName": "Search Symbols",
-        "userDescription": "Search indexed KiCad symbol libraries.",
-        "modelDescription": "Searches the local KiCad symbol index and returns matching symbols by name, description, or keyword.",
+        "displayName": "%kicadstudio.contributes.languageModelTools.5.displayName%",
+        "userDescription": "%kicadstudio.contributes.languageModelTools.5.userDescription%",
+        "modelDescription": "%kicadstudio.contributes.languageModelTools.5.modelDescription%",
         "canBeReferencedInPrompt": true,
         "icon": "$(symbol-namespace)",
         "when": "kicadstudio.hasProject",
@@ -1784,7 +1784,7 @@
           "properties": {
             "query": {
               "type": "string",
-              "description": "Symbol name, keyword, or description fragment to search."
+              "description": "%kicadstudio.contributes.languageModelTools.5.inputSchema.properties.query.description%"
             }
           },
           "required": [
@@ -1800,9 +1800,9 @@
           "library"
         ],
         "toolReferenceName": "searchFootprint",
-        "displayName": "Search Footprints",
-        "userDescription": "Search indexed KiCad footprint libraries.",
-        "modelDescription": "Searches the local KiCad footprint index and returns matching footprints by name, description, or tags.",
+        "displayName": "%kicadstudio.contributes.languageModelTools.6.displayName%",
+        "userDescription": "%kicadstudio.contributes.languageModelTools.6.userDescription%",
+        "modelDescription": "%kicadstudio.contributes.languageModelTools.6.modelDescription%",
         "canBeReferencedInPrompt": true,
         "icon": "$(circuit-board)",
         "when": "kicadstudio.hasProject",
@@ -1811,7 +1811,7 @@
           "properties": {
             "query": {
               "type": "string",
-              "description": "Footprint name, tag, or description fragment to search."
+              "description": "%kicadstudio.contributes.languageModelTools.6.inputSchema.properties.query.description%"
             }
           },
           "required": [
@@ -1826,9 +1826,9 @@
           "context"
         ],
         "toolReferenceName": "getActiveContext",
-        "displayName": "Get Active KiCad Context",
-        "userDescription": "Return the current KiCad Studio editor and diagnostics context.",
-        "modelDescription": "Returns the active file, file type, active variant, DRC summary inputs, cursor position, and other live KiCad Studio context. Use when the model needs up-to-date project state before deciding on another tool call.",
+        "displayName": "%kicadstudio.contributes.languageModelTools.7.displayName%",
+        "userDescription": "%kicadstudio.contributes.languageModelTools.7.userDescription%",
+        "modelDescription": "%kicadstudio.contributes.languageModelTools.7.modelDescription%",
         "canBeReferencedInPrompt": true,
         "icon": "$(info)",
         "when": "kicadstudio.hasProject",
@@ -1844,9 +1844,9 @@
           "variants"
         ],
         "toolReferenceName": "listVariants",
-        "displayName": "List KiCad Variants",
-        "userDescription": "List the KiCad 10 design variants known to the workspace.",
-        "modelDescription": "Returns the available KiCad design variants and override counts. Use when the user asks which variants exist or before switching variants.",
+        "displayName": "%kicadstudio.contributes.languageModelTools.8.displayName%",
+        "userDescription": "%kicadstudio.contributes.languageModelTools.8.userDescription%",
+        "modelDescription": "%kicadstudio.contributes.languageModelTools.8.modelDescription%",
         "canBeReferencedInPrompt": true,
         "icon": "$(list-tree)",
         "when": "kicadstudio.hasVariants",
@@ -1862,9 +1862,9 @@
           "variants"
         ],
         "toolReferenceName": "switchVariant",
-        "displayName": "Switch KiCad Variant",
-        "userDescription": "Change the active KiCad design variant.",
-        "modelDescription": "Sets the active KiCad 10 variant in the project file. Use only when the user explicitly wants to switch variants.",
+        "displayName": "%kicadstudio.contributes.languageModelTools.9.displayName%",
+        "userDescription": "%kicadstudio.contributes.languageModelTools.9.userDescription%",
+        "modelDescription": "%kicadstudio.contributes.languageModelTools.9.modelDescription%",
         "canBeReferencedInPrompt": true,
         "icon": "$(git-branch)",
         "when": "kicadstudio.hasVariants",
@@ -1873,7 +1873,7 @@
           "properties": {
             "variant": {
               "type": "string",
-              "description": "Exact KiCad variant name to activate."
+              "description": "%kicadstudio.contributes.languageModelTools.9.inputSchema.properties.variant.description%"
             }
           },
           "required": [
@@ -1885,7 +1885,7 @@
     "languageModelChatProviders": [
       {
         "vendor": "kicadstudio",
-        "displayName": "KiCad Studio",
+        "displayName": "%kicadstudio.contributes.languageModelChatProviders.0.displayName%",
         "managementCommand": "kicadstudio.manageChatProvider"
       }
     ]
@@ -1897,8 +1897,8 @@
     "build": "pnpm run prepare:media && webpack --mode production",
     "build:prod": "pnpm run build",
     "watch": "webpack --mode development --watch",
-    "format": "prettier --ignore-unknown --no-error-on-unmatched-pattern --write package.json README.md SECURITY.md docs/**/*.md scripts/**/*.{js,mjs} .vscode/*.json tsconfig*.json .prettierrc .prettierignore eslint.config.cjs jest.config.js webpack.config.js stryker.config.json Taskfile.yml .editorconfig .vscodeignore language-configuration.json schemas/**/*.json snippets/**/*.{json,code-snippets} syntaxes/**/*.json",
-    "format:check": "prettier --ignore-unknown --no-error-on-unmatched-pattern --check package.json README.md SECURITY.md docs/**/*.md scripts/**/*.{js,mjs} .vscode/*.json tsconfig*.json .prettierrc .prettierignore eslint.config.cjs jest.config.js webpack.config.js stryker.config.json Taskfile.yml .editorconfig .vscodeignore language-configuration.json schemas/**/*.json snippets/**/*.{json,code-snippets} syntaxes/**/*.json",
+    "format": "prettier --ignore-unknown --no-error-on-unmatched-pattern --write package.json package.nls*.json l10n/**/*.json README.md SECURITY.md docs/**/*.md scripts/**/*.{js,mjs} .vscode/*.json tsconfig*.json .prettierrc .prettierignore eslint.config.cjs jest.config.js webpack.config.js stryker.config.json Taskfile.yml .editorconfig .vscodeignore language-configuration.json schemas/**/*.json snippets/**/*.{json,code-snippets} syntaxes/**/*.json",
+    "format:check": "prettier --ignore-unknown --no-error-on-unmatched-pattern --check package.json package.nls*.json l10n/**/*.json README.md SECURITY.md docs/**/*.md scripts/**/*.{js,mjs} .vscode/*.json tsconfig*.json .prettierrc .prettierignore eslint.config.cjs jest.config.js webpack.config.js stryker.config.json Taskfile.yml .editorconfig .vscodeignore language-configuration.json schemas/**/*.json snippets/**/*.{json,code-snippets} syntaxes/**/*.json",
     "lint": "eslint src test scripts --ext .ts,.js,.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "audit:ci": "pnpm audit --audit-level high",
@@ -1991,5 +1991,6 @@
       "prettier --write"
     ],
     "*.{json,md,yml,yaml}": "prettier --write"
-  }
+  },
+  "l10n": "./l10n"
 }

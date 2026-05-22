@@ -8,6 +8,7 @@ import { LcscClient } from './lcscClient';
 import { OctopartClient } from './octopartClient';
 import { createNonce } from '../utils/nonce';
 import type { KiCadLibraryIndexer } from '../library/libraryIndexer';
+import { injectWebviewLocalization } from '../webviewI18n';
 
 export class ComponentSearchService {
   private detailsPanel: vscode.WebviewPanel | undefined;
@@ -134,7 +135,8 @@ export class ComponentSearchService {
     this.detailsPanel.title = `Part: ${result.mpn || result.lcscPartNumber || 'Details'}`;
     const nonce = createNonce();
     const cspSource = this.detailsPanel.webview.cspSource;
-    this.detailsPanel.webview.html = `<!DOCTYPE html>
+    this.detailsPanel.webview.html = injectWebviewLocalization(
+      `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -175,7 +177,9 @@ export class ComponentSearchService {
     document.getElementById('copy').addEventListener('click', () => vscode.postMessage({ type: 'copy-mpn', mpn: ${JSON.stringify(result.mpn)} }));
   </script>
 </body>
-    </html>`;
+    </html>`,
+      nonce
+    );
   }
 
   private async searchWithCache(

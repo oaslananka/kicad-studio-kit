@@ -2,6 +2,10 @@ import * as vscode from 'vscode';
 import { createNonce } from '../utils/nonce';
 import { asRecord, asString, hasType } from '../utils/webviewMessages';
 import type { DrcRulesMcpAdapter } from '../mcp/mcpToolAdapter';
+import {
+  injectWebviewLocalization,
+  localizeWebviewMessage
+} from '../webviewI18n';
 
 export class DrcRuleEditorPanel {
   private static currentPanel: DrcRuleEditorPanel | undefined;
@@ -27,7 +31,9 @@ export class DrcRuleEditorPanel {
       );
       if (choice === 'Setup MCP') {
         try {
-          await vscode.commands.executeCommand('kicadstudio.setupMcpIntegration');
+          await vscode.commands.executeCommand(
+            'kicadstudio.setupMcpIntegration'
+          );
         } catch (error) {
           await showDrcRuleEditorError('Unable to open MCP setup', error);
         }
@@ -42,7 +48,7 @@ export class DrcRuleEditorPanel {
 
     const panel = vscode.window.createWebviewPanel(
       'kicadstudio.drcRuleEditor',
-      'KiCad DRC Rule Editor',
+      localizeWebviewMessage('KiCad DRC Rule Editor'),
       vscode.ViewColumn.Beside,
       { enableScripts: true }
     );
@@ -99,7 +105,8 @@ export class DrcRuleEditorPanel {
 
   private renderHtml(_context: vscode.ExtensionContext): string {
     const nonce = createNonce();
-    return `<!DOCTYPE html>
+    return injectWebviewLocalization(
+      `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -142,7 +149,9 @@ export class DrcRuleEditorPanel {
     });
   </script>
 </body>
-</html>`;
+</html>`,
+      nonce
+    );
   }
 }
 
@@ -150,7 +159,9 @@ async function showDrcRuleEditorError(
   prefix: string,
   error: unknown
 ): Promise<void> {
-  await vscode.window.showErrorMessage(`${prefix}: ${messageFromUnknown(error)}`);
+  await vscode.window.showErrorMessage(
+    `${prefix}: ${messageFromUnknown(error)}`
+  );
 }
 
 function messageFromUnknown(error: unknown): string {

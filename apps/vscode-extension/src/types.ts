@@ -329,6 +329,8 @@ export interface McpServerInfoCompatibilityRange {
 export interface McpServerInfoContract {
   schemaVersion: string;
   server: 'kicad-mcp-pro';
+  description?: string | undefined;
+  localizedDescriptions?: Record<string, string> | undefined;
   version: string;
   mcpProtocolVersion: string;
   toolSchemaVersion: string;

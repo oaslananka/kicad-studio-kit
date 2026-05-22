@@ -25,6 +25,25 @@
     "server": {
       "const": "kicad-mcp-pro"
     },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "localizedDescriptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "tr"],
+      "properties": {
+        "en": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tr": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "version": {
       "type": "string",
       "minLength": 1

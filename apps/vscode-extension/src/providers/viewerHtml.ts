@@ -5,6 +5,11 @@ import { getViewerSidebarWidth } from './viewer/viewerLayerPanel';
 import { createViewerPayload } from './viewer/viewerPayload';
 import { resolveViewerPalette } from './viewer/viewerPalette';
 import { compactHtmlDocument, escapeScriptJson } from './viewer/viewerTemplate';
+import {
+  injectWebviewLocalization,
+  localizeWebviewMessage,
+  webviewLocale
+} from '../webviewI18n';
 
 export interface KiCanvasViewerHtmlOptions {
   title: string;
@@ -41,7 +46,8 @@ export function createKiCanvasViewerHtml(
     ...(options.restoreState ? { restoreState: options.restoreState } : {})
   });
 
-  return compactHtmlDocument(String.raw`<!DOCTYPE html>
+  return injectWebviewLocalization(
+    compactHtmlDocument(String.raw`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -1508,7 +1514,9 @@ export function createKiCanvasViewerHtml(
   })();
   </script>
 </body>
-</html>`);
+</html>`),
+    nonce
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1522,8 +1530,9 @@ export function createViewerErrorHtml(
 ): string {
   const message = error instanceof Error ? error.message : String(error);
   const nonce = createNonce();
+  const title = `${localizeWebviewMessage('KiCad Studio could not open')} ${fileName}`;
   return /* html */ `<!DOCTYPE html>
-<html lang="en">
+<html lang="${escapeAttr(webviewLocale())}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1537,9 +1546,9 @@ export function createViewerErrorHtml(
 </head>
 <body>
   <div class="card">
-    <h1>KiCad Studio — Could not open ${escapeHtml(fileName)}</h1>
-    <p><strong>What happened:</strong> the viewer failed while preparing the custom editor.</p>
-    <p><strong>How to fix:</strong> reload the window and reopen the file. If the error persists, this message will help diagnose the issue quickly.</p>
+    <h1>${escapeHtml(title)}</h1>
+    <p><strong>${escapeHtml(localizeWebviewMessage('What happened:'))}</strong> ${escapeHtml(localizeWebviewMessage('the viewer failed while preparing the custom editor.'))}</p>
+    <p><strong>${escapeHtml(localizeWebviewMessage('How to fix:'))}</strong> ${escapeHtml(localizeWebviewMessage('reload the window and reopen the file. If the error persists, this message will help diagnose the issue quickly.'))}</p>
     <pre>${escapeHtml(message)}</pre>
   </div>
 </body>

@@ -1,6 +1,7 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import type { BomEntry } from '../types';
+import { localizeWebviewMessage, webviewLocale } from '../webviewI18n';
 
 type ExcelJsModule = typeof import('exceljs');
 
@@ -116,12 +117,34 @@ export class BomExporter {
       )
       .join('\n');
 
+    const interactiveBomTitle = escapeHtml(
+      localizeWebviewMessage('Interactive BOM')
+    );
+    const heading = escapeHtml(
+      localizeWebviewMessage('KiCad Studio Interactive BOM')
+    );
+    const filterLabel = escapeHtml(localizeWebviewMessage('Filter BOM rows'));
+    const filterPlaceholder = escapeHtml(
+      localizeWebviewMessage('Filter by reference, value, footprint, or MPN')
+    );
+    const headers = (
+      [
+        'Reference',
+        'Qty',
+        'Value',
+        'Footprint',
+        'MPN',
+        'Manufacturer',
+        'LCSC',
+        'Description'
+      ] as const
+    ).map((header) => `<th>${escapeHtml(localizeWebviewMessage(header))}</th>`);
     const html = `<!DOCTYPE html>
-<html lang="en">
+<html lang="${escapeHtml(webviewLocale())}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive BOM</title>
+  <title>${interactiveBomTitle}</title>
   <style>
     body { font-family: Segoe UI, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 24px; }
     input { width: 100%; margin-bottom: 16px; padding: 10px 12px; border-radius: 10px; border: 1px solid #334155; background: #111827; color: inherit; }
@@ -132,11 +155,11 @@ export class BomExporter {
   </style>
 </head>
 <body>
-  <h1>KiCad Studio Interactive BOM</h1>
-  <input id="filter" aria-label="Filter BOM rows" placeholder="Filter by reference, value, footprint, or MPN">
+  <h1>${heading}</h1>
+  <input id="filter" aria-label="${filterLabel}" placeholder="${filterPlaceholder}">
   <table>
     <thead>
-      <tr><th>Reference</th><th>Qty</th><th>Value</th><th>Footprint</th><th>MPN</th><th>Manufacturer</th><th>LCSC</th><th>Description</th></tr>
+      <tr>${headers.join('')}</tr>
     </thead>
     <tbody id="rows">${rows}</tbody>
   </table>

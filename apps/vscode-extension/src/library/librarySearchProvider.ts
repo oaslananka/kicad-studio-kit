@@ -6,6 +6,7 @@ import { Logger } from '../utils/logger';
 import { KiCadCliDetector } from '../cli/kicadCliDetector';
 import { KiCadCliRunner } from '../cli/kicadCliRunner';
 import { createNonce } from '../utils/nonce';
+import { localizeWebviewMessage, webviewLocale } from '../webviewI18n';
 import {
   LibraryFootprint,
   LibrarySymbol,
@@ -113,8 +114,15 @@ export class LibrarySearchProvider {
       }
     );
     const nonce = createNonce();
+    const libraryLabel = escapeHtml(localizeWebviewMessage('Library:'));
+    const descriptionLabel = escapeHtml(localizeWebviewMessage('Description:'));
+    const keywordsLabel = escapeHtml(localizeWebviewMessage('Keywords:'));
+    const valueLabel = escapeHtml(localizeWebviewMessage('Value:'));
+    const footprintFiltersLabel = escapeHtml(
+      localizeWebviewMessage('Footprint filters:')
+    );
     panel.webview.html = `<!DOCTYPE html>
-<html lang="en">
+<html lang="${escapeAttr(webviewLocale())}">
 <head>
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; img-src ${panel.webview.cspSource} data:;">
   <style nonce="${nonce}">
@@ -124,11 +132,11 @@ export class LibrarySearchProvider {
 </head>
 <body>
   <h1>${escapeHtml(symbol.name)}</h1>
-  <p><strong>Library:</strong> ${escapeHtml(symbol.libraryName)}</p>
-  <p><strong>Description:</strong> ${escapeHtml(symbol.description || 'No description')}</p>
-  <p><strong>Keywords:</strong> ${escapeHtml(symbol.keywords.join(', ') || 'None')}</p>
-  <p><strong>Value:</strong> ${escapeHtml(symbol.value || 'Unknown')}</p>
-  <p><strong>Footprint filters:</strong> ${escapeHtml(symbol.footprintFilters.join(', ') || 'None')}</p>
+  <p><strong>${libraryLabel}</strong> ${escapeHtml(symbol.libraryName)}</p>
+  <p><strong>${descriptionLabel}</strong> ${escapeHtml(symbol.description || localizeWebviewMessage('No description'))}</p>
+  <p><strong>${keywordsLabel}</strong> ${escapeHtml(symbol.keywords.join(', ') || localizeWebviewMessage('None'))}</p>
+  <p><strong>${valueLabel}</strong> ${escapeHtml(symbol.value || localizeWebviewMessage('Unknown'))}</p>
+  <p><strong>${footprintFiltersLabel}</strong> ${escapeHtml(symbol.footprintFilters.join(', ') || localizeWebviewMessage('None'))}</p>
   <pre>${escapeHtml(symbol.libraryPath)}</pre>
 </body>
 </html>`;
@@ -160,8 +168,19 @@ export class LibrarySearchProvider {
 
     const svgDataUri = svgMarkup ? createSvgDataUri(svgMarkup) : '';
     const nonce = createNonce();
+    const libraryLabel = escapeHtml(localizeWebviewMessage('Library:'));
+    const descriptionLabel = escapeHtml(localizeWebviewMessage('Description:'));
+    const tagsLabel = escapeHtml(localizeWebviewMessage('Tags:'));
+    const footprintPreview = escapeAttr(
+      localizeWebviewMessage('Footprint preview')
+    );
+    const fallbackMessage = escapeHtml(
+      localizeWebviewMessage(
+        'SVG preview unavailable. Showing metadata-only fallback.'
+      )
+    );
     panel.webview.html = `<!DOCTYPE html>
-<html lang="en">
+<html lang="${escapeAttr(webviewLocale())}">
 <head>
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; img-src ${panel.webview.cspSource} data:;">
   <style nonce="${nonce}">
@@ -172,10 +191,10 @@ export class LibrarySearchProvider {
 </head>
 <body>
   <h1>${escapeHtml(footprint.name)}</h1>
-  <p><strong>Library:</strong> ${escapeHtml(footprint.libraryName)}</p>
-  <p><strong>Description:</strong> ${escapeHtml(footprint.description || 'No description')}</p>
-  <p><strong>Tags:</strong> ${escapeHtml(footprint.tags.join(', ') || 'None')}</p>
-  ${svgDataUri ? `<img class="preview" src="${escapeAttr(svgDataUri)}" alt="Footprint preview" />` : '<p>SVG preview unavailable. Showing metadata-only fallback.</p>'}
+  <p><strong>${libraryLabel}</strong> ${escapeHtml(footprint.libraryName)}</p>
+  <p><strong>${descriptionLabel}</strong> ${escapeHtml(footprint.description || localizeWebviewMessage('No description'))}</p>
+  <p><strong>${tagsLabel}</strong> ${escapeHtml(footprint.tags.join(', ') || localizeWebviewMessage('None'))}</p>
+  ${svgDataUri ? `<img class="preview" src="${escapeAttr(svgDataUri)}" alt="${footprintPreview}" />` : `<p>${fallbackMessage}</p>`}
   <pre>${escapeHtml(footprint.libraryPath)}</pre>
 </body>
 </html>`;

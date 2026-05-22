@@ -9,6 +9,7 @@ import type {
 import { findFirstWorkspaceFile } from '../utils/pathUtils';
 import type { VariantMcpAdapter } from '../mcp/mcpToolAdapter';
 import { createNonce } from '../utils/nonce';
+import { localizeWebviewMessage, webviewLocale } from '../webviewI18n';
 
 interface VariantDocument {
   activeVariant?: string | undefined;
@@ -514,14 +515,18 @@ function renderBomDiffHtml(
   const nonce = createNonce();
   const rows = changes.length
     ? changes.map((change) => `<li>${escapeHtml(change)}</li>`).join('')
-    : '<li>No component-level BOM differences were found.</li>';
+    : `<li>${escapeHtml(localizeWebviewMessage('No component-level BOM differences were found.'))}</li>`;
+  const bomDiffTitle = escapeHtml(localizeWebviewMessage('BOM Diff'));
+  const variantBomDiffTitle = escapeHtml(
+    localizeWebviewMessage('Variant BOM Diff')
+  );
   return `<!doctype html>
-<html lang="en">
+<html lang="${escapeHtml(webviewLocale())}">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}';">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BOM Diff</title>
+  <title>${bomDiffTitle}</title>
   <style nonce="${nonce}">
     body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); background: var(--vscode-editor-background); margin: 0; padding: 16px; }
     h1 { font-size: 18px; font-weight: 600; margin: 0 0 12px; }
@@ -531,7 +536,7 @@ function renderBomDiffHtml(
   </style>
 </head>
 <body>
-  <h1>Variant BOM Diff</h1>
+  <h1>${variantBomDiffTitle}</h1>
   <div class="meta">${escapeHtml(left.name)} -> ${escapeHtml(right.name)}</div>
   <ul>${rows}</ul>
 </body>

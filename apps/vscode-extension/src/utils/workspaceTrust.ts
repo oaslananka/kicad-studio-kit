@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { localize } from '../i18n';
 
 export function isWorkspaceTrusted(): boolean {
   return vscode.workspace.isTrusted !== false;
@@ -9,7 +10,7 @@ export async function requireWorkspaceTrust(feature: string): Promise<boolean> {
     return true;
   }
   void vscode.window.showWarningMessage(
-    `${feature} requires a trusted workspace. Trust this workspace to run KiCad CLI, external KiCad, import, or export tooling.`
+    localize('workspaceTrustRequired', { feature })
   );
   return false;
 }

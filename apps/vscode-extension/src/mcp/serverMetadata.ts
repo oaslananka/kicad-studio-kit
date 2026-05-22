@@ -92,6 +92,11 @@ function readWellKnownServerInfoContract(
   return {
     schemaVersion: stringValue(contract['schemaVersion']),
     server: 'kicad-mcp-pro',
+    description:
+      typeof contract['description'] === 'string'
+        ? contract['description']
+        : undefined,
+    localizedDescriptions: parseStringRecord(contract['localizedDescriptions']),
     version: stringValue(contract['version']),
     mcpProtocolVersion: stringValue(contract['mcpProtocolVersion']),
     toolSchemaVersion: stringValue(contract['toolSchemaVersion']),
@@ -170,7 +175,9 @@ function readWellKnownServerInfoContract(
   };
 }
 
-function parseLiveEditingTools(value: unknown): McpServerInfoContract['capabilities']['liveEditingTools'] {
+function parseLiveEditingTools(
+  value: unknown
+): McpServerInfoContract['capabilities']['liveEditingTools'] {
   if (!isRecord(value)) {
     return {};
   }
@@ -194,6 +201,19 @@ function parseLiveEditingTools(value: unknown): McpServerInfoContract['capabilit
     };
   }
   return parsed;
+}
+
+function parseStringRecord(value: unknown): Record<string, string> | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  const parsed: Record<string, string> = {};
+  for (const [key, raw] of Object.entries(value)) {
+    if (typeof raw === 'string') {
+      parsed[key] = raw;
+    }
+  }
+  return Object.keys(parsed).length ? parsed : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
