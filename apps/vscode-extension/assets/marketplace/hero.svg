@@ -1,0 +1,61 @@
+<svg width="1280" height="520" viewBox="0 0 1280 520" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KiCad Studio hero">
+  <defs>
+    <linearGradient id="heroBg" x1="0" y1="0" x2="1280" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset="0.46" stop-color="#1a1a2e"/>
+      <stop offset="1" stop-color="#103b3f"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="134" y1="78" x2="1144" y2="446" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#172554"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="520" fill="url(#heroBg)"/>
+  <g opacity="0.12" stroke="#e5e7eb">
+    <path d="M88 88H1192"/>
+    <path d="M88 176H1192"/>
+    <path d="M88 264H1192"/>
+    <path d="M88 352H1192"/>
+    <path d="M88 440H1192"/>
+    <path d="M160 56V464"/>
+    <path d="M320 56V464"/>
+    <path d="M480 56V464"/>
+    <path d="M640 56V464"/>
+    <path d="M800 56V464"/>
+    <path d="M960 56V464"/>
+    <path d="M1120 56V464"/>
+  </g>
+  <rect x="88" y="70" width="1104" height="380" rx="28" fill="url(#panel)" stroke="#38bdf8" stroke-opacity="0.28" stroke-width="2"/>
+  <rect x="126" y="112" width="238" height="296" rx="18" fill="#111827" stroke="#334155"/>
+  <rect x="390" y="112" width="426" height="296" rx="18" fill="#0b1120" stroke="#334155"/>
+  <rect x="842" y="112" width="312" height="296" rx="18" fill="#111827" stroke="#334155"/>
+  <text x="151" y="151" fill="#e5e7eb" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="700">Project</text>
+  <text x="414" y="151" fill="#e5e7eb" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="700">PCB Review</text>
+  <text x="866" y="151" fill="#e5e7eb" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="700">Quality Gates</text>
+  <g font-family="DejaVu Sans Mono, monospace" font-size="16" fill="#cbd5e1">
+    <text x="151" y="190">radio.kicad_pro</text>
+    <text x="169" y="222">schematic.kicad_sch</text>
+    <text x="169" y="254">front-panel.kicad_pcb</text>
+    <text x="169" y="286">rules.kicad_dru</text>
+    <text x="169" y="318">fabrication/</text>
+  </g>
+  <path d="M450 312H526L564 238H642L688 180H748" stroke="#22d3ee" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M450 350H596L646 286H746" stroke="#84cc16" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M450 214H518L548 180H620" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/>
+  <g fill="#0f172a" stroke-width="5">
+    <circle cx="526" cy="312" r="16" stroke="#22d3ee"/>
+    <circle cx="642" cy="238" r="16" stroke="#22d3ee"/>
+    <circle cx="596" cy="350" r="14" stroke="#84cc16"/>
+    <circle cx="548" cy="180" r="14" stroke="#f59e0b"/>
+  </g>
+  <g font-family="DejaVu Sans, Arial, sans-serif" font-size="16">
+    <rect x="866" y="184" width="250" height="42" rx="9" fill="#064e3b"/>
+    <text x="886" y="211" fill="#d1fae5">DRC fresh: 0 blocking</text>
+    <rect x="866" y="244" width="250" height="42" rx="9" fill="#1e3a8a"/>
+    <text x="886" y="271" fill="#dbeafe">MCP server: compatible</text>
+    <rect x="866" y="304" width="250" height="42" rx="9" fill="#78350f"/>
+    <text x="886" y="331" fill="#ffedd5">Exports ready for review</text>
+  </g>
+  <text x="126" y="494" fill="#f8fafc" font-family="DejaVu Sans, Arial, sans-serif" font-size="34" font-weight="700">KiCad Studio</text>
+  <text x="378" y="493" fill="#cbd5e1" font-family="DejaVu Sans, Arial, sans-serif" font-size="22">Project navigation, board review, diagnostics, manufacturing handoff, and MCP tools in VS Code</text>
+</svg>

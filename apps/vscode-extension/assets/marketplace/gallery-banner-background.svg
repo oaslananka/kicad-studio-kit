@@ -1,0 +1,40 @@
+<svg width="1280" height="320" viewBox="0 0 1280 320" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KiCad Studio gallery banner background">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="0.52" stop-color="#1a1a2e"/>
+      <stop offset="1" stop-color="#143a3a"/>
+    </linearGradient>
+    <linearGradient id="trace" x1="120" y1="40" x2="1160" y2="292" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.85"/>
+      <stop offset="0.55" stop-color="#84cc16" stop-opacity="0.72"/>
+      <stop offset="1" stop-color="#f59e0b" stop-opacity="0.78"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="320" fill="url(#bg)"/>
+  <path d="M0 248H144L212 180H372L456 96H632L704 168H836L924 80H1280" stroke="url(#trace)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M0 276H252L320 208H496L572 132H720L792 204H980L1056 128H1280" stroke="#38bdf8" stroke-opacity="0.22" stroke-width="2" stroke-linecap="round"/>
+  <path d="M64 68H224L288 132H420L488 64H620" stroke="#a3e635" stroke-opacity="0.22" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M840 264H1004L1072 196H1184" stroke="#fbbf24" stroke-opacity="0.22" stroke-width="3" stroke-linecap="round"/>
+  <g opacity="0.7">
+    <circle cx="212" cy="180" r="11" fill="#22d3ee"/>
+    <circle cx="456" cy="96" r="10" fill="#84cc16"/>
+    <circle cx="704" cy="168" r="10" fill="#38bdf8"/>
+    <circle cx="924" cy="80" r="11" fill="#f59e0b"/>
+    <circle cx="1072" cy="196" r="9" fill="#fbbf24"/>
+  </g>
+  <g opacity="0.16" stroke="#e5e7eb">
+    <path d="M96 24V296"/>
+    <path d="M224 24V296"/>
+    <path d="M352 24V296"/>
+    <path d="M480 24V296"/>
+    <path d="M608 24V296"/>
+    <path d="M736 24V296"/>
+    <path d="M864 24V296"/>
+    <path d="M992 24V296"/>
+    <path d="M1120 24V296"/>
+    <path d="M40 80H1240"/>
+    <path d="M40 160H1240"/>
+    <path d="M40 240H1240"/>
+  </g>
+</svg>

@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/test/unit'],
+  roots: ['<rootDir>/test'],
   moduleNameMapper: {
     '^vscode$': '<rootDir>/test/unit/vscodeMock.ts'
   },
@@ -31,5 +31,8 @@ module.exports = {
     '!src/library/librarySearchProvider.ts',
     '!src/tasks/**/*.ts'
   ],
-  testMatch: ['**/*.test.ts']
+  testMatch: [
+    '<rootDir>/test/unit/**/*.test.ts',
+    '<rootDir>/test/marketplace-assets.test.ts'
+  ]
 };
