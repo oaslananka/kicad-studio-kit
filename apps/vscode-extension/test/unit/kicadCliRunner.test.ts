@@ -348,6 +348,66 @@ describe('KiCadCliRunner', () => {
     expect(progressOutput).toContain('api_token=***');
   });
 
+  it('redacts absolute project paths from command and subprocess logs without changing spawned args', async () => {
+    const projectRoot = path.join(tempDir, 'project #&%+ Türkçe');
+    const boardFile = path.join(projectRoot, 'board #&%+.kicad_pcb');
+    const outputDir = path.join(projectRoot, 'fab reports');
+    fs.mkdirSync(projectRoot, { recursive: true });
+    fs.writeFileSync(boardFile, '', 'utf8');
+    __setConfiguration({});
+    const detector = {
+      detect: jest.fn().mockResolvedValue({
+        path: '/usr/bin/kicad-cli',
+        version: '10.0.1',
+        versionLabel: 'KiCad 10.0.1',
+        source: 'path'
+      })
+    };
+    const logger = {
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn()
+    };
+    const onProgress = jest.fn();
+    const spawnMock = childProcess.spawn as unknown as jest.Mock;
+    spawnMock.mockImplementation(() => {
+      const child = createChildProcessMock();
+      queueMicrotask(() => {
+        child.stdout.emit(
+          'data',
+          Buffer.from(`Generated ${boardFile} under ${outputDir}`)
+        );
+        child.emit('close', 0);
+      });
+      return child;
+    });
+
+    const runner = new KiCadCliRunner(detector as never, logger as never);
+    await runner.run({
+      command: ['pcb', 'drc', boardFile, '--output', outputDir],
+      cwd: projectRoot,
+      progressTitle: 'DRC',
+      onProgress
+    });
+
+    const spawnedArgs = spawnMock.mock.calls[0]?.[1] as string[];
+    expect(spawnedArgs).toEqual(
+      expect.arrayContaining([boardFile, '--output', outputDir])
+    );
+
+    const logOutput = [
+      ...logger.info.mock.calls.flat(),
+      ...logger.warn.mock.calls.flat(),
+      ...onProgress.mock.calls.flat()
+    ].join('\n');
+    expect(logOutput).toContain('***');
+    expect(logOutput).not.toContain('/usr/bin/kicad-cli');
+    expect(logOutput).not.toContain(projectRoot);
+    expect(logOutput).not.toContain(boardFile);
+    expect(logOutput).not.toContain(outputDir);
+  });
+
   it('fails fast when no kicad-cli installation can be detected', async () => {
     __setConfiguration({});
     const runner = new KiCadCliRunner(

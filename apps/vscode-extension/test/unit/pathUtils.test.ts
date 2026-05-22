@@ -45,6 +45,9 @@ describe('pathUtils', () => {
     const sample = ['folder', 'child', 'file.kicad_pcb'].join(path.sep);
 
     expect(toPosixPath(sample)).toBe('folder/child/file.kicad_pcb');
+    expect(toPosixPath('folder\\child/mixed.kicad_pcb')).toBe(
+      'folder/child/mixed.kicad_pcb'
+    );
     expect(
       relativeToWorkspace(
         path.join(process.cwd(), 'folder', 'board.kicad_pcb'),

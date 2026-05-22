@@ -27,7 +27,10 @@ export function getWorkspaceRoot(uri?: vscode.Uri): string | undefined {
 }
 
 export function toPosixPath(value: string): string {
-  return value.split(path.sep).join(path.posix.sep);
+  return value
+    .replaceAll('\\', path.posix.sep)
+    .split(path.sep)
+    .join(path.posix.sep);
 }
 
 export function relativeToWorkspace(
