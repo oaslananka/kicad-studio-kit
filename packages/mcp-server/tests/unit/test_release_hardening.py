@@ -248,6 +248,16 @@ async def test_http_tool_call_audit_log_is_emitted(sample_project: Path, monkeyp
     await call_tool_text(server, "kicad_get_version", {})
 
     audit = [item for item in events if item[0] == "tool_call_audit"]
+    started = [item for item in events if item[0] == "tool_call_started"]
+    finished = [item for item in events if item[0] == "tool_call_finished"]
+
+    assert started
+    assert started[0][1]["tool"] == "kicad_get_version"
+    assert started[0][1]["argument_keys"] == []
+    assert finished
+    assert finished[0][1]["tool"] == "kicad_get_version"
+    assert finished[0][1]["status"] == "ok"
+    assert finished[0][1]["latency_ms"] >= 0
     assert audit
     assert audit[0][1]["tool"] == "kicad_get_version"
     assert audit[0][1]["status"] == "ok"

@@ -113,6 +113,39 @@ def test_stateful_session_errors_are_structured_and_spec_aligned(
     assert listed.status_code == 200
 
 
+def test_streamable_http_logs_initialize_create_and_destroy_lifecycle(
+    sample_project: Path,
+    monkeypatch,
+) -> None:
+    _ = sample_project
+    cfg = get_config()
+    cfg.transport = "streamable-http"
+    cfg.stateful_http = True
+    server = build_server("minimal")
+    events: list[tuple[str, dict[str, object]]] = []
+    monkeypatch.setattr(
+        "kicad_mcp.server.logger.info",
+        lambda event, **kwargs: events.append((event, kwargs)),
+    )
+
+    with TestClient(server.streamable_http_app(), base_url="http://127.0.0.1:3334") as client:
+        initialized = client.post("/mcp", headers=HTTP_HEADERS, json=_initialize_request())
+        session_id = initialized.headers.get("mcp-session-id")
+        client.delete("/mcp", headers={"Mcp-Session-Id": str(session_id)})
+
+    assert initialized.status_code == 200
+    assert session_id
+    initialize = [item for item in events if item[0] == "mcp_transport_initialize"]
+    created = [item for item in events if item[0] == "mcp_session_created"]
+    destroyed = [item for item in events if item[0] == "mcp_session_destroyed"]
+    assert initialize
+    assert initialize[0][1]["request_id"] == 1
+    assert created
+    assert created[0][1]["mcp_session_id"] == session_id
+    assert destroyed
+    assert destroyed[0][1]["mcp_session_id"] == session_id
+
+
 def test_stateful_malformed_json_rpc_is_not_masked_by_session_check(
     sample_project: Path,
 ) -> None:

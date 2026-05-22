@@ -102,8 +102,11 @@ class KiCadMCPConfig(BaseSettings):
         "schematic",
         "agent_full",
     ] = Field(default="full")
-    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = Field(default="INFO")
-    log_format: Literal["json", "console"] = Field(default="console")
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(default="INFO")
+    log_format: Literal["json", "text", "console"] = Field(default="console")
+    log_file: Path | None = Field(default=None)
+    log_max_bytes: int = Field(default=5_000_000, ge=1024, le=1_000_000_000)
+    log_backup_count: int = Field(default=3, ge=1, le=20)
 
     enable_experimental_tools: bool = Field(default=False)
     ipc_connection_timeout: float = Field(default=10.0, gt=0.1, le=120.0)
@@ -178,6 +181,7 @@ class KiCadMCPConfig(BaseSettings):
         "workspace_root",
         "symbol_library_dir",
         "footprint_library_dir",
+        "log_file",
         mode="before",
     )
     @classmethod
@@ -232,7 +236,8 @@ class KiCadMCPConfig(BaseSettings):
     @classmethod
     def _normalize_log_level(cls, value: object) -> object:
         if isinstance(value, str):
-            return value.strip().upper()
+            normalized = value.strip().upper()
+            return "WARNING" if normalized == "WARN" else normalized
         return value
 
     @field_validator("log_format", "profile", mode="before")

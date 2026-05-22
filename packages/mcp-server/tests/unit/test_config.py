@@ -16,6 +16,24 @@ def test_config_reads_env_vars(sample_project: Path, monkeypatch) -> None:
     assert cfg.log_level == "DEBUG"
 
 
+def test_logging_config_accepts_text_warn_critical_and_rotating_file(
+    sample_project: Path,
+    tmp_path: Path,
+) -> None:
+    _ = sample_project
+    warning_cfg = KiCadMCPConfig(
+        log_level="warn",
+        log_format="text",
+        log_file=tmp_path / "server.log",
+    )
+    critical_cfg = KiCadMCPConfig(log_level="critical")
+
+    assert warning_cfg.log_level == "WARNING"
+    assert warning_cfg.log_format == "text"
+    assert warning_cfg.log_file == tmp_path / "server.log"
+    assert critical_cfg.log_level == "CRITICAL"
+
+
 def test_config_auto_detects_files(sample_project: Path) -> None:
     cfg = KiCadMCPConfig()
     assert cfg.project_file == sample_project / "demo.kicad_pro"

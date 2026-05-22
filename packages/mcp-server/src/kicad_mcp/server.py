@@ -371,6 +371,30 @@ def _audit_tool_call(
     )
 
 
+def _log_tool_call_started(tool_name: str, arguments: dict[str, object]) -> None:
+    logger.info(
+        "tool_call_started",
+        tool=tool_name,
+        argument_keys=sorted(arguments),
+    )
+
+
+def _log_tool_call_finished(
+    tool_name: str,
+    *,
+    status: str,
+    elapsed_ms: float,
+    error_code: str | None,
+) -> None:
+    logger.info(
+        "tool_call_finished",
+        tool=tool_name,
+        status=status,
+        latency_ms=round(elapsed_ms, 3),
+        error_code=error_code,
+    )
+
+
 class _SyncServerHandle:
     """Compatibility wrapper that exposes sync-friendly discovery helpers."""
 
@@ -625,6 +649,7 @@ class KiCadFastMCP(FastMCP):
         error_code: str | None = None
         limiter = _tool_limiter(name)
         result: object
+        _log_tool_call_started(name, arguments)
         try:
             await self._ensure_registered_async()
             if limiter is None:
@@ -644,6 +669,12 @@ class KiCadFastMCP(FastMCP):
         finally:
             elapsed_ms = (time.perf_counter() - started) * 1000.0
             _record_tool_metric(name, status, elapsed_ms)
+            _log_tool_call_finished(
+                name,
+                status=status,
+                elapsed_ms=elapsed_ms,
+                error_code=error_code,
+            )
             _audit_tool_call(
                 tool_name=name,
                 arguments=arguments,
@@ -665,16 +696,25 @@ class _StreamableHttpContractMiddleware:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         cfg = get_config()
-        if (
-            scope["type"] != "http"
-            or scope.get("method") != "POST"
-            or scope.get("path") != cfg.mount_path
-        ):
+        method = scope.get("method")
+        if scope["type"] != "http" or scope.get("path") != cfg.mount_path:
+            await self.app(scope, receive, send)
+            return
+
+        headers = _scope_headers(scope)
+        if method == "DELETE":
+            session_id = headers.get("mcp-session-id", "")
+            with structlog.contextvars.bound_contextvars(mcp_session_id=session_id or None):
+                await self.app(scope, receive, send)
+            if session_id:
+                self._forget_session(session_id)
+                logger.info("mcp_session_destroyed", mcp_session_id=session_id)
+            return
+        if method != "POST":
             await self.app(scope, receive, send)
             return
 
         body, replay_receive = await _buffer_request_body(receive)
-        headers = _scope_headers(scope)
 
         # Let FastMCP's auth layer preserve its existing 401/403 error shape.
         if cfg.auth_token and not secrets.compare_digest(
@@ -684,6 +724,12 @@ class _StreamableHttpContractMiddleware:
             return
 
         rpc_id, rpc_method = _json_rpc_metadata(body)
+        if rpc_method == "initialize":
+            logger.info(
+                "mcp_transport_initialize",
+                request_id=rpc_id,
+                mcp_session_id=headers.get("mcp-session-id") or None,
+            )
         if not _accept_header_includes(headers.get("accept", ""), "application/json"):
             await _streamable_http_error_response(
                 code=-32003,
@@ -759,9 +805,18 @@ class _StreamableHttpContractMiddleware:
                 response_session_id = _message_header(message, "mcp-session-id")
                 if response_session_id:
                     self._remember_session(response_session_id)
+                    logger.info(
+                        "mcp_session_created",
+                        request_id=rpc_id,
+                        mcp_session_id=response_session_id,
+                    )
             await send(message)
 
-        await self.app(scope, replay_receive, send_wrapper)
+        with structlog.contextvars.bound_contextvars(
+            request_id=rpc_id,
+            mcp_session_id=session_id or None,
+        ):
+            await self.app(scope, replay_receive, send_wrapper)
 
     def _has_session(self, session_id: str) -> bool:
         return session_id in self._session_ids
@@ -773,6 +828,11 @@ class _StreamableHttpContractMiddleware:
             self._session_ids.discard(self._session_order.popleft())
         self._session_order.append(session_id)
         self._session_ids.add(session_id)
+
+    def _forget_session(self, session_id: str) -> None:
+        self._session_ids.discard(session_id)
+        with contextlib.suppress(ValueError):
+            self._session_order.remove(session_id)
 
 
 async def _buffer_request_body(receive: Receive) -> tuple[bytes, Receive]:
@@ -1188,6 +1248,7 @@ def _apply_cli_env(
     project_dir: str | None = None,
     log_level: str | None = None,
     log_format: str | None = None,
+    log_file: str | None = None,
     profile: str | None = None,
     experimental: bool | None = None,
 ) -> None:
@@ -1199,6 +1260,7 @@ def _apply_cli_env(
         ),
         "KICAD_MCP_LOG_LEVEL": log_level,
         "KICAD_MCP_LOG_FORMAT": log_format,
+        "KICAD_MCP_LOG_FILE": log_file,
         "KICAD_MCP_PROFILE": profile,
         "KICAD_MCP_PROJECT_DIR": project_dir,
     }
@@ -1217,6 +1279,7 @@ def _run_server_from_options(
     project_dir: str | None = None,
     log_level: str | None = None,
     log_format: str | None = None,
+    log_file: str | None = None,
     profile: str | None = None,
     experimental: bool | None = None,
 ) -> None:
@@ -1228,13 +1291,20 @@ def _run_server_from_options(
         project_dir=project_dir,
         log_level=log_level,
         log_format=log_format,
+        log_file=log_file,
         profile=profile,
         experimental=experimental,
     )
     with contextlib.redirect_stdout(sys.stderr):
         reset_config()
         cfg = get_config()
-        setup_logging(cfg.log_level, cfg.log_format)
+        setup_logging(
+            cfg.log_level,
+            cfg.log_format,
+            cfg.log_file,
+            cfg.log_max_bytes,
+            cfg.log_backup_count,
+        )
 
         selected_transport = "stdio" if cfg.transport == "stdio" else "streamable-http"
         if cfg.transport == "sse":
@@ -1280,7 +1350,8 @@ def main_callback(
     port: int | None = typer.Option(None, help="HTTP bind port"),
     project_dir: str | None = typer.Option(None, help="Active KiCad project directory"),
     log_level: str | None = typer.Option(None, help="Log level"),
-    log_format: str | None = typer.Option(None, help="Log format: console or json"),
+    log_format: str | None = typer.Option(None, help="Log format: text or json"),
+    log_file: str | None = typer.Option(None, help="Rotating log file path"),
     profile: str | None = typer.Option(
         None, help=f"Server profile: {', '.join(available_profiles())}"
     ),
@@ -1294,6 +1365,7 @@ def main_callback(
         project_dir=project_dir,
         log_level=log_level,
         log_format=log_format,
+        log_file=log_file,
         profile=profile,
         experimental=experimental,
     )
@@ -1310,7 +1382,8 @@ def serve(
     port: int | None = typer.Option(None, help="HTTP bind port"),
     project_dir: str | None = typer.Option(None, help="Active KiCad project directory"),
     log_level: str | None = typer.Option(None, help="Log level"),
-    log_format: str | None = typer.Option(None, help="Log format: console or json"),
+    log_format: str | None = typer.Option(None, help="Log format: text or json"),
+    log_file: str | None = typer.Option(None, help="Rotating log file path"),
     profile: str | None = typer.Option(
         None, help=f"Server profile: {', '.join(available_profiles())}"
     ),
@@ -1324,6 +1397,7 @@ def serve(
         project_dir=project_dir,
         log_level=log_level,
         log_format=log_format,
+        log_file=log_file,
         profile=profile,
         experimental=experimental,
     )

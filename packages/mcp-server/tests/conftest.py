@@ -103,6 +103,9 @@ def reset_globals(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("KICAD_MCP_PORT", raising=False)
     monkeypatch.delenv("KICAD_MCP_LOG_LEVEL", raising=False)
     monkeypatch.delenv("KICAD_MCP_LOG_FORMAT", raising=False)
+    monkeypatch.delenv("KICAD_MCP_LOG_FILE", raising=False)
+    monkeypatch.delenv("KICAD_MCP_LOG_MAX_BYTES", raising=False)
+    monkeypatch.delenv("KICAD_MCP_LOG_BACKUP_COUNT", raising=False)
     monkeypatch.delenv("KICAD_MCP_PROFILE", raising=False)
     monkeypatch.delenv("KICAD_MCP_ENABLE_EXPERIMENTAL_TOOLS", raising=False)
 

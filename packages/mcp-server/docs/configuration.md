@@ -40,6 +40,32 @@ interop aliases for launchers and editors:
 Diagnostics only report whether tokens are configured. Token values are never
 printed.
 
+## Structured Logging
+
+The server writes text logs to stderr by default. Use JSON Lines when logs need
+to be parsed by an MCP client, CI collector, or operator tool:
+
+```bash
+kicad-mcp-pro --log-format json
+kicad-mcp-pro serve --log-level warn --log-format json --log-file ./kicad-mcp-pro.log
+```
+
+`--log-format` accepts `text` or `json`; `console` remains a compatibility alias
+for existing launchers. `--log-level` accepts `debug`, `info`, `warn`,
+`warning`, `error`, and `critical`. The same controls are available as
+`KICAD_MCP_LOG_LEVEL`, `KICAD_MCP_LOG_FORMAT`, and `KICAD_MCP_LOG_FILE`.
+File logging rotates by size with bounded retention. Configure the default
+5,000,000 byte limit and three retained backups through
+`KICAD_MCP_LOG_MAX_BYTES` and `KICAD_MCP_LOG_BACKUP_COUNT`.
+
+JSON log records always carry `ts`, `level`, `event`, `request_id`,
+`mcp_session_id`, `tool`, `latency_ms`, and `error` fields. Tool calls emit
+entry and exit events; Streamable HTTP logs initialize, session creation, and
+session destruction lifecycle events. KiCad path fields, secret-like fields, and
+oversized payload text are redacted before records reach stderr or rotated log
+files. Structured errors include type and message by default; stack output is
+limited to debug logging.
+
 ## Workspace Safety
 
 When `KICAD_MCP_WORKSPACE_ROOT` is set, project artifact reads and writes must
