@@ -81,6 +81,7 @@ import { KiCadTaskProvider } from './tasks/kicadTaskProvider';
 import { VariantProvider } from './variants/variantProvider';
 import { readConfiguredMcpProfile } from './commands/mcpProfilePicker';
 import { Logger } from './utils/logger';
+import { runSettingsMigrations } from './settings/settingsMigrations';
 import {
   getAiSecretKey,
   isAiSecretProvider,
@@ -104,6 +105,7 @@ export async function activate(
   const logger = new Logger('KiCad Studio');
   extensionLogger = logger;
   logger.info('Activating KiCad Studio...');
+  await runSettingsMigrations(context, logger);
   await migrateDeprecatedSecretSettings(context, logger);
   let latestDrcRun:
     | {

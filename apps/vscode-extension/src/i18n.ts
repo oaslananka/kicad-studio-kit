@@ -17,7 +17,11 @@ export const SOURCE_MESSAGES = {
   diagnosticErrors: '{count} errors',
   diagnosticWarnings: '{count} warnings',
   diagnosticInfos: '{count} info',
-  runValidation: 'Run {label}'
+  runValidation: 'Run {label}',
+  settingsMigrationFailed:
+    'KiCad Studio settings migration failed. Existing settings were left at the last successful schema version; check the KiCad Studio output for details.',
+  settingsMigrationUpdatedDeprecatedSettings:
+    'KiCad Studio updated deprecated settings to the current schema.'
 } as const;
 
 export type SourceMessageKey = keyof typeof SOURCE_MESSAGES;
