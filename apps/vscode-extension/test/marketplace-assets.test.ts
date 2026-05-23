@@ -151,9 +151,14 @@ describe('marketplace listing assets', () => {
     expectMarkdownSection(readme, 'Quick Start');
     expectMarkdownSection(readme, 'Feature Matrix');
     expectMarkdownSection(readme, 'KiCad CLI-Only Comparison');
+    expectMarkdownSection(readme, 'Release Notes');
     expectMarkdownSection(readme, 'Support and Sponsorship');
     expect(readme).toContain('assets/screenshots/project-tree.png');
     expect(readme).toContain('assets/screenshots/mcp-tools-dashboard.png');
+    expect(readme).toContain(
+      'https://open-vsx.org/extension/oaslananka/kicadstudio'
+    );
+    expect(readme).toContain('[CHANGELOG.md](CHANGELOG.md)');
     expect(readme).not.toMatch(/<details|<summary|<script|<style/iu);
 
     expectMarkdownSection(listingDoc, 'Manual Review Checklist');

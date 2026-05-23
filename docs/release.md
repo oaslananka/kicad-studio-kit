@@ -17,8 +17,9 @@ Release PRs are created by `.github/workflows/release-please.yml` with separate 
 The publish workflows keep release evidence product-scoped:
 
 - `publish-extension.yml` validates the VSIX, emits `SHA256SUMS.txt` and a
-  CycloneDX SBOM, then creates GitHub artifact attestations for the checksummed
-  extension package.
+  CycloneDX SBOM, creates GitHub artifact attestations for the checksummed
+  extension package, publishes the shared VSIX to the Visual Studio Marketplace,
+  and then publishes the same VSIX to Open VSX in a separate non-blocking job.
 - `publish-python.yml` validates the wheel and source distribution, emits
   `packages/mcp-server/release-evidence/SHA256SUMS.txt`, uploads that checksum
   as `python-release-evidence`, and creates GitHub artifact attestations for the

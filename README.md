@@ -4,6 +4,7 @@
 [![CodeQL](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml)
 [![Security](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml)
 [![MCP Registry](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/publish-mcp-registry.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/publish-mcp-registry.yml)
+[![Open VSX](https://img.shields.io/open-vsx/v/oaslananka/kicadstudio?label=Open%20VSX)](https://open-vsx.org/extension/oaslananka/kicadstudio)
 
 Monorepo for:
 

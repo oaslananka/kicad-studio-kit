@@ -51,6 +51,8 @@ Protocol or tool-schema changes must update compatibility metadata and release n
 
 Do not configure package registry tokens for PyPI, TestPyPI, or npm. Those publish paths use trusted publishing through OIDC.
 
+`VSCE_PAT` and `OVSX_PAT` must be scoped to the `extension-marketplaces` environment only. Rotate both tokens at least every 180 days, immediately after any maintainer access change, and immediately after any failed or suspicious publish attempt. Token rotation must update the environment secret before the old token is revoked so the next guarded workflow run can validate the replacement.
+
 ## Trusted Publisher Setup
 
 PyPI:
@@ -80,8 +82,15 @@ npm:
 Open VSX:
 
 - publisher namespace: `oaslananka`
+- extension URL: `https://open-vsx.org/extension/oaslananka/kicadstudio`
 - secret: `OVSX_PAT`
 - Eclipse account and Open VSX Publisher Agreement must be complete externally.
+- namespace ownership and token generation are managed in the Open VSX account settings.
+- the `publish-extension.yml` Open VSX job runs only after the Visual Studio Marketplace job succeeds.
+- the Open VSX job reuses the same VSIX artifact uploaded by the package job.
+- Open VSX failures are isolated from the Marketplace publish result and must be retried only after inspecting the guarded release log.
+- prerelease GitHub Releases skip Open VSX unless the release tag ends with `-openvsx`.
+- the packaged README points Open VSX users to `apps/vscode-extension/CHANGELOG.md` for release notes.
 
 VS Code Marketplace:
 
@@ -108,6 +117,7 @@ corepack pnpm --filter kicadstudio run build
 corepack pnpm --filter kicadstudio run package
 $vsix = Get-ChildItem -Path apps/vscode-extension -Filter *.vsix -Recurse | Sort-Object LastWriteTime | Select-Object -Last 1
 corepack pnpm --filter kicadstudio exec vsce ls --tree --no-dependencies
+corepack pnpm --filter kicadstudio exec ovsx publish --help
 ```
 
 CMD:
@@ -118,3 +128,5 @@ corepack pnpm install --frozen-lockfile
 corepack pnpm --filter kicadstudio run build
 corepack pnpm --filter kicadstudio run package
 ```
+
+The `ovsx publish --help` command is the safe Open VSX CLI smoke check for local preflight. Do not run `ovsx publish` with a token outside `.github/workflows/publish-extension.yml`.

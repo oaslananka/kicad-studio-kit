@@ -2,6 +2,8 @@
 
 # KiCad Studio
 
+[![Open VSX](https://img.shields.io/open-vsx/v/oaslananka/kicadstudio?label=Open%20VSX)](https://open-vsx.org/extension/oaslananka/kicadstudio)
+
 KiCad Studio turns VS Code into a focused KiCad workspace for project navigation, schematic and PCB inspection, DRC/ERC review, manufacturing handoff, and AI-assisted MCP workflows.
 
 Canonical repository: https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension
@@ -70,6 +72,10 @@ KiCad Studio 1.0.0 supports `kicad-mcp-pro >=1.0.0 <2.0.0` and was tested agains
 ## Marketplace Listing Copy
 
 The manual Marketplace and Open VSX checklist, English short/long listing copy, and Turkish localized copy live in [docs/marketplace-listing.md](docs/marketplace-listing.md).
+
+## Release Notes
+
+Release notes for Marketplace and Open VSX users live in [CHANGELOG.md](CHANGELOG.md).
 
 ## Local Development
 

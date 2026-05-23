@@ -6,24 +6,32 @@ on:
   workflow_dispatch:
     inputs:
       publish_vscode:
+        description: Publish to Visual Studio Marketplace.
         type: boolean
         default: true
       publish_openvsx:
+        description: Publish to Open VSX after Visual Studio Marketplace succeeds.
         type: boolean
         default: true
 
 permissions:
   contents: read
 
+env:
+  OPENVSX_PRERELEASE_TAG_SUFFIX: -openvsx
+
 jobs:
-  publish:
+  package:
     runs-on: ubuntu-24.04
-    environment: extension-marketplaces
     permissions:
       contents: read
       id-token: write
       attestations: write
       artifact-metadata: write
+    outputs:
+      is_prerelease: ${{ steps.release-policy.outputs.is_prerelease }}
+      openvsx_prerelease_allowed: ${{ steps.release-policy.outputs.openvsx_prerelease_allowed }}
+      release_tag: ${{ steps.release-policy.outputs.release_tag }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
@@ -38,6 +46,36 @@ jobs:
       - run: corepack pnpm --filter kicadstudio run package
       - run: corepack pnpm --filter kicadstudio run package:validate
       - run: corepack pnpm --filter kicadstudio run release:assets
+      - name: Evaluate Open VSX release policy
+        id: release-policy
+        shell: bash
+        env:
+          RELEASE_IS_PRERELEASE: ${{ github.event.release.prerelease }}
+          RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+
+          release_tag="${RELEASE_TAG_NAME:-${GITHUB_REF_NAME:-}}"
+          is_prerelease="${RELEASE_IS_PRERELEASE:-false}"
+          openvsx_prerelease_allowed="true"
+
+          if [[ "$GITHUB_EVENT_NAME" == "release" && "$is_prerelease" == "true" && "$release_tag" != *"$OPENVSX_PRERELEASE_TAG_SUFFIX" ]]; then
+            openvsx_prerelease_allowed="false"
+          fi
+
+          {
+            echo "release_tag=${release_tag}"
+            echo "is_prerelease=${is_prerelease}"
+            echo "openvsx_prerelease_allowed=${openvsx_prerelease_allowed}"
+          } >> "$GITHUB_OUTPUT"
+      - name: Identify extension package
+        shell: bash
+        run: |
+          set -euo pipefail
+          VSIX_PATH="$(find apps/vscode-extension -maxdepth 2 -type f -name '*.vsix' | sort | tail -n1)"
+          test -n "$VSIX_PATH"
+          test -f "$VSIX_PATH"
+          echo "Packaged ${VSIX_PATH}"
       - name: Attest extension assets
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
         with:
@@ -51,23 +89,94 @@ jobs:
             apps/vscode-extension/*.vsix
             apps/vscode-extension/SHA256SUMS.txt
             apps/vscode-extension/sbom.cdx.json
+          if-no-files-found: error
           retention-days: 14
-      - name: Publish marketplaces
+
+  publish_vscode:
+    needs: package
+    if: ${{ github.event_name == 'release' || inputs.publish_vscode }}
+    runs-on: ubuntu-24.04
+    environment: extension-marketplaces
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Download extension release evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: extension-release-evidence
+          path: release-assets/extension
+      - name: Publish Visual Studio Marketplace
         shell: bash
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
-          PUBLISH_VSCODE: ${{ github.event_name == 'release' || inputs.publish_vscode }}
-          PUBLISH_OPENVSX: ${{ github.event_name == 'release' || inputs.publish_openvsx }}
         run: |
           set -euo pipefail
-          VSIX_PATH="$(find apps/vscode-extension -maxdepth 2 -type f -name '*.vsix' | sort | tail -n1)"
+          VSIX_PATH="$(find release-assets/extension -type f -name '*.vsix' | sort | tail -n1)"
           test -n "$VSIX_PATH"
-          if [[ "$PUBLISH_VSCODE" == "true" ]]; then
-            test -n "$VSCE_PAT"
-            corepack pnpm --filter kicadstudio exec vsce publish --packagePath "$VSIX_PATH" --pat "$VSCE_PAT"
+          test -f "$VSIX_PATH"
+          test -n "$VSCE_PAT"
+          corepack pnpm --filter kicadstudio exec vsce publish --packagePath "$VSIX_PATH" --pat "$VSCE_PAT"
+
+  publish_openvsx:
+    needs: [package, publish_vscode]
+    if: ${{ (github.event_name == 'release' || inputs.publish_openvsx) && needs.publish_vscode.result == 'success' && needs.package.outputs.openvsx_prerelease_allowed == 'true' }}
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    environment: extension-marketplaces
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Download extension release evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: extension-release-evidence
+          path: release-assets/extension
+      - name: Publish Open VSX
+        shell: bash
+        env:
+          BASE_CONTENT_URL: https://github.com/oaslananka/kicad-studio-kit/blob/${{ github.sha }}/apps/vscode-extension
+          BASE_IMAGES_URL: https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/${{ github.sha }}/apps/vscode-extension
+          IS_PRERELEASE: ${{ needs.package.outputs.is_prerelease }}
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          set -euo pipefail
+          VSIX_PATH="$(find release-assets/extension -type f -name '*.vsix' | sort | tail -n1)"
+          test -n "$VSIX_PATH"
+          test -f "$VSIX_PATH"
+          test -n "$OVSX_PAT"
+
+          publish_args=(
+            publish
+            "$VSIX_PATH"
+            -p
+            "$OVSX_PAT"
+            --baseContentUrl
+            "$BASE_CONTENT_URL"
+            --baseImagesUrl
+            "$BASE_IMAGES_URL"
+          )
+          if [[ "$IS_PRERELEASE" == "true" ]]; then
+            publish_args+=(--pre-release)
           fi
-          if [[ "$PUBLISH_OPENVSX" == "true" ]]; then
-            test -n "$OVSX_PAT"
-            corepack pnpm --filter kicadstudio exec ovsx publish "$VSIX_PATH" -p "$OVSX_PAT"
-          fi
+
+          corepack pnpm --filter kicadstudio exec ovsx "${publish_args[@]}"
