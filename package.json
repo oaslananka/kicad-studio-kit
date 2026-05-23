@@ -54,14 +54,23 @@
     "check:performance-budgets": "node scripts/check-performance-budgets.mjs && node --test scripts/check-performance-budgets.test.mjs",
     "test:beta-program": "node --test scripts/check-beta-program.test.mjs",
     "check:beta-program": "node scripts/check-beta-program.mjs && pnpm run test:beta-program",
+    "docs:generate": "node scripts/generate-docs-site.mjs",
+    "docs:lint": "node scripts/check-docs-site.mjs --markdown",
+    "docs:links": "node scripts/check-docs-site.mjs --links",
+    "docs:check-generated": "node scripts/check-docs-site.mjs --generated",
+    "docs:build": "pnpm run docs:generate && vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "check:docs-site": "pnpm --dir packages/mcp-server run docs:tools:check && pnpm run docs:generate && pnpm run docs:lint && pnpm run docs:links && vitepress build docs && pnpm run docs:check-generated",
     "check:publish": "node scripts/check-publish-preflight.mjs",
     "governance:sync:dry-run": "node scripts/sync-governance-project-items.mjs --dry-run --chunk-size 10",
-    "check": "pnpm run check:forbidden-refs && pnpm run check:boundaries && pnpm run check:version && pnpm run check:compatibility && pnpm run check:runtime-policy && pnpm run check:governance && pnpm run check:fixtures && pnpm run check:testing-strategy && pnpm run check:performance-budgets && pnpm run check:beta-program && pnpm run release:dry-run && pnpm -r run check"
+    "check": "pnpm run check:forbidden-refs && pnpm run check:boundaries && pnpm run check:version && pnpm run check:compatibility && pnpm run check:runtime-policy && pnpm run check:governance && pnpm run check:fixtures && pnpm run check:testing-strategy && pnpm run check:performance-budgets && pnpm run check:beta-program && pnpm run check:docs-site && pnpm run release:dry-run && pnpm -r run check"
   },
   "devDependencies": {
     "@commitlint/cli": "21.0.0",
     "@commitlint/config-conventional": "21.0.0",
     "prettier": "3.8.3",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitepress": "1.6.4",
+    "yaml": "2.9.0"
   }
 }

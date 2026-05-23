@@ -13,6 +13,7 @@ Monorepo for:
 - npm launcher wrapper (`packages/mcp-npm`)
 
 Canonical repository: https://github.com/oaslananka/kicad-studio-kit
+Searchable documentation: https://oaslananka.github.io/kicad-studio-kit/
 
 ## Version Baseline
 
@@ -52,6 +53,7 @@ corepack pnpm run test:contract
 
 ## Architecture
 
+- [Searchable documentation site](https://oaslananka.github.io/kicad-studio-kit/)
 - [Repository structure](docs/architecture/repo-structure.md)
 - [Product boundaries](docs/architecture/product-boundaries.md)
 - [Release model](docs/architecture/release-model.md)
