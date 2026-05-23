@@ -8,6 +8,7 @@ import { registerQualityGateCommands } from './qualityGateCommands';
 import { registerSecretCommands } from './secretCommands';
 import { registerSettingsCommands } from './settingsCommands';
 import { registerViewerCommands } from './viewerCommands';
+import { registerFeedbackCommands } from './feedbackCommands';
 import type { CommandServices } from './types';
 
 export type { CommandServices } from './types';
@@ -32,6 +33,7 @@ export function registerAllCommands(
     ...registerQualityGateCommands(services),
     ...registerSecretCommands(services),
     ...registerSettingsCommands(extensionContext, services),
-    ...registerViewerCommands(services)
+    ...registerViewerCommands(services),
+    ...registerFeedbackCommands()
   );
 }

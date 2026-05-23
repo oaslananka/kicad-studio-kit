@@ -21,7 +21,8 @@ export const SOURCE_MESSAGES = {
   settingsMigrationFailed:
     'KiCad Studio settings migration failed. Existing settings were left at the last successful schema version; check the KiCad Studio output for details.',
   settingsMigrationUpdatedDeprecatedSettings:
-    'KiCad Studio updated deprecated settings to the current schema.'
+    'KiCad Studio updated deprecated settings to the current schema.',
+  feedbackOpenFailed: 'Open the KiCad Studio beta feedback form: {url}'
 } as const;
 
 export type SourceMessageKey = keyof typeof SOURCE_MESSAGES;

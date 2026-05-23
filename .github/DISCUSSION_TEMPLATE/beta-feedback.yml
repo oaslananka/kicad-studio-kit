@@ -1,0 +1,97 @@
+title: "[Beta feedback] "
+labels: ["source:beta"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing KiCad Studio beta builds. Do not attach proprietary board files, schematics, BOMs, API keys, customer data, or secrets. Use a reduced project or sanitized screenshots when possible.
+  - type: dropdown
+    id: workflow
+    attributes:
+      label: Workflow area
+      description: Pick the workflow that best matches the feedback.
+      options:
+        - Project discovery or project tree
+        - Schematic viewer
+        - PCB viewer
+        - DRC/ERC validation
+        - BOM, netlist, or manufacturing export
+        - MCP integration
+        - AI-assisted workflow
+        - Marketplace or installation
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: extension-version
+    attributes:
+      label: KiCad Studio version
+      description: Include the exact beta version or VSIX filename.
+      placeholder: 1.0.1 beta.1
+    validations:
+      required: true
+  - type: input
+    id: kicad-version
+    attributes:
+      label: KiCad version
+      placeholder: 10.0.3
+    validations:
+      required: true
+  - type: input
+    id: vscode-version
+    attributes:
+      label: VS Code version
+      placeholder: 1.121.0
+    validations:
+      required: true
+  - type: checkboxes
+    id: operating-systems
+    attributes:
+      label: Operating systems tested
+      options:
+        - label: Windows
+        - label: macOS
+        - label: Linux
+        - label: Other VS Code compatible editor
+  - type: dropdown
+    id: channel
+    attributes:
+      label: Install channel
+      options:
+        - Visual Studio Marketplace pre-release
+        - Open VSX pre-release
+        - Local VSIX
+        - Source checkout
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps or feedback
+      description: Use sanitized project details. Do not include secrets or private design files.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Consent
+      options:
+        - label: Maintainers may convert this discussion into a tracked Linear/GitHub issue and link back to this public discussion.
+          required: true

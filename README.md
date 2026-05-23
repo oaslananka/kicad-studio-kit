@@ -66,6 +66,7 @@ corepack pnpm run test:contract
 ## Publishing
 
 Publishing is handled by GitHub Actions workflows under `.github/workflows`. External setup for environments, marketplace secrets, and trusted publishers is documented in [docs/publishing.md](docs/publishing.md).
+The structured pre-1.0 beta program and tester feedback loop are documented in [docs/beta-program.md](docs/beta-program.md).
 
 ## Maintenance
 

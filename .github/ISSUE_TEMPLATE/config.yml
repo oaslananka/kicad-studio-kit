@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Beta feedback
+    url: https://github.com/oaslananka/kicad-studio-kit/discussions/new?category=beta-feedback
+    about: Use this for beta program feedback, UX friction, and non-security beta reports.
   - name: Security vulnerability
     url: https://github.com/oaslananka/kicad-studio-kit/security/advisories/new
     about: Report privately. Do not open public issues for security.

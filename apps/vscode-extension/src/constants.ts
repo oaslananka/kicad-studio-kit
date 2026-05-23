@@ -99,6 +99,7 @@ export const COMMANDS = {
   aiExplainCircuit: 'kicadstudio.aiExplainCircuit',
   openAiChat: 'kicadstudio.openAiChat',
   openSettings: 'kicadstudio.openSettings',
+  sendFeedback: 'kicadstudio.sendFeedback',
   aiProactiveDRC: 'kicadstudio.aiProactiveDRC',
   testAiConnection: 'kicadstudio.testAiConnection',
   searchLibrarySymbol: 'kicadstudio.searchLibrarySymbol',

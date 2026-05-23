@@ -27,6 +27,7 @@ Core maintainer runbooks:
 - [Dependency lifecycle](dependency-lifecycle.md)
 - [Reusable workflow governance](reusable-workflows.md)
 - [Publishing setup](publishing.md)
+- [Beta testing program](beta-program.md)
 - [Security model](security.md)
 - [Telemetry and error reporting](telemetry.md)
 - [Support matrix](support-matrix.md)

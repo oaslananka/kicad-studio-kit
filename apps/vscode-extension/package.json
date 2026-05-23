@@ -866,6 +866,12 @@
         "title": "%kicadstudio.contributes.commands.91.title%",
         "category": "%kicadstudio.contributes.commands.91.category%",
         "icon": "$(trash)"
+      },
+      {
+        "command": "kicadstudio.sendFeedback",
+        "title": "%kicadstudio.contributes.commands.92.title%",
+        "category": "%kicadstudio.contributes.commands.92.category%",
+        "icon": "$(comment-discussion)"
       }
     ],
     "menus": {
@@ -1074,6 +1080,9 @@
         },
         {
           "command": "kicadstudio.openSettings"
+        },
+        {
+          "command": "kicadstudio.sendFeedback"
         },
         {
           "command": "kicadstudio.setupMcpIntegration"

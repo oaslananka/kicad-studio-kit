@@ -64,3 +64,6 @@
 - name: fixed-in-canary
   color: "0e8a16"
   description: Compatibility issue is fixed in a canary or pre-release validation path
+- name: source:beta
+  color: "7C3AED"
+  description: Report or task originated from beta tester feedback

@@ -207,5 +207,6 @@
   "{count} info": "{count} bilgi",
   "Run {label}": "{label} çalıştır",
   "KiCad Studio settings migration failed. Existing settings were left at the last successful schema version; check the KiCad Studio output for details.": "KiCad Studio ayar geçişi başarısız oldu. Mevcut ayarlar son başarılı şema sürümünde bırakıldı; ayrıntılar için KiCad Studio çıktısını kontrol edin.",
-  "KiCad Studio updated deprecated settings to the current schema.": "KiCad Studio, kullanımdan kaldırılmış ayarları geçerli şemaya güncelledi."
+  "KiCad Studio updated deprecated settings to the current schema.": "KiCad Studio, kullanımdan kaldırılmış ayarları geçerli şemaya güncelledi.",
+  "Open the KiCad Studio beta feedback form: {url}": "KiCad Studio beta geri bildirim formunu açın: {url}"
 }

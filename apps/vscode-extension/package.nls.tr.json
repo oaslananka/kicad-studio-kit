@@ -227,6 +227,8 @@
   "kicadstudio.contributes.commands.90.category": "KiCad Kütüphane",
   "kicadstudio.contributes.commands.91.title": "KiCad: PCM Paketini Kaldır",
   "kicadstudio.contributes.commands.91.category": "KiCad Kütüphane",
+  "kicadstudio.contributes.commands.92.title": "KiCad Studio: Geri Bildirim Gönder",
+  "kicadstudio.contributes.commands.92.category": "KiCad Studio",
   "kicadstudio.contributes.configuration.title": "KiCad Studio",
   "kicadstudio.contributes.configuration.properties.kicadstudio.kicadCliPath.description": "kicad-cli yürütülebilir dosyasının yolu veya Flatpak komutu (örn. 'flatpak run --command=kicad-cli org.kicad.KiCad'). Otomatik algılama için boş bırakın.",
   "kicadstudio.contributes.configuration.properties.kicadstudio.kicadPath.description": "KiCad kurulum dizininin yolu (dosyaları KiCad'de açmak için kullanılır).",

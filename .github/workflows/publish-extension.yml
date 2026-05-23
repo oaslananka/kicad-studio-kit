@@ -13,6 +13,10 @@ on:
         description: Publish to Open VSX after Visual Studio Marketplace succeeds.
         type: boolean
         default: true
+      publish_prerelease:
+        description: Mark the VSIX and marketplace submissions as pre-release.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -43,23 +47,24 @@ jobs:
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm --filter kicadstudio run build
-      - run: corepack pnpm --filter kicadstudio run package
-      - run: corepack pnpm --filter kicadstudio run package:validate
-      - run: corepack pnpm --filter kicadstudio run release:assets
-      - name: Evaluate Open VSX release policy
+      - name: Evaluate extension pre-release policy
         id: release-policy
         shell: bash
         env:
+          WORKFLOW_DISPATCH_PRERELEASE: ${{ inputs.publish_prerelease || false }}
           RELEASE_IS_PRERELEASE: ${{ github.event.release.prerelease }}
           RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
 
           release_tag="${RELEASE_TAG_NAME:-${GITHUB_REF_NAME:-}}"
-          is_prerelease="${RELEASE_IS_PRERELEASE:-false}"
+          is_prerelease="false"
+          if [[ "${RELEASE_IS_PRERELEASE:-false}" == "true" || "${WORKFLOW_DISPATCH_PRERELEASE:-false}" == "true" || "$release_tag" == *"-beta."* ]]; then
+            is_prerelease="true"
+          fi
           openvsx_prerelease_allowed="true"
 
-          if [[ "$GITHUB_EVENT_NAME" == "release" && "$is_prerelease" == "true" && "$release_tag" != *"$OPENVSX_PRERELEASE_TAG_SUFFIX" ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == "release" && "$is_prerelease" == "true" && "$release_tag" != *"-beta."* && "$release_tag" != *"$OPENVSX_PRERELEASE_TAG_SUFFIX" ]]; then
             openvsx_prerelease_allowed="false"
           fi
 
@@ -68,6 +73,12 @@ jobs:
             echo "is_prerelease=${is_prerelease}"
             echo "openvsx_prerelease_allowed=${openvsx_prerelease_allowed}"
           } >> "$GITHUB_OUTPUT"
+      - name: Package extension
+        env:
+          KICAD_STUDIO_EXTENSION_PRE_RELEASE: ${{ steps.release-policy.outputs.is_prerelease }}
+        run: corepack pnpm --filter kicadstudio run package
+      - run: corepack pnpm --filter kicadstudio run package:validate
+      - run: corepack pnpm --filter kicadstudio run release:assets
       - name: Identify extension package
         shell: bash
         run: |
@@ -125,7 +136,18 @@ jobs:
           test -n "$VSIX_PATH"
           test -f "$VSIX_PATH"
           test -n "$VSCE_PAT"
-          corepack pnpm --filter kicadstudio exec vsce publish --packagePath "$VSIX_PATH" --pat "$VSCE_PAT"
+          publish_args=(
+            publish
+            --packagePath
+            "$VSIX_PATH"
+            --pat
+            "$VSCE_PAT"
+          )
+          if [[ "${{ needs.package.outputs.is_prerelease }}" == "true" ]]; then
+            publish_args+=(--pre-release)
+          fi
+
+          corepack pnpm --filter kicadstudio exec vsce "${publish_args[@]}"
 
   publish_openvsx:
     needs: [package, publish_vscode]

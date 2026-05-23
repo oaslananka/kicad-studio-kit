@@ -106,6 +106,9 @@ VS Code Marketplace:
 - publisher: `oaslananka`
 - extension id: `oaslananka.kicadstudio`
 - secret: `VSCE_PAT`
+- beta channel: GitHub pre-release tags ending in `-beta.N`; package and
+  publish steps must pass `--pre-release` for Marketplace and Open VSX beta
+  submissions. See [beta-program.md](beta-program.md).
 
 MCP Registry:
 

@@ -227,6 +227,8 @@
   "kicadstudio.contributes.commands.90.category": "KiCad Library",
   "kicadstudio.contributes.commands.91.title": "KiCad: Uninstall PCM Package",
   "kicadstudio.contributes.commands.91.category": "KiCad Library",
+  "kicadstudio.contributes.commands.92.title": "KiCad Studio: Send Feedback",
+  "kicadstudio.contributes.commands.92.category": "KiCad Studio",
   "kicadstudio.contributes.configuration.title": "KiCad Studio",
   "kicadstudio.contributes.configuration.properties.kicadstudio.kicadCliPath.description": "Path to kicad-cli executable or a Flatpak command (e.g. 'flatpak run --command=kicad-cli org.kicad.KiCad'). Leave empty for auto-detection.",
   "kicadstudio.contributes.configuration.properties.kicadstudio.kicadPath.description": "Path to KiCad installation directory (used to open files in KiCad).",

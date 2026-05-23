@@ -11,6 +11,9 @@ const pkg = JSON.parse(
 );
 const vsixName = `${pkg.name}-${pkg.version}.vsix`;
 const vsixPath = path.join(root, vsixName);
+const isPreRelease =
+  process.env.KICAD_STUDIO_EXTENSION_PRE_RELEASE === 'true' ||
+  process.argv.includes('--pre-release');
 
 if (fs.existsSync(vsixPath)) {
   fs.rmSync(vsixPath, { force: true });
@@ -23,7 +26,8 @@ const result = spawnSync(
     'package',
     '--no-dependencies',
     '--out',
-    vsixName
+    vsixName,
+    ...(isPreRelease ? ['--pre-release'] : [])
   ],
   {
     cwd: root,
