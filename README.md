@@ -72,3 +72,4 @@ Publishing is handled by GitHub Actions workflows under `.github/workflows`. Ext
 Dependency update policy, dashboard triage, and security-update handling are documented in [docs/dependency-lifecycle.md](docs/dependency-lifecycle.md).
 Compatibility support states and release gates are documented in [docs/support-matrix.md](docs/support-matrix.md).
 Canonical repository and portfolio workflow status are recorded in [CANONICAL.md](CANONICAL.md), [.repo-health.yaml](.repo-health.yaml), and [docs/reusable-workflows.md](docs/reusable-workflows.md).
+Telemetry and error reporting are opt-in, disabled by default, and documented in [docs/telemetry.md](docs/telemetry.md).

@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import re
 import threading
+import time
+import traceback
+from collections import deque
 from collections.abc import Iterator, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from urllib.parse import urlsplit, urlunsplit
 
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import (
@@ -31,6 +35,25 @@ from opentelemetry.trace import Span, Status, StatusCode, Tracer
 
 _SAFE_COMMAND_TOKEN = re.compile(r"^[A-Za-z0-9_.:-]+$")
 _INSTRUMENTATION_SCOPE = "kicad-mcp-pro"
+_DEFAULT_HTTP_OTLP_ENDPOINT = "http://127.0.0.1:4318"
+_DEFAULT_GRPC_OTLP_ENDPOINT = "http://127.0.0.1:4317"
+_SECRET_VALUE = re.compile(
+    r"\b(api[_-]?key|token|access[_-]?token|refresh[_-]?token|client[_-]?secret|password|authorization)\s*[:=]\s*[^\s,;]+",
+    re.IGNORECASE,
+)
+_URL = re.compile(r"\bhttps?://[^\s\"'<>]+", re.IGNORECASE)
+_WINDOWS_PATH = re.compile(r"\b[A-Za-z]:\\[^\s\"'<>]+")
+_POSIX_PRIVATE_PATH = re.compile(r"(^|[\s(\"'=])/(?:home|Users)/[^\s\"'<>),;]+")
+_KICAD_FILE_PATH = re.compile(
+    r"(^|[\s(\"'=])/[^\s\"'<>),;]+\.(?:kicad_pcb|kicad_sch|kicad_pro|kicad_dru|kicad_jobset|net|csv|xml|json|zip)\b",
+    re.IGNORECASE,
+)
+_IP_ADDRESS = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
+_HOSTNAME = re.compile(
+    r"\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{2,63}|local|test)\b",
+    re.IGNORECASE,
+)
+_VERSION = re.compile(r"\b(\d+)\.(\d+)(?:\.\d+)?\b")
 
 
 @dataclass
@@ -46,6 +69,8 @@ class _TelemetryRuntime:
     session_active: UpDownCounter | None = None
     cli_invocations: Counter | None = None
     cli_duration: Histogram | None = None
+    event_buffer: deque[dict[str, object]] = field(default_factory=deque)
+    event_buffer_max_events: int = 0
 
 
 _runtime = _TelemetryRuntime()
@@ -89,7 +114,12 @@ def _http_signal_endpoint(endpoint: str | None, signal: str) -> str | None:
 
 def _endpoint_value(cfg: object) -> str | None:
     endpoint = getattr(cfg, "otel_endpoint", None)
-    return str(endpoint) if endpoint not in (None, "") else None
+    if endpoint not in (None, ""):
+        return str(endpoint)
+    protocol = str(getattr(cfg, "otel_protocol", "http/protobuf"))
+    if protocol == "grpc":
+        return _DEFAULT_GRPC_OTLP_ENDPOINT
+    return _DEFAULT_HTTP_OTLP_ENDPOINT
 
 
 def _resource(cfg: object) -> Resource:
@@ -159,6 +189,7 @@ def configure_telemetry(
             active_meter_provider = managed_meter_provider
 
         meter = active_meter_provider.get_meter(_INSTRUMENTATION_SCOPE)
+        event_buffer_max_events = int(getattr(cfg, "telemetry_buffer_max_events", 100) or 0)
         _runtime = _TelemetryRuntime(
             configured=True,
             enabled=True,
@@ -166,6 +197,8 @@ def configure_telemetry(
             meter=meter,
             managed_tracer_provider=managed_tracer_provider,
             managed_meter_provider=managed_meter_provider,
+            event_buffer=deque(maxlen=event_buffer_max_events),
+            event_buffer_max_events=event_buffer_max_events,
             tool_invocations=meter.create_counter(
                 "mcp_tool_invocations_total",
                 unit="{invocation}",
@@ -220,6 +253,123 @@ def reset_telemetry(*, shutdown_managed: bool = False) -> None:
 
 def _current_runtime() -> _TelemetryRuntime:
     return _runtime
+
+
+def _sanitize_text(value: str) -> str:
+    return _SECRET_VALUE.sub(r"\1=[redacted]", value).replace("\x00", "").replace("\r", " ")
+
+
+def _redact_text(value: str) -> str:
+    return _sanitize_text(value).replace("\n", "\\n")
+
+
+def _redact_payload_text(value: str) -> str:
+    return _redact_text(value).replace("\t", " ")
+
+
+def _redact_sensitive_text(value: str) -> str:
+    text = _redact_payload_text(value)
+    text = _URL.sub("[url]", text)
+    text = _WINDOWS_PATH.sub("[path]", text)
+    text = _POSIX_PRIVATE_PATH.sub(r"\1[path]", text)
+    text = _KICAD_FILE_PATH.sub(r"\1[path]", text)
+    text = _IP_ADDRESS.sub("[ip]", text)
+    text = _HOSTNAME.sub("[host]", text)
+    return text[:2000]
+
+
+def _sanitize_attribute_key(key: str) -> str:
+    sanitized = re.sub(r"[^A-Za-z0-9_.-]+", "_", key).strip("_")
+    return sanitized[:80] or "attribute"
+
+
+def _sanitize_attributes(attributes: Mapping[str, object] | None) -> dict[str, object]:
+    if attributes is None:
+        return {}
+    sanitized: dict[str, object] = {}
+    for key, value in attributes.items():
+        safe_key = _sanitize_attribute_key(str(key))
+        if value is None or isinstance(value, bool | int | float):
+            sanitized[safe_key] = value
+        elif isinstance(value, str):
+            sanitized[safe_key] = _redact_sensitive_text(value)
+        else:
+            sanitized[safe_key] = _redact_sensitive_text(str(value))
+    return sanitized
+
+
+def tool_catalog_hash(tool_names: Iterator[str] | list[str] | tuple[str, ...]) -> str:
+    """Return a stable, anonymous hash for the advertised MCP tool catalog."""
+    digest = hashlib.sha256()
+    for name in sorted(str(tool_name) for tool_name in tool_names):
+        digest.update(name.encode("utf-8"))
+        digest.update(b"\0")
+    return digest.hexdigest()[:16]
+
+
+def kicad_cli_major_minor(version: str | None) -> str | None:
+    """Extract only the KiCad CLI major.minor version from an arbitrary version string."""
+    if not version:
+        return None
+    match = _VERSION.search(version)
+    if match is None:
+        return None
+    return f"{match.group(1)}.{match.group(2)}"
+
+
+def record_runtime_event(name: str, attributes: Mapping[str, object] | None = None) -> None:
+    """Record a bounded, redacted telemetry event for offline retry/debug inspection."""
+    runtime = _current_runtime()
+    if not runtime.enabled or runtime.event_buffer_max_events == 0:
+        return
+    runtime.event_buffer.append(
+        {
+            "kind": "usage",
+            "name": _redact_sensitive_text(name)[:120],
+            "timestamp": time.time(),
+            "attributes": _sanitize_attributes(attributes),
+        }
+    )
+
+
+def record_error_event(
+    name: str,
+    error: BaseException,
+    attributes: Mapping[str, object] | None = None,
+) -> None:
+    """Record a redacted error event without file paths, hostnames, tokens, or content."""
+    runtime = _current_runtime()
+    if not runtime.enabled or runtime.event_buffer_max_events == 0:
+        return
+    formatted_stack = "".join(
+        traceback.format_exception(type(error), error, error.__traceback__, limit=12)
+    )
+    runtime.event_buffer.append(
+        {
+            "kind": "error",
+            "name": _redact_sensitive_text(name)[:120],
+            "timestamp": time.time(),
+            "attributes": _sanitize_attributes(attributes),
+            "error": {
+                "type": _redact_sensitive_text(type(error).__name__),
+                "message": _redact_sensitive_text(str(error)),
+                "stack": _redact_sensitive_text(formatted_stack),
+            },
+        }
+    )
+
+
+def telemetry_buffer_snapshot() -> list[dict[str, object]]:
+    """Return a copy of the redacted offline telemetry buffer for tests and diagnostics."""
+    runtime = _current_runtime()
+    if not runtime.enabled:
+        return []
+    return list(runtime.event_buffer)
+
+
+def telemetry_enabled() -> bool:
+    """Return True when process telemetry is currently enabled."""
+    return _current_runtime().enabled
 
 
 @contextlib.contextmanager

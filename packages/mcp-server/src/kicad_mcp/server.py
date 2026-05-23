@@ -492,6 +492,8 @@ class KiCadFastMCP(FastMCP):
     _lazy_registration_error: BaseException | None = None
     _lazy_registration_lock: threading.Lock
     _lazy_registration_thread: threading.Thread | None = None
+    _telemetry_catalog_hash: str | None = None
+    _telemetry_kicad_version: str | None = None
 
     def set_lazy_registration(self, register: Callable[[], None]) -> None:
         """Defer heavy tool/resource registration until after stdio initialize can bind."""
@@ -674,6 +676,29 @@ class KiCadFastMCP(FastMCP):
         await self._ensure_registered_async()
         return await super().get_prompt(name, arguments)
 
+    def _telemetry_tool_catalog_hash(self) -> str:
+        if self._telemetry_catalog_hash is not None:
+            return self._telemetry_catalog_hash
+        catalog_hash = otel.tool_catalog_hash(tool.name for tool in self.list_tools_sync())
+        self._telemetry_catalog_hash = catalog_hash
+        return catalog_hash
+
+    def _telemetry_kicad_major_minor(self) -> str | None:
+        if self._telemetry_kicad_version is not None:
+            return self._telemetry_kicad_version or None
+        version = otel.kicad_cli_major_minor(find_kicad_version(get_config().kicad_cli))
+        self._telemetry_kicad_version = version or ""
+        return version
+
+    def _telemetry_context_attributes(self) -> dict[str, object]:
+        if not otel.telemetry_enabled():
+            return {}
+        return {
+            "protocol_version": MCP_PROTOCOL_VERSION,
+            "tool_catalog_hash": self._telemetry_tool_catalog_hash(),
+            "kicad_cli_version": self._telemetry_kicad_major_minor() or "unknown",
+        }
+
     async def call_tool(  # type: ignore[override]
         self,
         name: str,
@@ -702,11 +727,43 @@ class KiCadFastMCP(FastMCP):
             except ToolError as exc:
                 result = _structured_tool_error(exc, tool_name=name)
                 status, error_code = _status_from_result(result)
+                otel.record_error_event(
+                    "mcp.tool_error",
+                    exc,
+                    {
+                        "tool": name,
+                        "error_code": error_code or type(exc).__name__,
+                        **self._telemetry_context_attributes(),
+                    },
+                )
                 return result
+            except Exception as exc:
+                status = "error"
+                error_code = type(exc).__name__
+                otel.record_error_event(
+                    "mcp.tool_error",
+                    exc,
+                    {
+                        "tool": name,
+                        "error_code": error_code,
+                        **self._telemetry_context_attributes(),
+                    },
+                )
+                raise
             finally:
                 elapsed_ms = (time.perf_counter() - started) * 1000.0
                 _record_tool_metric(name, status, elapsed_ms)
                 otel.record_tool_invocation(name, status, elapsed_ms / 1000.0)
+                otel.record_runtime_event(
+                    "mcp.tool_call",
+                    {
+                        "tool": name,
+                        "status": status,
+                        "elapsed_ms": round(elapsed_ms, 2),
+                        "error_code": error_code or "",
+                        **self._telemetry_context_attributes(),
+                    },
+                )
                 otel.finish_tool_span(span, status=status, error_code=error_code)
                 _log_tool_call_finished(
                     name,

@@ -89,6 +89,7 @@ class KiCadMCPConfig(BaseSettings):
     otel_headers: str = Field(default="")
     otel_service_name: str = Field(default="kicad-mcp-pro")
     otel_protocol: Literal["http/protobuf", "grpc"] = Field(default="http/protobuf")
+    telemetry_buffer_max_events: int = Field(default=100, ge=0, le=1000)
     studio_watch_dir: Path | None = Field(default=None)
     profile: Literal[
         "full",
@@ -420,6 +421,7 @@ class KiCadMCPConfig(BaseSettings):
             "otel_headers": {"configured": bool(self.otel_headers)},
             "otel_service_name": self.otel_service_name,
             "otel_protocol": self.otel_protocol,
+            "telemetry_buffer_max_events": self.telemetry_buffer_max_events,
             "transport": self.transport,
             "auth_token": {"configured": self.auth_token is not None},
             "kicad_token": {"configured": self.kicad_token is not None},

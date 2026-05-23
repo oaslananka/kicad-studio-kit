@@ -17,7 +17,15 @@ from kicad_mcp.compatibility import MCP_PROTOCOL_VERSION
 from kicad_mcp.config import KiCadMCPConfig, get_config
 from kicad_mcp.server import _apply_cli_env, build_server
 from kicad_mcp.tools import board_file, export_support
-from kicad_mcp.utils.telemetry import configure_telemetry, reset_telemetry
+from kicad_mcp.utils.telemetry import (
+    configure_telemetry,
+    kicad_cli_major_minor,
+    record_error_event,
+    record_runtime_event,
+    reset_telemetry,
+    telemetry_buffer_snapshot,
+    tool_catalog_hash,
+)
 from tests.conftest import call_tool_text
 
 HTTP_HEADERS = {
@@ -77,6 +85,62 @@ def test_telemetry_config_enables_standard_otlp_env_and_cli_flag(
     _apply_cli_env(telemetry=True)
 
     assert get_config().telemetry_enabled is True
+
+
+def test_telemetry_disabled_does_not_buffer_runtime_events(sample_project: Path) -> None:
+    del sample_project
+    configure_telemetry(KiCadMCPConfig(telemetry_enabled=False))
+
+    record_runtime_event(
+        "mcp.tool_call",
+        {
+            "tool": "kicad_set_project",
+            "project": "/home/alice/private/project",
+        },
+    )
+
+    assert telemetry_buffer_snapshot() == []
+
+
+def test_error_telemetry_buffer_is_bounded_and_redacted(sample_project: Path) -> None:
+    private_file = sample_project / "private" / "board.kicad_pcb"
+    cfg = KiCadMCPConfig(telemetry_enabled=True, telemetry_buffer_max_events=1)
+    configure_telemetry(
+        cfg,
+        tracer_provider=TracerProvider(),
+        meter_provider=MeterProvider(),
+    )
+
+    first_error = RuntimeError(
+        f"failed to read {private_file} token=secret123 https://private.example.test"
+    )
+    second_error = ValueError(
+        f"failed to parse {private_file} api_key=secret456 private.example.test"
+    )
+    record_error_event("mcp.tool_error", first_error, {"tool": "first"})
+    record_error_event("mcp.tool_error", second_error, {"tool": "second"})
+
+    buffered = telemetry_buffer_snapshot()
+    payload_text = str(buffered)
+
+    assert len(buffered) == 1
+    assert buffered[0]["attributes"]["tool"] == "second"
+    assert "[path]" in payload_text
+    assert "[redacted]" in payload_text
+    assert "[host]" in payload_text
+    assert str(sample_project) not in payload_text
+    assert "secret456" not in payload_text
+    assert "private.example.test" not in payload_text
+
+
+def test_runtime_context_helpers_are_stable_and_anonymous(sample_project: Path) -> None:
+    del sample_project
+    assert tool_catalog_hash(["kicad_set_project", "pcb_get_summary"]) == tool_catalog_hash(
+        ["pcb_get_summary", "kicad_set_project"]
+    )
+    assert len(tool_catalog_hash(["kicad_set_project", "pcb_get_summary"])) == 16
+    assert kicad_cli_major_minor("KiCad CLI 10.0.3-0") == "10.0"
+    assert kicad_cli_major_minor("not a version") is None
 
 
 @pytest.mark.anyio

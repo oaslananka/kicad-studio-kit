@@ -20,5 +20,6 @@ overrides:
   diff: 8.0.4
   glob: 13.0.6
   mocha>serialize-javascript: 7.0.5
+  qs: 6.15.2
   test-exclude: 8.0.0
   uuid: 14.0.0

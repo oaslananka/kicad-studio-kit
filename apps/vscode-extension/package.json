@@ -1536,6 +1536,18 @@
           "type": "boolean",
           "default": false,
           "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.telemetry.enabled.description%"
+        },
+        "kicadstudio.telemetry.endpoint": {
+          "type": "string",
+          "default": "",
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.telemetry.endpoint.description%"
+        },
+        "kicadstudio.telemetry.bufferLimit": {
+          "type": "number",
+          "default": 100,
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.telemetry.bufferLimit.description%"
         }
       }
     },

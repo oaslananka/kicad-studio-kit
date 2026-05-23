@@ -28,19 +28,19 @@ a stack trace.
 Existing `KICAD_MCP_*` variables continue to work. The server also accepts these
 interop aliases for launchers and editors:
 
-| Alias | Internal field |
-|---|---|
-| `KICAD_API_TOKEN` | KiCad IPC token |
-| `KICAD_API_SOCKET` | KiCad IPC socket path |
-| `KICAD_CLI_PATH` | `kicad-cli` path |
-| `KICAD_MCP_TIMEOUT_MS` | IPC timeout in milliseconds |
-| `KICAD_MCP_RETRIES` | IPC connection retries |
-| `KICAD_MCP_HEADLESS` | Headless preference |
-| `KICAD_MCP_WORKSPACE_ROOT` | Workspace root for path safety |
+| Alias                         | Internal field                        |
+| ----------------------------- | ------------------------------------- |
+| `KICAD_API_TOKEN`             | KiCad IPC token                       |
+| `KICAD_API_SOCKET`            | KiCad IPC socket path                 |
+| `KICAD_CLI_PATH`              | `kicad-cli` path                      |
+| `KICAD_MCP_TIMEOUT_MS`        | IPC timeout in milliseconds           |
+| `KICAD_MCP_RETRIES`           | IPC connection retries                |
+| `KICAD_MCP_HEADLESS`          | Headless preference                   |
+| `KICAD_MCP_WORKSPACE_ROOT`    | Workspace root for path safety        |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | OpenTelemetry OTLP collector endpoint |
-| `OTEL_EXPORTER_OTLP_HEADERS` | OpenTelemetry OTLP exporter headers |
-| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` or `grpc` |
-| `OTEL_SERVICE_NAME` | OpenTelemetry service name |
+| `OTEL_EXPORTER_OTLP_HEADERS`  | OpenTelemetry OTLP exporter headers   |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` or `grpc`             |
+| `OTEL_SERVICE_NAME`           | OpenTelemetry service name            |
 
 Diagnostics only report whether tokens are configured. Token values are never
 printed.
@@ -107,16 +107,22 @@ Set `OTEL_EXPORTER_OTLP_HEADERS` for collector authentication and
 same opt-in switch is available as `KICAD_MCP_TELEMETRY_ENABLED=true` for
 launchers that cannot pass CLI flags.
 
+If telemetry is enabled without an explicit endpoint, the server uses local
+collector defaults: `http://127.0.0.1:4318` for OTLP/HTTP and
+`http://127.0.0.1:4317` for OTLP/gRPC. No third-party endpoint is enabled by
+default. Set `KICAD_MCP_TELEMETRY_BUFFER_MAX_EVENTS` to control the bounded
+redacted event buffer; the default is `100`, and `0` disables the buffer.
+
 The server emits spans for MCP request handling, MCP tool calls, KiCad CLI
 subprocess execution, and file-backed PCB parsing. It also emits these metrics:
 
-| Metric | Labels |
-|---|---|
-| `mcp_tool_invocations_total` | `tool`, `status` |
-| `mcp_tool_duration_seconds` | `tool` |
-| `mcp_session_active` | none |
+| Metric                        | Labels              |
+| ----------------------------- | ------------------- |
+| `mcp_tool_invocations_total`  | `tool`, `status`    |
+| `mcp_tool_duration_seconds`   | `tool`              |
+| `mcp_session_active`          | none                |
 | `kicad_cli_invocations_total` | `command`, `status` |
-| `kicad_cli_duration_seconds` | `command` |
+| `kicad_cli_duration_seconds`  | `command`           |
 
 Telemetry attributes intentionally avoid project paths, board contents,
 schematic contents, CLI output, request arguments, and collector headers.

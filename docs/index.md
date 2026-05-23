@@ -27,4 +27,5 @@ Core maintainer runbooks:
 - [Reusable workflow governance](reusable-workflows.md)
 - [Publishing setup](publishing.md)
 - [Security model](security.md)
+- [Telemetry and error reporting](telemetry.md)
 - [Support matrix](support-matrix.md)

@@ -219,7 +219,9 @@ export const SETTINGS = {
   viewerSyncTheme: 'kicadstudio.viewer.syncThemeWithVscode',
   viewerEnableLayerPanel: 'kicadstudio.viewer.enableLayerPanel',
   viewerEnableSnapshotExport: 'kicadstudio.viewer.enableSnapshotExport',
-  telemetryEnabled: 'kicadstudio.telemetry.enabled'
+  telemetryEnabled: 'kicadstudio.telemetry.enabled',
+  telemetryEndpoint: 'kicadstudio.telemetry.endpoint',
+  telemetryBufferLimit: 'kicadstudio.telemetry.bufferLimit'
 } as const;
 export const DEFAULT_BOM_FIELDS = [
   'Reference',
