@@ -142,5 +142,6 @@ Status key:
 Primary sources checked for this policy:
 
 - W3C WCAG 2.1 Recommendation: https://www.w3.org/TR/WCAG21/
-- VS Code Webviews UX guidance: https://code.visualstudio.com/api/ux-guidelines/webviews
+- VS Code Webviews UX guidance from the official VS Code API docs, checked
+  during implementation.
 - Deque axe-core README and API documentation: https://github.com/dequelabs/axe-core
