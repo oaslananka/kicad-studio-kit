@@ -28,6 +28,10 @@ function hasPackageRule(rules, predicate) {
   return rules.some((rule) => predicate(rule));
 }
 
+function hasExactLine(text, expectedLine) {
+  return text.split(/\r?\n/).includes(expectedLine);
+}
+
 function validateRenovate() {
   const renovate = readJson("renovate.json");
   const rules = renovate.packageRules ?? [];
@@ -163,7 +167,7 @@ function validateCanonicalPolicy() {
   const rootPackage = readJson("package.json");
 
   requireCondition(
-    canonical.includes("https://github.com/oaslananka/kicad-studio-kit"),
+    hasExactLine(canonical, "https://github.com/oaslananka/kicad-studio-kit"),
     "CANONICAL.md must name the canonical repository URL",
   );
   requireCondition(
@@ -210,8 +214,9 @@ function validateRepoHealth() {
   requireCondition(
     health.includes("classification: product-monorepo") &&
       health.includes("support_tier: tier-1") &&
-      health.includes(
-        "canonical_url: https://github.com/oaslananka/kicad-studio-kit",
+      hasExactLine(
+        health,
+        "  canonical_url: https://github.com/oaslananka/kicad-studio-kit",
       ),
     ".repo-health.yaml must declare classification, support tier, and canonical URL",
   );
