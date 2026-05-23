@@ -38,13 +38,23 @@ function fail(message) {
 }
 
 function slugify(text) {
-  return text
+  const normalized = text
     .trim()
     .toLowerCase()
-    .replace(/`([^`]+)`/gu, "$1")
-    .replace(/<[^>]+>/gu, "")
-    .replace(/[^\p{Letter}\p{Number}\s-]/gu, "")
-    .replace(/\s+/gu, "-");
+    .replace(/`([^`]+)`/gu, "$1");
+  return Array.from(normalized)
+    .map((character) => {
+      if (/[\p{Letter}\p{Number}]/u.test(character)) {
+        return character;
+      }
+      if (/[\s-]/u.test(character)) {
+        return "-";
+      }
+      return "";
+    })
+    .join("")
+    .replace(/-+/gu, "-")
+    .replace(/^-|-$/gu, "");
 }
 
 function anchorsFor(markdown) {

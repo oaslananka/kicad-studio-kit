@@ -12,12 +12,12 @@ Refresh with `corepack pnpm run docs:generate`.
 | `kicadstudio.qualityGate` | Quality Gates | `kicadstudio-sidebar` | tree | `kicadstudio.hasProject` |
 | `kicadstudio.bomView` | Bill of Materials | `kicadstudio-sidebar` | webview | `kicadstudio.hasProject` |
 | `kicadstudio.netlistView` | Netlist | `kicadstudio-sidebar` | webview | `kicadstudio.hasProject` |
-| `kicadstudio.variants` | Variants | `kicadstudio-sidebar` | tree | `kicadstudio.hasProject && kicadstudio.kicad10Plus` |
+| `kicadstudio.variants` | Variants | `kicadstudio-sidebar` | tree | `kicadstudio.hasProject &amp;&amp; kicadstudio.kicad10Plus` |
 | `kicadstudio.library` | Library | `kicadstudio-sidebar` | tree |  |
 | `kicadstudio.drcRules` | DRC Rules | `kicadstudio-sidebar` | tree | `kicadstudio.hasProject` |
 | `kicadstudio.fixQueue` | AI Fix Queue | `kicadstudio-sidebar` | tree | `kicadstudio.mcpConnected` |
 | `kicadstudio.componentSearch` | Component Search | `kicadstudio-sidebar` | tree |  |
-| `kicadstudio.mcpTools` | MCP & Tools | `kicadstudio-sidebar` | tree |  |
+| `kicadstudio.mcpTools` | MCP &amp; Tools | `kicadstudio-sidebar` | tree |  |
 
 ## Custom Editors
 
