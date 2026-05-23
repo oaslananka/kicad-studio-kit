@@ -48,7 +48,7 @@
     "hooks:pre-commit": "uv run --all-extras python scripts/hook_pre_commit.py && corepack pnpm run metadata:check",
     "hooks:pre-push": "corepack pnpm run metadata:check && corepack pnpm run release:check && corepack pnpm run compat:check && corepack pnpm run format:check && corepack pnpm run lint && corepack pnpm run typecheck && corepack pnpm run test:unit && corepack pnpm run workflows:lint",
     "hooks:security": "corepack pnpm run security",
-    "compat:check": "uv run --all-extras python scripts/check_no_pcbnew.py && uv run --all-extras python scripts/check_compatibility_matrix.py",
+    "compat:check": "uv run --all-extras python scripts/check_no_pcbnew.py && uv run --all-extras python scripts/check_compatibility_matrix.py && uv run --all-extras python scripts/runtime_policy.py check",
     "release:dry-run": "corepack pnpm run metadata:check && corepack pnpm run release:check"
   },
   "devDependencies": {

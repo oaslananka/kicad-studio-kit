@@ -22,6 +22,62 @@
 | pnpm         | 11.x       | `>=11.0.0 <12`        | older      | root package metadata                    |
 | Python       | 3.12       | 3.12, 3.13            | older      | `pyproject.toml` and CI                  |
 
+## Minimum-Bump Policy
+
+Runtime support boundaries are intentional product decisions, not incidental package metadata.
+Every boundary must be changed in `compatibility.yaml`, the relevant package manifest, this
+document, and the nearest release note or product changelog.
+
+VS Code:
+
+- `apps/vscode-extension/package.json` `engines.vscode` is the install-time floor.
+- The floor should be no more than one VS Code minor behind current stable.
+- `@types/vscode`, extension API usage, and canary lanes stay aligned with that floor.
+- Lowering the floor is blocked in CI unless `apps/vscode-extension/CHANGELOG.md` changes in
+  the same PR with compatibility context.
+
+Python:
+
+- `packages/mcp-server/pyproject.toml` `requires-python` is the MCP server install-time floor.
+- The supported Python window is two minor versions wide for the current stable product line.
+- The current 1.0.x line remains pinned to Python 3.12 and 3.13 until Python 3.14 validation is
+  complete; the drift workflow opens a tracking issue when the official bugfix window moves.
+- Lowering the floor is blocked in CI unless `packages/mcp-server/CHANGELOG.md` changes in the
+  same PR with compatibility context.
+
+KiCad:
+
+- `compatibility.yaml` declares the primary KiCad line, supported previous line, deprecated line,
+  and latest verified patch release.
+- The primary KiCad line should match the official current stable line once the canary lane is
+  green.
+- Lowering the primary line or widening support back to an older line requires both product
+  changelogs because it changes extension UX and MCP server behavior.
+
+Authoritative drift sources are declared in `compatibility.yaml` under `runtimePolicy.sources`:
+
+- VS Code stable and insiders release feeds from `update.code.visualstudio.com`.
+- Python release lifecycle metadata from `peps.python.org/api/python-releases.json`.
+- KiCad current release text from `kicad.org/download/linux`.
+
+## Automated Drift Detection
+
+Runtime drift is enforced by `packages/mcp-server/scripts/runtime_policy.py` and
+`.github/workflows/runtime-drift.yml`.
+
+Pull requests run local policy checks that:
+
+- verify `engines.vscode` is parseable and matches `compatibility.yaml`;
+- verify `requires-python` is parseable and matches `compatibility.yaml`;
+- verify the Python support window starts at the package lower bound;
+- block lowered VS Code, Python, or KiCad support boundaries without product changelog evidence;
+- require this document to change whenever runtime support metadata changes.
+
+The scheduled drift workflow fetches the authoritative sources above. When current stable versions
+move beyond policy, it opens or updates a GitHub compatibility issue named
+`Runtime support policy drift`. The issue is the tracking surface for raising `engines.vscode`,
+Python support, or KiCad primary support after canary validation passes.
+
 ## Release Gate
 
 Run the compatibility gate before any release PR is merged:
@@ -41,6 +97,7 @@ The gate fails when:
 - the extension MCP compatibility constants drift from the matrix.
 - the MCP server well-known metadata drifts from the matrix.
 - a required MCP tool listed in the matrix is missing from the generated tool catalog.
+- runtime minimums are malformed, out of sync, or lowered without changelog evidence.
 
 ## Support Drop Process
 

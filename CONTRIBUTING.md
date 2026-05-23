@@ -9,6 +9,7 @@ corepack pnpm run check:forbidden-refs
 corepack pnpm run check:boundaries
 corepack pnpm run check:version
 corepack pnpm run check:compatibility
+corepack pnpm run check:runtime-policy
 ```
 
 For extension-only work:
@@ -38,6 +39,11 @@ corepack pnpm run test:fixtures
 ```
 
 Report KiCad, VS Code, MCP protocol, dependency, or release-tool compatibility failures with the compatibility regression issue form. Include old and new versions, the failing command or workflow, and any canary run link.
+
+Runtime support changes must also follow [docs/support-matrix.md](docs/support-matrix.md).
+Changing `engines.vscode`, Python `requires-python`, or the primary KiCad support line requires
+the matching `compatibility.yaml` update, this support matrix update, and product changelog context
+when a lower runtime boundary is introduced.
 
 ## Issue order
 

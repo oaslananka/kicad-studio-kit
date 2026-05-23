@@ -1,10 +1,10 @@
 schemaVersion: 1
-updated: "2026-05-20"
+updated: "2026-05-23"
 source: "https://github.com/oaslananka/kicad-studio-kit"
 
 kicad:
   primary: "10.0.x"
-  latestVerified: "10.0.1"
+  latestVerified: "10.0.3"
   supported:
     - range: "10.0.x"
       state: "primary"
@@ -42,6 +42,25 @@ python:
   supported:
     - "3.12"
     - "3.13"
+
+runtimePolicy:
+  reviewed: "2026-05-23"
+  sources:
+    vscodeStable: "https://update.code.visualstudio.com/api/releases/stable"
+    vscodeInsiders: "https://update.code.visualstudio.com/api/update/linux-x64/insider/latest"
+    pythonReleases: "https://peps.python.org/api/python-releases.json"
+    kicadDownloads: "https://www.kicad.org/download/linux/"
+  vscode:
+    maxMinimumMinorLag: 1
+    loweringRequiresChangelog: "apps/vscode-extension/CHANGELOG.md"
+  python:
+    supportedMinorWindow: 2
+    loweringRequiresChangelog: "packages/mcp-server/CHANGELOG.md"
+  kicad:
+    primaryMajorLag: 0
+    loweringRequiresChangelogs:
+      - "apps/vscode-extension/CHANGELOG.md"
+      - "packages/mcp-server/CHANGELOG.md"
 
 mcp:
   protocolVersion: "2025-11-25"

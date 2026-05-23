@@ -54,11 +54,24 @@ const patterns = rawPatterns.map((pattern) => [
   pattern.replaceAll("\\", ""),
   new RegExp(pattern, "i"),
 ]);
+const visualStudioHostPattern =
+  /(?:^|[^A-Za-z0-9.-])([A-Za-z0-9.-]*visualstudio\.com)(?=[^A-Za-z0-9.-]|$)/gi;
+
+function isOfficialVscodeUpdateHostHit(line) {
+  const hosts = [...line.matchAll(visualStudioHostPattern)].map((match) =>
+    match[1].toLowerCase(),
+  );
+  return (
+    hosts.length > 0 &&
+    hosts.every((host) => host === "update.code.visualstudio.com")
+  );
+}
 
 function isAllowedHit(label, line) {
   return (
-    label === "(?<![@.])oaslananka/kicad-mcp-pro" &&
-    line.includes("ghcr.io/oaslananka/kicad-mcp-pro")
+    (label === "(?<![@.])oaslananka/kicad-mcp-pro" &&
+      line.includes("ghcr.io/oaslananka/kicad-mcp-pro")) ||
+    (label === "visualstudio.com" && isOfficialVscodeUpdateHostHit(line))
   );
 }
 
