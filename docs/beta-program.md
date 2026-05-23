@@ -118,7 +118,7 @@ PRs that came from beta feedback.
 ## Recognition
 
 Beta testers who opt into public recognition are listed in
-[CONTRIBUTORS.md](../CONTRIBUTORS.md) under "Beta tester recognition". The list
+[CONTRIBUTORS.md](contributors.md) under "Beta tester recognition". The list
 records names or handles only. Do not record email addresses, private project
 names, company names, or non-public design details.
 

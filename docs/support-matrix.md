@@ -2,6 +2,51 @@
 
 `compatibility.yaml` is the source of truth for KiCad Studio Kit compatibility metadata. Release dry-runs and CI validate that this matrix stays synchronized with package metadata, extension compatibility code, MCP discovery metadata, and the generated MCP tool catalog.
 
+## Generated Compatibility Summary
+
+<!-- docs-site:compatibility:start -->
+
+Machine-maintained from `compatibility.yaml`. Refresh with
+`corepack pnpm run docs:generate`.
+
+### Runtime Baseline
+
+| Runtime | Policy |
+| --- | --- |
+| KiCad primary | `10.0.x` |
+| KiCad latest verified | `10.0.3` |
+| VS Code minimum | `1.99.0` |
+| Node | `>=24.11.0 <25` |
+| pnpm | `>=11.0.0 <12` |
+| Python | `>=3.12` |
+| MCP protocol | `2025-11-25` |
+
+### KiCad Support
+
+| Range | State | CI | Notes |
+| --- | --- | --- | --- |
+| 10.0.x | primary | required | Primary optimized KiCad CLI and file-format target. |
+| 9.x | supported | scheduled | Core PCB, schematic, validation, and export workflows remain supported. |
+| 8.x | deprecated | manual | File-level read and migration support only; removal requires a release note. |
+
+### Product Versions
+
+| Product | Version | Manifest | Compatibility range |
+| --- | --- | --- | --- |
+| kicad-studio | 1.0.0 | apps/vscode-extension/package.json | &gt;=1.0.0 &lt;2.0.0 |
+| kicad-mcp-pro | 1.0.0 | packages/mcp-server/pyproject.toml | &gt;=1.0.0 &lt;2.0.0 |
+
+### Release Gate Inputs
+
+- compatibility.yaml validates
+- Product versions match release manifests
+- Extension MCP compatibility range matches embedded compatibility metadata
+- MCP protocol and tool schema metadata match server discovery metadata
+- Required MCP tools exist in the generated tool reference
+- KiCad, VS Code, Node, pnpm, and Python support ranges match package metadata
+
+<!-- docs-site:compatibility:end -->
+
 ## Lifecycle States
 
 | State      | Meaning                                                               |

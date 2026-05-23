@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://oaslananka.github.io/kicad-studio-kit/sitemap.xml

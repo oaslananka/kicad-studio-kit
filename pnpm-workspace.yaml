@@ -4,15 +4,16 @@ packages:
   - "packages/mcp-npm"
 
 allowBuilds:
-  '@go-task/cli': true
-  '@vscode/vsce-sign': true
+  "@go-task/cli": true
+  "@vscode/vsce-sign": true
+  esbuild: true
   unrs-resolver: true
 
 ignoredOptionalDependencies:
   - keytar
 
 overrides:
-  '@vscode/vsce>keytar': '-'
+  "@vscode/vsce>keytar": "-"
   encoding-sniffer: 1.0.2
   exceljs>archiver: 8.0.0
   exceljs>fast-csv: 5.0.7
