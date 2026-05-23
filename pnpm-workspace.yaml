@@ -19,8 +19,10 @@ overrides:
   exceljs>fast-csv: 5.0.7
   exceljs>unzipper: 0.12.3
   diff: 8.0.4
+  esbuild: 0.25.0
   glob: 13.0.6
   mocha>serialize-javascript: 7.0.5
   qs: 6.15.2
   test-exclude: 8.0.0
   uuid: 14.0.0
+  vite: 6.4.2
