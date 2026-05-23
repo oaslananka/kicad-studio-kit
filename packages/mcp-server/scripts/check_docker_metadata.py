@@ -59,18 +59,28 @@ def main() -> int:
             errors.append(f"{path} must expose 3334")
         if 'CMD ["--transport", "streamable-http"]' not in content:
             errors.append(f"{path} must default to streamable HTTP")
-        if "ARG DEBIAN_FRONTEND=noninteractive" not in content:
-            errors.append(f"{path} must make apt operations non-interactive")
         if "--disable-pip-version-check" not in content:
             errors.append(f"{path} must disable pip version notices during builds")
         if "--root-user-action=ignore" not in content:
             errors.append(f"{path} must silence intentional root pip install warnings")
 
     dockerfile = dockerfiles["Dockerfile"]
-    if "ARG KICAD_CLI_APT_PACKAGE" not in dockerfile:
-        errors.append("Dockerfile must support build-time KiCad CLI package installation")
+    if "python:3.12.13-alpine3.22@sha256:" not in dockerfile:
+        errors.append("Dockerfile must use the Trivy-clean pinned Python Alpine base")
+    if "ARG KICAD_CLI_APK_PACKAGE" not in dockerfile:
+        errors.append("Dockerfile must support build-time KiCad CLI package installation via APK")
+    if "apk upgrade --no-cache" not in dockerfile:
+        errors.append("Dockerfile must upgrade Alpine packages without persisting apk cache")
+    if 'apk add --no-cache "${KICAD_CLI_APK_PACKAGE}"' not in dockerfile:
+        errors.append("Dockerfile must install the optional KiCad CLI APK package without cache")
+    if "addgroup -S kicadmcp" not in dockerfile or "adduser -S -G kicadmcp" not in dockerfile:
+        errors.append("Dockerfile must create the non-root runtime user with Alpine tools")
+    if "apt-get" in dockerfile or "DEBIAN_FRONTEND" in dockerfile:
+        errors.append("Dockerfile must avoid Debian apt/debconf paths in the Alpine image")
 
     kicad10 = dockerfiles["Dockerfile.kicad10"]
+    if "ARG DEBIAN_FRONTEND=noninteractive" not in kicad10:
+        errors.append("Dockerfile.kicad10 must make apt operations non-interactive")
     if "pip install --no-cache-dir uv" in kicad10:
         errors.append("Dockerfile.kicad10 must pin UV_VERSION instead of installing uv unpinned")
     if "ENV KICAD_MCP_HOST=127.0.0.1" not in kicad10:

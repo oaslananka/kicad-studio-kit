@@ -1,4 +1,4 @@
-FROM python:3.12-slim@sha256:6026d9374020066a85690cabdb66f5d06a2dd606e756c7082fccdaaaf6d048dd AS builder
+FROM python:3.12.13-alpine3.22@sha256:a190708a2dec1bd18b1decb539f8e8f5407abaa9bf39cacda583f7f8c11db322 AS builder
 
 ARG UV_VERSION=0.11.12
 ENV UV_NO_CACHE=1
@@ -13,12 +13,11 @@ RUN uv build --wheel --out-dir /dist \
     --format requirements.txt \
     --output-file /dist/requirements.txt
 
-FROM python:3.12-slim@sha256:6026d9374020066a85690cabdb66f5d06a2dd606e756c7082fccdaaaf6d048dd AS runtime
+FROM python:3.12.13-alpine3.22@sha256:a190708a2dec1bd18b1decb539f8e8f5407abaa9bf39cacda583f7f8c11db322 AS runtime
 
 ARG KICAD_MCP_VERSION=0.0.0
 ARG VCS_REF=unknown
-ARG KICAD_CLI_APT_PACKAGE=
-ARG DEBIAN_FRONTEND=noninteractive
+ARG KICAD_CLI_APK_PACKAGE=
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
   PYTHONUNBUFFERED=1 \
@@ -34,12 +33,10 @@ LABEL io.modelcontextprotocol.server.name="io.github.oaslananka/kicad-mcp-pro" \
   org.opencontainers.image.revision="${VCS_REF}" \
   org.opencontainers.image.licenses="MIT"
 
-RUN apt-get update \
-  && apt-get upgrade -y --no-install-recommends \
-  && if [ -n "${KICAD_CLI_APT_PACKAGE}" ]; then apt-get install -y --no-install-recommends "${KICAD_CLI_APT_PACKAGE}"; fi \
-  && rm -rf /var/lib/apt/lists/* \
-  && groupadd --system kicadmcp \
-  && useradd --system --gid kicadmcp --home-dir /app --shell /usr/sbin/nologin kicadmcp
+RUN apk upgrade --no-cache \
+  && if [ -n "${KICAD_CLI_APK_PACKAGE}" ]; then apk add --no-cache "${KICAD_CLI_APK_PACKAGE}"; fi \
+  && addgroup -S kicadmcp \
+  && adduser -S -G kicadmcp -h /app -s /sbin/nologin kicadmcp
 
 COPY --from=builder /dist/ /tmp/dist/
 COPY docker-entrypoint.sh /usr/local/bin/kicad-mcp-pro-entrypoint

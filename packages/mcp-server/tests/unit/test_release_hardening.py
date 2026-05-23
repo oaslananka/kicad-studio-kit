@@ -695,7 +695,6 @@ def test_docker_metadata_contains_mcp_oci_label_and_release_image_contract() -> 
         assert "@sha256:" in content
         assert "EXPOSE 3334" in content
         assert 'CMD ["--transport", "streamable-http"]' in content
-        assert "ARG DEBIAN_FRONTEND=noninteractive" in content
         assert "--disable-pip-version-check" in content
         assert "--root-user-action=ignore" in content
 
@@ -703,7 +702,15 @@ def test_docker_metadata_contains_mcp_oci_label_and_release_image_contract() -> 
     assert "pip install --no-cache-dir uv" not in kicad_dockerfile
     assert f"UV_VERSION={uv_version}" in dockerfile
     assert f"UV_VERSION={uv_version}" in kicad_dockerfile
-    assert "ARG KICAD_CLI_APT_PACKAGE" in dockerfile
+    assert "python:3.12.13-alpine3.22@sha256:" in dockerfile
+    assert "ARG KICAD_CLI_APK_PACKAGE" in dockerfile
+    assert "apk upgrade --no-cache" in dockerfile
+    assert 'apk add --no-cache "${KICAD_CLI_APK_PACKAGE}"' in dockerfile
+    assert "addgroup -S kicadmcp" in dockerfile
+    assert "adduser -S -G kicadmcp" in dockerfile
+    assert "apt-get" not in dockerfile
+    assert "DEBIAN_FRONTEND" not in dockerfile
+    assert "ARG DEBIAN_FRONTEND=noninteractive" in kicad_dockerfile
     assert "ENV KICAD_MCP_HOST=127.0.0.1" in kicad_dockerfile
     assert "ghcr.io/freerouting/freerouting:2.1.0@sha256:" in compose
     assert ":latest" not in compose

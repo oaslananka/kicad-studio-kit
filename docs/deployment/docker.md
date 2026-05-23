@@ -72,10 +72,10 @@ Set `KICAD_PROJECT_DIR` to mount a project other than the bundled LED example.
 
 ## KiCad CLI Licensing
 
-The published image keeps KiCad external. Local derivative images can install a
-distribution KiCad package with `--build-arg KICAD_CLI_APT_PACKAGE=kicad`, or
-can use `packages/mcp-server/Dockerfile.kicad10` with an official KiCad 10
-AppImage URL.
+The published image keeps KiCad external. Local derivative images can install
+the Alpine KiCad package with `--build-arg KICAD_CLI_APK_PACKAGE=kicad`, or can
+use `packages/mcp-server/Dockerfile.kicad10` with an official KiCad 10 AppImage
+URL.
 
 Redistributing an image that bundles KiCad CLI adds KiCad's upstream license
 terms to the image. Review the official

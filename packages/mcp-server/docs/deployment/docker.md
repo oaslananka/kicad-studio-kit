@@ -78,12 +78,12 @@ Override `KICAD_PROJECT_DIR` to point at a local KiCad project.
 
 ## KiCad CLI Images
 
-The default published image keeps KiCad external. To install a distribution
-package during a local build, pass an apt package name:
+The default published image keeps KiCad external. To install the Alpine
+distribution package during a local build, pass its APK package name:
 
 ```bash
 docker build \
-  --build-arg KICAD_CLI_APT_PACKAGE=kicad \
+  --build-arg KICAD_CLI_APK_PACKAGE=kicad \
   -t kicad-mcp-pro:kicad-cli .
 ```
 
