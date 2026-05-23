@@ -61,6 +61,10 @@ PyPI:
 - repository: `kicad-studio-kit`
 - workflow: `publish-python.yml`
 - environment: `pypi`
+- package: `kicad-mcp-pro`
+- authentication: PyPI Trusted Publishing through GitHub OIDC
+- provenance: `pypa/gh-action-pypi-publish` uploads PyPI attestations with
+  `attestations: true`
 
 TestPyPI:
 
@@ -68,6 +72,10 @@ TestPyPI:
 - repository: `kicad-studio-kit`
 - workflow: `publish-python.yml`
 - environment: `testpypi`
+- package: `kicad-mcp-pro`
+- authentication: TestPyPI Trusted Publishing through GitHub OIDC
+- provenance: `pypa/gh-action-pypi-publish` uploads PyPI attestations with
+  `attestations: true`
 
 npm:
 

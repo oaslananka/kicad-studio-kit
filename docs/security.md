@@ -13,6 +13,8 @@ Pull requests and scheduled workflows keep the supply chain surface visible:
 - `CodeQL` analyzes TypeScript/JavaScript and Python.
 - `Gitleaks` fails on committed secret material with redacted output.
 - `Scorecard` publishes repository health findings through code scanning.
+- PyPI and TestPyPI publish jobs use Trusted Publishing through GitHub OIDC and
+  upload registry-native attestations through `pypa/gh-action-pypi-publish`.
 - Release publish workflows validate package contents, emit SHA-256 checksum
   evidence, and create GitHub artifact attestations where package registries do
   not already provide provenance.

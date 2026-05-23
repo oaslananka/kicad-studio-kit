@@ -63,7 +63,9 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
     needs: build
     runs-on: ubuntu-24.04
-    environment: testpypi
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/kicad-mcp-pro
     permissions:
       contents: read
       id-token: write
@@ -76,12 +78,15 @@ jobs:
         with:
           packages-dir: dist
           repository-url: https://test.pypi.org/legacy/
+          attestations: true
 
   publish-pypi:
     if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi')
     needs: build
     runs-on: ubuntu-24.04
-    environment: pypi
+    environment:
+      name: pypi
+      url: https://pypi.org/p/kicad-mcp-pro
     permissions:
       contents: read
       id-token: write
@@ -93,3 +98,4 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b
         with:
           packages-dir: dist
+          attestations: true

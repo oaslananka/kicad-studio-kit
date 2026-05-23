@@ -24,4 +24,7 @@ KiCad Studio Kit is the canonical monorepo for the KiCad Studio VS Code extensio
 Core maintainer runbooks:
 
 - [Dependency lifecycle](dependency-lifecycle.md)
+- [Reusable workflow governance](reusable-workflows.md)
+- [Publishing setup](publishing.md)
+- [Security model](security.md)
 - [Support matrix](support-matrix.md)

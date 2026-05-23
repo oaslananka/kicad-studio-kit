@@ -1,0 +1,53 @@
+schema_version: 1
+repository:
+  owner: oaslananka
+  name: kicad-studio-kit
+  canonical_url: https://github.com/oaslananka/kicad-studio-kit
+  classification: product-monorepo
+  support_tier: tier-1
+  primary_branch: main
+products:
+  - id: kicad-studio
+    path: apps/vscode-extension
+    package: oaslananka.kicadstudio
+    support_tier: tier-1
+  - id: kicad-mcp-pro
+    path: packages/mcp-server
+    package: kicad-mcp-pro
+    support_tier: tier-1
+  - id: kicad-mcp-pro-npm
+    path: packages/mcp-npm
+    package: "@oaslananka/kicad-mcp-pro"
+    support_tier: tier-1
+required_workflows:
+  - ci.yml
+  - security.yml
+  - codeql.yml
+  - gitleaks.yml
+  - scorecard.yml
+  - docs.yml
+  - release-please.yml
+  - publish-extension.yml
+  - publish-python.yml
+  - publish-npm.yml
+  - publish-mcp-registry.yml
+governance:
+  renovate:
+    config: renovate.json
+    dependency_dashboard: true
+    major_updates_require_dashboard_approval: true
+    grouped_patch_minor_surfaces:
+      - root-tooling
+      - vscode-extension
+      - mcp-server
+      - mcp-npm
+  publishing:
+    pypi_trusted_publishing: true
+    pypi_workflow: publish-python.yml
+    pypi_attestations: true
+    pypi_long_lived_tokens_allowed: false
+  canonical_policy:
+    document: CANONICAL.md
+  reusable_workflows:
+    status: gap-documented
+    document: docs/reusable-workflows.md

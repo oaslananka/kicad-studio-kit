@@ -19,7 +19,7 @@
   "enabledManagers": ["npm", "github-actions", "dockerfile", "pep621"],
   "rangeStrategy": "pin",
   "separateMajorMinor": true,
-  "separateMinorPatch": true,
+  "separateMinorPatch": false,
   "prCreation": "not-pending",
   "packageRules": [
     {
@@ -44,25 +44,28 @@
       "prPriority": 2
     },
     {
-      "description": "Keep root workspace orchestration updates separate from product runtime updates.",
+      "description": "Group root workspace orchestration patch and minor updates separately from product runtime updates.",
       "matchManagers": ["npm"],
-      "matchFileNames": ["package.json"],
+      "matchFileNames": ["package.json", "pnpm-workspace.yaml"],
+      "matchUpdateTypes": ["minor", "patch"],
       "groupName": "root workspace tooling",
       "semanticCommitScope": "root-tooling",
       "addLabels": ["product:repo", "ci"]
     },
     {
-      "description": "Keep extension package updates scoped to the VS Code extension workspace.",
+      "description": "Group extension package patch and minor updates inside the VS Code extension workspace.",
       "matchManagers": ["npm"],
       "matchFileNames": ["apps/vscode-extension/package.json"],
+      "matchUpdateTypes": ["minor", "patch"],
       "groupName": "vscode extension npm dependencies",
       "semanticCommitScope": "vscode-extension",
       "addLabels": ["product:vscode-extension"]
     },
     {
-      "description": "Keep npm launcher wrapper updates separate from extension dependencies.",
+      "description": "Group npm launcher wrapper patch and minor updates separately from extension dependencies.",
       "matchManagers": ["npm"],
       "matchFileNames": ["packages/mcp-npm/package.json"],
+      "matchUpdateTypes": ["minor", "patch"],
       "groupName": "mcp npm wrapper dependencies",
       "semanticCommitScope": "mcp-npm",
       "addLabels": ["product:mcp-npm"]
@@ -100,8 +103,10 @@
       "prPriority": 1
     },
     {
-      "description": "Keep Python project updates scoped to the MCP server package.",
+      "description": "Group Python project patch and minor updates inside the MCP server package.",
       "matchManagers": ["pep621"],
+      "matchFileNames": ["packages/mcp-server/pyproject.toml"],
+      "matchUpdateTypes": ["minor", "patch"],
       "groupName": "python mcp server dependencies",
       "semanticCommitScope": "mcp-server",
       "addLabels": ["product:mcp-server"]
