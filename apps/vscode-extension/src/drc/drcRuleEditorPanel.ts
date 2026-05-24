@@ -126,6 +126,10 @@ export function buildDrcRuleEditorHtml(): string {
     .actions { display: flex; gap: 8px; }
     button { color: var(--vscode-button-foreground); background: var(--vscode-button-background); border: 0; padding: 8px 12px; font: inherit; cursor: pointer; }
     button.secondary { color: var(--vscode-button-secondaryForeground); background: var(--vscode-button-secondaryBackground); }
+    :where(button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+      outline: 2px solid var(--vscode-focusBorder, #007acc);
+      outline-offset: 2px;
+    }
   </style>
 </head>
 <body>

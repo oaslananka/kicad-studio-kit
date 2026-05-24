@@ -74,6 +74,10 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
     select:focus, input:focus, textarea:focus {
       border-color: var(--accent);
     }
+    :where(button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
     header {
       display: grid;
       grid-template-columns: minmax(140px, 1fr) auto;
@@ -284,9 +288,31 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       vertical-align: text-bottom;
       animation: blink 0.9s step-end infinite;
     }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
     @keyframes blink {
       0%, 100% { opacity: 1; }
       50% { opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+      .typing-indicator::after { animation: none; }
     }
     @media (max-width: 680px) {
       header { grid-template-columns: 1fr; }
@@ -319,7 +345,8 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       <button id="settings" class="icon" type="button" title="Open KiCad Studio settings" aria-label="Open settings">&#9881;</button>
       <button id="export" class="icon" type="button" title="Export chat transcript" aria-label="Export chat">&#8681;</button>
       <button id="clear" class="icon" type="button" title="Clear chat" aria-label="Clear chat">Clear</button>
-      <button id="cancel" class="danger" type="button" disabled>Cancel</button>
+      <button id="cancel" class="danger" type="button" aria-describedby="cancel-disabled-reason" disabled>Cancel</button>
+      <span id="cancel-disabled-reason" class="sr-only">Cancel is disabled until a response is streaming.</span>
     </div>
   </header>
   <main id="messages" aria-live="polite">
@@ -388,6 +415,11 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       state.busy = !!busy;
       nodes.send.disabled = state.busy;
       nodes.cancel.disabled = !state.busy;
+      if (state.busy) {
+        nodes.cancel.removeAttribute('aria-describedby');
+      } else {
+        nodes.cancel.setAttribute('aria-describedby', 'cancel-disabled-reason');
+      }
       nodes.send.textContent = state.busy ? '…' : l10n.t('Send');
     }
     function clearMessages() {

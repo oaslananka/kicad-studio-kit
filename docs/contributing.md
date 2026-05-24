@@ -41,3 +41,30 @@ integration tests, fixture checks, contract tests, or visual/accessibility check
 changed surface.
 
 Runtime support changes must follow the [support matrix](support-matrix.md).
+
+## Accessibility Coverage
+
+New or changed KiCad Studio UI must keep the accessibility gate current before a
+pull request is ready for review:
+
+```bash
+corepack pnpm --filter kicadstudio run test:a11y
+```
+
+Update `apps/vscode-extension/test/a11y/accessibilityConformance.test.ts` when a
+change adds or materially changes a webview, custom editor toolbar, side panel,
+BOM/Netlist/Component Search surface, MCP Tools tree, Quality Gates tree, AI Fix
+Queue tree, status bar item, dialog-like flow, search box, or overlay.
+
+Contributor requirements:
+
+- Keep keyboard order deterministic and free of focus traps.
+- Provide accessible names for icon-only, symbolic, status, and toolbar actions.
+- Give disabled buttons reason text with `aria-describedby`, title text, or
+  adjacent assistive text when the reason is knowable.
+- Use VS Code theme tokens and verify dark, light, and high-contrast behavior.
+- Include `:focus-visible` styling for production webview controls.
+- Include `prefers-reduced-motion: reduce` CSS when a surface uses animation or
+  transitions.
+
+See [accessibility conformance target](accessibility.md) for the full policy.

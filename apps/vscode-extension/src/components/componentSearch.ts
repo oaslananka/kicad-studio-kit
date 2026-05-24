@@ -144,53 +144,10 @@ export class ComponentSearchService {
     this.detailsPanel.title = `Part: ${result.mpn || result.lcscPartNumber || 'Details'}`;
     const nonce = createNonce();
     const cspSource = this.detailsPanel.webview.cspSource;
-    this.detailsPanel.webview.html = injectWebviewLocalization(
-      `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${cspSource} data:; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
-  <style nonce="${nonce}">
-    body {
-      font-family: "Segoe UI", system-ui, sans-serif;
-      background: var(--vscode-editor-background);
-      color: var(--vscode-foreground);
-      padding: 16px;
-    }
-    button {
-      margin-right: 8px;
-      background: var(--vscode-button-background);
-      color: var(--vscode-button-foreground);
-      border: none;
-      border-radius: 4px;
-      padding: 6px 12px;
-      cursor: pointer;
-      font: inherit;
-    }
-    button:hover { background: var(--vscode-button-hoverBackground, var(--vscode-button-background)); }
-    pre { white-space: pre-wrap; }
-  </style>
-</head>
-<body>
-  <h1>${escapeHtml(result.mpn || result.lcscPartNumber || 'Part')}</h1>
-  <p>${escapeHtml(result.description)}</p>
-  <p><strong>Manufacturer:</strong> ${escapeHtml(result.manufacturer || 'Unknown')}</p>
-  <p><strong>Source:</strong> ${escapeHtml(result.source)}</p>
-  <button id="datasheet">Open Datasheet</button>
-  <button id="copy">Copy MPN</button>
-  ${result.pcmPackageId ? '<button id="pcm-install">Install PCM Library</button>' : ''}
-  <h2>Offers</h2>
-  <pre>${escapeHtml(JSON.stringify(result.offers, null, 2))}</pre>
-  <script nonce="${nonce}">
-    const vscode = acquireVsCodeApi();
-    document.getElementById('datasheet').addEventListener('click', () => vscode.postMessage({ type: 'datasheet', url: ${JSON.stringify(result.datasheetUrl ?? '')} }));
-    document.getElementById('copy').addEventListener('click', () => vscode.postMessage({ type: 'copy-mpn', mpn: ${JSON.stringify(result.mpn)} }));
-    document.getElementById('pcm-install')?.addEventListener('click', () => vscode.postMessage({ type: 'pcm-install' }));
-  </script>
-</body>
-    </html>`,
-      nonce
-    );
+    this.detailsPanel.webview.html = buildComponentDetailsHtml(result, {
+      nonce,
+      cspSource
+    });
   }
 
   private async searchWithCache(
@@ -321,7 +278,10 @@ export class ComponentSearchService {
       'Install PCM Library'
     );
     if (action === 'Install PCM Library') {
-      await vscode.commands.executeCommand(COMMANDS.installPcmPackage, candidate);
+      await vscode.commands.executeCommand(
+        COMMANDS.installPcmPackage,
+        candidate
+      );
     }
   }
 
@@ -336,6 +296,64 @@ export class ComponentSearchService {
       result.pcmPackageId
     );
   }
+}
+
+export function buildComponentDetailsHtml(
+  result: ComponentSearchResult,
+  options: { nonce: string; cspSource: string }
+): string {
+  return injectWebviewLocalization(
+    `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${options.cspSource} data:; style-src 'nonce-${options.nonce}'; script-src 'nonce-${options.nonce}';">
+  <title>KiCad Component Details</title>
+  <style nonce="${options.nonce}">
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--vscode-editor-background);
+      color: var(--vscode-foreground);
+      padding: 16px;
+    }
+    button {
+      margin-right: 8px;
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font: inherit;
+    }
+    button:hover { background: var(--vscode-button-hoverBackground, var(--vscode-button-background)); }
+    button:focus-visible {
+      outline: 2px solid var(--vscode-focusBorder, #007acc);
+      outline-offset: 2px;
+    }
+    pre { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(result.mpn || result.lcscPartNumber || 'Part')}</h1>
+  <p>${escapeHtml(result.description)}</p>
+  <p><strong>Manufacturer:</strong> ${escapeHtml(result.manufacturer || 'Unknown')}</p>
+  <p><strong>Source:</strong> ${escapeHtml(result.source)}</p>
+  <button id="datasheet">Open Datasheet</button>
+  <button id="copy">Copy MPN</button>
+  ${result.pcmPackageId ? '<button id="pcm-install">Install PCM Library</button>' : ''}
+  <h2>Offers</h2>
+  <pre>${escapeHtml(JSON.stringify(result.offers, null, 2))}</pre>
+  <script nonce="${options.nonce}">
+    const vscode = acquireVsCodeApi();
+    document.getElementById('datasheet').addEventListener('click', () => vscode.postMessage({ type: 'datasheet', url: ${JSON.stringify(result.datasheetUrl ?? '')} }));
+    document.getElementById('copy').addEventListener('click', () => vscode.postMessage({ type: 'copy-mpn', mpn: ${JSON.stringify(result.mpn)} }));
+    document.getElementById('pcm-install')?.addEventListener('click', () => vscode.postMessage({ type: 'pcm-install' }));
+  </script>
+</body>
+</html>`,
+    options.nonce
+  );
 }
 
 function escapeHtml(value: string): string {

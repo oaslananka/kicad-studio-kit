@@ -136,14 +136,14 @@ export function createKiCanvasViewerHtml(
       <div class="side-section">
         <h2>Viewer Tools</h2>
         <div class="side-actions">
-          <button class="btn" id="fit-btn" type="button">Fit</button>
-          <button class="btn" id="zoom-in-btn" type="button">+</button>
-          <button class="btn" id="zoom-out-btn" type="button">-</button>
+          <button class="btn" id="fit-btn" type="button" aria-label="Fit viewer">Fit</button>
+          <button class="btn" id="zoom-in-btn" type="button" aria-label="Zoom in viewer">+</button>
+          <button class="btn" id="zoom-out-btn" type="button" aria-label="Zoom out viewer">-</button>
           ${
             hasLayerControls
-              ? `<button class="btn" id="all-layers-btn" type="button">All</button>
-          <button class="btn" id="none-layers-btn" type="button">None</button>
-          <button class="btn" id="copper-layers-btn" type="button">Copper Only</button>`
+              ? `<button class="btn" id="all-layers-btn" type="button" aria-label="Show All layers">All</button>
+          <button class="btn" id="none-layers-btn" type="button" aria-label="Hide None layers">None</button>
+          <button class="btn" id="copper-layers-btn" type="button" aria-label="Show Copper Only layers">Copper Only</button>`
               : ''
           }
         </div>

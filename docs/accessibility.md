@@ -42,7 +42,10 @@ corepack pnpm --filter kicadstudio run test:a11y
 
 The gate renders representative extension-owned webview HTML in Chromium and
 runs axe-core with WCAG 2.0 A, WCAG 2.0 AA, WCAG 2.1 A, and WCAG 2.1 AA rule
-tags. It is part of the extension `check` and `check:ci` scripts and runs in
+tags. It also exercises dark, light, and high-contrast theme fixtures,
+keyboard tab order, accessible names, disabled-control reason text,
+focus-visible CSS, reduced-motion CSS, native tree rows, and status bar item
+labels. It is part of the extension `check` and `check:ci` scripts and runs in
 the GitHub Actions `vscode-extension` CI job.
 
 Manual release gate:
@@ -93,19 +96,19 @@ Status key:
 | 1.4.11 Non-text Contrast                        | AA    | Automated + Manual | Focus borders, input borders, status indicators, and interactive component boundaries must meet 3:1 against adjacent colors.                                                                                  |
 | 1.4.12 Text Spacing                             | AA    | Manual             | Text spacing changes must not clip or overlap labels, buttons, tables, cards, or status messages.                                                                                                             |
 | 1.4.13 Content on Hover or Focus                | AA    | Manual             | Tooltips/popovers must be dismissible, hoverable where applicable, and not obscure their trigger unless unavoidable in VS Code native UI.                                                                     |
-| 2.1.1 Keyboard                                  | A     | Manual             | All extension commands and in-scope webview actions must be reachable and operable by keyboard.                                                                                                               |
-| 2.1.2 No Keyboard Trap                          | A     | Manual             | No webview, custom editor, or tree view may trap keyboard focus.                                                                                                                                              |
+| 2.1.1 Keyboard                                  | A     | Automated + Manual | All extension commands and in-scope webview actions must be reachable and operable by keyboard. Representative webviews are checked for deterministic tab traversal.                                          |
+| 2.1.2 No Keyboard Trap                          | A     | Automated + Manual | No webview, custom editor, or tree view may trap keyboard focus. Representative tab-order tests catch focus loops in webview chrome.                                                                          |
 | 2.1.4 Character Key Shortcuts                   | A     | Manual             | Single-character shortcuts must be avoidable, remappable, or active only while focus is in the relevant control.                                                                                              |
 | 2.2.1 Timing Adjustable                         | A     | Manual             | Long-running operations use progress/status and cancellation where possible; no essential UI expires without user control.                                                                                    |
-| 2.2.2 Pause, Stop, Hide                         | A     | Manual             | Spinners, animations, and live updates must be tied to active work and stop when work completes.                                                                                                              |
+| 2.2.2 Pause, Stop, Hide                         | A     | Automated + Manual | Spinners, animations, and live updates must be tied to active work, stop when work completes, and include `prefers-reduced-motion` CSS when animation is present.                                             |
 | 2.3.1 Three Flashes or Below Threshold          | A     | Manual             | No extension-owned animation may flash more than three times per second.                                                                                                                                      |
 | 2.4.1 Bypass Blocks                             | A     | Manual             | Webviews with repeated chrome should keep primary controls early in the tab order; native VS Code navigation handles workbench-level bypass.                                                                  |
 | 2.4.2 Page Titled                               | A     | Automated          | Webview documents must include a meaningful title.                                                                                                                                                            |
-| 2.4.3 Focus Order                               | A     | Manual             | Focus order must follow logical task order in settings, chat, BOM, netlist, DRC editing, and viewer toolbars.                                                                                                 |
+| 2.4.3 Focus Order                               | A     | Automated + Manual | Focus order must follow logical task order in settings, chat, BOM, netlist, DRC editing, Component Search details, and viewer toolbars.                                                                       |
 | 2.4.4 Link Purpose (In Context)                 | A     | Automated + Manual | Links and buttons must identify their purpose through visible text, `aria-label`, title, or surrounding context.                                                                                              |
 | 2.4.5 Multiple Ways                             | AA    | Not applicable     | The extension is not a website with multiple pages; commands are available through VS Code navigation surfaces.                                                                                               |
 | 2.4.6 Headings and Labels                       | AA    | Automated + Manual | Section headings and form labels must describe their topic or purpose.                                                                                                                                        |
-| 2.4.7 Focus Visible                             | AA    | Manual             | Keyboard focus must be visible in native VS Code controls and extension-owned webviews.                                                                                                                       |
+| 2.4.7 Focus Visible                             | AA    | Automated + Manual | Keyboard focus must be visible in native VS Code controls and extension-owned webviews. Webview CSS must include `:focus-visible` styling for interactive controls.                                           |
 | 2.5.1 Pointer Gestures                          | A     | Manual             | Pointer gestures in viewer fallbacks must have keyboard or button alternatives where the function is extension-owned.                                                                                         |
 | 2.5.2 Pointer Cancellation                      | A     | Manual             | Click/drag actions should complete on release and avoid destructive down-event behavior.                                                                                                                      |
 | 2.5.3 Label in Name                             | A     | Automated + Manual | Accessible names for buttons and inputs must include their visible label text.                                                                                                                                |
@@ -137,11 +140,43 @@ Status key:
   `apps/vscode-extension/test/a11y/accessibilityConformance.test.ts` before they
   are considered release-ready.
 
+## Contributor Requirements
+
+New extension UI is not release-ready until the accessibility gate represents
+the changed surface. The requirement applies to webviews, custom editor chrome,
+tree views, status bar items, command flows, and generated HTML templates.
+
+- Add or update `apps/vscode-extension/test/a11y/accessibilityConformance.test.ts`
+  for every new or materially changed webview, toolbar, side panel, tree view,
+  status item, dialog-like flow, search box, or overlay.
+- Keep keyboard tab order deterministic. Focus must follow the visible workflow
+  order and must not loop inside a webview.
+- Give every icon-only, status-like, and symbolic action a stable accessible
+  name through visible text, `aria-label`, title, tooltip, or the native VS Code
+  API label/tooltip fields.
+- Disabled buttons should expose why the action is unavailable through
+  `aria-describedby`, title text, or adjacent reason text when the reason is
+  knowable.
+- Production CSS for interactive webviews must include `:focus-visible` styling
+  and keep that indicator visible in VS Code Dark, Light, and High Contrast
+  themes.
+- Production CSS with animation or transition effects must include a
+  `prefers-reduced-motion: reduce` rule that removes unnecessary motion without
+  hiding status text.
+- Prefer VS Code theme variables for foreground, background, border, and focus
+  colors. Avoid fixed colors that only work in one theme.
+- Keep visually hidden helper text available to assistive technology using the
+  local `.sr-only` pattern; do not hide required accessible names with
+  `display: none`.
+
 ## Source Verification
 
 Primary sources checked for this policy:
 
 - W3C WCAG 2.1 Recommendation: https://www.w3.org/TR/WCAG21/
-- VS Code Webviews UX guidance from the official VS Code API docs, checked
-  during implementation.
+- VS Code Webviews UX guidance and UX overview from the official VS Code API
+  docs, checked during implementation and rechecked on 2026-05-24.
 - Deque axe-core README and API documentation: https://github.com/dequelabs/axe-core
+- Playwright media emulation documentation for color scheme, forced colors, and
+  reduced motion, checked on 2026-05-24:
+  https://playwright.dev/docs/api/class-page#page-emulate-media

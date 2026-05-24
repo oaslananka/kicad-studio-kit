@@ -72,6 +72,10 @@ export function buildSettingsHtml(options: SettingsHtmlOptions): string {
       outline: none;
     }
     input:focus, select:focus { border-color: var(--accent); }
+    :where(button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
     header {
       position: sticky;
       top: 0;
