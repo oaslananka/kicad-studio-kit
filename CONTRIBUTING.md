@@ -10,6 +10,7 @@ corepack pnpm run check:boundaries
 corepack pnpm run check:version
 corepack pnpm run check:compatibility
 corepack pnpm run check:runtime-policy
+corepack pnpm run check:devcontainer
 ```
 
 For extension-only work:
@@ -52,6 +53,13 @@ Runtime support changes must also follow [docs/support-matrix.md](docs/support-m
 Changing `engines.vscode`, Python `requires-python`, or the primary KiCad support line requires
 the matching `compatibility.yaml` update, this support matrix update, and product changelog context
 when a lower runtime boundary is introduced.
+
+## Dev Container
+
+The repository includes a VS Code Dev Containers and GitHub Codespaces setup in
+[docs/devcontainer.md](docs/devcontainer.md). Inside the container,
+`corepack pnpm run dev-doctor -- --require-devcontainer` confirms the
+devcontainer marker and required tools.
 
 ## Issue order
 

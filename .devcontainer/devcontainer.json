@@ -1,0 +1,59 @@
+{
+  "name": "KiCad Studio Kit",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "ACTIONLINT_VERSION": "1.7.12",
+      "UV_VERSION": "0.11.12"
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24",
+      "nodeGypDependencies": true,
+      "pnpmVersion": "none"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspaces/kicad-studio-kit",
+  "containerEnv": {
+    "KICAD_STUDIO_DEVCONTAINER": "1",
+    "PLAYWRIGHT_BROWSERS_PATH": "/ms-playwright",
+    "UV_LINK_MODE": "copy",
+    "UV_PYTHON": "3.12"
+  },
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:${workspaceFolder}/packages/mcp-server/.venv/bin"
+  },
+  "mounts": [
+    "source=kicad-studio-kit-pnpm-store,target=/home/vscode/.local/share/pnpm/store,type=volume",
+    "source=kicad-studio-kit-uv-cache,target=/home/vscode/.cache/uv,type=volume"
+  ],
+  "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
+  "waitFor": "postCreateCommand",
+  "init": true,
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb",
+    "storage": "32gb"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-playwright.playwright",
+        "ms-python.python",
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "${workspaceFolder}/packages/mcp-server/.venv/bin/python",
+        "typescript.tsdk": "${workspaceFolder}/node_modules/typescript/lib"
+      }
+    }
+  }
+}
