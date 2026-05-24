@@ -1,24 +1,46 @@
-# LED Basic KiCad Example
+# LED Basic
 
-This is a minimal KiCad 10 project for validating KiCad Studio and KiCad MCP Pro workflows without a large board.
+## Purpose
 
-## Circuit
-
-- `J1`: 2-pin power input.
-- `R1`: 1 kOhm series resistor.
-- `D1`: green LED.
-- Nets: `/VIN`, `/LED_A`, `GND`.
+Use this compact KiCad 10 project as the first smoke target for KiCad Studio and
+KiCad MCP Pro. It demonstrates the Basic schematic and PCB viewer workflow, DRC
+and ERC workflow, and BOM and netlist workflow without requiring a large board.
 
 ## Files
 
 - `KICAD_TEST.kicad_pro`: KiCad project.
-- `KICAD_TEST.kicad_sch`: schematic.
-- `KICAD_TEST.kicad_pcb`: routed PCB.
+- `KICAD_TEST.kicad_sch`: schematic with a two-pin input, current-limiting resistor, LED, and ground net.
+- `KICAD_TEST.kicad_pcb`: routed PCB suitable for viewer, DRC, and manufacturing-export smoke commands.
 
-## KiCad CLI smoke checks
+## KiCad Version Compatibility
+
+Verified with KiCad CLI `10.0.3`. The files use KiCad 10 project, schematic,
+and PCB formats and are intended as small demo assets rather than a reference
+electrical design.
+
+## Extension Workflow
+
+1. Open `examples/led-basic` in VS Code.
+2. Open `KICAD_TEST.kicad_sch` and verify the schematic viewer fits the sheet.
+3. Open `KICAD_TEST.kicad_pcb` and verify the PCB viewer, zoom controls, layer state, and project tree.
+4. Run the extension validation commands and confirm DRC/ERC status is visible in the UI.
+
+## MCP Workflow
+
+The MCP connected workflow uses this project as a read-only board inspection
+target. The MCP degraded workflow can be exercised by starting the extension
+without the server and confirming the UI keeps project files inspectable.
+
+```powershell
+$env:KICAD_MCP_PROJECT_DIR = (Get-Location).Path
+kicad-mcp-pro --transport http --port 27185
+```
+
+## Smoke Commands
 
 ```powershell
 $kicadCli = 'C:\Program Files\KiCad\10.0\bin\kicad-cli.exe'
+New-Item -ItemType Directory -Force exports | Out-Null
 & $kicadCli sch erc --format json --output exports\KICAD_TEST-erc.json --severity-all --exit-code-violations KICAD_TEST.kicad_sch
 & $kicadCli pcb drc --format json --output exports\KICAD_TEST-drc.json --severity-all --schematic-parity --exit-code-violations KICAD_TEST.kicad_pcb
 & $kicadCli sch export netlist --format kicadxml --output exports\KICAD_TEST.net KICAD_TEST.kicad_sch
@@ -27,19 +49,8 @@ $kicadCli = 'C:\Program Files\KiCad\10.0\bin\kicad-cli.exe'
 & $kicadCli pcb export drill --output exports\drill --generate-report --report-path exports\drill\KICAD_TEST-drill.rpt KICAD_TEST.kicad_pcb
 ```
 
-The project was verified with KiCad CLI `10.0.3` on Windows 11.
+## Expected Outputs
 
-## Extension smoke workflow
-
-1. Open this folder in VS Code.
-2. Open `KICAD_TEST.kicad_sch` and `KICAD_TEST.kicad_pcb`.
-3. Verify the schematic/PCB viewers, project tree, BOM/netlist panels, and DRC/ERC status.
-
-## MCP smoke workflow
-
-```powershell
-$env:KICAD_MCP_PROJECT_DIR = (Get-Location).Path
-kicad-mcp-pro --transport http --port 27185
-```
-
-Use the extension or a compatible MCP client to inspect the project, run validation tools, and export manufacturing files.
+Generated reports and manufacturing files are written under `exports/`, which is
+ignored by git. Keep screenshots or rendered outputs outside the repository
+unless a future release smoke workflow explicitly promotes them.

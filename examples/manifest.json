@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "source": "OASLANA-77",
+  "policy": "User-facing examples are documentation and smoke-test projects, not deterministic fixtures.",
+  "examples": [
+    {
+      "id": "led-basic",
+      "title": "LED Basic",
+      "projectFiles": [
+        "KICAD_TEST.kicad_pro",
+        "KICAD_TEST.kicad_sch",
+        "KICAD_TEST.kicad_pcb"
+      ],
+      "workflows": [
+        "Basic schematic and PCB viewer",
+        "DRC and ERC workflow",
+        "BOM and netlist workflow"
+      ],
+      "compatibility": "KiCad 10.0.3",
+      "releaseSmoke": true
+    },
+    {
+      "id": "usb-c-power",
+      "title": "USB-C Power Intake",
+      "projectFiles": [
+        "USB_C_POWER.kicad_pro",
+        "USB_C_POWER.kicad_sch",
+        "USB_C_POWER.kicad_pcb"
+      ],
+      "workflows": [
+        "Basic schematic and PCB viewer",
+        "DRC and ERC workflow",
+        "MCP degraded workflow"
+      ],
+      "compatibility": "KiCad 10.0.3",
+      "releaseSmoke": false
+    },
+    {
+      "id": "buck-converter",
+      "title": "Buck Converter Review",
+      "projectFiles": [
+        "BUCK_CONVERTER.kicad_pro",
+        "BUCK_CONVERTER.kicad_sch",
+        "BUCK_CONVERTER.kicad_pcb"
+      ],
+      "workflows": [
+        "Basic schematic and PCB viewer",
+        "DRC and ERC workflow",
+        "BOM and netlist workflow"
+      ],
+      "compatibility": "KiCad 10.0.3",
+      "releaseSmoke": false
+    },
+    {
+      "id": "differential-pair-demo",
+      "title": "Differential Pair Review",
+      "projectFiles": [
+        "DIFFERENTIAL_PAIR_DEMO.kicad_pro",
+        "DIFFERENTIAL_PAIR_DEMO.kicad_sch",
+        "DIFFERENTIAL_PAIR_DEMO.kicad_pcb"
+      ],
+      "workflows": [
+        "Basic schematic and PCB viewer",
+        "DRC and ERC workflow",
+        "MCP connected workflow"
+      ],
+      "compatibility": "KiCad 10.0.3",
+      "releaseSmoke": false
+    },
+    {
+      "id": "manufacturing-release-demo",
+      "title": "Manufacturing Release",
+      "projectFiles": [
+        "MANUFACTURING_RELEASE_DEMO.kicad_pro",
+        "MANUFACTURING_RELEASE_DEMO.kicad_sch",
+        "MANUFACTURING_RELEASE_DEMO.kicad_pcb"
+      ],
+      "workflows": [
+        "DRC and ERC workflow",
+        "BOM and netlist workflow",
+        "Manufacturing export workflow"
+      ],
+      "compatibility": "KiCad 10.0.3",
+      "releaseSmoke": false
+    },
+    {
+      "id": "mcp-demo",
+      "title": "MCP Workflow Demo",
+      "projectFiles": [
+        "MCP_DEMO.kicad_pro",
+        "MCP_DEMO.kicad_sch",
+        "MCP_DEMO.kicad_pcb"
+      ],
+      "workflows": [
+        "Basic schematic and PCB viewer",
+        "MCP connected workflow",
+        "MCP degraded workflow"
+      ],
+      "compatibility": "KiCad 10.0.3",
+      "releaseSmoke": false
+    }
+  ]
+}
