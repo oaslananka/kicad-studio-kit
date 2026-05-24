@@ -109,6 +109,7 @@ export default defineConfig({
         text: "Contribute",
         items: [
           { text: "Contributing", link: "/contributing" },
+          { text: "Dev Container", link: "/devcontainer" },
           { text: "Contributors", link: "/contributors" },
           { text: "Fixture Corpus", link: "/kicad-fixture-corpus" },
           { text: "Performance Baselines", link: "/performance-baselines" },

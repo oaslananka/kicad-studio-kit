@@ -12,6 +12,7 @@ corepack pnpm run check:boundaries
 corepack pnpm run check:version
 corepack pnpm run check:compatibility
 corepack pnpm run check:runtime-policy
+corepack pnpm run check:devcontainer
 ```
 
 Product-scoped checks:
@@ -78,3 +79,10 @@ Contributor requirements:
 See [accessibility conformance target](accessibility.md) for the full policy.
 
 Runtime support changes must follow the [support matrix](support-matrix.md).
+
+## Dev Container
+
+Use the [dev container](devcontainer.md) for reproducible VS Code Dev Containers
+or GitHub Codespaces setup. Inside the container,
+`corepack pnpm run dev-doctor -- --require-devcontainer` confirms the
+devcontainer marker and required tools.

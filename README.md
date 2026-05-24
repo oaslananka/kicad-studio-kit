@@ -51,6 +51,11 @@ corepack pnpm run check:mcp-npm
 corepack pnpm run test:contract
 ```
 
+For a reproducible VS Code Dev Containers or GitHub Codespaces environment, use
+the checked-in [devcontainer configuration](docs/devcontainer.md). The container
+sets up Node, pnpm, Python, uv, Playwright, shellcheck, actionlint, GitHub CLI,
+and best-effort KiCad CLI support for root checks and MCP tests.
+
 ## Architecture
 
 - [Searchable documentation site](https://oaslananka.github.io/kicad-studio-kit/)
@@ -58,6 +63,7 @@ corepack pnpm run test:contract
 - [Product boundaries](docs/architecture/product-boundaries.md)
 - [Release model](docs/architecture/release-model.md)
 - [Testing strategy](docs/testing-strategy.md)
+- [Dev container](docs/devcontainer.md)
 - [KiCad fixture corpus](docs/kicad-fixture-corpus.md)
 - [Integration model](docs/integration/kicad-studio-mcp.md)
 
