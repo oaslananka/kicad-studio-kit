@@ -10,6 +10,7 @@ import pytest
 
 SUITES = {
     "unit": ["tests/unit/", "-q"],
+    "gui": ["tests/gui/", "-q"],
     "full": [
         "tests/unit/",
         "tests/integration/",

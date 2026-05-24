@@ -18,8 +18,10 @@ notes can add detail, but they should not weaken these gates.
 | Accessibility gate   | Extension-owned UI and webview changes                               | Prove WCAG 2.1 AA automated checks remain clean for in-scope extension surfaces.                | `corepack pnpm --filter kicadstudio run test:a11y` |
 | Contract gate        | Protocol, compatibility, or cross-product changes                    | Prove extension and MCP assumptions remain aligned.                                             | `corepack pnpm run test:contract`                  |
 | Protocol PR gate     | Protocol, compatibility, or cross-product review changes             | Keep protocol-impact PRs visible through the PR template and architecture guidance.             | `corepack pnpm run check:protocol-pr-template`     |
+| GUI smoke policy     | Real KiCad GUI smoke workflow/test wiring changes                    | Keep live-editor IPC smoke coverage wired without adding GUI work to the PR path.               | `corepack pnpm run check:kicad-gui-smoke`          |
 | Fixture gate         | Parser, diagnostics, command-builder, or KiCad file behavior changes | Prove deterministic KiCad corpus behavior stays stable.                                         | `corepack pnpm run test:fixtures`                  |
 | Nightly quality gate | Scheduled and manual workflow                                        | Re-run the repository gate plus contract and fixture gates outside the fast PR path.            | `.github/workflows/nightly-quality-gates.yml`      |
+| KiCad GUI smoke      | Scheduled and manual workflow                                        | Launch real KiCad editors on Windows primary plus Linux Xvfb and verify MCP live PCB context.   | `.github/workflows/kicad-gui-smoke.yml`            |
 | VS Code canary       | Scheduled and manual workflow                                        | Check supported VS Code host lanes before runtime/API changes reach users.                      | `.github/workflows/vscode-canary.yml`              |
 | KiCad canary         | Scheduled and manual workflow                                        | Check supported KiCad CLI lanes against real fixture exports without publishing packages.       | `.github/workflows/kicad-canary.yml`               |
 | Manual smoke         | Release candidate only                                               | Final human inspection where automation is not practical.                                       | PR notes must name the exact manual check          |
@@ -41,7 +43,7 @@ notes can add detail, but they should not weaken these gates.
 | KiCad CLI contract tests              | KiCad 10 primary behavior plus supported 9.x and deprecated 8.x compatibility where supported.                                       | Shared fixtures and MCP integration tests                                | `kicad-cli`                                                    | Nightly/canary gate                                    |
 | MCP transport contract tests          | Streamable HTTP initialize flow, session handling, stateless behavior, `MCP-Protocol-Version`, tool discovery, errors, and timeouts. | MCP tests and future shared contract package                             | pytest/http client                                             | Contract gate                                          |
 | Real-pair tests                       | Built VS Code extension connected to built MCP server against fixture workspaces.                                                    | Future shared harness                                                    | VS Code test host plus local MCP server                        | Nightly gate                                           |
-| Real KiCad GUI IPC smoke              | KiCad application IPC behavior that cannot be proven headlessly.                                                                     | Dedicated smoke harness                                                  | KiCad GUI plus fixture workspace                               | Nightly only                                           |
+| Real KiCad GUI IPC smoke              | KiCad application IPC behavior that cannot be proven by file-backed CLI tests.                                                       | `packages/mcp-server/tests/gui/`                                         | KiCad GUI, Xvfb, fixture workspace, MCP server tools            | Nightly/manual only                                    |
 | Release candidate manual smoke        | Marketplace/package artifact sanity only.                                                                                            | PR/release notes                                                         | Human confirmation                                             | Release candidate only                                 |
 
 ## Fast PR Gates
@@ -125,6 +127,16 @@ corepack pnpm run test:contract
 corepack pnpm run test:fixtures
 ```
 
+The real KiCad GUI smoke suite is isolated in
+`.github/workflows/kicad-gui-smoke.yml` because it starts desktop applications
+and requires a display server. The workflow is scheduled and manually
+dispatched only; it is not a PR or push trigger. Its Windows primary lane
+installs pinned KiCad 10.0.3, adds the KiCad binary directory to discovery, and
+captures process logs plus screenshots as artifacts. The Linux lane keeps a
+second Xvfb/dbus signal using the repository's existing KiCad canary PPA policy.
+The pytest suite is skipped unless `KICAD_MCP_ENABLE_GUI_SMOKE=1` is set, so
+local and PR test runs do not try to launch a desktop session by accident.
+
 As the M1-M4 roadmap lands, extend this workflow in focused PRs:
 
 | Future gate                | Tracking issue | Required behavior                                                                                                              |
@@ -132,6 +144,7 @@ As the M1-M4 roadmap lands, extend this workflow in focused PRs:
 | Shared fixture corpus      | OASLANA-36     | Maintain `apps/vscode-extension/test/fixtures/kicad/` with semantic fixture IDs and golden expected outputs.                   |
 | Unit test expansion        | OASLANA-37     | Cover project discovery, command builders, diagnostics, state machines, and MCP client behavior.                               |
 | MCP protocol contracts     | OASLANA-43     | Cover Streamable HTTP, session headers, stateless mode, tool discovery, errors, timeouts, and ChatGPT connector compatibility. |
+| KiCad GUI IPC smoke        | OASLANA-44     | Cover live PCB context, GUI-closed fallback diagnostics, multi-window behavior, and project switch isolation.                  |
 | MCP adapter layer tests    | OASLANA-56     | Verify extension UI and commands use the adapter boundary instead of direct MCP calls.                                         |
 | Server-info contract tests | OASLANA-57     | Verify advertised server-info, capability metadata, and compatibility ranges.                                                  |
 | Real-pair E2E              | OASLANA-75     | Build both products, start the server, launch the extension host, connect them, and validate capability handshakes.            |
@@ -168,6 +181,25 @@ artifacts. A failing lane opens or updates a compatibility issue. Stable-lane
 failures add the `release-blocker` label because the release gate lists VS Code
 stable compatibility as required.
 
+## KiCad GUI Smoke
+
+`.github/workflows/kicad-gui-smoke.yml` runs the OASLANA-44 live-editor smoke
+suite daily and on manual dispatch. Windows is the primary lane because KiCad
+process discovery and IPC endpoint behavior differ there; Linux Xvfb remains a
+secondary lane for the repository's existing headless CI environment. The
+workflow is intentionally separate from the normal nightly quality gate so GUI
+failures can be triaged as environment, window-manager, or IPC regressions
+without hiding deterministic unit, integration, and CLI-contract failures.
+
+The suite launches a fixture project, opens the schematic and PCB editors where
+the installed KiCad build exposes those entry points, then verifies
+`pcb_get_board_summary`, `pcb_get_tracks`, `pcb_get_footprints`, and
+`pcb_get_nets` report `live-gui` while the PCB Editor is open. It also verifies
+the closed/unavailable GUI path reports structured file-backed fallback
+diagnostics and that switching projects does not leak the old live board
+context. Failures upload process stdout/stderr, tool-output JSON, discovery
+metadata, and a screenshot when the runner can capture one.
+
 ## Regression Coverage Map
 
 Every bug fix should add an automated regression when practical. If automation
@@ -180,6 +212,7 @@ or artifact.
 | OASLANA-36  | KiCad file parser or quality-gate regressions that lack deterministic fixtures. | Shared KiCad fixture corpus and golden expected outputs                    |
 | OASLANA-37  | Extension helpers regressing without unit coverage.                             | Jest unit suites under `apps/vscode-extension/test/unit/`                  |
 | OASLANA-43  | MCP transport/session compatibility regressions.                                | MCP contract tests for Streamable HTTP and `MCP-Protocol-Version` behavior |
+| OASLANA-44  | Live KiCad PCB context regressing while file-backed CLI checks still pass.       | Scheduled GUI smoke suite for live context, fallback diagnostics, and project switching |
 | OASLANA-56  | Extension code bypassing the MCP adapter boundary.                              | Adapter unit tests plus integration tests for UI and command calls         |
 | OASLANA-57  | MCP server-info or capability metadata drift.                                   | Server-info and compatibility contract tests                               |
 | OASLANA-75  | Extension and MCP server passing independently but failing as a pair.           | Real-pair E2E tests                                                        |
@@ -211,6 +244,8 @@ before pushing.
 | MCP full behavior              | `corepack pnpm --dir packages/mcp-server run test`                                                          | `corepack pnpm run check:kicad-mcp-pro`        |
 | Protocol or compatibility      | `corepack pnpm run test:contract`                                                                           | `corepack pnpm run check`                      |
 | Protocol PR checklist          | `corepack pnpm run check:protocol-pr-template`                                                              | `corepack pnpm run check`                      |
+| KiCad GUI smoke wiring         | `corepack pnpm run check:kicad-gui-smoke`                                                                   | `corepack pnpm run check`                      |
+| Real KiCad GUI smoke           | `KICAD_MCP_ENABLE_GUI_SMOKE=1 corepack pnpm run test:kicad-gui-smoke`                                       | `.github/workflows/kicad-gui-smoke.yml`       |
 | Fixtures                       | `corepack pnpm run test:fixtures`                                                                           | `corepack pnpm run check`                      |
 
 ## KiCad Fixture Corpus
@@ -243,6 +278,9 @@ CI ownership follows product boundaries:
   `.github/workflows/codeql.yml` own security and static analysis lanes.
 - `.github/workflows/nightly-quality-gates.yml` owns the non-release scheduled
   quality gate.
+- `.github/workflows/kicad-gui-smoke.yml` owns scheduled/manual real KiCad GUI
+  live-context smoke coverage on Windows primary plus Linux Xvfb, and uploads
+  debugging artifacts on failure.
 - `.github/workflows/vscode-canary.yml` owns scheduled/manual VS Code
   compatibility lanes sourced from `compatibility.yaml`.
 - `.github/workflows/kicad-canary.yml` owns scheduled/manual real KiCad CLI
@@ -266,6 +304,14 @@ This strategy was checked against current primary sources:
   and snapshot update flow.
 - KiCad 10 command-line documentation for `kicad-cli` driven ERC, DRC, export,
   and version checks.
+- KiCad PCB Editor documentation for action-plugin/GUI scripting boundaries and
+  KiCad IPC API developer documentation for live-editor automation scope.
+- KiCad Windows Downloads for supported Windows versions and current stable
+  10.0.3 installer availability.
+- Chocolatey KiCad package metadata for the pinned Windows CI install command
+  and checksum-backed official KiCad installer URL.
+- GitHub Actions artifact documentation and `actions/upload-artifact` metadata
+  for scheduled failure log and screenshot uploads.
 - Model Context Protocol 2025-06-18 transport docs for Streamable HTTP,
   session handling, and `MCP-Protocol-Version`.
 - GitHub Actions workflow syntax docs for scheduled and manually dispatched

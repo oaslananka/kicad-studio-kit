@@ -23,6 +23,7 @@
     "typecheck": "uv run --all-extras python -m mypy src/kicad_mcp/",
     "test": "uv run --all-extras python scripts/run_pytest.py full",
     "test:unit": "uv run --all-extras python scripts/run_pytest.py unit",
+    "test:gui-smoke": "uv run --all-extras python scripts/run_pytest.py gui",
     "build": "uv build",
     "package:check": "uv build && uv run --all-extras python scripts/check_package_metadata.py",
     "workflows:lint": "uv run --all-extras python scripts/check_workflows.py --actionlint",

@@ -40,6 +40,8 @@ const requiredPhrases = [
   "corepack pnpm run package:kicad-mcp-pro",
   "corepack pnpm run check:mcp-npm",
   "corepack pnpm run check:performance-budgets",
+  "corepack pnpm run check:kicad-gui-smoke",
+  "corepack pnpm run test:kicad-gui-smoke",
   "corepack pnpm run test:contract",
   "corepack pnpm run test:fixtures",
   "docs/performance-baselines.md",
@@ -52,6 +54,7 @@ const requiredPhrases = [
   "visual regression",
   "accessibility",
   "manual smoke",
+  ".github/workflows/kicad-gui-smoke.yml",
 ];
 
 const roadmapIssueIds = [
@@ -59,6 +62,7 @@ const roadmapIssueIds = [
   "OASLANA-36",
   "OASLANA-37",
   "OASLANA-43",
+  "OASLANA-44",
   "OASLANA-56",
   "OASLANA-57",
   "OASLANA-75",
