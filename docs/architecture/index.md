@@ -10,6 +10,7 @@ the Python MCP server, the npm launcher, shared protocol schemas, examples, and 
 - [Release model](release-model.md)
 - [Branch protection](branch-protection.md)
 - [Definition of done](definition-of-done.md)
+- [Protocol change checklist](protocol-change-checklist.md)
 - [Governance board model](governance-board.md)
 - [M0 completion audit](m0-completion-audit.md)
 - [Testing strategy](testing-strategy.md)

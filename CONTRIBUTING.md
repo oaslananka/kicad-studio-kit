@@ -38,6 +38,14 @@ corepack pnpm run test:contract
 corepack pnpm run test:fixtures
 ```
 
+Protocol-impacting pull requests must complete the protocol section in
+`.github/PULL_REQUEST_TEMPLATE.md`. This applies to MCP tool names, tool
+schemas, capability metadata, transport behavior, server-info payloads,
+compatibility metadata, and extension MCP adapter behavior. Mark the section not
+applicable with a reason when none of those surfaces are touched. The checklist
+policy is documented in
+[docs/architecture/protocol-change-checklist.md](docs/architecture/protocol-change-checklist.md).
+
 Report KiCad, VS Code, MCP protocol, dependency, or release-tool compatibility failures with the compatibility regression issue form. Include old and new versions, the failing command or workflow, and any canary run link.
 
 Runtime support changes must also follow [docs/support-matrix.md](docs/support-matrix.md).

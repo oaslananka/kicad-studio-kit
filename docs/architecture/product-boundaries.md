@@ -31,6 +31,9 @@ The products integrate through MCP protocol and metadata:
 - contract and compatibility checks
 
 Protocol changes must update both product surfaces and the compatibility validation scripts.
+Use the [protocol change checklist](protocol-change-checklist.md) when changing
+tool names, schemas, capability metadata, transport behavior, server-info
+payloads, or extension adapter behavior.
 
 ## Enforcement
 

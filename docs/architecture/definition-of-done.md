@@ -40,7 +40,9 @@ Architecture changes must include:
 
 ## MCP protocol or capability changes
 
-Protocol-impacting changes must include:
+Protocol-impacting changes must complete the
+[protocol change checklist](protocol-change-checklist.md) in the pull request
+template and include:
 
 - Updated protocol schemas.
 - Updated MCP server implementation.
