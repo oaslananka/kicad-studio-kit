@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import {
   AI_SECRET_KEYS,
   COMMANDS,
@@ -104,8 +103,8 @@ export class ComponentSearchService implements vscode.WebviewViewProvider {
     _token: vscode.CancellationToken
   ): Promise<void> {
     this.searchView = webviewView;
-    webviewView.title = 'Component Search';
-    webviewView.description = 'Inline part lookup';
+    webviewView.title = vscode.l10n.t('Component Search');
+    webviewView.description = vscode.l10n.t('Inline part lookup');
     webviewView.webview.options = {
       enableScripts: true
     };
@@ -654,7 +653,10 @@ export class ComponentSearchService implements vscode.WebviewViewProvider {
 
     let entries: BomEntry[];
     try {
-      const text = fs.readFileSync(activeFile, 'utf8');
+      const bytes = await vscode.workspace.fs.readFile(
+        vscode.Uri.file(activeFile)
+      );
+      const text = new TextDecoder().decode(bytes);
       entries = new BomParser(new SExpressionParser()).parse(text, false);
     } catch {
       return [];
@@ -702,7 +704,11 @@ export class ComponentSearchService implements vscode.WebviewViewProvider {
     }
     const reference = entry.references[0] ?? 'symbol';
     return {
-      label: `Recommended for ${reference}`,
+      label: vscode.l10n.t({
+        message: 'Recommended for {reference}',
+        args: { reference },
+        comment: 'Suggested component search label for a schematic reference.'
+      }),
       query,
       detail: [
         projectContext.projectName,
@@ -755,7 +761,8 @@ export function buildComponentSearchViewHtml(
     : '';
   const recommendations = state.recommendations.length
     ? `<section class="suggestions" aria-label="Recommended parts">
-        <h2>Recommended parts${state.projectName ? ` for ${escapeHtml(state.projectName)}` : ''}</h2>
+        <h2>Recommended parts</h2>
+        ${state.projectName ? `<p class="section-context">${escapeHtml(state.projectName)}</p>` : ''}
         <div class="suggestion-list">
           ${state.recommendations
             .map((recommendation) =>
@@ -896,6 +903,11 @@ export function buildComponentSearchViewHtml(
       font-weight: 600;
       text-transform: uppercase;
       color: var(--vscode-descriptionForeground);
+    }
+    .section-context {
+      margin: -2px 0 8px;
+      color: var(--vscode-descriptionForeground);
+      overflow-wrap: anywhere;
     }
     .warnings,
     .error,
@@ -1133,16 +1145,25 @@ function formatAvailability(result: ComponentSearchResult): string {
     0
   );
   if (totalInventory > 0) {
-    return `${new Intl.NumberFormat('en-US').format(totalInventory)} in stock`;
+    const count = new Intl.NumberFormat(vscode.env.language || 'en').format(
+      totalInventory
+    );
+    return vscode.l10n.t({
+      message: '{count} in stock',
+      args: { count },
+      comment: 'Component availability count shown in search results.'
+    });
   }
-  return result.offers.length ? 'Stock not reported' : 'No availability data';
+  return result.offers.length
+    ? vscode.l10n.t('Stock not reported')
+    : vscode.l10n.t('No availability data');
 }
 
 function formatFootprintMatch(result: ComponentSearchResult): string {
   const footprint = result.specs.find((spec) =>
     /footprint|package|case/iu.test(spec.name)
   );
-  return footprint?.value || result.category || 'Not reported';
+  return footprint?.value || result.category || vscode.l10n.t('Not reported');
 }
 
 function estimateConfidence(

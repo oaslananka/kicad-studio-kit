@@ -1,7 +1,4 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
 import {
   buildComponentSearchViewHtml,
   ComponentSearchService
@@ -802,18 +799,15 @@ describe('ComponentSearchCache', () => {
     const cache = new ComponentSearchCache(
       context.globalState as unknown as vscode.Memento
     );
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'component-search-'));
-    const schematicFile = path.join(tempDir, 'controller.kicad_sch');
-    fs.writeFileSync(
-      schematicFile,
-      `(kicad_sch
+    (vscode.workspace.fs.readFile as jest.Mock).mockResolvedValue(
+      Buffer.from(`(kicad_sch
       (symbol
         (property "Reference" "U1")
         (property "Value" "STM32F411")
         (property "Footprint" "Package_QFP:LQFP-48_7x7mm_P0.5mm")
         (property "MPN" "STM32F411CEU6")
       )
-    )`
+    )`)
     );
     const viewMock = createWebviewViewMock();
     const service = new ComponentSearchService(
@@ -824,7 +818,7 @@ describe('ComponentSearchCache', () => {
       undefined,
       context as never,
       async () => ({
-        activeFile: schematicFile,
+        activeFile: '/workspace/controller.kicad_sch',
         selectedReference: 'U1',
         projectName: 'Controller'
       })
