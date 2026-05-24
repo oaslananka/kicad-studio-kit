@@ -40,7 +40,7 @@
     "package:kicad-studio": "pnpm --filter kicadstudio run package",
     "package:kicad-mcp-pro": "pnpm --dir packages/mcp-server run package:check",
     "verify:dist": "pnpm run package:kicad-studio && pnpm run package:kicad-mcp-pro && pnpm run check:mcp-npm",
-    "release:dry-run:kicad-studio": "pnpm --filter kicadstudio run release:dry-run",
+    "release:dry-run:kicad-studio": "pnpm --filter kicadstudio run package && pnpm --filter kicadstudio run package:validate && pnpm --filter kicadstudio run release:dry-run",
     "release:dry-run:kicad-mcp-pro": "pnpm --dir packages/mcp-server run release:dry-run && pnpm --dir packages/mcp-npm run check",
     "release:dry-run": "pnpm run release:dry-run:kicad-studio && pnpm run release:dry-run:kicad-mcp-pro",
     "check:forbidden-refs": "node scripts/check-no-forbidden-refs.mjs",
