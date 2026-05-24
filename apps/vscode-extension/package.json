@@ -63,7 +63,22 @@
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
-      "description": "%kicadstudio.capabilities.untrustedWorkspaces.description%"
+      "description": "%kicadstudio.capabilities.untrustedWorkspaces.description%",
+      "restrictedConfigurations": [
+        "kicadstudio.kicadCliPath",
+        "kicadstudio.kicadPath",
+        "kicadstudio.defaultOutputDir",
+        "kicadstudio.cli.defineVars",
+        "kicadstudio.ai.localEndpoint",
+        "kicadstudio.ai.allowTools",
+        "kicadstudio.mcp.endpoint",
+        "kicadstudio.mcp.allowRemoteEndpoint",
+        "kicadstudio.mcp.allowLegacySse",
+        "kicadstudio.mcp.pushContext",
+        "kicadstudio.pcm.repositoryUrls",
+        "kicadstudio.pcm.configDir",
+        "kicadstudio.pcm.thirdPartyDir"
+      ]
     }
   },
   "activationEvents": [
@@ -2035,13 +2050,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "audit:ci": "pnpm audit --audit-level high",
     "check:staged": "lint-staged",
-    "check": "pnpm run format:check && pnpm run marketplace:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run test:a11y && pnpm run build && pnpm run package && pnpm run package:validate",
+    "check": "pnpm run format:check && pnpm run marketplace:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run test:security && pnpm run test:a11y && pnpm run build && pnpm run package && pnpm run package:validate",
     "check:workspace-trust": "node scripts/check-untrusted-workspace.js",
-    "check:ci": "pnpm run audit:ci && pnpm run format:check && pnpm run docs:check && pnpm run workflows:lint && pnpm run lint && pnpm run typecheck && pnpm run check:workspace-trust && pnpm run test:unit:coverage && pnpm run test:a11y && pnpm run build && pnpm run test:integration && pnpm run package && pnpm run package:validate && pnpm run release:dry-run && pnpm run check:bundle-size",
+    "check:ci": "pnpm run audit:ci && pnpm run format:check && pnpm run docs:check && pnpm run workflows:lint && pnpm run lint && pnpm run typecheck && pnpm run check:workspace-trust && pnpm run test:unit:coverage && pnpm run test:security && pnpm run test:a11y && pnpm run build && pnpm run test:integration && pnpm run package && pnpm run package:validate && pnpm run release:dry-run && pnpm run check:bundle-size",
     "compile-tests": "tsc -p tsconfig.test.json",
-    "test": "pnpm run test:unit && pnpm run test:integration",
+    "test": "pnpm run test:unit && pnpm run test:security && pnpm run test:integration",
     "test:unit": "jest --runInBand",
     "test:unit:coverage": "jest --runInBand --coverage",
+    "test:security": "jest --config jest.config.js --runInBand --coverage=false --testMatch \"<rootDir>/test/security/**/*.test.ts\"",
     "test:a11y": "jest --config jest.config.js --runInBand --coverage=false --testMatch \"<rootDir>/test/a11y/**/*.test.ts\"",
     "test:perf": "jest --config jest.config.js --runInBand --coverage=false --testMatch \"<rootDir>/test/performance/**/*.test.ts\"",
     "test:integration": "pnpm run compile-tests && node ./out/test/runTest.js",
