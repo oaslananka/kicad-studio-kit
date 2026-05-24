@@ -55,9 +55,24 @@ Ownership and branch protection are documented in
 
 ## Regression Coverage
 
-Bug fixes should include automated regression coverage when practical. Use unit tests,
-integration tests, fixture checks, contract tests, or visual/accessibility checks based on the
-changed surface.
+Bug-fix pull requests must include automated regression coverage before the
+related issue is closed, when practical. The regression evidence should include:
+
+- A test that fails against the pre-fix behavior and passes after the fix.
+- A reference to the related issue ID in the test name or test metadata.
+- A fixture, golden output, contract case, visual snapshot, or accessibility
+  check when that is the right way to reproduce the bug.
+- The exact local or CI command that proves the regression now passes.
+
+Apply this policy to repeatable bugs in diagnostics freshness, viewer rendering
+and fit-to-screen behavior, MCP transport/session handling, project tree rows,
+BOM or netlist loading states, status bar freshness, KiCad CLI compatibility,
+and live GUI context.
+
+Exceptions must be explicit in the PR description and explain why the bug is
+not practical to automate. A maintainer must approve the exception before the
+issue is closed. Manual screenshots alone are not sufficient to close
+repeatable bugs.
 
 ## Accessibility Coverage
 

@@ -13,6 +13,7 @@ notes can add detail, but they should not weaken these gates.
 | Gate                 | Trigger                                                              | Purpose                                                                                         | Required command                                   |
 | -------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------- |
 | Fast PR gate         | Every pull request                                                   | Catch formatting, lint, type, unit, package, metadata, boundary, and compatibility regressions. | `corepack pnpm run check`                          |
+| Bug-fix regression   | Every bug-fix pull request                                           | Prove the repeatable bug fails before the fix, passes after it, and references the issue.       | Relevant test command plus PR checklist evidence   |
 | Performance budget   | Product, integration, and shared fixture/schema pull requests        | Report shared baseline drift and fail measured lanes that exceed the regression budget.         | `corepack pnpm run check:performance-budgets`      |
 | Product gate         | Product-scoped changes                                               | Prove the touched product still builds, tests, and packages independently.                      | Product commands below                             |
 | Accessibility gate   | Extension-owned UI and webview changes                               | Prove WCAG 2.1 AA automated checks remain clean for in-scope extension surfaces.                | `corepack pnpm --filter kicadstudio run test:a11y` |
@@ -93,6 +94,28 @@ Protocol, compatibility, or cross-product changes use:
 corepack pnpm run test:contract
 corepack pnpm run test:fixtures
 ```
+
+## Bug-Fix Regression Requirement
+
+OASLANA-61 / GitHub issue #62 makes regression coverage part of the issue
+closing bar. Bug-fix pull requests must include automated regression coverage
+when practical, and the evidence must be visible in the PR template before the
+bug issue is closed.
+
+Required evidence:
+
+- A test that fails against the pre-fix behavior and passes after the fix.
+- A reference to the related issue ID in the test name, test metadata, fixture
+  metadata, snapshot name, or contract case.
+- A fixture, golden output, visual snapshot, accessibility check, or protocol
+  contract when that is the right way to reproduce the bug.
+- The exact local or CI command that ran the regression.
+
+Exceptions must explain why automation is not practical and must be approved by
+a maintainer before closing the issue. Manual screenshots alone are not
+sufficient for repeatable bugs; screenshots can support a visual report, but the
+closing evidence should be a DOM, visual-regression, accessibility, fixture, or
+integration test when the bug can be reproduced.
 
 ## Path-Filtered CI Lanes
 
@@ -257,6 +280,22 @@ or artifact.
 | OASLANA-82  | KiCad CLI/file-format compatibility regressions.                                            | Scheduled KiCad version canary lane                                                                           |
 | OASLANA-124 | Performance regressions without shared limits or PR evidence.                               | Shared baselines, CI budget report artifacts, and drift thresholds                                            |
 | OASLANA-125 | Accessibility claims without an explicit WCAG target or automated evidence.                 | WCAG 2.1 AA policy plus `corepack pnpm --filter kicadstudio run test:a11y`                                    |
+
+### Known Repeatable Bug Areas
+
+Use this table when closing existing bug issues so the regression lands in the
+right layer instead of relying on manual screenshots or ad-hoc verification.
+
+| Area                           | Tracking issues                    | Required regression task                                                                                 |
+| ------------------------------ | ---------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Diagnostics stale state        | OASLANA-68, OASLANA-69             | State-store unit tests plus integration checks for Problems, validation views, and derived freshness UI. |
+| Viewer rendering and fit bugs  | OASLANA-16, OASLANA-70             | DOM/E2E fit tests and visual snapshots for schematic/PCB viewer surfaces.                                |
+| MCP transport/session bugs     | OASLANA-34, OASLANA-43, OASLANA-71 | Transport contract cases for initialize flow, sessions, mount paths, and protocol headers.               |
+| Project tree duplication       | OASLANA-20                         | Extension model/integration tests for tree rows, labels, and file-state indicators.                      |
+| BOM and netlist loading states | OASLANA-22, OASLANA-23             | Extension unit or integration tests for loading, empty, error, and parsed-data states.                   |
+| Status bar freshness bugs      | OASLANA-29, OASLANA-69             | State-store and extension integration tests for stale/current/error status item transitions.             |
+| KiCad CLI compatibility bugs   | OASLANA-30, OASLANA-38, OASLANA-82 | KiCad CLI contract/canary cases backed by fixture reports and compatibility metadata.                    |
+| Live GUI context bugs          | OASLANA-35, OASLANA-44             | Scheduled GUI smoke or targeted integration tests for live PCB context and file-backed fallback state.   |
 
 ## Local Commands
 

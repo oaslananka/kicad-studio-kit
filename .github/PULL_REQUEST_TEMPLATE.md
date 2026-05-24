@@ -20,6 +20,7 @@ Closes #
 ## Test evidence
 
 <!-- Commands run + brief result -->
+<!-- For bug fixes, name the regression test that fails before the fix and passes after it. -->
 
 ## Protocol / MCP impact
 
@@ -52,7 +53,8 @@ Checklist reference: `docs/architecture/protocol-change-checklist.md`
 
 - [ ] Tests pass locally
 - [ ] Lint and typecheck pass
-- [ ] Bug fixes include automated regression coverage, or an explicit maintainer-approved exception
+- [ ] Bug fixes include automated regression coverage that references the related issue in the test name or metadata
+- [ ] Bug-fix exceptions explain why automation is not practical and have maintainer approval
 - [ ] CHANGELOG entry (if user-visible)
 - [ ] Docs updated (if user-visible)
 - [ ] No new committed secrets or build artifacts
