@@ -10,7 +10,15 @@ corepack pnpm run check:boundaries
 corepack pnpm run check:version
 corepack pnpm run check:compatibility
 corepack pnpm run check:runtime-policy
+corepack pnpm run check:dev-doctor
 corepack pnpm run check:devcontainer
+```
+
+For local setup diagnostics, run:
+
+```bash
+corepack pnpm run dev:doctor
+corepack pnpm run dev:doctor -- --json
 ```
 
 For extension-only work:

@@ -42,9 +42,14 @@ The deprecated HTTP+SSE fallback routes are disabled by default. Set
 ## Install
 
 ```bash
+corepack pnpm run dev:doctor -- --ci
 uvx kicad-mcp-pro@1.0.0 --help
 npx @oaslananka/kicad-mcp-pro@1.0.0 --help
 ```
+
+For source checkouts, `corepack pnpm run dev:doctor` validates Node, pnpm,
+Python, uv, MCP server CLI startup/version reporting, fixture corpus, protocol
+schemas, common development ports, and optional Cloudflare tunnel tooling.
 
 ## Package Metadata
 

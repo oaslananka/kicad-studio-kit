@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import net from "node:net";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -89,7 +90,24 @@ function readPackageJson(repoRoot) {
   return JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
 }
 
+function firstLine(value) {
+  return String(value).split(/\r?\n/u).find(Boolean) ?? "";
+}
+
 function run(command, args, options = {}) {
+  if (options.commandRunner) {
+    const result = options.commandRunner(command, args, {
+      cwd: options.cwd ?? DEFAULT_REPO_ROOT,
+    });
+    return {
+      ok: result.ok,
+      status: result.status ?? (result.ok ? 0 : 1),
+      stdout: String(result.stdout ?? "").trim(),
+      stderr: String(result.stderr ?? "").trim(),
+      error: result.error,
+    };
+  }
+
   const result = spawnSync(command, args, {
     cwd: options.cwd ?? DEFAULT_REPO_ROOT,
     encoding: "utf8",
@@ -104,106 +122,621 @@ function run(command, args, options = {}) {
   };
 }
 
-function firstLine(value) {
-  return value.split(/\r?\n/u).find(Boolean) ?? "";
+function makeCheck({ id, label, category, required = true, ok, detail, hint }) {
+  return {
+    id,
+    label,
+    category,
+    required,
+    ok,
+    status: ok ? "pass" : required ? "fail" : "warn",
+    detail: detail || "(no detail)",
+    hint,
+  };
 }
 
-function toolCheck(id, label, command, args, options = {}) {
+function commandCheck(id, label, category, command, args, options = {}) {
   const result = run(command, args, options);
   const output = firstLine(
     result.stdout || result.stderr || result.error || "",
   );
-  return {
+  return makeCheck({
     id,
     label,
+    category,
     required: options.required ?? true,
     ok: result.ok,
     detail: output || `exit ${result.status ?? "unknown"}`,
-  };
+    hint: options.hint,
+  });
 }
 
-export function createDoctorReport(
+function versionCommandCheck(id, label, category, candidates, range, options) {
+  let lastResult = null;
+  for (const [command, args] of candidates) {
+    const result = run(command, args, options);
+    lastResult = result;
+    if (result.ok) {
+      const detail = firstLine(result.stdout || result.stderr);
+      return makeCheck({
+        id,
+        label,
+        category,
+        required: true,
+        ok: satisfiesSimpleRange(detail, range),
+        detail,
+        hint: options.hint,
+      });
+    }
+  }
+
+  return makeCheck({
+    id,
+    label,
+    category,
+    required: true,
+    ok: false,
+    detail: firstLine(
+      lastResult?.stdout || lastResult?.stderr || lastResult?.error || "",
+    ),
+    hint: options.hint,
+  });
+}
+
+function hasSupportedKicadVersion(output) {
+  const parsed = parseVersion(output);
+  return Boolean(parsed && parsed[0] >= 8 && parsed[0] <= 10);
+}
+
+function readOptionalText(repoRoot, relativePath) {
+  try {
+    return readFileSync(path.join(repoRoot, relativePath), "utf8");
+  } catch {
+    return "";
+  }
+}
+
+function workspaceScriptsCheck(packageJson) {
+  const scripts = packageJson.scripts ?? {};
+  const exactScripts = {
+    "dev-doctor": "node scripts/dev-doctor.mjs",
+    "dev:doctor": "node scripts/dev-doctor.mjs",
+    "check:dev-doctor": "node scripts/dev-doctor.mjs --ci --strict",
+    "check:kicad-studio": "pnpm --filter kicadstudio run check",
+    "check:kicad-mcp-pro": "pnpm --dir packages/mcp-server run check",
+    "check:mcp-npm": "pnpm --dir packages/mcp-npm run check",
+    "check:fixtures": "node scripts/generate-kicad-fixture-corpus.mjs --check",
+  };
+  const includesScripts = {
+    "test:contract":
+      "pnpm --dir packages/mcp-server run test:transport-contract",
+  };
+  const missing = Object.entries(exactScripts)
+    .filter(([name, expected]) => scripts[name] !== expected)
+    .map(([name]) => name);
+  missing.push(
+    ...Object.entries(includesScripts)
+      .filter(([name, expected]) => !scripts[name]?.includes(expected))
+      .map(([name]) => name),
+  );
+
+  return makeCheck({
+    id: "workspace-scripts",
+    label: "Root workspace scripts",
+    category: "workspace",
+    required: true,
+    ok: missing.length === 0,
+    detail:
+      missing.length === 0
+        ? "required root scripts are available"
+        : `missing or mismatched scripts: ${missing.join(", ")}`,
+    hint: "Restore the root package.json script entrypoints used by CI and contributors.",
+  });
+}
+
+function fixtureManifestCheck(repoRoot) {
+  const manifestPath = path.join(
+    repoRoot,
+    "apps",
+    "vscode-extension",
+    "test",
+    "fixtures",
+    "kicad",
+    "manifest.json",
+  );
+  try {
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    const fixtureCount = Number(manifest.fixtureCount ?? 0);
+    return makeCheck({
+      id: "fixture-manifest",
+      label: "KiCad fixture corpus manifest",
+      category: "fixtures",
+      required: true,
+      ok: fixtureCount > 0 && Array.isArray(manifest.fixtures),
+      detail: `${fixtureCount} fixture(s) declared`,
+      hint: "Regenerate fixtures with `corepack pnpm run fixtures:kicad:generate`.",
+    });
+  } catch (error) {
+    return makeCheck({
+      id: "fixture-manifest",
+      label: "KiCad fixture corpus manifest",
+      category: "fixtures",
+      required: true,
+      ok: false,
+      detail: error.message,
+      hint: "Regenerate fixtures with `corepack pnpm run fixtures:kicad:generate`.",
+    });
+  }
+}
+
+function protocolSchemasCheck(repoRoot) {
+  const schemaRoot = path.join(
+    repoRoot,
+    "packages",
+    "protocol-schemas",
+    "schemas",
+  );
+  try {
+    const schemaFiles = readdirSync(schemaRoot).filter((file) =>
+      file.endsWith(".schema.json"),
+    );
+    const invalid = [];
+    for (const file of schemaFiles) {
+      const schema = JSON.parse(
+        readFileSync(path.join(schemaRoot, file), "utf8"),
+      );
+      if (!schema.$schema || !schema.$id || !schema.type) {
+        invalid.push(file);
+      }
+    }
+    return makeCheck({
+      id: "protocol-schemas",
+      label: "Protocol schemas",
+      category: "protocol",
+      required: true,
+      ok: schemaFiles.length > 0 && invalid.length === 0,
+      detail:
+        invalid.length === 0
+          ? `${schemaFiles.length} schema file(s) parsed`
+          : `invalid schema metadata: ${invalid.join(", ")}`,
+      hint: "Keep packages/protocol-schemas/schemas/*.schema.json parseable and versioned.",
+    });
+  } catch (error) {
+    return makeCheck({
+      id: "protocol-schemas",
+      label: "Protocol schemas",
+      category: "protocol",
+      required: true,
+      ok: false,
+      detail: error.message,
+      hint: "Restore packages/protocol-schemas/schemas and run protocol contract checks.",
+    });
+  }
+}
+
+function extensionDependenciesCheck(repoRoot) {
+  const packagePath = path.join(
+    repoRoot,
+    "apps",
+    "vscode-extension",
+    "package.json",
+  );
+  const nodeModulesPath = path.join(
+    repoRoot,
+    "apps",
+    "vscode-extension",
+    "node_modules",
+  );
+  return makeCheck({
+    id: "vscode-extension-deps",
+    label: "VS Code extension dependencies",
+    category: "workspace",
+    required: true,
+    ok: existsSync(packagePath) && existsSync(nodeModulesPath),
+    detail: existsSync(nodeModulesPath)
+      ? "apps/vscode-extension/node_modules is present"
+      : "apps/vscode-extension/node_modules is missing",
+    hint: "Run `corepack pnpm install --frozen-lockfile` from the repository root.",
+  });
+}
+
+function mcpVersionDetail(result) {
+  try {
+    const payload = JSON.parse(result.stdout);
+    const version = payload.package?.version;
+    return version ? `kicad-mcp-pro ${version}` : firstLine(result.stdout);
+  } catch {
+    return firstLine(result.stdout || result.stderr || result.error || "");
+  }
+}
+
+function findPortOwner(port, repoRoot, commandRunner) {
+  if (process.platform === "win32") {
+    const result = run("netstat", ["-ano", "-p", "tcp"], {
+      cwd: repoRoot,
+      commandRunner,
+    });
+    const ownerLine = result.stdout
+      .split(/\r?\n/u)
+      .find((line) => line.includes(`:${port}`) && /LISTENING/u.test(line));
+    return ownerLine ? ownerLine.trim() : "owner process not found";
+  }
+
+  const lsof = run("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN"], {
+    cwd: repoRoot,
+    commandRunner,
+  });
+  if (lsof.ok && lsof.stdout) {
+    return (
+      firstLine(lsof.stdout.split(/\r?\n/u).slice(1).join("\n")) || lsof.stdout
+    );
+  }
+
+  const ss = run("ss", ["-ltnp"], { cwd: repoRoot, commandRunner });
+  const ownerLine = ss.stdout
+    .split(/\r?\n/u)
+    .find((line) => line.includes(`:${port}`));
+  return ownerLine ? ownerLine.trim() : "owner process not found";
+}
+
+async function probePort(port, repoRoot, commandRunner) {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.once("error", (error) => {
+      if (error.code === "EADDRINUSE") {
+        resolve({
+          ok: false,
+          detail: `127.0.0.1:${port} in use (${findPortOwner(port, repoRoot, commandRunner)})`,
+        });
+      } else {
+        resolve({
+          ok: false,
+          detail: `127.0.0.1:${port} unavailable: ${error.message}`,
+        });
+      }
+    });
+    server.listen(port, "127.0.0.1", () => {
+      server.close(() => {
+        resolve({ ok: true, detail: `127.0.0.1:${port} available` });
+      });
+    });
+  });
+}
+
+async function portsCheck(repoRoot, options) {
+  const ports = [27185, 3334, 3335];
+  const results = await Promise.all(
+    ports.map((port) =>
+      (
+        options.portProbe ??
+        ((value) => probePort(value, repoRoot, options.commandRunner))
+      )(port),
+    ),
+  );
+
+  return makeCheck({
+    id: "ports",
+    label: "Project development ports",
+    category: "network",
+    required: false,
+    ok: results.every((result) => result.ok),
+    detail: results.map((result) => result.detail).join("; "),
+    hint: "Stop the owning process or configure an alternate port for MCP/preview tooling.",
+  });
+}
+
+export async function createDoctorReport(
   repoRoot = DEFAULT_REPO_ROOT,
-  env = process.env,
+  options = {},
 ) {
   const packageJson = readPackageJson(repoRoot);
-  const environment = detectDevelopmentEnvironment(env);
+  const env = options.env ?? process.env;
+  const environment = {
+    platform: process.platform,
+    arch: process.arch,
+    ...detectDevelopmentEnvironment(env),
+  };
   const nodeRange = packageJson.engines?.node ?? ">=24.11.0 <25";
   const pnpmRange = packageJson.engines?.pnpm ?? ">=11.0.0 <12";
+  const pythonRange = ">=3.12";
+  const commandOptions = {
+    cwd: repoRoot,
+    commandRunner: options.commandRunner,
+  };
+  const developerToolRequired = !options.ci || environment.isDevcontainer;
   const checks = [];
 
-  checks.push({
-    id: "node",
-    label: `Node ${nodeRange}`,
-    required: true,
-    ok: satisfiesSimpleRange(process.versions.node, nodeRange),
-    detail: process.version,
-  });
-
-  const pnpm = run("corepack", ["pnpm", "--version"], { cwd: repoRoot });
-  checks.push({
-    id: "pnpm",
-    label: `pnpm ${pnpmRange}`,
-    required: true,
-    ok: pnpm.ok && satisfiesSimpleRange(pnpm.stdout, pnpmRange),
-    detail: firstLine(pnpm.stdout || pnpm.stderr || pnpm.error || ""),
-  });
-
-  const python = run("python3", ["--version"], { cwd: repoRoot });
-  checks.push({
-    id: "python",
-    label: "Python >=3.12",
-    required: true,
-    ok:
-      python.ok &&
-      satisfiesSimpleRange(python.stdout || python.stderr, ">=3.12"),
-    detail: firstLine(python.stdout || python.stderr || python.error || ""),
-  });
-
-  checks.push(toolCheck("uv", "uv", "uv", ["--version"]));
-  checks.push(toolCheck("corepack", "Corepack", "corepack", ["--version"]));
   checks.push(
-    toolCheck("shellcheck", "shellcheck", "shellcheck", ["--version"]),
-  );
-  checks.push(
-    toolCheck("actionlint", "actionlint", "actionlint", ["-version"]),
-  );
-  checks.push(toolCheck("gh", "GitHub CLI", "gh", ["--version"]));
-  checks.push(toolCheck("xvfb", "Xvfb", "xvfb-run", ["--help"]));
-  checks.push(
-    toolCheck("kicad-cli", "KiCad CLI", "kicad-cli", ["version"], {
-      required: false,
+    makeCheck({
+      id: "node",
+      label: `Node ${nodeRange}`,
+      category: "runtime",
+      required: true,
+      ok: satisfiesSimpleRange(process.versions.node, nodeRange),
+      detail: process.version,
+      hint: "Install the Node version declared in .node-version and package.json engines.",
     }),
   );
 
+  const pnpm = run("corepack", ["pnpm", "--version"], commandOptions);
+  checks.push(
+    makeCheck({
+      id: "pnpm",
+      label: `pnpm ${pnpmRange}`,
+      category: "runtime",
+      required: true,
+      ok: pnpm.ok && satisfiesSimpleRange(pnpm.stdout, pnpmRange),
+      detail: firstLine(pnpm.stdout || pnpm.stderr || pnpm.error || ""),
+      hint: "Run `corepack enable` and use the pnpm version declared by packageManager.",
+    }),
+  );
+
+  checks.push(
+    versionCommandCheck(
+      "python",
+      `Python ${pythonRange}`,
+      "runtime",
+      [
+        ["python3", ["--version"]],
+        ["python", ["--version"]],
+        ["py", ["-3", "--version"]],
+      ],
+      pythonRange,
+      {
+        ...commandOptions,
+        hint: "Install Python 3.12 or newer and make it available as python3 or python.",
+      },
+    ),
+  );
+
+  checks.push(
+    commandCheck("uv", "uv", "tools", "uv", ["--version"], {
+      ...commandOptions,
+      hint: "Install uv from https://docs.astral.sh/uv/.",
+    }),
+  );
+  checks.push(
+    commandCheck("corepack", "Corepack", "tools", "corepack", ["--version"], {
+      ...commandOptions,
+      hint: "Install Node with Corepack and run `corepack enable`.",
+    }),
+  );
+  checks.push(
+    commandCheck(
+      "shellcheck",
+      "shellcheck",
+      "tools",
+      "shellcheck",
+      ["--version"],
+      {
+        ...commandOptions,
+        required: developerToolRequired,
+        hint: "Install shellcheck for workflow and shell script validation.",
+      },
+    ),
+  );
+  checks.push(
+    commandCheck(
+      "actionlint",
+      "actionlint",
+      "tools",
+      "actionlint",
+      ["-version"],
+      {
+        ...commandOptions,
+        required: developerToolRequired,
+        hint: "Install actionlint for GitHub Actions workflow validation.",
+      },
+    ),
+  );
+  checks.push(
+    commandCheck("gh", "GitHub CLI", "tools", "gh", ["--version"], {
+      ...commandOptions,
+      required: developerToolRequired,
+      hint: "Install GitHub CLI and authenticate with `gh auth login`.",
+    }),
+  );
+  checks.push(
+    commandCheck("xvfb", "Xvfb", "tools", "xvfb-run", ["--help"], {
+      ...commandOptions,
+      required: developerToolRequired,
+      hint: "Install Xvfb for headless VS Code and KiCad GUI smoke tests on Linux.",
+    }),
+  );
+
+  const mcpWorkspace = run(
+    "uv",
+    [
+      "run",
+      "--project",
+      "packages/mcp-server",
+      "--all-extras",
+      "python",
+      "-c",
+      "import kicad_mcp; print('kicad_mcp import ok')",
+    ],
+    commandOptions,
+  );
+  checks.push(
+    makeCheck({
+      id: "mcp-workspace",
+      label: "uv resolves MCP server workspace",
+      category: "workspace",
+      required: true,
+      ok: mcpWorkspace.ok,
+      detail: firstLine(
+        mcpWorkspace.stdout || mcpWorkspace.stderr || mcpWorkspace.error || "",
+      ),
+      hint: "Run `uv sync --all-extras --frozen --project packages/mcp-server`.",
+    }),
+  );
+
+  const kicad = run("kicad-cli", ["version"], commandOptions);
+  const kicadDetail = firstLine(
+    kicad.stdout || kicad.stderr || kicad.error || "",
+  );
+  checks.push(
+    makeCheck({
+      id: "kicad-cli",
+      label: "KiCad CLI 8.x/9.x/10.x",
+      category: "tools",
+      required: !options.ci,
+      ok: kicad.ok && hasSupportedKicadVersion(kicadDetail),
+      detail: kicadDetail,
+      hint: "Install a supported KiCad CLI or set the extension kicad-cli path.",
+    }),
+  );
+
+  checks.push(extensionDependenciesCheck(repoRoot));
+
+  const mcpHelp = run(
+    "uv",
+    [
+      "run",
+      "--project",
+      "packages/mcp-server",
+      "--all-extras",
+      "kicad-mcp-pro",
+      "--help",
+    ],
+    commandOptions,
+  );
+  checks.push(
+    makeCheck({
+      id: "mcp-help",
+      label: "kicad-mcp-pro --help",
+      category: "mcp",
+      required: true,
+      ok: mcpHelp.ok,
+      detail: firstLine(
+        mcpHelp.stdout || mcpHelp.stderr || mcpHelp.error || "",
+      ),
+      hint: "Run `uv sync --all-extras --frozen --project packages/mcp-server`.",
+    }),
+  );
+
+  const mcpVersion = run(
+    "uv",
+    [
+      "run",
+      "--project",
+      "packages/mcp-server",
+      "--all-extras",
+      "kicad-mcp-pro",
+      "version",
+      "--json",
+    ],
+    commandOptions,
+  );
+  checks.push(
+    makeCheck({
+      id: "mcp-version",
+      label: "kicad-mcp-pro version",
+      category: "mcp",
+      required: true,
+      ok: mcpVersion.ok,
+      detail: mcpVersionDetail(mcpVersion),
+      hint: "Verify the MCP server CLI can report version metadata.",
+    }),
+  );
+
+  checks.push(
+    commandCheck(
+      "cloudflared",
+      "Cloudflare tunnel tool",
+      "optional",
+      "cloudflared",
+      ["--version"],
+      {
+        ...commandOptions,
+        required: false,
+        hint: "Install cloudflared only when testing remote tunnel workflows.",
+      },
+    ),
+  );
+
+  checks.push(await portsCheck(repoRoot, options));
+  checks.push(workspaceScriptsCheck(packageJson));
+  checks.push(fixtureManifestCheck(repoRoot));
+  checks.push(
+    commandCheck(
+      "fixture-corpus",
+      "KiCad fixture corpus validation",
+      "fixtures",
+      "corepack",
+      ["pnpm", "run", "check:fixtures"],
+      {
+        ...commandOptions,
+        hint: "Run `corepack pnpm run fixtures:kicad:generate` and commit the generated corpus.",
+      },
+    ),
+  );
+  checks.push(protocolSchemasCheck(repoRoot));
+
+  const compatibility = readOptionalText(repoRoot, "compatibility.yaml");
+  checks.push(
+    makeCheck({
+      id: "compatibility-matrix",
+      label: "Compatibility matrix",
+      category: "workspace",
+      required: true,
+      ok:
+        compatibility.includes('primary: "10.0.x"') &&
+        compatibility.includes('range: ">=24.11.0 <25"') &&
+        compatibility.includes('range: ">=3.12"'),
+      detail: compatibility
+        ? "compatibility.yaml contains runtime baselines"
+        : "missing",
+      hint: "Keep compatibility.yaml aligned with package engines and support docs.",
+    }),
+  );
+
+  const failedRequired = checks.some((check) => check.required && !check.ok);
+
   return {
+    schemaVersion: 1,
+    status: failedRequired ? "failed" : "ok",
     environment,
     checks,
   };
 }
 
-function printHuman(report) {
+export function formatHumanReport(report) {
   const envSummary = report.environment.isDevcontainer
     ? `devcontainer detected (${report.environment.markers.join(", ")})`
     : "devcontainer marker not detected";
-  console.log(`Environment: ${envSummary}`);
+  const lines = [
+    "KiCad Studio Kit dev-doctor",
+    `Status: ${report.status}`,
+    `Environment: ${report.environment.platform}/${report.environment.arch}; ${envSummary}`,
+  ];
 
   for (const check of report.checks) {
-    const status = check.ok ? "pass" : check.required ? "fail" : "warn";
-    console.log(`[${status}] ${check.label}: ${check.detail}`);
+    lines.push(`[${check.status}] ${check.label}: ${check.detail}`);
+    if (!check.ok) {
+      lines.push(`  hint: ${check.hint}`);
+    }
   }
+
+  return lines.join("\n");
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   const args = new Set(process.argv.slice(2));
-  const report = createDoctorReport();
+  const report = await createDoctorReport(DEFAULT_REPO_ROOT, {
+    env: process.env,
+    ci: args.has("--ci"),
+  });
   const requireDevcontainer = args.has("--require-devcontainer");
   const strict = args.has("--strict") || report.environment.isDevcontainer;
 
   if (args.has("--json")) {
     console.log(JSON.stringify(report, null, 2));
   } else {
-    printHuman(report);
+    console.log(formatHumanReport(report));
   }
 
   if (requireDevcontainer && !report.environment.isDevcontainer) {
