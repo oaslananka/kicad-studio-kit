@@ -26,6 +26,30 @@ repository. There is no secondary release authority.
 Manual workflow dispatch is available for diagnostics only and accepts no
 version input.
 
+## Package Validation
+
+The VSIX content gate is `corepack pnpm --filter kicadstudio run
+package:validate`. Run it after `corepack pnpm --filter kicadstudio run
+package` so the check can compare `vsce ls --no-dependencies` output, required
+viewer media, KiCanvas assets, Marketplace assets, contribution registrations,
+schema and grammar JSON, bundle sizes, and forbidden file patterns.
+
+The packaged file allowlist lives in
+`apps/vscode-extension/scripts/package-allowlist.json`. Update it only when a
+new runtime file is intentionally shipped. Before changing the allowlist, run:
+
+```bash
+corepack pnpm --filter kicadstudio run build
+corepack pnpm --filter kicadstudio run package
+corepack pnpm --filter kicadstudio exec vsce ls --no-dependencies
+corepack pnpm --filter kicadstudio run package:validate
+```
+
+Review every new `vsce ls` path before adding it to `allowedFiles` or
+`allowedGlobs`. Never allow `.env`, logs, source trees, node caches, test
+artifacts, output folders, maps, VSIX files, checksums, SBOMs, or generated
+temporary files into the VSIX.
+
 Required secrets:
 
 - `VSCE_PAT`
