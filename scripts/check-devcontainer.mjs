@@ -222,8 +222,19 @@ export function validateDevcontainerRepository(repoRoot = DEFAULT_REPO_ROOT) {
   if (scripts["dev-doctor"] !== "node scripts/dev-doctor.mjs") {
     errors.push("package.json must define dev-doctor");
   }
+  if (scripts["dev:doctor"] !== "node scripts/dev-doctor.mjs") {
+    errors.push("package.json must define dev:doctor");
+  }
+  if (
+    scripts["check:dev-doctor"] !== "node scripts/dev-doctor.mjs --ci --strict"
+  ) {
+    errors.push("package.json must define check:dev-doctor");
+  }
   if (!scripts.check?.includes("pnpm run check:devcontainer")) {
     errors.push("package.json check must run check:devcontainer");
+  }
+  if (!scripts.check?.includes("pnpm run check:dev-doctor")) {
+    errors.push("package.json check must run check:dev-doctor");
   }
 
   return errors;

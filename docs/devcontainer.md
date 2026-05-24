@@ -29,6 +29,7 @@ corepack enable pnpm
 corepack pnpm install --frozen-lockfile
 uv sync --all-extras --frozen --project packages/mcp-server
 corepack pnpm --filter kicadstudio exec playwright install --with-deps chromium
+corepack pnpm run check:dev-doctor
 corepack pnpm run check:devcontainer
 corepack pnpm run dev-doctor -- --require-devcontainer
 ```
@@ -45,8 +46,10 @@ uv run --project packages/mcp-server --all-extras pytest
 ```
 
 `corepack pnpm run check:devcontainer` validates the container contract without
-building the image. `corepack pnpm run dev-doctor -- --require-devcontainer`
-checks the active environment marker and the required command-line tools.
+building the image. `corepack pnpm run dev:doctor -- --json` emits a
+machine-readable environment report for CI/debug logs.
+`corepack pnpm run dev-doctor -- --require-devcontainer` checks the active
+environment marker and the required command-line tools.
 
 ## Test Coverage
 

@@ -28,6 +28,7 @@ All release surfaces are pinned to `1.0.0`:
 
 ```powershell
 corepack enable
+corepack pnpm run dev:doctor
 corepack pnpm install --frozen-lockfile
 uv sync --all-extras --frozen --project packages/mcp-server
 corepack pnpm run check:forbidden-refs
@@ -49,6 +50,7 @@ corepack pnpm run check:kicad-studio
 corepack pnpm run check:kicad-mcp-pro
 corepack pnpm run check:mcp-npm
 corepack pnpm run test:contract
+corepack pnpm run check:dev-doctor
 ```
 
 For a reproducible VS Code Dev Containers or GitHub Codespaces environment, use

@@ -28,5 +28,14 @@ test("root scripts expose devcontainer and dev-doctor checks", () => {
     packageJson.scripts["dev-doctor"],
     "node scripts/dev-doctor.mjs",
   );
+  assert.equal(
+    packageJson.scripts["dev:doctor"],
+    "node scripts/dev-doctor.mjs",
+  );
+  assert.equal(
+    packageJson.scripts["check:dev-doctor"],
+    "node scripts/dev-doctor.mjs --ci --strict",
+  );
+  assert.match(packageJson.scripts.check, /pnpm run check:dev-doctor/);
   assert.match(packageJson.scripts.check, /pnpm run check:devcontainer/);
 });

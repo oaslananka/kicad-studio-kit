@@ -24,6 +24,7 @@ Canonical repository: https://github.com/oaslananka/kicad-studio-kit/tree/main/a
 
 ```powershell
 corepack enable
+corepack pnpm run dev:doctor
 corepack pnpm install --frozen-lockfile
 corepack pnpm --filter kicadstudio run build
 corepack pnpm --filter kicadstudio run package
@@ -80,6 +81,7 @@ Release notes for Marketplace and Open VSX users live in [CHANGELOG.md](CHANGELO
 ## Local Development
 
 ```powershell
+corepack pnpm run dev:doctor -- --ci
 corepack pnpm install --frozen-lockfile
 corepack pnpm --filter kicadstudio run marketplace:check
 corepack pnpm --filter kicadstudio run build
