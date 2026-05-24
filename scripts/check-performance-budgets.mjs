@@ -30,6 +30,9 @@ export const REQUIRED_PERFORMANCE_METRIC_IDS = Object.freeze([
   "extension.validation.drc.medium_ms",
   "extension.validation.erc.clean_ms",
   "extension.validation.cancel_ms",
+  "extension.bom.large_parse_ms",
+  "extension.netlist.large_parse_ms",
+  "extension.export.command_cancel_ms",
   "mcp.tools_list.response_ms",
   "mcp.pcb_board_summary.medium_ms",
   "mcp.session.establishment_ms",
@@ -61,6 +64,49 @@ function multiplyThreshold(baseline, ratio) {
 
 export function loadRepositoryPerformanceCatalog(repoRoot = DEFAULT_REPO_ROOT) {
   return readJson(resolve(repoRoot, "performance", "baselines.json"));
+}
+
+export function loadPerformanceMeasurements(measurementPaths) {
+  const paths = Array.isArray(measurementPaths)
+    ? measurementPaths
+    : [measurementPaths];
+  if (paths.length === 0) {
+    throw new Error("At least one performance measurement file is required.");
+  }
+
+  const merged = {
+    schemaVersion: 1,
+    sources: [],
+    measurements: [],
+  };
+
+  for (const measurementPath of paths) {
+    const measurements = readJson(measurementPath);
+    if (!isRecord(measurements)) {
+      throw new Error(
+        `Performance measurements must be a JSON object: ${measurementPath}`,
+      );
+    }
+    if (measurements.schemaVersion !== 1) {
+      throw new Error(
+        `Performance measurements schemaVersion must be 1: ${measurementPath}`,
+      );
+    }
+    if (!Array.isArray(measurements.measurements)) {
+      throw new Error(
+        `Performance measurements must include a measurements array: ${measurementPath}`,
+      );
+    }
+
+    merged.sources.push(
+      typeof measurements.source === "string" && measurements.source.trim()
+        ? measurements.source
+        : measurementPath,
+    );
+    merged.measurements.push(...measurements.measurements);
+  }
+
+  return merged;
 }
 
 export function validatePerformanceCatalog(catalog) {
@@ -226,7 +272,7 @@ export function evaluatePerformanceMeasurements(catalog, measurements) {
 function parseArgs(argv) {
   const options = {
     catalog: DEFAULT_CATALOG_PATH,
-    measurements: undefined,
+    measurements: [],
     output: undefined,
   };
 
@@ -237,7 +283,7 @@ function parseArgs(argv) {
       options.catalog = resolve(value);
       index += 1;
     } else if (arg === "--measurements" && value) {
-      options.measurements = resolve(value);
+      options.measurements.push(resolve(value));
       index += 1;
     } else if (arg === "--output" && value) {
       options.output = resolve(value);
@@ -257,7 +303,7 @@ function writeReport(outputPath, report) {
 function runCli() {
   const options = parseArgs(process.argv.slice(2));
   const catalog = readJson(options.catalog);
-  if (!options.measurements) {
+  if (options.measurements.length === 0) {
     const errors = validatePerformanceCatalog(catalog);
     if (errors.length > 0) {
       throw new Error(errors.join("\n"));
@@ -268,7 +314,7 @@ function runCli() {
 
   const report = evaluatePerformanceMeasurements(
     catalog,
-    readJson(options.measurements),
+    loadPerformanceMeasurements(options.measurements),
   );
   if (options.output) {
     writeReport(options.output, report);

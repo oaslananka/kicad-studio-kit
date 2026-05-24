@@ -19,9 +19,9 @@
     "extension.activation.cold.posix_ms": {
       "baseline": 600,
       "unit": "ms",
-      "ciRequired": false,
+      "ciRequired": true,
       "summary": "Cold extension activation on macOS or Linux.",
-      "source": "OASLANA-46 activation performance harness"
+      "source": "apps/vscode-extension/test/performance/extensionPerformance.test.ts"
     },
     "extension.activation.warm_ms": {
       "baseline": 200,
@@ -33,51 +33,51 @@
     "extension.project_scan.single_ms": {
       "baseline": 300,
       "unit": "ms",
-      "ciRequired": false,
+      "ciRequired": true,
       "summary": "Project scan for one five-file fixture project.",
-      "source": "OASLANA-46 project scan performance harness"
+      "source": "apps/vscode-extension/test/performance/extensionPerformance.test.ts"
     },
     "extension.project_scan.medium_ms": {
       "baseline": 1000,
       "unit": "ms",
-      "ciRequired": false,
+      "ciRequired": true,
       "summary": "Project scan for four fixture projects and about twenty files.",
-      "source": "OASLANA-46 project scan performance harness"
+      "source": "apps/vscode-extension/test/performance/extensionPerformance.test.ts"
     },
     "extension.project_scan.large_ms": {
       "baseline": 3000,
       "unit": "ms",
-      "ciRequired": false,
+      "ciRequired": true,
       "summary": "Project scan for ten fixture projects and at least one hundred files.",
-      "source": "OASLANA-46 project scan performance harness"
+      "source": "apps/vscode-extension/test/performance/extensionPerformance.test.ts"
     },
     "extension.viewer.schematic_first_render_ms": {
       "baseline": 500,
       "unit": "ms",
-      "ciRequired": false,
+      "ciRequired": true,
       "summary": "KiCanvas schematic first render for the clean fixture.",
-      "source": "OASLANA-46 viewer performance harness"
+      "source": "apps/vscode-extension/test/performance/extensionPerformance.test.ts"
     },
     "extension.viewer.pcb_first_render_ms": {
       "baseline": 800,
       "unit": "ms",
-      "ciRequired": false,
+      "ciRequired": true,
       "summary": "KiCanvas PCB first render for the clean fixture.",
-      "source": "OASLANA-46 viewer performance harness"
+      "source": "apps/vscode-extension/test/performance/extensionPerformance.test.ts"
     },
     "extension.viewer.large_pcb_first_render_ms": {
       "baseline": 2000,
       "unit": "ms",
-      "ciRequired": false,
+      "ciRequired": true,
       "summary": "KiCanvas first render for a large four-layer PCB fixture.",
-      "source": "OASLANA-46 viewer performance harness"
+      "source": "apps/vscode-extension/test/performance/extensionPerformance.test.ts"
     },
     "extension.viewer.reload_ms": {
       "baseline": 300,
       "unit": "ms",
-      "ciRequired": false,
+      "ciRequired": true,
       "summary": "Viewer reload after the first render.",
-      "source": "OASLANA-46 viewer performance harness"
+      "source": "apps/vscode-extension/test/performance/extensionPerformance.test.ts"
     },
     "extension.validation.drc.clean_ms": {
       "baseline": 2000,
@@ -103,9 +103,30 @@
     "extension.validation.cancel_ms": {
       "baseline": 200,
       "unit": "ms",
-      "ciRequired": false,
+      "ciRequired": true,
       "summary": "Validation command cancellation response after user action.",
-      "source": "OASLANA-46 validation performance harness"
+      "source": "apps/vscode-extension/test/performance/extensionPerformance.test.ts"
+    },
+    "extension.bom.large_parse_ms": {
+      "baseline": 1200,
+      "unit": "ms",
+      "ciRequired": true,
+      "summary": "BOM parse and grouping for a generated 1000-component schematic.",
+      "source": "apps/vscode-extension/test/performance/extensionPerformance.test.ts"
+    },
+    "extension.netlist.large_parse_ms": {
+      "baseline": 1200,
+      "unit": "ms",
+      "ciRequired": true,
+      "summary": "Netlist S-expression parse and net extraction for a generated 1000-net report.",
+      "source": "apps/vscode-extension/test/performance/extensionPerformance.test.ts"
+    },
+    "extension.export.command_cancel_ms": {
+      "baseline": 200,
+      "unit": "ms",
+      "ciRequired": true,
+      "summary": "Export command cancellation response for a hanging KiCad CLI process.",
+      "source": "apps/vscode-extension/test/performance/extensionPerformance.test.ts"
     },
     "mcp.tools_list.response_ms": {
       "baseline": 100,

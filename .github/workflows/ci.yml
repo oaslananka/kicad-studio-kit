@@ -114,6 +114,10 @@ jobs:
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
       - run: uv sync --all-extras --frozen --project packages/mcp-server
+      - name: Measure extension performance budgets
+        env:
+          KICAD_EXTENSION_PERFORMANCE_MEASUREMENTS_JSON: performance-results/extension-performance.json
+        run: corepack pnpm --filter kicadstudio run test:perf
       - name: Measure MCP performance budgets
         env:
           KICAD_PERFORMANCE_MEASUREMENTS_JSON: performance-results/mcp-tools-list.json
@@ -121,6 +125,7 @@ jobs:
       - name: Check performance budgets
         run: >-
           node scripts/check-performance-budgets.mjs
+          --measurements performance-results/extension-performance.json
           --measurements performance-results/mcp-tools-list.json
           --output performance-results/budget-report.json
       - name: Upload performance budget artifacts

@@ -33,18 +33,21 @@ their artifacts before they set another metric to `ciRequired`.
 
 The current catalog covers these surfaces:
 
-| Surface        | Metrics                                                                                 |
-| -------------- | --------------------------------------------------------------------------------------- |
-| Activation     | Cold Windows, cold POSIX, and warm extension activation                                  |
-| Project scan   | Single-project, medium workspace, and large workspace scan                               |
-| Viewer         | Schematic first render, PCB first render, large PCB first render, and reload              |
-| Validation     | Clean DRC, medium DRC, clean ERC, and cancellation response                              |
-| MCP            | `tools/list`, medium-board `pcb_get_board_summary`, and session establishment            |
-| Memory         | Idle extension memory and memory with a viewer open                                      |
+| Surface      | Metrics                                                                      |
+| ------------ | ---------------------------------------------------------------------------- |
+| Activation   | Cold Windows, cold POSIX, and warm extension activation                       |
+| Project scan | Single-project, medium workspace, and large workspace scan                    |
+| Viewer       | Schematic first render, PCB first render, large PCB first render, and reload  |
+| Validation   | Clean DRC, medium DRC, clean ERC, and cancellation response                   |
+| Export       | Export cancellation response                                                  |
+| BOM/netlist  | Large schematic BOM parse and large netlist S-expression parse                |
+| MCP          | `tools/list`, medium-board `pcb_get_board_summary`, and session establishment |
+| Memory       | Idle extension memory and memory with a viewer open                           |
 
-`mcp.tools_list.response_ms` is the first CI-required producer. OASLANA-46 can
-add extension host, viewer, validation, memory, and fixture-backed MCP
-producers without changing the budget schema.
+OASLANA-46 makes the POSIX activation, project scan, viewer render,
+validation cancellation, BOM parse, netlist parse, export cancellation, and MCP
+`tools/list` metrics CI-required. Any missing CI-required metric fails the
+budget job before the pull request can merge.
 
 ## Local Checks
 
@@ -54,13 +57,23 @@ Validate catalog shape and checker behavior with:
 corepack pnpm run check:performance-budgets
 ```
 
-Create the same MCP measurement emitted by CI and evaluate its budget with:
+Run the full performance lane used by CI with:
 
 ```bash
+corepack pnpm run test:perf
+```
+
+Create the same extension and MCP measurements emitted by CI and evaluate
+their combined budget report with:
+
+```bash
+KICAD_EXTENSION_PERFORMANCE_MEASUREMENTS_JSON=performance-results/extension-performance.json \
+  corepack pnpm --filter kicadstudio run test:perf
 KICAD_PERFORMANCE_MEASUREMENTS_JSON=performance-results/mcp-tools-list.json \
   uv run --project packages/mcp-server --all-extras \
   pytest packages/mcp-server/tests/unit/test_benchmark_latency.py
 node scripts/check-performance-budgets.mjs \
+  --measurements performance-results/extension-performance.json \
   --measurements performance-results/mcp-tools-list.json \
   --output performance-results/budget-report.json
 ```
@@ -78,10 +91,11 @@ request and on pushes to `main`. Its reference environment is the GitHub-hosted
 
 The job uploads `performance-budget-artifacts` for 14 days:
 
-| Artifact path                                 | Contents                                              |
-| --------------------------------------------- | ----------------------------------------------------- |
-| `performance-results/mcp-tools-list.json`     | Raw MCP samples and the p95 measurement.              |
-| `performance-results/budget-report.json`      | Budget thresholds and checker result for each metric. |
+| Artifact path                                      | Contents                                              |
+| -------------------------------------------------- | ----------------------------------------------------- |
+| `performance-results/extension-performance.json`   | Raw extension host, viewer, parser, and cancel samples. |
+| `performance-results/mcp-tools-list.json`          | Raw MCP samples and the p95 measurement.              |
+| `performance-results/budget-report.json`           | Budget thresholds and checker result for each metric. |
 
 Keep reports from the relevant PR when investigating drift. Trend dashboards
 can consume the same JSON without coupling the producer to a hosted service.
