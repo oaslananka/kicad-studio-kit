@@ -23,10 +23,25 @@ Bug fixes must include regression coverage.
 Required evidence:
 
 - A test that fails before the fix and passes after the fix, when practical.
+- A related issue ID in the test name or test metadata.
 - A fixture, golden file, visual snapshot, or contract test when relevant.
-- A note in the PR explaining any case where automation is not practical.
+- The exact local or CI command that proves the regression now passes.
+- A note in the PR explaining any case where automation is not practical, with
+  maintainer approval before the issue is closed.
 
 Manual screenshots alone are not sufficient to close repeatable bugs.
+
+## Issue-closing checklist
+
+Before closing a bug issue, maintainers should verify:
+
+- The linked PR includes a regression test or a documented maintainer-approved
+  exception.
+- The regression evidence references the related issue ID in the test name,
+  fixture metadata, snapshot name, or contract case.
+- The PR lists the command or CI check that ran the regression.
+- Repeatable visual bugs are covered by a visual, DOM, accessibility, or
+  fixture-backed test instead of screenshot-only evidence.
 
 ## Architecture and monorepo changes
 
