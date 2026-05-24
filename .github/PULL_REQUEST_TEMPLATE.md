@@ -23,6 +23,13 @@ Closes #
 
 ## Protocol / MCP impact
 
+Complete this section when the PR changes MCP tool names, tool schemas,
+capability metadata, transport behavior, server-info payloads, compatibility
+metadata, or extension adapter behavior. For non-protocol PRs, mark it not
+applicable and state why.
+
+Checklist reference: `docs/architecture/protocol-change-checklist.md`
+
 - [ ] Not applicable; reason:
 - [ ] Protocol schema updated
 - [ ] MCP server implementation updated

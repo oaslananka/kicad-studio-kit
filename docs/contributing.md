@@ -23,6 +23,16 @@ corepack pnpm run check:mcp-npm
 corepack pnpm run test:contract
 ```
 
+## Protocol Changes
+
+Protocol-impacting pull requests must complete the protocol section in
+`.github/PULL_REQUEST_TEMPLATE.md`. This applies to MCP tool names, tool
+schemas, capability metadata, transport behavior, server-info payloads,
+compatibility metadata, and extension MCP adapter behavior. Mark the section not
+applicable with a reason when none of those surfaces are touched.
+
+Checklist policy: [protocol change checklist](architecture/protocol-change-checklist.md).
+
 ## Issue Order
 
 Work follows the governance phases documented in

@@ -17,6 +17,7 @@ notes can add detail, but they should not weaken these gates.
 | Product gate         | Product-scoped changes                                               | Prove the touched product still builds, tests, and packages independently.                      | Product commands below                             |
 | Accessibility gate   | Extension-owned UI and webview changes                               | Prove WCAG 2.1 AA automated checks remain clean for in-scope extension surfaces.                | `corepack pnpm --filter kicadstudio run test:a11y` |
 | Contract gate        | Protocol, compatibility, or cross-product changes                    | Prove extension and MCP assumptions remain aligned.                                             | `corepack pnpm run test:contract`                  |
+| Protocol PR gate     | Protocol, compatibility, or cross-product review changes             | Keep protocol-impact PRs visible through the PR template and architecture guidance.             | `corepack pnpm run check:protocol-pr-template`     |
 | Fixture gate         | Parser, diagnostics, command-builder, or KiCad file behavior changes | Prove deterministic KiCad corpus behavior stays stable.                                         | `corepack pnpm run test:fixtures`                  |
 | Nightly quality gate | Scheduled and manual workflow                                        | Re-run the repository gate plus contract and fixture gates outside the fast PR path.            | `.github/workflows/nightly-quality-gates.yml`      |
 | VS Code canary       | Scheduled and manual workflow                                        | Check supported VS Code host lanes before runtime/API changes reach users.                      | `.github/workflows/vscode-canary.yml`              |
@@ -182,6 +183,7 @@ or artifact.
 | OASLANA-56  | Extension code bypassing the MCP adapter boundary.                              | Adapter unit tests plus integration tests for UI and command calls         |
 | OASLANA-57  | MCP server-info or capability metadata drift.                                   | Server-info and compatibility contract tests                               |
 | OASLANA-75  | Extension and MCP server passing independently but failing as a pair.           | Real-pair E2E tests                                                        |
+| OASLANA-76  | Protocol-impact pull requests missing schema, adapter, contract, or compatibility evidence. | PR template protocol checklist plus `corepack pnpm run check:protocol-pr-template` |
 | OASLANA-16  | Schematic viewer rendering as a tiny low-resolution thumbnail.                  | Playwright viewer fit tests plus visual regression snapshots               |
 | OASLANA-20  | Project tree duplicate rows or unclear file state indicators.                   | Extension integration tests for project tree model and labels              |
 | OASLANA-68  | Stale state across project, diagnostics, viewer, MCP, and export surfaces.      | State-store unit tests plus integration checks for derived UI state        |
@@ -208,6 +210,7 @@ before pushing.
 | MCP unit behavior              | `uv run --project packages/mcp-server --all-extras pytest packages/mcp-server/tests/unit/<test_file>.py -q` | `corepack pnpm run check:kicad-mcp-pro`        |
 | MCP full behavior              | `corepack pnpm --dir packages/mcp-server run test`                                                          | `corepack pnpm run check:kicad-mcp-pro`        |
 | Protocol or compatibility      | `corepack pnpm run test:contract`                                                                           | `corepack pnpm run check`                      |
+| Protocol PR checklist          | `corepack pnpm run check:protocol-pr-template`                                                              | `corepack pnpm run check`                      |
 | Fixtures                       | `corepack pnpm run test:fixtures`                                                                           | `corepack pnpm run check`                      |
 
 ## KiCad Fixture Corpus
