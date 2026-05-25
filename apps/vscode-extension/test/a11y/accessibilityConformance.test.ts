@@ -39,6 +39,12 @@ type ThemeFixture = {
   name: string;
   media: MediaOptions;
   css: string;
+  tokens: {
+    button: string;
+    buttonText: string;
+    buttonSecondary: string;
+    buttonSecondaryText: string;
+  };
 };
 
 const axeOptions: RunOptions = {
@@ -120,6 +126,70 @@ describe('WCAG 2.1 AA webview conformance gate', () => {
       });
 
       expect(await collectMotionAndFocusCssIssues(page)).toEqual([]);
+    }
+  );
+
+  it.each(themeFixtures().map((theme) => [theme.name, theme] as const))(
+    'captures themed KiCanvas toolbar screenshot and keeps action hierarchy in %s',
+    async (_themeName, theme) => {
+      await page.emulateMedia(theme.media);
+      await page.setContent(
+        prepareForAxe(createViewerToolbarHtml(), theme.css),
+        {
+          waitUntil: 'domcontentloaded'
+        }
+      );
+
+      const screenshot = await page.locator('header').screenshot();
+      expect(screenshot.length).toBeGreaterThan(1000);
+
+      const styles = await page.evaluate(() => {
+        const readButton = (selector: string) => {
+          const element = document.querySelector<HTMLElement>(selector);
+          if (!element) {
+            throw new Error(`Missing toolbar control ${selector}`);
+          }
+          const style = getComputedStyle(element);
+          return {
+            backgroundColor: style.backgroundColor,
+            backgroundImage: style.backgroundImage,
+            color: style.color,
+            borderRadius: Number.parseFloat(style.borderRadius)
+          };
+        };
+        const header = document.querySelector<HTMLElement>('header');
+        if (!header) {
+          throw new Error('Missing viewer toolbar header');
+        }
+        return {
+          headerHeight: header.getBoundingClientRect().height,
+          reload: readButton('#reload-btn'),
+          open: readButton('#open-kicad-btn'),
+          exportPng: readButton('#export-png-btn'),
+          exportSvg: readButton('#export-svg-btn')
+        };
+      });
+
+      expect(styles.headerHeight).toBeLessThanOrEqual(42);
+      expect(styles.reload.backgroundImage).toBe('none');
+      expect(styles.reload.backgroundColor).toBe(hexToRgb(theme.tokens.button));
+      expect(styles.reload.color).toBe(hexToRgb(theme.tokens.buttonText));
+      expect(styles.reload.borderRadius).toBeLessThanOrEqual(6);
+
+      for (const secondaryAction of [
+        styles.open,
+        styles.exportPng,
+        styles.exportSvg
+      ]) {
+        expect(secondaryAction.backgroundImage).toBe('none');
+        expect(secondaryAction.backgroundColor).toBe(
+          hexToRgb(theme.tokens.buttonSecondary)
+        );
+        expect(secondaryAction.color).toBe(
+          hexToRgb(theme.tokens.buttonSecondaryText)
+        );
+        expect(secondaryAction.borderRadius).toBeLessThanOrEqual(6);
+      }
     }
   );
 });
@@ -411,7 +481,13 @@ function themeFixtures(): ThemeFixture[] {
         button: '#0e639c',
         buttonText: '#ffffff',
         buttonSecondary: '#3a3d41'
-      })
+      }),
+      tokens: {
+        button: '#0e639c',
+        buttonText: '#ffffff',
+        buttonSecondary: '#3a3d41',
+        buttonSecondaryText: '#f2f2f2'
+      }
     },
     {
       name: 'light',
@@ -433,7 +509,13 @@ function themeFixtures(): ThemeFixture[] {
         button: '#005fb8',
         buttonText: '#ffffff',
         buttonSecondary: '#e5e7eb'
-      })
+      }),
+      tokens: {
+        button: '#005fb8',
+        buttonText: '#ffffff',
+        buttonSecondary: '#e5e7eb',
+        buttonSecondaryText: '#1f2328'
+      }
     },
     {
       name: 'high contrast',
@@ -455,9 +537,29 @@ function themeFixtures(): ThemeFixture[] {
         button: '#000000',
         buttonText: '#ffffff',
         buttonSecondary: '#000000'
-      })
+      }),
+      tokens: {
+        button: '#000000',
+        buttonText: '#ffffff',
+        buttonSecondary: '#000000',
+        buttonSecondaryText: '#ffffff'
+      }
     }
   ];
+}
+
+function createViewerToolbarHtml(): string {
+  return createKiCanvasViewerHtml({
+    title: 'KiCad Studio Schematic Viewer',
+    fileName: 'demo.kicad_sch',
+    fileType: 'schematic',
+    status: 'Opening interactive renderer...',
+    cspSource: 'vscode-resource:',
+    kicanvasUri: 'vscode-resource:/media/kicanvas/kicanvas.js',
+    viewerCssUri: 'vscode-resource:/media/kicanvas/viewer.css',
+    base64: Buffer.from('(kicad_sch)').toString('base64'),
+    disabledReason: ''
+  });
 }
 
 function vscodeThemeCss(theme: {
@@ -576,17 +678,30 @@ function prepareForAxe(
 
 function inlineLocalStylesheets(html: string): string {
   return html.replace(
-    /<link\b(?=[^>]*rel=["']stylesheet["'])(?=[^>]*href=["']vscode-resource:\/media\/styles\/([^"']+)["'])[^>]*>/giu,
-    (_match, fileName: string) =>
-      `<style>${loadStylesheet(path.basename(fileName))}</style>`
+    /<link\b(?=[^>]*rel=["']stylesheet["'])(?=[^>]*href=["']vscode-resource:\/media\/(styles|kicanvas)\/([^"']+)["'])[^>]*>/giu,
+    (_match, directory: string, fileName: string) =>
+      `<style>${loadStylesheet(directory, path.basename(fileName))}</style>`
   );
 }
 
-function loadStylesheet(fileName: string): string {
+function loadStylesheet(directory: string, fileName: string): string {
   return fs.readFileSync(
-    path.join(extensionRoot, 'media', 'styles', fileName),
+    path.join(extensionRoot, 'media', directory, fileName),
     'utf8'
   );
+}
+
+function hexToRgb(value: string): string {
+  const hex = value.replace(/^#/u, '');
+  const channels =
+    hex.length === 3
+      ? hex.split('').map((channel) => Number.parseInt(channel + channel, 16))
+      : [
+          Number.parseInt(hex.slice(0, 2), 16),
+          Number.parseInt(hex.slice(2, 4), 16),
+          Number.parseInt(hex.slice(4, 6), 16)
+        ];
+  return `rgb(${channels.join(', ')})`;
 }
 
 async function collectInteractiveControlIssues(page: Page): Promise<string[]> {
