@@ -367,11 +367,16 @@ function webviewSurfaces(): WebviewSurface[] {
       expectedFocusOrder: [
         '#reload-btn',
         '#open-kicad-btn',
-        '#export-png-btn',
-        '#export-svg-btn',
         '#fit-btn',
+        '#zoom-out-btn',
         '#zoom-in-btn',
-        '#zoom-out-btn'
+        '#sheet-select',
+        '#grid-toggle',
+        '#theme-toggle',
+        '#reference-search',
+        '#reference-search-btn',
+        '#export-menu-toggle',
+        '#side-panel-toggle'
       ]
     },
     {
@@ -400,14 +405,16 @@ function webviewSurfaces(): WebviewSurface[] {
       expectedFocusOrder: [
         '#reload-btn',
         '#open-kicad-btn',
-        '#export-png-btn',
-        '#export-svg-btn',
         '#fit-btn',
-        '#zoom-in-btn',
         '#zoom-out-btn',
-        '#all-layers-btn',
-        '#none-layers-btn',
-        '#copper-layers-btn'
+        '#zoom-in-btn',
+        '#sheet-select',
+        '#grid-toggle',
+        '#theme-toggle',
+        '#reference-search',
+        '#reference-search-btn',
+        '#export-menu-toggle',
+        '#side-panel-toggle'
       ]
     },
     {

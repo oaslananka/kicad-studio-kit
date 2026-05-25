@@ -117,7 +117,7 @@ export function createKiCanvasViewerHtml(
       </label>
       <button class="btn compact-btn" id="reference-search-btn" type="button">Find</button>
       <details class="export-menu" id="export-menu">
-        <summary class="btn compact-btn">Export</summary>
+        <summary class="btn compact-btn" id="export-menu-toggle" aria-label="Export">Export</summary>
         <div class="export-menu-items">
           <button class="btn" id="export-png-btn" type="button" aria-label="Export PNG">PNG</button>
           <button class="btn" id="export-svg-btn" type="button" aria-label="Export SVG">SVG</button>
