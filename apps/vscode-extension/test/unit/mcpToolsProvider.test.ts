@@ -55,6 +55,7 @@ describe('McpToolsProvider', () => {
       'Endpoint',
       'Transport mode',
       'Profile',
+      'Operating mode',
       'Protocol version',
       'Tool schema version',
       'Compatibility'
@@ -249,11 +250,12 @@ describe('McpToolsProvider', () => {
         "MCP connected with degraded capabilities :: 1.0.0",
         "Compatibility dashboard :: degraded",
         "Compatibility dashboard > Compatibility state :: Connected but degraded",
-        "Compatibility dashboard > Server contract :: 7",
+        "Compatibility dashboard > Server contract :: 8",
         "Compatibility dashboard > Server contract > Server :: kicad-mcp-pro",
         "Compatibility dashboard > Server contract > Endpoint :: http://127.0.0.1:27185/mcp",
         "Compatibility dashboard > Server contract > Transport mode :: streamable-http, stateful",
         "Compatibility dashboard > Server contract > Profile :: full",
+        "Compatibility dashboard > Server contract > Operating mode :: readonly",
         "Compatibility dashboard > Server contract > Protocol version :: 2025-11-25",
         "Compatibility dashboard > Server contract > Tool schema version :: 1.0.0",
         "Compatibility dashboard > Server contract > Compatibility :: degraded",
@@ -291,7 +293,8 @@ describe('McpToolsProvider', () => {
         "Raw advertised capabilities :: 3 tools, 1 resources, 1 prompts",
         "Raw advertised capabilities > Capability diagnostics :: none",
         "Raw advertised capabilities > KiCad runtime :: live PCB",
-        "Raw advertised capabilities > Operation modes :: 7/8 available",
+        "Raw advertised capabilities > Operation modes :: readonly",
+        "Raw advertised capabilities > Operation modes > Active operating mode :: readonly",
         "Raw advertised capabilities > Operation modes > File-backed DRC :: available",
         "Raw advertised capabilities > Operation modes > File-backed ERC :: available",
         "Raw advertised capabilities > Operation modes > File-backed exports :: available",
@@ -355,7 +358,7 @@ function serverInfoFixture(
   } = {}
 ): McpServerInfoContract {
   const base: McpServerInfoContract = {
-    schemaVersion: '1.1.0',
+    schemaVersion: '1.2.0',
     server: 'kicad-mcp-pro',
     version: '1.0.0',
     mcpProtocolVersion: '2025-11-25',
@@ -392,6 +395,34 @@ function serverInfoFixture(
       livePcbContext: true,
       liveSchematicContext: true,
       ...overrides.kicad
+    },
+    operatingMode: {
+      active: 'readonly',
+      default: 'readonly',
+      available: ['readonly', 'write', 'manufacturing', 'experimental'],
+      experimentalEnabled: false,
+      toolAvailability: {
+        kicad_get_version: {
+          available: true,
+          requiredMode: 'readonly',
+          reason: null
+        },
+        pcb_add_track: {
+          available: false,
+          requiredMode: 'write',
+          reason: 'Requires write operating mode.'
+        },
+        export_manufacturing_package: {
+          available: false,
+          requiredMode: 'manufacturing',
+          reason: 'Requires manufacturing operating mode.'
+        },
+        route_tune_length: {
+          available: false,
+          requiredMode: 'experimental',
+          reason: 'Requires experimental operating mode.'
+        }
+      }
     },
     capabilities: {
       fileBackedDrc: true,

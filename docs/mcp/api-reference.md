@@ -26,6 +26,7 @@ and `compatibility.yaml`. Refresh with `corepack pnpm run docs:generate`.
 | `compatibilityRange` | object | yes |  |
 | `transport` | object | yes |  |
 | `kicad` | object | yes |  |
+| `operatingMode` | object | yes |  |
 | `capabilities` | object | yes |  |
 | `diagnostics` | array | yes |  |
 

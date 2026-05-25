@@ -14,6 +14,7 @@
     "compatibilityRange",
     "transport",
     "kicad",
+    "operatingMode",
     "capabilities",
     "diagnostics"
   ],
@@ -150,6 +151,42 @@
         }
       }
     },
+    "operatingMode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "active",
+        "default",
+        "available",
+        "experimentalEnabled",
+        "toolAvailability"
+      ],
+      "properties": {
+        "active": {
+          "$ref": "#/$defs/operatingMode"
+        },
+        "default": {
+          "$ref": "#/$defs/operatingMode"
+        },
+        "available": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/operatingMode"
+          },
+          "uniqueItems": true,
+          "minItems": 4
+        },
+        "experimentalEnabled": {
+          "type": "boolean"
+        },
+        "toolAvailability": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/toolOperatingModeAvailability"
+          }
+        }
+      }
+    },
     "capabilities": {
       "type": "object",
       "additionalProperties": false,
@@ -253,6 +290,25 @@
     }
   },
   "$defs": {
+    "operatingMode": {
+      "enum": ["readonly", "write", "manufacturing", "experimental"]
+    },
+    "toolOperatingModeAvailability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "requiredMode", "reason"],
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "requiredMode": {
+          "$ref": "#/$defs/operatingMode"
+        },
+        "reason": {
+          "type": ["string", "null"]
+        }
+      }
+    },
     "liveEditingTool": {
       "type": "object",
       "additionalProperties": false,

@@ -191,7 +191,7 @@ Total public tools: 255.
 | `sch_add_component` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | yes | no | no | yes | Add a schematic component through the hybrid IPC reload path. |
 | `sch_add_global_label` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | yes | no | no | no | Add a global label, preserving the requested shape and rotation. |
 | `sch_add_hierarchical_label` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | yes | no | no | no | Add a hierarchical label, preserving the requested shape and rotation. |
-| `sch_add_jumper` | agent_full | no | yes | no | no | no | Add a jumper symbol to the schematic. This KiCad MCP Pro tool supports production EDA automation workflows for MCP cl... |
+| `sch_add_jumper` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | yes | no | no | no | Add a jumper symbol to the schematic. This KiCad MCP Pro tool supports production EDA automation workflows for MCP cl... |
 | `sch_add_label` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | yes | no | no | no | Add a schematic label, snapping its anchor to the 2.54 mm grid by default. |
 | `sch_add_missing_junctions` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | yes | no | yes | no | Insert missing schematic junctions at T-intersection wire endpoints. This KiCad MCP Pro tool supports production EDA... |
 | `sch_add_no_connect` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | yes | no | no | no | Add a no-connect marker, snapping it to the 2.54 mm grid by default. |
@@ -224,12 +224,12 @@ Total public tools: 255.
 | `sch_list_templates` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | no | no | yes | no | List all available reference subcircuit templates. |
 | `sch_modify_property` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | yes | no | no | yes | Modify a schematic symbol property by reference. This KiCad MCP Pro tool supports production EDA automation workflows... |
 | `sch_move_symbol` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | yes | no | no | no | Move an existing symbol instance to a new absolute coordinate. |
-| `sch_reload` | agent_full | no | no | no | no | no | Ask KiCad to reload the active schematic. This KiCad MCP Pro tool supports production EDA automation workflows for MC... |
+| `sch_reload` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | no | no | no | no | Ask KiCad to reload the active schematic. This KiCad MCP Pro tool supports production EDA automation workflows for MC... |
 | `sch_route_wire_between_pins` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | yes | no | no | no | Route deterministic Manhattan wire segments between two placed symbol pins. |
 | `sch_set_hop_over` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | yes | no | yes | no | Toggle KiCad 10 hop-over display in the active project settings. |
 | `sch_set_sheet_size` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | yes | no | yes | no | Change the schematic sheet (paper) size. |
-| `sch_swap_gates` | agent_full | no | no | no | yes | no | Record a gate-swap back-annotation intent for a multi-unit component. |
-| `sch_swap_pins` | agent_full | no | no | no | yes | no | Record a pin-swap back-annotation intent for a component. |
+| `sch_swap_gates` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | no | no | yes | no | Record a gate-swap back-annotation intent for a multi-unit component. |
+| `sch_swap_pins` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | no | no | yes | no | Record a pin-swap back-annotation intent for a component. |
 | `sch_trace_net` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | no | no | no | no | Trace a named net through the active schematic and matching child sheets. |
 | `sch_update_properties` | agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation | no | yes | no | no | no | Update a property on a placed symbol. This KiCad MCP Pro tool supports production EDA automation workflows for MCP cl... |
 | `schematic_connectivity_gate` | agent_full, analysis, builder, critic, full, high_speed, manufacturing, pcb, power, release_manager, schematic | no | no | no | yes | no | Evaluate whether schematic structure and hierarchy look electrically meaningful. This KiCad MCP Pro tool supports pro... |
@@ -449,7 +449,7 @@ Total public tools: 255.
 - `sch_add_component`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=yes; openWorld=no; headless=no; requiresKiCadRunning=yes.
 - `sch_add_global_label`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=yes; openWorld=no; headless=no; requiresKiCadRunning=no.
 - `sch_add_hierarchical_label`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=yes; openWorld=no; headless=no; requiresKiCadRunning=no.
-- `sch_add_jumper`: profiles=agent_full; readOnly=no; destructive=yes; openWorld=no; headless=no; requiresKiCadRunning=no.
+- `sch_add_jumper`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=yes; openWorld=no; headless=no; requiresKiCadRunning=no.
 - `sch_add_label`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=yes; openWorld=no; headless=no; requiresKiCadRunning=no.
 - `sch_add_missing_junctions`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=yes; openWorld=no; headless=yes; requiresKiCadRunning=no.
 - `sch_add_no_connect`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=yes; openWorld=no; headless=no; requiresKiCadRunning=no.
@@ -482,12 +482,12 @@ Total public tools: 255.
 - `sch_list_templates`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
 - `sch_modify_property`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=yes; openWorld=no; headless=no; requiresKiCadRunning=yes.
 - `sch_move_symbol`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=yes; openWorld=no; headless=no; requiresKiCadRunning=no.
-- `sch_reload`: profiles=agent_full; readOnly=no; destructive=no; openWorld=no; headless=no; requiresKiCadRunning=no.
+- `sch_reload`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=no; openWorld=no; headless=no; requiresKiCadRunning=no.
 - `sch_route_wire_between_pins`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=yes; openWorld=no; headless=no; requiresKiCadRunning=no.
 - `sch_set_hop_over`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=yes; openWorld=no; headless=yes; requiresKiCadRunning=no.
 - `sch_set_sheet_size`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=yes; openWorld=no; headless=yes; requiresKiCadRunning=no.
-- `sch_swap_gates`: profiles=agent_full; readOnly=no; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
-- `sch_swap_pins`: profiles=agent_full; readOnly=no; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
+- `sch_swap_gates`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
+- `sch_swap_pins`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
 - `sch_trace_net`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=no; openWorld=no; headless=no; requiresKiCadRunning=no.
 - `sch_update_properties`: profiles=agent_full, builder, critic, full, high_speed, power, schematic, schematic_only, simulation; readOnly=no; destructive=yes; openWorld=no; headless=no; requiresKiCadRunning=no.
 - `schematic_connectivity_gate`: profiles=agent_full, analysis, builder, critic, full, high_speed, manufacturing, pcb, power, release_manager, schematic; readOnly=no; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.

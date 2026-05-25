@@ -10,6 +10,32 @@ Configuration is resolved in this order:
 
 The active project can also be changed at runtime with `kicad_set_project()`.
 
+## Operating Modes
+
+`KICAD_MCP_OPERATING_MODE` controls the risk level of the advertised and executable
+tool surface. It is applied after the server profile, so a profile can narrow categories
+while the operating mode still blocks unsafe calls.
+
+| Mode | Tool surface |
+| ---- | ------------ |
+| `readonly` | Default. Project, schematic, PCB, DRC/ERC, BOM, netlist, and source-safe export inspection. |
+| `write` | `readonly` plus controlled schematic and PCB source modifications and save operations. |
+| `manufacturing` | `readonly` plus manufacturing package and handoff workflows. General schematic/PCB write tools stay hidden. |
+| `experimental` | Full opt-in surface including write, manufacturing, routing, tuning, and unstable tools. |
+
+Equivalent CLI usage:
+
+```bash
+kicad-mcp-pro --mode readonly
+kicad-mcp-pro serve --mode write
+kicad-mcp-pro tools list --mode manufacturing
+```
+
+The legacy `--experimental` flag remains accepted and maps to `--mode experimental`
+when no explicit mode is supplied. `kicad_get_server_info` reports the active mode,
+the default mode, and structured per-tool mode availability so clients can disable
+features before invoking blocked tools.
+
 ## CLI Diagnostics
 
 ```bash

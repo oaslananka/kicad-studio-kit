@@ -51,7 +51,7 @@ def test_server_info_contract_matches_protocol_schema(monkeypatch, sample_projec
     payload = get_server_info_contract()
 
     _validate_contract(payload)
-    assert payload["schemaVersion"] == "1.1.0"
+    assert payload["schemaVersion"] == "1.2.0"
     assert payload["server"] == "kicad-mcp-pro"
     assert payload["description"] == "KiCad MCP Pro server for PCB and schematic workflows."
     assert payload["localizedDescriptions"] == {
@@ -90,6 +90,36 @@ def test_server_info_contract_matches_protocol_schema(monkeypatch, sample_projec
         "ipcEndpointSource": "default",
         "livePcbContext": True,
         "liveSchematicContext": False,
+    }
+    operating_mode = payload["operatingMode"]
+    assert operating_mode["active"] == "readonly"
+    assert operating_mode["default"] == "readonly"
+    assert operating_mode["available"] == [
+        "readonly",
+        "write",
+        "manufacturing",
+        "experimental",
+    ]
+    assert operating_mode["experimentalEnabled"] is False
+    assert operating_mode["toolAvailability"]["kicad_get_version"] == {
+        "available": True,
+        "requiredMode": "readonly",
+        "reason": None,
+    }
+    assert operating_mode["toolAvailability"]["pcb_add_track"] == {
+        "available": False,
+        "requiredMode": "write",
+        "reason": "Requires write operating mode.",
+    }
+    assert operating_mode["toolAvailability"]["export_manufacturing_package"] == {
+        "available": False,
+        "requiredMode": "manufacturing",
+        "reason": "Requires manufacturing operating mode.",
+    }
+    assert operating_mode["toolAvailability"]["route_tune_length"] == {
+        "available": False,
+        "requiredMode": "experimental",
+        "reason": "Requires experimental operating mode.",
     }
     capabilities = payload["capabilities"]
     assert capabilities == {

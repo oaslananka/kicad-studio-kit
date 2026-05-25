@@ -65,6 +65,7 @@ export class McpClient {
   private lastInstall: McpInstallStatus = { found: false, source: 'none' };
   private sessionId: string | undefined;
   private initializePromise: Promise<void> | undefined;
+  private connectionTestPromise: Promise<McpConnectionState> | undefined;
   private nextRpcId = 1;
   private readonly maxRetries: number;
   private readonly retryBaseDelayMs: number;
@@ -121,6 +122,19 @@ export class McpClient {
   }
 
   async testConnection(): Promise<McpConnectionState> {
+    if (this.connectionTestPromise) {
+      return this.connectionTestPromise;
+    }
+
+    this.connectionTestPromise = this.runConnectionTest();
+    try {
+      return await this.connectionTestPromise;
+    } finally {
+      this.connectionTestPromise = undefined;
+    }
+  }
+
+  private async runConnectionTest(): Promise<McpConnectionState> {
     if (vscode.workspace.isTrusted === false) {
       return this.setState({
         kind: 'Disconnected',
@@ -314,9 +328,7 @@ export class McpClient {
     }
   }
 
-  async fetchFixQueue(
-    args: Record<string, unknown> = {}
-  ): Promise<FixItem[]> {
+  async fetchFixQueue(args: Record<string, unknown> = {}): Promise<FixItem[]> {
     const resource = await this.readResource('kicad://project/fix_queue');
     const items =
       (Array.isArray(resource?.['items']) ? resource['items'] : undefined) ??
@@ -1017,6 +1029,15 @@ function cloneServerInfoContract(
     },
     transport: { ...serverInfo.transport },
     kicad: { ...serverInfo.kicad },
+    operatingMode: {
+      ...serverInfo.operatingMode,
+      available: [...serverInfo.operatingMode.available],
+      toolAvailability: Object.fromEntries(
+        Object.entries(serverInfo.operatingMode.toolAvailability).map(
+          ([name, availability]) => [name, { ...availability }]
+        )
+      )
+    },
     capabilities: {
       ...serverInfo.capabilities,
       cliExports: { ...serverInfo.capabilities.cliExports }

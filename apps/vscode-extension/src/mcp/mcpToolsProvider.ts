@@ -33,6 +33,7 @@ type CompatibilityDashboard = {
   endpoint: string;
   transportMode: string;
   profile: string;
+  operatingMode: string;
   protocolVersion: string;
   toolSchemaVersion: string;
   compatibility: string;
@@ -177,6 +178,7 @@ function buildCompatibilityDashboard(
     endpoint,
     transportMode: transportDescription(state, serverInfo),
     profile: profile ?? 'default',
+    operatingMode: serverInfo?.operatingMode.active ?? 'unknown',
     protocolVersion: serverInfo?.mcpProtocolVersion ?? 'unknown',
     toolSchemaVersion: serverInfo?.toolSchemaVersion ?? 'unknown',
     compatibility: compatibilityDescription(state, status),
@@ -301,6 +303,7 @@ function compatibilityDashboardNode(
         dashboardField('Endpoint', dashboard.endpoint),
         dashboardField('Transport mode', dashboard.transportMode),
         dashboardField('Profile', dashboard.profile),
+        dashboardField('Operating mode', dashboard.operatingMode),
         dashboardField('Protocol version', dashboard.protocolVersion),
         dashboardField('Tool schema version', dashboard.toolSchemaVersion),
         dashboardField('Compatibility', dashboard.compatibility)
@@ -605,19 +608,40 @@ function operationModesNode(
   ];
   return {
     label: 'Operation modes',
-    description: `${modes.filter((mode) => mode.enabled).length}/${modes.length} available`,
+    description: serverInfo.operatingMode.active,
     tooltip: modes
       .map(
         (mode) => `${mode.label}: ${mode.enabled ? 'available' : 'unavailable'}`
       )
       .join('\n'),
     icon: 'checklist',
-    children: modes.map((mode) => ({
-      label: mode.label,
-      description: mode.enabled ? 'available' : 'unavailable',
-      icon: mode.enabled ? 'pass' : 'circle-slash'
-    }))
+    children: [
+      {
+        label: 'Active operating mode',
+        description: serverInfo.operatingMode.active,
+        tooltip: `Default: ${serverInfo.operatingMode.default}`,
+        icon: modeIcon(serverInfo.operatingMode.active)
+      },
+      ...modes.map((mode) => ({
+        label: mode.label,
+        description: mode.enabled ? 'available' : 'unavailable',
+        icon: mode.enabled ? 'pass' : 'circle-slash'
+      }))
+    ]
   };
+}
+
+function modeIcon(mode: string): string {
+  if (mode === 'experimental') {
+    return 'beaker';
+  }
+  if (mode === 'manufacturing') {
+    return 'package';
+  }
+  if (mode === 'write') {
+    return 'edit';
+  }
+  return 'shield';
 }
 
 function capabilityFlag(

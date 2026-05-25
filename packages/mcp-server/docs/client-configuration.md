@@ -21,12 +21,16 @@ Recommended environment:
 ```text
 KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project
 KICAD_MCP_PROFILE=pcb_only
+KICAD_MCP_OPERATING_MODE=readonly
 ```
 
 Use `KICAD_MCP_PROFILE=full` if you want every tool category. Preferred focused profiles are
 `minimal`, `pcb_only`, `schematic_only`, `manufacturing`, `high_speed`, `power`,
 `simulation`, and `analysis`. Legacy aliases `pcb` and `schematic` still work for older
-client configs.
+client configs. Profiles select a tool category set; `KICAD_MCP_OPERATING_MODE` is the
+risk gate applied on top. The default mode is `readonly`. Use `write` only for schematic
+or PCB source edits, `manufacturing` for release/export handoff tools, and `experimental`
+for routing, tuning, and unstable helpers.
 
 ## VS Code And GitHub Copilot
 
@@ -44,7 +48,8 @@ configuration for global setup. GitHub Copilot in VS Code uses the same MCP serv
       "args": ["kicad-mcp-pro"],
       "env": {
         "KICAD_MCP_PROJECT_DIR": "/absolute/path/to/your/kicad-project",
-        "KICAD_MCP_PROFILE": "pcb_only"
+        "KICAD_MCP_PROFILE": "pcb_only",
+        "KICAD_MCP_OPERATING_MODE": "readonly"
       }
     }
   }

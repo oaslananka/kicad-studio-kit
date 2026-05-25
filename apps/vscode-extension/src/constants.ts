@@ -173,6 +173,10 @@ export const CONTEXT_KEYS = {
   mcpDisconnected: 'kicadstudio.mcpDisconnected',
   mcpVsCodeStdio: 'kicadstudio.mcpVsCodeStdio',
   mcpProfile: 'kicadstudio.mcpProfile',
+  mcpOperatingMode: 'kicadstudio.mcpOperatingMode',
+  mcpWriteMode: 'kicadstudio.mcpWriteMode',
+  mcpManufacturingMode: 'kicadstudio.mcpManufacturingMode',
+  mcpExperimentalMode: 'kicadstudio.mcpExperimentalMode',
   hasVariants: 'kicadstudio.hasVariants',
   workspaceTrusted: 'kicadstudio.workspaceTrusted'
 } as const;

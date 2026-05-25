@@ -8,8 +8,7 @@ import { withRealServer } from './setup';
 const REQUIRED_EXTENSION_HOST_TOOLS = [
   'project_quality_gate_report',
   'pcb_placement_quality_gate',
-  'pcb_transfer_quality_gate',
-  'manufacturing_quality_gate'
+  'pcb_transfer_quality_gate'
 ] as const;
 
 suite('Real Pair Extension Host', () => {
@@ -17,6 +16,11 @@ suite('Real Pair Extension Host', () => {
     this.timeout(180000);
 
     await withRealServer(async (server) => {
+      const tools = await server.listTools();
+      for (const tool of REQUIRED_EXTENSION_HOST_TOOLS) {
+        assert.ok(tools.includes(tool), `Missing real-pair tool ${tool}`);
+      }
+
       await configureMcpEndpoint(server.endpoint);
 
       const extension = vscode.extensions.getExtension(EXTENSION_ID);
@@ -28,12 +32,6 @@ suite('Real Pair Extension Host', () => {
       assert.strictEqual(extension.isActive, true);
 
       await vscode.commands.executeCommand(COMMANDS.retryMcp);
-
-      const tools = await server.listTools();
-      for (const tool of REQUIRED_EXTENSION_HOST_TOOLS) {
-        assert.ok(tools.includes(tool), `Missing real-pair tool ${tool}`);
-      }
-
       await vscode.commands.executeCommand(
         COMMANDS.qualityGateRunThis,
         placementGate()

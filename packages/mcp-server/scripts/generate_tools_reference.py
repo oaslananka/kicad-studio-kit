@@ -4,12 +4,14 @@ import argparse
 import contextlib
 import inspect
 import io
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 from mcp.types import ToolAnnotations
 
+from kicad_mcp.config import reset_config
 from kicad_mcp.server import build_server
 from kicad_mcp.tools.metadata import get_tool_metadata, infer_tool_annotations
 from kicad_mcp.tools.router import available_profiles
@@ -33,11 +35,21 @@ class ToolRow:
 
 
 def _registered_tools(profile: str) -> dict[str, object]:
+    previous_mode = os.environ.get("KICAD_MCP_OPERATING_MODE")
+    os.environ["KICAD_MCP_OPERATING_MODE"] = "experimental"
+    reset_config()
     buffer = io.StringIO()
-    with contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(buffer):
-        server = build_server(profile=profile)
-    server.filter_runtime_tools = False
-    return {tool.name: tool for tool in server.list_tools_sync()}
+    try:
+        with contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(buffer):
+            server = build_server(profile=profile)
+        server.filter_runtime_tools = False
+        return {tool.name: tool for tool in server.list_tools_sync()}
+    finally:
+        if previous_mode is None:
+            os.environ.pop("KICAD_MCP_OPERATING_MODE", None)
+        else:
+            os.environ["KICAD_MCP_OPERATING_MODE"] = previous_mode
+        reset_config()
 
 
 def _annotation_bool(annotations: ToolAnnotations, field: str) -> bool:

@@ -764,6 +764,9 @@ export async function activate(
       CONTEXT_KEYS.mcpVsCodeStdio,
       state.kind === 'VsCodeStdio'
     );
+    const activeMode =
+      state.server?.capabilities.serverInfo?.operatingMode.active ?? 'unknown';
+    await setMcpOperatingModeContexts(activeMode);
     mcpState.update(state);
 
     if (
@@ -808,6 +811,30 @@ export async function activate(
       'setContext',
       CONTEXT_KEYS.mcpVsCodeStdio,
       false
+    );
+    await setMcpOperatingModeContexts('unknown');
+  }
+
+  async function setMcpOperatingModeContexts(mode: string): Promise<void> {
+    await vscode.commands.executeCommand(
+      'setContext',
+      CONTEXT_KEYS.mcpOperatingMode,
+      mode
+    );
+    await vscode.commands.executeCommand(
+      'setContext',
+      CONTEXT_KEYS.mcpWriteMode,
+      mode === 'write' || mode === 'experimental'
+    );
+    await vscode.commands.executeCommand(
+      'setContext',
+      CONTEXT_KEYS.mcpManufacturingMode,
+      mode === 'manufacturing' || mode === 'experimental'
+    );
+    await vscode.commands.executeCommand(
+      'setContext',
+      CONTEXT_KEYS.mcpExperimentalMode,
+      mode === 'experimental'
     );
   }
 

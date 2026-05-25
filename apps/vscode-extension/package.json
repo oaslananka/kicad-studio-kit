@@ -961,7 +961,7 @@
           "group": "navigation"
         },
         {
-          "when": "view == kicadstudio.drcRules && kicadstudio.workspaceTrusted && kicadstudio.mcpConnected",
+          "when": "view == kicadstudio.drcRules && kicadstudio.workspaceTrusted && kicadstudio.mcpConnected && kicadstudio.mcpWriteMode",
           "command": "kicadstudio.drcRule.addWithMcp",
           "group": "navigation"
         },
@@ -1132,7 +1132,7 @@
         },
         {
           "command": "kicadstudio.manufacturing.release",
-          "when": "kicadstudio.mcpConnected && kicadstudio.hasProject && kicadstudio.workspaceTrusted"
+          "when": "kicadstudio.mcpConnected && kicadstudio.hasProject && kicadstudio.workspaceTrusted && kicadstudio.mcpManufacturingMode"
         },
         {
           "command": "kicadstudio.showStoredSecrets"
@@ -1149,7 +1149,7 @@
         },
         {
           "command": "kicadstudio.drcRule.addWithMcp",
-          "when": "kicadstudio.workspaceTrusted && kicadstudio.mcpConnected"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.mcpConnected && kicadstudio.mcpWriteMode"
         },
         {
           "command": "kicadstudio.drcRule.createDefault",
@@ -1795,7 +1795,7 @@
         "modelDescription": "%kicadstudio.contributes.languageModelTools.0.modelDescription%",
         "canBeReferencedInPrompt": true,
         "icon": "$(beaker)",
-        "when": "kicadstudio.hasProject",
+        "when": "kicadstudio.hasProject && kicadstudio.mcpManufacturingMode",
         "inputSchema": {
           "type": "object",
           "properties": {

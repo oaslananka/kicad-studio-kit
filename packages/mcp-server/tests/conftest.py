@@ -16,6 +16,26 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 
+def pytest_configure(config: pytest.Config) -> None:
+    """Register local markers even when pytest is launched from the monorepo root."""
+    config.addinivalue_line(
+        "markers",
+        "benchmark: lightweight performance regression checks with committed baselines",
+    )
+    config.addinivalue_line(
+        "markers",
+        "gui: real KiCad GUI smoke tests for scheduled/manual environments",
+    )
+    config.addinivalue_line(
+        "markers",
+        "mcp_mode(mode): run the test with an explicit KiCad MCP operating mode",
+    )
+    config.addinivalue_line(
+        "markers",
+        "slow: tests that are useful for scheduled/full validation but skipped by fast loops",
+    )
+
+
 def tool_text(result: object) -> str:
     """Extract text from a FastMCP tool result."""
     if hasattr(result, "isError") and hasattr(result, "content"):
@@ -110,6 +130,7 @@ def reset_globals(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     monkeypatch.delenv("KICAD_MCP_LOG_MAX_BYTES", raising=False)
     monkeypatch.delenv("KICAD_MCP_LOG_BACKUP_COUNT", raising=False)
     monkeypatch.delenv("KICAD_MCP_PROFILE", raising=False)
+    monkeypatch.delenv("KICAD_MCP_OPERATING_MODE", raising=False)
     monkeypatch.delenv("KICAD_MCP_ENABLE_EXPERIMENTAL_TOOLS", raising=False)
     monkeypatch.delenv("KICAD_MCP_TELEMETRY_ENABLED", raising=False)
     monkeypatch.delenv("KICAD_MCP_OTEL_ENDPOINT", raising=False)
@@ -122,6 +143,29 @@ def reset_globals(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     monkeypatch.delenv("OTEL_SERVICE_NAME", raising=False)
     yield
     reset_telemetry(shutdown_managed=True)
+
+
+@pytest.fixture(autouse=True)
+def legacy_mutating_suite_mode(
+    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest, reset_globals: None
+) -> None:
+    """Run tests that exercise mutating tool surfaces with an explicit mode."""
+    marker = request.node.get_closest_marker("mcp_mode")
+    if marker is not None:
+        mode = str(marker.args[0])
+    else:
+        mode = ""
+
+    path_parts = set(Path(str(request.node.path)).parts)
+    if not mode and {"integration", "e2e"}.isdisjoint(path_parts):
+        return
+    if not mode:
+        mode = "experimental"
+
+    from kicad_mcp.config import reset_config
+
+    monkeypatch.setenv("KICAD_MCP_OPERATING_MODE", mode)
+    reset_config()
 
 
 @pytest.fixture

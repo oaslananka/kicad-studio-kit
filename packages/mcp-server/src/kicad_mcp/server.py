@@ -54,6 +54,13 @@ from .diagnostics import (
 from .discovery import ensure_studio_project_watcher, find_kicad_version
 from .i18n import SERVER_DESCRIPTION, localize, option_help
 from .ipc.capabilities import KiCadIpcCapabilityState, get_ipc_capability_state
+from .operating_modes import (
+    OperatingMode,
+    active_operating_mode,
+    denial_message,
+    filter_tools_for_mode,
+    is_tool_allowed_in_mode,
+)
 from .tools import router
 from .tools.fixers import validate_callable_imports
 from .tools.metadata import get_tool_metadata, infer_tool_annotations
@@ -262,6 +269,8 @@ def _clean_tool_error(exc: BaseException) -> str:
 
 def _tool_error_code(message: str, *, tool_name: str = "") -> str:
     lowered = message.casefold()
+    if "operating mode" in lowered and "requires" in lowered:
+        return "MODE_FORBIDDEN"
     if "timed out" in lowered or "timeout" in lowered:
         return "CLI_TIMEOUT"
     if "kicad-cli" in lowered:
@@ -281,6 +290,11 @@ def _tool_error_code(message: str, *, tool_name: str = "") -> str:
 
 def _tool_error_hint(message: str) -> str:
     lowered = message.casefold()
+    if "operating mode" in lowered and "requires" in lowered:
+        return (
+            "Start kicad-mcp-pro with --mode write, --mode manufacturing, "
+            "or --mode experimental as appropriate."
+        )
     if "no pcb file" in lowered or "no schematic file" in lowered:
         return "Call kicad_set_project() or set the relevant KICAD_MCP_*_FILE variable."
     if "kicad-cli" in lowered:
@@ -504,6 +518,7 @@ class KiCadFastMCP(FastMCP):
     allow_experimental_tools: bool = False
     allowed_tool_names: set[str] | None = None
     filter_runtime_tools: bool = True
+    operating_mode: OperatingMode = OperatingMode.READONLY
     _lazy_registration: Callable[[], None] | None = None
     _lazy_registration_complete: bool = False
     _lazy_registration_error: BaseException | None = None
@@ -600,8 +615,12 @@ class KiCadFastMCP(FastMCP):
         allowed_tool_names = getattr(self, "allowed_tool_names", None)
         if allowed_tool_names is not None:
             tools = [tool for tool in tools if tool.name in allowed_tool_names]
+        mode = getattr(self, "operating_mode", active_operating_mode())
+        tools = filter_tools_for_mode(tools, mode)
         if getattr(self, "filter_runtime_tools", True):
             tools = _filter_ipc_runtime_tools(tools)
+        if mode is OperatingMode.EXPERIMENTAL:
+            return tools
         if (
             getattr(self, "allow_experimental_tools", False)
             or get_config().enable_experimental_tools
@@ -731,6 +750,14 @@ class KiCadFastMCP(FastMCP):
         with otel.tool_span(name) as span:
             try:
                 await self._ensure_registered_async()
+                mode = getattr(self, "operating_mode", active_operating_mode())
+                if not is_tool_allowed_in_mode(name, mode):
+                    result = _structured_tool_error_from_message(
+                        denial_message(name, mode),
+                        tool_name=name,
+                    )
+                    status, error_code = _status_from_result(result)
+                    return result
                 if limiter is None:
                     result = await super().call_tool(name, arguments)
                 else:
@@ -1266,6 +1293,7 @@ def build_server(profile: str | None = None, *, defer_registration: bool = False
     otel.ensure_telemetry_configured(cfg)
     cfg._validate_http_transport_security()
     selected_profile = profile or cfg.profile
+    operating_mode = active_operating_mode(cfg)
     enabled = set(categories_for_profile(selected_profile))
     token_verifier = _StaticTokenVerifier(cfg.auth_token) if cfg.auth_token else None
     auth = None
@@ -1295,7 +1323,8 @@ def build_server(profile: str | None = None, *, defer_registration: bool = False
         auth=auth,
         token_verifier=token_verifier,
     )
-    server.allow_experimental_tools = selected_profile == "agent_full"
+    server.operating_mode = operating_mode
+    server.allow_experimental_tools = operating_mode is OperatingMode.EXPERIMENTAL
     server.allowed_tool_names = {
         tool_name for category in enabled for tool_name in router.TOOL_CATEGORIES[category]["tools"]
     }
@@ -1384,6 +1413,7 @@ def _print_startup_diagnostics(cfg: KiCadMCPConfig, *, probe_runtime: bool = Tru
     logger.info(
         "startup_diagnostics",
         profile=cfg.profile,
+        operating_mode=active_operating_mode(cfg).value,
         kicad_cli=str(cfg.kicad_cli),
         kicad_version=kicad_version or "unknown",
         project_dir=str(cfg.project_dir) if cfg.project_dir else None,
@@ -1401,6 +1431,7 @@ def _apply_cli_env(
     log_format: str | None = None,
     log_file: str | None = None,
     profile: str | None = None,
+    operating_mode: str | None = None,
     experimental: bool | None = None,
     telemetry: bool | None = None,
 ) -> None:
@@ -1414,6 +1445,7 @@ def _apply_cli_env(
         "KICAD_MCP_LOG_FORMAT": log_format,
         "KICAD_MCP_LOG_FILE": log_file,
         "KICAD_MCP_PROFILE": profile,
+        "KICAD_MCP_OPERATING_MODE": operating_mode,
         "KICAD_MCP_PROJECT_DIR": project_dir,
     }
     for key, value in cli_env.items():
@@ -1421,6 +1453,8 @@ def _apply_cli_env(
             os.environ[key] = value
     if experimental is not None and not isinstance(experimental, OptionInfo):
         os.environ["KICAD_MCP_ENABLE_EXPERIMENTAL_TOOLS"] = "true" if experimental else "false"
+        if experimental and operating_mode is None:
+            os.environ["KICAD_MCP_OPERATING_MODE"] = "experimental"
     if telemetry is not None and not isinstance(telemetry, OptionInfo):
         os.environ["KICAD_MCP_TELEMETRY_ENABLED"] = "true" if telemetry else "false"
 
@@ -1435,6 +1469,7 @@ def _run_server_from_options(
     log_format: str | None = None,
     log_file: str | None = None,
     profile: str | None = None,
+    operating_mode: str | None = None,
     experimental: bool | None = None,
     telemetry: bool | None = None,
 ) -> None:
@@ -1448,6 +1483,7 @@ def _run_server_from_options(
         log_format=log_format,
         log_file=log_file,
         profile=profile,
+        operating_mode=operating_mode,
         experimental=experimental,
         telemetry=telemetry,
     )
@@ -1486,6 +1522,7 @@ def _run_server_from_options(
             version=__version__,
             transport=selected_transport,
             profile=cfg.profile,
+            operating_mode=active_operating_mode(cfg).value,
         )
 
     if selected_transport == "stdio":
@@ -1516,6 +1553,11 @@ def main_callback(
     profile: str | None = typer.Option(
         None, help=f"Server profile: {', '.join(available_profiles())}"
     ),
+    operating_mode: str | None = typer.Option(
+        None,
+        "--mode",
+        help=option_help("Operating mode: readonly, write, manufacturing, experimental"),
+    ),
     experimental: bool | None = typer.Option(None, help=option_help("Enable experimental tools")),
     telemetry: bool | None = typer.Option(
         None, "--telemetry/--no-telemetry", help=option_help("Enable OpenTelemetry export")
@@ -1531,6 +1573,7 @@ def main_callback(
         log_format=log_format,
         log_file=log_file,
         profile=profile,
+        operating_mode=operating_mode,
         experimental=experimental,
         telemetry=telemetry,
     )
@@ -1556,6 +1599,11 @@ def serve(
     profile: str | None = typer.Option(
         None, help=f"Server profile: {', '.join(available_profiles())}"
     ),
+    operating_mode: str | None = typer.Option(
+        None,
+        "--mode",
+        help=option_help("Operating mode: readonly, write, manufacturing, experimental"),
+    ),
     experimental: bool | None = typer.Option(None, help=option_help("Enable experimental tools")),
     telemetry: bool | None = typer.Option(
         None, "--telemetry/--no-telemetry", help=option_help("Enable OpenTelemetry export")
@@ -1571,6 +1619,7 @@ def serve(
         log_format=log_format,
         log_file=log_file,
         profile=profile,
+        operating_mode=operating_mode,
         experimental=experimental,
         telemetry=telemetry,
     )
@@ -1716,12 +1765,29 @@ def list_tools_command(
     profile: str | None = typer.Option(
         None, help=f"Server profile: {', '.join(available_profiles())}"
     ),
+    operating_mode: str | None = typer.Option(
+        None,
+        "--mode",
+        help=option_help("Operating mode: readonly, write, manufacturing, experimental"),
+    ),
 ) -> None:
     """List MCP tools available for the selected profile."""
     if profile is not None and profile not in available_profiles():
         raise typer.BadParameter(f"Unsupported profile: {profile}")
+    previous_mode = os.environ.get("KICAD_MCP_OPERATING_MODE")
+    if operating_mode is not None:
+        os.environ["KICAD_MCP_OPERATING_MODE"] = operating_mode
+        reset_config()
     with contextlib.redirect_stdout(io.StringIO()):
-        server = build_server(profile, defer_registration=False)
+        try:
+            server = build_server(profile, defer_registration=False)
+        finally:
+            if operating_mode is not None:
+                if previous_mode is None:
+                    os.environ.pop("KICAD_MCP_OPERATING_MODE", None)
+                else:
+                    os.environ["KICAD_MCP_OPERATING_MODE"] = previous_mode
+                reset_config()
     sync_list = getattr(server, "list_tools_sync", None)
     if not callable(sync_list):
         raise typer.Exit(2)
@@ -1800,7 +1866,11 @@ def version_command(
         cfg = get_config()
     payload = {
         "package": {"name": "kicad-mcp-pro", "version": __version__},
-        "mcp": {"transport_default": cfg.transport, "profile": cfg.profile},
+        "mcp": {
+            "transport_default": cfg.transport,
+            "profile": cfg.profile,
+            "operating_mode": active_operating_mode(cfg).value,
+        },
         "python": {"version": sys.version.split()[0]},
     }
     typer.echo(json.dumps(payload, indent=2) if json_output else __version__)

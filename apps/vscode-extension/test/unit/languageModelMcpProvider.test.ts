@@ -35,6 +35,57 @@ describe('language model MCP server definition provider', () => {
     expect(definition.value.env['KICAD_MCP_PROFILE']).toBe('full');
   });
 
+  it('falls back to the VS Code 1.115 positional stdio constructor', async () => {
+    const api = vscode as unknown as { McpStdioServerDefinition: unknown };
+    const original = api.McpStdioServerDefinition;
+    api.McpStdioServerDefinition = class PositionalMcpStdioServerDefinition {
+      cwd?: vscode.Uri;
+
+      constructor(
+        public readonly label: string,
+        public readonly command: string,
+        public readonly args: string[] = [],
+        public readonly env: Record<string, string | number | null> = {},
+        public readonly version?: string
+      ) {
+        if (typeof label !== 'string') {
+          throw new Error('label must be string');
+        }
+      }
+    };
+
+    try {
+      const definition = (await createKicadMcpServerDefinition(
+        {
+          detectKicadMcpPro: jest.fn()
+        } as never,
+        {
+          found: true,
+          command: 'kicad-mcp-pro',
+          version: '0.8.1',
+          source: 'global'
+        }
+      )) as {
+        label: string;
+        command: string;
+        args: string[];
+        env: Record<string, string | number | null>;
+        cwd?: vscode.Uri;
+        version?: string;
+      };
+
+      expect(definition.label).toBe('KiCad MCP Pro (bundled)');
+      expect(definition.command).toBe('kicad-mcp-pro');
+      expect(definition.env['KICAD_MCP_PROFILE']).toBe('full');
+      expect(definition.cwd?.fsPath).toBe(
+        workspace.workspaceFolders[0]?.uri.fsPath
+      );
+      expect(definition.version).toBe('0.8.1');
+    } finally {
+      api.McpStdioServerDefinition = original;
+    }
+  });
+
   it('registers the provider when the VS Code API is available', () => {
     const context =
       createExtensionContextMock() as unknown as vscode.ExtensionContext;

@@ -53,6 +53,18 @@ export interface McpServerInfoCompatibilityRange {
   };
 }
 
+export type McpOperatingMode =
+  | "readonly"
+  | "write"
+  | "manufacturing"
+  | "experimental";
+
+export interface McpToolOperatingModeAvailability {
+  available: boolean;
+  requiredMode: McpOperatingMode;
+  reason: string | null;
+}
+
 export interface McpServerInfoContract {
   schemaVersion: string;
   server: "kicad-mcp-pro";
@@ -81,6 +93,13 @@ export interface McpServerInfoContract {
     ipcEndpointSource: "config" | "environment" | "default";
     livePcbContext: boolean;
     liveSchematicContext: boolean;
+  };
+  operatingMode: {
+    active: McpOperatingMode;
+    default: McpOperatingMode;
+    available: McpOperatingMode[];
+    experimentalEnabled: boolean;
+    toolAvailability: Record<string, McpToolOperatingModeAvailability>;
   };
   capabilities: {
     fileBackedDrc: boolean;

@@ -2,8 +2,16 @@ from __future__ import annotations
 
 import pytest
 
+from kicad_mcp.operating_modes import OperatingMode, is_tool_allowed_in_mode
 from kicad_mcp.server import build_server
 from kicad_mcp.tools.router import EXPERIMENTAL_TOOL_NAMES, PROFILE_CATEGORIES, TOOL_CATEGORIES
+
+
+def _default_mode_expected_tools(profile_name: str, expected: list[str]) -> set[str]:
+    names = set(expected)
+    if profile_name != "agent_full":
+        names -= EXPERIMENTAL_TOOL_NAMES
+    return {name for name in names if is_tool_allowed_in_mode(name, OperatingMode.READONLY)}
 
 
 @pytest.mark.anyio
@@ -24,10 +32,7 @@ async def test_profile_tool_matrix_matches_declared_categories(
 
         assert len(listed) == len(listed_set)
         assert listed_set.issubset(set(expected))
-        if profile_name == "agent_full":
-            assert listed_set == set(expected)
-        else:
-            assert listed_set == (set(expected) - EXPERIMENTAL_TOOL_NAMES)
+        assert listed_set == _default_mode_expected_tools(profile_name, expected)
 
 
 class _AvailableIpcState:

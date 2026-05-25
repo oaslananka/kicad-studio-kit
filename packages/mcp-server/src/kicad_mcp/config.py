@@ -108,6 +108,10 @@ class KiCadMCPConfig(BaseSettings):
         "schematic",
         "agent_full",
     ] = Field(default="full")
+    operating_mode: Literal["readonly", "write", "manufacturing", "experimental"] = Field(
+        default="readonly",
+        description="Risk-oriented tool exposure mode.",
+    )
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(default="INFO")
     log_format: Literal["json", "text", "console"] = Field(default="console")
     log_file: Path | None = Field(default=None)
@@ -259,6 +263,17 @@ class KiCadMCPConfig(BaseSettings):
     def _normalize_lowercase_literals(cls, value: object) -> object:
         if isinstance(value, str):
             return value.strip().casefold()
+        return value
+
+    @field_validator("operating_mode", mode="before")
+    @classmethod
+    def _normalize_operating_mode(cls, value: object) -> object:
+        if value in (None, ""):
+            return "readonly"
+        if isinstance(value, str):
+            normalized = value.strip().casefold().replace("_", "-")
+            aliases = {"read-only": "readonly", "ro": "readonly", "mfg": "manufacturing"}
+            return aliases.get(normalized, normalized)
         return value
 
     @field_validator("kicad_cli")

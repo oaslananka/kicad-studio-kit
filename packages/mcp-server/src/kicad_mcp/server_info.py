@@ -15,8 +15,9 @@ from .discovery import CliCapabilities, get_cli_capabilities
 from .i18n import SERVER_DESCRIPTION, localize, localized_message_variants
 from .ipc.capabilities import get_ipc_capability_state
 from .ipc.client import KiCadIpcClient
+from .operating_modes import operating_mode_contract
 
-SERVER_INFO_SCHEMA_VERSION = "1.1.0"
+SERVER_INFO_SCHEMA_VERSION = "1.2.0"
 _BIND_ALL_HOSTS = {"0.0.0.0", "::"}  # noqa: S104 - bind-all sentinel, not a socket bind.
 _SEMVER_NUMBER_RE = re.compile(r"\d+")
 TransportType = Literal["stdio", "streamable-http", "sse"]
@@ -67,6 +68,7 @@ def get_server_info_contract(*, probe_live_context: bool = True) -> dict[str, ob
             "livePcbContext": ipc_state.live_pcb_context,
             "liveSchematicContext": ipc_state.live_schematic_context,
         },
+        "operatingMode": operating_mode_contract(cfg),
         "capabilities": {
             "fileBackedDrc": cli.found,
             "fileBackedErc": cli.found,

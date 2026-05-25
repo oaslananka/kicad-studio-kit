@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from kicad_mcp.operating_modes import OperatingMode, is_tool_allowed_in_mode
 from kicad_mcp.server import build_server, create_server
 from kicad_mcp.tools.router import (
     EXPERIMENTAL_TOOL_NAMES,
@@ -105,6 +106,7 @@ async def test_tool_category_output_shows_runtime_metadata() -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.mcp_mode("manufacturing")
 async def test_manufacturing_profile_exposes_release_exports_only() -> None:
     server = build_server("manufacturing")
     tool_names = {tool.name for tool in await server.list_tools()}
@@ -140,7 +142,12 @@ async def test_tool_categories_have_no_phantom_or_undeclared_tools(
     for category in TOOL_CATEGORIES.values():
         declared.update(category["tools"])
 
-    assert registered == (declared - EXPERIMENTAL_TOOL_NAMES)
+    expected = {
+        name
+        for name in declared - EXPERIMENTAL_TOOL_NAMES
+        if is_tool_allowed_in_mode(name, OperatingMode.READONLY)
+    }
+    assert registered == expected
 
 
 class _AvailableIpcState:

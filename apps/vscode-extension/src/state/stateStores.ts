@@ -586,6 +586,7 @@ function cloneCapabilities(capabilities: McpCapabilityCard): McpCapabilityCard {
           },
           transport: { ...serverInfo.transport },
           kicad: { ...serverInfo.kicad },
+          operatingMode: cloneOperatingMode(serverInfo),
           capabilities: {
             ...serverInfo.capabilities,
             cliExports: {
@@ -595,5 +596,30 @@ function cloneCapabilities(capabilities: McpCapabilityCard): McpCapabilityCard {
           diagnostics: [...(serverInfo.diagnostics ?? [])]
         }
       : undefined
+  };
+}
+
+function cloneOperatingMode(
+  serverInfo: NonNullable<McpCapabilityCard['serverInfo']>
+): NonNullable<McpCapabilityCard['serverInfo']>['operatingMode'] {
+  const mode = serverInfo.operatingMode;
+  if (!mode) {
+    return {
+      active: 'readonly',
+      default: 'readonly',
+      available: ['readonly', 'write', 'manufacturing', 'experimental'],
+      experimentalEnabled: false,
+      toolAvailability: {}
+    };
+  }
+  return {
+    ...mode,
+    available: [...mode.available],
+    toolAvailability: Object.fromEntries(
+      Object.entries(mode.toolAvailability).map(([name, availability]) => [
+        name,
+        { ...availability }
+      ])
+    )
   };
 }

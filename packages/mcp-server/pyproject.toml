@@ -129,6 +129,7 @@ addopts = "-q"
 markers = [
   "benchmark: lightweight performance regression checks with committed baselines",
   "gui: real KiCad GUI smoke tests for scheduled/manual environments",
+  "mcp_mode(mode): run the test with an explicit KiCad MCP operating mode",
   "slow: tests that are useful for scheduled/full validation but skipped by fast loops",
 ]
 

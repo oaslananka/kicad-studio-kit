@@ -8,6 +8,8 @@ from kicad_mcp.server import build_server
 from kicad_mcp.tools.metadata import infer_tool_annotations
 from kicad_mcp.tools.router import TOOL_CATEGORIES
 
+TESTS_ROOT = Path(__file__).resolve().parents[1]
+
 
 def test_every_declared_tool_can_be_normalized_into_annotations() -> None:
     declared_tools = {
@@ -36,7 +38,7 @@ async def test_every_declared_tool_has_static_test_reference() -> None:
         tool_name for category in TOOL_CATEGORIES.values() for tool_name in category["tools"]
     }
     test_blob = "\n".join(
-        path.read_text(encoding="utf-8", errors="ignore") for path in Path("tests").rglob("*.py")
+        path.read_text(encoding="utf-8", errors="ignore") for path in TESTS_ROOT.rglob("*.py")
     )
     missing = sorted(tool_name for tool_name in declared_tools if tool_name not in test_blob)
 

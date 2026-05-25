@@ -132,15 +132,49 @@ export function createMcpStdioServerDefinition(args: {
   command: string;
   args: string[];
   cwd: vscode.Uri;
-  env: Record<string, string>;
+  env: Record<string, string | number | null>;
   version?: string | undefined;
 }): unknown | undefined {
   const ctor = (
     vscode as unknown as {
-      McpStdioServerDefinition?: new (value: unknown) => unknown;
+      McpStdioServerDefinition?: new (...values: unknown[]) => unknown;
     }
   ).McpStdioServerDefinition;
-  return typeof ctor === 'function' ? new ctor(args) : undefined;
+  if (typeof ctor !== 'function') {
+    return undefined;
+  }
+  if (ctor.length > 1) {
+    return createPositionalMcpStdioServerDefinition(ctor, args);
+  }
+  try {
+    return new ctor(args);
+  } catch {
+    return createPositionalMcpStdioServerDefinition(ctor, args);
+  }
+}
+
+function createPositionalMcpStdioServerDefinition(
+  ctor: new (...values: unknown[]) => unknown,
+  args: {
+    label: string;
+    command: string;
+    args: string[];
+    cwd: vscode.Uri;
+    env: Record<string, string | number | null>;
+    version?: string | undefined;
+  }
+): unknown {
+  const definition = new ctor(
+    args.label,
+    args.command,
+    args.args,
+    args.env,
+    args.version
+  );
+  if (isRecord(definition)) {
+    definition['cwd'] = args.cwd;
+  }
+  return definition;
 }
 
 export function flattenLanguageModelMessages(

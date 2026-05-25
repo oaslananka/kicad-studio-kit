@@ -44,7 +44,7 @@ function wellKnownServerInfoResult() {
       version: '1.0.0'
     },
     serverInfoContract: {
-      schemaVersion: '1.1.0',
+      schemaVersion: '1.2.0',
       server: 'kicad-mcp-pro',
       version: '1.0.0',
       mcpProtocolVersion: '2025-11-25',
@@ -79,6 +79,24 @@ function wellKnownServerInfoResult() {
         ipcEndpointSource: 'default',
         livePcbContext: false,
         liveSchematicContext: false
+      },
+      operatingMode: {
+        active: 'readonly',
+        default: 'readonly',
+        available: ['readonly', 'write', 'manufacturing', 'experimental'],
+        experimentalEnabled: false,
+        toolAvailability: {
+          kicad_get_version: {
+            available: true,
+            requiredMode: 'readonly',
+            reason: null
+          },
+          pcb_add_track: {
+            available: false,
+            requiredMode: 'write',
+            reason: 'Requires write operating mode.'
+          }
+        }
       },
       capabilities: {
         fileBackedDrc: true,
@@ -283,7 +301,7 @@ describe('McpClient version gate', () => {
         createJsonResponse({
           ...wellKnownResult('1.0.0'),
           serverInfoContract: {
-            schemaVersion: '1.1.0',
+            schemaVersion: '1.2.0',
             server: 'other-server'
           }
         })
@@ -330,7 +348,7 @@ describe('McpClient version gate', () => {
     const state = await createClient().testConnection();
 
     expect(state.server?.compat).toBe('warn');
-    expect(state.server?.capabilities.serverInfo?.schemaVersion).toBe('1.1.0');
+    expect(state.server?.capabilities.serverInfo?.schemaVersion).toBe('1.2.0');
   });
 
   it('blocks tool calls after an incompatible initialize response', async () => {

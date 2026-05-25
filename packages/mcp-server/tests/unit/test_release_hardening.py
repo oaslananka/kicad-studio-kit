@@ -489,6 +489,7 @@ async def test_export_gerber_sends_progress_notifications(
 
 
 @pytest.mark.anyio
+@pytest.mark.mcp_mode("manufacturing")
 async def test_manufacturing_gate_block_returns_structured_validation_error(
     sample_project: Path,
     monkeypatch,
@@ -829,6 +830,7 @@ def test_docs_workflow_deploys_only_from_canonical_repo() -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.mcp_mode("write")
 async def test_project_generate_design_prompt_uses_design_intent(sample_project: Path) -> None:
     server = build_server("full")
     await call_tool_text(server, "kicad_set_project", {"project_dir": str(sample_project)})
@@ -863,6 +865,7 @@ async def test_project_generate_design_prompt_uses_design_intent(sample_project:
 
 
 @pytest.mark.anyio
+@pytest.mark.mcp_mode("experimental")
 async def test_export_manufacturing_package_accepts_explicit_variant(
     sample_project: Path,
     monkeypatch,

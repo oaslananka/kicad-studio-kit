@@ -18,6 +18,7 @@ def test_stdio_initialize_does_not_require_client_warmup() -> None:
     env["KICAD_MCP_LOG_LEVEL"] = "ERROR"
     env["KICAD_MCP_LOG_FORMAT"] = "json"
     env["KICAD_MCP_KICAD_CLI"] = "kicad-cli-missing-for-stdio-startup-test"
+    env["KICAD_MCP_OPERATING_MODE"] = "experimental"
     env["KICAD_MCP_TRANSPORT"] = "stdio"
 
     started = time.perf_counter()

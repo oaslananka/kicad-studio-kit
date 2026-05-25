@@ -7,6 +7,8 @@ import pytest
 from kicad_mcp.server import build_server
 from tests.conftest import call_tool_text
 
+pytestmark = pytest.mark.mcp_mode("experimental")
+
 
 @pytest.mark.anyio
 async def test_sch_set_hop_over_updates_project_file(sample_project) -> None:

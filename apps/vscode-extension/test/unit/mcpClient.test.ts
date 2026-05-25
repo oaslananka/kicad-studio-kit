@@ -110,6 +110,57 @@ describe('McpClient', () => {
     );
   }
 
+  it('coalesces concurrent connection tests onto one MCP probe', async () => {
+    let releaseInitialize: (() => void) | undefined;
+    const initializeResponse = new Promise((resolve) => {
+      releaseInitialize = () =>
+        resolve(
+          createJsonResponse({
+            result: {
+              serverInfo: { version: '1.0.0' },
+              capabilities: { tools: [], resources: [], prompts: [] }
+            }
+          })
+        );
+    });
+    global.fetch = jest.fn((_input, init) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        method?: string;
+      };
+      if (body.method === 'initialize') {
+        return initializeResponse;
+      }
+      return Promise.resolve(createJsonResponse({ result: { tools: [] } }));
+    }) as typeof fetch;
+    const detector = {
+      detectKicadMcpPro: jest
+        .fn()
+        .mockResolvedValue({ found: true, source: 'uvx' })
+    };
+    const client = new McpClient(
+      createExtensionContextMock() as never,
+      detector as never,
+      {
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        debug: jest.fn()
+      } as never
+    );
+
+    const first = client.testConnection();
+    const second = client.testConnection();
+
+    await Promise.resolve();
+    expect(detector.detectKicadMcpPro).toHaveBeenCalledTimes(1);
+    releaseInitialize?.();
+    const [firstState, secondState] = await Promise.all([first, second]);
+
+    expect(firstState.kind).toBe('Connected');
+    expect(secondState.kind).toBe('Connected');
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+  });
+
   it('does not probe or push MCP context in restricted workspaces', async () => {
     workspace.isTrusted = false;
     global.fetch = jest.fn() as typeof fetch;

@@ -9,6 +9,8 @@ from kicad_mcp.server import create_server
 from kicad_mcp.tools.schematic import place_symbol_block
 from tests.conftest import call_tool_text
 
+pytestmark = pytest.mark.mcp_mode("write")
+
 
 def _write_variant_schematic(sample_project) -> None:
     schematic = sample_project / "demo.kicad_sch"

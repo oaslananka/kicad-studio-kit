@@ -199,7 +199,7 @@ test("validates shared protocol payload families", () => {
 
 function serverInfoFixture() {
   return {
-    schemaVersion: "1.1.0",
+    schemaVersion: "1.2.0",
     server: "kicad-mcp-pro",
     description: "KiCad MCP Pro server for PCB and schematic workflows.",
     localizedDescriptions: {
@@ -239,6 +239,34 @@ function serverInfoFixture() {
       ipcEndpointSource: "default",
       livePcbContext: true,
       liveSchematicContext: false,
+    },
+    operatingMode: {
+      active: "readonly",
+      default: "readonly",
+      available: ["readonly", "write", "manufacturing", "experimental"],
+      experimentalEnabled: false,
+      toolAvailability: {
+        kicad_get_version: {
+          available: true,
+          requiredMode: "readonly",
+          reason: null,
+        },
+        pcb_add_track: {
+          available: false,
+          requiredMode: "write",
+          reason: "Requires write operating mode.",
+        },
+        export_manufacturing_package: {
+          available: false,
+          requiredMode: "manufacturing",
+          reason: "Requires manufacturing operating mode.",
+        },
+        route_tune_length: {
+          available: false,
+          requiredMode: "experimental",
+          reason: "Requires experimental operating mode.",
+        },
+      },
     },
     capabilities: {
       fileBackedDrc: true,
