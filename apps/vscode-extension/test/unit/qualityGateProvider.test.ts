@@ -22,7 +22,7 @@ describe('QualityGateProvider', () => {
 
     expect(children).toHaveLength(5);
     expect(provider.getTreeItem(children[0] as never).description).toContain(
-      'PENDING'
+      'Ready'
     );
   });
 
@@ -44,7 +44,9 @@ describe('QualityGateProvider', () => {
 
     expect(children).toHaveLength(5);
     expect(
-      children.every((item) => item.kind === 'gate' && item.gate.status === 'BLOCKED')
+      children.every(
+        (item) => item.kind === 'gate' && item.gate.status === 'BLOCKED'
+      )
     ).toBe(true);
     expect(provider.getTreeItem(children[0] as never).description).toContain(
       'BLOCKED'

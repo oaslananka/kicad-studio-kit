@@ -242,10 +242,27 @@ function pendingGate(id: string, label: string): QualityGateResult {
     id,
     label,
     status: 'PENDING',
-    summary: 'Click to run this gate or run all gates.',
+    summary: pendingGateSummary(id),
     details: [],
     violations: []
   };
+}
+
+function pendingGateSummary(id: string): string {
+  switch (id) {
+    case 'schematic':
+      return 'Run schematic checks';
+    case 'connectivity':
+      return 'Run connectivity checks';
+    case 'placement':
+      return 'Run placement checks';
+    case 'transfer':
+      return 'Run PCB transfer checks';
+    case 'manufacturing':
+      return 'Run manufacturing checks';
+    default:
+      return 'Run this quality gate';
+  }
 }
 
 function blockedGates(
@@ -275,7 +292,8 @@ function supportsHttpQualityGates(state: McpConnectionState): boolean {
 
 function descriptionForGate(gate: QualityGateResult): string {
   const runText = gate.lastRun ? ` - ${formatTimestamp(gate.lastRun)}` : '';
-  return `${gate.status} - ${gate.summary}${runText}`;
+  const status = gate.status === 'PENDING' ? 'Ready' : gate.status;
+  return `${status} - ${gate.summary}${runText}`;
 }
 
 function tooltipForGate(gate: QualityGateResult): string {
@@ -288,7 +306,9 @@ function tooltipForGate(gate: QualityGateResult): string {
     gate.violations.length
       ? `${gate.violations.length} violation(s). Expand for details.`
       : 'No violation rows cached for this gate.',
-    'Click to run this gate.'
+    gate.status === 'PENDING'
+      ? 'Click to run this gate when the project is ready.'
+      : 'Click to rerun this gate.'
   ];
   if (gate.raw) {
     lines.push('', gate.raw);

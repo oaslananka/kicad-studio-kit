@@ -29,7 +29,7 @@ export class ValidationViewProvider
       element.label,
       vscode.TreeItemCollapsibleState.None
     );
-    item.description = describe(element.summary);
+    item.description = describe(element);
     item.tooltip = tooltip(element);
     item.iconPath = new vscode.ThemeIcon(iconFor(element.summary));
     item.command = {
@@ -53,9 +53,10 @@ export class ValidationViewProvider
   }
 }
 
-function describe(summary: DiagnosticSummary | undefined): string {
+function describe(row: ValidationRow): string {
+  const { summary } = row;
   if (!summary) {
-    return localize('diagnosticPendingNoCachedResult');
+    return `Not run - Run ${row.label}`;
   }
   return localize('diagnosticSummary', {
     status: statusFor(summary),

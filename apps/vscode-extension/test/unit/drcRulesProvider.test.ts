@@ -1,6 +1,9 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { DrcRulesProvider } from '../../src/drc/drcRulesProvider';
+import {
+  DrcRulesProvider,
+  type DrcRuleItem
+} from '../../src/drc/drcRulesProvider';
 import { SExpressionParser } from '../../src/language/sExpressionParser';
 import { window, workspace } from './vscodeMock';
 
@@ -25,7 +28,7 @@ describe('DrcRulesProvider', () => {
 
     await (provider as any).load();
 
-    const items = provider.getChildren();
+    const items = provider.getChildren() as DrcRuleItem[];
     expect(items).toHaveLength(2);
     expect(items.map((item) => item.name)).toEqual([
       'min_usb_clearance',
@@ -40,7 +43,7 @@ describe('DrcRulesProvider', () => {
 
     await (provider as any).load();
 
-    const [item] = provider.getChildren();
+    const [item] = provider.getChildren() as DrcRuleItem[];
     if (!item) {
       throw new Error('Expected at least one DRC rule item.');
     }
@@ -71,13 +74,17 @@ describe('DrcRulesProvider', () => {
     expect(revealRange).toHaveBeenCalled();
   });
 
-  it('returns an empty list when no DRC rules file exists', async () => {
+  it('renders an actionable state when no DRC rules file exists', async () => {
     const provider = new DrcRulesProvider(new SExpressionParser());
     (workspace.findFiles as jest.Mock).mockResolvedValue([]);
 
     await (provider as any).load();
 
-    expect(provider.getChildren()).toEqual([]);
+    const [state] = provider.getChildren();
+    expect(provider.getTreeItem(state as never)).toMatchObject({
+      label: 'No DRC rules file',
+      description: 'Create or open a .kicad_dru file'
+    });
   });
 
   it('loads and merges rules from every .kicad_dru file in the workspace', async () => {
@@ -97,9 +104,9 @@ describe('DrcRulesProvider', () => {
     await (provider as any).load();
 
     expect(
-      provider
-        .getChildren()
-        .map((item) => `${path.basename(item.file)}:${item.name}`)
+      (provider.getChildren() as DrcRuleItem[]).map(
+        (item) => `${path.basename(item.file)}:${item.name}`
+      )
     ).toEqual([
       'custom_drc.kicad_dru:min_usb_clearance',
       'custom_drc.kicad_dru:rf_keepout',
@@ -122,7 +129,7 @@ describe('DrcRulesProvider', () => {
 
     await (provider as any).load();
 
-    const [item] = provider.getChildren();
+    const [item] = provider.getChildren() as DrcRuleItem[];
     expect(item?.name).toBe('kicad10_diff_pair_inner_layer');
     expect(item?.condition).toContain("A.Layer == 'In1.Cu'");
     expect(item?.constraint).toContain(

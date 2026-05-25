@@ -4,6 +4,12 @@ import type { FixItem, McpConnectionState } from '../types';
 import { isRecoverableMcpUnavailableError } from './mcpErrorMapper';
 import type { FixQueueMcpAdapter } from './mcpToolAdapter';
 import type { McpStateStore } from '../state/stateStores';
+import {
+  isSidebarWorkflowState,
+  sidebarState,
+  sidebarStateTreeItem,
+  type SidebarWorkflowState
+} from '../providers/sidebarWorkflowState';
 
 class FixQueueTreeItem extends vscode.TreeItem {
   constructor(public readonly item: FixItem) {
@@ -26,28 +32,61 @@ class FixQueueTreeItem extends vscode.TreeItem {
   }
 }
 
-export class FixQueueProvider implements vscode.TreeDataProvider<FixItem> {
+type FixQueueNode = FixItem | SidebarWorkflowState;
+
+export class FixQueueProvider implements vscode.TreeDataProvider<FixQueueNode> {
   private readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<
-    FixItem | undefined
+    FixQueueNode | undefined
   >();
   readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
   private items: FixItem[] = [];
+  private state: SidebarWorkflowState | undefined;
 
   constructor(
     private readonly adapter: FixQueueMcpAdapter,
     private readonly mcpState?: Pick<McpStateStore, 'getState'> | undefined
   ) {}
 
-  getTreeItem(element: FixItem): vscode.TreeItem {
+  getTreeItem(element: FixQueueNode): vscode.TreeItem {
+    if (isSidebarWorkflowState(element)) {
+      return sidebarStateTreeItem(element);
+    }
     return new FixQueueTreeItem(element);
   }
 
-  getChildren(): FixItem[] {
+  getChildren(): FixQueueNode[] {
     const state = this.mcpState?.getState();
     if (state && !supportsHttpFixQueue(state)) {
-      return [];
+      return [
+        sidebarState(
+          'error',
+          'Fix Queue unavailable',
+          'Use HTTP MCP transport',
+          fixQueueBlockMessage(state),
+          'warning',
+          {
+            command: COMMANDS.setupMcpIntegration,
+            title: 'Setup MCP Integration'
+          }
+        )
+      ];
     }
-    return this.items;
+    return this.items.length
+      ? this.items
+      : [
+          this.state ??
+            sidebarState(
+              'empty',
+              'No pending AI fixes',
+              'Run DRC/ERC or refresh MCP',
+              'No queued fixes are available for the active project. Run validation or refresh MCP capabilities to populate suggested repairs.',
+              'lightbulb',
+              {
+                command: COMMANDS.retryMcp,
+                title: 'Refresh MCP Fix Queue'
+              }
+            )
+        ];
   }
 
   getFixesForUri(uri: vscode.Uri, range?: vscode.Range): FixItem[] {
@@ -71,11 +110,25 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixItem> {
     const state = this.mcpState?.getState();
     if (state && !supportsHttpFixQueue(state)) {
       this.items = [];
+      this.state = undefined;
       this.onDidChangeTreeDataEmitter.fire(undefined);
       return;
     }
     try {
       this.items = await this.adapter.fetchFixQueue();
+      this.state = this.items.length
+        ? undefined
+        : sidebarState(
+            'empty',
+            'No pending AI fixes',
+            'Run DRC/ERC or refresh MCP',
+            'No queued fixes are available for the active project. Run validation or refresh MCP capabilities to populate suggested repairs.',
+            'lightbulb',
+            {
+              command: COMMANDS.retryMcp,
+              title: 'Refresh MCP Fix Queue'
+            }
+          );
     } catch (err) {
       // Swallow errors when MCP is connected via VS Code stdio (HTTP not
       // available) or when the server is temporarily unreachable, so the
@@ -84,6 +137,17 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixItem> {
         throw err;
       }
       this.items = [];
+      this.state = sidebarState(
+        'error',
+        'Fix Queue could not refresh',
+        'Retry MCP connection',
+        err instanceof Error ? err.message : String(err),
+        'warning',
+        {
+          command: COMMANDS.retryMcp,
+          title: 'Retry MCP Connection'
+        }
+      );
     }
     this.onDidChangeTreeDataEmitter.fire(undefined);
   }
@@ -173,4 +237,12 @@ function normalizePath(value: string): string {
 
 function supportsHttpFixQueue(state: McpConnectionState): boolean {
   return state.kind === 'Connected' && state.connected;
+}
+
+function fixQueueBlockMessage(state: McpConnectionState): string {
+  return state.kind === 'VsCodeStdio'
+    ? 'Fix Queue needs the HTTP MCP transport; VS Code stdio cannot serve queued repair actions.'
+    : state.kind === 'Incompatible'
+      ? 'Upgrade kicad-mcp-pro before loading AI repair actions.'
+      : 'Connect kicad-mcp-pro over HTTP before loading AI repair actions.';
 }

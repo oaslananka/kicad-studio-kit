@@ -382,20 +382,26 @@ describe('VariantProvider', () => {
     fs.writeFileSync(projectFile, JSON.stringify({}, null, 2), 'utf8');
     const provider = new VariantProvider();
 
-    const [variant] = await provider.getChildren();
-    if (!variant || !('componentOverrides' in variant)) {
-      throw new Error('Expected a fallback default variant.');
-    }
+    const [state] = await provider.getChildren();
+    expect(provider.getTreeItem(state as never)).toMatchObject({
+      label: 'No variants configured',
+      description: 'Create assembly variant'
+    });
 
-    expect(variant.name).toBe('Default');
-    expect(variant.isDefault).toBe(true);
+    await expect(provider.listVariants()).resolves.toEqual([
+      expect.objectContaining({ name: 'Default', isDefault: true })
+    ]);
   });
 
-  it('returns no variants and does not prompt when no project file exists', async () => {
+  it('renders a project prerequisite state and does not prompt when no project file exists', async () => {
     (workspace.findFiles as jest.Mock).mockResolvedValue([]);
     const provider = new VariantProvider();
 
-    await expect(provider.getChildren()).resolves.toEqual([]);
+    const [state] = await provider.getChildren();
+    expect(provider.getTreeItem(state as never)).toMatchObject({
+      label: 'No KiCad project file',
+      description: 'Open a .kicad_pro project'
+    });
     await provider.createVariant();
 
     expect(window.showInputBox).not.toHaveBeenCalled();
@@ -405,13 +411,15 @@ describe('VariantProvider', () => {
     fs.writeFileSync(projectFile, '{ invalid json', 'utf8');
     const provider = new VariantProvider();
 
-    const [variant] = await provider.getChildren();
-    if (!variant || !('componentOverrides' in variant)) {
-      throw new Error('Expected a fallback default variant.');
-    }
+    const [state] = await provider.getChildren();
+    expect(provider.getTreeItem(state as never)).toMatchObject({
+      label: 'No variants configured',
+      description: 'Create assembly variant'
+    });
 
-    expect(variant.name).toBe('Default');
-    expect(variant.isDefault).toBe(true);
+    await expect(provider.listVariants()).resolves.toEqual([
+      expect.objectContaining({ name: 'Default', isDefault: true })
+    ]);
   });
 
   it('does not create a variant when the input is blank', async () => {

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { FixQueueProvider } from '../../src/mcp/fixQueueProvider';
 import { McpStateStore } from '../../src/state/stateStores';
+import type { FixItem } from '../../src/types';
 import { window, workspace } from './vscodeMock';
 
 describe('FixQueueProvider code-action support', () => {
@@ -100,7 +101,7 @@ describe('FixQueueProvider code-action support', () => {
     };
     const provider = new FixQueueProvider(client as never);
     await provider.refresh();
-    const [first, second] = provider.getChildren();
+    const [first, second] = provider.getChildren() as FixItem[];
 
     expect(provider.getTreeItem(first as never).iconPath).toEqual(
       expect.objectContaining({ id: 'error' })
@@ -116,7 +117,7 @@ describe('FixQueueProvider code-action support', () => {
     expect(first?.status).toBe('failed');
   });
 
-  it('refresh swallows stdio/fetch/ECONNREFUSED errors and leaves items empty', async () => {
+  it('refresh swallows stdio/fetch/ECONNREFUSED errors and renders recovery state', async () => {
     const client = {
       fetchFixQueue: jest
         .fn()
@@ -132,7 +133,11 @@ describe('FixQueueProvider code-action support', () => {
     await expect(provider.refresh()).resolves.toBeUndefined();
     await expect(provider.refresh()).resolves.toBeUndefined();
     await expect(provider.refresh()).resolves.toBeUndefined();
-    expect(provider.getChildren()).toHaveLength(0);
+    const [state] = provider.getChildren();
+    expect(provider.getTreeItem(state as never)).toMatchObject({
+      label: 'Fix Queue could not refresh',
+      description: 'Retry MCP connection'
+    });
   });
 
   it('refresh re-throws errors unrelated to stdio/fetch', async () => {
@@ -170,6 +175,10 @@ describe('FixQueueProvider code-action support', () => {
     await provider.refresh();
 
     expect(client.fetchFixQueue).not.toHaveBeenCalled();
-    expect(provider.getChildren()).toEqual([]);
+    const [state] = provider.getChildren();
+    expect(provider.getTreeItem(state as never)).toMatchObject({
+      label: 'Fix Queue unavailable',
+      description: 'Use HTTP MCP transport'
+    });
   });
 });

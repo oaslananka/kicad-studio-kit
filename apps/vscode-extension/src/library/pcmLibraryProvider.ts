@@ -6,8 +6,14 @@ import {
   PcmPackageKind,
   PcmService
 } from './pcmService';
+import {
+  isSidebarWorkflowState,
+  sidebarState,
+  sidebarStateTreeItem,
+  type SidebarWorkflowState
+} from '../providers/sidebarWorkflowState';
 
-type PcmTreeNode = PcmGroupNode | PcmPackageNode;
+type PcmTreeNode = PcmGroupNode | PcmPackageNode | SidebarWorkflowState;
 
 interface PcmGroupNode {
   type: 'group';
@@ -23,8 +29,9 @@ interface PcmPackageNode {
 export class PcmLibraryProvider
   implements vscode.TreeDataProvider<PcmTreeNode>, vscode.Disposable
 {
-  private readonly onDidChangeTreeDataEmitter =
-    new vscode.EventEmitter<PcmTreeNode | undefined | void>();
+  private readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<
+    PcmTreeNode | undefined | void
+  >();
   readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
 
   private filter: PcmPackageKind | 'all' = 'all';
@@ -43,6 +50,9 @@ export class PcmLibraryProvider
   }
 
   getTreeItem(element: PcmTreeNode): vscode.TreeItem {
+    if (isSidebarWorkflowState(element)) {
+      return sidebarStateTreeItem(element);
+    }
     if (element.type === 'group') {
       const packages = this.packagesForKind(element.kind);
       const updates = packages.filter(
@@ -92,13 +102,31 @@ export class PcmLibraryProvider
 
   async getChildren(element?: PcmTreeNode): Promise<PcmTreeNode[]> {
     await this.ensureLoaded();
-    if (element?.type === 'group') {
+    if (isSidebarWorkflowState(element)) {
+      return [];
+    }
+    if (!element && this.pcmService.getPackages().length === 0) {
+      return [
+        sidebarState(
+          'empty',
+          'No PCM libraries indexed',
+          'Refresh PCM repositories',
+          'No KiCad Package and Content Manager packages are indexed yet. Refresh repositories or check the PCM repository settings.',
+          'library',
+          {
+            command: COMMANDS.refreshPcmLibraries,
+            title: 'Refresh PCM Repositories'
+          }
+        )
+      ];
+    }
+    if (element && isPcmGroupNode(element)) {
       return this.packagesForKind(element.kind).map((pkg) => ({
         type: 'package',
         pkg
       }));
     }
-    if (element?.type === 'package') {
+    if (element && isPcmPackageNode(element)) {
       return [];
     }
     if (this.filter !== 'all') {
@@ -194,7 +222,9 @@ function descriptionForPackage(pkg: PcmPackage): string {
 
 function tooltipForPackage(pkg: PcmPackage): string {
   const kinds = pkg.contentTypes
-    .map((kind) => PCM_PACKAGE_KINDS.find((entry) => entry.kind === kind)?.label)
+    .map(
+      (kind) => PCM_PACKAGE_KINDS.find((entry) => entry.kind === kind)?.label
+    )
     .filter(Boolean)
     .join(', ');
   return [
@@ -250,4 +280,12 @@ function toContextSuffix(value: string): string {
     .filter(Boolean)
     .map((part) => part[0]?.toUpperCase() + part.slice(1))
     .join('');
+}
+
+function isPcmGroupNode(value: PcmTreeNode): value is PcmGroupNode {
+  return 'type' in value && value.type === 'group';
+}
+
+function isPcmPackageNode(value: PcmTreeNode): value is PcmPackageNode {
+  return 'type' in value && value.type === 'package';
 }
