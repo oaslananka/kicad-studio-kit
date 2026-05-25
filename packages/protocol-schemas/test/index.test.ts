@@ -55,6 +55,23 @@ test("validates server-info payloads and reports schema errors", () => {
   assert.ok(invalid.errors.some((error) => error.path === "/server"));
 });
 
+test("rejects payloads that declare an unsupported schema major", () => {
+  const invalid = validateMcpServerInfoContract({
+    ...serverInfoFixture(),
+    schemaVersion: "2.0.0",
+  });
+
+  assert.equal(invalid.valid, false);
+  assert.deepEqual(invalid.errors, [
+    {
+      path: "/schemaVersion",
+      message:
+        "kicad-mcp-server-info payload declares unsupported schema major 2; expected 1.x",
+      keyword: "schemaMajor",
+    },
+  ]);
+});
+
 test("validates shared protocol payload families", () => {
   assert.equal(
     validateToolCapabilityMetadata({
@@ -70,6 +87,18 @@ test("validates shared protocol payload families", () => {
     }).valid,
     true,
   );
+
+  const toolDiscovery = validateMcpToolDiscovery({
+    schemaVersion: "1.7.0",
+    _meta: { "io.modelcontextprotocol/related-task": "OASLANA-52" },
+    nextCursor: "next-page",
+    tools: [{ name: "kicad_health", inputSchema: { type: "object" } }],
+    resources: [],
+    prompts: [],
+    vendorExtension: { accepted: true },
+  });
+  assert.equal(toolDiscovery.valid, true);
+  assert.equal(toolDiscovery.data?.nextCursor, "next-page");
 
   assert.equal(
     validateMcpToolDiscovery({

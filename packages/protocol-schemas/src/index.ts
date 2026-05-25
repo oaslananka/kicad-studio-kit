@@ -135,6 +135,8 @@ export interface McpToolCapabilityMetadata {
 
 export interface McpToolDiscoveryResponse {
   schemaVersion?: string;
+  _meta?: Record<string, unknown>;
+  nextCursor?: string;
   tools: Array<{
     name: string;
     description?: string;
@@ -143,6 +145,7 @@ export interface McpToolDiscoveryResponse {
   }>;
   resources?: Array<{ uri?: string; name?: string; description?: string }>;
   prompts?: Array<{ name: string; description?: string }>;
+  [key: string]: unknown;
 }
 
 export interface ExtensionActiveContextPayload {
@@ -298,12 +301,19 @@ export class ProtocolSchemaValidator {
     payload: unknown,
   ): ProtocolValidationResult<T> {
     const validate = this.validatorFor(schemaName);
-    const valid = Boolean(validate(payload));
+    const schemaVersion = protocolSchemaVersion(schemaName);
+    const schemaValid = Boolean(validate(payload));
+    const versionError = schemaValid
+      ? validatePayloadSchemaMajor(schemaName, schemaVersion, payload)
+      : undefined;
+    const valid = schemaValid && versionError === undefined;
     const result: ProtocolValidationResult<T> = {
       schemaName,
-      schemaVersion: protocolSchemaVersion(schemaName),
+      schemaVersion,
       valid,
-      errors: valid ? [] : normalizeAjvErrors(validate.errors),
+      errors: valid
+        ? []
+        : (versionError ?? normalizeAjvErrors(validate.errors)),
     };
     if (valid) {
       result.data = payload as T;
@@ -454,6 +464,38 @@ function normalizeAjvErrors(
     message: error.message ?? "schema validation failed",
     keyword: error.keyword,
   }));
+}
+
+function validatePayloadSchemaMajor(
+  schemaName: ProtocolSchemaName,
+  supportedVersion: string,
+  payload: unknown,
+): ProtocolValidationError[] | undefined {
+  if (!isRecord(payload) || typeof payload["schemaVersion"] !== "string") {
+    return undefined;
+  }
+
+  const payloadMajor = majorVersion(payload["schemaVersion"]);
+  const supportedMajor = majorVersion(supportedVersion);
+  if (payloadMajor === undefined || supportedMajor === undefined) {
+    return undefined;
+  }
+  if (payloadMajor === supportedMajor) {
+    return undefined;
+  }
+
+  return [
+    {
+      path: "/schemaVersion",
+      message: `${schemaName} payload declares unsupported schema major ${payloadMajor}; expected ${supportedMajor}.x`,
+      keyword: "schemaMajor",
+    },
+  ];
+}
+
+function majorVersion(version: string): number | undefined {
+  const match = /^([0-9]+)\.[0-9]+\.[0-9]+$/.exec(version);
+  return match ? Number(match[1]) : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
