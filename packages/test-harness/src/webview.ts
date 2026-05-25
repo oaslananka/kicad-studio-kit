@@ -30,6 +30,12 @@ export interface MockAcquireVsCodeApiScriptOptions {
   globalName?: string;
 }
 
+export interface ReadMockWebviewMessagesOptions extends MockAcquireVsCodeApiScriptOptions {
+  frameMatcher?: RegExp | ((frame: PlaywrightLikeFrame) => boolean);
+}
+
+type PlaywrightLikeEvaluationTarget = Pick<PlaywrightLikePage, "evaluate">;
+
 export function createMockVsCodeApi<State = unknown>(
   initialState?: State,
 ): MockVsCodeApi<State> {
@@ -103,10 +109,14 @@ export async function installMockAcquireVsCodeApiScript(
 }
 
 export async function readMockWebviewMessages(
-  page: Pick<PlaywrightLikePage, "evaluate">,
-  options: MockAcquireVsCodeApiScriptOptions = {},
+  target: PlaywrightLikeEvaluationTarget &
+    Partial<Pick<PlaywrightLikePage, "frames">>,
+  options: ReadMockWebviewMessagesOptions = {},
 ): Promise<unknown[]> {
-  return page.evaluate(
+  const evaluationTarget = hasFrames(target)
+    ? (findWebviewFrame(target, options.frameMatcher) ?? target)
+    : target;
+  return evaluationTarget.evaluate(
     ({ globalName }) => {
       const target = globalThis as typeof globalThis & Record<string, unknown>;
       return [
@@ -115,4 +125,12 @@ export async function readMockWebviewMessages(
     },
     { globalName: options.globalName ?? "__kicadVsCodeApiMock" },
   );
+}
+
+function hasFrames(
+  target: PlaywrightLikeEvaluationTarget &
+    Partial<Pick<PlaywrightLikePage, "frames">>,
+): target is PlaywrightLikeEvaluationTarget &
+  Pick<PlaywrightLikePage, "frames"> {
+  return typeof target.frames === "function";
 }

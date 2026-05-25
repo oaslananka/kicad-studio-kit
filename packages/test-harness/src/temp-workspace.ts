@@ -38,7 +38,13 @@ export function copyDirectory(
     if (entry.isDirectory()) {
       copyDirectory(sourceEntry, targetEntry, options);
     } else if (entry.isSymbolicLink()) {
-      fs.symlinkSync(fs.readlinkSync(sourceEntry), targetEntry);
+      const linkTarget = fs.readlinkSync(sourceEntry);
+      const type = symlinkTypeForCopy(sourceEntry);
+      fs.symlinkSync(
+        symlinkTargetForCopy(linkTarget, targetEntry, type),
+        targetEntry,
+        type,
+      );
     } else if (entry.isFile()) {
       fs.copyFileSync(sourceEntry, targetEntry);
     }
@@ -68,4 +74,24 @@ export function createTempWorkspace(
     workspace.sourcePath = options.sourcePath;
   }
   return workspace;
+}
+
+type SymlinkType = "dir" | "file" | "junction";
+
+function symlinkTypeForCopy(sourceEntry: string): SymlinkType {
+  if (!fs.statSync(sourceEntry).isDirectory()) {
+    return "file";
+  }
+  return process.platform === "win32" ? "junction" : "dir";
+}
+
+function symlinkTargetForCopy(
+  linkTarget: string,
+  targetEntry: string,
+  type: SymlinkType,
+): string {
+  if (type === "junction" && !path.isAbsolute(linkTarget)) {
+    return path.resolve(path.dirname(targetEntry), linkTarget);
+  }
+  return linkTarget;
 }

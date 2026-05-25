@@ -91,9 +91,54 @@ test("installs and reads a Playwright-like webview API script", async () => {
   assert.deepEqual(await readMockWebviewMessages(page), [{ command: "ready" }]);
 });
 
+test("reads webview messages from the matching frame context", async () => {
+  const mainTarget = { __kicadVsCodeApiMock: { messages: [] } };
+  const webviewTarget = {
+    __kicadVsCodeApiMock: { messages: [{ command: "ready" }] },
+  };
+  const mainFrame = {
+    name: () => "main",
+    url: () => "https://example.test",
+    evaluate<T, Arg>(pageFunction: (arg: Arg) => T | Promise<T>, arg: Arg) {
+      return evaluateInTarget(mainTarget, pageFunction, arg);
+    },
+  };
+  const webviewFrame = {
+    name: () => "panel",
+    url: () => "vscode-webview://panel",
+    evaluate<T, Arg>(pageFunction: (arg: Arg) => T | Promise<T>, arg: Arg) {
+      return evaluateInTarget(webviewTarget, pageFunction, arg);
+    },
+  };
+  const page = {
+    frames: () => [mainFrame, webviewFrame],
+    evaluate<T, Arg>(pageFunction: (arg: Arg) => T | Promise<T>, arg: Arg) {
+      return evaluateInTarget(mainTarget, pageFunction, arg);
+    },
+  };
+
+  assert.deepEqual(await readMockWebviewMessages(page), [{ command: "ready" }]);
+});
+
 function evaluate<T, Arg>(
   pageFunction: (arg: Arg) => T | Promise<T>,
   arg: Arg,
 ): Promise<T> {
   return Promise.resolve(pageFunction(arg));
+}
+
+async function evaluateInTarget<T, Arg>(
+  target: Record<string, unknown>,
+  pageFunction: (arg: Arg) => T | Promise<T>,
+  arg: Arg,
+): Promise<T> {
+  const globalTarget = globalThis as typeof globalThis &
+    Record<string, unknown>;
+  const previousMock = globalTarget["__kicadVsCodeApiMock"];
+  try {
+    globalTarget["__kicadVsCodeApiMock"] = target["__kicadVsCodeApiMock"];
+    return await pageFunction(arg);
+  } finally {
+    globalTarget["__kicadVsCodeApiMock"] = previousMock;
+  }
 }
