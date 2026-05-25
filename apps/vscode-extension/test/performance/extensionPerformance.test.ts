@@ -51,7 +51,12 @@ type ChildProcessMock = EventEmitter & {
 
 const EXTENSION_ROOT = path.resolve(__dirname, '..', '..');
 const REPO_ROOT = path.resolve(EXTENSION_ROOT, '..', '..');
-const FIXTURE_ROOT = path.join(EXTENSION_ROOT, 'test', 'fixtures', 'kicad');
+const FIXTURE_ROOT = path.join(
+  REPO_ROOT,
+  'packages',
+  'kicad-fixtures',
+  'fixtures'
+);
 const PERFORMANCE_CATALOG = JSON.parse(
   fs.readFileSync(path.join(REPO_ROOT, 'performance', 'baselines.json'), 'utf8')
 ) as PerformanceCatalog;
@@ -78,7 +83,8 @@ afterAll(() => {
     `${JSON.stringify(
       {
         schemaVersion: 1,
-        source: 'apps/vscode-extension/test/performance/extensionPerformance.test.ts',
+        source:
+          'apps/vscode-extension/test/performance/extensionPerformance.test.ts',
         measurements
       },
       null,
@@ -95,7 +101,10 @@ describe('OASLANA-46 extension performance budgets', () => {
         fs.readFileSync(path.join(EXTENSION_ROOT, 'package.json'), 'utf8')
       ) as {
         activationEvents?: string[];
-        contributes?: { commands?: unknown[]; views?: Record<string, unknown[]> };
+        contributes?: {
+          commands?: unknown[];
+          views?: Record<string, unknown[]>;
+        };
       };
 
       expect(manifest.activationEvents?.length).toBeGreaterThan(0);
@@ -130,9 +139,8 @@ describe('OASLANA-46 extension performance budgets', () => {
       for (let index = 0; index < 6; index += 1) {
         writeProject(tempDir, `large-${index}`, 14);
       }
-      const large = await recordMetric(
-        'extension.project_scan.large_ms',
-        () => discoverProjectCount(tempDir)
+      const large = await recordMetric('extension.project_scan.large_ms', () =>
+        discoverProjectCount(tempDir)
       );
       expect(large).toBe(10);
     } finally {
@@ -145,23 +153,26 @@ describe('OASLANA-46 extension performance budgets', () => {
       'clean-led-kicad10',
       'clean-led-kicad10.kicad_sch'
     );
-    const pcbText = readFixture('clean-led-kicad10', 'clean-led-kicad10.kicad_pcb');
+    const pcbText = readFixture(
+      'clean-led-kicad10',
+      'clean-led-kicad10.kicad_pcb'
+    );
     const largePcbText = readFixture('large-board', 'large-board.kicad_pcb');
 
     await recordMetric('extension.viewer.schematic_first_render_ms', () => {
-      expect(renderViewer('schematic', 'clean-led-kicad10.kicad_sch', schematicText)).toContain(
-        'kicanvas-source'
-      );
+      expect(
+        renderViewer('schematic', 'clean-led-kicad10.kicad_sch', schematicText)
+      ).toContain('kicanvas-source');
     });
     await recordMetric('extension.viewer.pcb_first_render_ms', () => {
-      expect(renderViewer('board', 'clean-led-kicad10.kicad_pcb', pcbText)).toContain(
-        'kicanvas-source'
-      );
+      expect(
+        renderViewer('board', 'clean-led-kicad10.kicad_pcb', pcbText)
+      ).toContain('kicanvas-source');
     });
     await recordMetric('extension.viewer.large_pcb_first_render_ms', () => {
-      expect(renderViewer('board', 'large-board.kicad_pcb', largePcbText)).toContain(
-        'kicanvas-source'
-      );
+      expect(
+        renderViewer('board', 'large-board.kicad_pcb', largePcbText)
+      ).toContain('kicanvas-source');
     });
     await recordMetric('extension.viewer.reload_ms', () => {
       expect(
@@ -229,7 +240,8 @@ async function recordMetric<T>(
   }
 
   const p95 = percentile(sampleValues, 0.95);
-  const failureLimit = metric.baseline * PERFORMANCE_CATALOG.tolerance.failureRatio;
+  const failureLimit =
+    metric.baseline * PERFORMANCE_CATALOG.tolerance.failureRatio;
   expect(p95).toBeLessThanOrEqual(failureLimit);
   measurements.push({
     metric: metricId,
@@ -242,7 +254,10 @@ async function recordMetric<T>(
   return lastResult as T;
 }
 
-function percentile(values: readonly number[], percentileValue: number): number {
+function percentile(
+  values: readonly number[],
+  percentileValue: number
+): number {
   const sorted = [...values].sort((left, right) => left - right);
   const index = Math.min(
     sorted.length - 1,
@@ -280,7 +295,11 @@ function writeProject(
     '(kicad_pcb)',
     'utf8'
   );
-  fs.writeFileSync(path.join(projectRoot, `${projectName}.kicad_dru`), '', 'utf8');
+  fs.writeFileSync(
+    path.join(projectRoot, `${projectName}.kicad_dru`),
+    '',
+    'utf8'
+  );
   for (let index = 0; index < extraFiles; index += 1) {
     fs.writeFileSync(
       path.join(projectRoot, `generated-${index}.kicad_sch`),
@@ -291,7 +310,10 @@ function writeProject(
 }
 
 function readFixture(fixtureName: string, fileName: string): string {
-  return fs.readFileSync(path.join(FIXTURE_ROOT, fixtureName, fileName), 'utf8');
+  return fs.readFileSync(
+    path.join(FIXTURE_ROOT, fixtureName, fileName),
+    'utf8'
+  );
 }
 
 function renderViewer(
