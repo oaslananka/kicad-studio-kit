@@ -8,6 +8,7 @@ const { spawnSync } = require('node:child_process');
 const defaultRoot = path.resolve(__dirname, '..');
 const defaultRepoRoot = path.resolve(defaultRoot, '..', '..');
 const allowlistPath = path.join(__dirname, 'package-allowlist.json');
+const allowedWebScriptNames = new Set(['test:webview']);
 
 function validatePackage(options = {}) {
   const root = path.resolve(options.root ?? defaultRoot);
@@ -103,7 +104,7 @@ function validateStaticMetadata({ root, repoRoot, pkg, fail }) {
 
   for (const scriptName of Object.keys(pkg.scripts ?? {})) {
     check(
-      !scriptName.includes('web'),
+      !scriptName.includes('web') || allowedWebScriptNames.has(scriptName),
       `web build script must not be introduced before ADR-0006 accepts it: ${scriptName}`,
       fail
     );

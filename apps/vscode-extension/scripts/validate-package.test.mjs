@@ -71,6 +71,44 @@ test('validatePackage rejects forbidden packaged files', () => {
   );
 });
 
+test('validatePackage allows webview-only test scripts without enabling a web target', () => {
+  const packageJson = readPackageJson();
+  packageJson.scripts = {
+    ...(packageJson.scripts ?? {}),
+    'test:webview': 'playwright test --config playwright.webview.config.ts'
+  };
+
+  assert.doesNotThrow(() =>
+    validatePackage({
+      root: extensionRoot,
+      repoRoot,
+      packageJson,
+      runVsce: false,
+      validatePackageFiles: false
+    })
+  );
+});
+
+test('validatePackage still rejects web build target scripts', () => {
+  const packageJson = readPackageJson();
+  packageJson.scripts = {
+    ...(packageJson.scripts ?? {}),
+    'build:web': 'webpack --config web.config.js'
+  };
+
+  assert.throws(
+    () =>
+      validatePackage({
+        root: extensionRoot,
+        repoRoot,
+        packageJson,
+        runVsce: false,
+        validatePackageFiles: false
+      }),
+    /web build script must not be introduced before ADR-0006 accepts it: build:web/
+  );
+});
+
 function readPackageJson() {
   return JSON.parse(
     fs.readFileSync(path.join(extensionRoot, 'package.json'), 'utf8')
