@@ -51,6 +51,7 @@ Architecture changes must include:
 - Boundary impact analysis.
 - Validation that product workspaces remain independently buildable.
 - No direct source imports between `apps/vscode-extension`, `packages/mcp-server`, and `packages/mcp-npm`.
+- No production source imports from `@oaslananka/kicad-test-harness`.
 - Migration notes for renamed or moved paths.
 
 ## MCP protocol or capability changes

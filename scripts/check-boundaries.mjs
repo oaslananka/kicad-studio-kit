@@ -16,6 +16,7 @@ const WORKSPACES = [
     name: "vscode-extension",
     path: "apps/vscode-extension",
     sourceRoots: ["src", "test", "scripts"],
+    productionSourceRoots: ["src"],
     forbiddenTokens: ["packages/mcp-server/src", "packages/mcp-npm/bin"],
     forbiddenModules: [/^kicad_mcp(?:\.|$)/],
   },
@@ -23,6 +24,7 @@ const WORKSPACES = [
     name: "mcp-server",
     path: "packages/mcp-server",
     sourceRoots: ["src", "tests", "scripts"],
+    productionSourceRoots: ["src"],
     forbiddenTokens: ["apps/vscode-extension/src", "packages/mcp-npm/bin"],
     forbiddenModules: [/^kicadstudio(?:\/|$)/],
   },
@@ -30,7 +32,19 @@ const WORKSPACES = [
     name: "mcp-npm",
     path: "packages/mcp-npm",
     sourceRoots: ["bin"],
+    productionSourceRoots: ["bin"],
     forbiddenTokens: ["apps/vscode-extension/src", "packages/mcp-server/src"],
+    forbiddenModules: [/^kicadstudio(?:\/|$)/, /^kicad_mcp(?:\.|$)/],
+  },
+  {
+    name: "test-harness",
+    path: "packages/test-harness",
+    sourceRoots: ["src", "test"],
+    forbiddenTokens: [
+      "apps/vscode-extension/src",
+      "packages/mcp-server/src",
+      "packages/mcp-npm/bin",
+    ],
     forbiddenModules: [/^kicadstudio(?:\/|$)/, /^kicad_mcp(?:\.|$)/],
   },
 ].map((workspace) => ({
@@ -72,6 +86,11 @@ const IMPORT_PATTERNS = [
   /\b(?:require|import)\(\s*["']([^"']+)["']\s*\)/g,
   /^\s*from\s+([A-Za-z_][\w.]*|\.+[\w.]*)\s+import\s+/gm,
   /^\s*import\s+([A-Za-z_][\w.]*)/gm,
+];
+const TEST_HARNESS_MODULE_PATTERN = /^@oaslananka\/kicad-test-harness(?:\/|$)/;
+const TEST_HARNESS_PATH_TOKENS = [
+  "packages/test-harness/src",
+  "packages/test-harness/dist",
 ];
 
 function toPosixPath(path) {
@@ -136,6 +155,12 @@ function targetWorkspaceForImport(file, specifier) {
   return workspaceForPath(targetPath);
 }
 
+function isProductionSourceFile(workspace, file) {
+  return (workspace.productionSourceRoots ?? []).some((sourceRoot) =>
+    isWithin(file, resolve(workspace.absolutePath, sourceRoot)),
+  );
+}
+
 function validateRequiredTopology() {
   const violations = [];
   for (const workspace of WORKSPACES) {
@@ -163,6 +188,7 @@ function validateWorkspace(workspace) {
     const content = readFileSync(file, "utf8");
     const relativeFile = toPosixPath(relative(REPO_ROOT, file));
     const normalizedContent = content.replaceAll("\\", "/");
+    const productionSourceFile = isProductionSourceFile(workspace, file);
 
     for (const token of workspace.forbiddenTokens) {
       if (ALLOWED_METADATA_READS.get(relativeFile)?.has(token)) {
@@ -178,6 +204,19 @@ function validateWorkspace(workspace) {
       }
     }
 
+    if (productionSourceFile) {
+      for (const token of TEST_HARNESS_PATH_TOKENS) {
+        const index = normalizedContent.indexOf(token);
+        if (index !== -1) {
+          violations.push({
+            file: relativeFile,
+            line: lineNumberAt(content, index),
+            reason: `production source references test harness path: ${token}`,
+          });
+        }
+      }
+    }
+
     for (const { specifier, index } of extractImports(content)) {
       if (
         workspace.forbiddenModules.some((pattern) => pattern.test(specifier))
@@ -186,6 +225,14 @@ function validateWorkspace(workspace) {
           file: relativeFile,
           line: lineNumberAt(content, index),
           reason: `imports another product's implementation module: ${specifier}`,
+        });
+      }
+
+      if (productionSourceFile && TEST_HARNESS_MODULE_PATTERN.test(specifier)) {
+        violations.push({
+          file: relativeFile,
+          line: lineNumberAt(content, index),
+          reason: `production source imports test harness module: ${specifier}`,
         });
       }
 

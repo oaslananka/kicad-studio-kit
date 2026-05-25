@@ -2,6 +2,7 @@ packages:
   - "apps/vscode-extension"
   - "packages/mcp-server"
   - "packages/mcp-npm"
+  - "packages/test-harness"
 
 allowBuilds:
   "@go-task/cli": true

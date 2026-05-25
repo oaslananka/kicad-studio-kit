@@ -11,6 +11,7 @@ Monorepo for:
 - KiCad Studio VS Code extension (`apps/vscode-extension`)
 - KiCad MCP Pro server (`packages/mcp-server`)
 - npm launcher wrapper (`packages/mcp-npm`)
+- shared test harness (`packages/test-harness`)
 
 Canonical repository: https://github.com/oaslananka/kicad-studio-kit
 Searchable documentation: https://oaslananka.github.io/kicad-studio-kit/
@@ -49,6 +50,7 @@ Product-scoped entrypoints are available from the root:
 corepack pnpm run check:kicad-studio
 corepack pnpm run check:kicad-mcp-pro
 corepack pnpm run check:mcp-npm
+corepack pnpm --dir packages/test-harness run check
 corepack pnpm run test:contract
 corepack pnpm run check:dev-doctor
 ```
