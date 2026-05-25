@@ -49,8 +49,32 @@ describe('ValidationViewProvider', () => {
     expect(rows.map((row) => row.label)).toEqual(['DRC', 'ERC']);
     expect(provider.getTreeItem(rows[0]!).description).toContain('PASS');
     expect(provider.getTreeItem(rows[1]!).description).toContain('WARN');
-    expect(provider.getTreeItem(rows[1]!).tooltip).toContain(
-      schematic.fsPath
-    );
+    expect(provider.getTreeItem(rows[1]!).tooltip).toContain(schematic.fsPath);
+  });
+
+  it('shows stale validation freshness instead of treating cached errors as current', () => {
+    const diagnostics = new DiagnosticStateStore(createDiagnosticsCollection());
+    const provider = new ValidationViewProvider(diagnostics);
+    const board = vscode.Uri.file('/workspace/demo.kicad_pcb');
+
+    diagnostics.applyValidationResult(board, [], {
+      file: board.fsPath,
+      errors: 5,
+      warnings: 2,
+      infos: 0,
+      source: 'drc',
+      capturedAt: '2026-05-21T05:00:00.000Z',
+      freshness: 'stale',
+      staleReason: 'Viewer reloaded after source file changed.',
+      origin: 'kicad-cli'
+    } as never);
+
+    const [row] = provider.getChildren();
+    const item = provider.getTreeItem(row!);
+
+    expect(item.description).toContain('STALE');
+    expect(item.description).not.toContain('FAIL');
+    expect(item.tooltip).toContain('Viewer reloaded');
+    expect(item.tooltip).toContain('kicad-cli');
   });
 });

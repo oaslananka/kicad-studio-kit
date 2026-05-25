@@ -3,6 +3,7 @@ import { COMMANDS } from '../constants';
 import { resolveTargetFile } from '../utils/workspaceUtils';
 import { registerTrustedCommand } from '../utils/workspaceTrust';
 import type { CommandServices } from './types';
+import type { DiagnosticSummary } from '../types';
 
 /**
  * Register DRC and ERC check commands.
@@ -48,6 +49,7 @@ export function registerCheckCommands(
           }
           await services.pushStudioContext();
         } catch (error) {
+          recordValidationFailure(services, 'drc', file, error);
           void vscode.window.showErrorMessage(
             error instanceof Error
               ? error.message
@@ -76,6 +78,7 @@ export function registerCheckCommands(
             );
           }
         } catch (error) {
+          recordValidationFailure(services, 'erc', file, error);
           void vscode.window.showErrorMessage(
             error instanceof Error
               ? error.message
@@ -120,5 +123,34 @@ function applyValidationResult(
     result.summary.source === 'drc'
       ? { drc: result.summary }
       : { erc: result.summary }
+  );
+}
+
+function recordValidationFailure(
+  services: CommandServices,
+  source: 'drc' | 'erc',
+  file: string,
+  error: unknown
+): void {
+  const uri = vscode.Uri.file(file);
+  if (services.diagnosticState) {
+    services.diagnosticState.recordValidationFailure(source, uri, error, {
+      project: services.projectState.findProjectForResource(uri)
+    });
+    return;
+  }
+  const summary: DiagnosticSummary = {
+    file,
+    source,
+    errors: 0,
+    warnings: 0,
+    infos: 0,
+    capturedAt: new Date().toISOString(),
+    freshness: 'failed',
+    origin: 'kicad-cli',
+    failureMessage: error instanceof Error ? error.message : String(error)
+  };
+  services.statusBar.update(
+    source === 'drc' ? { drc: summary } : { erc: summary }
   );
 }

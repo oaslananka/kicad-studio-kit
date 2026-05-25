@@ -63,6 +63,7 @@ export class KiCadCheckService {
           ];
 
     try {
+      const detected = await this.runner.detectCli(false);
       await this.runner.runWithProgress<string>({
         command,
         cwd: path.dirname(file),
@@ -72,7 +73,11 @@ export class KiCadCheckService {
       const diagnostics = this.parseDiagnostics(raw, file, kind);
       return {
         diagnostics,
-        summary: this.summarize(file, kind, diagnostics)
+        summary: this.summarize(file, kind, diagnostics, {
+          commandArgs: command,
+          reportPath: tmpJsonFile,
+          kicadVersion: detected?.version
+        })
       };
     } catch (error) {
       this.logger.error(`Failed to run ${kind.toUpperCase()}`, error);
@@ -85,7 +90,12 @@ export class KiCadCheckService {
   private summarize(
     file: string,
     source: 'drc' | 'erc',
-    diagnostics: vscode.Diagnostic[]
+    diagnostics: vscode.Diagnostic[],
+    metadata: {
+      commandArgs: string[];
+      reportPath: string;
+      kicadVersion: string | undefined;
+    }
   ): DiagnosticSummary {
     let errors = 0;
     let warnings = 0;
@@ -105,7 +115,12 @@ export class KiCadCheckService {
       errors,
       warnings,
       infos,
-      capturedAt: new Date().toISOString()
+      capturedAt: new Date().toISOString(),
+      freshness: diagnostics.length > 0 ? 'fresh-dirty' : 'fresh-clean',
+      origin: 'kicad-cli',
+      commandArgs: metadata.commandArgs,
+      reportPath: metadata.reportPath,
+      kicadVersion: metadata.kicadVersion
     };
   }
 

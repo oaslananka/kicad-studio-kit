@@ -74,6 +74,29 @@ function tooltip(row: ValidationRow): string {
       status: statusFor(row.summary)
     }),
     row.summary.file,
+    ...(row.summary.fileUri ? [`URI: ${row.summary.fileUri}`] : []),
+    ...(row.summary.projectName || row.summary.projectId
+      ? [`Project: ${row.summary.projectName ?? row.summary.projectId}`]
+      : []),
+    `Freshness: ${row.summary.freshness ?? 'not recorded'}`,
+    `Origin: ${row.summary.origin ?? 'not recorded'}`,
+    ...(row.summary.capturedAt ? [`Last run: ${row.summary.capturedAt}`] : []),
+    ...(row.summary.kicadVersion
+      ? [`KiCad CLI: ${row.summary.kicadVersion}`]
+      : []),
+    ...(row.summary.reportPath ? [`Report: ${row.summary.reportPath}`] : []),
+    ...(row.summary.commandArgs?.length
+      ? [`Command: kicad-cli ${row.summary.commandArgs.join(' ')}`]
+      : []),
+    ...(row.summary.staleReason
+      ? [`Stale reason: ${row.summary.staleReason}`]
+      : []),
+    ...(row.summary.failureMessage
+      ? [`Failure: ${row.summary.failureMessage}`]
+      : []),
+    ...(row.summary.lastGoodCapturedAt
+      ? [`Last good result: ${row.summary.lastGoodCapturedAt}`]
+      : []),
     localize('diagnosticErrors', { count: row.summary.errors }),
     localize('diagnosticWarnings', { count: row.summary.warnings }),
     localize('diagnosticInfos', { count: row.summary.infos })
@@ -88,16 +111,44 @@ function iconFor(summary: DiagnosticSummary | undefined): string {
       return 'warning';
     case 'PASS':
       return 'pass';
+    case 'STALE':
+      return 'history';
+    case 'FAILED':
+      return 'error';
+    case 'RUNNING':
+      return 'sync';
     case 'PENDING':
       return 'play-circle';
   }
 }
 
-function statusFor(
-  summary: DiagnosticSummary | undefined
-): 'PENDING' | 'PASS' | 'WARN' | 'FAIL' {
+type ValidationStatus =
+  | 'PENDING'
+  | 'PASS'
+  | 'WARN'
+  | 'FAIL'
+  | 'STALE'
+  | 'FAILED'
+  | 'RUNNING';
+
+function statusFor(summary: DiagnosticSummary | undefined): ValidationStatus {
   if (!summary) {
     return 'PENDING';
+  }
+  if (summary.freshness === 'stale') {
+    return 'STALE';
+  }
+  if (summary.freshness === 'failed') {
+    return 'FAILED';
+  }
+  if (summary.freshness === 'running') {
+    return 'RUNNING';
+  }
+  if (summary.freshness === 'never-run') {
+    return 'PENDING';
+  }
+  if (summary.freshness === 'fresh-clean') {
+    return 'PASS';
   }
   if (summary.errors > 0) {
     return 'FAIL';

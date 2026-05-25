@@ -95,6 +95,12 @@ export class KiCadCliRunner {
     this.controllers.clear();
   }
 
+  async detectCli(
+    notifyOnMissing = false
+  ): Promise<DetectedKiCadCli | undefined> {
+    return this.detector.detect(notifyOnMissing);
+  }
+
   private async executeCommand(
     options: CliRunOptions,
     detected: DetectedKiCadCli,

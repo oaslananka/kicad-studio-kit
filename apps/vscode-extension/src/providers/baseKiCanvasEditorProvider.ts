@@ -62,6 +62,10 @@ type ViewerSvgFallbackProvider = (
   uri: vscode.Uri
 ) => Promise<string | undefined>;
 type ViewerProjectResolver = (uri: vscode.Uri) => ProjectContext | undefined;
+type ViewerReloadObserver = (
+  uri: vscode.Uri,
+  project: ProjectContext | undefined
+) => void;
 
 /**
  * Shared custom editor provider for KiCanvas-backed viewers.
@@ -90,7 +94,8 @@ export abstract class BaseKiCanvasEditorProvider
     protected readonly context: vscode.ExtensionContext,
     private readonly svgFallbackProvider?: ViewerSvgFallbackProvider,
     private readonly viewerState = new ViewerStateStore(),
-    private readonly resolveProject?: ViewerProjectResolver
+    private readonly resolveProject?: ViewerProjectResolver,
+    private readonly onViewerReload?: ViewerReloadObserver
   ) {
     this.disposables.push(
       vscode.workspace.onDidSaveTextDocument((document) => {
@@ -331,9 +336,9 @@ export abstract class BaseKiCanvasEditorProvider
       return;
     }
 
-    this.viewerState.beginReload(uri, {
-      project: this.resolveProject?.(uri)
-    });
+    const project = this.resolveProject?.(uri);
+    this.viewerState.beginReload(uri, { project });
+    this.onViewerReload?.(uri, project);
     try {
       const payload = await this.buildViewerPayload(uri);
       for (const panel of visiblePanels) {
