@@ -4,6 +4,8 @@ import test from "node:test";
 
 import {
   findRepoRoot,
+  kicadExpectedPath,
+  kicadExpectedRoot,
   kicadFixturePath,
   kicadFixtureRoot,
   normalizePathForSnapshot,
@@ -15,11 +17,19 @@ test("resolves repository and KiCad fixture paths", () => {
   assert.equal(path.basename(repoRoot), "kicad-studio-kit");
   assert.equal(
     normalizePathForSnapshot(kicadFixtureRoot(repoRoot), repoRoot),
-    "apps/vscode-extension/test/fixtures/kicad",
+    "packages/kicad-fixtures/fixtures",
+  );
+  assert.equal(
+    normalizePathForSnapshot(kicadExpectedRoot(repoRoot), repoRoot),
+    "packages/kicad-fixtures/expected",
   );
   assert.match(
     kicadFixturePath("clean-led-kicad10", "clean-led-kicad10.kicad_pro"),
     /clean-led-kicad10/,
+  );
+  assert.match(
+    kicadExpectedPath("clean-led-kicad10", "project-tree.snapshot.json"),
+    /project-tree\.snapshot\.json/,
   );
 });
 

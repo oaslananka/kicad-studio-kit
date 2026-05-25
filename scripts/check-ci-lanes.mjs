@@ -74,7 +74,6 @@ const SHARED_PREFIXES = [
   "packages/protocol-schemas/",
   "packages/kicad-fixtures/",
   "packages/test-harness/",
-  "apps/vscode-extension/test/fixtures/",
 ];
 const CI_POLICY_PREFIXES = ["scripts/", ".github/"];
 const DOC_PREFIXES = ["docs/", "README.md", "CONTRIBUTING.md"];

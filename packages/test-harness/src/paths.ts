@@ -60,14 +60,11 @@ export function normalizePathForSnapshot(
 }
 
 export function kicadFixtureRoot(repoRoot = findRepoRoot()): string {
-  return path.join(
-    repoRoot,
-    "apps",
-    "vscode-extension",
-    "test",
-    "fixtures",
-    "kicad",
-  );
+  return path.join(repoRoot, "packages", "kicad-fixtures", "fixtures");
+}
+
+export function kicadExpectedRoot(repoRoot = findRepoRoot()): string {
+  return path.join(repoRoot, "packages", "kicad-fixtures", "expected");
 }
 
 export function kicadFixturePath(
@@ -78,7 +75,14 @@ export function kicadFixturePath(
 }
 
 export function kicadFixtureManifestPath(repoRoot = findRepoRoot()): string {
-  return path.join(kicadFixtureRoot(repoRoot), "manifest.json");
+  return path.join(repoRoot, "packages", "kicad-fixtures", "manifest.json");
+}
+
+export function kicadExpectedPath(
+  fixtureId: string,
+  ...segments: string[]
+): string {
+  return path.join(kicadExpectedRoot(), fixtureId, ...segments);
 }
 
 export function benchmarkFixtureRoot(repoRoot = findRepoRoot()): string {

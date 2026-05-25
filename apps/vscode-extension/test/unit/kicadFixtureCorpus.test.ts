@@ -3,6 +3,8 @@ import path from 'path';
 
 interface FixtureManifest {
   fixtureCount: number;
+  root: string;
+  expectedRoot: string;
   expectedFiles: string[];
   fixtures: Array<{
     id: string;
@@ -12,7 +14,7 @@ interface FixtureManifest {
     schematicFiles: string[];
     boardFile: string | null;
     designRulesFile: string | null;
-    expectedDir: string;
+    expectedPath: string;
     expectedFiles: string[];
     expectedOutcome: 'pass' | 'warn' | 'fail';
     tags: string[];
@@ -22,11 +24,14 @@ interface FixtureManifest {
 const manifestPath = path.join(
   __dirname,
   '..',
-  'fixtures',
-  'kicad',
+  '..',
+  '..',
+  '..',
+  'packages',
+  'kicad-fixtures',
   'manifest.json'
 );
-const corpusRoot = path.dirname(manifestPath);
+const repoRoot = path.join(__dirname, '..', '..', '..', '..');
 const manifest = JSON.parse(
   fs.readFileSync(manifestPath, 'utf8')
 ) as FixtureManifest;
@@ -37,6 +42,8 @@ const fixturesBySemanticName = new Map(
 describe('KiCad fixture corpus manifest', () => {
   it('exposes the required fixtures by semantic name', () => {
     expect(manifest.fixtureCount).toBe(14);
+    expect(manifest.root).toBe('packages/kicad-fixtures/fixtures');
+    expect(manifest.expectedRoot).toBe('packages/kicad-fixtures/expected');
     expect([...fixturesBySemanticName.keys()]).toEqual([
       'clean-led-kicad10',
       'stale-diagnostics-kicad10',
@@ -57,7 +64,8 @@ describe('KiCad fixture corpus manifest', () => {
 
   it('points every fixture to project files and golden outputs that exist', () => {
     for (const fixture of manifest.fixtures) {
-      const fixtureDir = path.join(corpusRoot, path.basename(fixture.path));
+      const fixtureDir = path.join(repoRoot, fixture.path);
+      const expectedDir = path.join(repoRoot, fixture.expectedPath);
 
       expect(fs.existsSync(path.join(fixtureDir, fixture.projectFile))).toBe(
         true
@@ -76,11 +84,7 @@ describe('KiCad fixture corpus manifest', () => {
         ).toBe(true);
       }
       for (const expectedFile of manifest.expectedFiles) {
-        expect(
-          fs.existsSync(
-            path.join(fixtureDir, fixture.expectedDir, expectedFile)
-          )
-        ).toBe(true);
+        expect(fs.existsSync(path.join(expectedDir, expectedFile))).toBe(true);
       }
       expect(fixture.expectedFiles).toEqual(manifest.expectedFiles);
     }

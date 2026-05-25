@@ -157,6 +157,18 @@ importers:
         specifier: 7.0.2
         version: 7.0.2(webpack@5.106.2)
 
+  packages/kicad-fixtures:
+    devDependencies:
+      '@types/node':
+        specifier: 24.12.3
+        version: 24.12.3
+      prettier:
+        specifier: 3.8.3
+        version: 3.8.3
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   packages/mcp-npm: {}
 
   packages/mcp-server:

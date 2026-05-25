@@ -201,7 +201,7 @@ As the M1-M4 roadmap lands, extend this workflow in focused PRs:
 
 | Future gate                | Tracking issue | Required behavior                                                                                                                                                            |
 | -------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Shared fixture corpus      | OASLANA-36     | Maintain `apps/vscode-extension/test/fixtures/kicad/` with semantic fixture IDs and golden expected outputs.                                                                 |
+| Shared fixture corpus      | OASLANA-53     | Maintain `packages/kicad-fixtures/` with semantic fixture IDs and golden expected outputs.                                                                                   |
 | Unit test expansion        | OASLANA-37     | Cover project discovery, command builders, diagnostics, state machines, and MCP client behavior.                                                                             |
 | MCP protocol contracts     | OASLANA-43     | Cover Streamable HTTP, session headers, stateless mode, tool discovery, errors, timeouts, and ChatGPT connector compatibility.                                               |
 | MCP transport conformance  | OASLANA-71     | Cover initialized notifications, tools/list and tools/call ordering, mount path routing, legacy SSE opt-in, VS Code MCP compatibility, and generic MCP client compatibility. |
@@ -328,8 +328,8 @@ before pushing.
 
 ## KiCad Fixture Corpus
 
-The canonical fixture corpus for OASLANA-36 lives at
-`apps/vscode-extension/test/fixtures/kicad/` and is documented in
+The canonical fixture package for OASLANA-53 lives at
+`packages/kicad-fixtures/` and is documented in
 [`docs/kicad-fixture-corpus.md`](kicad-fixture-corpus.md).
 
 Use semantic fixture IDs from `manifest.json` rather than hard-coded directory

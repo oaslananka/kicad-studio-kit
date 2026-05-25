@@ -17,7 +17,11 @@ const WORKSPACES = [
     path: "apps/vscode-extension",
     sourceRoots: ["src", "test", "scripts"],
     productionSourceRoots: ["src"],
-    forbiddenTokens: ["packages/mcp-server/src", "packages/mcp-npm/bin"],
+    forbiddenTokens: [
+      "packages/mcp-server/src",
+      "packages/mcp-npm/bin",
+      "packages/kicad-fixtures/src",
+    ],
     forbiddenModules: [/^kicad_mcp(?:\.|$)/],
   },
   {
@@ -25,7 +29,11 @@ const WORKSPACES = [
     path: "packages/mcp-server",
     sourceRoots: ["src", "tests", "scripts"],
     productionSourceRoots: ["src"],
-    forbiddenTokens: ["apps/vscode-extension/src", "packages/mcp-npm/bin"],
+    forbiddenTokens: [
+      "apps/vscode-extension/src",
+      "packages/mcp-npm/bin",
+      "packages/kicad-fixtures/src",
+    ],
     forbiddenModules: [/^kicadstudio(?:\/|$)/],
   },
   {
@@ -40,6 +48,17 @@ const WORKSPACES = [
     name: "test-harness",
     path: "packages/test-harness",
     sourceRoots: ["src", "test"],
+    forbiddenTokens: [
+      "apps/vscode-extension/src",
+      "packages/mcp-server/src",
+      "packages/mcp-npm/bin",
+    ],
+    forbiddenModules: [/^kicadstudio(?:\/|$)/, /^kicad_mcp(?:\.|$)/],
+  },
+  {
+    name: "kicad-fixtures",
+    path: "packages/kicad-fixtures",
+    sourceRoots: ["src", "test", "scripts"],
     forbiddenTokens: [
       "apps/vscode-extension/src",
       "packages/mcp-server/src",
@@ -87,10 +106,15 @@ const IMPORT_PATTERNS = [
   /^\s*from\s+([A-Za-z_][\w.]*|\.+[\w.]*)\s+import\s+/gm,
   /^\s*import\s+([A-Za-z_][\w.]*)/gm,
 ];
-const TEST_HARNESS_MODULE_PATTERN = /^@oaslananka\/kicad-test-harness(?:\/|$)/;
-const TEST_HARNESS_PATH_TOKENS = [
+const TEST_ONLY_SHARED_MODULE_PATTERNS = [
+  /^@oaslananka\/kicad-test-harness(?:\/|$)/,
+  /^@oaslananka\/kicad-fixtures(?:\/|$)/,
+];
+const TEST_ONLY_SHARED_PATH_TOKENS = [
   "packages/test-harness/src",
   "packages/test-harness/dist",
+  "packages/kicad-fixtures/src",
+  "packages/kicad-fixtures/dist",
 ];
 
 function toPosixPath(path) {
@@ -205,13 +229,13 @@ function validateWorkspace(workspace) {
     }
 
     if (productionSourceFile) {
-      for (const token of TEST_HARNESS_PATH_TOKENS) {
+      for (const token of TEST_ONLY_SHARED_PATH_TOKENS) {
         const index = normalizedContent.indexOf(token);
         if (index !== -1) {
           violations.push({
             file: relativeFile,
             line: lineNumberAt(content, index),
-            reason: `production source references test harness path: ${token}`,
+            reason: `production source references test-only shared path: ${token}`,
           });
         }
       }
@@ -228,11 +252,16 @@ function validateWorkspace(workspace) {
         });
       }
 
-      if (productionSourceFile && TEST_HARNESS_MODULE_PATTERN.test(specifier)) {
+      if (
+        productionSourceFile &&
+        TEST_ONLY_SHARED_MODULE_PATTERNS.some((pattern) =>
+          pattern.test(specifier),
+        )
+      ) {
         violations.push({
           file: relativeFile,
           line: lineNumberAt(content, index),
-          reason: `production source imports test harness module: ${specifier}`,
+          reason: `production source imports test-only shared module: ${specifier}`,
         });
       }
 

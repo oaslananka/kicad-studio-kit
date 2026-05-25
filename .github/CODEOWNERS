@@ -5,5 +5,6 @@
 /packages/mcp-server/ @oaslananka
 /packages/mcp-npm/ @oaslananka
 /packages/protocol-schemas/ @oaslananka
+/packages/kicad-fixtures/ @oaslananka
 /packages/test-harness/ @oaslananka
 /examples/ @oaslananka

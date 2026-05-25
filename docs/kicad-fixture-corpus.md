@@ -1,19 +1,22 @@
 # KiCad Fixture Corpus
 
-OASLANA-36 / GitHub issue #37 defines the canonical deterministic KiCad
-fixture corpus for parser, diagnostics, project tree, BOM, netlist, board state,
-MCP, and visual regression tests.
+OASLANA-53 / GitHub issue #54 defines the canonical deterministic KiCad
+fixture package for parser, diagnostics, project tree, BOM, netlist, board
+state, MCP, and visual regression tests.
 
 The corpus lives under:
 
 ```text
-apps/vscode-extension/test/fixtures/kicad/
+packages/kicad-fixtures/
+  manifest.json
+  fixtures/
+  expected/
 ```
 
 Fixtures are addressed by semantic ID through `manifest.json`; tests should not
 hard-code generated file lists. Each fixture contains a `.kicad_pro` file and
 the relevant schematic, PCB, or DRU files for the scenario. Each fixture also
-has an `expected/` directory with these golden outputs:
+has a matching `expected/<fixture-id>/` directory with these golden outputs:
 
 ```text
 project-tree.snapshot.json
@@ -35,8 +38,10 @@ corepack pnpm run fixtures:kicad:generate
 ```
 
 The generator is deterministic and is the only supported way to update fixture
-files. It rewrites `apps/vscode-extension/test/fixtures/kicad/` from the
-fixture definitions in `scripts/generate-kicad-fixture-corpus.mjs`.
+files. It rewrites `packages/kicad-fixtures/fixtures/`,
+`packages/kicad-fixtures/expected/`, and
+`packages/kicad-fixtures/manifest.json` from the fixture definitions in
+`scripts/generate-kicad-fixture-corpus.mjs`.
 
 ## Validation
 
@@ -78,7 +83,7 @@ conversion tests can cover both edge cases.
 ## Source Verification
 
 No new external dependency, GitHub Action, runtime, or package manager is
-introduced by this corpus. The generator uses the repository's existing Node.js
+introduced by this package. The generator uses the repository's existing Node.js
 24 runtime and stable built-in `node:fs` / `node:path` APIs. Fixture file shape
 is based on existing repository KiCad test fixtures and is intentionally small
 so it stays reviewable and stable in git.

@@ -49,10 +49,9 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
       recursive: true,
     });
     mkdirSync(path.join(repoRoot, "packages/mcp-server"), { recursive: true });
-    mkdirSync(
-      path.join(repoRoot, "apps/vscode-extension/test/fixtures/kicad"),
-      { recursive: true },
-    );
+    mkdirSync(path.join(repoRoot, "packages/kicad-fixtures"), {
+      recursive: true,
+    });
     mkdirSync(path.join(repoRoot, "packages/protocol-schemas/schemas"), {
       recursive: true,
     });
@@ -70,7 +69,9 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
             "check:kicad-mcp-pro": "pnpm --dir packages/mcp-server run check",
             "check:mcp-npm": "pnpm --dir packages/mcp-npm run check",
             "check:fixtures":
-              "node scripts/generate-kicad-fixture-corpus.mjs --check",
+              "node scripts/generate-kicad-fixture-corpus.mjs --check && node --test scripts/check-kicad-fixtures-package.test.mjs && pnpm --dir packages/kicad-fixtures run check",
+            "check:kicad-fixtures":
+              "pnpm --dir packages/kicad-fixtures run check",
             "test:contract":
               "pnpm --dir packages/mcp-server run test:transport-contract",
           },
@@ -100,7 +101,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
     writeFileSync(
       path.join(
         repoRoot,
-        "apps/vscode-extension/test/fixtures/kicad/manifest.json",
+        "packages/kicad-fixtures/manifest.json",
       ),
       JSON.stringify({ schemaVersion: 1, fixtureCount: 1, fixtures: [] }),
     );
