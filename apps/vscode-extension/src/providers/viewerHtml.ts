@@ -1269,7 +1269,7 @@ export function createKiCanvasViewerHtml(
       localState = {
         ...localState,
         activeLayers: layers
-          .filter((layer) => /\\.Cu$/i.test(layer.name))
+          .filter((layer) => /\.Cu$/i.test(layer.name))
           .map((layer) => layer.name)
       };
       renderSidebar();

@@ -96,6 +96,7 @@ jobs:
         run: corepack pnpm --filter kicadstudio exec playwright install --with-deps chromium
       - if: runner.os != 'Linux'
         run: corepack pnpm --filter kicadstudio exec playwright install chromium
+      - run: corepack pnpm --filter kicadstudio run test:webview
       - run: corepack pnpm --filter kicadstudio run test:a11y
       - run: corepack pnpm --filter kicadstudio run build
       - run: corepack pnpm --filter kicadstudio run package
