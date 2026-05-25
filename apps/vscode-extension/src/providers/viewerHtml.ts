@@ -87,7 +87,7 @@ export function createKiCanvasViewerHtml(
   <header>
     <h1>${escapeHtml(options.title)}: ${escapeHtml(options.fileName)}</h1>
     <div class="actions">
-      <button class="btn" id="reload-btn"    type="button" aria-label="Reload viewer">Reload Viewer</button>
+      <button class="btn btn-primary" id="reload-btn"    type="button" aria-label="Reload viewer">Reload Viewer</button>
       <button class="btn" id="open-kicad-btn" type="button" aria-label="Open in KiCad">Open in KiCad</button>
       <button class="btn" id="export-png-btn" type="button" aria-label="Export PNG">Export PNG</button>
       <button class="btn" id="export-svg-btn" type="button" aria-label="Export SVG">Export SVG</button>
@@ -111,7 +111,7 @@ export function createKiCanvasViewerHtml(
         <p id="error-message">An unexpected error occurred.</p>
         <p>Try clicking <strong>Reload Viewer</strong>. If the problem persists, open the file in KiCad directly.</p>
         <div class="actions">
-          <button class="btn" id="error-reload-btn" type="button">Reload Viewer</button>
+          <button class="btn btn-primary" id="error-reload-btn" type="button">Reload Viewer</button>
           <button class="btn" id="error-open-btn"   type="button">Open in KiCad</button>
         </div>
         <pre class="error-detail" id="error-detail" aria-label="Error detail"></pre>
