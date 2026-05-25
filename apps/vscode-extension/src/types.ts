@@ -45,8 +45,10 @@ export interface ViewerState {
   zoom: number;
   grid: boolean;
   theme: string;
+  toolsPanelCollapsed?: boolean | undefined;
   engine?: ViewerEngineState | undefined;
   selectedReference?: string | undefined;
+  selectedSheet?: string | undefined;
   selectedArea?:
     | {
         x1: number;
@@ -123,9 +125,16 @@ export interface TuningProfile {
   raw?: string | undefined;
 }
 
+export interface ViewerSheetInfo {
+  id: string;
+  name: string;
+  file?: string | undefined;
+}
+
 export interface ViewerMetadata {
   layers?: ViewerLayerInfo[] | undefined;
   tuningProfiles?: TuningProfile[] | undefined;
+  sheets?: ViewerSheetInfo[] | undefined;
   hopOvers?: Array<{ x: number; y: number }> | undefined;
   notes?: string[] | undefined;
 }

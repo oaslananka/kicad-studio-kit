@@ -1,5 +1,5 @@
 import { BaseKiCanvasEditorProvider } from './baseKiCanvasEditorProvider';
-import type { ViewerMetadata } from '../types';
+import type { ViewerMetadata, ViewerSheetInfo } from '../types';
 import * as vscode from 'vscode';
 
 /**
@@ -30,6 +30,111 @@ function stripLibSymbols(text: string): string {
   return text.slice(0, start) + text.slice(i);
 }
 
+function extractTopLevelBlocks(text: string, token: string): string[] {
+  const blocks: string[] = [];
+  const pattern = new RegExp(`^\\s*\\(\\s*${token}\\b`, 'gm');
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text)) !== null) {
+    const block = readBalancedExpression(text, match.index);
+    if (block) {
+      blocks.push(block);
+      pattern.lastIndex = match.index + block.length;
+    }
+  }
+  return blocks;
+}
+
+function readBalancedExpression(
+  text: string,
+  start: number
+): string | undefined {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = start; index < text.length; index++) {
+    const char = text[index];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (inString) {
+      if (char === '\\') {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+    if (char === '(') {
+      depth++;
+      continue;
+    }
+    if (char !== ')') {
+      continue;
+    }
+    depth--;
+    if (depth === 0) {
+      return text.slice(start, index + 1);
+    }
+  }
+
+  return undefined;
+}
+
+function extractSchematicSheets(text: string): ViewerSheetInfo[] {
+  const sheets = new Map<string, ViewerSheetInfo>();
+  for (const block of extractTopLevelBlocks(text, 'sheet')) {
+    const name = readSheetProperty(block, 'Sheetname');
+    const file = readSheetProperty(block, 'Sheetfile');
+    const uuid = block.match(/\(\s*uuid\s+"?([A-Fa-f0-9-]+)"?\s*\)/)?.[1];
+    const id = file ?? uuid ?? name;
+    const label = name ?? file ?? uuid;
+    if (!id || !label || sheets.has(id)) {
+      continue;
+    }
+    sheets.set(id, {
+      id,
+      name: label,
+      ...(file ? { file } : {})
+    });
+  }
+  return [...sheets.values()];
+}
+
+function readSheetProperty(
+  block: string,
+  propertyName: string
+): string | undefined {
+  const match = block.match(
+    new RegExp(
+      `\\(\\s*property\\s+"${propertyName}"\\s+"((?:\\\\.|[^"\\\\])*)"`,
+      'm'
+    )
+  );
+  const rawValue = match?.[1];
+  return rawValue ? unescapeKiCadString(rawValue) : undefined;
+}
+
+function unescapeKiCadString(value: string): string {
+  return value.replace(/\\(["\\nrt])/g, (_match, token: string) => {
+    switch (token) {
+      case 'n':
+        return '\n';
+      case 'r':
+        return '\r';
+      case 't':
+        return '\t';
+      default:
+        return token;
+    }
+  });
+}
+
 export class SchematicEditorProvider extends BaseKiCanvasEditorProvider {
   protected override readonly fileExtension = '.kicad_sch';
   protected override readonly fileType = 'schematic' as const;
@@ -57,18 +162,24 @@ export class SchematicEditorProvider extends BaseKiCanvasEditorProvider {
         y: Number(match[2])
       }))
       .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+    const sheets = extractSchematicSheets(schBody);
 
-    if (!hopOvers.length) {
+    if (!hopOvers.length && !sheets.length) {
       return undefined;
     }
 
     const count = hopOvers.length;
     return {
-      hopOvers,
-      notes: [
-        `${count} KiCad 10 hop-over arc${count === 1 ? '' : 's'} detected. ` +
-          `Overlay hint${count === 1 ? '' : 's'} shown until KiCanvas renders them natively.`
-      ]
+      ...(hopOvers.length
+        ? {
+            hopOvers,
+            notes: [
+              `${count} KiCad 10 hop-over arc${count === 1 ? '' : 's'} detected. ` +
+                `Overlay hint${count === 1 ? '' : 's'} shown until KiCanvas renders them natively.`
+            ]
+          }
+        : {}),
+      ...(sheets.length ? { sheets } : {})
     };
   }
 }

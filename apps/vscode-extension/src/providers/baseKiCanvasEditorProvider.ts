@@ -33,6 +33,8 @@ const PROGRESS_INLINE_WARNING_BYTES = 1 * 1024 * 1024;
 const LARGE_FILE_METADATA_BYTES = 512 * 1024;
 const MAX_PNG_EXPORT_BYTES = 20 * 1024 * 1024;
 const PNG_SIGNATURE = '89504e470d0a1a0a';
+const VIEWER_TOOLS_PANEL_COLLAPSED_KEY =
+  'kicadstudio.viewer.toolsPanelCollapsed';
 
 interface ViewerPayload {
   fileName: string;
@@ -139,7 +141,10 @@ export abstract class BaseKiCanvasEditorProvider
             this.fileType,
             theme
           ),
-          restoreState: info.state ?? this.viewerState.getState(info.uri)
+          restoreState: this.withWorkspaceViewerPreferences(
+            info.uri,
+            info.state ?? this.viewerState.getState(info.uri)
+          )
         }
       });
     }
@@ -225,6 +230,7 @@ export abstract class BaseKiCanvasEditorProvider
             const nextState = readViewerState(message.payload);
             if (info && nextState) {
               info.state = nextState;
+              await this.persistWorkspaceViewerPreferences(nextState);
               this.viewerState.updateState(document.uri, info.state, {
                 project: this.resolveProject?.(document.uri)
               });
@@ -346,7 +352,10 @@ export abstract class BaseKiCanvasEditorProvider
           type: 'refresh',
           payload: {
             ...payload,
-            restoreState: this.panelInfo.get(panel)?.state
+            restoreState: this.withWorkspaceViewerPreferences(
+              uri,
+              this.panelInfo.get(panel)?.state
+            )
           }
         });
       }
@@ -402,7 +411,10 @@ export abstract class BaseKiCanvasEditorProvider
     const mtimeMs = stat.mtime;
     const cached = this.fileCache.get(cacheKey);
     if (cached && cached.mtimeMs === mtimeMs) {
-      const restoreState = this.viewerState.getState(uri);
+      const restoreState = this.withWorkspaceViewerPreferences(
+        uri,
+        this.viewerState.getState(uri)
+      );
       return {
         fileName,
         base64: cached.base64,
@@ -462,10 +474,56 @@ export abstract class BaseKiCanvasEditorProvider
       ),
       ...(nextPayload.metadata ? { metadata: nextPayload.metadata } : {}),
       ...(() => {
-        const restoreState = this.viewerState.getState(uri);
+        const restoreState = this.withWorkspaceViewerPreferences(
+          uri,
+          this.viewerState.getState(uri)
+        );
         return restoreState ? { restoreState } : {};
       })()
     };
+  }
+
+  private withWorkspaceViewerPreferences(
+    _uri: vscode.Uri,
+    state: ViewerState | undefined
+  ): ViewerState {
+    const fallbackCollapsed = state?.toolsPanelCollapsed ?? true;
+    return {
+      zoom: 1,
+      grid: false,
+      theme: this.theme,
+      ...(state ?? {}),
+      toolsPanelCollapsed:
+        this.context.workspaceState?.get<boolean>(
+          VIEWER_TOOLS_PANEL_COLLAPSED_KEY,
+          fallbackCollapsed
+        ) ?? fallbackCollapsed
+    };
+  }
+
+  private async persistWorkspaceViewerPreferences(
+    state: ViewerState
+  ): Promise<void> {
+    const workspaceState = this.context.workspaceState;
+    if (
+      typeof state.toolsPanelCollapsed !== 'boolean' ||
+      !workspaceState?.update
+    ) {
+      return;
+    }
+    const current = workspaceState.get<boolean>(
+      VIEWER_TOOLS_PANEL_COLLAPSED_KEY
+    );
+    if (current === state.toolsPanelCollapsed) {
+      return;
+    }
+    if (typeof current === 'undefined' && state.toolsPanelCollapsed === true) {
+      return;
+    }
+    await workspaceState.update(
+      VIEWER_TOOLS_PANEL_COLLAPSED_KEY,
+      state.toolsPanelCollapsed
+    );
   }
 
   private invalidateFileCache(uri: vscode.Uri): void {
@@ -480,7 +538,10 @@ export abstract class BaseKiCanvasEditorProvider
     this.panelInfo.set(panel, {
       uri,
       pendingRefresh: false,
-      state: this.viewerState.getState(uri)
+      state: this.withWorkspaceViewerPreferences(
+        uri,
+        this.viewerState.getState(uri)
+      )
     });
   }
 
@@ -742,13 +803,20 @@ function readViewerState(value: unknown): ViewerState | undefined {
   const selectedArea = readSelectedArea(payload['selectedArea']);
   const activeLayers = readStringArray(payload['activeLayers']);
   const engine = readViewerEngineState(payload['engine']);
+  const toolsPanelCollapsed = payload['toolsPanelCollapsed'];
   return {
     zoom,
     grid,
     theme,
+    ...(typeof toolsPanelCollapsed === 'boolean'
+      ? { toolsPanelCollapsed }
+      : {}),
     ...(engine ? { engine } : {}),
     ...(typeof payload['selectedReference'] === 'string'
       ? { selectedReference: payload['selectedReference'] }
+      : {}),
+    ...(typeof payload['selectedSheet'] === 'string'
+      ? { selectedSheet: payload['selectedSheet'] }
       : {}),
     ...(selectedArea ? { selectedArea } : {}),
     ...(activeLayers ? { activeLayers } : {})
