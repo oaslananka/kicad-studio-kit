@@ -91,6 +91,8 @@ CODEOWNERS review should match the changed paths:
 - `packages/mcp-server/` for KiCad MCP Pro server and MCP Registry metadata.
 - `packages/mcp-npm/` for npm launcher work.
 - `packages/protocol-schemas/` for protocol schemas and compatibility review.
+- `packages/test-harness/` for shared test-only fixtures, mocks, golden
+  assertions, temporary workspaces, and MCP/webview helpers.
 - `examples/` for user-facing KiCad examples.
 
 Branch protection policy is documented in

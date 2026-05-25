@@ -56,6 +56,18 @@ test("shared schema changes run both product compatibility gates", () => {
   assert.equal(report.lanes.realPairCompatibility, true);
 });
 
+test("test harness changes run shared and cross-product compatibility gates", () => {
+  const report = classifyChangedFiles(["packages/test-harness/src/index.ts"]);
+
+  assert.equal(report.lanes.sharedPackages, true);
+  assert.equal(report.lanes.vscodeExtension, true);
+  assert.equal(report.lanes.mcpServer, true);
+  assert.equal(report.lanes.mcpNpm, true);
+  assert.equal(report.lanes.integrationContracts, true);
+  assert.equal(report.lanes.realPairCompatibility, true);
+  assert.equal(report.lanes.performanceBudgets, true);
+});
+
 test("root toolchain and CI workflow changes run all lanes", () => {
   for (const file of [
     "package.json",

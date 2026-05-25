@@ -4,12 +4,13 @@ The monorepo has three product workspaces, but the products must stay decoupled 
 
 ## Allowed dependencies
 
-| From                    | May depend on                                                              |
-| ----------------------- | -------------------------------------------------------------------------- |
-| `apps/vscode-extension` | npm dependencies, VS Code APIs, KiCad CLI process calls, MCP protocol data |
-| `packages/mcp-server`   | Python dependencies, KiCad Python/CLI integrations, MCP protocol data      |
-| `packages/mcp-npm`      | Node standard library and the published Python package name                |
-| future shared packages  | external dependencies and other shared packages only                       |
+| From                    | May depend on                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------ |
+| `apps/vscode-extension` | npm dependencies, VS Code APIs, KiCad CLI process calls, MCP protocol data, test harness in tests only |
+| `packages/mcp-server`   | Python dependencies, KiCad Python/CLI integrations, MCP protocol data                                  |
+| `packages/mcp-npm`      | Node standard library and the published Python package name                                            |
+| `packages/test-harness` | Node standard library and shared packages only                                                         |
+| future shared packages  | external dependencies and other shared packages only                                                   |
 
 ## Forbidden dependencies
 
@@ -17,6 +18,8 @@ The monorepo has three product workspaces, but the products must stay decoupled 
 - The MCP server must not import VS Code extension source or npm wrapper implementation.
 - The npm launcher must not import extension source or Python server source.
 - No product may reach into another product with relative imports.
+- Production source must not import `@oaslananka/kicad-test-harness` or
+  path-reference `packages/test-harness`.
 - `packages/*` shared packages must not depend on `apps/*`.
 
 ## Integration rule
@@ -43,7 +46,10 @@ Run the boundary checker from the repository root:
 corepack pnpm run check:boundaries
 ```
 
-The checker fails when a product source file imports or path-references another product workspace implementation. CI runs the same check in the metadata job.
+The checker fails when a product source file imports or path-references another
+product workspace implementation, when production source imports the shared test
+harness, or when the test harness imports product internals. CI runs the same
+check in the metadata job.
 
 Ownership is declared in `.github/CODEOWNERS` for `.github/`, architecture docs,
 examples, the extension, the MCP server, the npm wrapper, and shared protocol
