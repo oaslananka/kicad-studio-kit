@@ -2,6 +2,7 @@ packages:
   - "apps/vscode-extension"
   - "packages/mcp-server"
   - "packages/mcp-npm"
+  - "packages/protocol-schemas"
   - "packages/kicad-fixtures"
   - "packages/test-harness"
 

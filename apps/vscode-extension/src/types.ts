@@ -1,4 +1,13 @@
 import * as vscode from 'vscode';
+import type {
+  McpServerInfoCompatibilityRange,
+  McpServerInfoContract
+} from '@oaslananka/kicad-protocol-schemas';
+
+export type {
+  McpServerInfoCompatibilityRange,
+  McpServerInfoContract
+};
 
 export interface FileReference {
   uri: vscode.Uri;
@@ -323,78 +332,6 @@ export type McpConnectionKind =
   | 'Degraded'
   | 'Incompatible'
   | 'VsCodeStdio';
-
-export interface McpServerInfoCompatibilityRange {
-  kicadStudio: {
-    required: string;
-    recommended: string;
-    testedAgainst: string;
-  };
-  kicadMcpPro: {
-    required: string;
-    testedAgainst: string;
-  };
-}
-
-export interface McpServerInfoContract {
-  schemaVersion: string;
-  server: 'kicad-mcp-pro';
-  description?: string | undefined;
-  localizedDescriptions?: Record<string, string> | undefined;
-  version: string;
-  mcpProtocolVersion: string;
-  toolSchemaVersion: string;
-  compatibilityRange: McpServerInfoCompatibilityRange;
-  transport: {
-    type: 'stdio' | 'streamable-http' | 'sse';
-    streamableHttp: boolean;
-    statelessHttp: boolean;
-    legacySse: boolean;
-    authRequired: boolean;
-    endpoint: string | null;
-  };
-  kicad: {
-    cliFound: boolean;
-    cliPath: string;
-    cliVersion: string | null;
-    ipcAvailable: boolean;
-    ipcVersion: string | null;
-    ipcApiVersion: string | null;
-    ipcMajorVersion: number | null;
-    ipcEndpointSource: 'config' | 'environment' | 'default';
-    livePcbContext: boolean;
-    liveSchematicContext: boolean;
-  };
-  capabilities: {
-    fileBackedDrc: boolean;
-    fileBackedErc: boolean;
-    fileBackedExports: boolean;
-    livePcbRead: boolean;
-    livePcbWrite: boolean;
-    liveSchematicRead: boolean;
-    liveSchematicWrite: boolean;
-    liveEditingTools: Record<
-      string,
-      {
-        available: boolean;
-        backend: 'kicad-ipc' | 'hybrid-file-ipc';
-        reason: string | null;
-        minimumKiCadMajor: number;
-      }
-    >;
-    chatgptConnectorCompatible: boolean;
-    cliExports: {
-      ipc2581: boolean;
-      odb: boolean;
-      svg: boolean;
-      dxf: boolean;
-      step: boolean;
-      render: boolean;
-      spiceNetlist: boolean;
-    };
-  };
-  diagnostics: string[];
-}
 
 export interface McpCapabilityCard {
   tools: string[];

@@ -45,6 +45,17 @@ const WORKSPACES = [
     forbiddenModules: [/^kicadstudio(?:\/|$)/, /^kicad_mcp(?:\.|$)/],
   },
   {
+    name: "protocol-schemas",
+    path: "packages/protocol-schemas",
+    sourceRoots: ["src", "test", "scripts"],
+    forbiddenTokens: [
+      "apps/vscode-extension/src",
+      "packages/mcp-server/src",
+      "packages/mcp-npm/bin",
+    ],
+    forbiddenModules: [/^kicadstudio(?:\/|$)/, /^kicad_mcp(?:\.|$)/],
+  },
+  {
     name: "test-harness",
     path: "packages/test-harness",
     sourceRoots: ["src", "test"],

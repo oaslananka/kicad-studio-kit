@@ -1,4 +1,5 @@
 import { getMcpCompatStatus, normalizeMcpVersion } from './compat';
+import { validateMcpServerInfoContract } from '@oaslananka/kicad-protocol-schemas';
 import type { Logger } from '../utils/logger';
 import type { McpServerInfoContract } from '../types';
 
@@ -67,159 +68,10 @@ function readWellKnownServerInfoContract(
     return undefined;
   }
   const contract = value['serverInfoContract'];
-  if (contract['server'] !== 'kicad-mcp-pro') {
-    return undefined;
-  }
-  const transport = isRecord(contract['transport'])
-    ? contract['transport']
-    : {};
-  const kicad = isRecord(contract['kicad']) ? contract['kicad'] : {};
-  const capabilities = isRecord(contract['capabilities'])
-    ? contract['capabilities']
-    : {};
-  const cliExports = isRecord(capabilities['cliExports'])
-    ? capabilities['cliExports']
-    : {};
-  const compatibilityRange = isRecord(contract['compatibilityRange'])
-    ? contract['compatibilityRange']
-    : {};
-  const kicadStudio = isRecord(compatibilityRange['kicadStudio'])
-    ? compatibilityRange['kicadStudio']
-    : {};
-  const kicadMcpPro = isRecord(compatibilityRange['kicadMcpPro'])
-    ? compatibilityRange['kicadMcpPro']
-    : {};
-  return {
-    schemaVersion: stringValue(contract['schemaVersion']),
-    server: 'kicad-mcp-pro',
-    description:
-      typeof contract['description'] === 'string'
-        ? contract['description']
-        : undefined,
-    localizedDescriptions: parseStringRecord(contract['localizedDescriptions']),
-    version: stringValue(contract['version']),
-    mcpProtocolVersion: stringValue(contract['mcpProtocolVersion']),
-    toolSchemaVersion: stringValue(contract['toolSchemaVersion']),
-    compatibilityRange: {
-      kicadStudio: {
-        required: stringValue(kicadStudio['required']),
-        recommended: stringValue(kicadStudio['recommended']),
-        testedAgainst: stringValue(kicadStudio['testedAgainst'])
-      },
-      kicadMcpPro: {
-        required: stringValue(kicadMcpPro['required']),
-        testedAgainst: stringValue(kicadMcpPro['testedAgainst'])
-      }
-    },
-    transport: {
-      type:
-        transport['type'] === 'stdio' || transport['type'] === 'sse'
-          ? transport['type']
-          : 'streamable-http',
-      streamableHttp: Boolean(transport['streamableHttp']),
-      statelessHttp: Boolean(transport['statelessHttp']),
-      legacySse: Boolean(transport['legacySse']),
-      authRequired: Boolean(transport['authRequired']),
-      endpoint:
-        typeof transport['endpoint'] === 'string' ? transport['endpoint'] : null
-    },
-    kicad: {
-      cliFound: Boolean(kicad['cliFound']),
-      cliPath: stringValue(kicad['cliPath']),
-      cliVersion:
-        typeof kicad['cliVersion'] === 'string' ? kicad['cliVersion'] : null,
-      ipcAvailable: Boolean(kicad['ipcAvailable']),
-      ipcVersion:
-        typeof kicad['ipcVersion'] === 'string' ? kicad['ipcVersion'] : null,
-      ipcApiVersion:
-        typeof kicad['ipcApiVersion'] === 'string'
-          ? kicad['ipcApiVersion']
-          : null,
-      ipcMajorVersion:
-        typeof kicad['ipcMajorVersion'] === 'number'
-          ? kicad['ipcMajorVersion']
-          : null,
-      ipcEndpointSource:
-        kicad['ipcEndpointSource'] === 'config' ||
-        kicad['ipcEndpointSource'] === 'environment'
-          ? kicad['ipcEndpointSource']
-          : 'default',
-      livePcbContext: Boolean(kicad['livePcbContext']),
-      liveSchematicContext: Boolean(kicad['liveSchematicContext'])
-    },
-    capabilities: {
-      fileBackedDrc: Boolean(capabilities['fileBackedDrc']),
-      fileBackedErc: Boolean(capabilities['fileBackedErc']),
-      fileBackedExports: Boolean(capabilities['fileBackedExports']),
-      livePcbRead: Boolean(capabilities['livePcbRead']),
-      livePcbWrite: Boolean(capabilities['livePcbWrite']),
-      liveSchematicRead: Boolean(capabilities['liveSchematicRead']),
-      liveSchematicWrite: Boolean(capabilities['liveSchematicWrite']),
-      liveEditingTools: parseLiveEditingTools(capabilities['liveEditingTools']),
-      chatgptConnectorCompatible: Boolean(
-        capabilities['chatgptConnectorCompatible']
-      ),
-      cliExports: {
-        ipc2581: Boolean(cliExports['ipc2581']),
-        odb: Boolean(cliExports['odb']),
-        svg: Boolean(cliExports['svg']),
-        dxf: Boolean(cliExports['dxf']),
-        step: Boolean(cliExports['step']),
-        render: Boolean(cliExports['render']),
-        spiceNetlist: Boolean(cliExports['spiceNetlist'])
-      }
-    },
-    diagnostics: Array.isArray(contract['diagnostics'])
-      ? contract['diagnostics'].map((item) => String(item))
-      : []
-  };
-}
-
-function parseLiveEditingTools(
-  value: unknown
-): McpServerInfoContract['capabilities']['liveEditingTools'] {
-  if (!isRecord(value)) {
-    return {};
-  }
-  const parsed: McpServerInfoContract['capabilities']['liveEditingTools'] = {};
-  for (const [name, rawTool] of Object.entries(value)) {
-    if (!isRecord(rawTool)) {
-      continue;
-    }
-    const backend =
-      rawTool['backend'] === 'hybrid-file-ipc'
-        ? 'hybrid-file-ipc'
-        : 'kicad-ipc';
-    parsed[name] = {
-      available: Boolean(rawTool['available']),
-      backend,
-      reason: typeof rawTool['reason'] === 'string' ? rawTool['reason'] : null,
-      minimumKiCadMajor:
-        typeof rawTool['minimumKiCadMajor'] === 'number'
-          ? rawTool['minimumKiCadMajor']
-          : 9
-    };
-  }
-  return parsed;
-}
-
-function parseStringRecord(value: unknown): Record<string, string> | undefined {
-  if (!isRecord(value)) {
-    return undefined;
-  }
-  const parsed: Record<string, string> = {};
-  for (const [key, raw] of Object.entries(value)) {
-    if (typeof raw === 'string') {
-      parsed[key] = raw;
-    }
-  }
-  return Object.keys(parsed).length ? parsed : undefined;
+  const validation = validateMcpServerInfoContract(contract);
+  return validation.valid ? validation.data : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
-}
-
-function stringValue(value: unknown): string {
-  return typeof value === 'string' ? value : '';
 }
