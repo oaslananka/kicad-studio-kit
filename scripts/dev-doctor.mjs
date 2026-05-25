@@ -351,6 +351,21 @@ function mcpVersionDetail(result) {
   }
 }
 
+function mcpDoctorDetail(result) {
+  try {
+    const payload = JSON.parse(result.stdout);
+    const status = payload.status ?? "unknown";
+    const recentErrors = Array.isArray(payload.recent_errors)
+      ? payload.recent_errors.length
+      : 0;
+    return `doctor ${status}; ${recentErrors} recent ${
+      recentErrors === 1 ? "issue" : "issues"
+    }`;
+  } catch {
+    return firstLine(result.stdout || result.stderr || result.error || "");
+  }
+}
+
 function findPortOwner(port, repoRoot, commandRunner) {
   if (process.platform === "win32") {
     const result = run("netstat", ["-ano", "-p", "tcp"], {
@@ -638,6 +653,31 @@ export async function createDoctorReport(
       ok: mcpVersion.ok,
       detail: mcpVersionDetail(mcpVersion),
       hint: "Verify the MCP server CLI can report version metadata.",
+    }),
+  );
+
+  const mcpDoctor = run(
+    "uv",
+    [
+      "run",
+      "--project",
+      "packages/mcp-server",
+      "--all-extras",
+      "kicad-mcp-pro",
+      "doctor",
+      "--json",
+    ],
+    commandOptions,
+  );
+  checks.push(
+    makeCheck({
+      id: "mcp-doctor",
+      label: "kicad-mcp-pro doctor",
+      category: "mcp",
+      required: true,
+      ok: mcpDoctor.ok,
+      detail: mcpDoctorDetail(mcpDoctor),
+      hint: "Run `uv run --project packages/mcp-server --all-extras kicad-mcp-pro doctor --json`.",
     }),
   );
 

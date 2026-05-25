@@ -12,16 +12,29 @@ export interface McpInstallerCandidate {
   args: string[];
 }
 
+export interface McpDoctorResult {
+  ok: boolean;
+  status?: string | undefined;
+  recentErrors: string[];
+  output: string;
+  error?: string | undefined;
+}
+
 function runExecFile(
   command: string,
   args: string[],
-  timeoutMs: number
+  timeoutMs: number,
+  env?: Record<string, string>
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     execFile(
       command,
       args,
-      { encoding: 'utf8', timeout: timeoutMs },
+      {
+        encoding: 'utf8',
+        timeout: timeoutMs,
+        ...(env ? { env: { ...process.env, ...env } } : {})
+      },
       (error, stdout, stderr) => {
         if (error) {
           reject(error);
@@ -35,10 +48,16 @@ function runExecFile(
 
 async function run(
   command: string,
-  args: string[]
+  args: string[],
+  options: { timeoutMs?: number; env?: Record<string, string> } = {}
 ): Promise<{ ok: boolean; output: string }> {
   try {
-    const { stdout, stderr } = await runExecFile(command, args, 8_000);
+    const { stdout, stderr } = await runExecFile(
+      command,
+      args,
+      options.timeoutMs ?? 8_000,
+      options.env
+    );
     const output = `${stdout}\n${stderr}`.trim();
     return { ok: true, output };
   } catch (error) {
@@ -260,6 +279,43 @@ export class McpDetector {
     return buildHttpTaskArgs(status, profile, port, projectDir);
   }
 
+  async runDoctor(
+    status: McpInstallStatus,
+    projectDir?: string
+  ): Promise<McpDoctorResult> {
+    const invocation = doctorInvocation(status);
+    if (!invocation) {
+      return {
+        ok: false,
+        recentErrors: [],
+        output: '',
+        error:
+          'kicad-mcp-pro doctor is unavailable for this installation source.'
+      };
+    }
+
+    const result = await run(invocation.command, invocation.args, {
+      timeoutMs: 12_000,
+      ...(projectDir ? { env: { KICAD_MCP_PROJECT_DIR: projectDir } } : {})
+    });
+    if (!result.ok) {
+      return {
+        ok: false,
+        recentErrors: [],
+        output: result.output,
+        error: result.output
+      };
+    }
+
+    const parsed = parseDoctorOutput(result.output);
+    return {
+      ok: true,
+      status: parsed.status,
+      recentErrors: parsed.recentErrors,
+      output: result.output
+    };
+  }
+
   async detectInstallers(): Promise<McpInstallerCandidate[]> {
     const candidates: McpInstallerCandidate[] = [];
     if (
@@ -385,6 +441,54 @@ export class McpDetector {
 
 function extractVersion(output: string): string | undefined {
   return output.match(/(\d+\.\d+(?:\.\d+)?)/)?.[1];
+}
+
+function doctorInvocation(
+  status: McpInstallStatus
+): { command: string; args: string[] } | undefined {
+  if (!status.found) {
+    return undefined;
+  }
+  if (status.command === 'uvx') {
+    return { command: 'uvx', args: ['kicad-mcp-pro', 'doctor', '--json'] };
+  }
+  if (
+    status.command === 'kicad-mcp-pro' ||
+    status.command === 'pipx' ||
+    status.command === 'pip' ||
+    status.source === 'global' ||
+    status.source === 'pipx' ||
+    status.source === 'pip'
+  ) {
+    return { command: 'kicad-mcp-pro', args: ['doctor', '--json'] };
+  }
+  return undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function parseDoctorOutput(output: string): {
+  status?: string | undefined;
+  recentErrors: string[];
+} {
+  try {
+    const payload: unknown = JSON.parse(output);
+    if (!isRecord(payload)) {
+      return { recentErrors: [] };
+    }
+    const status =
+      typeof payload['status'] === 'string' ? payload['status'] : undefined;
+    const errors = Array.isArray(payload['recent_errors'])
+      ? payload['recent_errors'].filter(
+          (entry): entry is string => typeof entry === 'string'
+        )
+      : [];
+    return { status, recentErrors: errors };
+  } catch {
+    return { recentErrors: [] };
+  }
 }
 
 function buildHttpTaskArgs(

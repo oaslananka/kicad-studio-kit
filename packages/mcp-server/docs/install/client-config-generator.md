@@ -19,13 +19,18 @@ Related inspection commands:
 kicad-mcp-pro tools list --json
 kicad-mcp-pro capabilities --json
 kicad-mcp-pro doctor --json --strict
+kicad-mcp-pro doctor --json --bundle ./mcp-debug.zip
 ```
 
 Strict doctor exit codes are stable for launcher integration:
 
-| Exit code | Meaning |
-|---|---|
-| 0 | OK |
-| 1 | Degraded but usable |
-| 2 | Configuration or runtime error |
-| 3 | Missing external dependency |
+| Exit code | Meaning                        |
+| --------- | ------------------------------ |
+| 0         | OK                             |
+| 1         | Degraded but usable            |
+| 2         | Configuration or runtime error |
+| 3         | Missing external dependency    |
+
+Launchers can call non-strict `doctor --json` for diagnostics without starting
+the MCP server. The optional `--bundle` path writes a redacted support archive
+for setup debugging.

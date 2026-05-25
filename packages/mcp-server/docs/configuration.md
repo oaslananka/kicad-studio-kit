@@ -15,13 +15,19 @@ The active project can also be changed at runtime with `kicad_set_project()`.
 ```bash
 kicad-mcp-pro health --json
 kicad-mcp-pro doctor --json
+kicad-mcp-pro doctor --json --bundle ./mcp-debug.zip
 kicad-mcp-pro version --json
 ```
 
 `health --json` is a fast install/configuration check and does not require a
 running KiCad IPC server. `doctor --json` adds deeper KiCad CLI and IPC probes
 but reports unavailable KiCad as a degraded diagnostic state instead of printing
-a stack trace.
+a stack trace. The doctor JSON is schema-validated before it is printed and
+includes active project paths, transport host/port/mount settings, stateful HTTP
+mode, tool and category counts, a capability summary, live GUI context
+availability, and redacted recent diagnostic errors. `--bundle` writes a
+redacted zip with `doctor.json`, the generated JSON schema, safe environment
+metadata, and a README; it never includes plaintext tokens or credentials.
 
 ## Environment Aliases
 

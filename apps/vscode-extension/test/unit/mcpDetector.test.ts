@@ -554,3 +554,56 @@ describe('McpDetector.generateHttpConfig', () => {
     expect(args).toContain('http');
   });
 });
+
+describe('McpDetector.runDoctor', () => {
+  let tempDir: string;
+  let execFileMock: jest.Mock;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kicadstudio-doctor-'));
+    execFileMock = childProcess.execFile as unknown as jest.Mock;
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('calls kicad-mcp-pro doctor JSON through uvx with the active project directory', async () => {
+    execFileMock.mockImplementation(
+      (
+        command: string,
+        args: string[],
+        opts: { env?: Record<string, string> },
+        callback: (err: Error | null, stdout: string, stderr: string) => void
+      ) => {
+        expect(command).toBe('uvx');
+        expect(args).toEqual(['kicad-mcp-pro', 'doctor', '--json']);
+        expect(opts.env?.['KICAD_MCP_PROJECT_DIR']).toBe(tempDir);
+        callback(
+          null,
+          JSON.stringify({
+            schemaVersion: '1.0.0',
+            status: 'degraded',
+            recent_errors: ['kicad_ipc: unavailable']
+          }),
+          ''
+        );
+      }
+    );
+
+    const result = await new McpDetector().runDoctor(
+      {
+        found: true,
+        command: 'uvx',
+        version: '1.0.0',
+        source: 'uvx'
+      },
+      tempDir
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.status).toBe('degraded');
+    expect(result.recentErrors).toEqual(['kicad_ipc: unavailable']);
+  });
+});

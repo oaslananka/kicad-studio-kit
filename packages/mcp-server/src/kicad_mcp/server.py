@@ -15,6 +15,7 @@ import threading
 import time
 from collections import deque
 from collections.abc import Callable, Iterable, Iterator
+from pathlib import Path
 from typing import Any, TextIO, cast
 
 import anyio
@@ -43,7 +44,13 @@ from .capabilities import get as get_capability_record
 from .compatibility import MCP_PROTOCOL_VERSION
 from .config import LOOPBACK_HOSTS, KiCadMCPConfig, get_config, reset_config
 from .connection import KiCadConnectionError, get_board
-from .diagnostics import DiagnosticReport, build_doctor_report, build_health_report
+from .diagnostics import (
+    DiagnosticReport,
+    build_doctor_report,
+    build_health_report,
+    diagnostic_report_json,
+    write_diagnostic_bundle,
+)
 from .discovery import ensure_studio_project_watcher, find_kicad_version
 from .i18n import SERVER_DESCRIPTION, localize, option_help
 from .ipc.capabilities import KiCadIpcCapabilityState, get_ipc_capability_state
@@ -61,6 +68,18 @@ tools_app = typer.Typer(help=localize("Inspect registered MCP tools."))
 mcp_config_app = typer.Typer(help=localize("Generate MCP client configuration snippets."))
 app.add_typer(tools_app, name="tools")
 app.add_typer(mcp_config_app, name="mcp-config")
+DOCTOR_BUNDLE_OPTION = cast(
+    Path | None,
+    typer.Option(
+        None,
+        "--bundle",
+        file_okay=True,
+        dir_okay=False,
+        writable=True,
+        resolve_path=True,
+        help=option_help("Write a redacted diagnostic zip bundle to this path."),
+    ),
+)
 AnyFunction = Callable[..., object]
 
 
@@ -1559,7 +1578,7 @@ def serve(
 
 def _echo_report(report: DiagnosticReport, *, as_json: bool) -> None:
     if as_json:
-        typer.echo(report.model_dump_json(indent=2))
+        typer.echo(diagnostic_report_json(report, indent=2))
         return
     typer.echo(f"Status: {report.status}")
     for check in report.checks:
@@ -1567,7 +1586,23 @@ def _echo_report(report: DiagnosticReport, *, as_json: bool) -> None:
         typer.echo(f"- {check.name}: {check.status} - {check.message}{suffix}")
 
 
-def _diagnostic_command(builder: Callable[[], DiagnosticReport], *, as_json: bool) -> None:
+def _emit_diagnostic_report(
+    report: DiagnosticReport,
+    *,
+    as_json: bool,
+    bundle_path: Path | None = None,
+) -> None:
+    if bundle_path is not None:
+        write_diagnostic_bundle(report, bundle_path)
+    _echo_report(report, as_json=as_json)
+
+
+def _diagnostic_command(
+    builder: Callable[[], DiagnosticReport],
+    *,
+    as_json: bool,
+    bundle_path: Path | None = None,
+) -> None:
     try:
         if as_json:
             with contextlib.redirect_stdout(io.StringIO()):
@@ -1575,12 +1610,13 @@ def _diagnostic_command(builder: Callable[[], DiagnosticReport], *, as_json: boo
         else:
             report = builder()
     except Exception as exc:
+        message = str(exc)
         payload = {
             "ok": False,
             "status": "error",
             "error": {
                 "code": "CONFIGURATION_ERROR",
-                "message": str(exc),
+                "message": message,
                 "hint": "Fix malformed KiCad MCP configuration and retry.",
                 "retryable": False,
             },
@@ -1588,7 +1624,7 @@ def _diagnostic_command(builder: Callable[[], DiagnosticReport], *, as_json: boo
         error = cast(dict[str, object], payload["error"])
         typer.echo(json.dumps(payload, indent=2) if as_json else str(error["message"]))
         raise typer.Exit(2) from exc
-    _echo_report(report, as_json=as_json)
+    _emit_diagnostic_report(report, as_json=as_json, bundle_path=bundle_path)
     if not report.ok:
         raise typer.Exit(1)
 
@@ -1603,7 +1639,12 @@ def _strict_diagnostic_exit_code(report: DiagnosticReport) -> int:
     return 0
 
 
-def _strict_diagnostic_command(builder: Callable[[], DiagnosticReport], *, as_json: bool) -> None:
+def _strict_diagnostic_command(
+    builder: Callable[[], DiagnosticReport],
+    *,
+    as_json: bool,
+    bundle_path: Path | None = None,
+) -> None:
     try:
         if as_json:
             with contextlib.redirect_stdout(io.StringIO()):
@@ -1624,7 +1665,7 @@ def _strict_diagnostic_command(builder: Callable[[], DiagnosticReport], *, as_js
         error = cast(dict[str, object], payload["error"])
         typer.echo(json.dumps(payload, indent=2) if as_json else str(error["message"]))
         raise typer.Exit(2) from exc
-    _echo_report(report, as_json=as_json)
+    _emit_diagnostic_report(report, as_json=as_json, bundle_path=bundle_path)
     exit_code = _strict_diagnostic_exit_code(report)
     if exit_code:
         raise typer.Exit(exit_code)
@@ -1645,6 +1686,7 @@ def doctor(
     json_output: bool = typer.Option(
         False, "--json", help=option_help("Emit machine-readable JSON.")
     ),
+    bundle: Path | None = DOCTOR_BUNDLE_OPTION,
     strict: bool = typer.Option(
         False,
         "--strict",
@@ -1653,9 +1695,9 @@ def doctor(
 ) -> None:
     """Run deeper diagnostics without treating unavailable KiCad as fatal."""
     if strict:
-        _strict_diagnostic_command(build_doctor_report, as_json=json_output)
+        _strict_diagnostic_command(build_doctor_report, as_json=json_output, bundle_path=bundle)
         return
-    _diagnostic_command(build_doctor_report, as_json=json_output)
+    _diagnostic_command(build_doctor_report, as_json=json_output, bundle_path=bundle)
 
 
 def _tool_payload(tool: mcp_types.Tool) -> dict[str, object]:

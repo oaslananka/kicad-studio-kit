@@ -410,6 +410,9 @@ class KiCadMCPConfig(BaseSettings):
         return {
             "workspace_root": str(self.workspace) if self.workspace else None,
             "project_dir": str(self.project_dir) if self.project_dir else None,
+            "project_file": str(self.project_file) if self.project_file else None,
+            "pcb_file": str(self.pcb_file) if self.pcb_file else None,
+            "sch_file": str(self.sch_file) if self.sch_file else None,
             "output_dir": str(self.output_dir) if self.output_dir else None,
             "timeout_ms": self.timeout_ms,
             "retries": self.ipc_retries,
@@ -423,6 +426,10 @@ class KiCadMCPConfig(BaseSettings):
             "otel_protocol": self.otel_protocol,
             "telemetry_buffer_max_events": self.telemetry_buffer_max_events,
             "transport": self.transport,
+            "host": self.host,
+            "port": self.port,
+            "mount_path": self.mount_path,
+            "stateful_http": self.stateful_http,
             "auth_token": {"configured": self.auth_token is not None},
             "kicad_token": {"configured": self.kicad_token is not None},
         }

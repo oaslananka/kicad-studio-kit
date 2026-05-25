@@ -10,30 +10,45 @@ of importing Python modules from `packages/mcp-server`.
 uvx kicad-mcp-pro --help
 uvx kicad-mcp-pro health --json
 uvx kicad-mcp-pro doctor --json
+uvx kicad-mcp-pro doctor --json --bundle ./mcp-debug.zip
 uvx kicad-mcp-pro serve
 ```
 
 `health --json` must succeed when the package is installed, even if KiCad is not
 running. `doctor --json` may report degraded KiCad IPC status but should not
-crash for normal diagnosable conditions.
+crash for normal diagnosable conditions. KiCad Studio may call the doctor
+command directly for setup diagnostics; it does not start the MCP server.
 
 Stable fields for extension consumption:
 
 - `ok`
+- `schemaVersion`
 - `status`
 - `package.name`
 - `package.version`
 - `python.version`
 - `mcp.transport_default`
 - `mcp.profile`
+- `mcp.host`
+- `mcp.port`
+- `mcp.mount_path`
+- `mcp.stateful_http`
 - `kicad.cli_path`
 - `kicad.cli_found`
 - `kicad.version`
 - `kicad.ipc_reachable`
 - `config.workspace_root`
 - `config.project_dir`
+- `config.project_file`
+- `config.pcb_file`
+- `config.sch_file`
 - `config.timeout_ms`
 - `config.retries`
+- `tools.tool_count`
+- `tools.category_count`
+- `tools.capability_summary`
+- `live_context.available`
+- `recent_errors[]`
 - `checks[].name`
 - `checks[].status`
 - `checks[].message`

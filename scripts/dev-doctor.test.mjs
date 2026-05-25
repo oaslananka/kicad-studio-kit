@@ -101,10 +101,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
       ].join("\n"),
     );
     writeFileSync(
-      path.join(
-        repoRoot,
-        "packages/kicad-fixtures/manifest.json",
-      ),
+      path.join(repoRoot, "packages/kicad-fixtures/manifest.json"),
       JSON.stringify({ schemaVersion: 1, fixtureCount: 1, fixtures: [] }),
     );
     writeFileSync(
@@ -157,6 +154,18 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
             stderr: "",
           };
         }
+        if (joined.includes("kicad-mcp-pro doctor --json")) {
+          return {
+            ok: true,
+            status: 0,
+            stdout: JSON.stringify({
+              schemaVersion: "1.0.0",
+              status: "degraded",
+              recent_errors: ["kicad_ipc: unavailable"],
+            }),
+            stderr: "",
+          };
+        }
         if (joined === "corepack pnpm run check:fixtures") {
           return {
             ok: true,
@@ -195,6 +204,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
         "vscode-extension-deps",
         "mcp-help",
         "mcp-version",
+        "mcp-doctor",
         "cloudflared",
         "ports",
         "workspace-scripts",
@@ -206,6 +216,10 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
     assert.equal(byId.get("kicad-cli").required, false);
     assert.equal(byId.get("cloudflared").required, false);
     assert.equal(byId.get("mcp-version").detail, "kicad-mcp-pro 1.0.0");
+    assert.equal(
+      byId.get("mcp-doctor").detail,
+      "doctor degraded; 1 recent issue",
+    );
     assert.equal(
       report.checks.every(
         (check) => typeof check.hint === "string" && check.hint.length > 0,
