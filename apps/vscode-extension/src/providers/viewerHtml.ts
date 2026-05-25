@@ -95,11 +95,35 @@ export function createKiCanvasViewerHtml(
 <body>
   <header>
     <h1>${escapeHtml(options.title)}: ${escapeHtml(options.fileName)}</h1>
-    <div class="actions">
-      <button class="btn btn-primary" id="reload-btn"    type="button" aria-label="Reload viewer">Reload Viewer</button>
+    <div class="viewer-toolbar" id="viewer-toolbar" role="toolbar" aria-label="Viewer tools">
+      <button class="btn btn-primary" id="reload-btn" type="button" aria-label="Reload viewer">Reload Viewer</button>
       <button class="btn" id="open-kicad-btn" type="button" aria-label="Open in KiCad">Open in KiCad</button>
-      <button class="btn" id="export-png-btn" type="button" aria-label="Export PNG">Export PNG</button>
-      <button class="btn" id="export-svg-btn" type="button" aria-label="Export SVG">Export SVG</button>
+      <span class="toolbar-divider" aria-hidden="true"></span>
+      <button class="btn compact-btn" id="fit-btn" type="button" aria-label="Fit viewer">Fit</button>
+      <button class="btn icon-btn" id="zoom-out-btn" type="button" aria-label="Zoom out viewer">-</button>
+      <span id="zoom-level" class="zoom-level" aria-label="Current zoom">100%</span>
+      <button class="btn icon-btn" id="zoom-in-btn" type="button" aria-label="Zoom in viewer">+</button>
+      <label class="toolbar-field sheet-field" for="sheet-select">
+        <span>Sheet</span>
+        <select id="sheet-select" aria-label="Sheet selector">
+          <option value="root">${options.fileType === 'board' ? 'Board' : 'Root sheet'}</option>
+        </select>
+      </label>
+      <button class="btn compact-btn" id="grid-toggle" type="button" aria-pressed="false">Grid</button>
+      <button class="btn compact-btn" id="theme-toggle" type="button" aria-pressed="${themeName === 'light' ? 'true' : 'false'}">${themeName === 'light' ? 'Light' : 'Dark'}</button>
+      <label class="reference-search-field" for="reference-search">
+        <span>Reference</span>
+        <input id="reference-search" type="search" inputmode="search" autocomplete="off" placeholder="Find reference" aria-label="Find reference">
+      </label>
+      <button class="btn compact-btn" id="reference-search-btn" type="button">Find</button>
+      <details class="export-menu" id="export-menu">
+        <summary class="btn compact-btn">Export</summary>
+        <div class="export-menu-items">
+          <button class="btn" id="export-png-btn" type="button" aria-label="Export PNG">PNG</button>
+          <button class="btn" id="export-svg-btn" type="button" aria-label="Export SVG">SVG</button>
+        </div>
+      </details>
+      <button class="btn compact-btn" id="side-panel-toggle" type="button" aria-controls="viewer-side-panel" aria-expanded="false">Panel</button>
     </div>
     <span id="viewer-engine-badge" class="engine-badge" data-engine-kind="${escapeAttr(initialEngine.kind)}" title="${escapeAttr(initialEngine.reason ?? initialEngine.label)}">${escapeHtml(initialEngine.label)}</span>
     <span id="viewer-status">${escapeHtml(options.status)}</span>
@@ -142,7 +166,7 @@ export function createKiCanvasViewerHtml(
       </div>
     </div>
 
-    <aside aria-label="Viewer side panel">
+    <aside id="viewer-side-panel" aria-label="Viewer side panel">
       <div class="side-section" id="engine-section">
         <h2>Viewer Engine</h2>
         <div id="engine-summary" class="meta-row">${escapeHtml(initialEngine.reason ?? initialEngine.label)}</div>
@@ -150,9 +174,6 @@ export function createKiCanvasViewerHtml(
       <div class="side-section">
         <h2>Viewer Tools</h2>
         <div class="side-actions">
-          <button class="btn" id="fit-btn" type="button" aria-label="Fit viewer">Fit</button>
-          <button class="btn" id="zoom-in-btn" type="button" aria-label="Zoom in viewer">+</button>
-          <button class="btn" id="zoom-out-btn" type="button" aria-label="Zoom out viewer">-</button>
           ${
             hasLayerControls
               ? `<button class="btn" id="all-layers-btn" type="button" aria-label="Show All layers">All</button>
@@ -211,6 +232,13 @@ export function createKiCanvasViewerHtml(
     const zoomOutBtn = document.getElementById('zoom-out-btn');
     const exportPngBtn = document.getElementById('export-png-btn');
     const exportSvgBtn = document.getElementById('export-svg-btn');
+    const sidePanelToggleBtn = document.getElementById('side-panel-toggle');
+    const zoomLevelEl = document.getElementById('zoom-level');
+    const sheetSelectEl = document.getElementById('sheet-select');
+    const gridToggleBtn = document.getElementById('grid-toggle');
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const referenceSearchInput = document.getElementById('reference-search');
+    const referenceSearchBtn = document.getElementById('reference-search-btn');
     const allLayersBtn = document.getElementById('all-layers-btn');
     const noneLayersBtn = document.getElementById('none-layers-btn');
     const copperLayersBtn = document.getElementById('copper-layers-btn');
@@ -269,9 +297,16 @@ export function createKiCanvasViewerHtml(
       zoom: 1,
       grid: false,
       theme: payload.theme || 'kicad',
+      toolsPanelCollapsed: true,
+      selectedSheet: 'root',
       ...(payload.restoreState || {}),
       engine: payload.engine || createEngineState(payload.disabledReason ? 'metadata-only' : 'kicanvas', payload.disabledReason || undefined)
     };
+
+    function t(message) {
+      const translate = globalThis.kicadStudioL10n?.t;
+      return typeof translate === 'function' ? translate(message) : message;
+    }
 
     document.getElementById('reload-btn').addEventListener('click', () => initViewer());
     document.getElementById('open-kicad-btn').addEventListener('click', openInKiCad);
@@ -282,11 +317,42 @@ export function createKiCanvasViewerHtml(
     fitBtn.addEventListener('click', fitCurrentViewer);
     zoomInBtn.addEventListener('click', () => zoomCurrentViewer(1));
     zoomOutBtn.addEventListener('click', () => zoomCurrentViewer(-1));
+    sidePanelToggleBtn.addEventListener('click', () => setToolsPanelCollapsed(!localState.toolsPanelCollapsed));
+    sheetSelectEl.addEventListener('change', () => {
+      localState = { ...localState, selectedSheet: sheetSelectEl.value };
+      postViewerState();
+    });
+    gridToggleBtn.addEventListener('click', () => {
+      const nextGrid = !localState.grid;
+      localState = { ...localState, grid: nextGrid };
+      updateGridToggle();
+      postViewerState();
+    });
+    themeToggleBtn.addEventListener('click', () => {
+      const nextTheme = localState.theme === 'light' ? 'kicad' : 'light';
+      payload.theme = nextTheme;
+      localState = { ...localState, theme: nextTheme };
+      const viewer = viewerMount.querySelector('kicanvas-embed');
+      viewer?.setAttribute('theme', nextTheme);
+      updateThemeToggle();
+      postViewerState();
+    });
+    referenceSearchBtn.addEventListener('click', selectReferenceFromSearch);
+    referenceSearchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        selectReferenceFromSearch();
+      }
+    });
     allLayersBtn?.addEventListener('click', () => setAllLayers(true));
     noneLayersBtn?.addEventListener('click', () => setAllLayers(false));
     copperLayersBtn?.addEventListener('click', () => setCopperOnly());
     renderSidebar();
     updateEngineUi(localState.engine);
+    applyToolsPanelCollapsed(localState.toolsPanelCollapsed);
+    updateZoomLevel();
+    updateGridToggle();
+    updateThemeToggle();
 
     window.addEventListener('message', (event) => {
       const msg = event.data || {};
@@ -307,6 +373,10 @@ export function createKiCanvasViewerHtml(
             ...(payload.restoreState || {}),
             engine: payload.engine || localState.engine
           };
+          applyToolsPanelCollapsed(localState.toolsPanelCollapsed);
+          updateZoomLevel();
+          updateGridToggle();
+          updateThemeToggle();
         }
         void initViewer();
       }
@@ -321,6 +391,10 @@ export function createKiCanvasViewerHtml(
           ...localState,
           ...(payload.restoreState || {})
         };
+        applyToolsPanelCollapsed(localState.toolsPanelCollapsed);
+        updateZoomLevel();
+        updateGridToggle();
+        updateThemeToggle();
         void initViewer();
       }
       if (msg.type === 'setMetadata') {
@@ -829,6 +903,54 @@ export function createKiCanvasViewerHtml(
       });
     }
 
+    function setToolsPanelCollapsed(collapsed) {
+      localState = { ...localState, toolsPanelCollapsed: Boolean(collapsed) };
+      applyToolsPanelCollapsed(localState.toolsPanelCollapsed);
+      postViewerState();
+    }
+
+    function applyToolsPanelCollapsed(collapsed) {
+      document.body.classList.toggle('tools-collapsed', Boolean(collapsed));
+      sidePanelToggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      sidePanelToggleBtn.textContent = collapsed ? t('Panel') : t('Hide Panel');
+      sidePanelToggleBtn.title = collapsed ? t('Show viewer side panel') : t('Hide viewer side panel');
+    }
+
+    function updateZoomLevel() {
+      if (!zoomLevelEl) {
+        return;
+      }
+      const zoom = Number.isFinite(Number(localState.zoom)) ? Number(localState.zoom) : 1;
+      zoomLevelEl.textContent = Math.round(zoom * 100) + '%';
+      zoomLevelEl.title = t('Current zoom') + ' ' + zoomLevelEl.textContent;
+    }
+
+    function updateGridToggle() {
+      document.body.classList.toggle('grid-visible', Boolean(localState.grid));
+      gridToggleBtn.setAttribute('aria-pressed', localState.grid ? 'true' : 'false');
+      gridToggleBtn.classList.toggle('is-active', Boolean(localState.grid));
+    }
+
+    function updateThemeToggle() {
+      const light = localState.theme === 'light';
+      themeToggleBtn.setAttribute('aria-pressed', light ? 'true' : 'false');
+      themeToggleBtn.classList.toggle('is-active', light);
+      themeToggleBtn.textContent = light ? t('Light') : t('Dark');
+    }
+
+    function selectReferenceFromSearch() {
+      const reference = String(referenceSearchInput.value || '').trim();
+      if (!reference) {
+        return;
+      }
+      localState = {
+        ...localState,
+        selectedReference: reference
+      };
+      postViewerState();
+      vscode.postMessage({ type: 'componentSelected', payload: { reference } });
+    }
+
     function createEngineState(kind, reason) {
       const definition = ViewerEngines[kind] || ViewerEngines.kicanvas;
       return {
@@ -893,6 +1015,13 @@ export function createKiCanvasViewerHtml(
         ...payload.restoreState,
         engine: localState.engine || payload.restoreState.engine
       };
+      if (sheetSelectEl && localState.selectedSheet) {
+        sheetSelectEl.value = localState.selectedSheet;
+      }
+      applyToolsPanelCollapsed(localState.toolsPanelCollapsed);
+      updateZoomLevel();
+      updateGridToggle();
+      updateThemeToggle();
       updateSelectionSummary();
       postViewerState();
     }
@@ -1123,6 +1252,7 @@ export function createKiCanvasViewerHtml(
       if (viewer) {
         viewer.fitToScreen?.();
         localState = { ...localState, zoom: 1 };
+        updateZoomLevel();
         postViewerState();
         return;
       }
@@ -1141,6 +1271,7 @@ export function createKiCanvasViewerHtml(
           viewer.zoomOut?.();
           localState = { ...localState, zoom: Number(Math.max(0.1, localState.zoom - 0.1).toFixed(2)) };
         }
+        updateZoomLevel();
         postViewerState();
         return;
       }
@@ -1519,6 +1650,7 @@ export function createKiCanvasViewerHtml(
         fallbackSvgWrapper.scrollTop = Math.max(0, (fallbackSvgWrapper.scrollHeight - fallbackSvgWrapper.clientHeight) / 2);
       }
       localState = { ...localState, zoom: Number(fallbackSvgScale.toFixed(3)) };
+      updateZoomLevel();
       postViewerState();
     }
 
@@ -1629,16 +1761,19 @@ export function createKiCanvasViewerHtml(
         if (ev.key === 'f' || ev.key === 'F') {
           viewer.fitToScreen?.();
           localState = { ...localState, zoom: 1 };
+          updateZoomLevel();
           postViewerState();
         }
         if (ev.key === '+' || ev.key === '=') {
           viewer.zoomIn?.();
           localState = { ...localState, zoom: Number((localState.zoom + 0.1).toFixed(2)) };
+          updateZoomLevel();
           postViewerState();
         }
         if (ev.key === '-') {
           viewer.zoomOut?.();
           localState = { ...localState, zoom: Number(Math.max(0.1, localState.zoom - 0.1).toFixed(2)) };
+          updateZoomLevel();
           postViewerState();
         }
         if (ev.key === 'r' || ev.key === 'R') {

@@ -45,8 +45,10 @@ export interface ViewerState {
   zoom: number;
   grid: boolean;
   theme: string;
+  toolsPanelCollapsed?: boolean | undefined;
   engine?: ViewerEngineState | undefined;
   selectedReference?: string | undefined;
+  selectedSheet?: string | undefined;
   selectedArea?:
     | {
         x1: number;

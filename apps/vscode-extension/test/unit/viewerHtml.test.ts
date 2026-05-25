@@ -255,6 +255,58 @@ describe('createKiCanvasViewerHtml', () => {
     expect(html).not.toContain('id="all-layers-btn"');
   });
 
+  it('renders OASLANA-18 compact viewer controls with the tools panel collapsed by default', () => {
+    const html = createKiCanvasViewerHtml({
+      title: 'Viewer',
+      fileName: 'sample.kicad_sch',
+      fileType: 'schematic',
+      status: 'Opening interactive renderer...',
+      cspSource: 'vscode-resource:',
+      kicanvasUri: 'vscode-resource:/media/kicanvas/kicanvas.js',
+      base64: 'Zm9v',
+      disabledReason: ''
+    });
+
+    expect(html).toContain('id="viewer-toolbar"');
+    expect(html).toContain('id="side-panel-toggle"');
+    expect(html).toContain('aria-controls="viewer-side-panel"');
+    expect(html).toContain('id="viewer-side-panel"');
+    expect(html).toContain('id="zoom-level"');
+    expect(html).toContain('id="sheet-select"');
+    expect(html).toContain('id="grid-toggle"');
+    expect(html).toContain('id="theme-toggle"');
+    expect(html).toContain('id="reference-search"');
+    expect(html).toContain('id="export-menu"');
+    expect(html).toContain('toolsPanelCollapsed: true');
+    expect(html).toContain(
+      'applyToolsPanelCollapsed(localState.toolsPanelCollapsed);'
+    );
+  });
+
+  it('posts OASLANA-18 viewer state when the tools panel, grid, theme, or reference search changes', () => {
+    const html = createKiCanvasViewerHtml({
+      title: 'Viewer',
+      fileName: 'sample.kicad_pcb',
+      fileType: 'board',
+      status: 'Opening interactive renderer...',
+      cspSource: 'vscode-resource:',
+      kicanvasUri: 'vscode-resource:/media/kicanvas/kicanvas.js',
+      base64: 'Zm9v',
+      disabledReason: '',
+      metadata: {
+        layers: [{ name: 'F.Cu', kind: 'signal', visible: true }]
+      }
+    });
+
+    expect(html).toContain('function setToolsPanelCollapsed(collapsed)');
+    expect(html).toContain("sidePanelToggleBtn.addEventListener('click'");
+    expect(html).toContain('localState = { ...localState, grid: nextGrid };');
+    expect(html).toContain('localState = { ...localState, theme: nextTheme };');
+    expect(html).toContain('selectedReference: reference');
+    expect(html).toContain('postViewerState();');
+    expect(html).toContain("vscode.postMessage({ type: 'componentSelected'");
+  });
+
   it('normalizes fallback SVG size from viewBox-aware dimensions', () => {
     const html = createKiCanvasViewerHtml({
       title: 'Viewer',

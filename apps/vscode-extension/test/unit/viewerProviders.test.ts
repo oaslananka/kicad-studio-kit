@@ -5,7 +5,12 @@ import * as path from 'node:path';
 import { SchematicEditorProvider } from '../../src/providers/schematicEditorProvider';
 import { PcbEditorProvider } from '../../src/providers/pcbEditorProvider';
 import { ViewerStateStore } from '../../src/state/stateStores';
-import { __setConfiguration, window, workspace } from './vscodeMock';
+import {
+  __setConfiguration,
+  createExtensionContextMock,
+  window,
+  workspace
+} from './vscodeMock';
 
 type ProviderCtor = new (
   context: vscode.ExtensionContext,
@@ -588,5 +593,67 @@ describe.each([
       process.env['XDG_CONFIG_HOME'] = originalXdgConfigHome;
       fs.rmSync(fakeAppData, { recursive: true, force: true });
     }
+  });
+
+  it('persists the OASLANA-18 tools panel collapsed state in workspace state', async () => {
+    const context = createExtensionContextMock();
+    const viewerState = new ViewerStateStore();
+    const provider = new (ContextProvider as never as {
+      new (
+        context: vscode.ExtensionContext,
+        svgFallbackProvider: undefined,
+        viewerState: ViewerStateStore
+      ): InstanceType<typeof ContextProvider>;
+    })(context as unknown as vscode.ExtensionContext, undefined, viewerState);
+    const panel = createPanel();
+    const document = {
+      uri: vscode.Uri.file(tempFile)
+    } as vscode.CustomDocument;
+
+    await provider.resolveCustomEditor(
+      document,
+      panel as unknown as vscode.WebviewPanel
+    );
+    await panel.fireMessage({
+      type: 'viewerState',
+      payload: {
+        zoom: 1.25,
+        grid: true,
+        theme: 'light',
+        toolsPanelCollapsed: false
+      }
+    });
+
+    expect(context.workspaceState.update).toHaveBeenCalledWith(
+      'kicadstudio.viewer.toolsPanelCollapsed',
+      false
+    );
+    expect(viewerState.getState(document.uri)).toEqual(
+      expect.objectContaining({
+        toolsPanelCollapsed: false
+      })
+    );
+  });
+
+  it('restores the OASLANA-18 workspace tools panel preference into new viewer payloads', async () => {
+    const context = createExtensionContextMock();
+    await context.workspaceState.update(
+      'kicadstudio.viewer.toolsPanelCollapsed',
+      false
+    );
+    const provider = new ContextProvider(
+      context as unknown as vscode.ExtensionContext
+    );
+    const panel = createPanel();
+    const document = {
+      uri: vscode.Uri.file(tempFile)
+    } as vscode.CustomDocument;
+
+    await provider.resolveCustomEditor(
+      document,
+      panel as unknown as vscode.WebviewPanel
+    );
+
+    expect(panel.webview.html).toContain('"toolsPanelCollapsed":false');
   });
 });
