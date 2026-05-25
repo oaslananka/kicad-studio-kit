@@ -275,6 +275,47 @@ describe('McpClient version gate', () => {
     ).toBe(false);
   });
 
+  it('ignores malformed server-info contracts from the HTTP server card', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse(initializeResult('1.27.0')))
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          ...wellKnownResult('1.0.0'),
+          serverInfoContract: {
+            schemaVersion: '1.1.0',
+            server: 'other-server'
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({ result: { tools: [] } })
+      ) as typeof fetch;
+
+    const state = await createClient().testConnection();
+
+    expect(state.kind).toBe('Connected');
+    expect(state.server?.compat).toBe('ok');
+    expect(state.server?.capabilities.serverInfo).toBeUndefined();
+  });
+
+  it('marks MCP degraded when tools/list violates the discovery schema', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse(initializeResult('1.0.0')))
+      .mockResolvedValueOnce(
+        createJsonResponse({ result: { resources: [] } })
+      ) as typeof fetch;
+
+    const state = await createClient().testConnection();
+
+    expect(state.kind).toBe('Degraded');
+    expect(state.connected).toBe(false);
+    expect(state.message).toContain(
+      'MCP tools/list response failed protocol schema validation'
+    );
+  });
+
   it('reads server-info diagnostics when initialize identifies kicad-mcp-pro', async () => {
     global.fetch = jest
       .fn()

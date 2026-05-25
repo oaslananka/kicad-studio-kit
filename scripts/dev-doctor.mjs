@@ -208,6 +208,8 @@ function workspaceScriptsCheck(packageJson) {
     "check:fixtures":
       "node scripts/generate-kicad-fixture-corpus.mjs --check && node --test scripts/check-kicad-fixtures-package.test.mjs && pnpm --dir packages/kicad-fixtures run check",
     "check:kicad-fixtures": "pnpm --dir packages/kicad-fixtures run check",
+    "check:protocol-schemas":
+      "node --test scripts/check-protocol-schemas-package.test.mjs && pnpm --dir packages/protocol-schemas run check",
   };
   const includesScripts = {
     "test:contract":

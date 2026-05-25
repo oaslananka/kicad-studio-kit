@@ -41,6 +41,7 @@ class CapabilityRecord:
     verification_level: str = "experimental"
 
 
+PROTOCOL_TOOL_CAPABILITY_SCHEMA_VERSION = "1.0.0"
 _REGISTRY: dict[str, CapabilityRecord] = {}
 
 
@@ -57,6 +58,29 @@ def get(name: str) -> CapabilityRecord | None:
 def all_records() -> dict[str, CapabilityRecord]:
     """Return a copy of all capability records."""
     return dict(_REGISTRY)
+
+
+def to_protocol_metadata(record: CapabilityRecord) -> dict[str, object]:
+    """Return schema-versioned metadata for an advertised capability."""
+    return {
+        "schemaVersion": PROTOCOL_TOOL_CAPABILITY_SCHEMA_VERSION,
+        "name": record.name,
+        "profiles": sorted(record.profiles),
+        "tier": record.tier.value,
+        "runtime": record.runtime.value,
+        "supports_dry_run": record.supports_dry_run,
+        "human_gate_required": record.human_gate_required,
+        "description": record.description,
+        "verification_level": record.verification_level,
+    }
+
+
+def all_protocol_metadata() -> list[dict[str, object]]:
+    """Return all capability records as protocol-schema payloads."""
+    return [
+        to_protocol_metadata(record)
+        for record in sorted(_REGISTRY.values(), key=lambda item: item.name)
+    ]
 
 
 def tools_for_profile(profile: str) -> list[CapabilityRecord]:

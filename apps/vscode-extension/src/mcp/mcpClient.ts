@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
+import { validateMcpToolDiscovery } from '@oaslananka/kicad-protocol-schemas';
 import { MCP_REQUEST_TIMEOUT_MS, SETTINGS } from '../constants';
 import type {
   FixItem,
@@ -161,7 +162,15 @@ export class McpClient {
           install
         });
       }
-      await this.rpc('tools/list', {});
+      const toolDiscovery = await this.rpc('tools/list', {});
+      const toolDiscoveryValidation = validateMcpToolDiscovery(toolDiscovery);
+      if (!toolDiscoveryValidation.valid) {
+        throw new Error(
+          `MCP tools/list response failed protocol schema validation: ${formatProtocolValidationErrors(
+            toolDiscoveryValidation.errors
+          )}`
+        );
+      }
       return this.setState({
         kind: 'Connected',
         available: install.found,
@@ -938,6 +947,18 @@ function serverInfoDiagnostics(serverInfo: McpServerInfoContract): string[] {
     diagnostics.push('Streamable HTTP transport is unavailable.');
   }
   return [...new Set(diagnostics)];
+}
+
+function formatProtocolValidationErrors(
+  errors: Array<{ path: string; message: string }>
+): string {
+  if (errors.length === 0) {
+    return 'unknown schema validation error';
+  }
+  return errors
+    .slice(0, 3)
+    .map((error) => `${error.path}: ${error.message}`)
+    .join('; ');
 }
 
 function normalizeCapabilityNames(value: unknown): string[] {

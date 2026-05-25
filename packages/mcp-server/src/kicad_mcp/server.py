@@ -15,7 +15,6 @@ import threading
 import time
 from collections import deque
 from collections.abc import Callable, Iterable, Iterator
-from dataclasses import asdict
 from typing import Any, TextIO, cast
 
 import anyio
@@ -39,8 +38,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from typer.models import OptionInfo
 
 from . import __version__
-from .capabilities import AccessTier, RuntimeRequirement
-from .capabilities import all_records as all_capability_records
+from .capabilities import AccessTier, RuntimeRequirement, all_protocol_metadata
 from .capabilities import get as get_capability_record
 from .compatibility import MCP_PROTOCOL_VERSION
 from .config import LOOPBACK_HOSTS, KiCadMCPConfig, get_config, reset_config
@@ -1660,14 +1658,6 @@ def doctor(
     _diagnostic_command(build_doctor_report, as_json=json_output)
 
 
-def _jsonable(value: object) -> object:
-    if hasattr(value, "model_dump"):
-        return value.model_dump(mode="json", exclude_none=True)
-    if isinstance(value, frozenset):
-        return sorted(value)
-    return value
-
-
 def _tool_payload(tool: mcp_types.Tool) -> dict[str, object]:
     dumped = tool.model_dump(mode="json", exclude_none=True)
     return {
@@ -1710,10 +1700,7 @@ def capabilities_command(
     json_output: bool = typer.Option(False, "--json", help="Emit machine-readable JSON."),
 ) -> None:
     """List registered capability metadata."""
-    records = sorted(all_capability_records().values(), key=lambda record: record.name)
-    payload = [
-        {key: _jsonable(value) for key, value in asdict(record).items()} for record in records
-    ]
+    payload = all_protocol_metadata()
     if json_output:
         typer.echo(json.dumps(payload, indent=2))
         return
