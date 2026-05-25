@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { COMMANDS } from '../constants';
+import { localize } from '../i18n';
 import type { FixItem, McpConnectionState } from '../types';
 import { isRecoverableMcpUnavailableError } from './mcpErrorMapper';
 import type { FixQueueMcpAdapter } from './mcpToolAdapter';
@@ -60,13 +61,13 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixQueueNode> {
       return [
         sidebarState(
           'error',
-          'Fix Queue unavailable',
-          'Use HTTP MCP transport',
+          localize('fixQueueUnavailableLabel'),
+          localize('fixQueueUnavailableDescription'),
           fixQueueBlockMessage(state),
           'warning',
           {
             command: COMMANDS.setupMcpIntegration,
-            title: 'Setup MCP Integration'
+            title: localize('fixQueueSetupMcpCommand')
           }
         )
       ];
@@ -77,13 +78,13 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixQueueNode> {
           this.state ??
             sidebarState(
               'empty',
-              'No pending AI fixes',
-              'Run DRC/ERC or refresh MCP',
-              'No queued fixes are available for the active project. Run validation or refresh MCP capabilities to populate suggested repairs.',
+              localize('fixQueueEmptyLabel'),
+              localize('fixQueueEmptyDescription'),
+              localize('fixQueueEmptyDetail'),
               'lightbulb',
               {
                 command: COMMANDS.retryMcp,
-                title: 'Refresh MCP Fix Queue'
+                title: localize('fixQueueRefreshCommand')
               }
             )
         ];
@@ -120,13 +121,13 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixQueueNode> {
         ? undefined
         : sidebarState(
             'empty',
-            'No pending AI fixes',
-            'Run DRC/ERC or refresh MCP',
-            'No queued fixes are available for the active project. Run validation or refresh MCP capabilities to populate suggested repairs.',
+            localize('fixQueueEmptyLabel'),
+            localize('fixQueueEmptyDescription'),
+            localize('fixQueueEmptyDetail'),
             'lightbulb',
             {
               command: COMMANDS.retryMcp,
-              title: 'Refresh MCP Fix Queue'
+              title: localize('fixQueueRefreshCommand')
             }
           );
     } catch (err) {
@@ -139,13 +140,13 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixQueueNode> {
       this.items = [];
       this.state = sidebarState(
         'error',
-        'Fix Queue could not refresh',
-        'Retry MCP connection',
+        localize('fixQueueRefreshErrorLabel'),
+        localize('fixQueueRefreshErrorDescription'),
         err instanceof Error ? err.message : String(err),
         'warning',
         {
           command: COMMANDS.retryMcp,
-          title: 'Retry MCP Connection'
+          title: localize('fixQueueRetryCommand')
         }
       );
     }
@@ -241,8 +242,8 @@ function supportsHttpFixQueue(state: McpConnectionState): boolean {
 
 function fixQueueBlockMessage(state: McpConnectionState): string {
   return state.kind === 'VsCodeStdio'
-    ? 'Fix Queue needs the HTTP MCP transport; VS Code stdio cannot serve queued repair actions.'
+    ? localize('fixQueueBlockStdio')
     : state.kind === 'Incompatible'
-      ? 'Upgrade kicad-mcp-pro before loading AI repair actions.'
-      : 'Connect kicad-mcp-pro over HTTP before loading AI repair actions.';
+      ? localize('fixQueueBlockIncompatible')
+      : localize('fixQueueBlockDefault');
 }

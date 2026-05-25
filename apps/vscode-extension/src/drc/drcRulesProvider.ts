@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 import * as vscode from 'vscode';
 import { COMMANDS } from '../constants';
+import { localize } from '../i18n';
 import { SExpressionParser, type SNode } from '../language/sExpressionParser';
 import {
   isSidebarWorkflowState,
@@ -79,13 +80,13 @@ export class DrcRulesProvider implements vscode.TreeDataProvider<DrcRulesNode> {
       this.items = [];
       this.state = sidebarState(
         'empty',
-        'No DRC rules file',
-        'Create or open a .kicad_dru file',
-        'Add a KiCad design-rules file to this workspace, then refresh this view to inspect custom rule constraints.',
+        localize('drcRulesNoFileLabel'),
+        localize('drcRulesNoFileDescription'),
+        localize('drcRulesNoFileDetail'),
         'new-file',
         {
           command: COMMANDS.createDrcRulesFile,
-          title: 'Create or Open DRC Rules'
+          title: localize('drcRulesCreateOrOpenCommand')
         }
       );
       return;
@@ -100,17 +101,17 @@ export class DrcRulesProvider implements vscode.TreeDataProvider<DrcRulesNode> {
         ? undefined
         : sidebarState(
             'empty',
-            'No custom rules found',
-            'Add rules to .kicad_dru',
-            'The workspace has a .kicad_dru file, but no readable KiCad rule blocks were found.',
+            localize('drcRulesNoCustomRulesLabel'),
+            localize('drcRulesNoCustomRulesDescription'),
+            localize('drcRulesNoCustomRulesDetail'),
             'symbol-rule'
           );
     } catch (error) {
       this.items = [];
       this.state = sidebarState(
         'error',
-        'DRC rules could not load',
-        'Fix rule syntax and refresh',
+        localize('drcRulesLoadErrorLabel'),
+        localize('drcRulesLoadErrorDescription'),
         error instanceof Error ? error.message : String(error),
         'error'
       );

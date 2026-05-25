@@ -9,6 +9,7 @@ import type {
 } from '../types';
 import type { QualityGateMcpAdapter } from '../mcp/mcpToolAdapter';
 import type { McpStateStore } from '../state/stateStores';
+import { localize } from '../i18n';
 
 type QualityGateElement =
   | {
@@ -86,7 +87,7 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
     item.iconPath = new vscode.ThemeIcon(iconForStatus(gate.status));
     item.command = {
       command: COMMANDS.qualityGateRunThis,
-      title: 'Run This Quality Gate',
+      title: localize('qualityGateRunThis'),
       arguments: [gate]
     };
     return item;
@@ -251,17 +252,17 @@ function pendingGate(id: string, label: string): QualityGateResult {
 function pendingGateSummary(id: string): string {
   switch (id) {
     case 'schematic':
-      return 'Run schematic checks';
+      return localize('qualityGatePendingSchematic');
     case 'connectivity':
-      return 'Run connectivity checks';
+      return localize('qualityGatePendingConnectivity');
     case 'placement':
-      return 'Run placement checks';
+      return localize('qualityGatePendingPlacement');
     case 'transfer':
-      return 'Run PCB transfer checks';
+      return localize('qualityGatePendingTransfer');
     case 'manufacturing':
-      return 'Run manufacturing checks';
+      return localize('qualityGatePendingManufacturing');
     default:
-      return 'Run this quality gate';
+      return localize('qualityGatePendingDefault');
   }
 }
 
@@ -292,7 +293,8 @@ function supportsHttpQualityGates(state: McpConnectionState): boolean {
 
 function descriptionForGate(gate: QualityGateResult): string {
   const runText = gate.lastRun ? ` - ${formatTimestamp(gate.lastRun)}` : '';
-  const status = gate.status === 'PENDING' ? 'Ready' : gate.status;
+  const status =
+    gate.status === 'PENDING' ? localize('qualityGateReady') : gate.status;
   return `${status} - ${gate.summary}${runText}`;
 }
 
@@ -307,8 +309,8 @@ function tooltipForGate(gate: QualityGateResult): string {
       ? `${gate.violations.length} violation(s). Expand for details.`
       : 'No violation rows cached for this gate.',
     gate.status === 'PENDING'
-      ? 'Click to run this gate when the project is ready.'
-      : 'Click to rerun this gate.'
+      ? localize('qualityGateClickRunWhenReady')
+      : localize('qualityGateClickRerun')
   ];
   if (gate.raw) {
     lines.push('', gate.raw);

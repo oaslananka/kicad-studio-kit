@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { COMMANDS } from '../constants';
+import { localize } from '../i18n';
 import {
   PCM_PACKAGE_KINDS,
   PcmPackage,
@@ -109,13 +110,13 @@ export class PcmLibraryProvider
       return [
         sidebarState(
           'empty',
-          'No PCM libraries indexed',
-          'Refresh PCM repositories',
-          'No KiCad Package and Content Manager packages are indexed yet. Refresh repositories or check the PCM repository settings.',
+          localize('pcmNoLibrariesLabel'),
+          localize('pcmNoLibrariesDescription'),
+          localize('pcmNoLibrariesDetail'),
           'library',
           {
             command: COMMANDS.refreshPcmLibraries,
-            title: 'Refresh PCM Repositories'
+            title: localize('pcmRefreshRepositoriesCommand')
           }
         )
       ];

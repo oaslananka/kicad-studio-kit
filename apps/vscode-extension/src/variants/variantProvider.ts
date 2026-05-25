@@ -9,6 +9,7 @@ import type {
 import { findFirstWorkspaceFile } from '../utils/pathUtils';
 import type { VariantMcpAdapter } from '../mcp/mcpToolAdapter';
 import { createNonce } from '../utils/nonce';
+import { localize } from '../i18n';
 import { localizeWebviewMessage, webviewLocale } from '../webviewI18n';
 import {
   isSidebarWorkflowState,
@@ -111,9 +112,9 @@ export class VariantProvider implements vscode.TreeDataProvider<VariantTreeNode>
       return [
         sidebarState(
           'empty',
-          'No KiCad project file',
-          'Open a .kicad_pro project',
-          'Variants are stored in the KiCad project file. Open or add a .kicad_pro file before creating assembly variants.',
+          localize('variantNoProjectLabel'),
+          localize('variantNoProjectDescription'),
+          localize('variantNoProjectDetail'),
           'repo'
         )
       ];
@@ -122,13 +123,13 @@ export class VariantProvider implements vscode.TreeDataProvider<VariantTreeNode>
       return [
         sidebarState(
           'empty',
-          'No variants configured',
-          'Create assembly variant',
-          'This project does not define assembly variants yet. Create a named variant before comparing BOM outputs.',
+          localize('variantNoVariantsLabel'),
+          localize('variantNoVariantsDescription'),
+          localize('variantNoVariantsDetail'),
           'symbol-namespace',
           {
             command: COMMANDS.createVariant,
-            title: 'Create Assembly Variant'
+            title: localize('variantCreateCommand')
           }
         )
       ];

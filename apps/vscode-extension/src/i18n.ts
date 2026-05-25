@@ -11,6 +11,7 @@ export const SOURCE_MESSAGES = {
   restart: 'Restart',
   later: 'Later',
   diagnosticPendingNoCachedResult: 'PENDING - no cached result',
+  diagnosticPendingRunAction: 'Not run - Run {label}',
   diagnosticSummary: '{status} - {errors} errors, {warnings} warnings',
   diagnosticNotRun: '{label} has not been run yet.',
   diagnosticStatusTooltip: '{label}: {status}',
@@ -18,6 +19,59 @@ export const SOURCE_MESSAGES = {
   diagnosticWarnings: '{count} warnings',
   diagnosticInfos: '{count} info',
   runValidation: 'Run {label}',
+  qualityGateRunThis: 'Run This Quality Gate',
+  qualityGateReady: 'Ready',
+  qualityGatePendingSchematic: 'Run schematic checks',
+  qualityGatePendingConnectivity: 'Run connectivity checks',
+  qualityGatePendingPlacement: 'Run placement checks',
+  qualityGatePendingTransfer: 'Run PCB transfer checks',
+  qualityGatePendingManufacturing: 'Run manufacturing checks',
+  qualityGatePendingDefault: 'Run this quality gate',
+  qualityGateClickRunWhenReady:
+    'Click to run this gate when the project is ready.',
+  qualityGateClickRerun: 'Click to rerun this gate.',
+  drcRulesNoFileLabel: 'No DRC rules file',
+  drcRulesNoFileDescription: 'Create or open a .kicad_dru file',
+  drcRulesNoFileDetail:
+    'Add a KiCad design-rules file to this workspace, then refresh this view to inspect custom rule constraints.',
+  drcRulesCreateOrOpenCommand: 'Create or Open DRC Rules',
+  drcRulesNoCustomRulesLabel: 'No custom rules found',
+  drcRulesNoCustomRulesDescription: 'Add rules to .kicad_dru',
+  drcRulesNoCustomRulesDetail:
+    'The workspace has a .kicad_dru file, but no readable KiCad rule blocks were found.',
+  drcRulesLoadErrorLabel: 'DRC rules could not load',
+  drcRulesLoadErrorDescription: 'Fix rule syntax and refresh',
+  fixQueueUnavailableLabel: 'Fix Queue unavailable',
+  fixQueueUnavailableDescription: 'Use HTTP MCP transport',
+  fixQueueSetupMcpCommand: 'Setup MCP Integration',
+  fixQueueEmptyLabel: 'No pending AI fixes',
+  fixQueueEmptyDescription: 'Run DRC/ERC or refresh MCP',
+  fixQueueEmptyDetail:
+    'No queued fixes are available for the active project. Run validation or refresh MCP capabilities to populate suggested repairs.',
+  fixQueueRefreshCommand: 'Refresh MCP Fix Queue',
+  fixQueueRefreshErrorLabel: 'Fix Queue could not refresh',
+  fixQueueRefreshErrorDescription: 'Retry MCP connection',
+  fixQueueRetryCommand: 'Retry MCP Connection',
+  fixQueueBlockStdio:
+    'Fix Queue needs the HTTP MCP transport; VS Code stdio cannot serve queued repair actions.',
+  fixQueueBlockIncompatible:
+    'Upgrade kicad-mcp-pro before loading AI repair actions.',
+  fixQueueBlockDefault:
+    'Connect kicad-mcp-pro over HTTP before loading AI repair actions.',
+  pcmNoLibrariesLabel: 'No PCM libraries indexed',
+  pcmNoLibrariesDescription: 'Refresh PCM repositories',
+  pcmNoLibrariesDetail:
+    'No KiCad Package and Content Manager packages are indexed yet. Refresh repositories or check the PCM repository settings.',
+  pcmRefreshRepositoriesCommand: 'Refresh PCM Repositories',
+  variantNoProjectLabel: 'No KiCad project file',
+  variantNoProjectDescription: 'Open a .kicad_pro project',
+  variantNoProjectDetail:
+    'Variants are stored in the KiCad project file. Open or add a .kicad_pro file before creating assembly variants.',
+  variantNoVariantsLabel: 'No variants configured',
+  variantNoVariantsDescription: 'Create assembly variant',
+  variantNoVariantsDetail:
+    'This project does not define assembly variants yet. Create a named variant before comparing BOM outputs.',
+  variantCreateCommand: 'Create Assembly Variant',
   settingsMigrationFailed:
     'KiCad Studio settings migration failed. Existing settings were left at the last successful schema version; check the KiCad Studio output for details.',
   settingsMigrationUpdatedDeprecatedSettings:

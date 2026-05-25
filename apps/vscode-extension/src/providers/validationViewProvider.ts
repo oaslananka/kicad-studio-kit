@@ -56,7 +56,7 @@ export class ValidationViewProvider
 function describe(row: ValidationRow): string {
   const { summary } = row;
   if (!summary) {
-    return `Not run - Run ${row.label}`;
+    return localize('diagnosticPendingRunAction', { label: row.label });
   }
   return localize('diagnosticSummary', {
     status: statusFor(summary),
