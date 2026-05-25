@@ -152,7 +152,7 @@ test.describe('KiCad Studio webview DOM', () => {
 
     await page.locator('#reference-search').focus();
     await page.keyboard.press('r');
-    await expect.poll(() => countMessages(page, 'requestRefresh')).toBe(0);
+    await expect(await countMessages(page, 'requestRefresh')).toBe(0);
 
     await page.locator('#reload-btn').focus();
     await expect(page.locator('#reload-btn')).toBeFocused();
