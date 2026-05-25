@@ -105,9 +105,7 @@ export function createKiCanvasViewerHtml(
       <button class="btn icon-btn" id="zoom-in-btn" type="button" aria-label="Zoom in viewer">+</button>
       <label class="toolbar-field sheet-field" for="sheet-select">
         <span>Sheet</span>
-        <select id="sheet-select" aria-label="Sheet selector">
-          <option value="root">${options.fileType === 'board' ? 'Board' : 'Root sheet'}</option>
-        </select>
+        <select id="sheet-select" aria-label="Sheet selector"></select>
       </label>
       <button class="btn compact-btn" id="grid-toggle" type="button" aria-pressed="false">Grid</button>
       <button class="btn compact-btn" id="theme-toggle" type="button" aria-pressed="${themeName === 'light' ? 'true' : 'false'}">${themeName === 'light' ? 'Light' : 'Dark'}</button>
@@ -230,6 +228,7 @@ export function createKiCanvasViewerHtml(
     const fitBtn = document.getElementById('fit-btn');
     const zoomInBtn = document.getElementById('zoom-in-btn');
     const zoomOutBtn = document.getElementById('zoom-out-btn');
+    const exportMenuEl = document.getElementById('export-menu');
     const exportPngBtn = document.getElementById('export-png-btn');
     const exportSvgBtn = document.getElementById('export-svg-btn');
     const sidePanelToggleBtn = document.getElementById('side-panel-toggle');
@@ -312,14 +311,21 @@ export function createKiCanvasViewerHtml(
     document.getElementById('open-kicad-btn').addEventListener('click', openInKiCad);
     document.getElementById('error-reload-btn').addEventListener('click', () => initViewer());
     document.getElementById('error-open-btn').addEventListener('click', openInKiCad);
-    document.getElementById('export-png-btn').addEventListener('click', exportPng);
-    document.getElementById('export-svg-btn').addEventListener('click', exportSvg);
+    exportPngBtn.addEventListener('click', () => {
+      closeExportMenu();
+      exportPng();
+    });
+    exportSvgBtn.addEventListener('click', () => {
+      closeExportMenu();
+      exportSvg();
+    });
     fitBtn.addEventListener('click', fitCurrentViewer);
     zoomInBtn.addEventListener('click', () => zoomCurrentViewer(1));
     zoomOutBtn.addEventListener('click', () => zoomCurrentViewer(-1));
     sidePanelToggleBtn.addEventListener('click', () => setToolsPanelCollapsed(!localState.toolsPanelCollapsed));
     sheetSelectEl.addEventListener('change', () => {
       localState = { ...localState, selectedSheet: sheetSelectEl.value };
+      applyViewerSelectionState(viewerMount.querySelector('kicanvas-embed'));
       postViewerState();
     });
     gridToggleBtn.addEventListener('click', () => {
@@ -333,7 +339,12 @@ export function createKiCanvasViewerHtml(
       payload.theme = nextTheme;
       localState = { ...localState, theme: nextTheme };
       const viewer = viewerMount.querySelector('kicanvas-embed');
-      viewer?.setAttribute('theme', nextTheme);
+      if (viewer) {
+        viewer.setAttribute('theme', nextTheme);
+      } else {
+        payload.fallbackBackground = '';
+        updateFallbackTheme();
+      }
       updateThemeToggle();
       postViewerState();
     });
@@ -347,6 +358,7 @@ export function createKiCanvasViewerHtml(
     allLayersBtn?.addEventListener('click', () => setAllLayers(true));
     noneLayersBtn?.addEventListener('click', () => setAllLayers(false));
     copperLayersBtn?.addEventListener('click', () => setCopperOnly());
+    populateSheetSelect();
     renderSidebar();
     updateEngineUi(localState.engine);
     applyToolsPanelCollapsed(localState.toolsPanelCollapsed);
@@ -368,11 +380,14 @@ export function createKiCanvasViewerHtml(
               : payload.fallbackBackground;
           payload.restoreState   = msg.payload.restoreState || payload.restoreState;
           payload.engine         = msg.payload.engine || payload.engine;
+          payload.metadata       = msg.payload.metadata || undefined;
           localState             = {
             ...localState,
+            theme: payload.theme || localState.theme,
             ...(payload.restoreState || {}),
             engine: payload.engine || localState.engine
           };
+          populateSheetSelect();
           applyToolsPanelCollapsed(localState.toolsPanelCollapsed);
           updateZoomLevel();
           updateGridToggle();
@@ -389,6 +404,7 @@ export function createKiCanvasViewerHtml(
         payload.restoreState = msg.payload?.restoreState || payload.restoreState;
         localState = {
           ...localState,
+          theme: payload.theme || localState.theme,
           ...(payload.restoreState || {})
         };
         applyToolsPanelCollapsed(localState.toolsPanelCollapsed);
@@ -399,6 +415,8 @@ export function createKiCanvasViewerHtml(
       }
       if (msg.type === 'setMetadata') {
         payload.metadata = msg.payload || payload.metadata;
+        populateSheetSelect();
+        applyViewerSelectionState(viewerMount.querySelector('kicanvas-embed'));
         renderSidebar();
         renderHopOverOverlay();
       }
@@ -916,6 +934,46 @@ export function createKiCanvasViewerHtml(
       sidePanelToggleBtn.title = collapsed ? t('Show viewer side panel') : t('Hide viewer side panel');
     }
 
+    function closeExportMenu() {
+      if (exportMenuEl) {
+        exportMenuEl.open = false;
+      }
+    }
+
+    function populateSheetSelect() {
+      if (!sheetSelectEl) {
+        return;
+      }
+      const metadataSheets = payload.metadata?.sheets || [];
+      const sheets = Array.isArray(metadataSheets) ? metadataSheets : [];
+      const rootLabel = payload.fileType === 'board' ? t('Board') : t('Root sheet');
+      const options = [
+        { id: 'root', name: rootLabel },
+        ...sheets
+          .map((sheet) => ({
+            id: String(sheet?.id || sheet?.file || sheet?.name || ''),
+            name: String(sheet?.name || sheet?.file || sheet?.id || '')
+          }))
+          .filter((sheet) => sheet.id && sheet.name)
+      ];
+      const currentSheet = localState.selectedSheet || 'root';
+      const values = new Set(options.map((sheet) => sheet.id));
+      sheetSelectEl.replaceChildren(
+        ...options.map((sheet) => {
+          const option = document.createElement('option');
+          option.value = sheet.id;
+          option.textContent = sheet.name;
+          return option;
+        })
+      );
+      if (values.has(currentSheet)) {
+        sheetSelectEl.value = currentSheet;
+        return;
+      }
+      localState = { ...localState, selectedSheet: 'root' };
+      sheetSelectEl.value = 'root';
+    }
+
     function updateZoomLevel() {
       if (!zoomLevelEl) {
         return;
@@ -926,16 +984,26 @@ export function createKiCanvasViewerHtml(
     }
 
     function updateGridToggle() {
-      document.body.classList.toggle('grid-visible', Boolean(localState.grid));
+      const viewer = viewerMount.querySelector('kicanvas-embed');
+      document.body.classList.toggle('grid-visible', Boolean(localState.grid) && !viewer);
       gridToggleBtn.setAttribute('aria-pressed', localState.grid ? 'true' : 'false');
       gridToggleBtn.classList.toggle('is-active', Boolean(localState.grid));
+      applyViewerGridState(viewer);
     }
 
     function updateThemeToggle() {
       const light = localState.theme === 'light';
+      document.body.dataset.viewerTheme = light ? 'light' : 'kicad';
       themeToggleBtn.setAttribute('aria-pressed', light ? 'true' : 'false');
       themeToggleBtn.classList.toggle('is-active', light);
       themeToggleBtn.textContent = light ? t('Light') : t('Dark');
+    }
+
+    function updateFallbackTheme() {
+      if (!fallbackSvgWrapper || !fallbackSvgElement) {
+        return;
+      }
+      applyFallbackPresentation(fallbackSvgWrapper, fallbackSvgElement);
     }
 
     function selectReferenceFromSearch() {
@@ -947,8 +1015,45 @@ export function createKiCanvasViewerHtml(
         ...localState,
         selectedReference: reference
       };
+      applyViewerSelectionState(viewerMount.querySelector('kicanvas-embed'));
       postViewerState();
       vscode.postMessage({ type: 'componentSelected', payload: { reference } });
+    }
+
+    function applyViewerSelectionState(viewer) {
+      if (!viewer) {
+        return;
+      }
+      const selectedSheet = String(localState.selectedSheet || 'root');
+      if (selectedSheet && selectedSheet !== 'root') {
+        viewer.setAttribute('sheet', selectedSheet);
+      } else {
+        viewer.removeAttribute('sheet');
+      }
+      const reference = String(localState.selectedReference || '').trim();
+      if (reference) {
+        viewer.setAttribute('selected-reference', reference);
+      } else {
+        viewer.removeAttribute('selected-reference');
+      }
+      try {
+        if (reference) {
+          viewer.viewer?.select?.(reference);
+        }
+      } catch {}
+    }
+
+    function applyViewerGridState(viewer) {
+      if (!viewer) {
+        return;
+      }
+      if (localState.grid) {
+        viewer.setAttribute('show-grid', 'true');
+        viewer.setAttribute('grid', 'true');
+      } else {
+        viewer.removeAttribute('show-grid');
+        viewer.removeAttribute('grid');
+      }
     }
 
     function createEngineState(kind, reason) {
@@ -1006,18 +1111,19 @@ export function createKiCanvasViewerHtml(
     }
 
     function applyViewerState(viewer) {
-      if (!payload.restoreState) {
-        postViewerState();
-        return;
+      if (payload.restoreState) {
+        localState = {
+          ...payload.restoreState,
+          engine: localState.engine || payload.restoreState.engine
+        };
       }
-      viewer.setAttribute('theme', payload.restoreState.theme || payload.theme || 'kicad');
-      localState = {
-        ...payload.restoreState,
-        engine: localState.engine || payload.restoreState.engine
-      };
+      viewer.setAttribute('theme', localState.theme || payload.theme || 'kicad');
+      populateSheetSelect();
       if (sheetSelectEl && localState.selectedSheet) {
         sheetSelectEl.value = localState.selectedSheet;
       }
+      applyViewerSelectionState(viewer);
+      applyViewerGridState(viewer);
       applyToolsPanelCollapsed(localState.toolsPanelCollapsed);
       updateZoomLevel();
       updateGridToggle();
@@ -1406,7 +1512,7 @@ export function createKiCanvasViewerHtml(
         return getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#001023';
       }
 
-      if (payload.theme === 'light') {
+      if (localState.theme === 'light') {
         return '#f8fafc';
       }
 
@@ -1755,9 +1861,22 @@ export function createKiCanvasViewerHtml(
       }
     }
 
+    function isEditableShortcutTarget(target) {
+      if (!(target instanceof Element)) {
+        return false;
+      }
+      return Boolean(
+        target.closest('input, select, textarea, [contenteditable="true"], [role="textbox"]') ||
+          target.closest('[contenteditable]')?.isContentEditable
+      );
+    }
+
     function installKeyboardShortcuts(viewer) {
       clearKeyboardShortcuts();
       keydownHandler = (ev) => {
+        if (isEditableShortcutTarget(ev.target)) {
+          return;
+        }
         if (ev.key === 'f' || ev.key === 'F') {
           viewer.fitToScreen?.();
           localState = { ...localState, zoom: 1 };

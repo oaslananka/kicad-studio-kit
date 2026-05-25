@@ -504,13 +504,23 @@ export abstract class BaseKiCanvasEditorProvider
   private async persistWorkspaceViewerPreferences(
     state: ViewerState
   ): Promise<void> {
+    const workspaceState = this.context.workspaceState;
     if (
       typeof state.toolsPanelCollapsed !== 'boolean' ||
-      !this.context.workspaceState?.update
+      !workspaceState?.update
     ) {
       return;
     }
-    await this.context.workspaceState.update(
+    const current = workspaceState.get<boolean>(
+      VIEWER_TOOLS_PANEL_COLLAPSED_KEY
+    );
+    if (current === state.toolsPanelCollapsed) {
+      return;
+    }
+    if (typeof current === 'undefined' && state.toolsPanelCollapsed === true) {
+      return;
+    }
+    await workspaceState.update(
       VIEWER_TOOLS_PANEL_COLLAPSED_KEY,
       state.toolsPanelCollapsed
     );

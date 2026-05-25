@@ -522,6 +522,39 @@ describe.each([
     ]);
   });
 
+  it('extracts hierarchical schematic sheets into viewer metadata', () => {
+    if (extension !== '.kicad_sch') {
+      return;
+    }
+
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext) as unknown as SchematicEditorProvider;
+    const metadata = (provider as any).buildViewerMetadata(
+      vscode.Uri.file(tempFile),
+      `(kicad_sch
+        (version 20250316)
+        (sheet
+          (at 40.64 50.8)
+          (size 20.32 15.24)
+          (uuid "60000000-0000-0000-0000-000000000002")
+          (property "Sheetname" "Power" (at 40.64 48.26 0))
+          (property "Sheetfile" "power.kicad_sch" (at 40.64 66.04 0))
+        )
+      )`
+    ) as {
+      sheets?: Array<{ id: string; name: string; file?: string | undefined }>;
+    };
+
+    expect(metadata.sheets).toEqual([
+      {
+        id: 'power.kicad_sch',
+        name: 'Power',
+        file: 'power.kicad_sch'
+      }
+    ]);
+  });
+
   it('passes the active KiCad board background color into the fallback payload', async () => {
     if (extension !== '.kicad_pcb') {
       return;
@@ -628,6 +661,48 @@ describe.each([
       'kicadstudio.viewer.toolsPanelCollapsed',
       false
     );
+    expect(viewerState.getState(document.uri)).toEqual(
+      expect.objectContaining({
+        toolsPanelCollapsed: false
+      })
+    );
+  });
+
+  it('skips redundant OASLANA-18 workspace preference writes when collapsed state is unchanged', async () => {
+    const context = createExtensionContextMock();
+    await context.workspaceState.update(
+      'kicadstudio.viewer.toolsPanelCollapsed',
+      false
+    );
+    (context.workspaceState.update as jest.Mock).mockClear();
+    const viewerState = new ViewerStateStore();
+    const provider = new (ContextProvider as never as {
+      new (
+        context: vscode.ExtensionContext,
+        svgFallbackProvider: undefined,
+        viewerState: ViewerStateStore
+      ): InstanceType<typeof ContextProvider>;
+    })(context as unknown as vscode.ExtensionContext, undefined, viewerState);
+    const panel = createPanel();
+    const document = {
+      uri: vscode.Uri.file(tempFile)
+    } as vscode.CustomDocument;
+
+    await provider.resolveCustomEditor(
+      document,
+      panel as unknown as vscode.WebviewPanel
+    );
+    await panel.fireMessage({
+      type: 'viewerState',
+      payload: {
+        zoom: 1.25,
+        grid: true,
+        theme: 'light',
+        toolsPanelCollapsed: false
+      }
+    });
+
+    expect(context.workspaceState.update).not.toHaveBeenCalled();
     expect(viewerState.getState(document.uri)).toEqual(
       expect.objectContaining({
         toolsPanelCollapsed: false

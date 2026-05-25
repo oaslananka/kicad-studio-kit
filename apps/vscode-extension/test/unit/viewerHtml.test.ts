@@ -277,6 +277,9 @@ describe('createKiCanvasViewerHtml', () => {
     expect(html).toContain('id="theme-toggle"');
     expect(html).toContain('id="reference-search"');
     expect(html).toContain('id="export-menu"');
+    expect(html).toContain('const exportMenuEl = document.getElementById');
+    expect(html).toContain('function populateSheetSelect()');
+    expect(html).toContain('payload.metadata?.sheets || []');
     expect(html).toContain('toolsPanelCollapsed: true');
     expect(html).toContain(
       'applyToolsPanelCollapsed(localState.toolsPanelCollapsed);'
@@ -301,9 +304,20 @@ describe('createKiCanvasViewerHtml', () => {
     expect(html).toContain('function setToolsPanelCollapsed(collapsed)');
     expect(html).toContain("sidePanelToggleBtn.addEventListener('click'");
     expect(html).toContain('localState = { ...localState, grid: nextGrid };');
+    expect(html).toContain('applyViewerGridState(');
     expect(html).toContain('localState = { ...localState, theme: nextTheme };');
+    expect(html).toContain('updateFallbackTheme();');
     expect(html).toContain('selectedReference: reference');
+    expect(html).toContain('applyViewerSelectionState(');
+    expect(html).toContain(
+      "viewer.setAttribute('selected-reference', reference);"
+    );
+    expect(html).toContain("viewer.setAttribute('sheet', selectedSheet);");
     expect(html).toContain('postViewerState();');
+    expect(html).toContain('function closeExportMenu()');
+    expect(html).toContain('closeExportMenu();');
+    expect(html).toContain('function isEditableShortcutTarget(target)');
+    expect(html).toContain('if (isEditableShortcutTarget(ev.target))');
     expect(html).toContain("vscode.postMessage({ type: 'componentSelected'");
   });
 
