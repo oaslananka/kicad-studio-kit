@@ -159,6 +159,16 @@ export async function activate(
     diagnosticsCollection
   );
   const checkService = new KiCadCheckService(cliRunner, parser, logger);
+  const markViewerDiagnosticsStale = (
+    resource: vscode.Uri,
+    project: ProjectContext | undefined
+  ): void => {
+    diagnosticState.markStaleForResource(
+      resource,
+      'Viewer reloaded after source file changed.',
+      { project }
+    );
+  };
   const treeProvider = new KiCadProjectTreeProvider();
   const validationViewProvider = new ValidationViewProvider(diagnosticState);
   const bomViewProvider = new BomViewProvider(context, parser, exportState);
@@ -173,13 +183,15 @@ export async function activate(
     context,
     async (resource) => exportService.renderViewerSvg(resource),
     viewerState,
-    (resource) => projectState.findProjectForResource(resource)
+    (resource) => projectState.findProjectForResource(resource),
+    markViewerDiagnosticsStale
   );
   const pcbEditorProvider = new PcbEditorProvider(
     context,
     async (resource) => exportService.renderViewerSvg(resource),
     viewerState,
-    (resource) => projectState.findProjectForResource(resource)
+    (resource) => projectState.findProjectForResource(resource),
+    markViewerDiagnosticsStale
   );
   const gitDiffDetector = new GitDiffDetector(parser);
   const diffEditorProvider = new DiffEditorProvider(context, gitDiffDetector);
@@ -694,6 +706,14 @@ export async function activate(
         await vscode.commands.executeCommand('workbench.actions.view.problems');
       }
     } catch (error) {
+      diagnosticState.recordValidationFailure(
+        shouldRunDrc ? 'drc' : 'erc',
+        vscode.Uri.file(document.fileName),
+        error,
+        {
+          project: projectState.findProjectForResource(document.fileName)
+        }
+      );
       logger.error('Auto DRC/ERC on save failed', error);
       void vscode.window.showErrorMessage(
         error instanceof Error

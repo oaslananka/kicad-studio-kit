@@ -62,20 +62,125 @@ describe('extension state stores', () => {
     expect(store.getSnapshot()).toMatchObject({
       drc: {
         file: boardUri.fsPath,
-        errors: 0
+        errors: 0,
+        freshness: 'fresh-clean',
+        origin: 'kicad-cli'
       },
       erc: undefined
     });
     expect(store.getLatestDrcRun()).toEqual({
       file: boardUri.fsPath,
       diagnostics: [],
-      summary: expect.objectContaining({ errors: 0, source: 'drc' })
+      summary: expect.objectContaining({
+        errors: 0,
+        source: 'drc',
+        freshness: 'fresh-clean',
+        origin: 'kicad-cli'
+      })
     });
     expect(store.getDiagnosticBundleSnapshot()).toEqual({
-      drc: expect.objectContaining({ errors: 0, source: 'drc' }),
+      drc: expect.objectContaining({
+        errors: 0,
+        source: 'drc',
+        freshness: 'fresh-clean',
+        origin: 'kicad-cli'
+      }),
       erc: undefined,
       activeProjectId: undefined,
       projects: []
+    });
+  });
+
+  it('marks dirty validation results as fresh-dirty', () => {
+    const collection = createDiagnosticsCollection();
+    const store = new DiagnosticStateStore(collection);
+    const boardUri = vscode.Uri.file('/workspace/demo.kicad_pcb');
+    const violation = createDiagnostic('Clearance violation');
+
+    store.applyValidationResult(boardUri, [violation], {
+      file: boardUri.fsPath,
+      errors: 1,
+      warnings: 0,
+      infos: 0,
+      source: 'drc'
+    });
+
+    expect(store.getSnapshot().drc).toMatchObject({
+      errors: 1,
+      freshness: 'fresh-dirty',
+      origin: 'kicad-cli'
+    });
+  });
+
+  it('records failed validation without replacing the last known good Problems entries', () => {
+    const collection = createDiagnosticsCollection();
+    const store = new DiagnosticStateStore(collection);
+    const boardUri = vscode.Uri.file('/workspace/demo.kicad_pcb');
+
+    store.applyValidationResult(boardUri, [], {
+      file: boardUri.fsPath,
+      errors: 0,
+      warnings: 0,
+      infos: 0,
+      source: 'drc',
+      capturedAt: '2026-05-25T08:00:00.000Z'
+    });
+
+    (
+      store as DiagnosticStateStore & {
+        recordValidationFailure(
+          source: 'drc' | 'erc',
+          uri: vscode.Uri,
+          error: unknown,
+          options?: { projectId?: string }
+        ): void;
+      }
+    ).recordValidationFailure(
+      'drc',
+      boardUri,
+      new Error('kicad-cli exited with code 1')
+    );
+
+    expect(collection.set).toHaveBeenCalledTimes(1);
+    expect(store.getSnapshot().drc).toMatchObject({
+      file: boardUri.fsPath,
+      errors: 0,
+      freshness: 'failed',
+      failureMessage: 'kicad-cli exited with code 1',
+      lastGoodCapturedAt: '2026-05-25T08:00:00.000Z'
+    });
+  });
+
+  it('marks viewer-reloaded validation diagnostics as stale in state and Problems', () => {
+    const collection = createDiagnosticsCollection();
+    const store = new DiagnosticStateStore(collection);
+    const boardUri = vscode.Uri.file('/workspace/demo.kicad_pcb');
+    const violation = createDiagnostic('Clearance violation');
+
+    store.applyValidationResult(boardUri, [violation], {
+      file: boardUri.fsPath,
+      errors: 1,
+      warnings: 0,
+      infos: 0,
+      source: 'drc',
+      capturedAt: '2026-05-25T08:00:00.000Z'
+    });
+
+    store.markStaleForResource(
+      boardUri,
+      'Viewer reloaded after source file changed.'
+    );
+
+    expect(collection.set).toHaveBeenLastCalledWith(boardUri, [
+      expect.objectContaining({
+        message: expect.stringContaining('[stale] Clearance violation'),
+        source: 'kicad-cli:drc:stale'
+      })
+    ]);
+    expect(store.getSnapshot().drc).toMatchObject({
+      freshness: 'stale',
+      staleReason: 'Viewer reloaded after source file changed.',
+      lastGoodCapturedAt: '2026-05-25T08:00:00.000Z'
     });
   });
 
@@ -165,7 +270,8 @@ describe('extension state stores', () => {
       'sk-mcp-secret'
     );
     expect(
-      mcp.getDiagnosticBundleSnapshot().server?.capabilities.serverInfo?.diagnostics
+      mcp.getDiagnosticBundleSnapshot().server?.capabilities.serverInfo
+        ?.diagnostics
     ).toEqual(['password=***']);
     expect(exports.getDiagnosticBundleSnapshot()).toEqual({
       surfaces: [

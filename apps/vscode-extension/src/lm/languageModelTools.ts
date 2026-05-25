@@ -186,22 +186,27 @@ function createRunDrcTool(
         );
       }
 
-      const result = await services.checkService.runDRC(file);
-      applyValidationResult(services, file, result);
-      services.setLatestDrcRun({
-        file,
-        diagnostics: result.diagnostics,
-        summary: result.summary
-      });
-
-      return buildToolResult(
-        `DRC completed for ${path.basename(file)}: ${formatSummary(result.summary)}.`,
-        {
+      try {
+        const result = await services.checkService.runDRC(file);
+        applyValidationResult(services, file, result);
+        services.setLatestDrcRun({
           file,
-          summary: result.summary,
-          diagnostics: result.diagnostics.map(serializeDiagnostic)
-        }
-      );
+          diagnostics: result.diagnostics,
+          summary: result.summary
+        });
+
+        return buildToolResult(
+          `DRC completed for ${path.basename(file)}: ${formatSummary(result.summary)}.`,
+          {
+            file,
+            summary: result.summary,
+            diagnostics: result.diagnostics.map(serializeDiagnostic)
+          }
+        );
+      } catch (error) {
+        recordValidationFailure(services, 'drc', file, error);
+        throw error;
+      }
     }
   };
 }
@@ -227,17 +232,22 @@ function createRunErcTool(
         );
       }
 
-      const result = await services.checkService.runERC(file);
-      applyValidationResult(services, file, result);
+      try {
+        const result = await services.checkService.runERC(file);
+        applyValidationResult(services, file, result);
 
-      return buildToolResult(
-        `ERC completed for ${path.basename(file)}: ${formatSummary(result.summary)}.`,
-        {
-          file,
-          summary: result.summary,
-          diagnostics: result.diagnostics.map(serializeDiagnostic)
-        }
-      );
+        return buildToolResult(
+          `ERC completed for ${path.basename(file)}: ${formatSummary(result.summary)}.`,
+          {
+            file,
+            summary: result.summary,
+            diagnostics: result.diagnostics.map(serializeDiagnostic)
+          }
+        );
+      } catch (error) {
+        recordValidationFailure(services, 'erc', file, error);
+        throw error;
+      }
     }
   };
 }
@@ -263,6 +273,22 @@ function applyValidationResult(
     return;
   }
   services.diagnosticsCollection.set(uri, result.diagnostics);
+}
+
+function recordValidationFailure(
+  services: LanguageModelToolServices,
+  source: 'drc' | 'erc',
+  file: string,
+  error: unknown
+): void {
+  services.diagnosticState?.recordValidationFailure(
+    source,
+    vscode.Uri.file(file),
+    error,
+    {
+      project: services.projectState?.findProjectForResource(file)
+    }
+  );
 }
 
 function createExportGerbersTool(
@@ -626,7 +652,8 @@ function collectProjectFiles(
     currentPath !== rootPath &&
     entries.some(
       (entry) =>
-        entry.isFile() && path.extname(entry.name).toLowerCase() === '.kicad_pro'
+        entry.isFile() &&
+        path.extname(entry.name).toLowerCase() === '.kicad_pro'
     )
   ) {
     return [];
@@ -647,7 +674,10 @@ function collectProjectFiles(
 }
 
 function isWithinDirectory(rootPath: string, filePath: string): boolean {
-  const relative = path.relative(path.resolve(rootPath), path.resolve(filePath));
+  const relative = path.relative(
+    path.resolve(rootPath),
+    path.resolve(filePath)
+  );
   return !relative.startsWith('..') && !path.isAbsolute(relative);
 }
 

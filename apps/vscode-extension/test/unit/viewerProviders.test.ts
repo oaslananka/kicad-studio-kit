@@ -147,6 +147,40 @@ describe.each([
     );
   });
 
+  it('notifies diagnostics when a visible viewer reloads', async () => {
+    const onViewerReload = jest.fn();
+    const provider = new (ContextProvider as never as {
+      new (
+        context: vscode.ExtensionContext,
+        svgFallbackProvider: undefined,
+        viewerState: ViewerStateStore,
+        resolveProject: undefined,
+        onViewerReload: (uri: vscode.Uri) => void
+      ): InstanceType<typeof ContextProvider>;
+    })(
+      {
+        extensionUri: vscode.Uri.file('/extension')
+      } as vscode.ExtensionContext,
+      undefined,
+      new ViewerStateStore(),
+      undefined,
+      onViewerReload
+    );
+    const panel = createPanel();
+    const document = {
+      uri: vscode.Uri.file(tempFile)
+    } as vscode.CustomDocument;
+
+    await provider.resolveCustomEditor(
+      document,
+      panel as unknown as vscode.WebviewPanel
+    );
+
+    await (provider as any).refreshDocument(document.uri);
+
+    expect(onViewerReload).toHaveBeenCalledWith(document.uri, undefined);
+  });
+
   it('keeps hidden viewers out of loading state until refresh becomes visible', async () => {
     const viewerState = new ViewerStateStore();
     const provider = new (ContextProvider as never as {

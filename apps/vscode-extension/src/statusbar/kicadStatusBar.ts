@@ -194,55 +194,11 @@ export class KiCadStatusBar implements vscode.Disposable {
   }
 
   private renderDrc(): void {
-    if (!this.drc) {
-      this.drcItem.hide();
-      this.drcItem.backgroundColor = undefined;
-      return;
-    }
-    this.drcItem.show();
-    if (this.drc.errors > 0) {
-      this.drcItem.text = `$(error) DRC: ${this.drc.errors}`;
-      this.drcItem.tooltip = this.diagnosticTooltip('DRC', this.drc);
-      this.drcItem.backgroundColor = new vscode.ThemeColor(
-        'statusBarItem.errorBackground'
-      );
-    } else if (this.drc.warnings > 0) {
-      this.drcItem.text = `$(warning) DRC: ${this.drc.warnings}`;
-      this.drcItem.tooltip = this.diagnosticTooltip('DRC', this.drc);
-      this.drcItem.backgroundColor = new vscode.ThemeColor(
-        'statusBarItem.warningBackground'
-      );
-    } else {
-      this.drcItem.text = '$(pass) DRC';
-      this.drcItem.tooltip = this.diagnosticTooltip('DRC', this.drc);
-      this.drcItem.backgroundColor = undefined;
-    }
+    this.renderDiagnosticItem(this.drcItem, 'DRC', this.drc);
   }
 
   private renderErc(): void {
-    if (!this.erc) {
-      this.ercItem.hide();
-      this.ercItem.backgroundColor = undefined;
-      return;
-    }
-    this.ercItem.show();
-    if (this.erc.errors > 0) {
-      this.ercItem.text = `$(error) ERC: ${this.erc.errors}`;
-      this.ercItem.tooltip = this.diagnosticTooltip('ERC', this.erc);
-      this.ercItem.backgroundColor = new vscode.ThemeColor(
-        'statusBarItem.errorBackground'
-      );
-    } else if (this.erc.warnings > 0) {
-      this.ercItem.text = `$(warning) ERC: ${this.erc.warnings}`;
-      this.ercItem.tooltip = this.diagnosticTooltip('ERC', this.erc);
-      this.ercItem.backgroundColor = new vscode.ThemeColor(
-        'statusBarItem.warningBackground'
-      );
-    } else {
-      this.ercItem.text = '$(pass) ERC';
-      this.ercItem.tooltip = this.diagnosticTooltip('ERC', this.erc);
-      this.ercItem.backgroundColor = undefined;
-    }
+    this.renderDiagnosticItem(this.ercItem, 'ERC', this.erc);
   }
 
   private renderValidationSeparator(): void {
@@ -384,12 +340,74 @@ export class KiCadStatusBar implements vscode.Disposable {
     label: 'DRC' | 'ERC',
     summary: DiagnosticSummary
   ): string {
-    return [
+    const lines = [
       `${label}: ${summary.errors} error(s), ${summary.warnings} warning(s), ${summary.infos} info.`,
+      `Freshness: ${summary.freshness ?? 'not recorded'}`,
+      `Origin: ${summary.origin ?? 'not recorded'}`,
       `Source: ${summary.file}`,
+      ...(summary.fileUri ? [`URI: ${summary.fileUri}`] : []),
+      ...(summary.projectName || summary.projectId
+        ? [`Project: ${summary.projectName ?? summary.projectId}`]
+        : []),
       `Updated: ${formatTimestamp(summary.capturedAt)}`,
+      ...(summary.kicadVersion ? [`KiCad CLI: ${summary.kicadVersion}`] : []),
+      ...(summary.reportPath ? [`Report: ${summary.reportPath}`] : []),
+      ...(summary.commandArgs?.length
+        ? [`Command: kicad-cli ${summary.commandArgs.join(' ')}`]
+        : []),
+      ...(summary.staleReason ? [`Stale reason: ${summary.staleReason}`] : []),
+      ...(summary.failureMessage ? [`Failure: ${summary.failureMessage}`] : []),
+      ...(summary.lastGoodCapturedAt
+        ? [`Last good result: ${formatTimestamp(summary.lastGoodCapturedAt)}`]
+        : []),
       'Click to re-run and refresh Problems.'
-    ].join('\n');
+    ];
+    return lines.join('\n');
+  }
+
+  private renderDiagnosticItem(
+    item: vscode.StatusBarItem,
+    label: 'DRC' | 'ERC',
+    summary: DiagnosticSummary | undefined
+  ): void {
+    if (!summary) {
+      item.hide();
+      item.backgroundColor = undefined;
+      return;
+    }
+    item.show();
+    item.tooltip = this.diagnosticTooltip(label, summary);
+    if (summary.freshness === 'stale') {
+      item.text = `$(history) ${label} stale`;
+      item.backgroundColor = undefined;
+      return;
+    }
+    if (summary.freshness === 'failed') {
+      item.text = `$(error) ${label} failed`;
+      item.backgroundColor = new vscode.ThemeColor(
+        'statusBarItem.warningBackground'
+      );
+      return;
+    }
+    if (summary.freshness === 'running') {
+      item.text = `$(sync~spin) ${label}`;
+      item.backgroundColor = undefined;
+      return;
+    }
+    if (summary.errors > 0) {
+      item.text = `$(error) ${label}: ${summary.errors}`;
+      item.backgroundColor = new vscode.ThemeColor(
+        'statusBarItem.errorBackground'
+      );
+    } else if (summary.warnings > 0) {
+      item.text = `$(warning) ${label}: ${summary.warnings}`;
+      item.backgroundColor = new vscode.ThemeColor(
+        'statusBarItem.warningBackground'
+      );
+    } else {
+      item.text = `$(pass) ${label}`;
+      item.backgroundColor = undefined;
+    }
   }
 }
 

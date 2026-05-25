@@ -172,6 +172,23 @@ describe('KiCadStatusBar', () => {
       expect(item(1).backgroundColor).toBeUndefined();
       bar.dispose();
     });
+
+    it('does not render stale DRC errors as current failures', () => {
+      const bar = makeBar();
+      const staleDrc = {
+        ...makeDrc({ errors: 5, warnings: 2 }),
+        freshness: 'stale',
+        staleReason: 'Viewer reloaded after source file changed.'
+      } as DiagnosticSummary;
+
+      bar.update({ drc: staleDrc });
+
+      expect(item(1).text).toContain('stale');
+      expect(item(1).text).not.toContain('5');
+      expect(item(1).backgroundColor).toBeUndefined();
+      expect(item(1).tooltip).toContain('Viewer reloaded');
+      bar.dispose();
+    });
   });
 
   describe('ERC item (index 2)', () => {

@@ -4,10 +4,7 @@ import type {
   McpServerInfoContract
 } from '@oaslananka/kicad-protocol-schemas';
 
-export type {
-  McpServerInfoCompatibilityRange,
-  McpServerInfoContract
-};
+export type { McpServerInfoCompatibilityRange, McpServerInfoContract };
 
 export interface FileReference {
   uri: vscode.Uri;
@@ -236,6 +233,21 @@ export interface AIProviderCapabilities {
   supportsStreaming: boolean;
 }
 
+export type DiagnosticFreshness =
+  | 'never-run'
+  | 'running'
+  | 'fresh-clean'
+  | 'fresh-dirty'
+  | 'stale'
+  | 'failed';
+
+export type DiagnosticOrigin =
+  | 'kicad-cli'
+  | 'mcp'
+  | 'cached-report'
+  | 'manual-import'
+  | 'syntax';
+
 export interface DiagnosticSummary {
   file: string;
   errors: number;
@@ -243,6 +255,17 @@ export interface DiagnosticSummary {
   infos: number;
   source: 'drc' | 'erc' | 'syntax';
   capturedAt?: string | undefined;
+  fileUri?: string | undefined;
+  projectId?: string | undefined;
+  projectName?: string | undefined;
+  freshness?: DiagnosticFreshness | undefined;
+  origin?: DiagnosticOrigin | undefined;
+  kicadVersion?: string | undefined;
+  reportPath?: string | undefined;
+  commandArgs?: string[] | undefined;
+  staleReason?: string | undefined;
+  failureMessage?: string | undefined;
+  lastGoodCapturedAt?: string | undefined;
 }
 
 export interface ProjectContext {
