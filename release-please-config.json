@@ -70,7 +70,7 @@
     },
     "packages/mcp-npm": {
       "release-type": "node",
-      "package-name": "@oaslananka/kicad-mcp-pro",
+      "package-name": "kicad-mcp-pro",
       "component": "mcp-npm",
       "changelog-path": "CHANGELOG.md"
     }

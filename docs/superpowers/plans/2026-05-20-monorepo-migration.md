@@ -13,6 +13,7 @@
 ### Task 1: Build Target Topology
 
 **Files:**
+
 - Create directories: `apps/vscode-extension`, `packages/mcp-server`, `packages/mcp-npm`, `docs`, `scripts`, `.github/workflows`
 - Move/copy source: `kicad-studio-ide/*` to `apps/vscode-extension/*`
 - Move/copy source: `kicad-studio-mcp/*` to `packages/mcp-server/*`
@@ -25,6 +26,7 @@
 ### Task 2: Patch Root Workspace
 
 **Files:**
+
 - Create/modify: `package.json`, `pnpm-workspace.yaml`, `.node-version`, `.nvmrc`, `.python-version`, `.npmrc`, `uv.toml`, `.gitignore`, `.gitattributes`
 - Create/modify: `README.md`, `CHANGELOG.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`
 - Create/modify: `.release-please-manifest.json`, `release-please-config.json`, `renovate.json`, `Taskfile.yml`
@@ -36,6 +38,7 @@
 ### Task 3: Patch Package Metadata
 
 **Files:**
+
 - Modify: `apps/vscode-extension/package.json`
 - Modify: `packages/mcp-server/pyproject.toml`
 - Modify: `packages/mcp-server/src/kicad_mcp/__init__.py`
@@ -46,11 +49,12 @@
 
 - [ ] Set every package version to `1.0.0`.
 - [ ] Set repository, homepage, bugs, docs, and MCP identity fields to `oaslananka/kicad-studio-kit`.
-- [ ] Preserve public package identities: `kicadstudio`, `kicad-mcp-pro`, `@oaslananka/kicad-mcp-pro`, and `io.github.oaslananka/kicad-mcp-pro`.
+- [ ] Preserve public package identities: `kicadstudio`, `kicad-mcp-pro`, and `io.github.oaslananka/kicad-mcp-pro`.
 
 ### Task 4: Replace CI and Publish Workflows
 
 **Files:**
+
 - Create/modify: `.github/workflows/ci.yml`
 - Create/modify: `.github/workflows/release-please.yml`
 - Create/modify: `.github/workflows/publish-extension.yml`
@@ -73,6 +77,7 @@
 ### Task 5: Add Validation Scripts and Docs
 
 **Files:**
+
 - Create: `scripts/check-no-forbidden-refs.mjs`
 - Create: `scripts/check-version-consistency.mjs`
 - Create: `scripts/check-publish-preflight.mjs`
@@ -86,6 +91,7 @@
 ### Task 6: Validate and Report
 
 **Commands:**
+
 - `corepack pnpm install --frozen-lockfile`
 - `uv sync --all-extras --frozen --project packages/mcp-server`
 - `corepack pnpm run check:forbidden-refs`

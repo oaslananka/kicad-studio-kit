@@ -138,7 +138,8 @@ def _runner_check() -> CheckResult:
             normalized = tuple(str(value).strip().strip("'\"") for value in values)
             if "self-hosted" in normalized:
                 hits.append(
-                    f"{path.relative_to(REPO_ROOT)} job {job_name}: self-hosted runner is not allowed"
+                    f"{path.relative_to(REPO_ROOT)} job {job_name}: "
+                    "self-hosted runner is not allowed"
                 )
     if hits:
         return CheckResult("runner regression", "FAIL", "; ".join(hits))
@@ -284,7 +285,7 @@ def _readme_check() -> CheckResult:
     required = {
         "canonical repository": "https://github.com/oaslananka/kicad-studio-kit/tree/main/packages/mcp-server",
         "PyPI package": "kicad-mcp-pro",
-        "npm wrapper": "@oaslananka/kicad-mcp-pro",
+        "npm wrapper": "kicad-mcp-pro",
         "MCP Registry name": "io.github.oaslananka/kicad-mcp-pro",
         "version": "1.0.0",
     }

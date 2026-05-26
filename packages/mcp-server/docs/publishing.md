@@ -134,14 +134,14 @@ the Python package into the Scoop app directory at install time.
 The repository root `package.json` is private and exists only for hooks and CI
 scripts. It must not be published to npm.
 
-The optional npm wrapper lives under `npm-wrapper/`:
+The optional npm wrapper lives under `packages/mcp-npm/`:
 
 ```text
-npm-wrapper/package.json
-npm-wrapper/bin/kicad-mcp-pro.js
+packages/mcp-npm/package.json
+packages/mcp-npm/bin/kicad-mcp-pro.js
 ```
 
-The wrapper package name is `@oaslananka/kicad-mcp-pro`. It does not install
+The wrapper package name is `kicad-mcp-pro`. It does not install
 Python dependencies during the package-manager install lifecycle; at runtime it
 executes:
 
@@ -162,8 +162,9 @@ Required GitHub environment:
 Required GitHub secrets:
 
 - `PACKAGE_MANAGER_TOKEN`
-- `NPM_TOKEN` only if npm trusted publishing is not used for a future wrapper
-  publish workflow
+
+The npm wrapper uses trusted publishing through GitHub Actions OIDC. Do not add
+an `NPM_TOKEN` secret for the canonical npm publish workflow.
 
 Required GitHub variables:
 

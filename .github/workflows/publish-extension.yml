@@ -28,7 +28,7 @@ jobs:
   package:
     runs-on: ubuntu-24.04
     permissions:
-      contents: read
+      contents: write
       id-token: write
       attestations: write
       artifact-metadata: write
@@ -79,29 +79,47 @@ jobs:
         run: corepack pnpm --filter kicadstudio run package
       - run: corepack pnpm --filter kicadstudio run package:validate
       - run: corepack pnpm --filter kicadstudio run release:assets
-      - name: Identify extension package
+      - name: Stage extension release evidence
+        id: stage-evidence
         shell: bash
         run: |
           set -euo pipefail
+          evidence_dir="release-assets/vscode-extension"
+          mkdir -p "$evidence_dir"
           VSIX_PATH="$(find apps/vscode-extension -maxdepth 2 -type f -name '*.vsix' | sort | tail -n1)"
           test -n "$VSIX_PATH"
           test -f "$VSIX_PATH"
-          echo "Packaged ${VSIX_PATH}"
+          cp "$VSIX_PATH" "$evidence_dir/"
+          cp apps/vscode-extension/SHA256SUMS.txt "$evidence_dir/"
+          cp apps/vscode-extension/sbom.cdx.json "$evidence_dir/"
+          (cd "$evidence_dir" && sha256sum --check SHA256SUMS.txt)
+          echo "vsix_name=$(basename "$VSIX_PATH")" >> "$GITHUB_OUTPUT"
       - name: Attest extension assets
+        id: attest-extension
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
         with:
-          subject-checksums: apps/vscode-extension/SHA256SUMS.txt
-          sbom-path: apps/vscode-extension/sbom.cdx.json
+          subject-checksums: release-assets/vscode-extension/SHA256SUMS.txt
+          sbom-path: release-assets/vscode-extension/sbom.cdx.json
       - name: Store extension release evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: extension-release-evidence
-          path: |
-            apps/vscode-extension/*.vsix
-            apps/vscode-extension/SHA256SUMS.txt
-            apps/vscode-extension/sbom.cdx.json
+          path: release-assets/vscode-extension
           if-no-files-found: error
           retention-days: 14
+      - name: Attach extension evidence to GitHub Release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release-policy.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          upload_dir="release-assets/upload/vscode-extension"
+          mkdir -p "$upload_dir"
+          cp release-assets/vscode-extension/*.vsix "$upload_dir/"
+          cp release-assets/vscode-extension/SHA256SUMS.txt "$upload_dir/vscode-extension-SHA256SUMS.txt"
+          cp release-assets/vscode-extension/sbom.cdx.json "$upload_dir/vscode-extension-sbom.cdx.json"
+          gh release upload "$RELEASE_TAG" "$upload_dir"/* --clobber
 
   publish_vscode:
     needs: package
@@ -125,14 +143,19 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: extension-release-evidence
-          path: release-assets/extension
+          path: release-assets/vscode-extension
+      - name: Verify extension checksums before Marketplace publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd release-assets/vscode-extension && sha256sum --check SHA256SUMS.txt)
       - name: Publish Visual Studio Marketplace
         shell: bash
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
           set -euo pipefail
-          VSIX_PATH="$(find release-assets/extension -type f -name '*.vsix' | sort | tail -n1)"
+          VSIX_PATH="$(find release-assets/vscode-extension -type f -name '*.vsix' | sort | tail -n1)"
           test -n "$VSIX_PATH"
           test -f "$VSIX_PATH"
           test -n "$VSCE_PAT"
@@ -148,6 +171,13 @@ jobs:
           fi
 
           corepack pnpm --filter kicadstudio exec vsce "${publish_args[@]}"
+      - name: Verify Visual Studio Marketplace publish status
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./apps/vscode-extension/package.json').version")"
+          corepack pnpm --filter kicadstudio exec vsce show oaslananka.kicadstudio --json > vscode-marketplace.json
+          VERSION="$version" node -e "const fs = require('node:fs'); const data = JSON.parse(fs.readFileSync('vscode-marketplace.json', 'utf8')); if (!JSON.stringify(data).includes(process.env.VERSION)) throw new Error('Visual Studio Marketplace version not visible: ' + process.env.VERSION);"
 
   publish_openvsx:
     needs: [package, publish_vscode]
@@ -172,7 +202,12 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: extension-release-evidence
-          path: release-assets/extension
+          path: release-assets/vscode-extension
+      - name: Verify extension checksums before Open VSX publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd release-assets/vscode-extension && sha256sum --check SHA256SUMS.txt)
       - name: Publish Open VSX
         shell: bash
         env:
@@ -182,7 +217,7 @@ jobs:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
         run: |
           set -euo pipefail
-          VSIX_PATH="$(find release-assets/extension -type f -name '*.vsix' | sort | tail -n1)"
+          VSIX_PATH="$(find release-assets/vscode-extension -type f -name '*.vsix' | sort | tail -n1)"
           test -n "$VSIX_PATH"
           test -f "$VSIX_PATH"
           test -n "$OVSX_PAT"
@@ -202,3 +237,16 @@ jobs:
           fi
 
           corepack pnpm --filter kicadstudio exec ovsx "${publish_args[@]}"
+      - name: Verify Open VSX published digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./apps/vscode-extension/package.json').version")"
+          mkdir -p release-assets/openvsx-verify
+          corepack pnpm --filter kicadstudio exec ovsx get oaslananka.kicadstudio --metadata --versionRange "$version" > release-assets/openvsx-verify/metadata.json
+          corepack pnpm --filter kicadstudio exec ovsx get oaslananka.kicadstudio --versionRange "$version" --output release-assets/openvsx-verify
+          downloaded="$(find release-assets/openvsx-verify -type f -name '*.vsix' | sort | tail -n1)"
+          test -n "$downloaded"
+          expected="$(awk '{print $1}' release-assets/vscode-extension/SHA256SUMS.txt)"
+          actual="$(sha256sum "$downloaded" | awk '{print $1}')"
+          test "$expected" = "$actual"

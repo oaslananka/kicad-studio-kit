@@ -40,7 +40,7 @@
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
-      "identifier": "@oaslananka/kicad-mcp-pro",
+      "identifier": "kicad-mcp-pro",
       "version": "1.0.0",
       "runtimeHint": "npx",
       "transport": {

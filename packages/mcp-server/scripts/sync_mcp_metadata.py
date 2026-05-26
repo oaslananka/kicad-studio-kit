@@ -129,7 +129,7 @@ def _registry_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
             {
                 "registryType": "npm",
                 "registryBaseUrl": "https://registry.npmjs.org",
-                "identifier": "@oaslananka/kicad-mcp-pro",
+                "identifier": "kicad-mcp-pro",
                 "version": metadata["version"],
                 "runtimeHint": "npx",
                 "transport": {"type": "stdio"},
@@ -265,7 +265,8 @@ def main(argv: list[str] | None = None) -> int:
         if path.read_text(encoding="utf-8") != rendered:
             drift.append(path)
             if args.write:
-                path.write_text(rendered, encoding="utf-8")
+                with path.open("w", encoding="utf-8", newline="\n") as manifest:
+                    manifest.write(rendered)
 
     if drift and args.check:
         rel = ", ".join(

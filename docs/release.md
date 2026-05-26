@@ -19,13 +19,20 @@ The publish workflows keep release evidence product-scoped:
 - `publish-extension.yml` validates the VSIX, emits `SHA256SUMS.txt` and a
   CycloneDX SBOM, creates GitHub artifact attestations for the checksummed
   extension package, publishes the shared VSIX to the Visual Studio Marketplace,
-  and then publishes the same VSIX to Open VSX in a separate non-blocking job.
+  verifies the Marketplace version, and then publishes the same VSIX to Open VSX
+  in a separate non-blocking job that downloads the published VSIX and compares
+  its digest with the release checksum.
 - `publish-python.yml` validates the wheel and source distribution, emits
-  `packages/mcp-server/release-evidence/SHA256SUMS.txt`, uploads that checksum
-  as `python-release-evidence`, and creates GitHub artifact attestations for the
-  wheel and source distribution before PyPI trusted publishing. The `python-dist`
-  artifact intentionally contains only `*.whl` and `*.tar.gz` files.
-- `publish-npm.yml` uses npm provenance for the MCP launcher package.
+  `packages/mcp-server/release-evidence/SHA256SUMS.txt`, emits a CycloneDX SBOM,
+  uploads that evidence as `python-release-evidence`, and creates GitHub
+  artifact attestations for the Python wheel and source distribution before PyPI
+  trusted publishing. The publish jobs verify local checksums before upload and
+  verify PyPI/TestPyPI SHA-256 digests after upload. The `python-dist` artifact
+  intentionally contains only `*.whl` and `*.tar.gz` files.
+- `publish-npm.yml` packs the `kicad-mcp-pro` npm launcher tarball, emits
+  `SHA256SUMS.txt` and a CycloneDX SBOM, creates GitHub artifact attestations,
+  publishes with npm provenance, and downloads the published tarball to verify
+  its SHA-256 digest.
 - `publish-mcp-container.yml` validates the Docker image on pull requests and
   publishes signed multi-arch GHCR images with BuildKit SBOM/provenance for
   `mcp-server-v*` GitHub Releases.

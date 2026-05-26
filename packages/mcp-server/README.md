@@ -5,7 +5,7 @@
 Canonical repository: https://github.com/oaslananka/kicad-studio-kit/tree/main/packages/mcp-server
 
 - PyPI: `kicad-mcp-pro`
-- npm wrapper: `@oaslananka/kicad-mcp-pro`
+- npm wrapper: `kicad-mcp-pro`
 - MCP Registry name: `io.github.oaslananka/kicad-mcp-pro`
 - Version: `1.0.0`
 
@@ -44,7 +44,7 @@ The deprecated HTTP+SSE fallback routes are disabled by default. Set
 ```bash
 corepack pnpm run dev:doctor -- --ci
 uvx kicad-mcp-pro@1.0.0 --help
-npx @oaslananka/kicad-mcp-pro@1.0.0 --help
+npx kicad-mcp-pro@1.0.0 --help
 ```
 
 For source checkouts, `corepack pnpm run dev:doctor` validates Node, pnpm,

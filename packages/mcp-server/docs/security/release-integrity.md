@@ -3,12 +3,12 @@
 Release integrity controls are emitted only from the canonical repository,
 `oaslananka/kicad-studio-kit`.
 
-## SBOM
+## Python SBOM
 
-The release workflow generates a CycloneDX SBOM as a release artifact:
+The Python publish workflow generates a CycloneDX SBOM as release evidence:
 
 ```text
-dist/bom.json
+packages/mcp-server/release-evidence/sbom.cdx.json
 ```
 
 Download it from the GitHub Release or the release workflow artifacts and keep
@@ -101,14 +101,14 @@ when the image is pushed.
 
 ## PyPI Trusted Publishing
 
-The release workflow is configured for PyPI Trusted Publishing through GitHub
-Actions OIDC. PyPI and TestPyPI project owners must configure trusted
-publishers for:
+The Python publish workflow is configured for PyPI Trusted Publishing through
+GitHub Actions OIDC. PyPI and TestPyPI project owners must configure trusted
+publishers for the package-index environments:
 
 - Owner: `oaslananka`
-- Repository: `kicad-mcp-pro`
-- Workflow: `release-please.yml`
-- Environment: `release`
+- Repository: `kicad-studio-kit`
+- Workflow: `publish-python.yml`
+- Environments: `pypi` and `testpypi`
 
 After the publisher is configured, long-lived package-index token secrets should
 not be used by CI.

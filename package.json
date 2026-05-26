@@ -49,9 +49,11 @@
     "release:dry-run:kicad-studio": "pnpm --filter kicadstudio run package && pnpm --filter kicadstudio run package:validate && pnpm --filter kicadstudio run release:dry-run",
     "release:dry-run:kicad-mcp-pro": "pnpm --dir packages/mcp-server run release:dry-run && pnpm --dir packages/mcp-npm run check",
     "release:dry-run": "pnpm run release:dry-run:kicad-studio && pnpm run release:dry-run:kicad-mcp-pro",
+    "release:verify": "node scripts/check-release-provenance.mjs && pnpm run test:release-provenance",
     "check:forbidden-refs": "node scripts/check-no-forbidden-refs.mjs",
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "test:release-please": "node --test scripts/check-release-please-monorepo.test.mjs",
+    "test:release-provenance": "node --test scripts/check-release-provenance.test.mjs scripts/verify-npm-release.test.mjs",
     "check:release-please": "node scripts/check-release-please-monorepo.mjs && pnpm run test:release-please",
     "check:version": "node scripts/check-version-consistency.mjs && pnpm run check:release-please",
     "check:compatibility": "uv run --project packages/mcp-server --all-extras python packages/mcp-server/scripts/check_compatibility_matrix.py",
@@ -83,7 +85,7 @@
     "check:docs-site": "pnpm --dir packages/mcp-server run docs:tools:check && pnpm run docs:check-generated && pnpm run docs:lint && pnpm run docs:links && vitepress build docs",
     "check:publish": "node scripts/check-publish-preflight.mjs",
     "governance:sync:dry-run": "node scripts/sync-governance-project-items.mjs --dry-run --chunk-size 10",
-    "check": "pnpm run check:forbidden-refs && pnpm run check:boundaries && pnpm run check:version && pnpm run check:compatibility && pnpm run check:runtime-policy && pnpm run check:governance && pnpm run check:fixtures && pnpm run check:protocol-schemas && pnpm run check:ci-lanes && pnpm run check:testing-strategy && pnpm run check:regression-policy && pnpm run check:protocol-pr-template && pnpm run check:kicad-gui-smoke && pnpm run check:dev-doctor && pnpm run check:devcontainer && pnpm run check:performance-budgets && pnpm run check:beta-program && pnpm run check:agent-configs && pnpm run check:examples && pnpm run check:docs-site && pnpm run release:dry-run && pnpm -r run check"
+    "check": "pnpm run check:forbidden-refs && pnpm run check:boundaries && pnpm run check:version && pnpm run check:compatibility && pnpm run check:runtime-policy && pnpm run check:governance && pnpm run check:fixtures && pnpm run check:protocol-schemas && pnpm run check:ci-lanes && pnpm run check:testing-strategy && pnpm run check:regression-policy && pnpm run check:protocol-pr-template && pnpm run check:kicad-gui-smoke && pnpm run check:dev-doctor && pnpm run check:devcontainer && pnpm run check:performance-budgets && pnpm run check:beta-program && pnpm run check:agent-configs && pnpm run check:examples && pnpm run check:docs-site && pnpm run release:dry-run && pnpm run release:verify && pnpm -r run check"
   },
   "devDependencies": {
     "@commitlint/cli": "21.0.0",

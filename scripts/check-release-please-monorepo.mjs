@@ -44,7 +44,7 @@ const EXPECTED_PACKAGES = {
   "packages/mcp-npm": {
     product: "kicad-mcp-pro",
     releaseType: "node",
-    packageName: "@oaslananka/kicad-mcp-pro",
+    packageName: "kicad-mcp-pro",
     component: "mcp-npm",
     versionFile: "packages/mcp-npm/package.json",
   },

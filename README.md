@@ -22,7 +22,7 @@ All release surfaces are pinned to `1.0.0`:
 
 - VS Code extension: `oaslananka.kicadstudio`
 - Python package: `kicad-mcp-pro`
-- npm wrapper: `@oaslananka/kicad-mcp-pro`
+- npm wrapper: `kicad-mcp-pro`
 - MCP Registry name: `io.github.oaslananka/kicad-mcp-pro`
 
 ## KiCad Compatibility

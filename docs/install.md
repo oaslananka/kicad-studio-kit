@@ -6,7 +6,7 @@ KiCad Studio Kit has three install surfaces:
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | KiCad Studio VS Code extension | You want KiCad project navigation, viewers, validation, exports, component search, and MCP integration inside VS Code. | Install `oaslananka.kicadstudio` from the VS Code Marketplace or Open VSX once release publishing is enabled. |
 | kicad-mcp-pro Python server    | You want an MCP server that exposes KiCad workflows to MCP clients.                                                    | Install the Python package or run from this repository with `uv`.                                             |
-| npm launcher                   | You want a Node package that launches the Python MCP server consistently.                                              | Install `@oaslananka/kicad-mcp-pro` once npm publishing is enabled.                                           |
+| npm launcher                   | You want a Node package that launches the Python MCP server consistently.                                              | Install `kicad-mcp-pro` once npm publishing is enabled.                                                       |
 
 ## Local Repository Setup
 

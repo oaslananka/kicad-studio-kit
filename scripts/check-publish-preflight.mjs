@@ -24,14 +24,12 @@ function run(command, args) {
 const failures = [];
 const npm = run("npm", [
   "view",
-  `@oaslananka/kicad-mcp-pro@${version}`,
+  `kicad-mcp-pro@${version}`,
   "version",
   "--json",
 ]);
 if (npm.status === 0 && npm.stdout.trim()) {
-  failures.push(
-    `npm package @oaslananka/kicad-mcp-pro@${version} already exists`,
-  );
+  failures.push(`npm package kicad-mcp-pro@${version} already exists`);
 }
 
 const pip = run("python", ["-m", "pip", "index", "versions", "kicad-mcp-pro"]);
@@ -57,7 +55,7 @@ console.log(
   "- PyPI/TestPyPI: owner oaslananka, repository kicad-studio-kit, workflow publish-python.yml, environments pypi/testpypi",
 );
 console.log(
-  "- npm: package @oaslananka/kicad-mcp-pro, provider GitHub Actions, workflow publish-npm.yml, environment npm",
+  "- npm: package kicad-mcp-pro, provider GitHub Actions, workflow publish-npm.yml, environment npm",
 );
 console.log(
   "- MCP Registry: io.github.oaslananka/kicad-mcp-pro via GitHub OIDC",

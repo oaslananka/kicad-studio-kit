@@ -554,11 +554,17 @@ function extractRegisteredCustomEditorConstants(sourceText) {
 }
 
 function runVsceList(root) {
-  const command = process.platform === 'win32' ? 'vsce.cmd' : 'vsce';
-  const result = spawnSync(command, ['ls', '--no-dependencies'], {
+  const invocation =
+    process.platform === 'win32'
+      ? {
+          command: process.env.ComSpec ?? 'cmd.exe',
+          args: ['/d', '/s', '/c', 'vsce ls --no-dependencies']
+        }
+      : { command: 'vsce', args: ['ls', '--no-dependencies'] };
+  const result = spawnSync(invocation.command, invocation.args, {
     cwd: root,
     encoding: 'utf8',
-    shell: process.platform === 'win32'
+    shell: false
   });
   if (result.error) {
     throw result.error;

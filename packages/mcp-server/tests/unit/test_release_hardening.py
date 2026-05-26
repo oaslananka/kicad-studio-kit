@@ -622,7 +622,10 @@ def test_release_and_publish_workflows_are_monorepo_ready() -> None:
     assert "TEST_PYPI_TOKEN" not in publish_python
 
     assert "id-token: write" in publish_npm
-    assert "npm publish --access public --provenance" in publish_npm
+    assert (
+        'npm publish "${{ steps.npm-evidence.outputs.tarball }}" --access public --provenance'
+        in publish_npm
+    )
     assert "NPM_TOKEN" not in publish_npm
 
     assert "VSCE_PAT" in publish_extension
@@ -650,11 +653,11 @@ def test_security_and_publish_workflows_emit_supply_chain_evidence() -> None:
     assert "show-patched-versions: true" in security
 
     assert "corepack pnpm --filter kicadstudio run release:assets" in publish_extension
-    assert "apps/vscode-extension/SHA256SUMS.txt" in publish_extension
+    assert "release-assets/vscode-extension/SHA256SUMS.txt" in publish_extension
     assert "apps/vscode-extension/sbom.cdx.json" in publish_extension
-    assert "subject-checksums: apps/vscode-extension/SHA256SUMS.txt" in publish_extension
+    assert "subject-checksums: release-assets/vscode-extension/SHA256SUMS.txt" in publish_extension
 
-    assert "Generate Python checksums" in publish_python
+    assert "Generate Python release evidence" in publish_python
     assert "packages/mcp-server/release-evidence/SHA256SUMS.txt" in publish_python
     assert "packages/mcp-server/dist/SHA256SUMS.txt" not in publish_python
     assert (

@@ -18,7 +18,7 @@ def test_npm_wrapper_package_is_separate_from_private_root_package() -> None:
     wrapper_package = json.loads((WRAPPER_ROOT / "package.json").read_text(encoding="utf-8"))
 
     assert root_package["private"] is True
-    assert wrapper_package["name"] == "@oaslananka/kicad-mcp-pro"
+    assert wrapper_package["name"] == "kicad-mcp-pro"
     assert wrapper_package["bin"]["kicad-mcp-pro"] == "bin/kicad-mcp-pro.js"
     assert wrapper_package["mcpName"] == "io.github.oaslananka/kicad-mcp-pro"
 

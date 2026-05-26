@@ -5,12 +5,12 @@ Publishing is GitHub-only and uses the canonical repository `oaslananka/kicad-st
 ## Version Availability
 
 ```bash
-npm view @oaslananka/kicad-mcp-pro@1.0.0 version --json || true
+npm view kicad-mcp-pro@1.0.0 version --json || true
 python -m pip index versions kicad-mcp-pro || true
 ```
 
 ```powershell
-npm view '@oaslananka/kicad-mcp-pro@1.0.0' version --json
+npm view 'kicad-mcp-pro@1.0.0' version --json
 python -m pip index versions kicad-mcp-pro
 ```
 
@@ -78,15 +78,18 @@ TestPyPI:
 - provenance: `pypa/gh-action-pypi-publish` uploads PyPI attestations with
   `attestations: true`
 
-npm:
+Npm:
 
-- package: `@oaslananka/kicad-mcp-pro`
+- package: `kicad-mcp-pro`
 - provider: GitHub Actions
 - organization/user: `oaslananka`
 - repository: `kicad-studio-kit`
 - workflow filename: `publish-npm.yml`
 - environment: `npm`
 - runner: GitHub-hosted `ubuntu-24.04`
+- provenance: npm trusted publishing automatically emits provenance for public
+  packages from public GitHub repositories; the workflow keeps
+  `npm publish --provenance` as an explicit release guard.
 
 Open VSX:
 
@@ -151,3 +154,56 @@ corepack pnpm --filter kicadstudio run package
 ```
 
 The `ovsx publish --help` command is the safe Open VSX CLI smoke check for local preflight. Do not run `ovsx publish` with a token outside `.github/workflows/publish-extension.yml`.
+
+## Release Evidence
+
+GitHub Releases are the durable release evidence index. Each product publish
+workflow uploads product-scoped build artifacts, `SHA256SUMS.txt`,
+`sbom.cdx.json`, GitHub artifact attestations, and post-publish verification
+records when a GitHub Release triggers the workflow.
+
+| Product                | Release assets                                                                 | Publish verification                                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| VSIX                   | `kicadstudio-<version>.vsix`, `vscode-extension-SHA256SUMS.txt`, SBOM evidence | Verify checksum before Marketplace/Open VSX publish; verify Marketplace version and Open VSX digest. |
+| Python wheel and sdist | wheel, sdist, `kicad-mcp-pro-python-SHA256SUMS.txt`, SBOM evidence             | Verify local checksums before publish; verify PyPI/TestPyPI SHA-256 digests after publish.           |
+| npm launcher tarball   | `kicad-mcp-pro-<version>.tgz`, `mcp-npm-SHA256SUMS.txt`, SBOM evidence         | Verify local checksum before publish; download npm tarball and verify SHA-256 after publish.         |
+
+Local release policy verification:
+
+```bash
+corepack pnpm run release:verify
+```
+
+Windows 11 PowerShell:
+
+```powershell
+corepack pnpm run release:verify
+```
+
+## Rollback and re-publish policy
+
+VS Code Marketplace and Open VSX:
+
+- Prefer publishing a fixed patch version. Do not delete or reuse a version.
+- If an extension must be hidden, unpublish it from the Marketplace or Open VSX
+  publisher console, then publish a new patch version with fresh evidence.
+- Keep the original GitHub Release evidence attached and add a maintainer note to
+  the replacement release explaining the superseded version.
+
+PyPI and TestPyPI:
+
+- Do not delete files to replace them with different bytes. PyPI versions are
+  immutable for practical release integrity.
+- If a published distribution is defective, yank it when appropriate and publish
+  a new patch version.
+- Verify the new wheel and source distribution against the GitHub Release
+  checksums and PyPI digest metadata before announcement.
+
+npm:
+
+- Do not unpublish stable versions except for the narrow windows and policy cases
+  allowed by npm.
+- Use `npm deprecate kicad-mcp-pro@<version> "<reason>"` for a bad release and
+  publish a fixed patch version.
+- Confirm `npm view kicad-mcp-pro@<version> dist.tarball --json` points to the
+  tarball whose SHA-256 matches the GitHub Release checksum.

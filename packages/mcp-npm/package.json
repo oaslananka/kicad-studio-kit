@@ -1,5 +1,5 @@
 {
-  "name": "@oaslananka/kicad-mcp-pro",
+  "name": "kicad-mcp-pro",
   "version": "1.0.0",
   "description": "npm wrapper for the KiCad MCP Pro Python package.",
   "license": "MIT",
