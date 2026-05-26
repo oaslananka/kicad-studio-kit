@@ -110,6 +110,24 @@ the same shape in `.vscode/mcp.json` for your own project.
 Use an absolute KiCad project path for `KICAD_MCP_PROJECT_DIR`. Some VS Code MCP setups do
 not expand `${workspaceFolder}` and may fail at server startup.
 
+## Destination Paths
+
+Copy the example into the client-owned config file. Keep repository examples inert by
+leaving their `.example.*` filenames unchanged.
+The Windows paths use `%USERPROFILE%` and `%APPDATA%` conventions used on Windows 11 and
+current supported Windows releases.
+
+| Client                     | Linux/macOS destination                                                                                          | Windows destination                                                          |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| VS Code and GitHub Copilot | `<project>/.vscode/mcp.json`, or the user-profile config opened by `MCP: Open User Configuration`                | `<project>\.vscode\mcp.json`, or the user-profile config opened from VS Code |
+| Codex CLI / IDE extension  | `~/.codex/config.toml`, or a trusted `<project>/.codex/config.toml`                                              | `%USERPROFILE%\.codex\config.toml`, or `<project>\.codex\config.toml`        |
+| Claude Code                | `<project>/.mcp.json`, or use `claude mcp add --scope project`                                                   | `<project>\.mcp.json`, or use `claude mcp add --scope project`               |
+| Claude Desktop             | macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`; Linux users should use Claude Code MCP | `%APPDATA%\Claude\claude_desktop_config.json`                                |
+| Cursor                     | `<project>/.cursor/mcp.json` or `~/.cursor/mcp.json`                                                             | `<project>\.cursor\mcp.json` or `%USERPROFILE%\.cursor\mcp.json`             |
+| Gemini CLI                 | `~/.gemini/settings.json` or `<project>/.gemini/settings.json`                                                   | `%USERPROFILE%\.gemini\settings.json` or `<project>\.gemini\settings.json`   |
+| Generic stdio client       | The client's MCP config file                                                                                     | The client's MCP config file                                                 |
+| Generic HTTP client        | The client's remote/HTTP MCP config file                                                                         | The client's remote/HTTP MCP config file                                     |
+
 ## Codex CLI And Codex IDE Extension
 
 Codex stores MCP servers in `~/.codex/config.toml` or a trusted project-scoped
@@ -289,6 +307,11 @@ The default endpoint is:
 ```text
 http://127.0.0.1:3334/mcp
 ```
+
+The loopback examples above do not need `KICAD_MCP_AUTH_TOKEN`. Set
+`KICAD_MCP_AUTH_TOKEN` only when HTTP binds outside loopback or crosses a tunnel or remote
+network boundary. Clients must then send the same value as a bearer token. Store the token
+in local environment or secret storage and never in a checked-in config example.
 
 VS Code HTTP example:
 
