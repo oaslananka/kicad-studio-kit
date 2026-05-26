@@ -9,6 +9,7 @@ const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const requiredFixtureIds = [
   "clean-led-kicad10",
   "stale-diagnostics-kicad10",
+  "kicad-10-0-3-regressions",
   "erc-power-pin-error",
   "drc-courtyard-error",
   "unconnected-pcb",
@@ -114,6 +115,25 @@ test("OASLANA-53 shared package owns the deterministic KiCad fixture corpus", ()
     fs.existsSync(repoPath("apps/vscode-extension/test/fixtures/kicad")),
     false,
     "product workspaces must not keep a private duplicate KiCad corpus",
+  );
+
+  const regressionFixture = manifest.fixtures.find(
+    (fixture) => fixture.id === "kicad-10-0-3-regressions",
+  );
+  assert.ok(regressionFixture, "KiCad 10.0.3 regression fixture must exist");
+  assert.equal(regressionFixture.regressionCoverage.kicadVersion, "10.0.3");
+  assert.deepEqual(regressionFixture.regressionCoverage.importers, [
+    "pads_import_edge_case_fixture",
+    "allegro_import_capability_probe",
+  ]);
+  assert.ok(
+    fs.existsSync(
+      repoPath(
+        regressionFixture.path,
+        "importers",
+        "pads-zone-intersection.asc",
+      ),
+    ),
   );
 });
 

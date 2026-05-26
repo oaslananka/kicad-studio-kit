@@ -76,6 +76,7 @@ The corpus includes these required semantic fixtures:
 
 - `clean-led-kicad10`
 - `stale-diagnostics-kicad10`
+- `kicad-10-0-3-regressions`
 - `erc-power-pin-error`
 - `drc-courtyard-error`
 - `unconnected-pcb`
@@ -92,6 +93,12 @@ The corpus includes these required semantic fixtures:
 `paths-with-spaces` uses file names containing spaces. `unicode-path-çöğü`
 uses a non-ASCII directory and file name so Windows path handling and URI
 conversion tests can cover both edge cases.
+
+`kicad-10-0-3-regressions` is the patch-specific fixture group for KiCad
+10.0.3. It records DRC status/elapsed report parsing, ERC sheet-level report
+shape parsing, the schematic PDF property-popup suppression probe, a PADS
+import edge-case source, an Allegro import capability probe, and a custom
+padstack on a non-copper layer.
 
 ## Source Verification
 

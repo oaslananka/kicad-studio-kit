@@ -4,6 +4,7 @@ import path from "node:path";
 export const KICAD_FIXTURE_IDS = [
   "clean-led-kicad10",
   "stale-diagnostics-kicad10",
+  "kicad-10-0-3-regressions",
   "erc-power-pin-error",
   "drc-courtyard-error",
   "unconnected-pcb",
@@ -33,6 +34,14 @@ export type KicadFixtureId = (typeof KICAD_FIXTURE_IDS)[number];
 export type KicadExpectedFile = (typeof KICAD_EXPECTED_FILES)[number];
 export type KicadFixtureOutcome = "pass" | "warn" | "fail";
 
+export interface KicadRegressionCoverage {
+  kicadVersion: string;
+  source: string;
+  cli: string[];
+  importers: string[];
+  pcb: string[];
+}
+
 export interface KicadFixtureManifestEntry {
   id: KicadFixtureId;
   semanticName: KicadFixtureId;
@@ -45,6 +54,7 @@ export interface KicadFixtureManifestEntry {
   expectedFiles: KicadExpectedFile[];
   expectedOutcome: KicadFixtureOutcome;
   tags: string[];
+  regressionCoverage?: KicadRegressionCoverage;
 }
 
 export interface KicadFixtureManifest {

@@ -56,6 +56,34 @@ test("resolves fixture and expected golden paths from package root", () => {
   assert.ok(fs.existsSync(kicadExpectedPath("clean-led-kicad10")));
 });
 
+test("exposes KiCad 10.0.3 regression fixture coverage metadata", () => {
+  const fixture = getKicadFixture("kicad-10-0-3-regressions");
+
+  assert.equal(fixture.regressionCoverage?.kicadVersion, "10.0.3");
+  assert.ok(fixture.tags.includes("kicad10.0.3"));
+  assert.deepEqual(fixture.regressionCoverage?.cli, [
+    "drc_elapsed_or_status_output_parsing",
+    "erc_output_shape_stability",
+    "pcb_export_pdf_property_popup_suppression_probe",
+  ]);
+  assert.deepEqual(fixture.regressionCoverage?.importers, [
+    "pads_import_edge_case_fixture",
+    "allegro_import_capability_probe",
+  ]);
+  assert.deepEqual(fixture.regressionCoverage?.pcb, [
+    "custom_padstack_non_copper_layer_fixture",
+  ]);
+  assert.ok(
+    fs.existsSync(
+      kicadFixturePath(
+        "kicad-10-0-3-regressions",
+        "importers",
+        "pads-zone-intersection.asc",
+      ),
+    ),
+  );
+});
+
 test("throws a clear error for unknown fixture IDs", () => {
   assert.throws(
     () => getKicadFixture("missing-fixture"),

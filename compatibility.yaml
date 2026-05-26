@@ -96,6 +96,7 @@ kicadIpcReadiness:
         canaryProbes:
           [
             "schematic-pdf",
+            "schematic-pdf-no-property-popups",
             "pcb-pdf",
             "pcb-svg",
             "pcb-dxf",
