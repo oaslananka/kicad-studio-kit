@@ -101,9 +101,38 @@ def test_no_pcbnew_guard_detects_imports(tmp_path: Path, monkeypatch: pytest.Mon
     bad.write_text("import pcbnew\npcbnew.LoadBoard('board.kicad_pcb')\n", encoding="utf-8")
 
     monkeypatch.setattr(module, "SCAN_DIRS", (src_dir,))
-    monkeypatch.setattr(module, "IGNORED_FILES", set())
 
     assert module._violations(good) == []
+    assert module.main() == 1
+
+
+def test_no_pcbnew_guard_honors_matrix_allowlist(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _load_script("check_no_pcbnew.py")
+    matrix = tmp_path / "compatibility.yaml"
+    matrix.write_text(
+        """
+kicadIpcReadiness:
+  directPcbnewImports:
+    allowedPaths:
+      - allowed/**
+""".lstrip(),
+        encoding="utf-8",
+    )
+    allowed_file = tmp_path / "allowed" / "fixture.py"
+    blocked_file = tmp_path / "src" / "blocked.py"
+    allowed_file.parent.mkdir()
+    blocked_file.parent.mkdir()
+    allowed_file.write_text("import pcbnew\n", encoding="utf-8")
+    blocked_file.write_text("import pcbnew\n", encoding="utf-8")
+
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "MATRIX_PATH", matrix)
+    monkeypatch.setattr(module, "SCAN_DIRS", (tmp_path,))
+
+    assert module._python_files() == [blocked_file]
     assert module.main() == 1
 
 

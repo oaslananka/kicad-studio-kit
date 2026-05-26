@@ -20,6 +20,99 @@ kicad:
       notes: "File-level read and migration support only; removal requires a release note."
   dropped: []
 
+kicadIpcReadiness:
+  reviewed: "2026-05-26"
+  sources:
+    pcbnewDeprecation: "https://dev-docs.kicad.org/en/apis-and-binding/pcbnew/"
+    commandLine: "https://docs.kicad.org/master/en/cli/cli.html"
+    nightlies: "https://www.kicad.org/help/nightlies-and-rcs/"
+  directPcbnewImports:
+    policy: "forbidden-in-production"
+    allowedPaths:
+      - "packages/mcp-server/scripts/check_no_pcbnew.py"
+      - "packages/mcp-server/tests/**"
+  manualCanary:
+    currentNightlyRange: "10.99.x"
+    releaseCandidateRange: "11.0.x"
+    currentNightlyCommand: "corepack pnpm run test:kicad-cli-contract:nightly"
+    releaseCandidateCommand: "corepack pnpm run test:kicad-cli-contract:future"
+  ipcApi:
+    requiredFor:
+      projectDiscovery:
+        tools: ["kicad_get_project_info", "kicad_set_project"]
+        canaryProbes:
+          [
+            "version",
+            "path-with-spaces-board-stats",
+            "unicode-path-board-stats",
+          ]
+        evidence:
+          - "packages/mcp-server/tests/integration/test_project_library_surface.py"
+          - "packages/mcp-server/tests/unit/test_discovery.py"
+      pcbRead:
+        tools:
+          [
+            "pcb_get_board_summary",
+            "pcb_get_tracks",
+            "pcb_get_footprints",
+            "pcb_get_nets",
+          ]
+        canaryProbes:
+          [
+            "board-stats",
+            "path-with-spaces-board-stats",
+            "unicode-path-board-stats",
+          ]
+        evidence:
+          - "packages/mcp-server/tests/integration/test_pcb_tools.py"
+          - "packages/mcp-server/tests/gui/test_kicad_gui_live_context.py"
+      schematicRead:
+        tools: ["sch_get_symbols", "sch_get_sheet_info", "sch_get_net_names"]
+        canaryProbes: ["clean-erc", "schematic-pdf", "bom", "netlist"]
+        evidence:
+          - "packages/mcp-server/tests/integration/test_schematic_tools.py"
+          - "packages/mcp-server/tests/integration/test_project_library_surface.py"
+      drc:
+        tools: ["run_drc", "validate_design", "check_design_for_manufacture"]
+        canaryProbes: ["clean-drc", "dirty-drc"]
+        evidence:
+          - "packages/mcp-server/tests/integration/test_export_tools.py"
+          - "packages/mcp-server/tests/integration/test_pcb_export_validation_surface.py"
+      erc:
+        tools: ["run_erc", "validate_design", "schematic_quality_gate"]
+        canaryProbes: ["clean-erc", "dirty-erc"]
+        evidence:
+          - "packages/mcp-server/tests/integration/test_export_tools.py"
+          - "packages/mcp-server/tests/integration/test_schematic_connectivity_gate.py"
+      export:
+        tools:
+          [
+            "export_gerber",
+            "export_drill",
+            "export_manufacturing_package",
+            "export_bom",
+            "export_netlist",
+          ]
+        canaryProbes:
+          [
+            "schematic-pdf",
+            "pcb-pdf",
+            "pcb-svg",
+            "pcb-dxf",
+            "gerbers",
+            "drill",
+            "step",
+          ]
+        evidence:
+          - "packages/mcp-server/tests/integration/test_export_tools.py"
+          - "packages/mcp-server/tests/unit/test_kicad_canary.py"
+      diagnostics:
+        tools: ["kicad_get_version", "kicad_get_server_info", "kicad_help"]
+        canaryProbes: ["version", "read-only-output-failure"]
+        evidence:
+          - "packages/mcp-server/tests/unit/test_server_info_contract.py"
+          - "packages/mcp-server/tests/unit/test_cli_diagnostics.py"
+
 vscode:
   minimum: "1.120.0"
   enginesRange: "^1.120.0"
