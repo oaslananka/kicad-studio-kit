@@ -43,6 +43,33 @@ describe('KiCadDiagnosticsAggregator', () => {
     ).toEqual(['Unknown node', 'Clearance']);
   });
 
+  it('clears syntax diagnostics without erasing clean CLI state for the same schematic', () => {
+    const backing = createBackingCollection();
+    const aggregator = new KiCadDiagnosticsAggregator(backing);
+    const uri = vscode.Uri.file('/workspace/schematic.kicad_sch');
+    const syntax = new vscode.Diagnostic(
+      new vscode.Range(0, 0, 0, 1),
+      'Unknown node',
+      2
+    );
+    syntax.source = 'kicad-studio:syntax';
+    const erc = new vscode.Diagnostic(
+      new vscode.Range(1, 0, 1, 1),
+      'ERC warning',
+      1
+    );
+    erc.source = 'kicad-cli:erc';
+
+    aggregator.setForSource(uri, 'syntax', [syntax]);
+    aggregator.set(uri, [erc]);
+    aggregator.setForSource(uri, 'syntax', []);
+
+    expect(
+      aggregator.get(uri)?.map((diagnostic) => diagnostic.message)
+    ).toEqual(['ERC warning']);
+    expect(backing.set).toHaveBeenLastCalledWith(uri, [erc]);
+  });
+
   it('replaces only diagnostics from the same source', () => {
     const backing = createBackingCollection();
     const aggregator = new KiCadDiagnosticsAggregator(backing);

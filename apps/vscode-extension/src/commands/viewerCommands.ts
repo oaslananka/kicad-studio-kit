@@ -16,7 +16,7 @@ import { resolveKiCadExecutable, launchDetached } from './kicadLauncher';
 import { buildStatusMenuItems } from './viewerStatusMenu';
 import type { CommandServices } from './types';
 import { findFirstWorkspaceFile, getWorkspaceRoot } from '../utils/pathUtils';
-import type { ProjectContext, ProjectTreeNode } from '../types';
+import type { KiCadVariant, ProjectContext, ProjectTreeNode } from '../types';
 import { unwrapPcmPackage } from '../library/pcmLibraryProvider';
 import type { PcmPackage } from '../library/pcmService';
 
@@ -258,19 +258,24 @@ export function registerViewerCommands(
       'Uninstall PCM package'
     ),
 
-    vscode.commands.registerCommand(COMMANDS.createVariant, async () => {
-      await services.variantProvider.createVariant();
-      await services.refreshContexts();
-      await services.pushStudioContext();
-    }),
+    registerTrustedCommand(
+      COMMANDS.createVariant,
+      async () => {
+        await services.variantProvider.createVariant();
+        await services.refreshContexts();
+        await services.pushStudioContext();
+      },
+      'Create Variant'
+    ),
 
-    vscode.commands.registerCommand(
+    registerTrustedCommand(
       COMMANDS.setActiveVariant,
-      async (variant) => {
+      async (variant: KiCadVariant) => {
         await services.variantProvider.setActive(variant);
         await services.refreshContexts();
         await services.pushStudioContext();
-      }
+      },
+      'Set Active Variant'
     ),
 
     vscode.commands.registerCommand(COMMANDS.diffVariantBom, () =>

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { KICAD_S_EXPRESSION_LANGUAGES } from '../constants';
+import type { DiagnosticBucket } from './diagnosticsAggregator';
 import { KEYWORD_DESCRIPTIONS } from './kicadSchemas';
 import { SExpressionParser, type SNode } from './sExpressionParser';
 
@@ -38,19 +39,15 @@ export class KiCadDiagnosticsProvider {
         (KEYWORD_DESCRIPTIONS[document.languageId] ?? new Map()).keys()
       );
       this.collectUnknownTags(ast, issues, schema);
-      this.diagnostics.set(document.uri, issues);
+      setDiagnosticsForSource(this.diagnostics, document.uri, 'syntax', issues);
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : 'Unable to analyze this KiCad file. Try saving again or checking the file for malformed S-expressions.';
       const range = new vscode.Range(0, 0, 0, 1);
-      this.diagnostics.set(document.uri, [
-        createSyntaxDiagnostic(
-          range,
-          message,
-          vscode.DiagnosticSeverity.Warning
-        )
+      setDiagnosticsForSource(this.diagnostics, document.uri, 'syntax', [
+        createSyntaxDiagnostic(range, message, vscode.DiagnosticSeverity.Warning)
       ]);
     }
   }
@@ -102,6 +99,26 @@ export class KiCadDiagnosticsProvider {
       tag.startsWith('${')
     );
   }
+}
+
+function setDiagnosticsForSource(
+  collection: vscode.DiagnosticCollection,
+  uri: vscode.Uri,
+  bucket: DiagnosticBucket,
+  diagnostics: readonly vscode.Diagnostic[]
+): void {
+  const bucketed = collection as vscode.DiagnosticCollection & {
+    setForSource?: (
+      uri: vscode.Uri,
+      bucket: DiagnosticBucket,
+      diagnostics: readonly vscode.Diagnostic[]
+    ) => void;
+  };
+  if (typeof bucketed.setForSource === 'function') {
+    bucketed.setForSource(uri, bucket, diagnostics);
+    return;
+  }
+  collection.set(uri, diagnostics);
 }
 
 function createSyntaxDiagnostic(
