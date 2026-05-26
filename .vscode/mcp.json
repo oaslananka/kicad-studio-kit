@@ -2,11 +2,12 @@
   "servers": {
     "kicad": {
       "type": "stdio",
-      "command": "kicad-mcp-pro",
-      "args": [],
+      "command": "uvx",
+      "args": ["kicad-mcp-pro"],
       "env": {
-        "KICAD_MCP_PROJECT_DIR": "${workspaceFolder}/test/fixtures/sample_project",
-        "KICAD_MCP_PROFILE": "full"
+        "KICAD_MCP_WORKSPACE_ROOT": "${workspaceFolder}",
+        "KICAD_MCP_PROFILE": "analysis",
+        "KICAD_MCP_OPERATING_MODE": "readonly"
       }
     }
   }

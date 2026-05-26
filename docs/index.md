@@ -38,4 +38,7 @@ features:
   - title: Architecture and contribution flow
     details: Product boundaries, ownership, branch protection, test strategy, and contributor expectations are reachable from the architecture section.
     link: /architecture/
+  - title: Agent onboarding
+    details: Root agent instructions, MCP client setup examples, and Codex support boundaries are documented for repeatable coding-agent workflows.
+    link: /agents/
 ---

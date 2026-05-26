@@ -70,6 +70,8 @@ and best-effort KiCad CLI support for root checks and MCP tests.
 - [Dev container](docs/devcontainer.md)
 - [KiCad fixture corpus](docs/kicad-fixture-corpus.md)
 - [Integration model](docs/integration/kicad-studio-mcp.md)
+- [Agent onboarding](docs/agents/index.md)
+- [MCP client config examples](examples/mcp-clients/README.md)
 
 ## Examples
 

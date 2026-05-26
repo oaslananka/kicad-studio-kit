@@ -76,7 +76,15 @@ const SHARED_PREFIXES = [
   "packages/test-harness/",
 ];
 const CI_POLICY_PREFIXES = ["scripts/", ".github/"];
-const DOC_PREFIXES = ["docs/", "README.md", "CONTRIBUTING.md"];
+const DOC_PREFIXES = [
+  "docs/",
+  "README.md",
+  "CONTRIBUTING.md",
+  "AGENTS.md",
+  "CLAUDE.md",
+  ".github/copilot-instructions.md",
+  "examples/mcp-clients/",
+];
 
 const EXTENSION_INTEGRATION_PREFIXES = [
   "apps/vscode-extension/src/mcp/",
