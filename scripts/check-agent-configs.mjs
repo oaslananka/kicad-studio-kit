@@ -224,6 +224,7 @@ const requiredReferences = {
   ],
   "packages/mcp-server/docs/client-configuration.md": [
     "KICAD_MCP_OPERATING_MODE=readonly",
+    "KICAD_MCP_PROFILE=pcb_only",
     "../../../docs/agents/client-configs.md",
     "https://developers.openai.com/codex/config-reference",
   ],
