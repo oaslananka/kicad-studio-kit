@@ -95,8 +95,14 @@ jobs:
       - run: corepack pnpm --filter kicadstudio run test:unit:coverage
       - if: runner.os == 'Linux'
         run: corepack pnpm --filter kicadstudio exec playwright install --with-deps chromium
-      - if: runner.os != 'Linux'
+      - if: runner.os == 'macOS'
         run: corepack pnpm --filter kicadstudio exec playwright install chromium
+      - name: Install Playwright Chromium shell
+        if: runner.os == 'Windows'
+        timeout-minutes: 6
+        env:
+          PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT: "120000"
+        run: corepack pnpm --filter kicadstudio exec playwright install --only-shell chromium
       - run: corepack pnpm --filter kicadstudio run test:webview
       - run: corepack pnpm --filter kicadstudio run test:a11y
       - run: corepack pnpm --filter kicadstudio run build
