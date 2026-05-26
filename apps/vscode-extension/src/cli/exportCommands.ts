@@ -429,13 +429,13 @@ export class KiCadExportService {
 
   async export3DPdf(resource?: vscode.Uri): Promise<void> {
     const detected = await this.detector.detect(true);
-    const versionMajor = Number(detected?.version.split('.')[0] ?? '0');
     if (!detected) {
       void vscode.window.showWarningMessage(
         '3D PDF export requires a detected KiCad 10+ kicad-cli.'
       );
       return;
     }
+    const versionMajor = Number(detected.version.split('.')[0] ?? '0');
     if (versionMajor < 10) {
       void vscode.window.showWarningMessage(
         `3D PDF export requires KiCad 10 or later; detected ${detected.versionLabel}.`

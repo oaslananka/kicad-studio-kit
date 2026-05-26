@@ -112,6 +112,21 @@ describe('KiCadStatusBar', () => {
       bar.dispose();
     });
 
+    it('warns when detected CLI reports an unparseable version', () => {
+      const bar = makeBar();
+      bar.update({
+        cli: {
+          path: '/usr/bin/kicad-cli',
+          version: 'nightly',
+          versionLabel: 'KiCad nightly',
+          source: 'path'
+        }
+      });
+      expect(item(0).tooltip).toContain('parseable KiCad major version');
+      expect(item(0).backgroundColor).toBeDefined();
+      bar.dispose();
+    });
+
     it('shows circuit-board icon when cli is detected', () => {
       const bar = makeBar();
       bar.update({

@@ -31,6 +31,18 @@ describe('kicadCliSupport', () => {
         versionLabel: 'KiCad 7.0.11'
       }).state
     ).toBe('unsupported');
+    expect(
+      describeKiCadSupportLine({
+        version: 'nightly',
+        versionLabel: 'KiCad nightly'
+      })
+    ).toEqual(
+      expect.objectContaining({
+        state: 'unknown',
+        label: 'KiCad nightly unknown',
+        detail: expect.stringContaining('parseable KiCad major version')
+      })
+    );
   });
 
   it('reports feature availability from version line plus capability probes', () => {

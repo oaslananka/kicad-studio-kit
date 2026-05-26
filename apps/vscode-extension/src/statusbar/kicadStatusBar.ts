@@ -191,7 +191,9 @@ export class KiCadStatusBar implements vscode.Disposable {
       this.kicadItem.text = `$(circuit-board) ${this.cli.versionLabel}`;
       this.kicadItem.tooltip = `KiCad CLI: ${this.cli.path}\nSupport: ${support.label}\n${support.detail}\nClick to open settings`;
       this.kicadItem.backgroundColor =
-        support.state === 'deprecated' || support.state === 'unsupported'
+        support.state === 'deprecated' ||
+        support.state === 'unsupported' ||
+        support.state === 'unknown'
           ? new vscode.ThemeColor('statusBarItem.warningBackground')
           : undefined;
     }

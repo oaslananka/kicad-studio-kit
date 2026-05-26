@@ -51,11 +51,19 @@ export function describeKiCadSupportLine(
   cli: Pick<DetectedKiCadCli, 'version' | 'versionLabel'> | undefined
 ): KiCadSupportLine {
   const major = parseKiCadMajor(cli);
-  if (!cli || typeof major === 'undefined') {
+  if (!cli) {
     return {
       state: 'unknown',
       label: 'KiCad CLI not detected',
       detail: 'Install KiCad or configure kicadstudio.kicadCliPath.'
+    };
+  }
+  if (typeof major === 'undefined') {
+    return {
+      state: 'unknown',
+      label: `${cli.versionLabel} unknown`,
+      detail:
+        'Detected kicad-cli did not report a parseable KiCad major version.'
     };
   }
   if (major >= 10) {

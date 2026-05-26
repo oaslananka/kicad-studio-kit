@@ -255,15 +255,19 @@ export class KiCadCliDetector {
       return undefined;
     }
 
-    const capabilities: KiCadCliCapabilitySnapshot = {};
-    for (const command of STATUS_MENU_CAPABILITY_COMMANDS) {
-      capabilities[command] = await this.hasCapability(command);
-    }
-    capabilities.variantOption = await this.commandHelpIncludes(
-      ['sch', 'export', 'pdf'],
-      /--variant\b/
-    );
-    return capabilities;
+    const [commandResults, variantOption] = await Promise.all([
+      Promise.all(
+        STATUS_MENU_CAPABILITY_COMMANDS.map(
+          async (command) =>
+            [command, await this.hasCapability(command)] as const
+        )
+      ),
+      this.commandHelpIncludes(['sch', 'export', 'pdf'], /--variant\b/)
+    ]);
+    return {
+      ...(Object.fromEntries(commandResults) as KiCadCliCapabilitySnapshot),
+      variantOption
+    };
   }
 
   private async validateCandidate(
