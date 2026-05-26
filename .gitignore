@@ -10,6 +10,7 @@ coverage/
 htmlcov/
 coverage.xml
 performance-results/
+artifacts/
 .pytest-tmp*/
 *.vsix
 *.whl

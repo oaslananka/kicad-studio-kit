@@ -19,9 +19,11 @@ import yaml
 
 MCP_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = MCP_ROOT.parents[1]
-FIXTURE_ROOT = REPO_ROOT / "apps" / "vscode-extension" / "test" / "fixtures" / "kicad"
+FIXTURE_ROOT = REPO_ROOT / "packages" / "kicad-fixtures" / "fixtures"
 DEFAULT_TIMEOUT_SECONDS = 180
 KICAD_VIOLATION_EXIT_CODE = 5
+WINDOWS_PRIMARY_RUNNER = "windows-2025-vs2026"
+WINDOWS_PRIMARY_KICAD_VERSION = "10.0.3"
 
 INSTALLERS = {
     "10.0.x": {
@@ -46,9 +48,12 @@ class CanaryStep:
 
     name: str
     fixture: str
-    args: tuple[str, ...]
+    args: tuple[str, ...] = ()
     outputs: tuple[Path, ...] = ()
     expects_violations: bool = False
+    expects_failure: bool = False
+    skip_reason: str | None = None
+    readonly_dirs: tuple[Path, ...] = ()
 
 
 def _read_compatibility_matrix() -> dict[str, Any]:
@@ -79,7 +84,7 @@ def _expected_major(kicad_range: str) -> int:
     return int(match.group("major"))
 
 
-def _release_lane(entry: object) -> dict[str, object]:
+def _linux_release_lane(entry: object) -> dict[str, object]:
     kicad_range = _entry_value(entry, "range")
     state = _entry_value(entry, "state")
     ci_mode = _entry_value(entry, "ci")
@@ -87,13 +92,35 @@ def _release_lane(entry: object) -> dict[str, object]:
     if installer is None:
         raise ValueError(f"No canary installer metadata for KiCad range {kicad_range!r}")
     return {
-        "id": _lane_id(kicad_range, state),
+        "id": f"{_lane_id(kicad_range, state)}-linux",
         "range": kicad_range,
         "state": state,
         "ci": ci_mode,
+        "os": "ubuntu-24.04",
+        "install": "apt-ppa",
         "ppa": installer["release_ppa"],
         "package": installer["package"],
         "continue_on_error": state == "deprecated",
+    }
+
+
+def _windows_primary_lane(entry: object, compatibility: dict[str, Any]) -> dict[str, object]:
+    kicad_range = _entry_value(entry, "range")
+    state = _entry_value(entry, "state")
+    ci_mode = _entry_value(entry, "ci")
+    kicad = compatibility.get("kicad")
+    latest_verified = WINDOWS_PRIMARY_KICAD_VERSION
+    if isinstance(kicad, dict) and isinstance(kicad.get("latestVerified"), str):
+        latest_verified = str(kicad["latestVerified"])
+    return {
+        "id": f"{_lane_id(kicad_range, state)}-windows",
+        "range": kicad_range,
+        "state": state,
+        "ci": ci_mode,
+        "os": WINDOWS_PRIMARY_RUNNER,
+        "install": "choco",
+        "version": latest_verified,
+        "continue_on_error": False,
     }
 
 
@@ -102,10 +129,12 @@ def _nightly_lane(primary_range: str) -> dict[str, object]:
     if installer is None or "nightly_ppa" not in installer:
         raise ValueError(f"No nightly canary installer metadata for {primary_range!r}")
     return {
-        "id": f"kicad-{_expected_major(primary_range)}-nightly",
+        "id": f"kicad-{_expected_major(primary_range)}-nightly-linux",
         "range": primary_range,
         "state": "prerelease",
         "ci": "scheduled",
+        "os": "ubuntu-24.04",
+        "install": "apt-ppa",
         "ppa": installer["nightly_ppa"],
         "package": installer["package"],
         "continue_on_error": True,
@@ -116,6 +145,7 @@ def build_canary_matrix(
     compatibility: dict[str, Any],
     *,
     include_manual: bool,
+    required_only: bool = False,
 ) -> dict[str, list[dict[str, object]]]:
     """Return GitHub Actions matrix lanes derived from compatibility metadata."""
     kicad = compatibility.get("kicad")
@@ -125,17 +155,25 @@ def build_canary_matrix(
     if not isinstance(entries, list):
         raise ValueError("compatibility metadata missing kicad.supported list")
 
-    lanes = [
-        _release_lane(entry)
-        for entry in entries
-        if (ci_mode := _entry_value(entry, "ci")) in {"required", "scheduled"}
-        or include_manual
-        and ci_mode == "manual"
-    ]
     primary = kicad.get("primary")
     if not isinstance(primary, str) or not primary:
         raise ValueError("compatibility metadata missing kicad.primary")
-    lanes.append(_nightly_lane(primary))
+
+    lanes: list[dict[str, object]] = []
+    for entry in entries:
+        ci_mode = _entry_value(entry, "ci")
+        if required_only and ci_mode != "required":
+            continue
+        if ci_mode not in {"required", "scheduled"} and not (
+            include_manual and ci_mode == "manual"
+        ):
+            continue
+        if _entry_value(entry, "range") == primary and _entry_value(entry, "state") == "primary":
+            lanes.append(_windows_primary_lane(entry, compatibility))
+        lanes.append(_linux_release_lane(entry))
+
+    if not required_only:
+        lanes.append(_nightly_lane(primary))
     return {"include": lanes}
 
 
@@ -155,8 +193,8 @@ def supports_feature_gate(
     return isinstance(ranges, list) and kicad_range in ranges
 
 
-def _project_file(fixture: str, suffix: str) -> Path:
-    matches = sorted((FIXTURE_ROOT / fixture).glob(f"*{suffix}"))
+def _fixture_file(root: Path, fixture: str, suffix: str) -> Path:
+    matches = sorted((root / fixture).glob(f"*{suffix}"))
     if len(matches) != 1:
         raise FileNotFoundError(
             f"Expected one {suffix} file in fixture {fixture!r}, found {len(matches)}"
@@ -164,18 +202,61 @@ def _project_file(fixture: str, suffix: str) -> Path:
     return matches[0]
 
 
+def _project_file(fixture: str, suffix: str) -> Path:
+    return _fixture_file(FIXTURE_ROOT, fixture, suffix)
+
+
+def _prepare_fixture_workspaces(artifacts: Path, fixtures: set[str]) -> Path:
+    workspace_root = artifacts / "workspace"
+    workspace_root.mkdir(parents=True, exist_ok=True)
+    for fixture in sorted(fixtures):
+        source = FIXTURE_ROOT / fixture
+        target = workspace_root / fixture
+        if not source.is_dir():
+            raise FileNotFoundError(f"Unknown KiCad fixture: {fixture}")
+        if target.exists():
+            shutil.rmtree(target)
+        shutil.copytree(source, target)
+    return workspace_root
+
+
+def _feature_skip_reason(
+    compatibility: dict[str, Any],
+    feature_name: str,
+    kicad_range: str,
+) -> str | None:
+    if supports_feature_gate(compatibility, feature_name, kicad_range):
+        return None
+    return f"{feature_name} is not enabled for KiCad {kicad_range}"
+
+
 def _command_plan(
     artifacts: Path,
     compatibility: dict[str, Any],
     kicad_range: str,
 ) -> list[CanaryStep]:
-    clean_schematic = _project_file("clean-led-kicad10", ".kicad_sch")
-    clean_board = _project_file("clean-led-kicad10", ".kicad_pcb")
-    dirty_erc = _project_file("erc-power-pin-error", ".kicad_sch")
-    dirty_drc = _project_file("drc-courtyard-error", ".kicad_pcb")
+    workspace_root = _prepare_fixture_workspaces(
+        artifacts,
+        {
+            "clean-led-kicad10",
+            "drc-courtyard-error",
+            "erc-power-pin-error",
+            "paths-with-spaces",
+            "unicode-path-çöğü",
+        },
+    )
+    clean_schematic = _fixture_file(workspace_root, "clean-led-kicad10", ".kicad_sch")
+    clean_board = _fixture_file(workspace_root, "clean-led-kicad10", ".kicad_pcb")
+    dirty_erc = _fixture_file(workspace_root, "erc-power-pin-error", ".kicad_sch")
+    dirty_drc = _fixture_file(workspace_root, "drc-courtyard-error", ".kicad_pcb")
+    path_with_spaces_board = _fixture_file(workspace_root, "paths-with-spaces", ".kicad_pcb")
+    unicode_path_board = _fixture_file(workspace_root, "unicode-path-çöğü", ".kicad_pcb")
 
     reports = artifacts / "reports"
     manufacturing = artifacts / "manufacturing"
+    graphics = artifacts / "graphics"
+    readonly_output = artifacts / "readonly-project"
+    manufacturing_skip = _feature_skip_reason(compatibility, "manufacturingExports", kicad_range)
     steps = [
         CanaryStep(name="version", fixture="compatibility", args=("version",)),
         CanaryStep(
@@ -243,6 +324,64 @@ def _command_plan(
             expects_violations=True,
         ),
         CanaryStep(
+            name="schematic-pdf",
+            fixture="clean-led-kicad10",
+            args=(
+                "sch",
+                "export",
+                "pdf",
+                "--output",
+                str(reports / "schematic.pdf"),
+                str(clean_schematic),
+            ),
+            outputs=(reports / "schematic.pdf",),
+        ),
+        CanaryStep(
+            name="pcb-pdf",
+            fixture="clean-led-kicad10",
+            args=(
+                "pcb",
+                "export",
+                "pdf",
+                "--output",
+                str(reports / "pcb.pdf"),
+                "--layers",
+                "F.Cu,B.Cu,Edge.Cuts",
+                str(clean_board),
+            ),
+            outputs=(reports / "pcb.pdf",),
+        ),
+        CanaryStep(
+            name="pcb-svg",
+            fixture="clean-led-kicad10",
+            args=(
+                "pcb",
+                "export",
+                "svg",
+                "--output",
+                str(graphics / "pcb-svg"),
+                "--layers",
+                "F.Cu,B.Cu,Edge.Cuts",
+                str(clean_board),
+            ),
+            outputs=(graphics / "pcb-svg",),
+        ),
+        CanaryStep(
+            name="pcb-dxf",
+            fixture="clean-led-kicad10",
+            args=(
+                "pcb",
+                "export",
+                "dxf",
+                "--output",
+                str(graphics / "pcb.dxf"),
+                "--layers",
+                "F.Cu,B.Cu,Edge.Cuts",
+                str(clean_board),
+            ),
+            outputs=(graphics / "pcb.dxf",),
+        ),
+        CanaryStep(
             name="bom",
             fixture="clean-led-kicad10",
             args=(
@@ -285,38 +424,95 @@ def _command_plan(
             ),
             outputs=(reports / "board-stats.txt",),
         ),
+        CanaryStep(
+            name="step",
+            fixture="clean-led-kicad10",
+            args=(
+                "pcb",
+                "export",
+                "step",
+                "--output",
+                str(graphics / "board.step"),
+                str(clean_board),
+            ),
+            outputs=(graphics / "board.step",),
+        ),
+        CanaryStep(
+            name="path-with-spaces-board-stats",
+            fixture="paths-with-spaces",
+            args=(
+                "pcb",
+                "export",
+                "stats",
+                "--output",
+                str(reports / "path-with-spaces-board-stats.txt"),
+                str(path_with_spaces_board),
+            ),
+            outputs=(reports / "path-with-spaces-board-stats.txt",),
+        ),
+        CanaryStep(
+            name="unicode-path-board-stats",
+            fixture="unicode-path-çöğü",
+            args=(
+                "pcb",
+                "export",
+                "stats",
+                "--output",
+                str(reports / "unicode-path-board-stats.txt"),
+                str(unicode_path_board),
+            ),
+            outputs=(reports / "unicode-path-board-stats.txt",),
+        ),
+        CanaryStep(
+            name="read-only-output-failure",
+            fixture="clean-led-kicad10",
+            args=(
+                "pcb",
+                "export",
+                "stats",
+                "--output",
+                str(readonly_output / "board-stats.txt"),
+                str(clean_board),
+            ),
+            expects_failure=True,
+            readonly_dirs=(readonly_output,),
+        ),
     ]
-    if supports_feature_gate(compatibility, "manufacturingExports", kicad_range):
-        steps.extend(
-            [
-                CanaryStep(
-                    name="gerbers",
-                    fixture="clean-led-kicad10",
-                    args=(
-                        "pcb",
-                        "export",
-                        "gerbers",
-                        "--layers",
-                        "F.Cu,B.Cu,F.Silkscreen,B.Silkscreen,F.Mask,B.Mask,Edge.Cuts",
-                        "--output",
-                        str(manufacturing / "gerbers"),
-                        str(clean_board),
-                    ),
+
+    steps.extend(
+        [
+            CanaryStep(
+                name="gerbers",
+                fixture="clean-led-kicad10",
+                args=(
+                    "pcb",
+                    "export",
+                    "gerbers",
+                    "--layers",
+                    "F.Cu,B.Cu,F.Silkscreen,B.Silkscreen,F.Mask,B.Mask,Edge.Cuts",
+                    "--output",
+                    str(manufacturing / "gerbers"),
+                    str(clean_board),
                 ),
-                CanaryStep(
-                    name="drill",
-                    fixture="clean-led-kicad10",
-                    args=(
-                        "pcb",
-                        "export",
-                        "drill",
-                        "--output",
-                        str(manufacturing / "drill"),
-                        str(clean_board),
-                    ),
+                outputs=(manufacturing / "gerbers",),
+                skip_reason=manufacturing_skip,
+            ),
+            CanaryStep(
+                name="drill",
+                fixture="clean-led-kicad10",
+                args=(
+                    "pcb",
+                    "export",
+                    "drill",
+                    "--output",
+                    str(manufacturing / "drill"),
+                    str(clean_board),
                 ),
-            ]
-        )
+                outputs=(manufacturing / "drill",),
+                skip_reason=manufacturing_skip,
+            ),
+        ]
+    )
     return steps
 
 
@@ -353,9 +549,58 @@ def _subprocess_output_text(value: object) -> str:
     return str(value)
 
 
+def _path_has_content(path: Path) -> bool:
+    if path.is_dir():
+        return any(path.iterdir())
+    return path.exists() and path.stat().st_size > 0
+
+
+def _make_readonly_dirs(paths: tuple[Path, ...]) -> list[Path]:
+    readonly_paths: list[Path] = []
+    for path in paths:
+        path.mkdir(parents=True, exist_ok=True)
+        path.chmod(0o555)
+        readonly_paths.append(path)
+    return readonly_paths
+
+
+def _restore_writable_dirs(paths: list[Path]) -> None:
+    for path in paths:
+        try:
+            path.chmod(0o755)
+        except OSError:
+            pass
+
+
 def _run_step(cli: Path, step: CanaryStep, artifacts: Path) -> dict[str, object]:
+    if step.skip_reason is not None:
+        return {
+            "name": step.name,
+            "fixture": step.fixture,
+            "returncode": None,
+            "expectsViolations": step.expects_violations,
+            "expectsFailure": step.expects_failure,
+            "outputs": [str(path.relative_to(artifacts)) for path in step.outputs],
+            "ok": True,
+            "skipped": True,
+            "reason": step.skip_reason,
+        }
+    if step.readonly_dirs and os.name == "nt":
+        return {
+            "name": step.name,
+            "fixture": step.fixture,
+            "returncode": None,
+            "expectsViolations": step.expects_violations,
+            "expectsFailure": step.expects_failure,
+            "outputs": [],
+            "ok": True,
+            "skipped": True,
+            "reason": "read-only directory permission checks are covered by Linux canary lanes",
+        }
+
     command = [str(cli), *step.args]
     error: str | None = None
+    readonly_dirs = _make_readonly_dirs(step.readonly_dirs)
     try:
         result = subprocess.run(
             command,
@@ -381,21 +626,27 @@ def _run_step(cli: Path, step: CanaryStep, artifacts: Path) -> dict[str, object]
         error = f"{type(exc).__name__}: {exc}"
         stderr = f"{error}\n"
         returncode = -1
+    finally:
+        _restore_writable_dirs(readonly_dirs)
 
     logs = artifacts / "logs"
     _write_text(logs / f"{step.name}.command.txt", shlex.join(command) + "\n")
     _write_text(logs / f"{step.name}.stdout.log", stdout)
     _write_text(logs / f"{step.name}.stderr.log", stderr)
 
-    outputs_exist = all(path.exists() and path.stat().st_size > 0 for path in step.outputs)
+    outputs_exist = all(_path_has_content(path) for path in step.outputs)
     command_ok = (
         returncode == KICAD_VIOLATION_EXIT_CODE if step.expects_violations else returncode == 0
     )
+    if step.expects_failure:
+        command_ok = returncode not in {0, None}
+        outputs_exist = True
     step_result: dict[str, object] = {
         "name": step.name,
         "fixture": step.fixture,
         "returncode": returncode,
         "expectsViolations": step.expects_violations,
+        "expectsFailure": step.expects_failure,
         "outputs": [str(path.relative_to(artifacts)) for path in step.outputs],
         "ok": command_ok and outputs_exist,
     }
@@ -440,8 +691,35 @@ def _assert_version_matches_range(version_result: dict[str, object], kicad_range
 def run_canary(artifacts: Path, kicad_range: str) -> int:
     """Run the KiCad CLI canary plan and write reports and logs to artifacts."""
     compatibility = _read_compatibility_matrix()
-    cli = _resolve_cli()
     artifacts.mkdir(parents=True, exist_ok=True)
+    try:
+        cli = _resolve_cli()
+    except FileNotFoundError as exc:
+        results: list[dict[str, object]] = [
+            {
+                "name": "resolve-cli",
+                "fixture": "environment",
+                "ok": False,
+                "error": str(exc),
+            }
+        ]
+        summary = {
+            "kicadRange": kicad_range,
+            "kicadCli": None,
+            "manufacturingExports": supports_feature_gate(
+                compatibility,
+                "manufacturingExports",
+                kicad_range,
+            ),
+            "results": results,
+            "failingFixtures": ["environment"],
+        }
+        _write_text(
+            artifacts / "summary.json", json.dumps(summary, indent=2, sort_keys=True) + "\n"
+        )
+        _write_text(artifacts / "failing-fixtures.txt", "environment\n")
+        print(str(exc), file=sys.stderr)
+        return 1
 
     steps = _command_plan(artifacts, compatibility, kicad_range)
     results = [_run_step(cli, step, artifacts) for step in steps]
@@ -477,8 +755,12 @@ def run_canary(artifacts: Path, kicad_range: str) -> int:
     return 0
 
 
-def _write_matrix(include_manual: bool) -> int:
-    matrix = build_canary_matrix(_read_compatibility_matrix(), include_manual=include_manual)
+def _write_matrix(include_manual: bool, required_only: bool) -> int:
+    matrix = build_canary_matrix(
+        _read_compatibility_matrix(),
+        include_manual=include_manual,
+        required_only=required_only,
+    )
     print(json.dumps(matrix, separators=(",", ":")))
     return 0
 
@@ -493,6 +775,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Include compatibility lanes marked manual.",
     )
+    matrix_parser.add_argument(
+        "--required-only",
+        action="store_true",
+        help="Only include required lanes for pull-request smoke checks.",
+    )
 
     run_parser = subcommands.add_parser("run", help="Run KiCad CLI canary commands.")
     run_parser.add_argument("--artifacts", type=Path, required=True)
@@ -500,7 +787,7 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     if args.command == "matrix":
-        return _write_matrix(args.include_manual)
+        return _write_matrix(args.include_manual, args.required_only)
     if args.command == "run":
         return run_canary(args.artifacts, args.kicad_range)
     raise AssertionError(f"Unhandled command: {args.command}")

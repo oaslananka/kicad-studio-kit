@@ -219,12 +219,34 @@ from `compatibility.yaml` every week and on manual dispatch. Required and
 scheduled lanes run by default; manual dispatch can opt into deprecated lanes
 that remain documented but should not block normal scheduled canaries.
 
+Pull requests that touch the KiCad contract harness, compatibility metadata, or
+fixture corpus run the required KiCad contract smoke lanes only. The PR smoke
+matrix covers the primary KiCad 10.0.x line on Windows with the Chocolatey
+KiCad 10.0.3 install path under `C:\Program Files\KiCad\10.0\bin`, plus the
+Linux primary lane from the KiCad 10 release PPA. Scheduled and manual runs keep
+the heavier matrix: primary 10.0.x, supported 9.x, prerelease/nightly 10.x, and
+manual opt-in deprecated 8.x.
+
 Each lane writes command logs, KiCad reports, manufacturing export outputs,
 `summary.json`, and `failing-fixtures.txt` into an artifact named after the
 lane. Manufacturing exports are enabled only when the matrix feature gate lists
 that KiCad range. Primary-lane failures fail the workflow and create or update a
 compatibility issue with the `release-blocker` label; prerelease and deprecated
 lanes report artifacts and issue comments without blocking the default branch.
+
+Run the same primary contract locally after installing KiCad or setting
+`KICAD_CANARY_KICAD_CLI`, `KICAD_MCP_KICAD_CLI`, or `KICAD_CLI_PATH`:
+
+```bash
+corepack pnpm run test:kicad-cli-contract
+```
+
+The contract uses the shared fixture corpus in `packages/kicad-fixtures/` and
+validates `kicad-cli version`, ERC, DRC, schematic PDF export, PCB PDF/SVG/DXF
+export, Gerber and drill export, BOM, netlist, board statistics, STEP export,
+paths containing spaces, Unicode paths, missing CLI reporting, read-only output
+failure reporting, and structured skipped results for feature gates that are not
+supported by a KiCad line.
 
 ## VS Code Canary
 
