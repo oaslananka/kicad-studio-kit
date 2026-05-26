@@ -83,7 +83,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
       ),
     );
     writeFileSync(path.join(repoRoot, ".node-version"), "24\n");
-    writeFileSync(path.join(repoRoot, ".python-version"), "3.12\n");
+    writeFileSync(path.join(repoRoot, ".python-version"), "3.13\n");
     writeFileSync(
       path.join(repoRoot, "apps/vscode-extension/package.json"),
       JSON.stringify({ name: "kicadstudio" }),
@@ -97,7 +97,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
         "node:",
         '  range: ">=24.11.0 <25"',
         "python:",
-        '  range: ">=3.12"',
+        '  range: ">=3.13"',
       ].join("\n"),
     );
     writeFileSync(
@@ -125,7 +125,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
           return { ok: true, status: 0, stdout: "11.0.8", stderr: "" };
         }
         if (joined === "python3 --version") {
-          return { ok: true, status: 0, stdout: "Python 3.12.3", stderr: "" };
+          return { ok: true, status: 0, stdout: "Python 3.13.8", stderr: "" };
         }
         if (joined === "uv --version") {
           return { ok: true, status: 0, stdout: "uv 0.11.12", stderr: "" };

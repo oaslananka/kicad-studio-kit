@@ -100,7 +100,7 @@ def reset_connection() -> None:
 
 
 @contextmanager
-def board_transaction() -> Generator[Board, None, None]:
+def board_transaction() -> Generator[Board]:
     """Context manager for board operations."""
     with _lock:
         board = get_board()

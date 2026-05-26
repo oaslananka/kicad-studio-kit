@@ -14,7 +14,7 @@ RUN curl -fL "${KICAD_APPIMAGE_URL}" -o /tmp/kicad.AppImage \
     && mkdir -p /opt/kicad-appimage \
     && cp -a squashfs-root/. /opt/kicad-appimage/
 
-FROM python:3.12-slim@sha256:6026d9374020066a85690cabdb66f5d06a2dd606e756c7082fccdaaaf6d048dd AS builder
+FROM python:3.13.11-slim@sha256:2b9c9803c6a287cafa0a8c917211dddd23dcd2016f049690ee5219f5d3f1636e AS builder
 ARG UV_VERSION=0.11.12
 WORKDIR /app
 RUN python -m pip install --no-cache-dir --disable-pip-version-check --root-user-action=ignore "uv==${UV_VERSION}"
@@ -22,7 +22,7 @@ COPY pyproject.toml uv.lock README.md LICENSE ./
 COPY src/ src/
 RUN uv sync --frozen --extra http --extra simulation --extra freerouting
 
-FROM python:3.12-slim@sha256:6026d9374020066a85690cabdb66f5d06a2dd606e756c7082fccdaaaf6d048dd AS runtime
+FROM python:3.13.11-slim@sha256:2b9c9803c6a287cafa0a8c917211dddd23dcd2016f049690ee5219f5d3f1636e AS runtime
 ARG KICAD_MCP_VERSION=0.0.0
 ARG VCS_REF=unknown
 ARG DEBIAN_FRONTEND=noninteractive

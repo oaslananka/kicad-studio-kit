@@ -8,7 +8,7 @@ This monorepo uses Renovate as the dependency maintenance bot. Repository-local 
 - Renovate lock-file maintenance refreshes `pnpm-lock.yaml` and `packages/mcp-server/uv.lock` on the weekly maintenance window.
 - GitHub Action references remain pinned to immutable commit SHAs.
 - `@types/node` stays below `25` while the workspace runtime is Node 24.
-- `@types/vscode` stays aligned with `engines.vscode: ^1.99.0`.
+- `@types/vscode` stays aligned with `engines.vscode: ^1.120.0`.
 - Python dependency updates are applied through `pyproject.toml` plus `uv.lock`.
 
 ## Applied Updates
@@ -23,7 +23,7 @@ This monorepo uses Renovate as the dependency maintenance bot. Repository-local 
 | `prettier`                         | `3.8.3`   |
 | `typescript`                       | `5.9.3`   |
 | `@types/node`                      | `24.12.3` |
-| `@types/vscode`                    | `1.99.1`  |
+| `@types/vscode`                    | `1.120.0` |
 | `webpack-cli`                      | `7.0.2`   |
 | `c8`                               | `11.0.0`  |
 | `lint-staged`                      | `17.0.4`  |
@@ -40,7 +40,7 @@ This monorepo uses Renovate as the dependency maintenance bot. Repository-local 
 | ESLint 10 and `@eslint/js` 10             | Postponed until the flat config migration can be validated on all matrix runners.                                                                                                                  |
 | Jest 30, `@types/jest` 30, `jest-util` 30 | Postponed until unit, integration, mocks, and extension host tests are migrated together.                                                                                                          |
 | `@types/node` 25                          | Rejected for now because the runtime target is Node 24.x.                                                                                                                                          |
-| `@types/vscode` 1.118                     | Rejected for now because the extension minimum remains `engines.vscode: ^1.99.0`.                                                                                                                  |
+| `@types/vscode` 1.121                     | Rejected for now because the package is not published yet; `1.120.0` is the newest registry version aligned with `engines.vscode: ^1.120.0`.                                                       |
 
 ## Security Review
 

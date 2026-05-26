@@ -1,5 +1,5 @@
 schemaVersion: 1
-updated: "2026-05-23"
+updated: "2026-05-26"
 source: "https://github.com/oaslananka/kicad-studio-kit"
 
 kicad:
@@ -21,8 +21,8 @@ kicad:
   dropped: []
 
 vscode:
-  minimum: "1.99.0"
-  enginesRange: "^1.99.0"
+  minimum: "1.120.0"
+  enginesRange: "^1.120.0"
   stable: "current"
   insiders: "current"
   nodeRuntime: "24.x"
@@ -37,14 +37,14 @@ pnpm:
   primary: "11.x"
 
 python:
-  range: ">=3.12"
-  primary: "3.12"
+  range: ">=3.13"
+  primary: "3.13"
   supported:
-    - "3.12"
     - "3.13"
+    - "3.14"
 
 runtimePolicy:
-  reviewed: "2026-05-23"
+  reviewed: "2026-05-26"
   sources:
     vscodeStable: "https://update.code.visualstudio.com/api/releases/stable"
     vscodeInsiders: "https://update.code.visualstudio.com/api/update/linux-x64/insider/latest"

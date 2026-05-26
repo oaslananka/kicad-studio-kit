@@ -7,7 +7,7 @@ def test_vscode_canary_matrix_uses_compatibility_metadata() -> None:
     matrix = build_canary_matrix(
         {
             "vscode": {
-                "minimum": "1.99.0",
+                "minimum": "1.120.0",
                 "stable": "current",
                 "insiders": "current",
             }
@@ -25,7 +25,7 @@ def test_vscode_canary_matrix_uses_compatibility_metadata() -> None:
             {
                 "id": "vscode-minimum",
                 "state": "supported",
-                "version": "1.99.0",
+                "version": "1.120.0",
                 "continue_on_error": False,
             },
             {
@@ -42,7 +42,7 @@ def test_vscode_canary_matrix_preserves_explicit_channel_versions() -> None:
     matrix = build_canary_matrix(
         {
             "vscode": {
-                "minimum": "1.99.0",
+                "minimum": "1.120.0",
                 "stable": "1.116.0",
                 "insiders": "1.117.0-insider",
             }

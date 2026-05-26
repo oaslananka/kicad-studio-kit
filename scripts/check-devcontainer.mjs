@@ -89,7 +89,7 @@ function validateDevcontainerJson(errors, config) {
     KICAD_STUDIO_DEVCONTAINER: "1",
     PLAYWRIGHT_BROWSERS_PATH: "/ms-playwright",
     UV_LINK_MODE: "copy",
-    UV_PYTHON: "3.12",
+    UV_PYTHON: "3.13",
   })) {
     if (containerEnv[name] !== expected) {
       errors.push(`devcontainer containerEnv.${name} must be ${expected}`);
@@ -156,7 +156,7 @@ export function validateDevcontainerRepository(repoRoot = DEFAULT_REPO_ROOT) {
   requireExecutable(errors, repoRoot, ".devcontainer/postCreateCommand.sh");
 
   for (const phrase of [
-    "FROM mcr.microsoft.com/devcontainers/python:3.12-bookworm",
+    "FROM mcr.microsoft.com/devcontainers/python:3.13-bookworm",
     "ARG ACTIONLINT_VERSION=1.7.12",
     "ARG UV_VERSION=0.11.12",
     "shellcheck",
@@ -188,7 +188,7 @@ export function validateDevcontainerRepository(repoRoot = DEFAULT_REPO_ROOT) {
   for (const phrase of [
     "Node 24",
     "pnpm 11",
-    "Python 3.12",
+    "Python 3.13",
     "uv 0.11.12",
     "actionlint 1.7.12",
     "shellcheck",

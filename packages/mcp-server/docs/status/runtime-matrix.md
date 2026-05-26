@@ -6,8 +6,8 @@ This matrix describes the supported runtime surface for KiCad MCP Pro.
 
 | Python | Status | Notes                                   |
 | ------ | ------ | --------------------------------------- |
-| 3.12   | Tested | Primary package and Docker runtime.     |
-| 3.13   | Tested | Covered by CI for pure Python behavior. |
+| 3.13   | Tested | Primary package and Docker runtime.     |
+| 3.14   | Tested | Covered by CI for pure Python behavior. |
 
 ## Operating Systems
 

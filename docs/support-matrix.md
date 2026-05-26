@@ -15,10 +15,10 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 | --- | --- |
 | KiCad primary | `10.0.x` |
 | KiCad latest verified | `10.0.3` |
-| VS Code minimum | `1.99.0` |
+| VS Code minimum | `1.120.0` |
 | Node | `>=24.11.0 <25` |
 | pnpm | `>=11.0.0 <12` |
-| Python | `>=3.12` |
+| Python | `>=3.13` |
 | MCP protocol | `2025-11-25` |
 
 ### KiCad Support
@@ -61,11 +61,11 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 | Surface      | Primary    | Supported             | Deprecated | Gate                                     |
 | ------------ | ---------- | --------------------- | ---------- | ---------------------------------------- |
 | KiCad        | 10.0.x     | 9.x                   | 8.x        | `compatibility.yaml` + release preflight |
-| VS Code      | current    | `engines.vscode` 1.99 | none       | extension manifest + VS Code canary      |
+| VS Code      | current    | `engines.vscode` 1.120 | none      | extension manifest + VS Code canary      |
 | MCP protocol | 2025-11-25 | 2025-11-25            | older      | well-known server card + matrix          |
 | Node         | 24.x       | `>=24.11.0 <25`       | older      | root and extension package metadata      |
 | pnpm         | 11.x       | `>=11.0.0 <12`        | older      | root package metadata                    |
-| Python       | 3.12       | 3.12, 3.13            | older      | `pyproject.toml` and CI                  |
+| Python       | 3.13       | 3.13, 3.14            | older      | `pyproject.toml` and CI                  |
 
 ## Minimum-Bump Policy
 
@@ -85,8 +85,8 @@ Python:
 
 - `packages/mcp-server/pyproject.toml` `requires-python` is the MCP server install-time floor.
 - The supported Python window is two minor versions wide for the current stable product line.
-- The current 1.0.x line remains pinned to Python 3.12 and 3.13 until Python 3.14 validation is
-  complete; the drift workflow opens a tracking issue when the official bugfix window moves.
+- The current 1.0.x line tracks the official two-minor bugfix window: Python 3.13 and 3.14.
+  The drift workflow opens a tracking issue when the official bugfix window moves again.
 - Lowering the floor is blocked in CI unless `packages/mcp-server/CHANGELOG.md` changes in the
   same PR with compatibility context.
 

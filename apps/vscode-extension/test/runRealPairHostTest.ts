@@ -13,7 +13,7 @@ async function main(): Promise<void> {
     'benchmark_projects',
     'pass_minimal_mcu_board'
   );
-  const vscodeExecutablePath = await downloadAndUnzipVSCode('1.115.0');
+  const vscodeExecutablePath = await downloadAndUnzipVSCode('1.120.0');
   const userDataDir = await mkdtemp(
     path.join(tmpdir(), 'kicadstudio-real-pair-user-')
   );

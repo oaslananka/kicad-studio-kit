@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "publisher": "oaslananka",
   "engines": {
-    "vscode": "^1.99.0",
+    "vscode": "^1.120.0",
     "node": "24.x"
   },
   "packageManager": "pnpm@11.0.8",
@@ -2108,7 +2108,7 @@
     "@types/jest": "30.0.0",
     "@types/mocha": "10.0.10",
     "@types/node": "24.12.3",
-    "@types/vscode": "1.99.1",
+    "@types/vscode": "1.120.0",
     "@typescript-eslint/eslint-plugin": "8.59.2",
     "@typescript-eslint/parser": "8.59.2",
     "@vscode/test-electron": "2.5.2",

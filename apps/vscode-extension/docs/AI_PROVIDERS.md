@@ -70,7 +70,7 @@ Use `kicadstudio.ai.language` to control the response language independently fro
 
 ## Language Model Tools
 
-KiCad Studio 1.0.0 targets VS Code `^1.99.0` for Language Model Tool and chat-provider contribution metadata. When `kicadstudio.ai.allowTools` is enabled and the host VS Code build exposes the API, KiCad Studio registers tools for:
+KiCad Studio 1.0.0 targets VS Code `^1.120.0` for Language Model Tool and chat-provider contribution metadata. When `kicadstudio.ai.allowTools` is enabled and the host VS Code build exposes the API, KiCad Studio registers tools for:
 
 - DRC
 - ERC
