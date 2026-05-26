@@ -20,6 +20,55 @@ All stdio examples use:
 gate applied on top of that profile. Switch to `write`, `manufacturing`, or
 `experimental` only when the task explicitly requires that surface.
 
+## CLI Setup Commands
+
+Use these commands when the client can register MCP servers directly from a CLI. Otherwise,
+copy the matching example file into the install location below.
+
+### Linux/macOS
+
+```bash
+codex mcp add kicad \
+  --env KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
+  --env KICAD_MCP_PROFILE=pcb_only \
+  --env KICAD_MCP_OPERATING_MODE=readonly \
+  -- uvx kicad-mcp-pro
+
+claude mcp add --transport stdio --scope project \
+  --env KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
+  --env KICAD_MCP_PROFILE=pcb_only \
+  --env KICAD_MCP_OPERATING_MODE=readonly \
+  kicad -- uvx kicad-mcp-pro
+
+gemini mcp add --scope project --transport stdio \
+  -e KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
+  -e KICAD_MCP_PROFILE=pcb_only \
+  -e KICAD_MCP_OPERATING_MODE=readonly \
+  kicad uvx kicad-mcp-pro
+```
+
+### Windows PowerShell
+
+```powershell
+codex mcp add kicad `
+  --env 'KICAD_MCP_PROJECT_DIR=C:\absolute\path\to\your\kicad-project' `
+  --env 'KICAD_MCP_PROFILE=pcb_only' `
+  --env 'KICAD_MCP_OPERATING_MODE=readonly' `
+  -- uvx kicad-mcp-pro
+
+claude mcp add --transport stdio --scope project `
+  --env 'KICAD_MCP_PROJECT_DIR=C:\absolute\path\to\your\kicad-project' `
+  --env 'KICAD_MCP_PROFILE=pcb_only' `
+  --env 'KICAD_MCP_OPERATING_MODE=readonly' `
+  kicad -- uvx kicad-mcp-pro
+
+gemini mcp add --scope project --transport stdio `
+  -e 'KICAD_MCP_PROJECT_DIR=C:\absolute\path\to\your\kicad-project' `
+  -e 'KICAD_MCP_PROFILE=pcb_only' `
+  -e 'KICAD_MCP_OPERATING_MODE=readonly' `
+  kicad uvx kicad-mcp-pro
+```
+
 ## Example Files
 
 | Client                         | File                                 | Install location                                 |
@@ -37,11 +86,22 @@ gate applied on top of that profile. Switch to `write`, `manufacturing`, or
 
 For HTTP clients, start the server separately:
 
+### Linux/macOS
+
 ```bash
 KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
 KICAD_MCP_PROFILE=pcb_only \
 KICAD_MCP_OPERATING_MODE=readonly \
-kicad-mcp-pro --transport http --host 127.0.0.1 --port 3334
+uvx kicad-mcp-pro --transport http --host 127.0.0.1 --port 3334
+```
+
+### Windows PowerShell
+
+```powershell
+$Env:KICAD_MCP_PROJECT_DIR = 'C:\absolute\path\to\your\kicad-project'
+$Env:KICAD_MCP_PROFILE = 'pcb_only'
+$Env:KICAD_MCP_OPERATING_MODE = 'readonly'
+uvx kicad-mcp-pro --transport http --host 127.0.0.1 --port 3334
 ```
 
 Then point the client at:

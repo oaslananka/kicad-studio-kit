@@ -31,9 +31,10 @@ Ship repository-local agent onboarding and a checked-in MCP client config pack n
 - `docs/agents/`
 - `examples/mcp-clients/`
 
-Default the examples to `KICAD_MCP_OPERATING_MODE=readonly` and
-`KICAD_MCP_PROFILE=analysis`. Keep checked-in workspace config free of fixture paths and
-machine-specific production paths.
+Default the copyable client examples to `KICAD_MCP_OPERATING_MODE=readonly` and
+`KICAD_MCP_PROFILE=pcb_only`. Keep checked-in workspace developer config free of fixture
+paths and machine-specific production paths; it may use the broader `analysis` profile
+when it does not embed a project path.
 
 Do not add Codex skills or a packaged plugin in this change. Skills should be added only
 after a workflow is stable enough to encode as a reusable procedure. Plugin distribution
@@ -45,8 +46,8 @@ server configuration are insufficient.
 - Agents can start from root instructions instead of discovering scattered docs.
 - Client examples are parseable and copyable after replacing the project path placeholder.
 - The root VS Code MCP config is a safe developer default, not a fixture shortcut.
-- Codex is documented as both a VS Code extension provider enum and as an external MCP
-  client, with a clear boundary between those meanings.
+- Codex is documented as an external MCP client, not a direct KiCad Studio extension
+  provider setting.
 - CI must validate the agent docs and client examples so stale or unsafe defaults fail
   before merge.
 
