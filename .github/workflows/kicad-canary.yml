@@ -107,6 +107,7 @@ jobs:
       - name: Run KiCad CLI canary
         env:
           KICAD_CANARY_RANGE: ${{ matrix.range }}
+        shell: bash
         run: |
           uv run --project packages/mcp-server --all-extras python packages/mcp-server/scripts/kicad_canary.py run \
             --artifacts "artifacts/kicad-canary/${{ matrix.id }}" \
