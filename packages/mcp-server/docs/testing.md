@@ -30,7 +30,7 @@ uv run pytest --cov=kicad_mcp_pro --cov-report=term-missing
 ## CI Matrix
 
 CI runs in the canonical `oaslananka/kicad-studio-kit` GitHub repository on
-GitHub-hosted runners. Python **3.12** is the required PR/push lane for the MCP
+GitHub-hosted runners. Python **3.13** is the required PR/push lane for the MCP
 server, and package publishing uses the release workflows documented in
 `docs/publishing.md`.
 

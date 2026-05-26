@@ -17,9 +17,9 @@ describe('VS Code test runtime', () => {
     ).toBe('insiders');
     expect(
       resolveVsCodeTestVersion({
-        KICADSTUDIO_VSCODE_VERSION: '1.99.0'
+        KICADSTUDIO_VSCODE_VERSION: '1.120.0'
       })
-    ).toBe('1.99.0');
+    ).toBe('1.120.0');
   });
 
   it('selects the dedicated canary host suite only when requested', () => {

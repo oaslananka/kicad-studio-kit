@@ -703,7 +703,7 @@ def test_docker_metadata_contains_mcp_oci_label_and_release_image_contract() -> 
     assert "pip install --no-cache-dir uv" not in kicad_dockerfile
     assert f"UV_VERSION={uv_version}" in dockerfile
     assert f"UV_VERSION={uv_version}" in kicad_dockerfile
-    assert "python:3.12.13-alpine3.22@sha256:" in dockerfile
+    assert "python:3.13.11-alpine3.22@sha256:" in dockerfile
     assert "KICAD_MCP_HOST=0.0.0.0" in dockerfile
     assert "ARG KICAD_CLI_APK_PACKAGE" in dockerfile
     assert "apk upgrade --no-cache" in dockerfile

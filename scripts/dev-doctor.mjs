@@ -454,7 +454,7 @@ export async function createDoctorReport(
   };
   const nodeRange = packageJson.engines?.node ?? ">=24.11.0 <25";
   const pnpmRange = packageJson.engines?.pnpm ?? ">=11.0.0 <12";
-  const pythonRange = ">=3.12";
+  const pythonRange = ">=3.13";
   const commandOptions = {
     cwd: repoRoot,
     commandRunner: options.commandRunner,
@@ -500,7 +500,7 @@ export async function createDoctorReport(
       pythonRange,
       {
         ...commandOptions,
-        hint: "Install Python 3.12 or newer and make it available as python3 or python.",
+        hint: "Install Python 3.13 or newer and make it available as python3 or python.",
       },
     ),
   );
@@ -724,7 +724,7 @@ export async function createDoctorReport(
       ok:
         compatibility.includes('primary: "10.0.x"') &&
         compatibility.includes('range: ">=24.11.0 <25"') &&
-        compatibility.includes('range: ">=3.12"'),
+        compatibility.includes('range: ">=3.13"'),
       detail: compatibility
         ? "compatibility.yaml contains runtime baselines"
         : "missing",

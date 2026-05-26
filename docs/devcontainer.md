@@ -11,7 +11,7 @@ The container follows the repository support matrix:
 | ----------------- | ----------------------------------------------------------------------------------------------- |
 | Node 24           | official `ghcr.io/devcontainers/features/node:1` feature with `version: "24"`                   |
 | pnpm 11           | root `packageManager` through Corepack, with the Node feature not installing a global pnpm      |
-| Python 3.12       | official `mcr.microsoft.com/devcontainers/python:3.12-bookworm` base image                      |
+| Python 3.13       | official `mcr.microsoft.com/devcontainers/python:3.13-bookworm` base image                      |
 | uv 0.11.12        | pinned Python package install, matching the MCP container policy                                |
 | actionlint 1.7.12 | pinned upstream release archive with SHA-256 verification                                       |
 | shellcheck        | Debian package                                                                                  |

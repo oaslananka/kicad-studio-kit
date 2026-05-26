@@ -7,7 +7,7 @@ cd "${repo_root}"
 export KICAD_STUDIO_DEVCONTAINER="${KICAD_STUDIO_DEVCONTAINER:-1}"
 export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-/ms-playwright}"
 export UV_LINK_MODE="${UV_LINK_MODE:-copy}"
-export UV_PYTHON="${UV_PYTHON:-3.12}"
+export UV_PYTHON="${UV_PYTHON:-3.13}"
 
 echo "Configuring KiCad Studio Kit devcontainer in ${repo_root}"
 

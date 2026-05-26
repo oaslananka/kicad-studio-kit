@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-FROM mcr.microsoft.com/devcontainers/python:3.12-bookworm
+FROM mcr.microsoft.com/devcontainers/python:3.13-bookworm
 
 ARG ACTIONLINT_VERSION=1.7.12
 ARG UV_VERSION=0.11.12
@@ -8,7 +8,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV KICAD_STUDIO_DEVCONTAINER=1 \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
     UV_LINK_MODE=copy \
-    UV_PYTHON=3.12
+    UV_PYTHON=3.13
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \

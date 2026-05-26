@@ -16,8 +16,8 @@ from scripts.runtime_policy import (
 
 def _snapshot(
     *,
-    vscode_range: str = "^1.99.0",
-    python_range: str = ">=3.12",
+    vscode_range: str = "^1.120.0",
+    python_range: str = ">=3.13",
     kicad_primary: str = "10.0.x",
 ) -> RuntimeSupportSnapshot:
     return RuntimeSupportSnapshot(
@@ -30,6 +30,14 @@ def _snapshot(
 
 def test_repository_runtime_policy_is_parseable_and_in_sync() -> None:
     assert validate_runtime_policy() == []
+
+
+def test_repository_runtime_metadata_matches_current_bugfix_window() -> None:
+    snapshot = runtime_policy.snapshot_from_repo()
+
+    assert snapshot.vscode_engines_range == "^1.120.0"
+    assert snapshot.python_requires == ">=3.13"
+    assert snapshot.python_supported_minors == ("3.13", "3.14")
 
 
 def test_vscode_engine_drift_reports_minimum_lag() -> None:
@@ -76,8 +84,8 @@ def test_python_drift_reports_missing_current_supported_window() -> None:
 
 def test_runtime_lowering_requires_product_changelog() -> None:
     findings = detect_runtime_lowering(
-        base=_snapshot(vscode_range="^1.99.0", python_range=">=3.12"),
-        current=_snapshot(vscode_range="^1.98.0", python_range=">=3.11"),
+        base=_snapshot(vscode_range="^1.120.0", python_range=">=3.13"),
+        current=_snapshot(vscode_range="^1.119.0", python_range=">=3.12"),
         changed_files=(Path("docs/support-matrix.md"),),
     )
 
@@ -87,8 +95,8 @@ def test_runtime_lowering_requires_product_changelog() -> None:
 
 def test_runtime_lowering_accepts_required_changelogs() -> None:
     findings = detect_runtime_lowering(
-        base=_snapshot(vscode_range="^1.99.0", python_range=">=3.12"),
-        current=_snapshot(vscode_range="^1.98.0", python_range=">=3.11"),
+        base=_snapshot(vscode_range="^1.120.0", python_range=">=3.13"),
+        current=_snapshot(vscode_range="^1.119.0", python_range=">=3.12"),
         changed_files=(
             Path("apps/vscode-extension/CHANGELOG.md"),
             Path("packages/mcp-server/CHANGELOG.md"),
@@ -110,8 +118,8 @@ def test_runtime_lowering_uses_policy_changelog_paths() -> None:
     )
 
     findings = detect_runtime_lowering(
-        base=_snapshot(vscode_range="^1.99.0", python_range=">=3.12", kicad_primary="10.0.x"),
-        current=_snapshot(vscode_range="^1.98.0", python_range=">=3.11", kicad_primary="9.x"),
+        base=_snapshot(vscode_range="^1.120.0", python_range=">=3.13", kicad_primary="10.0.x"),
+        current=_snapshot(vscode_range="^1.119.0", python_range=">=3.12", kicad_primary="9.x"),
         changed_files=(
             Path("custom/extension-changelog.md"),
             Path("custom/mcp-changelog.md"),

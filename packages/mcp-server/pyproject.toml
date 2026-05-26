@@ -27,14 +27,14 @@ classifiers = [
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
   "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: Implementation :: CPython",
   "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
   "Topic :: Software Development :: Code Generators",
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
   "authlib>=1.7.1",
   "anyio>=4.4.0",
@@ -108,7 +108,7 @@ packages = ["src/kicad_mcp"]
 include = ["src/kicad_mcp", "README.md", "LICENSE", "pyproject.toml"]
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py313"
 line-length = 100
 
 [tool.ruff.lint]
@@ -119,7 +119,7 @@ ignore = ["S603"]
 "tests/**/*.py" = ["ANN001", "ANN202", "S101"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 strict = true
 plugins = ["pydantic.mypy"]
 

@@ -2,7 +2,7 @@
 
 ## Development Setup
 
-1. Install Node.js `24.14.1`, pnpm `11.0.8`, and VS Code 1.99+.
+1. Install Node.js `24.14.1`, pnpm `11.0.8`, and VS Code 1.120+.
 2. Run `pnpm install --frozen-lockfile`.
 3. Press `F5` to launch the Extension Development Host.
 4. Let the Git hooks handle fast staged checks on commit and run `pnpm run check` before push.

@@ -22,7 +22,7 @@
     "KICAD_STUDIO_DEVCONTAINER": "1",
     "PLAYWRIGHT_BROWSERS_PATH": "/ms-playwright",
     "UV_LINK_MODE": "copy",
-    "UV_PYTHON": "3.12"
+    "UV_PYTHON": "3.13"
   },
   "remoteEnv": {
     "PATH": "${containerEnv:PATH}:${workspaceFolder}/packages/mcp-server/.venv/bin"
