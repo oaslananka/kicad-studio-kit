@@ -20,14 +20,26 @@ Use the checked-in examples under `examples/mcp-clients/`:
 
 Replace `/absolute/path/to/your/kicad-project` with the target KiCad project path before
 copying a config into a real client location.
+Claude Code project scope writes shared server configuration to the project `.mcp.json`;
+review that file before trusting servers from another branch or contributor.
 
-Recommended local server:
+Recommended local server on Linux/macOS:
 
 ```bash
 claude mcp add --transport stdio --scope project \
   --env KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
   --env KICAD_MCP_PROFILE=pcb_only \
   --env KICAD_MCP_OPERATING_MODE=readonly \
+  kicad -- uvx kicad-mcp-pro
+```
+
+Recommended local server on Windows PowerShell:
+
+```powershell
+claude mcp add --scope project --transport stdio `
+  --env KICAD_MCP_PROJECT_DIR=C:\absolute\path\to\your\kicad-project `
+  --env KICAD_MCP_PROFILE=pcb_only `
+  --env KICAD_MCP_OPERATING_MODE=readonly `
   kicad -- uvx kicad-mcp-pro
 ```
 
