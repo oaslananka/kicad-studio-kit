@@ -287,6 +287,36 @@ describe('KiCadCliDetector', () => {
     await expect(detector.hasCapability('bom')).resolves.toBe(false);
   });
 
+  it('builds a status-menu capability snapshot from CLI help probes', async () => {
+    const detector = new KiCadCliDetector() as any;
+    detector.detect = jest.fn().mockResolvedValue({
+      path: '/usr/bin/kicad-cli',
+      version: '10.0.3',
+      versionLabel: 'KiCad 10.0.3',
+      source: 'path'
+    });
+    detector.hasCapability = jest
+      .fn()
+      .mockImplementation(async (command: string) => command !== 'odb');
+    detector.commandHelpIncludes = jest.fn().mockResolvedValue(true);
+
+    await expect(detector.getCapabilitySnapshot()).resolves.toEqual(
+      expect.objectContaining({
+        drc: true,
+        erc: true,
+        gerbers: true,
+        pdf3d: true,
+        odb: false,
+        variantOption: true
+      })
+    );
+    expect(detector.hasCapability).toHaveBeenCalledWith('jobset');
+    expect(detector.commandHelpIncludes).toHaveBeenCalledWith(
+      ['sch', 'export', 'pdf'],
+      /--variant\b/
+    );
+  });
+
   it('handles empty candidates, missing files, and failed PATH lookups', async () => {
     const detector = new KiCadCliDetector() as any;
     const existsSyncMock = fs.existsSync as unknown as jest.Mock;

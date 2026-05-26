@@ -47,6 +47,34 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 
 <!-- docs-site:compatibility:end -->
 
+## Tested KiCad CLI Feature Matrix
+
+This matrix records the user-facing support boundary for `kicad-cli` driven
+extension features. The runtime checks intentionally probe CLI command help
+before running commands; a version line alone is not enough to enable advanced
+exports.
+
+| KiCad line | Tested patch | Support state | Required validation                         | Extension feature state                                                                                                                                                                     |
+| ---------- | ------------ | ------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 10.0.x     | 10.0.3       | Primary       | Required release gate and KiCad canary lane | Core DRC/ERC, BOM/netlist, Gerbers/drill, jobsets, design variants, 3D PDF, and ODB++ are supported when command probes pass.                                                               |
+| 9.x        | 9.0.9        | Supported     | Scheduled KiCad canary lane                 | Core DRC/ERC, BOM/netlist, Gerbers/drill, jobsets, ODB++, and manufacturing package workflows are supported when command probes pass; KiCad 10-only variants and 3D PDF remain unavailable. |
+| 8.x        | 8.0.x        | Deprecated    | Manual compatibility check                  | Core file-level read, migration, DRC/ERC, BOM/netlist, and Gerber workflows are best-effort when command probes pass; jobsets, variants, 3D PDF, and ODB++ remain unavailable.              |
+| <8         | none         | Unsupported   | None                                        | KiCad Studio reports the detected CLI as unsupported and does not claim feature compatibility.                                                                                              |
+
+Status surfaces:
+
+- The status bar shows the detected KiCad support line and warns on deprecated or unsupported CLIs.
+- The `KiCad Studio Commands` status menu lists feature-level availability with precise unsupported reasons.
+- Advanced commands such as ODB++ and 3D PDF export require both their documented KiCad line and a successful `kicad-cli` capability probe.
+
+Freshness sources checked on 2026-05-26:
+
+- KiCad 10.0.3 release notes: <https://www.kicad.org/blog/2026/05/KiCad-10.0.3-Release/>
+- KiCad 9.0.9 release notes: <https://www.kicad.org/blog/2026/04/KiCad-9.0.9-Release/>
+- KiCad 10.0 CLI reference: <https://docs.kicad.org/10.0/en/cli/cli.html>
+- KiCad 9.0 CLI reference: <https://docs.kicad.org/9.0/en/cli/cli.html>
+- KiCad 8.0 CLI reference: <https://docs.kicad.org/8.0/en/cli/cli.html>
+
 ## Lifecycle States
 
 | State      | Meaning                                                               |
@@ -58,14 +86,14 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 
 ## Current Platform Policy
 
-| Surface      | Primary    | Supported             | Deprecated | Gate                                     |
-| ------------ | ---------- | --------------------- | ---------- | ---------------------------------------- |
-| KiCad        | 10.0.x     | 9.x                   | 8.x        | `compatibility.yaml` + release preflight |
-| VS Code      | current    | `engines.vscode` 1.120 | none      | extension manifest + VS Code canary      |
-| MCP protocol | 2025-11-25 | 2025-11-25            | older      | well-known server card + matrix          |
-| Node         | 24.x       | `>=24.11.0 <25`       | older      | root and extension package metadata      |
-| pnpm         | 11.x       | `>=11.0.0 <12`        | older      | root package metadata                    |
-| Python       | 3.13       | 3.13, 3.14            | older      | `pyproject.toml` and CI                  |
+| Surface      | Primary    | Supported              | Deprecated | Gate                                     |
+| ------------ | ---------- | ---------------------- | ---------- | ---------------------------------------- |
+| KiCad        | 10.0.x     | 9.x                    | 8.x        | `compatibility.yaml` + release preflight |
+| VS Code      | current    | `engines.vscode` 1.120 | none       | extension manifest + VS Code canary      |
+| MCP protocol | 2025-11-25 | 2025-11-25             | older      | well-known server card + matrix          |
+| Node         | 24.x       | `>=24.11.0 <25`        | older      | root and extension package metadata      |
+| pnpm         | 11.x       | `>=11.0.0 <12`         | older      | root package metadata                    |
+| Python       | 3.13       | 3.13, 3.14             | older      | `pyproject.toml` and CI                  |
 
 ## Minimum-Bump Policy
 

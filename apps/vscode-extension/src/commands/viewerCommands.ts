@@ -32,12 +32,15 @@ export function registerViewerCommands(
       const cli = trusted
         ? await services.cliDetector.detect(false)
         : undefined;
+      const capabilities = cli
+        ? await services.cliDetector.getCapabilitySnapshot()
+        : undefined;
       if (cli) {
         services.statusBar.update({ cli });
       }
       const snapshot = services.statusBar.getSnapshot();
       const picked = await vscode.window.showQuickPick(
-        buildStatusMenuItems({ trusted, cli, snapshot }),
+        buildStatusMenuItems({ trusted, cli, capabilities, snapshot }),
         { title: 'KiCad Studio Commands' }
       );
       if (picked?.command) {

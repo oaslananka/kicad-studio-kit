@@ -25,6 +25,18 @@ describe('buildStatusMenuItems', () => {
         versionLabel: 'KiCad 10.0.1',
         source: 'settings'
       },
+      capabilities: {
+        drc: true,
+        erc: true,
+        bom: true,
+        netlist: true,
+        gerbers: true,
+        drill: true,
+        jobset: true,
+        pdf3d: true,
+        odb: false,
+        variantOption: true
+      },
       snapshot: {
         drc: {
           file: '/workspace/sample.kicad_pcb',
@@ -46,6 +58,7 @@ describe('buildStatusMenuItems', () => {
     expect(items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ label: 'Status', kind: -1 }),
+        expect.objectContaining({ label: 'Compatibility', kind: -1 }),
         expect.objectContaining({ label: 'Validate', kind: -1 }),
         expect.objectContaining({ label: 'Export', kind: -1 }),
         expect.objectContaining({ label: 'Libraries', kind: -1 }),
@@ -58,11 +71,28 @@ describe('buildStatusMenuItems', () => {
     );
     expect(detectedItem).toEqual(
       expect.objectContaining({
-        description: 'KiCad 10.0.1',
+        description: 'KiCad 10.0.1 primary',
         detail: expect.stringContaining('/opt/kicad/bin/kicad-cli')
       })
     );
     expect(detectedItem).not.toHaveProperty('command');
+    expect(items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: '$(pass) Design variants',
+          description: 'available'
+        }),
+        expect.objectContaining({
+          label: '$(warning) ODB++ export',
+          description: 'missing odb',
+          detail: expect.stringContaining('capability probe failed')
+        }),
+        expect.objectContaining({
+          label: '$(pass) 3D PDF export',
+          description: 'available'
+        })
+      ])
+    );
     expect(items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -104,6 +134,14 @@ describe('buildStatusMenuItems', () => {
         command: 'workbench.action.openSettings',
         args: [SETTINGS.cliPath]
       })
+    );
+    expect(items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: '$(question) DRC, ERC, BOM, netlist, Gerbers',
+          description: 'unknown'
+        })
+      ])
     );
   });
 });

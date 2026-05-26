@@ -7,6 +7,7 @@ import type {
   McpCompatStatus,
   McpConnectionKind
 } from '../types';
+import { describeKiCadSupportLine } from '../cli/kicadCliSupport';
 
 // Priority decreases left-to-right within Left-aligned items.
 // Higher number = further left.
@@ -186,9 +187,13 @@ export class KiCadStatusBar implements vscode.Disposable {
         'statusBarItem.warningBackground'
       );
     } else {
+      const support = describeKiCadSupportLine(this.cli);
       this.kicadItem.text = `$(circuit-board) ${this.cli.versionLabel}`;
-      this.kicadItem.tooltip = `KiCad CLI: ${this.cli.path}\nClick to open settings`;
-      this.kicadItem.backgroundColor = undefined;
+      this.kicadItem.tooltip = `KiCad CLI: ${this.cli.path}\nSupport: ${support.label}\n${support.detail}\nClick to open settings`;
+      this.kicadItem.backgroundColor =
+        support.state === 'deprecated' || support.state === 'unsupported'
+          ? new vscode.ThemeColor('statusBarItem.warningBackground')
+          : undefined;
     }
     this.kicadItem.command = COMMANDS.showStatusMenu;
   }

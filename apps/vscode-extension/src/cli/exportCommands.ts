@@ -101,7 +101,7 @@ export function buildCliExportCommands(
           outputDir,
           '--layers',
           layers.join(','),
-          ...(versionMajor >= 9 ? ['--precision', precision] : []),
+          ...(versionMajor >= 8 ? ['--precision', precision] : []),
           file
         ]
       ];
@@ -430,9 +430,21 @@ export class KiCadExportService {
   async export3DPdf(resource?: vscode.Uri): Promise<void> {
     const detected = await this.detector.detect(true);
     const versionMajor = Number(detected?.version.split('.')[0] ?? '0');
-    if (versionMajor < 10 || !(await this.detector.hasCapability('pdf3d'))) {
+    if (!detected) {
       void vscode.window.showWarningMessage(
-        '3D PDF export requires KiCad 10 or later.'
+        '3D PDF export requires a detected KiCad 10+ kicad-cli.'
+      );
+      return;
+    }
+    if (versionMajor < 10) {
+      void vscode.window.showWarningMessage(
+        `3D PDF export requires KiCad 10 or later; detected ${detected.versionLabel}.`
+      );
+      return;
+    }
+    if (!(await this.detector.hasCapability('pdf3d'))) {
+      void vscode.window.showWarningMessage(
+        `${detected.versionLabel} does not expose kicad-cli pcb export 3dpdf.`
       );
       return;
     }
@@ -944,7 +956,11 @@ export class KiCadExportService {
         ? inferOutputPath(file, outputDir, '-bom', '.csv')
         : inferOutputPath(file, outputDir, '-bom', '.xlsx');
     const uri = vscode.Uri.file(file);
-    this.exportState?.begin('bom', uri, `Exporting BOM ${format.toUpperCase()}.`);
+    this.exportState?.begin(
+      'bom',
+      uri,
+      `Exporting BOM ${format.toUpperCase()}.`
+    );
     try {
       if (format === 'csv') {
         await this.bomExporter.exportCsv(entries, outputFile);

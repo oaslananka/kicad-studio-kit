@@ -41,18 +41,61 @@ describe('buildCliExportCommands', () => {
     ).toContain('ipcd356');
   });
 
-  it('builds gerber precision only for KiCad 9 and newer', () => {
+  it('builds Gerber precision for the supported KiCad 8, 9, and 10 lines', () => {
     const pcb = '/project/board.kicad_pcb';
+    for (const versionMajor of [8, 9, 10]) {
+      expect(
+        buildCliExportCommands('export-gerbers', pcb, '/project/fab', {
+          versionMajor
+        })[0]
+      ).toEqual(expect.arrayContaining(['--precision', '6']));
+    }
     expect(
       buildCliExportCommands('export-gerbers', pcb, '/project/fab', {
-        versionMajor: 9
-      })[0]
-    ).toEqual(expect.arrayContaining(['--precision', '6']));
-    expect(
-      buildCliExportCommands('export-gerbers', pcb, '/project/fab', {
-        versionMajor: 6
+        versionMajor: 7
       })[0]
     ).not.toContain('--precision');
+  });
+
+  it('validates command construction across the KiCad support matrix', () => {
+    const pcb = '/project/board.kicad_pcb';
+    const schematic = '/project/design.kicad_sch';
+
+    for (const versionMajor of [8, 9, 10]) {
+      expect(
+        buildCliExportCommands('export-gerbers', pcb, '/project/fab', {
+          versionMajor
+        })[0]
+      ).toEqual(
+        expect.arrayContaining([
+          'pcb',
+          'export',
+          'gerbers',
+          '--output',
+          '/project/fab',
+          pcb
+        ])
+      );
+      expect(
+        buildCliExportCommands('export-pdf-sch', schematic, '/project/fab', {
+          versionMajor
+        })[0]
+      ).toEqual(expect.arrayContaining(['sch', 'export', 'pdf', schematic]));
+      expect(
+        buildCliExportCommands('export-netlist', schematic, '/project/fab', {
+          versionMajor
+        })[0]
+      ).toEqual(
+        expect.arrayContaining([
+          'sch',
+          'export',
+          'netlist',
+          '--format',
+          'kicadsexpr',
+          schematic
+        ])
+      );
+    }
   });
 
   it('discovers active Gerber layers from the board stackup', async () => {

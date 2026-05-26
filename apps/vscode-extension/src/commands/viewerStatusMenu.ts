@@ -1,5 +1,10 @@
 import { COMMANDS, SETTINGS } from '../constants';
 import type { DetectedKiCadCli, DiagnosticSummary } from '../types';
+import type { KiCadCliCapabilitySnapshot } from '../cli/kicadCliDetector';
+import {
+  buildKiCadFeatureSupport,
+  describeKiCadSupportLine
+} from '../cli/kicadCliSupport';
 
 export interface StatusBarSnapshot {
   drc?: DiagnosticSummary | undefined;
@@ -20,9 +25,18 @@ const QUICK_PICK_SEPARATOR = -1;
 export function buildStatusMenuItems(options: {
   trusted: boolean;
   cli?: DetectedKiCadCli | undefined;
+  capabilities?: KiCadCliCapabilitySnapshot | undefined;
   snapshot: StatusBarSnapshot;
 }): StatusMenuItem[] {
-  const { trusted, cli, snapshot } = options;
+  const { trusted, cli, capabilities, snapshot } = options;
+  const supportLine = describeKiCadSupportLine(cli);
+  const featureItems = trusted
+    ? buildKiCadFeatureSupport({ cli, capabilities }).map((feature) => ({
+        label: `${featureIcon(feature.state)} ${feature.label}`,
+        description: feature.summary,
+        detail: feature.reason
+      }))
+    : [];
   const drcDetail = snapshot.drc
     ? `${snapshot.drc.errors} errors, ${snapshot.drc.warnings} warnings, ${snapshot.drc.infos} info - ${formatTimestamp(snapshot.drc.capturedAt)}`
     : 'No DRC result yet';
@@ -34,8 +48,8 @@ export function buildStatusMenuItems(options: {
     ? cli
       ? {
           label: '$(circuit-board) KiCad detected',
-          description: cli.versionLabel,
-          detail: `${cli.path} (${cli.source})`
+          description: supportLine.label,
+          detail: `${cli.path} (${cli.source})\n${supportLine.detail}`
         }
       : {
           label: '$(warning) kicad-cli not detected',
@@ -52,6 +66,7 @@ export function buildStatusMenuItems(options: {
   const items: StatusMenuItem[] = [
     separator('Status'),
     statusItem,
+    ...(trusted ? [separator('Compatibility'), ...featureItems] : []),
     separator('Validate'),
     {
       label: '$(beaker) Run board DRC',
@@ -115,6 +130,16 @@ export function buildStatusMenuItems(options: {
   ];
 
   return items;
+}
+
+function featureIcon(state: 'available' | 'unsupported' | 'unknown'): string {
+  if (state === 'available') {
+    return '$(pass)';
+  }
+  if (state === 'unsupported') {
+    return '$(warning)';
+  }
+  return '$(question)';
 }
 
 function separator(label: string): StatusMenuItem {
