@@ -267,7 +267,7 @@ Gemini CLI HTTP example:
 ## References
 
 - Agent onboarding and examples: ../../../docs/agents/client-configs.md
-- VS Code MCP configuration: https://code.visualstudio.com/docs/copilot/customization/mcp-servers
+- VS Code MCP configuration: https://code.vscode.dev/docs/copilot/customization/mcp-servers
 - Codex MCP configuration: https://developers.openai.com/codex/config-reference
 - Claude Code MCP configuration: https://docs.anthropic.com/en/docs/claude-code/mcp
 - Anthropic MCP overview: https://docs.anthropic.com/en/docs/mcp

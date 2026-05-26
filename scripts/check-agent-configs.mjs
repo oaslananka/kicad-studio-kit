@@ -194,7 +194,7 @@ const requiredReferences = {
     "claude-code.mcp.example.json",
     "generic-http.mcp.example.json",
     "KICAD_MCP_PROFILE=pcb_only",
-    "https://code.visualstudio.com/docs/copilot/customization/mcp-servers",
+    "https://code.vscode.dev/docs/copilot/customization/mcp-servers",
     "https://developers.openai.com/codex/config-reference",
     "https://modelcontextprotocol.io/specification/2025-06-18/basic/transports",
   ],

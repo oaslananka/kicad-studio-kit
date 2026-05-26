@@ -56,7 +56,7 @@ needed, document the network boundary, authentication model, and operating mode 
 
 The config shapes were checked against the current client documentation on 2026-05-26:
 
-- VS Code MCP configuration reference: <https://code.visualstudio.com/docs/copilot/customization/mcp-servers>
+- VS Code MCP configuration reference: <https://code.vscode.dev/docs/copilot/customization/mcp-servers>
 - OpenAI Codex configuration reference: <https://developers.openai.com/codex/config-reference>
 - Claude Code MCP configuration: <https://docs.anthropic.com/en/docs/claude-code/mcp>
 - Cursor MCP documentation: <https://docs.cursor.com/context/mcp>
