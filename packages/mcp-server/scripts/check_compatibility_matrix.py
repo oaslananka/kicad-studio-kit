@@ -14,6 +14,16 @@ import yaml
 
 MCP_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = MCP_ROOT.parents[1]
+PCBNEW_POLICY = "forbidden-in-production"
+REQUIRED_IPC_AREAS = (
+    "projectDiscovery",
+    "pcbRead",
+    "schematicRead",
+    "drc",
+    "erc",
+    "export",
+    "diagnostics",
+)
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -57,6 +67,91 @@ def _extension_protocol_from_ts() -> str:
 def _tool_names() -> set[str]:
     text = (MCP_ROOT / "docs/tools-reference.generated.md").read_text(encoding="utf-8")
     return set(re.findall(r"^\| `([^`]+)` \|", text, flags=re.MULTILINE))
+
+
+def _validate_repo_relative_path(value: Any, label: str) -> list[str]:
+    if not isinstance(value, str) or not value:
+        return [f"{label} must be a non-empty relative path"]
+    path = Path(value)
+    if path.is_absolute() or ".." in path.parts:
+        return [f"{label} must stay inside the repository: {value!r}"]
+    return []
+
+
+def _validate_pcbnew_policy(readiness: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    direct = readiness.get("directPcbnewImports")
+    if not isinstance(direct, dict):
+        return ["kicadIpcReadiness.directPcbnewImports must be a mapping"]
+    if direct.get("policy") != PCBNEW_POLICY:
+        errors.append(f"kicadIpcReadiness.directPcbnewImports.policy must be {PCBNEW_POLICY!r}")
+    allowed = direct.get("allowedPaths")
+    if not isinstance(allowed, list) or not allowed:
+        return [*errors, "kicadIpcReadiness.directPcbnewImports.allowedPaths must be a list"]
+    for index, value in enumerate(allowed):
+        errors.extend(
+            _validate_repo_relative_path(value, f"directPcbnewImports.allowedPaths[{index}]")
+        )
+    if "packages/mcp-server/tests/**" not in allowed:
+        errors.append("direct pcbnew allowlist must document test-only compatibility paths")
+    return errors
+
+
+def _validate_manual_canary(readiness: dict[str, Any]) -> list[str]:
+    manual = readiness.get("manualCanary")
+    if not isinstance(manual, dict):
+        return ["kicadIpcReadiness.manualCanary must be a mapping"]
+    errors: list[str] = []
+    for key in ("currentNightlyRange", "releaseCandidateRange"):
+        value = manual.get(key)
+        if not isinstance(value, str) or re.fullmatch(r"\d+(?:\.\d+)?\.x", value) is None:
+            errors.append(f"kicadIpcReadiness.manualCanary.{key} must be a KiCad range")
+    for key in ("currentNightlyCommand", "releaseCandidateCommand"):
+        if not isinstance(manual.get(key), str) or not manual[key]:
+            errors.append(f"kicadIpcReadiness.manualCanary.{key} must be a non-empty command")
+    return errors
+
+
+def _validate_ipc_area(
+    area: str,
+    detail: Any,
+    available_tools: set[str],
+) -> list[str]:
+    if not isinstance(detail, dict):
+        return [f"kicadIpcReadiness.ipcApi.requiredFor.{area} must be a mapping"]
+    errors: list[str] = []
+    for key in ("tools", "canaryProbes", "evidence"):
+        if not isinstance(detail.get(key), list) or not detail[key]:
+            errors.append(f"kicadIpcReadiness.ipcApi.requiredFor.{area}.{key} must be a list")
+    for tool_name in detail.get("tools", []):
+        if isinstance(tool_name, str) and tool_name not in available_tools:
+            errors.append(f"kicadIpcReadiness {area} references unknown tool {tool_name!r}")
+    for index, evidence in enumerate(detail.get("evidence", [])):
+        label = f"kicadIpcReadiness.ipcApi.requiredFor.{area}.evidence[{index}]"
+        errors.extend(_validate_repo_relative_path(evidence, label))
+        if isinstance(evidence, str) and not (REPO_ROOT / evidence).exists():
+            errors.append(f"{label} does not exist: {evidence!r}")
+    return errors
+
+
+def _validate_ipc_readiness(
+    matrix: dict[str, Any],
+    available_tools: set[str],
+) -> list[str]:
+    readiness = matrix.get("kicadIpcReadiness")
+    if not isinstance(readiness, dict):
+        return ["compatibility.yaml missing top-level 'kicadIpcReadiness'"]
+    errors = [*_validate_pcbnew_policy(readiness), *_validate_manual_canary(readiness)]
+    ipc_api = readiness.get("ipcApi")
+    required_for = ipc_api.get("requiredFor") if isinstance(ipc_api, dict) else None
+    if not isinstance(required_for, dict):
+        return [*errors, "kicadIpcReadiness.ipcApi.requiredFor must be a mapping"]
+    for area in REQUIRED_IPC_AREAS:
+        if area not in required_for:
+            errors.append(f"kicadIpcReadiness.ipcApi.requiredFor missing {area!r}")
+            continue
+        errors.extend(_validate_ipc_area(area, required_for[area], available_tools))
+    return errors
 
 
 def _validate_required_shape(matrix: dict[str, Any]) -> list[str]:
@@ -154,6 +249,7 @@ def validate_compatibility_matrix() -> list[str]:
         errors.append("well-known server card must embed compatibility_summary()")
 
     available_tools = _tool_names()
+    errors.extend(_validate_ipc_readiness(matrix, available_tools))
     for group in ("required", "optional"):
         for tool_name in matrix["mcpTools"][group]:
             if tool_name not in available_tools:

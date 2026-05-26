@@ -61,6 +61,22 @@ exports.
 | 8.x        | 8.0.x        | Deprecated    | Manual compatibility check                  | Core file-level read, migration, DRC/ERC, BOM/netlist, and Gerber workflows are best-effort when command probes pass; jobsets, variants, 3D PDF, and ODB++ remain unavailable.              |
 | <8         | none         | Unsupported   | None                                        | KiCad Studio reports the detected CLI as unsupported and does not claim feature compatibility.                                                                                              |
 
+## KiCad 11 Readiness
+
+KiCad 11 is not a primary support target yet. The readiness contract is tracked
+separately from the current KiCad 10.0.x support boundary so release gates keep
+protecting users on the stable line while maintainers test the next major line.
+
+| Readiness item         | Current contract                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------------------- |
+| Stable baseline        | KiCad 10.0.x remains primary and release-blocking.                                                 |
+| Direct SWIG imports    | Production `pcbnew` imports are forbidden by `packages/mcp-server/scripts/check_no_pcbnew.py`.     |
+| Allowed `pcbnew` paths | Only the guard script and `packages/mcp-server/tests/**`.                                          |
+| IPC parity matrix      | `compatibility.yaml` `kicadIpcReadiness.ipcApi.requiredFor`.                                       |
+| Current nightly smoke  | `corepack pnpm run test:kicad-cli-contract:nightly` with a configured nightly `kicad-cli`.         |
+| KiCad 11 RC smoke      | `corepack pnpm run test:kicad-cli-contract:future` once the installed prerelease reports `11.0.x`. |
+| Migration guide        | [`docs/compatibility/kicad-10-to-11-migration.md`](compatibility/kicad-10-to-11-migration.md).     |
+
 Status surfaces:
 
 - The status bar shows the detected KiCad support line and warns on deprecated or unsupported CLIs.
@@ -72,6 +88,9 @@ Freshness sources checked on 2026-05-26:
 - KiCad 10.0.3 release notes: <https://www.kicad.org/blog/2026/05/KiCad-10.0.3-Release/>
 - KiCad 9.0.9 release notes: <https://www.kicad.org/blog/2026/04/KiCad-9.0.9-Release/>
 - KiCad 10.0 CLI reference: <https://docs.kicad.org/10.0/en/cli/cli.html>
+- KiCad nightly CLI reference: <https://docs.kicad.org/master/en/cli/cli.html>
+- KiCad PCB Python bindings deprecation notice: <https://dev-docs.kicad.org/en/apis-and-binding/pcbnew/>
+- KiCad nightly and release candidate guidance: <https://www.kicad.org/help/nightlies-and-rcs/>
 - KiCad 9.0 CLI reference: <https://docs.kicad.org/9.0/en/cli/cli.html>
 - KiCad 8.0 CLI reference: <https://docs.kicad.org/8.0/en/cli/cli.html>
 

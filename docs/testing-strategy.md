@@ -227,6 +227,36 @@ Linux primary lane from the KiCad 10 release PPA. Scheduled and manual runs keep
 the heavier matrix: primary 10.0.x, supported 9.x, prerelease/nightly 10.x, and
 manual opt-in deprecated 8.x.
 
+KiCad 11 readiness is documented as a manual smoke path until a stable package
+or release candidate lane can be installed deterministically in CI. The current
+development-branch nightly command expects a nightly `kicad-cli` that reports
+the next-development version range:
+
+```bash
+KICAD_CANARY_KICAD_CLI=/absolute/path/to/kicad-cli \
+  corepack pnpm run test:kicad-cli-contract:nightly
+```
+
+```powershell
+$Env:KICAD_CANARY_KICAD_CLI = "C:\Program Files\KiCad Nightly\bin\kicad-cli.exe"
+corepack pnpm run test:kicad-cli-contract:nightly
+```
+
+When the installed prerelease reports `11.0.x`, use the future-line smoke:
+
+```bash
+KICAD_CANARY_KICAD_CLI=/absolute/path/to/kicad-cli \
+  corepack pnpm run test:kicad-cli-contract:future
+```
+
+```powershell
+$Env:KICAD_CANARY_KICAD_CLI = "C:\Program Files\KiCad\11.0\bin\kicad-cli.exe"
+corepack pnpm run test:kicad-cli-contract:future
+```
+
+The migration checklist and IPC parity matrix live in
+[`docs/compatibility/kicad-10-to-11-migration.md`](compatibility/kicad-10-to-11-migration.md).
+
 Each lane writes command logs, KiCad reports, manufacturing export outputs,
 `summary.json`, and `failing-fixtures.txt` into an artifact named after the
 lane. Manufacturing exports are enabled only when the matrix feature gate lists

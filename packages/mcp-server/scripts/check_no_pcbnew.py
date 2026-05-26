@@ -9,16 +9,50 @@ supported IPC/CLI surfaces instead of adding new SWIG dependencies.
 from __future__ import annotations
 
 import ast
+import fnmatch
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-SCAN_DIRS = (ROOT / "src", ROOT / "tests", ROOT / "scripts")
-IGNORED_FILES = {Path(__file__).resolve()}
+import yaml
+
+MCP_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = MCP_ROOT.parents[1]
+MATRIX_PATH = REPO_ROOT / "compatibility.yaml"
+SCAN_DIRS = (REPO_ROOT / "apps", MCP_ROOT / "src", MCP_ROOT / "scripts", MCP_ROOT / "tests")
+DEFAULT_ALLOWED_PATHS = ("packages/mcp-server/scripts/check_no_pcbnew.py",)
 
 
 def _is_pcbnew_module(module_name: str | None) -> bool:
     return bool(module_name) and (module_name == "pcbnew" or module_name.startswith("pcbnew."))
+
+
+def _repo_relative(path: Path) -> str:
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return resolved.as_posix()
+
+
+def _allowed_path_patterns() -> tuple[str, ...]:
+    if not MATRIX_PATH.exists():
+        return DEFAULT_ALLOWED_PATHS
+    data = yaml.safe_load(MATRIX_PATH.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        return DEFAULT_ALLOWED_PATHS
+    readiness = data.get("kicadIpcReadiness")
+    if not isinstance(readiness, dict):
+        return DEFAULT_ALLOWED_PATHS
+    direct_imports = readiness.get("directPcbnewImports", {})
+    allowed = direct_imports.get("allowedPaths") if isinstance(direct_imports, dict) else None
+    if not isinstance(allowed, list):
+        return DEFAULT_ALLOWED_PATHS
+    return tuple(pattern for pattern in allowed if isinstance(pattern, str) and pattern)
+
+
+def _is_allowed(path: Path, patterns: tuple[str, ...]) -> bool:
+    relative = _repo_relative(path)
+    return any(fnmatch.fnmatchcase(relative, pattern) for pattern in patterns)
 
 
 def _violations(path: Path) -> list[str]:
@@ -44,11 +78,10 @@ def _violations(path: Path) -> list[str]:
 
 def _python_files() -> list[Path]:
     files: list[Path] = []
+    allowed = _allowed_path_patterns()
     for directory in SCAN_DIRS:
         if directory.exists():
-            files.extend(
-                path for path in directory.rglob("*.py") if path.resolve() not in IGNORED_FILES
-            )
+            files.extend(path for path in directory.rglob("*.py") if not _is_allowed(path, allowed))
     return sorted(files)
 
 
