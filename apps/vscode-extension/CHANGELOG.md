@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Surface KiCad 8.x, 9.x, and 10.0.x compatibility state in the status
+  bar/menu with feature-level capability probe results.
 - Clarify Codex support as an external MCP client workflow, remove it from the
   direct extension provider settings, and migrate legacy
   `kicadstudio.ai.provider=codex` selections to GitHub Copilot.
