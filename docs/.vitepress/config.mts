@@ -32,6 +32,7 @@ export default defineConfig({
       { text: "Install", link: "/install" },
       { text: "Extension", link: "/extension/" },
       { text: "MCP", link: "/mcp/" },
+      { text: "Agents", link: "/agents/" },
       { text: "Architecture", link: "/architecture/" },
       { text: "Support Matrix", link: "/support-matrix" },
       { text: "Changelog", link: "/changelog/" },
@@ -68,6 +69,14 @@ export default defineConfig({
           { text: "API Reference", link: "/mcp/api-reference" },
           { text: "Docker", link: "/deployment/docker" },
           { text: "Integration", link: "/integration/kicad-studio-mcp" },
+        ],
+      },
+      {
+        text: "Agents",
+        items: [
+          { text: "Overview", link: "/agents/" },
+          { text: "Client Configurations", link: "/agents/client-configs" },
+          { text: "Codex Support", link: "/agents/codex-support" },
         ],
       },
       {

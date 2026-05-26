@@ -2,7 +2,7 @@
 
 ## Supported Providers
 
-KiCad Studio supports six direct AI provider paths:
+KiCad Studio supports seven direct AI provider paths:
 
 - Claude
 - OpenAI
@@ -10,6 +10,7 @@ KiCad Studio supports six direct AI provider paths:
 - GitHub Copilot
 - Gemini
 - local OpenAI-compatible endpoints
+- Codex through the VS Code Language Model API
 
 For compatible VS Code builds, KiCad Studio can also contribute:
 
@@ -41,6 +42,14 @@ For compatible VS Code builds, KiCad Studio can also contribute:
 - Set `kicadstudio.ai.provider` to `copilot`.
 - Requires a VS Code environment where the Language Model API exposes Copilot models.
 - No separate API key is stored by KiCad Studio.
+
+## Codex
+
+- Set `kicadstudio.ai.provider` to `codex`.
+- Requires a VS Code environment where the Language Model API exposes compatible models.
+- No separate API key is stored by KiCad Studio.
+- This provider is a direct KiCad Studio extension provider. It does not start the Codex CLI, read `~/.codex/config.toml`, or configure Codex as an external MCP client.
+- For Codex CLI or Codex IDE extension MCP setup, use [`docs/agents/codex-support.md`](../../../docs/agents/codex-support.md) and [`examples/mcp-clients/codex.config.example.toml`](../../../examples/mcp-clients/codex.config.example.toml).
 
 ## Gemini
 

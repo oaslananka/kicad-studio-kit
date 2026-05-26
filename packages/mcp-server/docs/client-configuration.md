@@ -70,6 +70,7 @@ CLI setup:
 codex mcp add kicad \
   --env KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
   --env KICAD_MCP_PROFILE=pcb_only \
+  --env KICAD_MCP_OPERATING_MODE=readonly \
   -- uvx kicad-mcp-pro
 ```
 
@@ -85,6 +86,7 @@ tool_timeout_sec = 120
 [mcp_servers.kicad.env]
 KICAD_MCP_PROJECT_DIR = "/absolute/path/to/your/kicad-project"
 KICAD_MCP_PROFILE = "pcb_only"
+KICAD_MCP_OPERATING_MODE = "readonly"
 ```
 
 ## Claude Desktop
@@ -99,7 +101,8 @@ Add the server to `claude_desktop_config.json`:
       "args": ["kicad-mcp-pro"],
       "env": {
         "KICAD_MCP_PROJECT_DIR": "/absolute/path/to/your/kicad-project",
-        "KICAD_MCP_PROFILE": "pcb_only"
+        "KICAD_MCP_PROFILE": "pcb_only",
+        "KICAD_MCP_OPERATING_MODE": "readonly"
       }
     }
   }
@@ -122,7 +125,8 @@ Project-scoped `.mcp.json`:
       "args": ["kicad-mcp-pro"],
       "env": {
         "KICAD_MCP_PROJECT_DIR": "/absolute/path/to/your/kicad-project",
-        "KICAD_MCP_PROFILE": "pcb_only"
+        "KICAD_MCP_PROFILE": "pcb_only",
+        "KICAD_MCP_OPERATING_MODE": "readonly"
       }
     }
   }
@@ -136,6 +140,7 @@ claude mcp add kicad \
   --scope project \
   --env KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
   --env KICAD_MCP_PROFILE=pcb_only \
+  --env KICAD_MCP_OPERATING_MODE=readonly \
   -- uvx kicad-mcp-pro
 ```
 
@@ -153,7 +158,8 @@ configuration:
       "args": ["kicad-mcp-pro"],
       "env": {
         "KICAD_MCP_PROJECT_DIR": "/absolute/path/to/your/kicad-project",
-        "KICAD_MCP_PROFILE": "pcb_only"
+        "KICAD_MCP_PROFILE": "pcb_only",
+        "KICAD_MCP_OPERATING_MODE": "readonly"
       }
     }
   }
@@ -172,7 +178,8 @@ Add the server to `~/.gemini/settings.json`:
       "args": ["kicad-mcp-pro"],
       "env": {
         "KICAD_MCP_PROJECT_DIR": "/absolute/path/to/your/kicad-project",
-        "KICAD_MCP_PROFILE": "pcb_only"
+        "KICAD_MCP_PROFILE": "pcb_only",
+        "KICAD_MCP_OPERATING_MODE": "readonly"
       },
       "timeout": 120000
     }
@@ -193,7 +200,8 @@ If your client accepts the common `mcpServers` JSON shape, use this as the start
       "args": ["kicad-mcp-pro"],
       "env": {
         "KICAD_MCP_PROJECT_DIR": "/absolute/path/to/your/kicad-project",
-        "KICAD_MCP_PROFILE": "pcb_only"
+        "KICAD_MCP_PROFILE": "pcb_only",
+        "KICAD_MCP_OPERATING_MODE": "readonly"
       }
     }
   }
@@ -208,6 +216,9 @@ setup below.
 Start KiCad MCP Pro as an HTTP server:
 
 ```bash
+KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
+KICAD_MCP_PROFILE=pcb_only \
+KICAD_MCP_OPERATING_MODE=readonly \
 kicad-mcp-pro --transport http --host 127.0.0.1 --port 3334
 ```
 
@@ -253,8 +264,9 @@ Gemini CLI HTTP example:
 
 ## References
 
+- Agent onboarding and examples: ../../../docs/agents/client-configs.md
 - VS Code MCP configuration: https://code.vscode.dev/docs/copilot/customization/mcp-servers
-- Codex MCP configuration: https://developers.openai.com/codex/mcp
+- Codex MCP configuration: https://developers.openai.com/learn/docs-mcp
 - Claude Code MCP configuration: https://docs.anthropic.com/en/docs/claude-code/mcp
 - Anthropic MCP overview: https://docs.anthropic.com/en/docs/mcp
 - Cursor MCP configuration: https://docs.cursor.com/en/context/mcp

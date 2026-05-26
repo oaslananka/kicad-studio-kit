@@ -83,12 +83,18 @@ test("root toolchain and CI workflow changes run all lanes", () => {
 });
 
 test("docs-only changes keep product lanes skipped while metadata still runs", () => {
-  const report = classifyChangedFiles(["docs/testing-strategy.md"]);
+  const report = classifyChangedFiles([
+    "docs/testing-strategy.md",
+    "AGENTS.md",
+    ".github/copilot-instructions.md",
+    "examples/mcp-clients/vscode.mcp.example.json",
+  ]);
 
   assert.equal(report.lanes.metadata, true);
   assert.equal(report.lanes.vscodeExtension, false);
   assert.equal(report.lanes.mcpServer, false);
   assert.equal(report.lanes.sharedPackages, false);
+  assert.equal(report.lanes.integrationContracts, false);
 });
 
 test("manual and scheduled contexts can force all lanes", () => {
