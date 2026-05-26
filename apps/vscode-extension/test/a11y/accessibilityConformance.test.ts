@@ -29,6 +29,7 @@ import {
 jest.setTimeout(60_000);
 
 const extensionRoot = path.resolve(__dirname, '../..');
+const PLAYWRIGHT_CHANNEL_ENV = 'KICADSTUDIO_PLAYWRIGHT_CHANNEL';
 type MediaOptions = Parameters<Page['emulateMedia']>[0];
 type WebviewSurface = {
   name: string;
@@ -64,7 +65,7 @@ describe('WCAG 2.1 AA webview conformance gate', () => {
   let page: Page;
 
   beforeAll(async () => {
-    browser = await chromium.launch();
+    browser = await chromium.launch(browserLaunchOptions());
     page = await browser.newPage({
       viewport: { width: 1280, height: 900 }
     });
@@ -232,6 +233,11 @@ describe('WCAG 2.1 AA webview conformance gate', () => {
     }
   );
 });
+
+function browserLaunchOptions(): Parameters<typeof chromium.launch>[0] {
+  const channel = process.env[PLAYWRIGHT_CHANNEL_ENV];
+  return channel ? { channel } : {};
+}
 
 describe('native VS Code surface accessibility gate', () => {
   beforeEach(() => {

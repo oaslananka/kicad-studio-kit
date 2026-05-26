@@ -1,5 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
+const PLAYWRIGHT_CHANNEL_ENV = 'KICADSTUDIO_PLAYWRIGHT_CHANNEL';
+const playwrightChannel = process.env[PLAYWRIGHT_CHANNEL_ENV];
+
 export default defineConfig({
   testDir: './test/webview',
   timeout: 60000,
@@ -11,6 +14,7 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     browserName: 'chromium',
+    ...(playwrightChannel ? { channel: playwrightChannel } : {}),
     viewport: {
       width: 1280,
       height: 720
