@@ -54,7 +54,8 @@ Enable CODEOWNERS review. Path ownership is declared in `.github/CODEOWNERS`:
 - Require branches to be up to date before merge when required checks are enabled.
 - Require signed commits if the account policy supports it.
 - Disallow force pushes and branch deletion for `main`.
-- Restrict who can bypass required pull requests and required checks.
+- Restrict bypass to repository administrators and only for pull request merges.
+  Direct pushes to `main` remain blocked.
 
 The strict up-to-date rule currently favors a current green `main` integration
 point over merge throughput. Re-evaluate it with the required-check set if the
