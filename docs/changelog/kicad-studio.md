@@ -4,6 +4,9 @@ Source: `apps/vscode-extension/CHANGELOG.md`
 
 ## [Unreleased]
 
+- Clarify Codex support as an external MCP client workflow, remove it from the
+  direct extension provider settings, and migrate legacy
+  `kicadstudio.ai.provider=codex` selections to GitHub Copilot.
 - Add explicit KiCanvas/CLI SVG fallback/metadata-only viewer engine state,
   toolbar engine badges, unsupported-control disabling, and regression coverage
   for fallback diagnostics.

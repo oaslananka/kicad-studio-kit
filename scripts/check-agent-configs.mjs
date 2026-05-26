@@ -223,6 +223,10 @@ const requiredReferences = {
     "examples/mcp-clients/codex.config.example.toml",
     "docs/agents/codex-support.md",
   ],
+  "apps/vscode-extension/CHANGELOG.md": [
+    "Clarify Codex support as an external MCP client workflow",
+    "kicadstudio.ai.provider=codex",
+  ],
   "packages/mcp-server/docs/client-configuration.md": [
     "KICAD_MCP_OPERATING_MODE=readonly",
     "KICAD_MCP_PROFILE=pcb_only",
