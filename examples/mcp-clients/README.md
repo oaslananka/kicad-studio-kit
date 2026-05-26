@@ -82,6 +82,24 @@ gemini mcp add --scope project --transport stdio `
 | Generic stdio MCP client       | `generic-stdio.mcp.example.json`     | Client-specific MCP config                       |
 | Generic Streamable HTTP client | `generic-http.mcp.example.json`      | Client-specific MCP config                       |
 
+## Destination Paths
+
+Copy the example into the client-owned config file for your real project. Keep these
+`.example.*` files as inert templates in this repository.
+The Windows paths use `%USERPROFILE%` and `%APPDATA%` conventions used on Windows 11 and
+current supported Windows releases.
+
+| Client                     | Linux/macOS destination                                                                                          | Windows destination                                                          |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| VS Code and GitHub Copilot | `<project>/.vscode/mcp.json`, or the user-profile config opened by `MCP: Open User Configuration`                | `<project>\.vscode\mcp.json`, or the user-profile config opened from VS Code |
+| Codex CLI / IDE extension  | `~/.codex/config.toml`, or a trusted `<project>/.codex/config.toml`                                              | `%USERPROFILE%\.codex\config.toml`, or `<project>\.codex\config.toml`        |
+| Claude Code                | `<project>/.mcp.json`, or use `claude mcp add --scope project`                                                   | `<project>\.mcp.json`, or use `claude mcp add --scope project`               |
+| Claude Desktop             | macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`; Linux users should use Claude Code MCP | `%APPDATA%\Claude\claude_desktop_config.json`                                |
+| Cursor                     | `<project>/.cursor/mcp.json` or `~/.cursor/mcp.json`                                                             | `<project>\.cursor\mcp.json` or `%USERPROFILE%\.cursor\mcp.json`             |
+| Gemini CLI                 | `~/.gemini/settings.json` or `<project>/.gemini/settings.json`                                                   | `%USERPROFILE%\.gemini\settings.json` or `<project>\.gemini\settings.json`   |
+| Generic stdio MCP client   | The client's MCP config file                                                                                     | The client's MCP config file                                                 |
+| Generic HTTP MCP client    | The client's remote/HTTP MCP config file                                                                         | The client's remote/HTTP MCP config file                                     |
+
 ## Streamable HTTP
 
 For HTTP clients, start the server separately:
@@ -112,3 +130,7 @@ http://127.0.0.1:3334/mcp
 
 Do not bind the HTTP server to `0.0.0.0` unless you have added an explicit network and
 authentication design for that environment.
+Set `KICAD_MCP_AUTH_TOKEN` only when HTTP binds outside loopback or crosses a tunnel or
+remote network boundary. In that case, configure the client to send the same value as a
+bearer token and keep the token in local environment or secret storage, never in a checked-in
+example.
