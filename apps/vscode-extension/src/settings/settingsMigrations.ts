@@ -136,6 +136,52 @@ export function createRenameSettingMigration(args: {
   };
 }
 
+export function createReplaceSettingValueMigration(args: {
+  readonly schemaVersion: number;
+  readonly setting: string;
+  readonly fromValue: unknown;
+  readonly toValue: unknown;
+  readonly description?: string;
+}): SettingMigration {
+  return {
+    schemaVersion: args.schemaVersion,
+    id: `replace-${args.setting}-${String(args.fromValue)}-with-${String(
+      args.toValue
+    )}`,
+    destructive: true,
+    describe: () =>
+      args.description ??
+      `Replace deprecated ${args.setting} value ${String(
+        args.fromValue
+      )} with ${String(args.toValue)}.`,
+    async apply(context) {
+      const inspection = context.config.inspect<unknown>(args.setting);
+      if (!inspection) {
+        context.logger.debug(
+          `Settings migration v${args.schemaVersion}: ${args.setting} has no configured values.`
+        );
+        return { changed: false, destructive: false };
+      }
+
+      let changed = false;
+      for (const scope of CONFIGURATION_SCOPES) {
+        if (inspection[scope.valueKey] !== args.fromValue) {
+          continue;
+        }
+        await context.config.update(args.setting, args.toValue, scope.target);
+        context.logger.info(
+          `Settings migration v${args.schemaVersion}: replaced ${args.setting}=${String(
+            args.fromValue
+          )} with ${String(args.toValue)} at ${scope.label} scope.`
+        );
+        changed = true;
+      }
+
+      return { changed, destructive: changed };
+    }
+  };
+}
+
 export const DEFAULT_SETTINGS_MIGRATIONS: readonly SettingMigration[] = [
   createNoopSettingsMigration(1),
   createRenameSettingMigration({
@@ -143,6 +189,13 @@ export const DEFAULT_SETTINGS_MIGRATIONS: readonly SettingMigration[] = [
     from: 'kicadstudio.viewerTheme',
     to: SETTINGS.viewerTheme,
     description: `Rename legacy kicadstudio.viewerTheme to ${SETTINGS.viewerTheme}.`
+  }),
+  createReplaceSettingValueMigration({
+    schemaVersion: 3,
+    setting: SETTINGS.aiProvider,
+    fromValue: 'codex',
+    toValue: 'copilot',
+    description: `Migrate ${SETTINGS.aiProvider}=codex to the equivalent GitHub Copilot VS Code Language Model provider.`
   })
 ];
 

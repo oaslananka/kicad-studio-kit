@@ -9,7 +9,7 @@ import {
   type AiSecretProvider
 } from '../utils/secrets';
 import { ClaudeProvider } from './claudeProvider';
-import { CodexProvider, CopilotProvider } from './copilotProvider';
+import { CopilotProvider } from './copilotProvider';
 import { GeminiProvider } from './geminiProvider';
 import { LocalProvider } from './localProvider';
 import { getDefaultModel } from './modelCatalog';
@@ -52,10 +52,6 @@ export class AIProviderRegistry {
 
     if (selected === 'copilot') {
       return new CopilotProvider();
-    }
-
-    if (selected === 'codex') {
-      return new CodexProvider();
     }
 
     if (selected === 'local') {
@@ -134,8 +130,7 @@ export class AIProviderRegistry {
       provider === 'openrouter' ||
       provider === 'copilot' ||
       provider === 'gemini' ||
-      provider === 'local' ||
-      provider === 'codex'
+      provider === 'local'
       ? getDefaultModel(provider)
       : '';
   }

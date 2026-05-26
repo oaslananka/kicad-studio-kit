@@ -96,6 +96,8 @@ describe('settings webview', () => {
     expect(html).not.toContain('https://cdn');
     expect(html).not.toMatch(/\son[a-z]+=/i);
     expect(html).toContain('data-setting="kicadstudio.ai.provider"');
+    expect(html).toContain('<option value="copilot">GitHub Copilot</option>');
+    expect(html).not.toContain('<option value="codex">');
     expect(html).toContain("type: 'requestApiKeyStatus'");
   });
 

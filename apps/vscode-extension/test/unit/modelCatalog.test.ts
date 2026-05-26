@@ -1,4 +1,5 @@
 import {
+  MODEL_CATALOG,
   getDefaultModel,
   getProviderModels,
   getRecommendedModel
@@ -26,5 +27,10 @@ describe('AI model catalog', () => {
         })
       ])
     );
+  });
+
+  it('does not advertise Codex as a direct extension model provider', () => {
+    expect(Object.keys(MODEL_CATALOG)).not.toContain('codex');
+    expect(() => getProviderModels('codex' as never)).toThrow();
   });
 });

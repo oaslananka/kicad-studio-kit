@@ -14,7 +14,6 @@ export const WEBVIEW_MESSAGES = [
   'Provider',
   'Disabled',
   'Local OpenAI-compatible',
-  'Codex (VS Code)',
   'Model',
   'Provider default',
   'Local endpoint',

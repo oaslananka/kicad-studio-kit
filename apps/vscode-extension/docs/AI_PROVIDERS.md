@@ -2,7 +2,7 @@
 
 ## Supported Providers
 
-KiCad Studio supports seven direct AI provider paths:
+KiCad Studio supports six direct AI provider paths:
 
 - Claude
 - OpenAI
@@ -10,7 +10,6 @@ KiCad Studio supports seven direct AI provider paths:
 - GitHub Copilot
 - Gemini
 - local OpenAI-compatible endpoints
-- Codex through the VS Code Language Model API
 
 For compatible VS Code builds, KiCad Studio can also contribute:
 
@@ -43,14 +42,6 @@ For compatible VS Code builds, KiCad Studio can also contribute:
 - Requires a VS Code environment where the Language Model API exposes Copilot models.
 - No separate API key is stored by KiCad Studio.
 
-## Codex
-
-- Set `kicadstudio.ai.provider` to `codex`.
-- Requires a VS Code environment where the Language Model API exposes compatible models.
-- No separate API key is stored by KiCad Studio.
-- This provider is a direct KiCad Studio extension provider. It does not start the Codex CLI, read `~/.codex/config.toml`, or configure Codex as an external MCP client.
-- For Codex CLI or Codex IDE extension MCP setup, use [`docs/agents/codex-support.md`](../../../docs/agents/codex-support.md) and [`examples/mcp-clients/codex.config.example.toml`](../../../examples/mcp-clients/codex.config.example.toml).
-
 ## Gemini
 
 - Set `kicadstudio.ai.provider` to `gemini`.
@@ -63,6 +54,17 @@ For compatible VS Code builds, KiCad Studio can also contribute:
 - Set `kicadstudio.ai.localEndpoint` to the base URL of a local OpenAI-compatible chat endpoint, for example one that exposes `/v1/chat/completions`.
 - Set `kicadstudio.ai.model` to the model ID expected by that endpoint.
 - KiCad Studio does not store or send an API key for the local provider. Without a configured local endpoint, provider selection falls back to an unconfigured state.
+
+## Codex
+
+Codex is supported as an external MCP client workflow, not as a direct KiCad Studio
+extension AI provider. Use [`docs/agents/codex-support.md`](../../../docs/agents/codex-support.md)
+and [`examples/mcp-clients/codex.config.example.toml`](../../../examples/mcp-clients/codex.config.example.toml)
+to connect Codex CLI or the Codex IDE extension to `kicad-mcp-pro`.
+
+Legacy settings that still contain `kicadstudio.ai.provider=codex` are migrated to
+`copilot`, which preserves the previous VS Code Language Model API behavior without
+presenting Codex as a separate direct provider.
 
 ## Response Language
 

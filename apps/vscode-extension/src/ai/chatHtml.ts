@@ -339,7 +339,6 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
         <option value="openai">OpenAI</option>
         <option value="copilot">Copilot</option>
         <option value="gemini">Gemini</option>
-        <option value="codex">Codex (VS Code)</option>
       </select>
       <input id="model" type="text" aria-label="Model" placeholder="Model override">
       <button id="settings" class="icon" type="button" title="Open KiCad Studio settings" aria-label="Open settings">&#9881;</button>

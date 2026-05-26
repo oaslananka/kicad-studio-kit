@@ -27,7 +27,7 @@ Total settings: 45.
 | `kicadstudio.pcm.repositoryUrls` | array | `["https://repository.kicad.org/repository.json"]` |  | PCM repository JSON feed URLs. The default points at KiCad's official add-on repository; add community repository.json feeds here. |
 | `kicadstudio.pcm.configDir` | string | `` |  | Optional KiCad user configuration directory for PCM metadata such as installed_packages.json. Leave empty for platform defaults. |
 | `kicadstudio.pcm.thirdPartyDir` | string | `` |  | Optional KiCad third-party content directory used by PCM installs. Leave empty for KiCad environment variables or the KiCad Studio fallback. |
-| `kicadstudio.ai.provider` | string | `none` | `none`, `claude`, `openai`, `openrouter`, `copilot`, `gemini`, `local`, `codex` | AI provider for circuit analysis and error explanation. |
+| `kicadstudio.ai.provider` | string | `none` | `none`, `claude`, `openai`, `openrouter`, `copilot`, `gemini`, `local` | AI provider for circuit analysis and error explanation. |
 | `kicadstudio.ai.model` | string | `` |  | Optional AI model override. Leave empty to use the provider default when the provider has one. |
 | `kicadstudio.ai.localEndpoint` | string | `` |  | OpenAI-compatible local chat endpoint base URL. KiCad Studio enables the local provider only after this endpoint is configured. |
 | `kicadstudio.ai.openaiApiMode` | string | `responses` | `responses`, `chat-completions` | OpenAI API mode. Responses is the default for new work; Chat Completions is retained for compatibility. |

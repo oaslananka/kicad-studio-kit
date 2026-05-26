@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import {
   createNoopSettingsMigration,
   createRenameSettingMigration,
+  createReplaceSettingValueMigration,
   CURRENT_SETTINGS_SCHEMA_VERSION,
   DEFAULT_SETTINGS_MIGRATIONS,
   runSettingsMigrations,
@@ -219,13 +220,72 @@ describe('settings migrations', () => {
     );
   });
 
+  it('migrates legacy Codex provider selections to the Copilot provider per scope', async () => {
+    const context = createExtensionContextMock();
+    const logger = createLoggerMock();
+    const updates: Array<[string, unknown, vscode.ConfigurationTarget]> = [];
+    const config = {
+      inspect: jest.fn((key: string) => {
+        if (key === SETTINGS.aiProvider) {
+          return {
+            globalValue: 'codex',
+            workspaceValue: 'openai',
+            workspaceFolderValue: 'codex'
+          };
+        }
+        return undefined;
+      }),
+      update: jest.fn(
+        async (
+          key: string,
+          value: unknown,
+          target: vscode.ConfigurationTarget
+        ) => {
+          updates.push([key, value, target]);
+        }
+      )
+    };
+
+    const result = await runSettingsMigrations(
+      context as never,
+      logger,
+      [
+        createReplaceSettingValueMigration({
+          schemaVersion: 1,
+          setting: SETTINGS.aiProvider,
+          fromValue: 'codex',
+          toValue: 'copilot',
+          description:
+            'Migrate the removed Codex direct provider setting to GitHub Copilot.'
+        })
+      ],
+      config as never
+    );
+
+    expect(updates).toEqual([
+      [SETTINGS.aiProvider, 'copilot', vscode.ConfigurationTarget.Global],
+      [
+        SETTINGS.aiProvider,
+        'copilot',
+        vscode.ConfigurationTarget.WorkspaceFolder
+      ]
+    ]);
+    expect(result.destructiveChanges).toBe(true);
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining('KiCad Studio updated deprecated settings')
+    );
+  });
+
   it('declares initial seed and template rename migrations', () => {
     expect(
       DEFAULT_SETTINGS_MIGRATIONS.map((migration) => migration.schemaVersion)
-    ).toEqual([1, 2]);
-    expect(CURRENT_SETTINGS_SCHEMA_VERSION).toBe(2);
+    ).toEqual([1, 2, 3]);
+    expect(CURRENT_SETTINGS_SCHEMA_VERSION).toBe(3);
     expect(DEFAULT_SETTINGS_MIGRATIONS[1]?.describe()).toContain(
       SETTINGS.viewerTheme
+    );
+    expect(DEFAULT_SETTINGS_MIGRATIONS[2]?.describe()).toContain(
+      SETTINGS.aiProvider
     );
   });
 });

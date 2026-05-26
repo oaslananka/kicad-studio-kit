@@ -1,18 +1,17 @@
 # Codex Support
 
-KiCad Studio Kit has two distinct Codex-related surfaces.
+KiCad Studio Kit supports Codex through the external MCP client path.
 
-## VS Code Extension Provider
+## Extension Provider Status
 
-Inside the VS Code extension, `kicadstudio.ai.provider=codex` is implemented as a direct
-extension provider. It routes through the VS Code Language Model API using the local VS Code
-host and available language-model extensions. It does not read Codex CLI config, does not
-start the Codex CLI, and does not require a separate Codex API key in KiCad Studio.
+`kicadstudio.ai.provider=codex` is a legacy setting value, not a current direct KiCad
+Studio extension provider. KiCad Studio migrates that legacy value to `copilot` because the
+old implementation used the VS Code Language Model API and Copilot-compatible models.
 
 Related implementation and docs:
 
 - `apps/vscode-extension/src/ai/aiProvider.ts`
-- `apps/vscode-extension/src/ai/copilotProvider.ts`
+- `apps/vscode-extension/src/settings/settingsMigrations.ts`
 - `apps/vscode-extension/docs/AI_PROVIDERS.md`
 - [`docs/extension/settings.md`](../extension/settings.md)
 
@@ -31,12 +30,12 @@ codex mcp add kicad \
 ```
 
 This external-client path gives Codex access to KiCad MCP tools. It is separate from the
-VS Code extension's `codex` provider enum.
+VS Code extension's direct AI provider setting.
 
 ## Rule Of Thumb
 
-- Use `kicadstudio.ai.provider=codex` when working inside KiCad Studio's chat UI in VS
-  Code.
+- Use `kicadstudio.ai.provider=copilot` when you want KiCad Studio's chat UI to route
+  through the VS Code Language Model API.
 - Use Codex MCP config when Codex is the coding agent or IDE agent connecting to
   `kicad-mcp-pro`.
-- Do not describe the extension provider enum as the Codex CLI integration.
+- Do not describe the extension provider setting as the Codex CLI integration.

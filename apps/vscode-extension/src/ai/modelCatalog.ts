@@ -4,8 +4,7 @@ export type AiProviderId =
   | 'openrouter'
   | 'copilot'
   | 'gemini'
-  | 'local'
-  | 'codex';
+  | 'local';
 
 export interface ModelInfo {
   id: string;
@@ -197,19 +196,6 @@ export const COPILOT_MODELS: AiModelInfo[] = [
   }
 ];
 
-export const CODEX_MODELS: AiModelInfo[] = [
-  {
-    id: 'codex/default',
-    provider: 'codex',
-    label: 'VS Code Codex (Best available)',
-    maxTokens: 4096,
-    supportsStreaming: true,
-    contextWindow: 128000,
-    recommended: true,
-    default: true
-  }
-];
-
 export const LOCAL_MODELS: AiModelInfo[] = [];
 
 export const MODEL_CATALOG: Record<AiProviderId, AiModelInfo[]> = {
@@ -218,26 +204,26 @@ export const MODEL_CATALOG: Record<AiProviderId, AiModelInfo[]> = {
   openrouter: OPENROUTER_MODELS,
   gemini: GEMINI_MODELS,
   copilot: COPILOT_MODELS,
-  local: LOCAL_MODELS,
-  codex: CODEX_MODELS
+  local: LOCAL_MODELS
 };
 
 export const AI_MODEL_CATALOG = MODEL_CATALOG;
 
 export function getProviderModels(provider: AiProviderId): AiModelInfo[] {
-  return MODEL_CATALOG[provider];
+  const models = MODEL_CATALOG[provider];
+  if (!models) {
+    throw new Error(`Unsupported AI provider: ${String(provider)}`);
+  }
+  return models;
 }
 
 export function getDefaultModel(provider: AiProviderId): string {
-  return (
-    MODEL_CATALOG[provider].find((model) => model.default)?.id ??
-    MODEL_CATALOG[provider][0]?.id ??
-    ''
-  );
+  const models = getProviderModels(provider);
+  return models.find((model) => model.default)?.id ?? models[0]?.id ?? '';
 }
 
 export function getRecommendedModel(
   provider: AiProviderId
 ): AiModelInfo | undefined {
-  return MODEL_CATALOG[provider].find((model) => model.recommended);
+  return getProviderModels(provider).find((model) => model.recommended);
 }

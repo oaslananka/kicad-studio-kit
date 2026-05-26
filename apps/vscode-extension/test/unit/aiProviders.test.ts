@@ -1,7 +1,8 @@
 import { ClaudeProvider } from '../../src/ai/claudeProvider';
+import { AIProviderRegistry } from '../../src/ai/aiProvider';
 import { CopilotProvider } from '../../src/ai/copilotProvider';
 import { OpenAIProvider } from '../../src/ai/openaiProvider';
-import { lm } from './vscodeMock';
+import { createExtensionContextMock, lm } from './vscodeMock';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -115,6 +116,18 @@ describe('AI providers', () => {
         content: expect.stringContaining('Context:\ncontext')
       })
     ]);
+  });
+
+  it('does not expose Codex as a direct extension provider', async () => {
+    const registry = new AIProviderRegistry(
+      createExtensionContextMock() as never
+    );
+
+    await expect(
+      registry.getProviderForSelection('codex')
+    ).resolves.toBeUndefined();
+    expect(registry.getDefaultModel('codex')).toBe('');
+    expect(registry.isKeyedProvider('codex')).toBe(false);
   });
 });
 

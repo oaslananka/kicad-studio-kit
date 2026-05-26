@@ -217,9 +217,10 @@ const requiredReferences = {
     "profile: `pcb_only`",
   ],
   "apps/vscode-extension/docs/AI_PROVIDERS.md": [
-    "seven direct AI provider paths",
+    "six direct AI provider paths",
     "## Codex",
-    "~/.codex/config.toml",
+    "not as a direct KiCad Studio",
+    "examples/mcp-clients/codex.config.example.toml",
     "docs/agents/codex-support.md",
   ],
   "packages/mcp-server/docs/client-configuration.md": [
