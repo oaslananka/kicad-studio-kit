@@ -18,6 +18,7 @@
   },
   "files": [
     "bin/",
+    "scripts/",
     "README.md"
   ],
   "engines": {
@@ -28,6 +29,6 @@
   },
   "scripts": {
     "check": "npm pack --dry-run",
-    "build": "node bin/kicad-mcp-pro.js --help || true"
+    "build": "node scripts/build-smoke.js"
   }
 }
