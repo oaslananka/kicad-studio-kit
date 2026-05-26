@@ -26,9 +26,8 @@ from tests.conftest import call_tool_text
 pytestmark = [pytest.mark.anyio, pytest.mark.gui, pytest.mark.slow]
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-FIXTURE_ROOT = (
-    REPO_ROOT / "apps" / "vscode-extension" / "test" / "fixtures" / "kicad" / "clean-led-kicad10"
-)
+GUI_SMOKE_FIXTURE_ID = "clean-led-kicad10"
+FIXTURE_ROOT = REPO_ROOT / "packages" / "kicad-fixtures" / "fixtures" / GUI_SMOKE_FIXTURE_ID
 SMOKE_TOOLS = (
     "pcb_get_board_summary",
     "pcb_get_tracks",
@@ -98,7 +97,7 @@ def _copy_fixture(tmp_path: Path, name: str) -> Path:
 
 
 def _configure_project(monkeypatch: pytest.MonkeyPatch, project_dir: Path) -> dict[str, str]:
-    stem = "clean-led-kicad10"
+    stem = GUI_SMOKE_FIXTURE_ID
     env = {
         "KICAD_MCP_PROJECT_DIR": str(project_dir),
         "KICAD_MCP_PROJECT_FILE": str(project_dir / f"{stem}.kicad_pro"),
