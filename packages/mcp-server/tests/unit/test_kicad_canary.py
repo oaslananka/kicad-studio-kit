@@ -33,7 +33,10 @@ def _compatibility_matrix() -> dict[str, object]:
         "featureGates": {
             "manufacturingExports": {
                 "kicad": ["9.x", "10.0.x"],
-            }
+            },
+            "kicad10AdvancedExports": {
+                "kicad": ["10.0.x"],
+            },
         },
     }
 
@@ -162,6 +165,7 @@ def test_command_plan_covers_oaslana_38_export_surface(tmp_path: Path) -> None:
         "clean-drc",
         "dirty-drc",
         "schematic-pdf",
+        "schematic-pdf-no-property-popups",
         "pcb-pdf",
         "pcb-svg",
         "pcb-dxf",
@@ -170,6 +174,8 @@ def test_command_plan_covers_oaslana_38_export_surface(tmp_path: Path) -> None:
         "bom",
         "netlist",
         "board-stats",
+        "pads-import-capability",
+        "allegro-import-capability",
         "step",
         "path-with-spaces-board-stats",
         "unicode-path-board-stats",
@@ -181,6 +187,9 @@ def test_command_plan_covers_oaslana_38_export_surface(tmp_path: Path) -> None:
     assert steps["unicode-path-board-stats"].fixture == "unicode-path-çöğü"
     assert steps["read-only-output-failure"].expects_failure is True
     assert "--layers" in steps["pcb-pdf"].args
+    assert "--exclude-pdf-property-popups" in steps["schematic-pdf-no-property-popups"].args
+    assert steps["pads-import-capability"].required_output_tokens == ("--format", "pads")
+    assert steps["allegro-import-capability"].optional_capability is True
     assert str(kicad_canary.FIXTURE_ROOT) not in " ".join(steps["clean-erc"].args)
     assert str(tmp_path / "workspace" / "clean-led-kicad10") in " ".join(steps["clean-erc"].args)
 
@@ -193,6 +202,10 @@ def test_unsupported_feature_steps_are_structured_skips(tmp_path: Path) -> None:
 
     assert steps["gerbers"].skip_reason == "manufacturingExports is not enabled for KiCad 8.x"
     assert steps["drill"].skip_reason == "manufacturingExports is not enabled for KiCad 8.x"
+    assert (
+        steps["schematic-pdf-no-property-popups"].skip_reason
+        == "kicad10AdvancedExports is not enabled for KiCad 8.x"
+    )
 
     result = kicad_canary._run_step(Path(sys.executable), steps["gerbers"], tmp_path)
 
@@ -249,6 +262,29 @@ def test_violation_step_only_accepts_documented_kicad_exit_code(tmp_path: Path) 
 
     assert result["returncode"] == 2
     assert result["ok"] is False
+
+
+def test_optional_capability_probe_records_structured_skip(tmp_path: Path) -> None:
+    cli = Path(sys.executable)
+    script = tmp_path / "fake_kicad_cli.py"
+    script.write_text("print('Usage: kicad-cli pcb import --format pads')\n", encoding="utf-8")
+
+    result = kicad_canary._run_step(
+        cli,
+        CanaryStep(
+            name="allegro-import-capability",
+            fixture="kicad-10-0-3-regressions",
+            args=(str(script),),
+            required_output_tokens=("allegro",),
+            optional_capability=True,
+        ),
+        tmp_path / "artifacts",
+    )
+
+    assert result["ok"] is True
+    assert result["skipped"] is True
+    assert result["missingTokens"] == ["allegro"]
+    assert result["reason"] == "Optional capability not advertised: allegro"
 
 
 def test_timeout_step_writes_artifact_logs(tmp_path: Path, monkeypatch) -> None:

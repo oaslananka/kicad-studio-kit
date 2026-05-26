@@ -271,12 +271,20 @@ Run the same primary contract locally after installing KiCad or setting
 corepack pnpm run test:kicad-cli-contract
 ```
 
+```powershell
+corepack pnpm run test:kicad:canary
+```
+
 The contract uses the shared fixture corpus in `packages/kicad-fixtures/` and
 validates `kicad-cli version`, ERC, DRC, schematic PDF export, PCB PDF/SVG/DXF
 export, Gerber and drill export, BOM, netlist, board statistics, STEP export,
 paths containing spaces, Unicode paths, missing CLI reporting, read-only output
 failure reporting, and structured skipped results for feature gates that are not
-supported by a KiCad line.
+supported by a KiCad line. KiCad 10.0.3-specific probes additionally cover
+schematic PDF property-popup suppression, PADS import help, Allegro import
+capability reporting, and the generated
+[`kicad-10-0-3-regressions`](kicad-fixture-corpus.md#fixture-coverage)
+fixture group.
 
 ## VS Code Canary
 

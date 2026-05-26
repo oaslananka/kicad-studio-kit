@@ -18,6 +18,12 @@ interface FixtureManifest {
     expectedFiles: string[];
     expectedOutcome: 'pass' | 'warn' | 'fail';
     tags: string[];
+    regressionCoverage?: {
+      kicadVersion: string;
+      cli: string[];
+      importers: string[];
+      pcb: string[];
+    };
   }>;
 }
 
@@ -41,12 +47,13 @@ const fixturesBySemanticName = new Map(
 
 describe('KiCad fixture corpus manifest', () => {
   it('exposes the required fixtures by semantic name', () => {
-    expect(manifest.fixtureCount).toBe(14);
+    expect(manifest.fixtureCount).toBe(15);
     expect(manifest.root).toBe('packages/kicad-fixtures/fixtures');
     expect(manifest.expectedRoot).toBe('packages/kicad-fixtures/expected');
     expect([...fixturesBySemanticName.keys()]).toEqual([
       'clean-led-kicad10',
       'stale-diagnostics-kicad10',
+      'kicad-10-0-3-regressions',
       'erc-power-pin-error',
       'drc-courtyard-error',
       'unconnected-pcb',
@@ -97,5 +104,29 @@ describe('KiCad fixture corpus manifest', () => {
     expect(spaces?.projectFile).toBe('path case.kicad_pro');
     expect(unicode?.path).toContain('unicode-path-çöğü');
     expect(unicode?.projectFile).toBe('unicode-çöğü.kicad_pro');
+  });
+
+  it('exposes KiCad 10.0.3 regression metadata for extension consumers', () => {
+    const regression = fixturesBySemanticName.get('kicad-10-0-3-regressions');
+
+    expect(regression?.tags).toEqual(
+      expect.arrayContaining([
+        'kicad10.0.3',
+        'pdf-property-popups',
+        'pads-import',
+        'allegro-capability'
+      ])
+    );
+    expect(regression?.regressionCoverage?.kicadVersion).toBe('10.0.3');
+    expect(regression?.regressionCoverage?.cli).toContain(
+      'pcb_export_pdf_property_popup_suppression_probe'
+    );
+    expect(regression?.regressionCoverage?.importers).toEqual([
+      'pads_import_edge_case_fixture',
+      'allegro_import_capability_probe'
+    ]);
+    expect(regression?.regressionCoverage?.pcb).toEqual([
+      'custom_padstack_non_copper_layer_fixture'
+    ]);
   });
 });

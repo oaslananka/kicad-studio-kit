@@ -13,6 +13,7 @@ packages/kicad-fixtures/
   fixtures/
     clean-led-kicad10/
     stale-diagnostics-kicad10/
+    kicad-10-0-3-regressions/
     erc-power-pin-error/
     drc-courtyard-error/
     unconnected-pcb/
@@ -43,6 +44,9 @@ packages/kicad-fixtures/
 fixture ID, source file names, expected DRC/ERC/BOM/netlist state, tags, and
 supported KiCad versions through fixture tags such as `kicad10`,
 `windows-paths`, `schematic`, `pcb`, `drc`, and `erc`.
+
+The `kicad-10-0-3-regressions` fixture records patch-specific CLI, importer,
+export, and custom-padstack probes for the KiCad 10.0.3 release line.
 
 Tests should use semantic fixture IDs from `manifest.json` or the TypeScript
 helpers exported from `src/index.ts`. Do not hard-code generated file lists in

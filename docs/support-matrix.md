@@ -82,6 +82,8 @@ Status surfaces:
 - The status bar shows the detected KiCad support line and warns on deprecated or unsupported CLIs.
 - The `KiCad Studio Commands` status menu lists feature-level availability with precise unsupported reasons.
 - Advanced commands such as ODB++ and 3D PDF export require both their documented KiCad line and a successful `kicad-cli` capability probe.
+- KiCad 10.0.3 patch-specific regression coverage is tracked by
+  [`kicad-10-0-3-regressions`](kicad-fixture-corpus.md#fixture-coverage).
 
 Freshness sources checked on 2026-05-26:
 

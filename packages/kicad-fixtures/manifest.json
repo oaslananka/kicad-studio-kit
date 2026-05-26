@@ -5,7 +5,7 @@
   "githubIssue": 54,
   "root": "packages/kicad-fixtures/fixtures",
   "expectedRoot": "packages/kicad-fixtures/expected",
-  "fixtureCount": 14,
+  "fixtureCount": 15,
   "expectedFiles": [
     "project-tree.snapshot.json",
     "diagnostics.snapshot.json",
@@ -60,6 +60,53 @@
       ],
       "expectedOutcome": "warn",
       "tags": ["kicad10", "diagnostics", "stale-state"]
+    },
+    {
+      "id": "kicad-10-0-3-regressions",
+      "semanticName": "kicad-10-0-3-regressions",
+      "path": "packages/kicad-fixtures/fixtures/kicad-10-0-3-regressions",
+      "projectFile": "kicad-10-0-3-regressions.kicad_pro",
+      "schematicFiles": ["kicad-10-0-3-regressions.kicad_sch"],
+      "boardFile": "kicad-10-0-3-regressions.kicad_pcb",
+      "designRulesFile": "kicad-10-0-3-regressions.kicad_dru",
+      "expectedPath": "packages/kicad-fixtures/expected/kicad-10-0-3-regressions",
+      "expectedFiles": [
+        "project-tree.snapshot.json",
+        "diagnostics.snapshot.json",
+        "status.snapshot.json",
+        "erc-report.json",
+        "drc-report.json",
+        "bom.csv",
+        "netlist.net",
+        "board-stats.txt"
+      ],
+      "expectedOutcome": "warn",
+      "tags": [
+        "kicad10",
+        "kicad10.0.3",
+        "regression",
+        "cli",
+        "drc",
+        "erc",
+        "pdf-property-popups",
+        "pads-import",
+        "allegro-capability",
+        "custom-padstack"
+      ],
+      "regressionCoverage": {
+        "kicadVersion": "10.0.3",
+        "source": "https://www.kicad.org/blog/2026/05/KiCad-10.0.3-Release/",
+        "cli": [
+          "drc_elapsed_or_status_output_parsing",
+          "erc_output_shape_stability",
+          "pcb_export_pdf_property_popup_suppression_probe"
+        ],
+        "importers": [
+          "pads_import_edge_case_fixture",
+          "allegro_import_capability_probe"
+        ],
+        "pcb": ["custom_padstack_non_copper_layer_fixture"]
+      }
     },
     {
       "id": "erc-power-pin-error",

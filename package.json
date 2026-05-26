@@ -31,6 +31,7 @@
     "test:kicad-mcp-pro": "pnpm --dir packages/mcp-server run test:unit",
     "test:contract": "pnpm --dir packages/mcp-server run test:transport-contract && pnpm run check:compatibility && pnpm --dir packages/mcp-server run mcp:manifest:check",
     "test:kicad-cli-contract": "uv run --project packages/mcp-server --all-extras python packages/mcp-server/scripts/kicad_canary.py run --artifacts artifacts/kicad-cli-contract/local --kicad-range 10.0.x",
+    "test:kicad:canary": "pnpm run test:kicad-cli-contract",
     "test:kicad-cli-contract:nightly": "uv run --project packages/mcp-server --all-extras python packages/mcp-server/scripts/kicad_canary.py run --artifacts artifacts/kicad-cli-contract/nightly --kicad-range 10.99.x",
     "test:kicad-cli-contract:future": "uv run --project packages/mcp-server --all-extras python packages/mcp-server/scripts/kicad_canary.py run --artifacts artifacts/kicad-cli-contract/kicad11 --kicad-range 11.0.x",
     "test:kicad-cli-contract:matrix": "uv run --project packages/mcp-server --all-extras python packages/mcp-server/scripts/kicad_canary.py matrix",

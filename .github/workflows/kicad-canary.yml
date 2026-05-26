@@ -7,6 +7,7 @@ on:
       - "compatibility.yaml"
       - "packages/kicad-fixtures/**"
       - "packages/mcp-server/scripts/kicad_canary.py"
+      - "packages/mcp-server/tests/unit/test_kicad_10_0_3_regressions.py"
       - "packages/mcp-server/tests/unit/test_kicad_canary.py"
       - "packages/mcp-server/tests/integration/test_kicad_cli_smoke.py"
       - "docs/testing-strategy.md"

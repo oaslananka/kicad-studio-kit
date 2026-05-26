@@ -54,6 +54,8 @@ class CanaryStep:
     expects_failure: bool = False
     skip_reason: str | None = None
     readonly_dirs: tuple[Path, ...] = ()
+    required_output_tokens: tuple[str, ...] = ()
+    optional_capability: bool = False
 
 
 def _read_compatibility_matrix() -> dict[str, Any]:
@@ -241,12 +243,14 @@ def _command_plan(
             "clean-led-kicad10",
             "drc-courtyard-error",
             "erc-power-pin-error",
+            "kicad-10-0-3-regressions",
             "paths-with-spaces",
             "unicode-path-çöğü",
         },
     )
     clean_schematic = _fixture_file(workspace_root, "clean-led-kicad10", ".kicad_sch")
     clean_board = _fixture_file(workspace_root, "clean-led-kicad10", ".kicad_pcb")
+    regression_schematic = _fixture_file(workspace_root, "kicad-10-0-3-regressions", ".kicad_sch")
     dirty_erc = _fixture_file(workspace_root, "erc-power-pin-error", ".kicad_sch")
     dirty_drc = _fixture_file(workspace_root, "drc-courtyard-error", ".kicad_pcb")
     path_with_spaces_board = _fixture_file(workspace_root, "paths-with-spaces", ".kicad_pcb")
@@ -257,6 +261,11 @@ def _command_plan(
     graphics = artifacts / "graphics"
     readonly_output = artifacts / "readonly-project"
     manufacturing_skip = _feature_skip_reason(compatibility, "manufacturingExports", kicad_range)
+    kicad10_export_skip = _feature_skip_reason(
+        compatibility,
+        "kicad10AdvancedExports",
+        kicad_range,
+    )
     steps = [
         CanaryStep(name="version", fixture="compatibility", args=("version",)),
         CanaryStep(
@@ -335,6 +344,21 @@ def _command_plan(
                 str(clean_schematic),
             ),
             outputs=(reports / "schematic.pdf",),
+        ),
+        CanaryStep(
+            name="schematic-pdf-no-property-popups",
+            fixture="kicad-10-0-3-regressions",
+            args=(
+                "sch",
+                "export",
+                "pdf",
+                "--output",
+                str(reports / "schematic-no-property-popups.pdf"),
+                "--exclude-pdf-property-popups",
+                str(regression_schematic),
+            ),
+            outputs=(reports / "schematic-no-property-popups.pdf",),
+            skip_reason=kicad10_export_skip,
         ),
         CanaryStep(
             name="pcb-pdf",
@@ -423,6 +447,19 @@ def _command_plan(
                 str(clean_board),
             ),
             outputs=(reports / "board-stats.txt",),
+        ),
+        CanaryStep(
+            name="pads-import-capability",
+            fixture="kicad-10-0-3-regressions",
+            args=("pcb", "import", "--help"),
+            required_output_tokens=("--format", "pads"),
+        ),
+        CanaryStep(
+            name="allegro-import-capability",
+            fixture="kicad-10-0-3-regressions",
+            args=("pcb", "import", "--help"),
+            required_output_tokens=("allegro",),
+            optional_capability=True,
         ),
         CanaryStep(
             name="step",
@@ -641,6 +678,12 @@ def _run_step(cli: Path, step: CanaryStep, artifacts: Path) -> dict[str, object]
     if step.expects_failure:
         command_ok = returncode not in {0, None}
         outputs_exist = True
+    combined_output = f"{stdout}\n{stderr}".casefold()
+    missing_tokens = [
+        token for token in step.required_output_tokens if token.casefold() not in combined_output
+    ]
+    capability_skip = bool(step.optional_capability and missing_tokens and command_ok)
+    step_ok = command_ok and outputs_exist and (not missing_tokens or capability_skip)
     step_result: dict[str, object] = {
         "name": step.name,
         "fixture": step.fixture,
@@ -648,8 +691,13 @@ def _run_step(cli: Path, step: CanaryStep, artifacts: Path) -> dict[str, object]
         "expectsViolations": step.expects_violations,
         "expectsFailure": step.expects_failure,
         "outputs": [str(path.relative_to(artifacts)) for path in step.outputs],
-        "ok": command_ok and outputs_exist,
+        "ok": step_ok,
     }
+    if missing_tokens:
+        step_result["missingTokens"] = missing_tokens
+    if capability_skip:
+        step_result["skipped"] = True
+        step_result["reason"] = f"Optional capability not advertised: {', '.join(missing_tokens)}"
     if error is not None:
         step_result["error"] = error
     return step_result

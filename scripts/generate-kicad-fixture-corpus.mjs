@@ -37,6 +37,7 @@ const expectedFileNames = [
 const fixtureIds = [
   "clean-led-kicad10",
   "stale-diagnostics-kicad10",
+  "kicad-10-0-3-regressions",
   "erc-power-pin-error",
   "drc-courtyard-error",
   "unconnected-pcb",
@@ -114,6 +115,130 @@ const fixtures = [
         stale: true,
       },
     ],
+  },
+  {
+    id: "kicad-10-0-3-regressions",
+    fileBase: "kicad-10-0-3-regressions",
+    expectedOutcome: "warn",
+    tags: [
+      "kicad10",
+      "kicad10.0.3",
+      "regression",
+      "cli",
+      "drc",
+      "erc",
+      "pdf-property-popups",
+      "pads-import",
+      "allegro-capability",
+      "custom-padstack",
+    ],
+    hasSchematic: true,
+    hasPcb: true,
+    hasDru: true,
+    customPadstackNonCopper: true,
+    components: [
+      component(
+        "U1",
+        "PADS_EDGE",
+        "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+        "PADS_NET",
+      ),
+      component(
+        "TP1",
+        "MASK_PADSTACK",
+        "TestPoint:TestPoint_Pad_D1.0mm",
+        "MASK_PROBE",
+      ),
+    ],
+    diagnostics: [
+      {
+        severity: "warning",
+        source: "drc",
+        code: "DRC_STATUS_OUTPUT_SHAPE",
+        message:
+          "KiCad 10.0.3 DRC status and elapsed-time output remains parseable from JSON reports.",
+      },
+      {
+        severity: "warning",
+        source: "erc",
+        code: "ERC_SHEET_OUTPUT_SHAPE",
+        message:
+          "KiCad 10.0.3 ERC sheet-level report shape remains parseable.",
+      },
+      {
+        severity: "info",
+        source: "importer",
+        code: "PADS_EDGE_CASE_FIXTURE",
+        message:
+          "PADS segment-intersection regression fixture is present for importer probes.",
+      },
+      {
+        severity: "info",
+        source: "importer",
+        code: "ALLEGRO_CAPABILITY_PROBE",
+        message:
+          "Allegro PCB importer capability is probed and recorded even when full import support is unavailable.",
+      },
+    ],
+    drcReportMetadata: {
+      kicadVersion: "10.0.3",
+      statusText: "DRC completed; elapsed=00:00:00.42",
+      elapsedSeconds: 0.42,
+      regression: "drc_elapsed_or_status_output_parsing",
+    },
+    ercSheets: [
+      {
+        path: "/",
+        violations: [
+          {
+            severity: "warning",
+            type: "sheet_output_shape",
+            description:
+              "KiCad 10.0.3 ERC sheet-level report shape remains parseable.",
+          },
+        ],
+      },
+    ],
+    extraFiles: [
+      {
+        path: "importers/pads-zone-intersection.asc",
+        role: "pads-import-fixture",
+        content: [
+          "!PADS-POWERPCB-V2007.0-ASCII!",
+          "*PCB* GENERAL PARAMETERS OF THE PCB DESIGN",
+          "UNITS MM",
+          "*SIGNAL* ITEMS",
+          "*LINES*",
+          "PADS_NET 0.250 0.000 0.000 12.000 0.000",
+          "PADS_NET 0.250 6.000 -6.000 6.000 6.000",
+          "*END*",
+          "",
+        ].join("\n"),
+      },
+      {
+        path: "importers/allegro-capability-probe.json",
+        role: "allegro-capability-probe",
+        content: stableJson({
+          format: "allegro",
+          status: "capability-probe-only",
+          reason:
+            "KiCad 10.0.3 CLI documentation does not list Allegro as a pcb import format.",
+          command: ["kicad-cli", "pcb", "import", "--help"],
+        }),
+      },
+    ],
+    regressionCoverage: {
+      kicadVersion: "10.0.3",
+      source:
+        "https://www.kicad.org/blog/2026/05/KiCad-10.0.3-Release/",
+      cli: [
+        "drc_elapsed_or_status_output_parsing",
+        "erc_output_shape_stability",
+        "pcb_export_pdf_property_popup_suppression_probe",
+      ],
+      importers: ["pads_import_edge_case_fixture", "allegro_import_capability_probe"],
+      pcb: ["custom_padstack_non_copper_layer_fixture"],
+    },
   },
   {
     id: "erc-power-pin-error",
@@ -422,6 +547,27 @@ function footprintBlock(item, index) {
   ].join("\n");
 }
 
+function customPadstackBlock() {
+  return [
+    `  (footprint "Fixture:CustomPadstackMask"`,
+    `    (layer "F.Cu")`,
+    `    (at 40 20 0)`,
+    `    (property "Reference" "TP1")`,
+    `    (property "Value" "MASK_PADSTACK")`,
+    `    (pad "1" smd custom (at 0 0) (size 1 1) (layers "F.Mask")`,
+    `      (options (clearance outline) (anchor rect))`,
+    `      (primitives`,
+    `        (gr_poly`,
+    `          (pts (xy -0.5 -0.5) (xy 0.5 -0.5) (xy 0.5 0.5) (xy -0.5 0.5))`,
+    `          (width 0)`,
+    `          (fill yes)`,
+    `        )`,
+    `      )`,
+    `    )`,
+    `  )`,
+  ].join("\n");
+}
+
 function pcbContent(fixture) {
   if (fixture.malformedPcb) {
     return `(kicad_pcb\n  (version 20240101)\n  (generator "KiCad Studio Fixture Corpus")\n  (layers\n`;
@@ -450,6 +596,7 @@ function pcbContent(fixture) {
     `  )`,
     ...nets,
     ...footprints,
+    ...(fixture.customPadstackNonCopper ? [customPadstackBlock()] : []),
     ...segments,
     `  (gr_rect (start 0 0) (end 100 60) (stroke (width 0.10) (type solid)) (fill none) (layer "Edge.Cuts"))`,
     `)`,
@@ -498,6 +645,9 @@ function projectContent(fixture) {
   }
   if (fixture.hasDru) {
     project.designRules = { file: druFileName(fixture) };
+  }
+  if (fixture.regressionCoverage) {
+    project.regressionCoverage = fixture.regressionCoverage;
   }
 
   return stableJson(project);
@@ -565,6 +715,14 @@ function projectTreeSnapshot(fixture) {
     path: fixture.hasDru ? druFileName(fixture) : null,
     exists: Boolean(fixture.hasDru),
   });
+
+  for (const file of fixture.extraFiles ?? []) {
+    files.push({
+      role: file.role,
+      path: file.path,
+      exists: true,
+    });
+  }
 
   return {
     fixture: fixture.id,
@@ -636,7 +794,7 @@ function reportFor(fixture, source) {
   const diagnostics = diagnosticEntries(fixture).filter(
     (item) => item.source === source,
   );
-  return {
+  const report = {
     fixture: fixture.id,
     formatVersion: 1,
     generatedBy: generatorPath,
@@ -651,6 +809,13 @@ function reportFor(fixture, source) {
       file: item.file,
     })),
   };
+  if (source === "drc" && fixture.drcReportMetadata) {
+    report.metadata = fixture.drcReportMetadata;
+  }
+  if (source === "erc" && fixture.ercSheets) {
+    report.sheets = fixture.ercSheets;
+  }
+  return report;
 }
 
 function escapeCsv(value) {
@@ -754,6 +919,10 @@ function filesForFixture(fixture) {
     files.set(fixturePath(fixture, druFileName(fixture)), druContent(fixture));
   }
 
+  for (const file of fixture.extraFiles ?? []) {
+    files.set(fixturePath(fixture, file.path), file.content);
+  }
+
   const expectedDir = expectedPath(fixture);
   files.set(
     path.join(expectedDir, "project-tree.snapshot.json"),
@@ -811,6 +980,9 @@ function corpusManifest() {
       expectedFiles: expectedFileNames,
       expectedOutcome: fixture.expectedOutcome,
       tags: fixture.tags,
+      ...(fixture.regressionCoverage
+        ? { regressionCoverage: fixture.regressionCoverage }
+        : {}),
     })),
   };
 }
