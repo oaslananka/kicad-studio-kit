@@ -13,6 +13,6 @@ coding agents and MCP-capable clients that work with KiCad Studio Kit.
 
 ## Default Safety Model
 
-Use `readonly` MCP operating mode and a focused profile such as `analysis` for onboarding,
+Use `readonly` MCP operating mode and a focused profile such as `pcb_only` for onboarding,
 triage, review, and code-agent workflows. Broader tool surfaces are opt-in and should be
 documented in the PR when used.

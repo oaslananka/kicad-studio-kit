@@ -26,7 +26,7 @@ Recommended local server:
 ```bash
 claude mcp add --transport stdio --scope project \
   --env KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
-  --env KICAD_MCP_PROFILE=analysis \
+  --env KICAD_MCP_PROFILE=pcb_only \
   --env KICAD_MCP_OPERATING_MODE=readonly \
   kicad -- uvx kicad-mcp-pro
 ```

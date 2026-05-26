@@ -36,8 +36,10 @@ for routing, tuning, and unstable helpers.
 
 VS Code uses `.vscode/mcp.json` for workspace-level configuration and a user profile MCP
 configuration for global setup. GitHub Copilot in VS Code uses the same MCP server setup.
+The repository ships `.vscode/mcp.example.json` as the copyable workspace example; place
+the same shape in `.vscode/mcp.json` for your own project.
 
-`.vscode/mcp.json`:
+`.vscode/mcp.example.json`:
 
 ```json
 {
@@ -265,8 +267,8 @@ Gemini CLI HTTP example:
 ## References
 
 - Agent onboarding and examples: ../../../docs/agents/client-configs.md
-- VS Code MCP configuration: https://code.vscode.dev/docs/copilot/customization/mcp-servers
-- Codex MCP configuration: https://developers.openai.com/learn/docs-mcp
+- VS Code MCP configuration: https://code.visualstudio.com/docs/copilot/customization/mcp-servers
+- Codex MCP configuration: https://developers.openai.com/codex/config-reference
 - Claude Code MCP configuration: https://docs.anthropic.com/en/docs/claude-code/mcp
 - Anthropic MCP overview: https://docs.anthropic.com/en/docs/mcp
 - Cursor MCP configuration: https://docs.cursor.com/en/context/mcp

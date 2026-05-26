@@ -21,53 +21,60 @@ const requiredMarkdownFiles = [
 
 const requiredRootExamples = [
   {
+    file: ".vscode/mcp.example.json",
+    format: "json",
+    rootKey: "servers",
+    type: "stdio",
+    profile: "pcb_only",
+  },
+  {
     file: "examples/mcp-clients/vscode.mcp.example.json",
     format: "json",
     rootKey: "servers",
     type: "stdio",
-    profile: "analysis",
+    profile: "pcb_only",
   },
   {
     file: "examples/mcp-clients/codex.config.example.toml",
     format: "toml",
     rootKey: "mcp_servers",
     type: "stdio",
-    profile: "analysis",
+    profile: "pcb_only",
   },
   {
     file: "examples/mcp-clients/claude-code.mcp.example.json",
     format: "json",
     rootKey: "mcpServers",
     type: "stdio",
-    profile: "analysis",
+    profile: "pcb_only",
   },
   {
     file: "examples/mcp-clients/claude-desktop.config.example.json",
     format: "json",
     rootKey: "mcpServers",
     type: "stdio",
-    profile: "analysis",
+    profile: "pcb_only",
   },
   {
     file: "examples/mcp-clients/cursor.mcp.example.json",
     format: "json",
     rootKey: "mcpServers",
     type: "stdio",
-    profile: "analysis",
+    profile: "pcb_only",
   },
   {
     file: "examples/mcp-clients/gemini.settings.example.json",
     format: "json",
     rootKey: "mcpServers",
     type: "stdio",
-    profile: "analysis",
+    profile: "pcb_only",
   },
   {
     file: "examples/mcp-clients/generic-stdio.mcp.example.json",
     format: "json",
     rootKey: "mcpServers",
     type: "stdio",
-    profile: "analysis",
+    profile: "pcb_only",
   },
   {
     file: "examples/mcp-clients/generic-http.mcp.example.json",
@@ -170,19 +177,25 @@ const requiredReferences = {
     "corepack pnpm run verify:dist",
     "examples/mcp-clients/",
   ],
-  "README.md": ["docs/agents/index.md", "examples/mcp-clients/README.md"],
+  "README.md": [
+    "docs/agents/index.md",
+    "examples/mcp-clients/README.md",
+    ".vscode/mcp.example.json",
+  ],
   "docs/agents/index.md": [
     "AGENTS.md",
     "client-configs.md",
     "codex-support.md",
   ],
   "docs/agents/client-configs.md": [
+    ".vscode/mcp.example.json",
     "vscode.mcp.example.json",
     "codex.config.example.toml",
     "claude-code.mcp.example.json",
     "generic-http.mcp.example.json",
-    "https://code.vscode.dev/docs/copilot/customization/mcp-servers",
-    "https://developers.openai.com/learn/docs-mcp",
+    "KICAD_MCP_PROFILE=pcb_only",
+    "https://code.visualstudio.com/docs/copilot/customization/mcp-servers",
+    "https://developers.openai.com/codex/config-reference",
     "https://modelcontextprotocol.io/specification/2025-06-18/basic/transports",
   ],
   "docs/agents/codex-support.md": [
@@ -201,6 +214,7 @@ const requiredReferences = {
     "codex.config.example.toml",
     "generic-http.mcp.example.json",
     "KICAD_MCP_OPERATING_MODE",
+    "profile: `pcb_only`",
   ],
   "apps/vscode-extension/docs/AI_PROVIDERS.md": [
     "seven direct AI provider paths",
@@ -211,7 +225,7 @@ const requiredReferences = {
   "packages/mcp-server/docs/client-configuration.md": [
     "KICAD_MCP_OPERATING_MODE=readonly",
     "../../../docs/agents/client-configs.md",
-    "https://developers.openai.com/learn/docs-mcp",
+    "https://developers.openai.com/codex/config-reference",
   ],
   "docs/.vitepress/config.mts": ["/agents/", "/agents/client-configs"],
 };

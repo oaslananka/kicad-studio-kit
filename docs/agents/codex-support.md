@@ -25,7 +25,7 @@ starting point, or use the CLI form below:
 ```bash
 codex mcp add kicad \
   --env KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
-  --env KICAD_MCP_PROFILE=analysis \
+  --env KICAD_MCP_PROFILE=pcb_only \
   --env KICAD_MCP_OPERATING_MODE=readonly \
   -- uvx kicad-mcp-pro
 ```

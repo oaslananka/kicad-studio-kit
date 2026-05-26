@@ -13,7 +13,7 @@ All stdio examples use:
 
 - command: `uvx`
 - args: `["kicad-mcp-pro"]`
-- profile: `analysis`
+- profile: `pcb_only`
 - operating mode: `readonly`
 
 `KICAD_MCP_PROFILE` narrows the tool categories. `KICAD_MCP_OPERATING_MODE` is the risk
@@ -39,7 +39,7 @@ For HTTP clients, start the server separately:
 
 ```bash
 KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
-KICAD_MCP_PROFILE=analysis \
+KICAD_MCP_PROFILE=pcb_only \
 KICAD_MCP_OPERATING_MODE=readonly \
 kicad-mcp-pro --transport http --host 127.0.0.1 --port 3334
 ```

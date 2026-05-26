@@ -21,7 +21,7 @@ startup_timeout_sec = 20
 
 [mcp_servers.kicad.env]
 KICAD_MCP_PROJECT_DIR = "/absolute/path/to/your/kicad-project"
-KICAD_MCP_PROFILE = "analysis"
+KICAD_MCP_PROFILE = "pcb_only"
 KICAD_MCP_OPERATING_MODE = "readonly"
 `);
 
@@ -45,11 +45,11 @@ test("stdio validator rejects unsafe profile and mode drift", () => {
         KICAD_MCP_OPERATING_MODE: "write",
       },
     },
-    { file: "example.json", expectedProfile: "analysis" },
+    { file: "example.json", expectedProfile: "pcb_only" },
   );
 
   assert.match(errors.join("\n"), /stdio command must be uvx/u);
-  assert.match(errors.join("\n"), /KICAD_MCP_PROFILE must be analysis/u);
+  assert.match(errors.join("\n"), /KICAD_MCP_PROFILE must be pcb_only/u);
   assert.match(errors.join("\n"), /KICAD_MCP_OPERATING_MODE must be readonly/u);
 });
 
