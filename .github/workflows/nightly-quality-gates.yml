@@ -32,6 +32,7 @@ jobs:
           version-file: packages/mcp-server/uv.toml
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm --filter kicadstudio exec playwright install --with-deps chromium
       - run: uv sync --all-extras --frozen --project packages/mcp-server
       - run: corepack pnpm run check
       - run: corepack pnpm run test:contract
