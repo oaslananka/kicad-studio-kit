@@ -179,7 +179,7 @@ const requiredReferences = {
   "CLAUDE.md": [
     "AGENTS.md",
     ".mcp.json",
-    "claude mcp add --scope project",
+    "claude mcp add --transport stdio --scope project",
     "claude-code.mcp.example.json",
     "Windows PowerShell",
     "KICAD_MCP_OPERATING_MODE=readonly",

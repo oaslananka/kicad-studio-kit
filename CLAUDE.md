@@ -36,10 +36,10 @@ claude mcp add --transport stdio --scope project \
 Recommended local server on Windows PowerShell:
 
 ```powershell
-claude mcp add --scope project --transport stdio `
-  --env KICAD_MCP_PROJECT_DIR=C:\absolute\path\to\your\kicad-project `
-  --env KICAD_MCP_PROFILE=pcb_only `
-  --env KICAD_MCP_OPERATING_MODE=readonly `
+claude mcp add --transport stdio --scope project `
+  --env 'KICAD_MCP_PROJECT_DIR=C:\absolute\path\to\your\kicad-project' `
+  --env 'KICAD_MCP_PROFILE=pcb_only' `
+  --env 'KICAD_MCP_OPERATING_MODE=readonly' `
   kicad -- uvx kicad-mcp-pro
 ```
 
