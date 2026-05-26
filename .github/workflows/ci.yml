@@ -100,6 +100,10 @@ jobs:
       - run: corepack pnpm --filter kicadstudio run test:webview
       - run: corepack pnpm --filter kicadstudio run test:a11y
       - run: corepack pnpm --filter kicadstudio run build
+      - if: runner.os == 'Linux'
+        run: xvfb-run -a corepack pnpm --filter kicadstudio run test:integration
+      - if: runner.os != 'Linux'
+        run: corepack pnpm --filter kicadstudio run test:integration
       - run: corepack pnpm --filter kicadstudio run package
       - name: Verify extension package and no VS Code Web target
         run: corepack pnpm --filter kicadstudio run package:validate

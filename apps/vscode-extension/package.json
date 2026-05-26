@@ -1010,72 +1010,124 @@
       ],
       "commandPalette": [
         {
-          "command": "kicadstudio.exportGerbers",
+          "command": "kicadstudio.openSchematic",
+          "when": "kicadstudio.schematicOpen"
+        },
+        {
+          "command": "kicadstudio.openPCB",
           "when": "kicadstudio.pcbOpen"
+        },
+        {
+          "command": "kicadstudio.openInKiCad",
+          "when": "kicadstudio.workspaceTrusted && resourceExtname =~ /\\.kicad_(sch|pcb|sym|mod|pro|jobset|dru)/"
+        },
+        {
+          "command": "kicadstudio.detectCli",
+          "when": "kicadstudio.workspaceTrusted"
+        },
+        {
+          "command": "kicadstudio.exportGerbers",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
+        },
+        {
+          "command": "kicadstudio.exportGerbersWithDrill",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
+        },
+        {
+          "command": "kicadstudio.exportPCBPDF",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
+        },
+        {
+          "command": "kicadstudio.exportSVG",
+          "when": "kicadstudio.workspaceTrusted && (kicadstudio.schematicOpen || kicadstudio.pcbOpen)"
         },
         {
           "command": "kicadstudio.exportIPC2581",
-          "when": "kicadstudio.pcbOpen"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
+        },
+        {
+          "command": "kicadstudio.exportODB",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
         },
         {
           "command": "kicadstudio.export3DGLB",
-          "when": "kicadstudio.pcbOpen"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
         },
         {
           "command": "kicadstudio.export3DBREP",
-          "when": "kicadstudio.pcbOpen"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
         },
         {
           "command": "kicadstudio.export3DPLY",
-          "when": "kicadstudio.pcbOpen"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
         },
         {
           "command": "kicadstudio.export3DPdf",
-          "when": "kicadstudio.pcbOpen && kicadstudio.kicad10Plus"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen && kicadstudio.kicad10Plus"
         },
         {
           "command": "kicadstudio.exportGenCAD",
-          "when": "kicadstudio.pcbOpen"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
         },
         {
           "command": "kicadstudio.exportIPCD356",
-          "when": "kicadstudio.pcbOpen"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
         },
         {
-          "command": "kicadstudio.exportDXF"
+          "command": "kicadstudio.exportDXF",
+          "when": "kicadstudio.workspaceTrusted && (kicadstudio.schematicOpen || kicadstudio.pcbOpen)"
         },
         {
           "command": "kicadstudio.exportPickAndPlace",
-          "when": "kicadstudio.pcbOpen"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
         },
         {
           "command": "kicadstudio.exportManufacturingPackage",
-          "when": "kicadstudio.pcbOpen"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
         },
         {
-          "command": "kicadstudio.exportFootprintSVG"
+          "command": "kicadstudio.exportFootprintSVG",
+          "when": "kicadstudio.workspaceTrusted && resourceExtname == .kicad_mod"
         },
         {
-          "command": "kicadstudio.exportSymbolSVG"
+          "command": "kicadstudio.exportSymbolSVG",
+          "when": "kicadstudio.workspaceTrusted && resourceExtname == .kicad_sym"
         },
         {
-          "command": "kicadstudio.runJobset"
+          "command": "kicadstudio.runJobset",
+          "when": "kicadstudio.workspaceTrusted && resourceExtname == .kicad_jobset"
         },
         {
           "command": "kicadstudio.runDRC",
-          "when": "kicadstudio.pcbOpen"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
         },
         {
           "command": "kicadstudio.runERC",
-          "when": "kicadstudio.schematicOpen"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
         },
         {
           "command": "kicadstudio.exportPDF",
-          "when": "kicadstudio.schematicOpen"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
         },
         {
           "command": "kicadstudio.exportBOMCSV",
-          "when": "kicadstudio.schematicOpen"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
+        },
+        {
+          "command": "kicadstudio.exportBOMXLSX",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
+        },
+        {
+          "command": "kicadstudio.exportNetlist",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
+        },
+        {
+          "command": "kicadstudio.exportInteractiveBOM",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
+        },
+        {
+          "command": "kicadstudio.exportViewerSvg",
+          "when": "kicadstudio.workspaceTrusted && (activeCustomEditorId == kicadstudio.schematicViewer || activeCustomEditorId == kicadstudio.pcbViewer)"
         },
         {
           "command": "kicadstudio.aiAnalyzeError",
@@ -1094,13 +1146,24 @@
           "when": "kicadstudio.aiEnabled"
         },
         {
+          "command": "kicadstudio.searchComponent"
+        },
+        {
+          "command": "kicadstudio.showDiff",
+          "when": "kicadstudio.hasProject"
+        },
+        {
+          "command": "kicadstudio.refreshProjectTree"
+        },
+        {
           "command": "kicadstudio.openSettings"
         },
         {
           "command": "kicadstudio.sendFeedback"
         },
         {
-          "command": "kicadstudio.setupMcpIntegration"
+          "command": "kicadstudio.setupMcpIntegration",
+          "when": "kicadstudio.workspaceTrusted"
         },
         {
           "command": "kicadstudio.mcp.launchHttp",
@@ -1112,6 +1175,9 @@
         },
         {
           "command": "kicadstudio.mcp.retry"
+        },
+        {
+          "command": "kicadstudio.mcp.openUpgradeGuide"
         },
         {
           "command": "kicadstudio.mcp.pickProfile",
@@ -1128,7 +1194,18 @@
         },
         {
           "command": "kicadstudio.qualityGate.runAll",
-          "when": "kicadstudio.mcpConnected && kicadstudio.hasProject"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.mcpConnected && kicadstudio.hasProject"
+        },
+        {
+          "command": "kicadstudio.qualityGate.runThis",
+          "when": "false"
+        },
+        {
+          "command": "kicadstudio.qualityGate.showRaw",
+          "when": "false"
+        },
+        {
+          "command": "kicadstudio.qualityGate.openDocs"
         },
         {
           "command": "kicadstudio.manufacturing.release",
@@ -1141,11 +1218,36 @@
           "command": "kicadstudio.clearAiKey"
         },
         {
+          "command": "kicadstudio.setOctopartApiKey"
+        },
+        {
+          "command": "kicadstudio.setAiApiKey"
+        },
+        {
+          "command": "kicadstudio.clearSecrets"
+        },
+        {
           "command": "kicadstudio.manageChatProvider"
         },
         {
           "command": "kicadstudio.openDesignIntent",
-          "when": "kicadstudio.mcpConnected"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.mcpConnected"
+        },
+        {
+          "command": "kicadstudio.refreshFixQueue",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.mcpConnected"
+        },
+        {
+          "command": "kicadstudio.applyFixQueueItem",
+          "when": "false"
+        },
+        {
+          "command": "kicadstudio.fixQueue.apply",
+          "when": "false"
+        },
+        {
+          "command": "kicadstudio.fixQueue.applyAll",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.mcpConnected"
         },
         {
           "command": "kicadstudio.drcRule.addWithMcp",
@@ -1160,16 +1262,24 @@
           "when": "kicadstudio.workspaceTrusted"
         },
         {
+          "command": "kicadstudio.drcRule.reveal",
+          "when": "false"
+        },
+        {
           "command": "kicadstudio.variant.create",
-          "when": "kicadstudio.kicad10Plus"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject && kicadstudio.kicad10Plus"
         },
         {
           "command": "kicadstudio.variant.setActive",
-          "when": "kicadstudio.hasVariants"
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.hasVariants"
         },
         {
           "command": "kicadstudio.variant.diffBom",
           "when": "kicadstudio.hasVariants"
+        },
+        {
+          "command": "kicadstudio.variant.refresh",
+          "when": "kicadstudio.kicad10Plus"
         },
         {
           "command": "kicadstudio.testAiConnection",
@@ -1207,19 +1317,47 @@
           "when": "kicadstudio.workspaceTrusted"
         },
         {
+          "command": "kicadstudio.saveExportPreset",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject"
+        },
+        {
+          "command": "kicadstudio.runExportPreset",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject"
+        },
+        {
           "command": "kicadstudio.showStatusMenu"
         },
         {
-          "command": "kicadstudio.importPads"
+          "command": "kicadstudio.importPads",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject"
         },
         {
-          "command": "kicadstudio.importAltium"
+          "command": "kicadstudio.importAltium",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject"
         },
         {
-          "command": "kicadstudio.importEagle"
+          "command": "kicadstudio.importEagle",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject"
         },
         {
-          "command": "kicadstudio.importGeda"
+          "command": "kicadstudio.importCadstar",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject"
+        },
+        {
+          "command": "kicadstudio.importFabmaster",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject"
+        },
+        {
+          "command": "kicadstudio.importPcad",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject"
+        },
+        {
+          "command": "kicadstudio.importSolidworks",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject"
+        },
+        {
+          "command": "kicadstudio.importGeda",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject"
         }
       ]
     },
@@ -1228,19 +1366,19 @@
         "command": "kicadstudio.runDRC",
         "key": "ctrl+shift+d",
         "mac": "cmd+shift+d",
-        "when": "kicadstudio.pcbOpen"
+        "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
       },
       {
         "command": "kicadstudio.runERC",
         "key": "ctrl+shift+e",
         "mac": "cmd+shift+e",
-        "when": "kicadstudio.schematicOpen"
+        "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
       },
       {
         "command": "kicadstudio.exportGerbers",
         "key": "ctrl+shift+g",
         "mac": "cmd+shift+g",
-        "when": "kicadstudio.pcbOpen"
+        "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
       },
       {
         "command": "kicadstudio.searchLibrarySymbol",
@@ -2060,7 +2198,7 @@
     "test:security": "pnpm run build:protocol-schemas && jest --config jest.config.js --runInBand --coverage=false --testMatch \"<rootDir>/test/security/**/*.test.ts\"",
     "test:a11y": "pnpm run build:protocol-schemas && jest --config jest.config.js --runInBand --coverage=false --testMatch \"<rootDir>/test/a11y/**/*.test.ts\"",
     "test:perf": "pnpm run build:protocol-schemas && jest --config jest.config.js --runInBand --coverage=false --testMatch \"<rootDir>/test/performance/**/*.test.ts\"",
-    "test:integration": "pnpm run compile-tests && node ./out/test/runTest.js",
+    "test:integration": "pnpm run build && pnpm run compile-tests && node ./out/test/runTest.js",
     "test:integration:real": "pnpm run compile-tests && node ./out/test/integration/realServer/quickstart.flow.test.js && node ./out/test/integration/realServer/qualityGate.flow.test.js && node ./out/test/integration/realServer/contextBridge.flow.test.js && node ./out/test/integration/realServer/compatibility.flow.test.js",
     "test:integration:real:host": "pnpm run build && pnpm run compile-tests && node ./out/test/runRealPairHostTest.js",
     "test:e2e": "playwright test test/e2e/",

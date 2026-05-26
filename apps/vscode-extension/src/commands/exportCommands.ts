@@ -136,8 +136,10 @@ export function registerExportCommands(
       (resource?: vscode.Uri) => services.exportService.exportSVG(resource),
       'Export Viewer SVG'
     ),
-    vscode.commands.registerCommand(COMMANDS.saveExportPreset, () =>
-      services.exportService.savePreset()
+    registerTrustedCommand(
+      COMMANDS.saveExportPreset,
+      () => services.exportService.savePreset(),
+      'Save Export Preset'
     ),
     registerTrustedCommand(
       COMMANDS.runExportPreset,

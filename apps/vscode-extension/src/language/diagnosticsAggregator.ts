@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-type DiagnosticBucket = 'syntax' | 'drc' | 'erc' | 'other';
+export type DiagnosticBucket = 'syntax' | 'drc' | 'erc' | 'other';
 
 export class KiCadDiagnosticsAggregator implements vscode.DiagnosticCollection {
   private readonly buckets = new Map<
@@ -50,6 +50,25 @@ export class KiCadDiagnosticsAggregator implements vscode.DiagnosticCollection {
     }
     this.uris.set(key, uri);
     const bucket = inferBucket(uri, diagnostics);
+    const current =
+      this.buckets.get(key) ??
+      new Map<DiagnosticBucket, readonly vscode.Diagnostic[]>();
+    current.set(bucket, diagnostics);
+    this.buckets.set(key, current);
+    this.flush(uri);
+  }
+
+  setForSource(
+    uri: vscode.Uri,
+    bucket: DiagnosticBucket,
+    diagnostics: readonly vscode.Diagnostic[]
+  ): void {
+    const key = keyForUri(uri);
+    const previousUri = this.uris.get(key);
+    if (previousUri && previousUri.toString() !== uri.toString()) {
+      this.backing.delete(previousUri);
+    }
+    this.uris.set(key, uri);
     const current =
       this.buckets.get(key) ??
       new Map<DiagnosticBucket, readonly vscode.Diagnostic[]>();
