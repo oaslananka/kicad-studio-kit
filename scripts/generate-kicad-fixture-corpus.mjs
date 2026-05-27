@@ -43,6 +43,7 @@ const fixtureIds = [
   "unconnected-pcb",
   "missing-netlist",
   "empty-board",
+  "empty-project-kicad10",
   "no-dru-file",
   "multi-sheet-schematic",
   "large-board",
@@ -162,8 +163,7 @@ const fixtures = [
         severity: "warning",
         source: "erc",
         code: "ERC_SHEET_OUTPUT_SHAPE",
-        message:
-          "KiCad 10.0.3 ERC sheet-level report shape remains parseable.",
+        message: "KiCad 10.0.3 ERC sheet-level report shape remains parseable.",
       },
       {
         severity: "info",
@@ -229,14 +229,16 @@ const fixtures = [
     ],
     regressionCoverage: {
       kicadVersion: "10.0.3",
-      source:
-        "https://www.kicad.org/blog/2026/05/KiCad-10.0.3-Release/",
+      source: "https://www.kicad.org/blog/2026/05/KiCad-10.0.3-Release/",
       cli: [
         "drc_elapsed_or_status_output_parsing",
         "erc_output_shape_stability",
         "pcb_export_pdf_property_popup_suppression_probe",
       ],
-      importers: ["pads_import_edge_case_fixture", "allegro_import_capability_probe"],
+      importers: [
+        "pads_import_edge_case_fixture",
+        "allegro_import_capability_probe",
+      ],
       pcb: ["custom_padstack_non_copper_layer_fixture"],
     },
   },
@@ -349,6 +351,32 @@ const fixtures = [
         source: "pcb",
         code: "BOARD_EMPTY",
         message: "Board has no footprints and no routed copper.",
+      },
+    ],
+  },
+  {
+    id: "empty-project-kicad10",
+    fileBase: "empty-project-kicad10",
+    expectedOutcome: "warn",
+    tags: ["kicad10", "pcb", "schematic", "empty-state"],
+    hasSchematic: true,
+    hasPcb: true,
+    hasDru: false,
+    emptySchematic: true,
+    fileFormatVersion: "20250316",
+    components: [],
+    diagnostics: [
+      {
+        severity: "warning",
+        source: "schematic",
+        code: "SCH_EMPTY",
+        message: "Schematic has no symbols, wires, or named nets.",
+      },
+      {
+        severity: "warning",
+        source: "pcb",
+        code: "BOARD_EMPTY",
+        message: "Board has no footprints, nets, or routed copper.",
       },
     ],
   },
@@ -475,6 +503,10 @@ function druFileName(fixture) {
   return `${fixture.fileBase}.kicad_dru`;
 }
 
+function fileFormatVersion(fixture) {
+  return fixture.fileFormatVersion ?? "20240101";
+}
+
 function fixtureRelativePath(...segments) {
   return [fixturesRootRelative, ...segments].join("/");
 }
@@ -505,6 +537,24 @@ function schematicContent(fixture, fileName) {
     return `(kicad_sch\n  (version 20240101)\n  (generator "KiCad Studio Fixture Corpus")\n  (symbol\n`;
   }
 
+  if (fixture.emptySchematic) {
+    return [
+      `(kicad_sch`,
+      `  (version ${fileFormatVersion(fixture)})`,
+      `  (generator "KiCad Studio Fixture Corpus")`,
+      `  (uuid "00000000-0000-0000-0000-000000000228")`,
+      `  (paper "A4")`,
+      `  (title_block (title "${fixture.id}"))`,
+      `  (lib_symbols)`,
+      `  (sheet_instances`,
+      `    (path "/" (page "1"))`,
+      `  )`,
+      `  (embedded_fonts no)`,
+      `)`,
+      ``,
+    ].join("\n");
+  }
+
   const isChildSheet = fileName === "power.kicad_sch";
   const components = isChildSheet
     ? fixture.components.filter((item) => ["U2", "C2"].includes(item.reference))
@@ -516,7 +566,7 @@ function schematicContent(fixture, fileName) {
 
   const lines = [
     `(kicad_sch`,
-    `  (version 20240101)`,
+    `  (version ${fileFormatVersion(fixture)})`,
     `  (generator "KiCad Studio Fixture Corpus")`,
     `  (paper "A4")`,
     `  (title_block (title "${title}"))`,
@@ -586,9 +636,10 @@ function pcbContent(fixture) {
 
   return [
     `(kicad_pcb`,
-    `  (version 20240101)`,
+    `  (version ${fileFormatVersion(fixture)})`,
     `  (generator "KiCad Studio Fixture Corpus")`,
     `  (general)`,
+    ...(fixture.emptySchematic ? [`  (paper "A4")`] : []),
     `  (layers`,
     `    (0 "F.Cu" signal)`,
     `    (31 "B.Cu" signal)`,
@@ -990,10 +1041,7 @@ function corpusManifest() {
 function buildCorpusFiles() {
   const files = new Map();
 
-  files.set(
-    manifestPath,
-    stableJson(corpusManifest()),
-  );
+  files.set(manifestPath, stableJson(corpusManifest()));
 
   for (const fixture of fixtures) {
     for (const [filePath, content] of filesForFixture(fixture)) {

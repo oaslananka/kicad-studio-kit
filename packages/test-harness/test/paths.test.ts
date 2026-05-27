@@ -28,6 +28,13 @@ test("resolves repository and KiCad fixture paths", () => {
     /clean-led-kicad10/,
   );
   assert.match(
+    kicadFixturePath(
+      "empty-project-kicad10",
+      "empty-project-kicad10.kicad_pro",
+    ),
+    /empty-project-kicad10/,
+  );
+  assert.match(
     kicadExpectedPath("clean-led-kicad10", "project-tree.snapshot.json"),
     /project-tree\.snapshot\.json/,
   );

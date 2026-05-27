@@ -47,7 +47,7 @@ const fixturesBySemanticName = new Map(
 
 describe('KiCad fixture corpus manifest', () => {
   it('exposes the required fixtures by semantic name', () => {
-    expect(manifest.fixtureCount).toBe(15);
+    expect(manifest.fixtureCount).toBe(16);
     expect(manifest.root).toBe('packages/kicad-fixtures/fixtures');
     expect(manifest.expectedRoot).toBe('packages/kicad-fixtures/expected');
     expect([...fixturesBySemanticName.keys()]).toEqual([
@@ -59,6 +59,7 @@ describe('KiCad fixture corpus manifest', () => {
       'unconnected-pcb',
       'missing-netlist',
       'empty-board',
+      'empty-project-kicad10',
       'no-dru-file',
       'multi-sheet-schematic',
       'large-board',

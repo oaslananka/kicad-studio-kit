@@ -647,6 +647,38 @@ def _format_file_backed_diagnostics(
     ]
 
 
+def _format_board_file_diagnostics(
+    *,
+    board_file: Path | None,
+    status: str,
+) -> list[str]:
+    """Render configured board-file diagnostics for file-only PCB tools."""
+    cfg = get_config()
+    project_path = cfg.project_dir if cfg.project_dir is not None else "(not configured)"
+    return [
+        "Diagnostics:",
+        "- Source: file-backed",
+        f"- Active project path: {project_path}",
+        f"- Board file: {board_file if board_file is not None else '(not configured)'}",
+        f"- Fallback status: {status}",
+    ]
+
+
+def _board_file_diagnostic_payload(
+    *,
+    board_file: Path | None,
+    status: str,
+) -> dict[str, str]:
+    """Return machine-readable configured board-file diagnostics."""
+    cfg = get_config()
+    return {
+        "source": "file-backed",
+        "active_project_path": str(cfg.project_dir) if cfg.project_dir is not None else "",
+        "board_file": str(board_file) if board_file is not None else "",
+        "fallback_status": status,
+    }
+
+
 def _load_file_backed_board(ipc_error: BaseException) -> tuple[Path, str, list[str]] | str:
     board_file = _configured_board_file()
     if board_file is None:
@@ -2264,15 +2296,36 @@ def register(mcp: FastMCP) -> None:
     @headless_compatible
     def pcb_get_footprint_layers(reference: str) -> str:
         """List every layer referenced by a footprint block, including inner layers."""
-        board_content = _normalize_board_content(
-            _get_pcb_file_for_sync().read_text(encoding="utf-8")
-        )
+        board_file = _get_pcb_file_for_sync()
+        board_content = _normalize_board_content(board_file.read_text(encoding="utf-8"))
         footprints = _parse_board_footprint_blocks(board_content)
         entry = footprints.get(reference)
         if entry is None:
-            return f"Footprint '{reference}' was not found in the board file."
+            return json.dumps(
+                {
+                    "reference": reference,
+                    "found": False,
+                    "layers": [],
+                    "diagnostics": _board_file_diagnostic_payload(
+                        board_file=board_file,
+                        status="footprint reference not present in board file",
+                    ),
+                },
+                indent=2,
+            )
         layers = _footprint_layers_from_block(str(entry["block"]))
-        return json.dumps({"reference": reference, "layers": layers}, indent=2)
+        return json.dumps(
+            {
+                "reference": reference,
+                "found": True,
+                "layers": layers,
+                "diagnostics": _board_file_diagnostic_payload(
+                    board_file=board_file,
+                    status="using file-backed footprint parser",
+                ),
+            },
+            indent=2,
+        )
 
     @mcp.tool()
     @headless_compatible
@@ -2357,7 +2410,15 @@ def register(mcp: FastMCP) -> None:
         try:
             layers = _current_stackup_specs()
         except ValueError as exc:
-            return str(exc)
+            return "\n".join(
+                [
+                    str(exc),
+                    *_format_board_file_diagnostics(
+                        board_file=_configured_board_file(),
+                        status="stackup data unavailable in active board context",
+                    ),
+                ]
+            )
 
         lines = [f"Board stackup ({len(layers)} layers):"]
         for index, layer in enumerate(layers, start=1):
@@ -2513,9 +2574,22 @@ def register(mcp: FastMCP) -> None:
         )
 
     @mcp.tool()
+    @headless_compatible
     def pcb_get_selection() -> str:
         """List currently selected items in the PCB editor."""
-        items = list(get_board().get_selection())
+        try:
+            items = list(get_board().get_selection())
+        except (KiCadConnectionError, OSError) as exc:
+            loaded = _load_file_backed_board(exc)
+            if isinstance(loaded, str):
+                return loaded
+            _, _, diagnostics = loaded
+            return "\n".join(
+                [
+                    "No PCB items are selected in the file-backed fallback.",
+                    *diagnostics,
+                ]
+            )
         if not items:
             return "No PCB items are currently selected."
         lines = [f"Selected items ({len(items)} total):"]
@@ -2524,19 +2598,52 @@ def register(mcp: FastMCP) -> None:
         return "\n".join(lines)
 
     @mcp.tool()
+    @headless_compatible
     def pcb_get_board_as_string() -> str:
         """Return the current board as a bounded S-expression string."""
         cfg = get_config()
-        data = get_board().get_as_string()
+        diagnostics: list[str] | None = None
+        try:
+            data = get_board().get_as_string()
+        except (KiCadConnectionError, OSError) as exc:
+            loaded = _load_file_backed_board(exc)
+            if isinstance(loaded, str):
+                return loaded
+            _, data, diagnostics = loaded
         if len(data) > cfg.max_text_response_chars:
-            return f"{data[: cfg.max_text_response_chars]}\n... [truncated]"
-        return data
+            data = f"{data[: cfg.max_text_response_chars]}\n... [truncated]"
+        return "\n".join([data, *diagnostics]) if diagnostics is not None else data
 
     @mcp.tool()
+    @headless_compatible
     def pcb_get_ratsnest() -> str:
         """Report currently unconnected board items using the latest DRC view."""
-        board = get_board()
-        nets = board.get_nets(netclass_filter=None)
+        try:
+            board = get_board()
+            nets = board.get_nets(netclass_filter=None)
+        except (KiCadConnectionError, OSError) as exc:
+            loaded = _load_file_backed_board(exc)
+            if isinstance(loaded, str):
+                return loaded
+            _, content, diagnostics = loaded
+            file_nets = _board_file_nets(content)
+            if not file_nets:
+                return "\n".join(
+                    [
+                        "The file-backed board has no nets to analyze.",
+                        *diagnostics,
+                    ]
+                )
+            return "\n".join(
+                [
+                    (
+                        "File-backed ratsnest extraction requires a DRC report "
+                        "to list open connections."
+                    ),
+                    "Run `get_unconnected_nets()` or `run_drc()` for an actionable list.",
+                    *diagnostics,
+                ]
+            )
         if not nets:
             return "The active board has no nets to analyze."
         return (
@@ -2550,11 +2657,27 @@ def register(mcp: FastMCP) -> None:
         """Read the active board design rules file when available."""
         cfg = get_config()
         if cfg.project_dir is None:
-            return "No active project is configured."
+            return "\n".join(
+                [
+                    "No active project is configured.",
+                    *_format_board_file_diagnostics(
+                        board_file=_configured_board_file(),
+                        status="unavailable: no active project",
+                    ),
+                ]
+            )
 
         matches = sorted(cfg.project_dir.glob("*.kicad_dru"))
         if not matches:
-            return "No .kicad_dru design rules file was found in the active project."
+            return "\n".join(
+                [
+                    "No .kicad_dru design rules file was found in the active project.",
+                    *_format_board_file_diagnostics(
+                        board_file=_configured_board_file(),
+                        status="design rules file not present",
+                    ),
+                ]
+            )
 
         content = matches[0].read_text(encoding="utf-8", errors="ignore")
         if len(content) > cfg.max_text_response_chars:
@@ -4028,10 +4151,16 @@ def register(mcp: FastMCP) -> None:
         state = _load_pcb_state("pcb_blocks.json", {"blocks": {}})
         blocks = cast(dict[str, dict[str, Any]], state.get("blocks", {}))
         payload = {
-            name: {
-                "footprint_count": len(cast(list[object], block.get("footprints", []))),
-            }
-            for name, block in sorted(blocks.items())
+            "blocks": {
+                name: {
+                    "footprint_count": len(cast(list[object], block.get("footprints", []))),
+                }
+                for name, block in sorted(blocks.items())
+            },
+            "diagnostics": {
+                "source": "file-backed",
+                "state_file": str(_pcb_state_path("pcb_blocks.json")),
+            },
         }
         return json.dumps(payload, indent=2)
 

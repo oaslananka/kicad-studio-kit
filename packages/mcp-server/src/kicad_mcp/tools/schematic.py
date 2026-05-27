@@ -1643,6 +1643,23 @@ def _get_schematic_file() -> Path:
     return cfg.sch_file
 
 
+def _format_schematic_diagnostics(sch_file: Path) -> list[str]:
+    """Render active schematic path diagnostics for file-backed read tools."""
+    cfg = get_config()
+    project_path = cfg.project_dir if cfg.project_dir is not None else "(not configured)"
+    return [
+        "Diagnostics:",
+        "- Source: file-backed",
+        f"- Active project path: {project_path}",
+        f"- Schematic file: {sch_file}",
+    ]
+
+
+def _with_schematic_diagnostics(message: str, sch_file: Path) -> str:
+    """Append active schematic diagnostics to an empty-state read response."""
+    return "\n".join([message, *_format_schematic_diagnostics(sch_file)])
+
+
 def project_schematic_files() -> list[Path]:
     """Return the active project's schematic files, including flat sibling sheets."""
     active = _get_schematic_file().resolve()
@@ -3202,10 +3219,14 @@ def register(mcp: FastMCP) -> None:
     @ttl_cache(ttl_seconds=5)
     def sch_get_symbols() -> str:
         """List all schematic symbols."""
-        data = parse_schematic_file(_get_schematic_file())
+        sch_file = _get_schematic_file()
+        data = parse_schematic_file(sch_file)
         symbols = data["symbols"] + data["power_symbols"]
         if not symbols:
-            return "The active schematic contains no symbols."
+            return _with_schematic_diagnostics(
+                "The active schematic contains no symbols.",
+                sch_file,
+            )
 
         lines = [f"Symbols ({len(symbols)} total):"]
         for symbol in data["symbols"]:
@@ -3227,9 +3248,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     def sch_get_wires() -> str:
         """List all wires in the schematic."""
-        wires = parse_schematic_file(_get_schematic_file())["wires"]
+        sch_file = _get_schematic_file()
+        wires = parse_schematic_file(sch_file)["wires"]
         if not wires:
-            return "The active schematic contains no wires."
+            return _with_schematic_diagnostics(
+                "The active schematic contains no wires.",
+                sch_file,
+            )
         lines = [f"Wires ({len(wires)} total):"]
         for wire in wires:
             identifier = f"{wire['uuid']} " if wire.get("uuid") else ""
@@ -3241,9 +3266,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     def sch_get_labels() -> str:
         """List all labels in the schematic."""
-        labels = parse_schematic_file(_get_schematic_file())["labels"]
+        sch_file = _get_schematic_file()
+        labels = parse_schematic_file(sch_file)["labels"]
         if not labels:
-            return "The active schematic contains no labels."
+            return _with_schematic_diagnostics(
+                "The active schematic contains no labels.",
+                sch_file,
+            )
         lines = [f"Labels ({len(labels)} total):"]
         lines.extend(
             f"- {label['name']} @ ({label['x']}, {label['y']}) rot={label['rotation']}"
@@ -3254,10 +3283,14 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     def sch_get_net_names() -> str:
         """List unique net names derived from labels."""
-        labels = parse_schematic_file(_get_schematic_file())["labels"]
+        sch_file = _get_schematic_file()
+        labels = parse_schematic_file(sch_file)["labels"]
         names = sorted({label["name"] for label in labels})
         if not names:
-            return "No named nets were found in the schematic."
+            return _with_schematic_diagnostics(
+                "No named nets were found in the schematic.",
+                sch_file,
+            )
         return "Named nets:\n" + "\n".join(f"- {name}" for name in names)
 
     @mcp.tool()
@@ -4125,7 +4158,8 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     def sch_check_power_flags() -> str:
         """Check whether common power nets appear to be flagged."""
-        data = parse_schematic_file(_get_schematic_file())
+        sch_file = _get_schematic_file()
+        data = parse_schematic_file(sch_file)
         named_power = {
             label["name"]
             for label in data["labels"]
@@ -4134,7 +4168,10 @@ def register(mcp: FastMCP) -> None:
         power_symbols = {symbol["value"].upper() for symbol in data["power_symbols"]}
         missing = sorted(name for name in named_power if name.upper() not in power_symbols)
         if not missing:
-            return "No obvious missing power flags were detected."
+            return _with_schematic_diagnostics(
+                "No obvious missing power flags were detected.",
+                sch_file,
+            )
         return "Potential missing power flags:\n" + "\n".join(f"- {name}" for name in missing)
 
     @mcp.tool()
@@ -4321,11 +4358,17 @@ def register(mcp: FastMCP) -> None:
                 schematic_file=str(sch_file),
                 error=str(exc),
             )
-            return f"Could not inspect sheet hierarchy: {exc}"
+            return _with_schematic_diagnostics(
+                f"Could not inspect sheet hierarchy: {exc}",
+                sch_file,
+            )
 
         children = hierarchy.get("root", {}).get("children", [])
         if not children:
-            return "The active schematic has no child sheets."
+            return _with_schematic_diagnostics(
+                "The active schematic has no child sheets.",
+                sch_file,
+            )
 
         lines = [f"Child sheets ({len(children)} total):"]
         for child in children:
@@ -4463,9 +4506,13 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     def sch_get_connectivity_graph() -> str:
         """Summarize the active schematic as a textual net connectivity graph."""
-        groups = _build_connectivity_groups(_get_schematic_file())
+        sch_file = _get_schematic_file()
+        groups = _build_connectivity_groups(sch_file)
         if not groups:
-            return "The active schematic has no connectivity to summarize."
+            return _with_schematic_diagnostics(
+                "The active schematic has no connectivity to summarize.",
+                sch_file,
+            )
 
         lines = [f"Connectivity groups ({len(groups)} total):"]
         for index, group in enumerate(groups, start=1):
@@ -4647,7 +4694,10 @@ def register(mcp: FastMCP) -> None:
         all_syms = sch_data["symbols"] + sch_data["power_symbols"]
 
         if not all_syms:
-            return "The active schematic contains no symbols."
+            return _with_schematic_diagnostics(
+                "The active schematic contains no symbols.",
+                sch_file,
+            )
 
         lines = [
             f"Schematic bounding boxes ({len(all_syms)} symbols):",
