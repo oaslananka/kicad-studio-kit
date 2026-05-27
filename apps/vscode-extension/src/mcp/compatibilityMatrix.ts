@@ -11,7 +11,7 @@ export const COMPATIBILITY_MATRIX = {
   },
   products: {
     kicadStudio: {
-      version: '2.8.3',
+      version: '1.0.0',
       compatibleMcpPro: {
         required: '>=3.5.2 <4.0.0',
         recommended: '>=3.5.2 <4.0.0',
@@ -21,8 +21,8 @@ export const COMPATIBILITY_MATRIX = {
     kicadMcpPro: {
       version: '3.5.2',
       compatibleExtension: {
-        required: '>=2.8.3 <3.0.0',
-        testedAgainst: '2.8.3'
+        required: '>=1.0.0 <2.0.0',
+        testedAgainst: '1.0.0'
       }
     }
   }

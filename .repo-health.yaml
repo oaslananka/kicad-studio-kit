@@ -9,7 +9,7 @@ repository:
 products:
   - id: kicad-studio
     path: apps/vscode-extension
-    package: oaslananka.kicadstudio
+    package: oaslananka.kicadstudiokit
     support_tier: tier-1
   - id: kicad-mcp-pro
     path: packages/mcp-server

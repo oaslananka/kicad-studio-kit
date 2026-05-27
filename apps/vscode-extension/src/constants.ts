@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-export const EXTENSION_ID = 'oaslananka.kicadstudio';
+export const EXTENSION_ID = 'oaslananka.kicadstudiokit';
 export const OUTPUT_CHANNEL_NAME = 'KiCad Studio';
 export const DIAGNOSTIC_COLLECTION_NAME = 'kicad';
 export const TREE_VIEW_ID = 'kicadstudio.projectTree';

@@ -16,7 +16,7 @@ corepack pnpm install --frozen-lockfile
 uv sync --all-extras --frozen --project packages/mcp-server
 
 if [[ "${KICAD_STUDIO_SKIP_PLAYWRIGHT_INSTALL:-0}" != "1" ]]; then
-  corepack pnpm --filter kicadstudio exec playwright install --with-deps chromium
+  corepack pnpm --filter kicadstudiokit exec playwright install --with-deps chromium
 fi
 
 corepack pnpm run check:devcontainer

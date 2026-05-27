@@ -127,7 +127,7 @@ describe('cross-platform path regression suite', () => {
       'os: [ubuntu-24.04, windows-2025-vs2026, macos-15]'
     );
     expect(workflow).toContain(
-      'corepack pnpm --filter kicadstudio run test:unit:coverage'
+      'corepack pnpm --filter kicadstudiokit run test:unit:coverage'
     );
   });
 

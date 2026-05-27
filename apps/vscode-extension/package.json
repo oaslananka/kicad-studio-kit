@@ -1,8 +1,8 @@
 {
-  "name": "kicadstudio",
+  "name": "kicadstudiokit",
   "displayName": "%kicadstudio.displayName%",
   "description": "%kicadstudio.description%",
-  "version": "2.8.3",
+  "version": "1.0.0",
   "publisher": "oaslananka",
   "engines": {
     "vscode": "^1.120.0",
@@ -2219,7 +2219,7 @@
     "package:vsce": "node scripts/package-extension.js",
     "package:ovsx": "node scripts/package-extension.js",
     "package:ls": "vsce ls --tree --no-dependencies",
-    "package:validate": "node scripts/validate-package.js && node --test scripts/validate-package.test.mjs",
+    "package:validate": "node scripts/validate-package.js && node scripts/validate-vsix-metadata.js && node --test scripts/validate-package.test.mjs scripts/validate-vsix-metadata.test.mjs",
     "release:assets": "node scripts/create-release-assets.js",
     "docs:check": "node scripts/validate-docs.js",
     "workflows:lint": "node scripts/lint-workflows.js",

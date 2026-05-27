@@ -9,7 +9,7 @@ suite('Fix Queue Code Action Integration', () => {
   });
 
   test('contributes kicad command categories for new fix commands', () => {
-    const extension = vscode.extensions.getExtension('oaslananka.kicadstudio');
+    const extension = vscode.extensions.getExtension('oaslananka.kicadstudiokit');
     assert.ok(extension);
     const packageJson = extension.packageJSON as {
       contributes?: {

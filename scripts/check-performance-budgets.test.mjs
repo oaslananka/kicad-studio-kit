@@ -120,7 +120,7 @@ test("root check includes performance budget catalog validation", () => {
 
   assert.equal(
     packageJson.scripts["test:perf"],
-    "pnpm --filter kicadstudio run test:perf && uv run --project packages/mcp-server --all-extras pytest packages/mcp-server/tests/unit/test_benchmark_latency.py",
+    "pnpm --filter kicadstudiokit run test:perf && uv run --project packages/mcp-server --all-extras pytest packages/mcp-server/tests/unit/test_benchmark_latency.py",
   );
   assert.equal(
     packageJson.scripts["check:performance-budgets"],

@@ -94,7 +94,7 @@ Npm:
 Open VSX:
 
 - publisher namespace: `oaslananka`
-- extension URL: `https://open-vsx.org/extension/oaslananka/kicadstudio`
+- extension URL: `https://open-vsx.org/extension/oaslananka/kicadstudiokit`
 - secret: `OVSX_PAT`
 - Eclipse account and Open VSX Publisher Agreement must be complete externally.
 - namespace ownership and token generation are managed in the Open VSX account settings.
@@ -107,7 +107,7 @@ Open VSX:
 VS Code Marketplace:
 
 - publisher: `oaslananka`
-- extension id: `oaslananka.kicadstudio`
+- extension id: `oaslananka.kicadstudiokit`
 - secret: `VSCE_PAT`
 - beta channel: GitHub pre-release tags ending in `-beta.N`; package and
   publish steps must pass `--pre-release` for Marketplace and Open VSX beta
@@ -137,11 +137,11 @@ PowerShell:
 ```powershell
 corepack enable
 corepack pnpm install --frozen-lockfile
-corepack pnpm --filter kicadstudio run build
-corepack pnpm --filter kicadstudio run package
+corepack pnpm --filter kicadstudiokit run build
+corepack pnpm --filter kicadstudiokit run package
 $vsix = Get-ChildItem -Path apps/vscode-extension -Filter *.vsix -Recurse | Sort-Object LastWriteTime | Select-Object -Last 1
-corepack pnpm --filter kicadstudio exec vsce ls --tree --no-dependencies
-corepack pnpm --filter kicadstudio exec ovsx publish --help
+corepack pnpm --filter kicadstudiokit exec vsce ls --tree --no-dependencies
+corepack pnpm --filter kicadstudiokit exec ovsx publish --help
 ```
 
 CMD:
@@ -149,8 +149,8 @@ CMD:
 ```cmd
 corepack enable
 corepack pnpm install --frozen-lockfile
-corepack pnpm --filter kicadstudio run build
-corepack pnpm --filter kicadstudio run package
+corepack pnpm --filter kicadstudiokit run build
+corepack pnpm --filter kicadstudiokit run package
 ```
 
 The `ovsx publish --help` command is the safe Open VSX CLI smoke check for local preflight. Do not run `ovsx publish` with a token outside `.github/workflows/publish-extension.yml`.
@@ -164,7 +164,7 @@ records when a GitHub Release triggers the workflow.
 
 | Product                | Release assets                                                                 | Publish verification                                                                                 |
 | ---------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| VSIX                   | `kicadstudio-<version>.vsix`, `vscode-extension-SHA256SUMS.txt`, SBOM evidence | Verify checksum before Marketplace/Open VSX publish; verify Marketplace version and Open VSX digest. |
+| VSIX                   | `kicadstudiokit-<version>.vsix`, `vscode-extension-SHA256SUMS.txt`, SBOM evidence | Verify checksum before Marketplace/Open VSX publish; verify Marketplace version and Open VSX digest. |
 | Python wheel and sdist | wheel, sdist, `kicad-mcp-pro-python-SHA256SUMS.txt`, SBOM evidence             | Verify local checksums before publish; verify PyPI/TestPyPI SHA-256 digests after publish.           |
 | npm launcher tarball   | `kicad-mcp-pro-<version>.tgz`, `mcp-npm-SHA256SUMS.txt`, SBOM evidence         | Verify local checksum before publish; download npm tarball and verify SHA-256 after publish.         |
 

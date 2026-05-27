@@ -652,7 +652,7 @@ def test_security_and_publish_workflows_emit_supply_chain_evidence() -> None:
     assert "fail-on-severity: high" in security
     assert "show-patched-versions: true" in security
 
-    assert "corepack pnpm --filter kicadstudio run release:assets" in publish_extension
+    assert "corepack pnpm --filter kicadstudiokit run release:assets" in publish_extension
     assert "release-assets/vscode-extension/SHA256SUMS.txt" in publish_extension
     assert "apps/vscode-extension/sbom.cdx.json" in publish_extension
     assert "subject-checksums: release-assets/vscode-extension/SHA256SUMS.txt" in publish_extension

@@ -4,7 +4,7 @@
 [![CodeQL](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml)
 [![Security](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml)
 [![MCP Registry](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/publish-mcp-registry.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/publish-mcp-registry.yml)
-[![Open VSX](https://img.shields.io/open-vsx/v/oaslananka/kicadstudio?label=Open%20VSX)](https://open-vsx.org/extension/oaslananka/kicadstudio)
+[![Open VSX](https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX)](https://open-vsx.org/extension/oaslananka/kicadstudiokit)
 
 Monorepo for:
 
@@ -20,7 +20,7 @@ Searchable documentation: https://oaslananka.github.io/kicad-studio-kit/
 
 All release surfaces are pinned to `1.0.0`:
 
-- VS Code extension: `oaslananka.kicadstudio`
+- VS Code extension: `oaslananka.kicadstudiokit`
 - Python package: `kicad-mcp-pro`
 - npm wrapper: `kicad-mcp-pro`
 - MCP Registry name: `io.github.oaslananka/kicad-mcp-pro`
@@ -42,8 +42,8 @@ corepack pnpm install --frozen-lockfile
 uv sync --all-extras --frozen --project packages/mcp-server
 corepack pnpm run check:forbidden-refs
 corepack pnpm run check:version
-corepack pnpm --filter kicadstudio run check
-corepack pnpm --filter kicadstudio run package
+corepack pnpm --filter kicadstudiokit run check
+corepack pnpm --filter kicadstudiokit run package
 Push-Location packages/mcp-server
 corepack pnpm run check
 Pop-Location

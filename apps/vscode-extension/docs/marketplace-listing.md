@@ -14,8 +14,8 @@ This checklist keeps the Visual Studio Marketplace and Open VSX listing assets r
 - README includes Quick Start, Feature Matrix, KiCad CLI-only comparison, screenshots, MCP compatibility, and support/sponsorship sections.
 - Screenshot set includes project tree, schematic viewer, PCB viewer, DRC results, and MCP Tools dashboard at 1280x720.
 - English and Turkish listing copy below match the product positioning and OASLANA-106 localization work.
-- Run `corepack pnpm --filter kicadstudio run marketplace:check` before packaging.
-- Run `corepack pnpm --filter kicadstudio run package:validate` after packaging to confirm README assets, Marketplace assets, contribution registrations, bundle limits, and VSIX allowlist contents.
+- Run `corepack pnpm --filter kicadstudiokit run marketplace:check` before packaging.
+- Run `corepack pnpm --filter kicadstudiokit run package:validate` after packaging to confirm README assets, Marketplace assets, contribution registrations, bundle limits, and VSIX allowlist contents.
 
 ## English Listing Copy
 

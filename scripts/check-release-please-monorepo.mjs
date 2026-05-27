@@ -30,7 +30,7 @@ const EXPECTED_PACKAGES = {
   "apps/vscode-extension": {
     product: "kicad-studio",
     releaseType: "node",
-    packageName: "kicadstudio",
+    packageName: "kicadstudiokit",
     component: "vscode-extension",
     versionFile: "apps/vscode-extension/package.json",
   },
@@ -339,7 +339,7 @@ export async function runSyntheticReleasePleaseDryRun(
       resolveExecutable("pnpm"),
       [
         "--filter",
-        "kicadstudio",
+        "kicadstudiokit",
         "exec",
         "release-please",
         "release-pr",

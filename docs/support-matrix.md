@@ -33,8 +33,8 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 
 | Product | Version | Manifest | Compatibility range |
 | --- | --- | --- | --- |
-| kicad-studio | 2.8.3 | apps/vscode-extension/package.json | &gt;=3.5.2 &lt;4.0.0 |
-| kicad-mcp-pro | 3.5.2 | packages/mcp-server/pyproject.toml | &gt;=2.8.3 &lt;3.0.0 |
+| kicad-studio | 1.0.0 | apps/vscode-extension/package.json | &gt;=3.5.2 &lt;4.0.0 |
+| kicad-mcp-pro | 3.5.2 | packages/mcp-server/pyproject.toml | &gt;=1.0.0 &lt;2.0.0 |
 
 ### Release Gate Inputs
 

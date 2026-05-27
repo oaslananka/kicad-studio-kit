@@ -2,14 +2,14 @@
 
 # KiCad Studio
 
-[![Open VSX](https://img.shields.io/open-vsx/v/oaslananka/kicadstudio?label=Open%20VSX)](https://open-vsx.org/extension/oaslananka/kicadstudio)
+[![Open VSX](https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX)](https://open-vsx.org/extension/oaslananka/kicadstudiokit)
 
 KiCad Studio turns VS Code into a focused KiCad workspace for project navigation, schematic and PCB inspection, DRC/ERC review, manufacturing handoff, and AI-assisted MCP workflows.
 
 Canonical repository: https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension
 
-- Extension ID: `oaslananka.kicadstudio`
-- Version: `2.8.3`
+- Extension ID: `oaslananka.kicadstudiokit`
+- Version: `1.0.0`
 - Supported MCP: `kicad-mcp-pro >=3.5.2 <4.0.0`
 - Supported KiCad projects: KiCad 8.x, 9.x, and 10.x project, schematic, PCB, DRC, and jobset files
 
@@ -26,8 +26,8 @@ Canonical repository: https://github.com/oaslananka/kicad-studio-kit/tree/main/a
 corepack enable
 corepack pnpm run dev:doctor
 corepack pnpm install --frozen-lockfile
-corepack pnpm --filter kicadstudio run build
-corepack pnpm --filter kicadstudio run package
+corepack pnpm --filter kicadstudiokit run build
+corepack pnpm --filter kicadstudiokit run package
 ```
 
 ## Feature Matrix
@@ -68,7 +68,7 @@ corepack pnpm --filter kicadstudio run package
 
 ## MCP Compatibility
 
-KiCad Studio 2.8.3 supports `kicad-mcp-pro >=3.5.2 <4.0.0` and was tested against `3.5.2`. If a connected server reports a version outside the required range, MCP-dependent commands are disabled while KiCad-only features continue to work.
+KiCad Studio 1.0.0 supports `kicad-mcp-pro >=3.5.2 <4.0.0` and was tested against `3.5.2`. If a connected server reports a version outside the required range, MCP-dependent commands are disabled while KiCad-only features continue to work.
 
 ## Marketplace Listing Copy
 
@@ -83,9 +83,9 @@ Release notes for Marketplace and Open VSX users live in [CHANGELOG.md](CHANGELO
 ```powershell
 corepack pnpm run dev:doctor -- --ci
 corepack pnpm install --frozen-lockfile
-corepack pnpm --filter kicadstudio run marketplace:check
-corepack pnpm --filter kicadstudio run build
-corepack pnpm --filter kicadstudio run package
+corepack pnpm --filter kicadstudiokit run marketplace:check
+corepack pnpm --filter kicadstudiokit run build
+corepack pnpm --filter kicadstudiokit run package
 ```
 
 ## Marketplace Dry Run
@@ -93,10 +93,10 @@ corepack pnpm --filter kicadstudio run package
 ```powershell
 corepack enable
 corepack pnpm install --frozen-lockfile
-corepack pnpm --filter kicadstudio run marketplace:check
-corepack pnpm --filter kicadstudio run build
-corepack pnpm --filter kicadstudio run package
-corepack pnpm --filter kicadstudio exec vsce ls --tree --no-dependencies
+corepack pnpm --filter kicadstudiokit run marketplace:check
+corepack pnpm --filter kicadstudiokit run build
+corepack pnpm --filter kicadstudiokit run package
+corepack pnpm --filter kicadstudiokit exec vsce ls --tree --no-dependencies
 ```
 
 ## Support and Sponsorship

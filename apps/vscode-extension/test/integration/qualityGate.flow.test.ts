@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 
 suite('Quality Gate Integration', () => {
   test('contributes quality gate view and commands', async () => {
-    const extension = vscode.extensions.getExtension('oaslananka.kicadstudio');
+    const extension = vscode.extensions.getExtension('oaslananka.kicadstudiokit');
     assert.ok(extension);
     const packageJson = extension.packageJSON as {
       contributes?: {

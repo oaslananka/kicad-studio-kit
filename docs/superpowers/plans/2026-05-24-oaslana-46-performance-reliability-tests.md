@@ -58,7 +58,7 @@ The test writes `KICAD_EXTENSION_PERFORMANCE_MEASUREMENTS_JSON` when set.
 
 - [x] **Step 2: Run the focused test and verify RED**
 
-Run: `corepack pnpm --filter kicadstudio run test:perf`
+Run: `corepack pnpm --filter kicadstudiokit run test:perf`
 
 Expected: fail because the script is not wired yet.
 
@@ -68,7 +68,7 @@ Add `test:perf` to the extension package and root package. Keep the harness dete
 
 - [x] **Step 4: Run the focused test and verify GREEN**
 
-Run: `KICAD_EXTENSION_PERFORMANCE_MEASUREMENTS_JSON=performance-results/extension-performance.json corepack pnpm --filter kicadstudio run test:perf`
+Run: `KICAD_EXTENSION_PERFORMANCE_MEASUREMENTS_JSON=performance-results/extension-performance.json corepack pnpm --filter kicadstudiokit run test:perf`
 
 Expected: pass and write `performance-results/extension-performance.json`.
 
@@ -137,7 +137,7 @@ corepack pnpm run typecheck
 corepack pnpm run test
 corepack pnpm run build
 corepack pnpm run verify:dist
-corepack pnpm --filter kicadstudio run workflows:lint
+corepack pnpm --filter kicadstudiokit run workflows:lint
 corepack pnpm --dir packages/mcp-server run workflows:lint
 corepack pnpm --dir packages/mcp-server run workflows:security
 corepack pnpm audit --audit-level high

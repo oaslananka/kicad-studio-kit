@@ -256,7 +256,7 @@ test("release-please dry-run snapshot keeps MCP-only changes out of extension re
   assert.match(calls[0].command, /pnpm(?:\.cmd)?$/);
   assert.deepEqual(calls[0].args.slice(0, 4), [
     "--filter",
-    "kicadstudio",
+    "kicadstudiokit",
     "exec",
     "release-please",
   ]);

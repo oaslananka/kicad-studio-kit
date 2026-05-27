@@ -173,7 +173,7 @@ export function validateDevcontainerRepository(repoRoot = DEFAULT_REPO_ROOT) {
     "corepack enable pnpm",
     "corepack pnpm install --frozen-lockfile",
     "uv sync --all-extras --frozen --project packages/mcp-server",
-    "corepack pnpm --filter kicadstudio exec playwright install --with-deps chromium",
+    "corepack pnpm --filter kicadstudiokit exec playwright install --with-deps chromium",
     "corepack pnpm run check:devcontainer",
     "corepack pnpm run dev-doctor -- --require-devcontainer",
   ]) {

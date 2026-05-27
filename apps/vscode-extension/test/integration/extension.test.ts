@@ -32,7 +32,7 @@ suite('Extension Integration', () => {
 
   suiteSetup(() => {
     const loadedExtension = vscode.extensions.getExtension(
-      'oaslananka.kicadstudio'
+      'oaslananka.kicadstudiokit'
     );
     assert.ok(loadedExtension, 'Expected KiCad Studio extension to load.');
     extension = loadedExtension;

@@ -82,7 +82,7 @@ Forbidden data classes:
 The regression tests cover both sides:
 
 ```bash
-corepack pnpm --filter kicadstudio exec jest test/unit/telemetry.test.ts --runInBand --coverage=false
+corepack pnpm --filter kicadstudiokit exec jest test/unit/telemetry.test.ts --runInBand --coverage=false
 uv run --project packages/mcp-server --all-extras pytest packages/mcp-server/tests/unit/test_telemetry.py -q
 ```
 

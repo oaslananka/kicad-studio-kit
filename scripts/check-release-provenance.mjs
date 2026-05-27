@@ -84,6 +84,12 @@ function checkWorkflowEvidence(failures) {
   );
   expectIncludes(
     extension,
+    "scripts/validate-vsix-metadata.js",
+    "extension workflow",
+    failures,
+  );
+  expectIncludes(
+    extension,
     'VSIX_DIR="$GITHUB_WORKSPACE/release-assets/vscode-extension"',
     "extension workflow",
     failures,
@@ -96,13 +102,19 @@ function checkWorkflowEvidence(failures) {
   );
   expectIncludes(
     extension,
-    "vsce show oaslananka.kicadstudio --json",
+    "vsce show oaslananka.kicadstudiokit --json",
     "extension workflow",
     failures,
   );
   expectIncludes(
     extension,
-    "ovsx get oaslananka.kicadstudio",
+    "ovsx get oaslananka.kicadstudiokit",
+    "extension workflow",
+    failures,
+  );
+  expectIncludes(
+    extension,
+    "--packagePath",
     "extension workflow",
     failures,
   );

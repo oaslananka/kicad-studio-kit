@@ -4,7 +4,7 @@ KiCad Studio Kit is one GitHub repository with three independently validated rel
 
 | Workspace               | Product role                                        | Public surface                                         |
 | ----------------------- | --------------------------------------------------- | ------------------------------------------------------ |
-| `apps/vscode-extension` | KiCad Studio VS Code and Open VSX extension         | `oaslananka.kicadstudio`                               |
+| `apps/vscode-extension` | KiCad Studio VS Code and Open VSX extension         | `oaslananka.kicadstudiokit`                               |
 | `packages/mcp-server`   | KiCad MCP Pro Python server and MCP Registry source | `kicad-mcp-pro` / `io.github.oaslananka/kicad-mcp-pro` |
 | `packages/mcp-npm`      | Thin npm launcher for the Python server             | `kicad-mcp-pro`                                        |
 | `packages/test-harness` | Private shared test utilities                       | Not published                                          |

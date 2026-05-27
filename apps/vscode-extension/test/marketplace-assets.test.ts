@@ -156,7 +156,7 @@ describe('marketplace listing assets', () => {
     expect(readme).toContain('assets/screenshots/project-tree.png');
     expect(readme).toContain('assets/screenshots/mcp-tools-dashboard.png');
     expect(readme).toContain(
-      'https://open-vsx.org/extension/oaslananka/kicadstudio'
+      'https://open-vsx.org/extension/oaslananka/kicadstudiokit'
     );
     expect(readme).toContain('[CHANGELOG.md](CHANGELOG.md)');
     expect(readme).not.toMatch(/<details|<summary|<script|<style/iu);
