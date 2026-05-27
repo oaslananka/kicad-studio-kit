@@ -116,6 +116,12 @@ jobs:
           & $chromePath --version
           "KICADSTUDIO_PLAYWRIGHT_CHANNEL=chrome" >> $env:GITHUB_ENV
       - run: corepack pnpm --filter kicadstudiokit run test:webview
+      - name: Install Playwright Chromium for visual snapshots
+        if: runner.os == 'Windows'
+        run: corepack pnpm --filter kicadstudiokit exec playwright install chromium
+      - name: Run visual regression snapshots
+        if: runner.os == 'Windows'
+        run: corepack pnpm --filter kicadstudiokit run test:visual
       - run: corepack pnpm --filter kicadstudiokit run test:a11y
       - run: corepack pnpm --filter kicadstudiokit run build
       - if: runner.os == 'Linux'

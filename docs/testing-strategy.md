@@ -36,7 +36,7 @@ notes can add detail, but they should not weaken these gates.
 | Extension unit tests                  | Project discovery, command builders, diagnostics, state machines, MCP client behavior, webview HTML helpers, parsers.                                                                                      | `apps/vscode-extension/test/unit/`                                                                | Jest                                                           | Fast PR gate                                           |
 | Extension integration tests           | Activation, commands, context keys, diagnostics, project tree, status bar, custom editors, real-server flows.                                                                                              | `apps/vscode-extension/test/integration/`                                                         | `@vscode/test-electron` and VS Code Extension Development Host | Product gate, nightly gate when enabled                |
 | Extension webview and E2E tests       | Viewer state machine, fit and zoom behavior, layer panel, toolbar, loading, error, empty states.                                                                                                           | `apps/vscode-extension/test/e2e/`                                                                 | Playwright                                                     | Product gate or nightly gate based on environment      |
-| Visual regression                     | Schematic and PCB viewer surfaces, sidebars, themes, viewport sizes.                                                                                                                                       | `apps/vscode-extension/test/e2e/` snapshot suites                                                 | Playwright `toHaveScreenshot`                                  | Nightly gate until baselines are stable enough for PRs |
+| Visual regression                     | Schematic and PCB viewer surfaces, sidebars, themes, viewport sizes, DPI, BOM/netlist states, and diagnostic sidebars.                                                                                     | `apps/vscode-extension/test/visual/` snapshot suites                                              | Playwright `toHaveScreenshot`                                  | Windows PR lane for committed goldens                  |
 | Accessibility and keyboard navigation | WCAG 2.1 AA target, webview axe-core checks, Activity Bar views, custom editors, tree views, status actions, command flows.                                                                                | [`docs/accessibility.md`](accessibility.md), extension a11y tests                                 | axe-core, Chromium, VS Code test host, manual screen readers   | Product gate and release candidate gate                |
 | MCP unit tests                        | Pure Python helpers, tool metadata, routers, server startup, semantic gates, release guards.                                                                                                               | `packages/mcp-server/tests/unit/`                                                                 | pytest                                                         | Fast PR gate                                           |
 | MCP integration tests                 | File-backed KiCad behavior, export/manufacturing tools, project quality gates, simulation and routing tools.                                                                                               | `packages/mcp-server/tests/integration/`                                                          | pytest plus optional `kicad-cli`                               | Nightly gate unless the fixture is pure and fast       |
@@ -69,9 +69,39 @@ Extension-only changes use:
 corepack pnpm run check:kicad-studio
 corepack pnpm run test:kicad-studio
 corepack pnpm --filter kicadstudiokit run test:a11y
+corepack pnpm --filter kicadstudiokit run test:visual
 corepack pnpm run build:kicad-studio
 corepack pnpm run package:kicad-studio
 ```
+
+## Visual Regression Snapshots
+
+The extension visual gate lives in
+`apps/vscode-extension/test/visual/` and uses
+`apps/vscode-extension/playwright.visual.config.ts`. It covers VS Code Dark,
+VS Code Light, and High Contrast themes across 1280x720, 1920x1080,
+2560x1440, and 3840x2160 viewports at `deviceScaleFactor: 1` and `2`.
+
+The committed golden set covers clean schematic, clean PCB, large schematic,
+large PCB, empty project, DRC errors, ERC errors, BOM loading/success/error,
+and Netlist loading/success/error fixtures. Snapshot names include the fixture
+and directly preserve coverage for issues #17, #18, and #19.
+
+Run the gate locally with:
+
+```bash
+corepack pnpm --filter kicadstudiokit run test:visual
+```
+
+```powershell
+corepack pnpm --filter kicadstudiokit run test:visual
+```
+
+The diff budget is explicit: `maxDiffPixelRatio: 0.002` with Playwright
+pixelmatch `threshold: 0.2`, `scale: css`, disabled animations, hidden carets,
+and reduced-motion media. Golden changes must be reviewed in PRs like source
+changes: the PR should explain why the UI changed, include the command above,
+and avoid updating snapshots together with unrelated code.
 
 MCP server changes use:
 
@@ -380,6 +410,7 @@ before pushing.
 | Extension accessibility        | `corepack pnpm --filter kicadstudiokit run test:a11y`                                                          | `corepack pnpm run check:kicad-studio`         |
 | Extension integration behavior | `corepack pnpm --filter kicadstudiokit run test:integration`                                                   | `corepack pnpm run check:kicad-studio`         |
 | Extension webview/E2E behavior | `corepack pnpm --filter kicadstudiokit run test:e2e`                                                           | Nightly quality gate once snapshots are stable |
+| Extension visual snapshots     | `corepack pnpm --filter kicadstudiokit run test:visual`                                                        | Windows PR lane for committed goldens          |
 | MCP unit behavior              | `uv run --project packages/mcp-server --all-extras pytest packages/mcp-server/tests/unit/<test_file>.py -q` | `corepack pnpm run check:kicad-mcp-pro`        |
 | MCP full behavior              | `corepack pnpm --dir packages/mcp-server run test`                                                          | `corepack pnpm run check:kicad-mcp-pro`        |
 | Protocol or compatibility      | `corepack pnpm run test:contract`                                                                           | `corepack pnpm run check`                      |
