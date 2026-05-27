@@ -18,6 +18,8 @@ function createFixture(overrides = {}) {
         "packages:",
         '  - "packages/mcp-server"',
         "minimumReleaseAge: 1440",
+        "minimumReleaseAgeExclude:",
+        "  - tmp@0.2.6",
         "blockExoticSubdeps: true",
         "",
       ].join("\n"),
@@ -26,7 +28,7 @@ function createFixture(overrides = {}) {
     path.join(repoRoot, "package.json"),
     JSON.stringify(
       overrides.rootPackage ?? {
-        packageManager: "pnpm@11.0.8",
+        packageManager: "pnpm@11.3.0",
         engines: { pnpm: ">=11.0.0 <12" },
       },
     ),
@@ -87,6 +89,8 @@ test("disabled pnpm supply-chain controls fail validation", () => {
       "packages:",
       '  - "packages/mcp-server"',
       "minimumReleaseAge: 0",
+      "minimumReleaseAgeExclude:",
+      "  - tmp",
       "blockExoticSubdeps: false",
       "trustLockfile: true",
       "",
@@ -97,6 +101,7 @@ test("disabled pnpm supply-chain controls fail validation", () => {
       "pnpm-workspace.yaml must set minimumReleaseAge: 1440",
       "pnpm-workspace.yaml must set blockExoticSubdeps: true",
       "pnpm-workspace.yaml must not enable trustLockfile for public PR CI",
+      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.6",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -107,7 +112,7 @@ test(".npmrc and package.json cannot carry ignored pnpm supply-chain settings", 
   const repoRoot = createFixture({
     npmrc: "minimumReleaseAge=0\n",
     rootPackage: {
-      packageManager: "pnpm@11.0.8",
+      packageManager: "pnpm@11.3.0",
       engines: { pnpm: ">=11.0.0 <12" },
       pnpm: { blockExoticSubdeps: false },
     },

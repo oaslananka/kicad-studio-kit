@@ -8,8 +8,10 @@ import { parse } from "yaml";
 const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
 const MINIMUM_RELEASE_AGE_MINUTES = 1440;
+const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = ["tmp@0.2.6"];
 const FORBIDDEN_PNPM_SETTINGS = [
   "minimumReleaseAge",
+  "minimumReleaseAgeExclude",
   "blockExoticSubdeps",
   "trustLockfile",
 ];
@@ -69,6 +71,14 @@ function validateWorkspace(errors, workspace) {
     workspace?.trustLockfile !== true,
     "pnpm-workspace.yaml must not enable trustLockfile for public PR CI",
   );
+  assertCondition(
+    errors,
+    sameStringList(
+      workspace?.minimumReleaseAgeExclude,
+      ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES,
+    ),
+    "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.6",
+  );
 }
 
 function validatePackageJson(errors, packageJson) {
@@ -114,6 +124,13 @@ function validateSecurityWorkflow(errors, workflow) {
       `security.yml must include ${phrase}`,
     );
   }
+}
+
+function sameStringList(actual, expected) {
+  if (!Array.isArray(actual) || actual.length !== expected.length) {
+    return false;
+  }
+  return expected.every((value, index) => actual[index] === value);
 }
 
 function validateMcpSecurityScripts(errors, packageJson) {

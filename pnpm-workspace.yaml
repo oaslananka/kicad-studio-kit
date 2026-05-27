@@ -7,6 +7,8 @@ packages:
   - "packages/test-harness"
 
 minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - tmp@0.2.6
 blockExoticSubdeps: true
 
 allowBuilds:
