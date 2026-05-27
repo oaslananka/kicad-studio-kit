@@ -45,6 +45,10 @@ export default defineConfig({
           { text: "Install", link: "/install" },
           { text: "Versions", link: "/versions" },
           { text: "Support Matrix", link: "/support-matrix" },
+          {
+            text: "KiCad 10.0.3 Feature Parity",
+            link: "/compatibility/kicad-10-0-3-feature-parity",
+          },
         ],
       },
       {

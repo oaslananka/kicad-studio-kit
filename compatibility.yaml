@@ -82,6 +82,351 @@ kicad:
         cliFormat: "solidworks"
         evidence: "KiCad 10 CLI import help advertises the format."
 
+kicad10FeatureParity:
+  reviewed: "2026-05-27"
+  baseline: "10.0.3"
+  primaryIssue: "https://github.com/oaslananka/kicad-studio-kit/issues/177"
+  documentation: "docs/compatibility/kicad-10-0-3-feature-parity.md"
+  allowedStatuses:
+    - "supported"
+    - "not-applicable"
+    - "partial"
+    - "blocked"
+    - "future"
+  sources:
+    releaseNotes: "https://www.kicad.org/blog/2026/05/KiCad-10.0.3-Release/"
+    releaseTag: "https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.3"
+    cliReference: "https://docs.kicad.org/10.0/en/cli/cli.html"
+    pcbEditorReference: "https://docs.kicad.org/10.0/en/pcbnew/pcbnew.html"
+    pcbnewDeprecation: "https://dev-docs.kicad.org/en/apis-and-binding/pcbnew/"
+    nightlies: "https://www.kicad.org/help/nightlies-and-rcs/"
+  surfaces:
+    importers:
+      altium:
+        status: "supported"
+        nativeSurface: "kicad-cli pcb import --format altium"
+        productSurface: "KiCad Studio extension command and MCP manufacturing probe"
+        evidence:
+          - "path:apps/vscode-extension/test/unit/importCommands.test.ts"
+          - "path:apps/vscode-extension/test/integration/extension.test.ts"
+          - "command:kicad-cli pcb import --help includes altium"
+        notes: "Extension and MCP import paths are gated by CLI help before use."
+      allegro:
+        status: "blocked"
+        nativeSurface: "KiCad PCB Editor GUI Cadence Allegro .brd import"
+        productSurface: "KiCad Studio extension command registered but hidden unless CLI support appears"
+        issue: "https://github.com/oaslananka/kicad-studio-kit/issues/179"
+        evidence:
+          - "path:apps/vscode-extension/test/unit/importCommands.test.ts"
+          - "fixture:kicad-10-0-3-regressions"
+          - "command:kicad-cli pcb import --help does not advertise allegro in KiCad 10.0.3"
+        notes: "KiCad 10.0.3 documents GUI Allegro import, but the stable CLI surface is not available."
+      cadstar:
+        status: "supported"
+        nativeSurface: "kicad-cli pcb import --format cadstar"
+        productSurface: "KiCad Studio extension command"
+        evidence:
+          - "path:apps/vscode-extension/test/unit/importCommands.test.ts"
+          - "command:kicad-cli pcb import --help includes cadstar"
+        notes: "Command remains probe-gated like other importer workflows."
+      eagle:
+        status: "supported"
+        nativeSurface: "kicad-cli pcb import --format eagle"
+        productSurface: "KiCad Studio extension command"
+        evidence:
+          - "path:apps/vscode-extension/test/unit/importCommands.test.ts"
+          - "command:kicad-cli pcb import --help includes eagle"
+        notes: "Command remains probe-gated like other importer workflows."
+      fabmaster:
+        status: "supported"
+        nativeSurface: "kicad-cli pcb import --format fabmaster"
+        productSurface: "KiCad Studio extension command"
+        evidence:
+          - "path:apps/vscode-extension/test/unit/importCommands.test.ts"
+          - "command:kicad-cli pcb import --help includes fabmaster"
+        notes: "Command remains probe-gated like other importer workflows."
+      geda_lepton:
+        status: "supported"
+        nativeSurface: "kicad-cli pcb import --format geda when help advertises the token"
+        productSurface: "KiCad Studio extension command and MCP manufacturing import"
+        evidence:
+          - "path:apps/vscode-extension/test/unit/importCommands.test.ts"
+          - "path:packages/mcp-server/tests/integration/test_manufacturing_tools.py"
+          - "command:kicad-cli pcb import --help includes geda"
+        notes: "The product treats gEDA/Lepton as supported only after capability probing passes."
+      pads:
+        status: "supported"
+        nativeSurface: "kicad-cli pcb import --format pads"
+        productSurface: "KiCad Studio extension command, MCP manufacturing import, and KiCad 10.0.3 fixture probe"
+        evidence:
+          - "path:packages/mcp-server/tests/unit/test_kicad_canary.py"
+          - "path:packages/mcp-server/tests/integration/test_manufacturing_tools.py"
+          - "fixture:kicad-10-0-3-regressions"
+        notes: "KiCad 10.0.3 PADS importer regressions are covered by canary and fixture metadata."
+      pcad:
+        status: "supported"
+        nativeSurface: "kicad-cli pcb import --format pcad"
+        productSurface: "KiCad Studio extension command"
+        evidence:
+          - "path:apps/vscode-extension/test/unit/importCommands.test.ts"
+          - "command:kicad-cli pcb import --help includes pcad"
+        notes: "Command remains probe-gated like other importer workflows."
+      solidworks:
+        status: "supported"
+        nativeSurface: "kicad-cli pcb import --format solidworks"
+        productSurface: "KiCad Studio extension command"
+        evidence:
+          - "path:apps/vscode-extension/test/unit/importCommands.test.ts"
+          - "command:kicad-cli pcb import --help includes solidworks"
+        notes: "Command remains probe-gated like other importer workflows."
+    exports:
+      gerber:
+        status: "supported"
+        nativeSurface: "kicad-cli pcb export gerbers"
+        productSurface: "MCP manufacturing package and extension export workflows"
+        evidence:
+          - "path:packages/mcp-server/scripts/kicad_canary.py"
+          - "path:packages/mcp-server/tests/integration/test_export_tools.py"
+          - "command:corepack pnpm run test:kicad-cli-contract"
+        notes: "Primary KiCad canary requires Gerber export artifacts."
+      drill:
+        status: "supported"
+        nativeSurface: "kicad-cli pcb export drill"
+        productSurface: "MCP manufacturing package and extension export workflows"
+        evidence:
+          - "path:packages/mcp-server/scripts/kicad_canary.py"
+          - "path:packages/mcp-server/tests/integration/test_export_tools.py"
+          - "command:corepack pnpm run test:kicad-cli-contract"
+        notes: "Primary KiCad canary requires drill export artifacts."
+      pdf:
+        status: "supported"
+        nativeSurface: "kicad-cli sch export pdf and pcb export pdf"
+        productSurface: "MCP schematic/PCB export and extension PDF commands"
+        evidence:
+          - "path:packages/mcp-server/scripts/kicad_canary.py"
+          - "path:packages/mcp-server/tests/unit/test_kicad_canary.py"
+          - "command:kicad-cli sch export pdf and pcb export pdf"
+        notes: "Schematic and PCB PDF exports are part of the KiCad 10 canary plan."
+      pcb_pdf_property_popup_suppression:
+        status: "supported"
+        nativeSurface: "kicad-cli sch export pdf --exclude-pdf-property-popups"
+        productSurface: "KiCad 10.0.3 regression canary and fixture metadata"
+        evidence:
+          - "path:packages/mcp-server/scripts/kicad_canary.py"
+          - "path:packages/mcp-server/tests/unit/test_kicad_canary.py"
+          - "fixture:kicad-10-0-3-regressions"
+        notes: "The KiCad 10.0.3 CLI release note feature has a dedicated canary probe."
+      ipc2581:
+        status: "supported"
+        nativeSurface: "kicad-cli pcb export ipc2581"
+        productSurface: "KiCad Studio extension command and MCP export_ipc2581 tool"
+        evidence:
+          - "path:apps/vscode-extension/test/integration/extension.test.ts"
+          - "path:packages/mcp-server/tests/integration/test_pcb_export_validation_surface.py"
+          - "path:packages/mcp-server/tests/integration/test_export_tools.py"
+        notes: "Extension and MCP surfaces both expose IPC-2581 with command-level tests."
+      odbpp:
+        status: "supported"
+        nativeSurface: "kicad-cli pcb export odb"
+        productSurface: "KiCad Studio extension command and MCP export_odb tool"
+        evidence:
+          - "path:apps/vscode-extension/test/unit/exportPresets.test.ts"
+          - "path:packages/mcp-server/tests/integration/test_export_tools.py"
+          - "path:packages/mcp-server/tests/e2e/test_server.py"
+        notes: "ODB++ remains capability-gated by KiCad CLI detection."
+      step:
+        status: "supported"
+        nativeSurface: "kicad-cli pcb export step"
+        productSurface: "MCP export_step and export_3d_step tools"
+        evidence:
+          - "path:packages/mcp-server/tests/integration/test_export_tools.py"
+          - "path:packages/mcp-server/tests/unit/test_release_hardening.py"
+          - "path:packages/mcp-server/scripts/kicad_canary.py"
+        notes: "STEP is a release-gated 3D export with path-safety tests."
+      stepz:
+        status: "future"
+        nativeSurface: "kicad-cli pcb export stepz"
+        productSurface: "No first-class KiCad Studio Kit command or MCP tool yet"
+        issue: "https://github.com/oaslananka/kicad-studio-kit/issues/232"
+        evidence:
+          - "source:https://docs.kicad.org/10.0/en/cli/cli.html"
+        notes: "Documented upstream CLI export; product adoption is intentionally tracked separately."
+      xao:
+        status: "future"
+        nativeSurface: "kicad-cli pcb export xao"
+        productSurface: "No first-class KiCad Studio Kit command or MCP tool yet"
+        issue: "https://github.com/oaslananka/kicad-studio-kit/issues/232"
+        evidence:
+          - "source:https://docs.kicad.org/10.0/en/cli/cli.html"
+        notes: "Documented upstream CLI export; product adoption is intentionally tracked separately."
+    gui_editor:
+      design_blocks:
+        status: "supported"
+        nativeSurface: "KiCad 10 PCB Editor design block workflow"
+        productSurface: "S-expression parser and MCP pcb_block_* tools"
+        evidence:
+          - "path:apps/vscode-extension/test/unit/sExpressionParser.test.ts"
+          - "path:packages/mcp-server/tests/integration/test_pcb_tools.py"
+          - "path:docs/mcp/tools.md"
+        notes: "Product support is headless and tool-oriented, not a replacement for the native GUI editor."
+      graphical_drc_rule_editor:
+        status: "not-applicable"
+        nativeSurface: "KiCad PCB Editor graphical DRC rule editor"
+        productSurface: "Textual .kicad_dru guidance and diagnostics, not a GUI rule editor"
+        evidence:
+          - "path:apps/vscode-extension/test/unit/drcRulesProvider.test.ts"
+          - "path:apps/vscode-extension/src/ai/prompts.ts"
+        notes: "The native graphical editor remains a KiCad GUI feature outside extension/MCP ownership."
+      variants:
+        status: "supported"
+        nativeSurface: "KiCad 10 design variants"
+        productSurface: "Extension variants view and MCP variant_* tools"
+        evidence:
+          - "path:apps/vscode-extension/test/unit/variantProvider.test.ts"
+          - "path:packages/mcp-server/tests/unit/test_variant_diff.py"
+          - "path:packages/mcp-server/tests/integration/test_export_tools.py"
+        notes: "Variant listing, activation, BOM diffing, and export integration are covered."
+      barcode_support:
+        status: "supported"
+        nativeSurface: "KiCad 10 PCB Editor barcode tool"
+        productSurface: "MCP pcb_add_barcode tool"
+        evidence:
+          - "path:packages/mcp-server/tests/unit/test_kicad10_parity_tools.py"
+          - "path:docs/mcp/tools.md"
+          - "source:https://docs.kicad.org/10.0/en/pcbnew/pcbnew.html"
+        notes: "Headless barcode insertion is supported; native visual editing remains in KiCad."
+      time_domain_tuning:
+        status: "partial"
+        nativeSurface: "KiCad 10 interactive time-domain tuning workflows"
+        productSurface: "MCP route_tune_time_domain and tuning profile helpers"
+        issue: "https://github.com/oaslananka/kicad-studio-kit/issues/232"
+        evidence:
+          - "path:packages/mcp-server/tests/unit/test_kicad10_parity_tools.py"
+          - "path:packages/mcp-server/tests/integration/test_routing_tools.py"
+        notes: "The MCP tools model tuning intent, but they do not replace native interactive routing UX."
+    ipc:
+      kicad_python_ipc:
+        status: "supported"
+        nativeSurface: "KiCad IPC API"
+        productSurface: "MCP live context discovery and scheduled GUI smoke coverage"
+        evidence:
+          - "path:packages/mcp-server/tests/gui/test_kicad_gui_live_context.py"
+          - "path:docs/compatibility/kicad-10-to-11-migration.md"
+          - "smoke:corepack pnpm run test:kicad-gui-smoke"
+        notes: "IPC is the supported live-editor direction for KiCad 10 and KiCad 11 readiness."
+      swig_pcbnew_direct_dependency:
+        status: "blocked"
+        nativeSurface: "Deprecated SWIG pcbnew Python bindings"
+        productSurface: "Production direct pcbnew imports are forbidden"
+        issue: "https://github.com/oaslananka/kicad-studio-kit/issues/197"
+        evidence:
+          - "path:packages/mcp-server/scripts/check_no_pcbnew.py"
+          - "path:docs/compatibility/kicad-10-to-11-migration.md"
+          - "source:https://dev-docs.kicad.org/en/apis-and-binding/pcbnew/"
+        notes: "The guard blocks production reliance on an API planned for removal in KiCad 11."
+    vscode_extension:
+      status_surface:
+        status: "supported"
+        nativeSurface: "Detected KiCad CLI version and command help"
+        productSurface: "Status bar and command menu feature availability"
+        evidence:
+          - "path:apps/vscode-extension/test/unit/kicadStatusBar.test.ts"
+          - "path:apps/vscode-extension/test/unit/viewerStatusMenu.test.ts"
+          - "path:apps/vscode-extension/test/unit/kicadCliSupport.test.ts"
+        notes: "The UI reports primary/deprecated/unsupported KiCad lines and feature-level gates."
+      importer_command_gating:
+        status: "supported"
+        nativeSurface: "kicad-cli pcb import --help"
+        productSurface: "Command palette availability and deterministic unsupported warnings"
+        evidence:
+          - "path:apps/vscode-extension/test/unit/importCommands.test.ts"
+          - "path:apps/vscode-extension/test/integration/extension.test.ts"
+        notes: "Importer commands cannot run without the corresponding CLI token."
+    mcp_server:
+      server_info_capability_contract:
+        status: "supported"
+        nativeSurface: "KiCad CLI and IPC runtime discovery"
+        productSurface: "kicad_get_server_info compatibility and capability payload"
+        evidence:
+          - "path:packages/mcp-server/tests/unit/test_server_info_contract.py"
+          - "path:packages/protocol-schemas/test/index.test.ts"
+          - "path:docs/mcp/api-reference.md"
+        notes: "Server-info schema and generated docs are release-gated."
+      empty_project_read_tools:
+        status: "partial"
+        nativeSurface: "Empty KiCad 10.0.3 project files"
+        productSurface: "File-backed MCP read tools and quality gates"
+        issue: "https://github.com/oaslananka/kicad-studio-kit/issues/228"
+        evidence:
+          - "path:packages/mcp-server/tests/integration/test_pcb_tools.py"
+          - "path:packages/mcp-server/tests/integration/test_schematic_tools.py"
+        notes: "Regression coverage is tracked separately so the parity matrix stays bounded."
+      ipc_state_consistency:
+        status: "partial"
+        nativeSurface: "KiCad IPC lifecycle"
+        productSurface: "kicad_get_server_info and tool diagnostics"
+        issue: "https://github.com/oaslananka/kicad-studio-kit/issues/223"
+        evidence:
+          - "path:packages/mcp-server/tests/unit/test_server_info_contract.py"
+          - "path:packages/mcp-server/tests/gui/test_kicad_gui_live_context.py"
+        notes: "Issue #229 tracks additional lifecycle transition coverage."
+    release:
+      vsix_provenance:
+        status: "supported"
+        nativeSurface: "VS Code extension release artifact"
+        productSurface: "VSIX checksum, SBOM, and artifact attestation workflow"
+        evidence:
+          - "path:.github/workflows/publish-extension.yml"
+          - "path:scripts/check-release-provenance.mjs"
+          - "path:docs/release.md"
+        notes: "Release provenance is validated by the release verification gate."
+      wheel_provenance:
+        status: "supported"
+        nativeSurface: "Python wheel and source distribution"
+        productSurface: "PyPI trusted publishing, checksums, SBOM, and attestations"
+        evidence:
+          - "path:.github/workflows/publish-python.yml"
+          - "path:packages/mcp-server/tests/unit/test_release_hardening.py"
+          - "path:docs/publishing.md"
+        notes: "Release evidence is product-scoped for the Python package."
+      npm_tarball_provenance:
+        status: "supported"
+        nativeSurface: "npm launcher tarball"
+        productSurface: "npm provenance, checksum verification, and SBOM workflow"
+        evidence:
+          - "path:.github/workflows/publish-npm.yml"
+          - "path:scripts/check-release-provenance.mjs"
+          - "path:docs/release.md"
+        notes: "npm release evidence is tied to the version-linked MCP product."
+  kicad11Readiness:
+    protocol_upgrade:
+      status: "future"
+      nativeSurface: "MCP protocol and KiCad 11 readiness"
+      productSurface: "Protocol upgrade plan and KiCad 11 manual canary path"
+      issue: "https://github.com/oaslananka/kicad-studio-kit/issues/197"
+      evidence:
+        - "path:docs/compatibility/kicad-10-to-11-migration.md"
+        - "command:corepack pnpm run test:kicad-cli-contract:future"
+      notes: "KiCad 11 is intentionally separate from the KiCad 10.0.3 release-blocking baseline."
+    nightly_canary:
+      status: "supported"
+      nativeSurface: "KiCad development-branch nightly CLI"
+      productSurface: "Manual prerelease smoke command and scheduled canary metadata"
+      evidence:
+        - "path:packages/mcp-server/scripts/kicad_canary.py"
+        - "path:docs/compatibility/kicad-10-to-11-migration.md"
+        - "command:corepack pnpm run test:kicad-cli-contract:nightly"
+      notes: "Nightly runs remain non-release and do not change the stable support line."
+    swig_removal_guard:
+      status: "supported"
+      nativeSurface: "KiCad 11 planned removal of SWIG pcbnew bindings"
+      productSurface: "Production direct-pcbnew import guard"
+      evidence:
+        - "path:packages/mcp-server/scripts/check_no_pcbnew.py"
+        - "path:packages/mcp-server/tests/unit/test_compatibility_matrix.py"
+        - "source:https://dev-docs.kicad.org/en/apis-and-binding/pcbnew/"
+      notes: "The guard keeps KiCad 11 preparation independent from current KiCad 10 parity."
+
 kicadIpcReadiness:
   reviewed: "2026-05-26"
   sources:

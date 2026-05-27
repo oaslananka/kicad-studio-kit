@@ -4,6 +4,7 @@ import yaml
 
 from kicad_mcp.compatibility import COMPATIBILITY_MATRIX, MCP_PROTOCOL_VERSION
 from scripts.check_compatibility_matrix import (
+    KICAD10_FEATURE_STATUSES,
     PCBNEW_POLICY,
     REPO_ROOT,
     REQUIRED_IPC_AREAS,
@@ -50,3 +51,32 @@ def test_kicad_ipc_readiness_contract_covers_pcbnew_and_parity() -> None:
     assert set(REQUIRED_IPC_AREAS).issubset(required_for)
     assert readiness["manualCanary"]["currentNightlyRange"] == "10.99.x"
     assert readiness["manualCanary"]["releaseCandidateRange"] == "11.0.x"
+
+
+def test_kicad10_feature_parity_matrix_tracks_gaps_and_evidence() -> None:
+    matrix = yaml.safe_load((REPO_ROOT / "compatibility.yaml").read_text(encoding="utf-8"))
+    parity = matrix["kicad10FeatureParity"]
+    surfaces = parity["surfaces"]
+
+    assert parity["baseline"] == matrix["kicad"]["latestVerified"]
+    assert set(parity["allowedStatuses"]) == KICAD10_FEATURE_STATUSES
+    assert surfaces["importers"]["allegro"]["status"] == "blocked"
+    assert surfaces["exports"]["stepz"]["issue"].endswith("/issues/232")
+    assert surfaces["gui_editor"]["graphical_drc_rule_editor"]["status"] == "not-applicable"
+    assert surfaces["mcp_server"]["empty_project_read_tools"]["issue"].endswith("/issues/228")
+    assert parity["kicad11Readiness"]["protocol_upgrade"]["issue"].endswith("/issues/197")
+
+    supported_items = [
+        feature
+        for group in surfaces.values()
+        for feature in group.values()
+        if feature["status"] == "supported"
+    ]
+    assert supported_items
+    assert all(
+        any(
+            item.startswith(("path:", "fixture:", "command:", "smoke:"))
+            for item in feature["evidence"]
+        )
+        for feature in supported_items
+    )

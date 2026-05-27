@@ -68,23 +68,36 @@ exports.
 after probing `kicad-cli pcb import --help`; this prevents the extension from
 claiming GUI-only importers as CLI-backed workflows.
 
-| Source format | Extension command | KiCad 10 CLI state | User-facing behavior |
-| --- | --- | --- | --- |
-| Altium | `kicadstudio.importAltium` | Supported | Command remains available and validates `--format altium` before opening the picker. |
-| Allegro | `kicadstudio.importAllegro` | Blocked | Command is registered for future compatibility, hidden unless `--format allegro` is advertised, and reports a deterministic warning when invoked without CLI support. |
-| CADSTAR | `kicadstudio.importCadstar` | Supported | Command remains available and validates `--format cadstar` before opening the picker. |
-| Eagle | `kicadstudio.importEagle` | Supported | Command remains available and validates `--format eagle` before opening the picker. |
-| Fabmaster | `kicadstudio.importFabmaster` | Supported | Command remains available and validates `--format fabmaster` before opening the picker. |
-| gEDA/Lepton | `kicadstudio.importGeda` | Probe-gated | Existing command remains available but does not run unless the installed CLI help advertises `geda`. |
-| PADS | `kicadstudio.importPads` | Supported | Command remains available and validates `--format pads` before opening the picker. |
-| P-CAD | `kicadstudio.importPcad` | Supported | Command remains available and validates `--format pcad` before opening the picker. |
-| SolidWorks PCB | `kicadstudio.importSolidworks` | Supported | Command remains available and validates `--format solidworks` before opening the picker. |
+| Source format  | Extension command              | KiCad 10 CLI state | User-facing behavior                                                                                                                                                  |
+| -------------- | ------------------------------ | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Altium         | `kicadstudio.importAltium`     | Supported          | Command remains available and validates `--format altium` before opening the picker.                                                                                  |
+| Allegro        | `kicadstudio.importAllegro`    | Blocked            | Command is registered for future compatibility, hidden unless `--format allegro` is advertised, and reports a deterministic warning when invoked without CLI support. |
+| CADSTAR        | `kicadstudio.importCadstar`    | Supported          | Command remains available and validates `--format cadstar` before opening the picker.                                                                                 |
+| Eagle          | `kicadstudio.importEagle`      | Supported          | Command remains available and validates `--format eagle` before opening the picker.                                                                                   |
+| Fabmaster      | `kicadstudio.importFabmaster`  | Supported          | Command remains available and validates `--format fabmaster` before opening the picker.                                                                               |
+| gEDA/Lepton    | `kicadstudio.importGeda`       | Probe-gated        | Existing command remains available but does not run unless the installed CLI help advertises `geda`.                                                                  |
+| PADS           | `kicadstudio.importPads`       | Supported          | Command remains available and validates `--format pads` before opening the picker.                                                                                    |
+| P-CAD          | `kicadstudio.importPcad`       | Supported          | Command remains available and validates `--format pcad` before opening the picker.                                                                                    |
+| SolidWorks PCB | `kicadstudio.importSolidworks` | Supported          | Command remains available and validates `--format solidworks` before opening the picker.                                                                              |
 
 Allegro fixture coverage is tracked by
 [`kicad-10-0-3-regressions`](kicad-fixture-corpus.md#fixture-coverage). The
 fixture records the stable boundary: KiCad 10 PCB Editor supports Cadence
 Allegro `.brd` import, while current stable CLI help does not advertise
 `--format allegro`.
+
+## KiCad 10.0.3 Feature-Parity Matrix
+
+The full KiCad 10.0.3 parity contract lives in
+[`docs/compatibility/kicad-10-0-3-feature-parity.md`](compatibility/kicad-10-0-3-feature-parity.md)
+and is machine-validated from `compatibility.yaml` `kicad10FeatureParity`.
+It covers importer, CLI/export, GUI/editor, IPC, VS Code extension, MCP server,
+and release artifact surfaces.
+
+Every `supported` feature must link to a test, fixture, command probe, or smoke
+path. Every `partial` or `blocked` feature must link to a GitHub issue. KiCad
+11 readiness risks stay in the separate readiness section so the KiCad 10.0.3
+matrix remains the stable release boundary.
 
 ## KiCad 11 Readiness
 
