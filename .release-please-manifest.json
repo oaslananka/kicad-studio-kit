@@ -1,5 +1,5 @@
 {
   "apps/vscode-extension": "1.0.0",
-  "packages/mcp-server": "3.5.2",
-  "packages/mcp-npm": "3.5.2"
+  "packages/mcp-server": "3.6.0",
+  "packages/mcp-npm": "3.6.0"
 }
