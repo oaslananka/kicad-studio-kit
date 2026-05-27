@@ -1,7 +1,9 @@
 import { defineConfig } from '@playwright/test';
 
+const PLAYWRIGHT_CHANNEL_ENV = 'KICADSTUDIO_PLAYWRIGHT_CHANNEL';
 const VISUAL_MAX_DIFF_PIXEL_RATIO = 0.002;
 const VISUAL_PIXELMATCH_THRESHOLD = 0.2;
+const playwrightChannel = process.env[PLAYWRIGHT_CHANNEL_ENV];
 
 export default defineConfig({
   testDir: './test/visual',
@@ -22,6 +24,7 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     browserName: 'chromium',
+    ...(playwrightChannel ? { channel: playwrightChannel } : {}),
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     reducedMotion: 'reduce'
