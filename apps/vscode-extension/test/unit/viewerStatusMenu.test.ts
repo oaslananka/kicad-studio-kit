@@ -35,7 +35,8 @@ describe('buildStatusMenuItems', () => {
         jobset: true,
         pdf3d: true,
         odb: false,
-        variantOption: true
+        variantOption: true,
+        allegroImport: false
       },
       snapshot: {
         drc: {
@@ -90,6 +91,10 @@ describe('buildStatusMenuItems', () => {
         expect.objectContaining({
           label: '$(pass) 3D PDF export',
           description: 'available'
+        }),
+        expect.objectContaining({
+          label: '$(warning) Allegro PCB import',
+          description: 'missing allegroImport'
         })
       ])
     );

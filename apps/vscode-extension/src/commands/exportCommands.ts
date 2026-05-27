@@ -185,6 +185,11 @@ export function registerExportCommands(
       COMMANDS.importGeda,
       () => services.importService.importBoard('geda'),
       'Import gEDA/Lepton Board'
+    ),
+    registerTrustedCommand(
+      COMMANDS.importAllegro,
+      () => services.importService.importBoard('allegro'),
+      'Import Allegro Board'
     )
   ];
 }

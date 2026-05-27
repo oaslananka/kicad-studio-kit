@@ -63,7 +63,8 @@ describe('kicadCliSupport', () => {
         jobset: true,
         pdf3d: true,
         odb: true,
-        variantOption: true
+        variantOption: true,
+        allegroImport: true
       }
     });
 
@@ -83,6 +84,10 @@ describe('kicadCliSupport', () => {
         }),
         expect.objectContaining({
           id: 'three-d-pdf-export',
+          state: 'available'
+        }),
+        expect.objectContaining({
+          id: 'allegro-pcb-import',
           state: 'available'
         })
       ])
@@ -177,6 +182,28 @@ describe('kicadCliSupport', () => {
       expect.objectContaining({
         state: 'unsupported',
         summary: 'missing pdf3d'
+      })
+    );
+  });
+
+  it('marks Allegro PCB import unsupported when the CLI help omits the format', () => {
+    const features = buildKiCadFeatureSupport({
+      cli: {
+        path: '/usr/bin/kicad-cli',
+        version: '10.0.3',
+        versionLabel: 'KiCad 10.0.3',
+        source: 'path'
+      },
+      capabilities: {
+        allegroImport: false
+      }
+    });
+
+    expect(features.find((item) => item.id === 'allegro-pcb-import')).toEqual(
+      expect.objectContaining({
+        state: 'unsupported',
+        summary: 'missing allegroImport',
+        reason: expect.stringContaining('KiCad PCB Editor')
       })
     );
   });

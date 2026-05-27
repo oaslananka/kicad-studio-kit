@@ -89,10 +89,75 @@ describe('KiCadImportService', () => {
     await service.importBoard('pads');
 
     expect(window.showWarningMessage).toHaveBeenCalledWith(
-      expect.stringContaining('does not advertise pads PCB import support')
+      expect.stringContaining('does not advertise PADS PCB import support')
     );
     expect(window.showOpenDialog).not.toHaveBeenCalled();
     expect(runner.runWithProgress).not.toHaveBeenCalled();
+  });
+
+  it('keeps Allegro hidden behind the kicad-cli import format probe', async () => {
+    const { service, runner } = createService({
+      detector: {
+        hasCapability: jest.fn().mockResolvedValue(true),
+        getCommandHelp: jest
+          .fn()
+          .mockResolvedValue(
+            'Usage: kicad-cli pcb import --format pads|altium|solidworks'
+          )
+      }
+    });
+
+    await service.importBoard('allegro');
+
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('does not advertise Allegro PCB import support')
+    );
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('KiCad 10 PCB Editor supports Allegro .brd import')
+    );
+    expect(window.showOpenDialog).not.toHaveBeenCalled();
+    expect(runner.runWithProgress).not.toHaveBeenCalled();
+  });
+
+  it('reports per-format import support from kicad-cli help', async () => {
+    const { service } = createService({
+      detector: {
+        hasCapability: jest.fn().mockResolvedValue(true),
+        getCommandHelp: jest
+          .fn()
+          .mockResolvedValue(
+            'Usage: kicad-cli pcb import --format pads|altium|allegro'
+          )
+      }
+    });
+
+    await expect(
+      service.getImportFormatSupportSnapshot(['pads', 'allegro', 'geda'])
+    ).resolves.toEqual({
+      pads: true,
+      allegro: true,
+      geda: false
+    });
+  });
+
+  it('fails closed when an import support snapshot probe rejects', async () => {
+    const error = new Error('probe failed');
+    const { service, logger } = createService({
+      detector: {
+        hasCapability: jest.fn().mockRejectedValue(error),
+        getCommandHelp: jest.fn()
+      }
+    });
+
+    await expect(
+      service.getImportFormatSupportSnapshot(['allegro'])
+    ).resolves.toEqual({
+      allegro: false
+    });
+    expect(logger.error).toHaveBeenCalledWith(
+      'Import support probe for allegro failed',
+      error
+    );
   });
 
   it('stops without running kicad-cli when the import picker is cancelled', async () => {
@@ -129,7 +194,7 @@ describe('KiCadImportService', () => {
         inputFile
       ],
       cwd: tempDir,
-      progressTitle: 'Importing pads board'
+      progressTitle: 'Importing PADS board'
     });
     expect(JSON.parse(fs.readFileSync(projectFile, 'utf8'))).toEqual({
       meta: {
@@ -163,6 +228,44 @@ describe('KiCadImportService', () => {
     await service.importBoard('pads');
 
     expect(fs.readFileSync(projectFile, 'utf8')).toBe('{"existing":true}\n');
+  });
+
+  it('imports Allegro boards when kicad-cli advertises the format', async () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kicad-import-'));
+    const inputFile = path.join(tempDir, 'legacy-allegro.brd');
+    fs.writeFileSync(inputFile, 'legacy board', 'utf8');
+    const outputFile = path.join(tempDir, 'legacy-allegro.kicad_pcb');
+    const { service, runner } = createService({
+      detector: {
+        hasCapability: jest.fn().mockResolvedValue(true),
+        getCommandHelp: jest
+          .fn()
+          .mockResolvedValue(
+            'Usage: kicad-cli pcb import --format pads|altium|allegro'
+          )
+      }
+    });
+    (window.showOpenDialog as jest.Mock).mockResolvedValue([
+      Uri.file(inputFile)
+    ]);
+
+    await service.importBoard('allegro');
+
+    expect(runner.runWithProgress).toHaveBeenCalledWith(
+      expect.objectContaining({
+        command: [
+          'pcb',
+          'import',
+          '--format',
+          'allegro',
+          '--output',
+          outputFile,
+          inputFile
+        ],
+        cwd: tempDir,
+        progressTitle: 'Importing Allegro board'
+      })
+    );
   });
 
   it('logs the failed import and shows the underlying error message once', async () => {

@@ -310,6 +310,14 @@ suite('Extension Integration', () => {
       [
         'kicadstudio.importGeda',
         ['kicadstudio.workspaceTrusted', 'kicadstudio.hasProject']
+      ],
+      [
+        'kicadstudio.importAllegro',
+        [
+          'kicadstudio.workspaceTrusted',
+          'kicadstudio.hasProject',
+          'kicadstudio.allegroImportSupported'
+        ]
       ]
     ] as Array<[string, string[]]>) {
       assertCommandPaletteWhen(commandPalette, command, expectedContexts);

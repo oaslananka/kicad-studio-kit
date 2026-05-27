@@ -215,6 +215,8 @@
   "kicadstudio.contributes.commands.84.category": "KiCad Import",
   "kicadstudio.contributes.commands.85.title": "KiCad: Import gEDA/Lepton PCB",
   "kicadstudio.contributes.commands.85.category": "KiCad Import",
+  "kicadstudio.contributes.commands.93.title": "KiCad: Import Allegro Board",
+  "kicadstudio.contributes.commands.93.category": "KiCad Import",
   "kicadstudio.contributes.commands.86.title": "KiCad: Refresh PCM Repositories",
   "kicadstudio.contributes.commands.86.category": "KiCad Library",
   "kicadstudio.contributes.commands.87.title": "KiCad: Filter PCM Packages",

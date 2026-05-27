@@ -157,7 +157,8 @@ export const COMMANDS = {
   importFabmaster: 'kicadstudio.importFabmaster',
   importPcad: 'kicadstudio.importPcad',
   importSolidworks: 'kicadstudio.importSolidworks',
-  importGeda: 'kicadstudio.importGeda'
+  importGeda: 'kicadstudio.importGeda',
+  importAllegro: 'kicadstudio.importAllegro'
 } as const;
 export const CONTEXT_KEYS = {
   hasProject: 'kicadstudio.hasProject',
@@ -178,6 +179,7 @@ export const CONTEXT_KEYS = {
   mcpManufacturingMode: 'kicadstudio.mcpManufacturingMode',
   mcpExperimentalMode: 'kicadstudio.mcpExperimentalMode',
   hasVariants: 'kicadstudio.hasVariants',
+  allegroImportSupported: 'kicadstudio.allegroImportSupported',
   workspaceTrusted: 'kicadstudio.workspaceTrusted'
 } as const;
 export const SETTINGS = {

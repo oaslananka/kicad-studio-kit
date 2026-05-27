@@ -61,6 +61,31 @@ exports.
 | 8.x        | 8.0.x        | Deprecated    | Manual compatibility check                  | Core file-level read, migration, DRC/ERC, BOM/netlist, and Gerber workflows are best-effort when command probes pass; jobsets, variants, 3D PDF, and ODB++ remain unavailable.                   |
 | <8         | none         | Unsupported   | None                                        | KiCad Studio reports the detected CLI as unsupported and does not claim feature compatibility.                                                                                                   |
 
+## KiCad 10 PCB Import Workflow Matrix
+
+`compatibility.yaml` tracks extension-facing PCB import workflows under
+`kicad.pcbImportWorkflows`. KiCad Studio shows or runs importer commands only
+after probing `kicad-cli pcb import --help`; this prevents the extension from
+claiming GUI-only importers as CLI-backed workflows.
+
+| Source format | Extension command | KiCad 10 CLI state | User-facing behavior |
+| --- | --- | --- | --- |
+| Altium | `kicadstudio.importAltium` | Supported | Command remains available and validates `--format altium` before opening the picker. |
+| Allegro | `kicadstudio.importAllegro` | Blocked | Command is registered for future compatibility, hidden unless `--format allegro` is advertised, and reports a deterministic warning when invoked without CLI support. |
+| CADSTAR | `kicadstudio.importCadstar` | Supported | Command remains available and validates `--format cadstar` before opening the picker. |
+| Eagle | `kicadstudio.importEagle` | Supported | Command remains available and validates `--format eagle` before opening the picker. |
+| Fabmaster | `kicadstudio.importFabmaster` | Supported | Command remains available and validates `--format fabmaster` before opening the picker. |
+| gEDA/Lepton | `kicadstudio.importGeda` | Probe-gated | Existing command remains available but does not run unless the installed CLI help advertises `geda`. |
+| PADS | `kicadstudio.importPads` | Supported | Command remains available and validates `--format pads` before opening the picker. |
+| P-CAD | `kicadstudio.importPcad` | Supported | Command remains available and validates `--format pcad` before opening the picker. |
+| SolidWorks PCB | `kicadstudio.importSolidworks` | Supported | Command remains available and validates `--format solidworks` before opening the picker. |
+
+Allegro fixture coverage is tracked by
+[`kicad-10-0-3-regressions`](kicad-fixture-corpus.md#fixture-coverage). The
+fixture records the stable boundary: KiCad 10 PCB Editor supports Cadence
+Allegro `.brd` import, while current stable CLI help does not advertise
+`--format allegro`.
+
 ## KiCad 11 Readiness
 
 KiCad 11 is not a primary support target yet. The readiness contract is tracked
@@ -96,6 +121,7 @@ Freshness sources checked on 2026-05-27:
 - KiCad 9.0.9 release notes: <https://www.kicad.org/blog/2026/04/KiCad-9.0.9-Release/>
 - KiCad 9.0.9 RC note for final 9.0 bug-fix policy: <https://www.kicad.org/blog/2026/04/KiCad-Version-9.0.9-Release-Candidate-1-Available/>
 - KiCad 10.0 CLI reference: <https://docs.kicad.org/10.0/en/cli/cli.html>
+- KiCad 10.0 PCB Editor import reference: <https://docs.kicad.org/10.0/en/pcbnew/pcbnew.html>
 - KiCad nightly CLI reference: <https://docs.kicad.org/master/en/cli/cli.html>
 - KiCad PCB Python bindings deprecation notice: <https://dev-docs.kicad.org/en/apis-and-binding/pcbnew/>
 - KiCad nightly and release candidate guidance: <https://www.kicad.org/help/nightlies-and-rcs/>

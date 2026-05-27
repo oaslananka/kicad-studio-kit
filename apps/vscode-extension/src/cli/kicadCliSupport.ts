@@ -24,7 +24,8 @@ export interface KiCadFeatureSupport {
     | 'jobsets'
     | 'variants'
     | 'odb-export'
-    | 'three-d-pdf-export';
+    | 'three-d-pdf-export'
+    | 'allegro-pcb-import';
   label: string;
   state: KiCadFeatureState;
   summary: string;
@@ -175,6 +176,18 @@ export function buildKiCadFeatureSupport(options: {
         '3D PDF export is enabled for KiCad 10 when the `pcb export 3dpdf` command probe passes.',
       unsupportedReason:
         '3D PDF export requires KiCad 10+ and a kicad-cli build that exposes `pcb export 3dpdf`.'
+    }),
+    feature({
+      id: 'allegro-pcb-import',
+      label: 'Allegro PCB import',
+      major,
+      minimumMajor: 10,
+      capabilityKeys: ['allegroImport'],
+      capabilities,
+      supportedReason:
+        'Allegro import is enabled when `kicad-cli pcb import --help` advertises the Allegro format.',
+      unsupportedReason:
+        'Allegro import is available in the KiCad PCB Editor, but the extension command requires a KiCad 10+ CLI build that exposes `pcb import --format allegro`.'
     })
   ];
 }

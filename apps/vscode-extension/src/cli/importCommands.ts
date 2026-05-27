@@ -5,15 +5,38 @@ import { KiCadCliRunner } from './kicadCliRunner';
 import { KiCadCliDetector } from './kicadCliDetector';
 import { Logger } from '../utils/logger';
 
-export type SupportedPcbImportFormat =
-  | 'pads'
-  | 'altium'
-  | 'eagle'
-  | 'cadstar'
-  | 'fabmaster'
-  | 'pcad'
-  | 'geda'
-  | 'solidworks';
+export const PCB_IMPORT_FORMATS = [
+  'pads',
+  'altium',
+  'eagle',
+  'cadstar',
+  'fabmaster',
+  'pcad',
+  'geda',
+  'solidworks',
+  'allegro'
+] as const;
+
+export type SupportedPcbImportFormat = (typeof PCB_IMPORT_FORMATS)[number];
+
+const PCB_IMPORT_FORMAT_LABELS: Record<SupportedPcbImportFormat, string> = {
+  pads: 'PADS',
+  altium: 'Altium',
+  eagle: 'Eagle',
+  cadstar: 'CADSTAR',
+  fabmaster: 'Fabmaster',
+  pcad: 'P-CAD',
+  geda: 'gEDA/Lepton',
+  solidworks: 'SolidWorks',
+  allegro: 'Allegro'
+};
+
+const PCB_IMPORT_UNSUPPORTED_HINTS: Partial<
+  Record<SupportedPcbImportFormat, string>
+> = {
+  allegro:
+    'KiCad 10 PCB Editor supports Allegro .brd import, but this kicad-cli build does not expose --format allegro. Use KiCad PCB Editor File > Import > Non-KiCad Board File until a KiCad CLI build advertises Allegro import.'
+};
 
 export class KiCadImportService {
   constructor(
@@ -24,14 +47,13 @@ export class KiCadImportService {
 
   async importBoard(format: SupportedPcbImportFormat): Promise<void> {
     if (!(await this.isImportFormatSupported(format))) {
-      void vscode.window.showWarningMessage(
-        `This KiCad CLI does not advertise ${format} PCB import support.`
-      );
+      void vscode.window.showWarningMessage(unsupportedImportMessage(format));
       return;
     }
 
+    const label = PCB_IMPORT_FORMAT_LABELS[format];
     const selection = await vscode.window.showOpenDialog({
-      title: `Import ${format} board`,
+      title: `Import ${label} board`,
       canSelectFiles: true,
       canSelectFolders: false,
       canSelectMany: false
@@ -58,7 +80,7 @@ export class KiCadImportService {
           inputFile
         ],
         cwd: path.dirname(inputFile),
-        progressTitle: `Importing ${format} board`
+        progressTitle: `Importing ${label} board`
       });
 
       const projectFile = await ensureProjectForImportedBoard(outputFile);
@@ -77,7 +99,23 @@ export class KiCadImportService {
     }
   }
 
-  private async isImportFormatSupported(
+  async getImportFormatSupportSnapshot(
+    formats: readonly SupportedPcbImportFormat[] = PCB_IMPORT_FORMATS
+  ): Promise<Partial<Record<SupportedPcbImportFormat, boolean>>> {
+    const entries = await Promise.all(
+      formats.map(async (format) => {
+        try {
+          return [format, await this.isImportFormatSupported(format)] as const;
+        } catch (error) {
+          this.logger.error(`Import support probe for ${format} failed`, error);
+          return [format, false] as const;
+        }
+      })
+    );
+    return Object.fromEntries(entries);
+  }
+
+  async isImportFormatSupported(
     format: SupportedPcbImportFormat
   ): Promise<boolean> {
     if (!(await this.detector.hasCapability('pcbImport'))) {
@@ -87,11 +125,19 @@ export class KiCadImportService {
     if (!help) {
       return false;
     }
-    if (format === 'geda') {
-      return /\bgeda\b/i.test(help);
-    }
-    return new RegExp(`\\b${escapeRegExp(format)}\\b`, 'i').test(help);
+    return importFormatHelpPattern(format).test(help);
   }
+}
+
+function unsupportedImportMessage(format: SupportedPcbImportFormat): string {
+  const label = PCB_IMPORT_FORMAT_LABELS[format];
+  const base = `This KiCad CLI does not advertise ${label} PCB import support.`;
+  const hint = PCB_IMPORT_UNSUPPORTED_HINTS[format];
+  return hint ? `${base} ${hint}` : base;
+}
+
+function importFormatHelpPattern(format: SupportedPcbImportFormat): RegExp {
+  return new RegExp(`\\b${escapeRegExp(format)}\\b`, 'i');
 }
 
 function escapeRegExp(value: string): string {

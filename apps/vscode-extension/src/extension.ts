@@ -568,6 +568,10 @@ export async function activate(
     const provider = await aiProviders.getProvider();
     const cli = trusted ? await cliDetector.detect() : undefined;
     const kicadVersionMajor = Number(cli?.version.split('.')[0] ?? '0');
+    const allegroImportSupported = await detectAllegroImportSupport(
+      trusted,
+      Boolean(cli)
+    );
     const hasVariants = await workspaceHasVariants();
     const mcpProfile = readConfiguredMcpProfile();
     const persistedProjectId = context.workspaceState.get<string>(
@@ -624,6 +628,11 @@ export async function activate(
     );
     await vscode.commands.executeCommand(
       'setContext',
+      CONTEXT_KEYS.allegroImportSupported,
+      allegroImportSupported
+    );
+    await vscode.commands.executeCommand(
+      'setContext',
       CONTEXT_KEYS.workspaceTrusted,
       isWorkspaceTrusted()
     );
@@ -640,6 +649,22 @@ export async function activate(
       drc: diagnosticState.getSnapshot().drc,
       erc: diagnosticState.getSnapshot().erc
     });
+  }
+
+  async function detectAllegroImportSupport(
+    trusted: boolean,
+    cliDetected: boolean
+  ): Promise<boolean> {
+    if (!trusted || !cliDetected) {
+      return false;
+    }
+
+    try {
+      return await importService.isImportFormatSupported('allegro');
+    } catch (error) {
+      logger.error('Allegro import capability probe failed', error);
+      return false;
+    }
   }
 
   async function selectActiveProject(

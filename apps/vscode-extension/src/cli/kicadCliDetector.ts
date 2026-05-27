@@ -26,6 +26,7 @@ export type KiCadCliCapabilitySnapshot = Partial<
   Record<KiCadCliCapabilityName, boolean>
 > & {
   variantOption?: boolean;
+  allegroImport?: boolean;
 };
 
 export function getCliCandidates(
@@ -255,18 +256,20 @@ export class KiCadCliDetector {
       return undefined;
     }
 
-    const [commandResults, variantOption] = await Promise.all([
+    const [commandResults, variantOption, allegroImport] = await Promise.all([
       Promise.all(
         STATUS_MENU_CAPABILITY_COMMANDS.map(
           async (command) =>
             [command, await this.hasCapability(command)] as const
         )
       ),
-      this.commandHelpIncludes(['sch', 'export', 'pdf'], /--variant\b/)
+      this.commandHelpIncludes(['sch', 'export', 'pdf'], /--variant\b/),
+      this.commandHelpIncludes(['pcb', 'import'], /\ballegro\b/i)
     ]);
     return {
       ...(Object.fromEntries(commandResults) as KiCadCliCapabilitySnapshot),
-      variantOption
+      variantOption,
+      allegroImport
     };
   }
 

@@ -215,6 +215,8 @@
   "kicadstudio.contributes.commands.84.category": "KiCad İçe Aktar",
   "kicadstudio.contributes.commands.85.title": "KiCad: gEDA/Lepton PCB İçe Aktar",
   "kicadstudio.contributes.commands.85.category": "KiCad İçe Aktar",
+  "kicadstudio.contributes.commands.93.title": "KiCad: Allegro Kartını İçe Aktar",
+  "kicadstudio.contributes.commands.93.category": "KiCad İçe Aktar",
   "kicadstudio.contributes.commands.86.title": "KiCad: PCM Depolarını Yenile",
   "kicadstudio.contributes.commands.86.category": "KiCad Kütüphane",
   "kicadstudio.contributes.commands.87.title": "KiCad: PCM Paketlerini Filtrele",

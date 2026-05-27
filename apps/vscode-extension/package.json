@@ -847,6 +847,11 @@
         "category": "%kicadstudio.contributes.commands.85.category%"
       },
       {
+        "command": "kicadstudio.importAllegro",
+        "title": "%kicadstudio.contributes.commands.93.title%",
+        "category": "%kicadstudio.contributes.commands.93.category%"
+      },
+      {
         "command": "kicadstudio.pcm.refresh",
         "title": "%kicadstudio.contributes.commands.86.title%",
         "category": "%kicadstudio.contributes.commands.86.category%",
@@ -1358,6 +1363,10 @@
         {
           "command": "kicadstudio.importGeda",
           "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject"
+        },
+        {
+          "command": "kicadstudio.importAllegro",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject && kicadstudio.allegroImportSupported"
         }
       ]
     },

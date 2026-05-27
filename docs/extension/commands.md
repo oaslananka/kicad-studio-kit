@@ -3,7 +3,7 @@
 Machine-maintained from `apps/vscode-extension/package.json` and `package.nls.json`.
 Refresh with `corepack pnpm run docs:generate`.
 
-Total contributed commands: 93.
+Total contributed commands: 94.
 
 | Command ID | Title | Category |
 | --- | --- | --- |
@@ -93,6 +93,7 @@ Total contributed commands: 93.
 | `kicadstudio.importPcad` | KiCad: Import P-CAD Board | KiCad Import |
 | `kicadstudio.importSolidworks` | KiCad: Import SolidWorks PCB | KiCad Import |
 | `kicadstudio.importGeda` | KiCad: Import gEDA/Lepton PCB | KiCad Import |
+| `kicadstudio.importAllegro` | KiCad: Import Allegro Board | KiCad Import |
 | `kicadstudio.pcm.refresh` | KiCad: Refresh PCM Repositories | KiCad Library |
 | `kicadstudio.pcm.filter` | KiCad: Filter PCM Packages | KiCad Library |
 | `kicadstudio.pcm.install` | KiCad: Install PCM Package | KiCad Library |

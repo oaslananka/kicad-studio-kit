@@ -222,7 +222,7 @@ const fixtures = [
           format: "allegro",
           status: "capability-probe-only",
           reason:
-            "KiCad 10.0.3 CLI documentation does not list Allegro as a pcb import format.",
+            "KiCad 10.0.3 PCB Editor documentation lists Cadence Allegro import, but CLI documentation does not list Allegro as a pcb import format.",
           command: ["kicad-cli", "pcb", "import", "--help"],
         }),
       },

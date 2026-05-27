@@ -307,13 +307,18 @@ describe('KiCadCliDetector', () => {
         gerbers: true,
         pdf3d: true,
         odb: false,
-        variantOption: true
+        variantOption: true,
+        allegroImport: true
       })
     );
     expect(detector.hasCapability).toHaveBeenCalledWith('jobset');
     expect(detector.commandHelpIncludes).toHaveBeenCalledWith(
       ['sch', 'export', 'pdf'],
       /--variant\b/
+    );
+    expect(detector.commandHelpIncludes).toHaveBeenCalledWith(
+      ['pcb', 'import'],
+      /\ballegro\b/i
     );
   });
 

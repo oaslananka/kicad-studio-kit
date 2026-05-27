@@ -28,6 +28,59 @@ kicad:
       ci: "manual"
       notes: "File-level read and migration support only; removal requires a release note."
   dropped: []
+  pcbImportWorkflows:
+    reviewed: "2026-05-27"
+    commandProbe: "kicad-cli pcb import --help"
+    sources:
+      cliReference: "https://docs.kicad.org/10.0/en/cli/cli.html"
+      pcbEditorReference: "https://docs.kicad.org/10.0/en/pcbnew/pcbnew.html"
+    formats:
+      altium:
+        status: "supported"
+        extensionCommand: "kicadstudio.importAltium"
+        cliFormat: "altium"
+        evidence: "KiCad 10 CLI import help advertises the format."
+      allegro:
+        status: "blocked"
+        extensionCommand: "kicadstudio.importAllegro"
+        cliFormat: "allegro"
+        evidence: "KiCad 10 PCB Editor supports Cadence Allegro .brd import, but KiCad 10 CLI import help does not advertise --format allegro."
+        fixture: "packages/kicad-fixtures/fixtures/kicad-10-0-3-regressions/importers/allegro-capability-probe.json"
+      cadstar:
+        status: "supported"
+        extensionCommand: "kicadstudio.importCadstar"
+        cliFormat: "cadstar"
+        evidence: "KiCad 10 CLI import help advertises the format."
+      eagle:
+        status: "supported"
+        extensionCommand: "kicadstudio.importEagle"
+        cliFormat: "eagle"
+        evidence: "KiCad 10 CLI import help advertises the format."
+      fabmaster:
+        status: "supported"
+        extensionCommand: "kicadstudio.importFabmaster"
+        cliFormat: "fabmaster"
+        evidence: "KiCad 10 CLI import help advertises the format."
+      geda:
+        status: "probe-gated"
+        extensionCommand: "kicadstudio.importGeda"
+        cliFormat: "geda"
+        evidence: "Existing extension command remains guarded by kicad-cli help because current stable CLI docs do not advertise gEDA in --format options."
+      pads:
+        status: "supported"
+        extensionCommand: "kicadstudio.importPads"
+        cliFormat: "pads"
+        evidence: "KiCad 10 CLI import help advertises the format."
+      pcad:
+        status: "supported"
+        extensionCommand: "kicadstudio.importPcad"
+        cliFormat: "pcad"
+        evidence: "KiCad 10 CLI import help advertises the format."
+      solidworks:
+        status: "supported"
+        extensionCommand: "kicadstudio.importSolidworks"
+        cliFormat: "solidworks"
+        evidence: "KiCad 10 CLI import help advertises the format."
 
 kicadIpcReadiness:
   reviewed: "2026-05-26"
