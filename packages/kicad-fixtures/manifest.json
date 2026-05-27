@@ -5,7 +5,7 @@
   "githubIssue": 54,
   "root": "packages/kicad-fixtures/fixtures",
   "expectedRoot": "packages/kicad-fixtures/expected",
-  "fixtureCount": 15,
+  "fixtureCount": 16,
   "expectedFiles": [
     "project-tree.snapshot.json",
     "diagnostics.snapshot.json",
@@ -217,6 +217,28 @@
       ],
       "expectedOutcome": "warn",
       "tags": ["pcb", "empty-state"]
+    },
+    {
+      "id": "empty-project-kicad10",
+      "semanticName": "empty-project-kicad10",
+      "path": "packages/kicad-fixtures/fixtures/empty-project-kicad10",
+      "projectFile": "empty-project-kicad10.kicad_pro",
+      "schematicFiles": ["empty-project-kicad10.kicad_sch"],
+      "boardFile": "empty-project-kicad10.kicad_pcb",
+      "designRulesFile": null,
+      "expectedPath": "packages/kicad-fixtures/expected/empty-project-kicad10",
+      "expectedFiles": [
+        "project-tree.snapshot.json",
+        "diagnostics.snapshot.json",
+        "status.snapshot.json",
+        "erc-report.json",
+        "drc-report.json",
+        "bom.csv",
+        "netlist.net",
+        "board-stats.txt"
+      ],
+      "expectedOutcome": "warn",
+      "tags": ["kicad10", "pcb", "schematic", "empty-state"]
     },
     {
       "id": "no-dru-file",

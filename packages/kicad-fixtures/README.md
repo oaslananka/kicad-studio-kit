@@ -19,6 +19,7 @@ packages/kicad-fixtures/
     unconnected-pcb/
     missing-netlist/
     empty-board/
+    empty-project-kicad10/
     no-dru-file/
     multi-sheet-schematic/
     large-board/

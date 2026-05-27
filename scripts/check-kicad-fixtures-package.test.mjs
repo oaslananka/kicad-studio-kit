@@ -15,6 +15,7 @@ const requiredFixtureIds = [
   "unconnected-pcb",
   "missing-netlist",
   "empty-board",
+  "empty-project-kicad10",
   "no-dru-file",
   "multi-sheet-schematic",
   "large-board",
@@ -146,6 +147,9 @@ test("OASLANA-53 fixture package documents metadata and regeneration workflow", 
     "corepack pnpm run fixtures:kicad:generate",
     "corepack pnpm run test:fixtures",
   ]) {
-    assert.match(readme, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
+    assert.match(
+      readme,
+      new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"),
+    );
   }
 });
