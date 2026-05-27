@@ -158,7 +158,7 @@ export function validateDevcontainerRepository(repoRoot = DEFAULT_REPO_ROOT) {
   for (const phrase of [
     "FROM mcr.microsoft.com/devcontainers/python:3.13-bookworm",
     "ARG ACTIONLINT_VERSION=1.7.12",
-    "ARG UV_VERSION=0.11.12",
+    "ARG UV_VERSION=0.11.16",
     "shellcheck",
     "apt-cache show kicad",
     "actionlint_${ACTIONLINT_VERSION}_${actionlint_arch}.tar.gz",
@@ -189,7 +189,7 @@ export function validateDevcontainerRepository(repoRoot = DEFAULT_REPO_ROOT) {
     "Node 24",
     "pnpm 11",
     "Python 3.13",
-    "uv 0.11.12",
+    "uv 0.11.16",
     "actionlint 1.7.12",
     "shellcheck",
     "GitHub CLI",

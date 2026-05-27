@@ -4,7 +4,7 @@
   "private": true,
   "description": "Monorepo for KiCad Studio VS Code extension and KiCad MCP Pro server.",
   "license": "MIT",
-  "packageManager": "pnpm@11.0.8",
+  "packageManager": "pnpm@11.3.0",
   "engines": {
     "node": ">=24.11.0 <25",
     "pnpm": ">=11.0.0 <12"

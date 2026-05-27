@@ -26,7 +26,7 @@ function createFixture(overrides = {}) {
     path.join(repoRoot, "package.json"),
     JSON.stringify(
       overrides.rootPackage ?? {
-        packageManager: "pnpm@11.0.8",
+        packageManager: "pnpm@11.3.0",
         engines: { pnpm: ">=11.0.0 <12" },
       },
     ),
@@ -107,7 +107,7 @@ test(".npmrc and package.json cannot carry ignored pnpm supply-chain settings", 
   const repoRoot = createFixture({
     npmrc: "minimumReleaseAge=0\n",
     rootPackage: {
-      packageManager: "pnpm@11.0.8",
+      packageManager: "pnpm@11.3.0",
       engines: { pnpm: ">=11.0.0 <12" },
       pnpm: { blockExoticSubdeps: false },
     },

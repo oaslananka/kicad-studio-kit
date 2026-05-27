@@ -15,7 +15,7 @@ RUN curl -fL "${KICAD_APPIMAGE_URL}" -o /tmp/kicad.AppImage \
     && cp -a squashfs-root/. /opt/kicad-appimage/
 
 FROM python:3.13.11-slim@sha256:2b9c9803c6a287cafa0a8c917211dddd23dcd2016f049690ee5219f5d3f1636e AS builder
-ARG UV_VERSION=0.11.12
+ARG UV_VERSION=0.11.16
 WORKDIR /app
 RUN python -m pip install --no-cache-dir --disable-pip-version-check --root-user-action=ignore "uv==${UV_VERSION}"
 COPY pyproject.toml uv.lock README.md LICENSE ./

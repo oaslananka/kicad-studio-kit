@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/devcontainers/python:3.13-bookworm
 
 ARG ACTIONLINT_VERSION=1.7.12
-ARG UV_VERSION=0.11.12
+ARG UV_VERSION=0.11.16
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV KICAD_STUDIO_DEVCONTAINER=1 \

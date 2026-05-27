@@ -75,7 +75,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
       path.join(repoRoot, "package.json"),
       JSON.stringify(
         {
-          packageManager: "pnpm@11.0.8",
+          packageManager: "pnpm@11.3.0",
           engines: { node: ">=24.11.0 <25", pnpm: ">=11.0.0 <12" },
           scripts: {
             "dev-doctor": "node scripts/dev-doctor.mjs",
@@ -138,13 +138,13 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
       commandRunner(command, args) {
         const joined = [command, ...args].join(" ");
         if (joined === "corepack pnpm --version") {
-          return { ok: true, status: 0, stdout: "11.0.8", stderr: "" };
+          return { ok: true, status: 0, stdout: "11.3.0", stderr: "" };
         }
         if (joined === "python3 --version") {
           return { ok: true, status: 0, stdout: "Python 3.13.8", stderr: "" };
         }
         if (joined === "uv --version") {
-          return { ok: true, status: 0, stdout: "uv 0.11.12", stderr: "" };
+          return { ok: true, status: 0, stdout: "uv 0.11.16", stderr: "" };
         }
         if (joined.includes("import kicad_mcp")) {
           return {
