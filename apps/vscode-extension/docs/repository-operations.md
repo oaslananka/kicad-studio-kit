@@ -66,13 +66,13 @@ corepack pnpm install --frozen-lockfile
 uv sync --all-extras --frozen --project packages/mcp-server
 corepack pnpm run check:forbidden-refs
 corepack pnpm run check:version
-corepack pnpm --filter kicadstudio run check
-corepack pnpm --filter kicadstudio run package
+corepack pnpm --filter kicadstudiokit run check
+corepack pnpm --filter kicadstudiokit run package
 (cd packages/mcp-server && corepack pnpm run check)
 (cd packages/mcp-npm && npm pack --dry-run)
 ```
 
-`corepack pnpm --filter kicadstudio run package` is the safe VSIX packaging check. Production marketplace publishing must use `.github/workflows/publish-extension.yml`.
+`corepack pnpm --filter kicadstudiokit run package` is the safe VSIX packaging check. Production marketplace publishing must use `.github/workflows/publish-extension.yml`.
 
 `corepack pnpm run check:publish` verifies local publish metadata and external version availability without publishing.
 

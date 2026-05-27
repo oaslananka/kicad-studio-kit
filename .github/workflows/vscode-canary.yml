@@ -53,12 +53,12 @@ jobs:
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
       - name: Run VS Code canary unit smokes
-        run: corepack pnpm --filter kicadstudio run test:unit
+        run: corepack pnpm --filter kicadstudiokit run test:unit
       - name: Run VS Code extension host canary
         env:
           KICADSTUDIO_VSCODE_TEST_SUITE: canary
           KICADSTUDIO_VSCODE_VERSION: ${{ matrix.version }}
-        run: xvfb-run -a corepack pnpm --filter kicadstudio run test:integration
+        run: xvfb-run -a corepack pnpm --filter kicadstudiokit run test:integration
       - name: Upload VS Code canary artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

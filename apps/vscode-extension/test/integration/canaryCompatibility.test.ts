@@ -13,7 +13,7 @@ suite('VS Code Canary Compatibility', () => {
 
   suiteSetup(() => {
     const canaryExtension = vscode.extensions.getExtension(
-      'oaslananka.kicadstudio'
+      'oaslananka.kicadstudiokit'
     );
     assert.ok(canaryExtension, 'Expected KiCad Studio extension to load.');
     extension = canaryExtension;

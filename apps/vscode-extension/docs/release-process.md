@@ -28,8 +28,8 @@ version input.
 
 ## Package Validation
 
-The VSIX content gate is `corepack pnpm --filter kicadstudio run
-package:validate`. Run it after `corepack pnpm --filter kicadstudio run
+The VSIX content gate is `corepack pnpm --filter kicadstudiokit run
+package:validate`. Run it after `corepack pnpm --filter kicadstudiokit run
 package` so the check can compare `vsce ls --no-dependencies` output, required
 viewer media, KiCanvas assets, Marketplace assets, contribution registrations,
 schema and grammar JSON, bundle sizes, and forbidden file patterns.
@@ -39,10 +39,10 @@ The packaged file allowlist lives in
 new runtime file is intentionally shipped. Before changing the allowlist, run:
 
 ```bash
-corepack pnpm --filter kicadstudio run build
-corepack pnpm --filter kicadstudio run package
-corepack pnpm --filter kicadstudio exec vsce ls --no-dependencies
-corepack pnpm --filter kicadstudio run package:validate
+corepack pnpm --filter kicadstudiokit run build
+corepack pnpm --filter kicadstudiokit run package
+corepack pnpm --filter kicadstudiokit exec vsce ls --no-dependencies
+corepack pnpm --filter kicadstudiokit run package:validate
 ```
 
 Review every new `vsce ls` path before adding it to `allowedFiles` or

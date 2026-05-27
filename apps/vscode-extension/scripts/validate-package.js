@@ -53,7 +53,8 @@ function validateStaticMetadata({ root, repoRoot, pkg, fail }) {
     bugs: 'https://github.com/oaslananka/kicad-studio-kit/issues',
     homepage:
       'https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension',
-    publisher: 'oaslananka'
+    publisher: 'oaslananka',
+    name: 'kicadstudiokit'
   };
 
   check(
@@ -74,6 +75,11 @@ function validateStaticMetadata({ root, repoRoot, pkg, fail }) {
   check(
     pkg.publisher === expected.publisher,
     'publisher must remain oaslananka',
+    fail
+  );
+  check(
+    pkg.name === expected.name,
+    'extension package name must be kicadstudiokit',
     fail
   );
   check(

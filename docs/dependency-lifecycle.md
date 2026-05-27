@@ -61,7 +61,7 @@ corepack pnpm run check:version
 
 Product-specific checks:
 
-- Extension updates: `corepack pnpm --filter kicadstudio run check`.
+- Extension updates: `corepack pnpm --filter kicadstudiokit run check`.
 - MCP server updates: `Push-Location packages/mcp-server; corepack pnpm run check; Pop-Location`.
 - npm wrapper updates: `Push-Location packages/mcp-npm; npm pack --dry-run; Pop-Location`.
 - Root, CI, or release updates: root checks plus affected workflow commands.

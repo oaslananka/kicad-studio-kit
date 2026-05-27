@@ -241,7 +241,7 @@ function workspaceScriptsCheck(packageJson) {
     "dev-doctor": "node scripts/dev-doctor.mjs",
     "dev:doctor": "node scripts/dev-doctor.mjs",
     "check:dev-doctor": "node scripts/dev-doctor.mjs --ci --strict",
-    "check:kicad-studio": "pnpm --filter kicadstudio run check",
+    "check:kicad-studio": "pnpm --filter kicadstudiokit run check",
     "check:kicad-mcp-pro": "pnpm --dir packages/mcp-server run check",
     "check:mcp-npm": "pnpm --dir packages/mcp-npm run check",
     "check:fixtures":

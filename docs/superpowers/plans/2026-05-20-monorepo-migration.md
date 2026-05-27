@@ -96,8 +96,8 @@
 - `uv sync --all-extras --frozen --project packages/mcp-server`
 - `corepack pnpm run check:forbidden-refs`
 - `corepack pnpm run check:version`
-- `corepack pnpm --filter kicadstudio run build`
-- `corepack pnpm --filter kicadstudio run package`
+- `corepack pnpm --filter kicadstudiokit run build`
+- `corepack pnpm --filter kicadstudiokit run package`
 - `Push-Location packages/mcp-server; uv build; corepack pnpm run mcp:manifest:check; Pop-Location`
 - `Push-Location packages/mcp-npm; npm pack --dry-run; Pop-Location`
 

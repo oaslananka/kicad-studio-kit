@@ -43,7 +43,7 @@ it.each(themeSurfaceCases())(
 Run:
 
 ```bash
-corepack pnpm --filter kicadstudio run test:a11y
+corepack pnpm --filter kicadstudiokit run test:a11y
 ```
 
 Expected: FAIL on the newly enforced gaps before production fixes.
@@ -88,8 +88,8 @@ export function buildComponentDetailsHtml(
 Run:
 
 ```bash
-corepack pnpm --filter kicadstudio run test:a11y
-corepack pnpm --filter kicadstudio exec jest --config jest.config.js --runInBand --coverage=false test/unit/componentSearch.test.ts
+corepack pnpm --filter kicadstudiokit run test:a11y
+corepack pnpm --filter kicadstudiokit exec jest --config jest.config.js --runInBand --coverage=false test/unit/componentSearch.test.ts
 ```
 
 Expected: PASS with no deprecation warnings introduced by the change.

@@ -89,19 +89,19 @@ jobs:
           package-manager-cache: false
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
-      - run: corepack pnpm --filter kicadstudio run format:check
-      - run: corepack pnpm --filter kicadstudio run lint
-      - run: corepack pnpm --filter kicadstudio run typecheck
-      - run: corepack pnpm --filter kicadstudio run test:unit:coverage
+      - run: corepack pnpm --filter kicadstudiokit run format:check
+      - run: corepack pnpm --filter kicadstudiokit run lint
+      - run: corepack pnpm --filter kicadstudiokit run typecheck
+      - run: corepack pnpm --filter kicadstudiokit run test:unit:coverage
       - name: Use runner Chrome with Playwright Linux dependencies
         if: runner.os == 'Linux'
         timeout-minutes: 6
         run: |
-          corepack pnpm --filter kicadstudio exec playwright install-deps chromium
+          corepack pnpm --filter kicadstudiokit exec playwright install-deps chromium
           google-chrome --version
           echo "KICADSTUDIO_PLAYWRIGHT_CHANNEL=chrome" >> "$GITHUB_ENV"
       - if: runner.os == 'macOS'
-        run: corepack pnpm --filter kicadstudio exec playwright install chromium
+        run: corepack pnpm --filter kicadstudiokit exec playwright install chromium
       - name: Use runner Chrome for Playwright Windows tests
         if: runner.os == 'Windows'
         shell: pwsh
@@ -115,16 +115,16 @@ jobs:
           }
           & $chromePath --version
           "KICADSTUDIO_PLAYWRIGHT_CHANNEL=chrome" >> $env:GITHUB_ENV
-      - run: corepack pnpm --filter kicadstudio run test:webview
-      - run: corepack pnpm --filter kicadstudio run test:a11y
-      - run: corepack pnpm --filter kicadstudio run build
+      - run: corepack pnpm --filter kicadstudiokit run test:webview
+      - run: corepack pnpm --filter kicadstudiokit run test:a11y
+      - run: corepack pnpm --filter kicadstudiokit run build
       - if: runner.os == 'Linux'
-        run: xvfb-run -a corepack pnpm --filter kicadstudio run test:integration
+        run: xvfb-run -a corepack pnpm --filter kicadstudiokit run test:integration
       - if: runner.os != 'Linux'
-        run: corepack pnpm --filter kicadstudio run test:integration
-      - run: corepack pnpm --filter kicadstudio run package
+        run: corepack pnpm --filter kicadstudiokit run test:integration
+      - run: corepack pnpm --filter kicadstudiokit run package
       - name: Verify extension package and no VS Code Web target
-        run: corepack pnpm --filter kicadstudio run package:validate
+        run: corepack pnpm --filter kicadstudiokit run package:validate
 
   mcp-server:
     needs: ci-lanes
@@ -202,7 +202,7 @@ jobs:
       - name: Measure extension performance budgets
         env:
           KICAD_EXTENSION_PERFORMANCE_MEASUREMENTS_JSON: performance-results/extension-performance.json
-        run: corepack pnpm --filter kicadstudio run test:perf
+        run: corepack pnpm --filter kicadstudiokit run test:perf
       - name: Measure MCP performance budgets
         env:
           KICAD_PERFORMANCE_MEASUREMENTS_JSON: performance-results/mcp-tools-list.json
@@ -244,15 +244,15 @@ jobs:
       - name: Run real-pair compatibility tests
         env:
           REAL_SERVER_ARTIFACT_DIR: apps/vscode-extension/test-results/real-server
-        run: corepack pnpm --filter kicadstudio run test:integration:real
+        run: corepack pnpm --filter kicadstudiokit run test:integration:real
       - name: Run real-pair extension host test
         env:
           REAL_SERVER_ARTIFACT_DIR: apps/vscode-extension/test-results/real-server
-        run: xvfb-run -a corepack pnpm --filter kicadstudio run test:integration:real:host
+        run: xvfb-run -a corepack pnpm --filter kicadstudiokit run test:integration:real:host
       - name: Run real-pair VS Code host smoke
         env:
           REAL_SERVER_ARTIFACT_DIR: apps/vscode-extension/test-results/real-server
-        run: xvfb-run -a corepack pnpm --filter kicadstudio run test:e2e:real
+        run: xvfb-run -a corepack pnpm --filter kicadstudiokit run test:e2e:real
       - name: Upload real-pair failure artifacts
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

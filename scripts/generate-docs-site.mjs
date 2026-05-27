@@ -459,7 +459,7 @@ New or changed KiCad Studio UI must keep the accessibility gate current before a
 pull request is ready for review:
 
 \`\`\`bash
-corepack pnpm --filter kicadstudio run test:a11y
+corepack pnpm --filter kicadstudiokit run test:a11y
 \`\`\`
 
 Update \`apps/vscode-extension/test/a11y/accessibilityConformance.test.ts\` when a

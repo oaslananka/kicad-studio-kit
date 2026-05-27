@@ -68,7 +68,7 @@ their combined budget report with:
 
 ```bash
 KICAD_EXTENSION_PERFORMANCE_MEASUREMENTS_JSON=performance-results/extension-performance.json \
-  corepack pnpm --filter kicadstudio run test:perf
+  corepack pnpm --filter kicadstudiokit run test:perf
 KICAD_PERFORMANCE_MEASUREMENTS_JSON=performance-results/mcp-tools-list.json \
   uv run --project packages/mcp-server --all-extras \
   pytest packages/mcp-server/tests/unit/test_benchmark_latency.py

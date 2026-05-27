@@ -22,7 +22,7 @@ COMPATIBILITY_MATRIX: Final[dict[str, object]] = {
     },
     "products": {
         "kicad-studio": {
-            "version": "2.8.3",
+            "version": "1.0.0",
             "compatibleMcpPro": {
                 "required": ">=3.5.2 <4.0.0",
                 "recommended": ">=3.5.2 <4.0.0",
@@ -32,8 +32,8 @@ COMPATIBILITY_MATRIX: Final[dict[str, object]] = {
         "kicad-mcp-pro": {
             "version": "3.5.2",
             "compatibleExtension": {
-                "required": ">=2.8.3 <3.0.0",
-                "testedAgainst": "2.8.3",
+                "required": ">=1.0.0 <2.0.0",
+                "testedAgainst": "1.0.0",
             },
         },
     },

@@ -54,4 +54,4 @@ jobs:
           package-manager-cache: false
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
-      - run: corepack pnpm --filter kicadstudio run test:security
+      - run: corepack pnpm --filter kicadstudiokit run test:security

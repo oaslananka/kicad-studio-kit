@@ -37,7 +37,7 @@ Documented exceptions:
 Automated gate:
 
 ```bash
-corepack pnpm --filter kicadstudio run test:a11y
+corepack pnpm --filter kicadstudiokit run test:a11y
 ```
 
 The gate renders representative extension-owned webview HTML in Chromium and

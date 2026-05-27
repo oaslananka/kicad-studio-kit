@@ -2,10 +2,10 @@
 set -euo pipefail
 
 target="${PUBLISH_TARGET:-all}"
-vsix="$(find . -maxdepth 1 -type f -name 'kicadstudio-*.vsix' | sort | head -n 1)"
+vsix="$(find . -maxdepth 1 -type f -name 'kicadstudiokit-*.vsix' | sort | head -n 1)"
 
 if [ -z "${vsix}" ]; then
-  echo "No kicadstudio-*.vsix artifact found. Run pnpm run package first." >&2
+  echo "No kicadstudiokit-*.vsix artifact found. Run pnpm run package first." >&2
   exit 1
 fi
 
@@ -24,7 +24,7 @@ publish_open_vsx() {
     exit 1
   fi
   echo "Publishing ${vsix} to Open VSX..."
-  pnpm exec ovsx publish "${vsix}" --pat "${OVSX_PAT}"
+  pnpm exec ovsx --pat "${OVSX_PAT}" publish --packagePath "${vsix}"
 }
 
 case "${target}" in

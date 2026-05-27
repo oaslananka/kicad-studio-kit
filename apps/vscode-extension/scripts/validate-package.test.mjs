@@ -52,6 +52,23 @@ test('validatePackage rejects contributed commands without registered implementa
   );
 });
 
+test('validatePackage rejects the deleted Marketplace package name', () => {
+  const packageJson = readPackageJson();
+  packageJson.name = 'kicadstudio';
+
+  assert.throws(
+    () =>
+      validatePackage({
+        root: extensionRoot,
+        repoRoot,
+        packageJson,
+        runVsce: false,
+        validatePackageFiles: false
+      }),
+    /extension package name must be kicadstudiokit/
+  );
+});
+
 test('validatePackage rejects forbidden packaged files', () => {
   assert.throws(
     () =>

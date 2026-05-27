@@ -16,7 +16,7 @@ notes can add detail, but they should not weaken these gates.
 | Bug-fix regression   | Every bug-fix pull request                                           | Prove the repeatable bug fails before the fix, passes after it, and references the issue.              | Relevant test command plus PR checklist evidence   |
 | Performance budget   | Product, integration, and shared fixture/schema pull requests        | Report shared baseline drift and fail measured lanes that exceed the regression budget.                | `corepack pnpm run check:performance-budgets`      |
 | Product gate         | Product-scoped changes                                               | Prove the touched product still builds, tests, and packages independently.                             | Product commands below                             |
-| Accessibility gate   | Extension-owned UI and webview changes                               | Prove WCAG 2.1 AA automated checks remain clean for in-scope extension surfaces.                       | `corepack pnpm --filter kicadstudio run test:a11y` |
+| Accessibility gate   | Extension-owned UI and webview changes                               | Prove WCAG 2.1 AA automated checks remain clean for in-scope extension surfaces.                       | `corepack pnpm --filter kicadstudiokit run test:a11y` |
 | Contract gate        | Protocol, compatibility, or cross-product changes                    | Prove extension and MCP assumptions remain aligned.                                                    | `corepack pnpm run test:contract`                  |
 | Protocol PR gate     | Protocol, compatibility, or cross-product review changes             | Keep protocol-impact PRs visible through the PR template and architecture guidance.                    | `corepack pnpm run check:protocol-pr-template`     |
 | GUI smoke policy     | Real KiCad GUI smoke workflow/test wiring changes                    | Keep live-editor IPC smoke coverage wired without adding GUI work to the PR path.                      | `corepack pnpm run check:kicad-gui-smoke`          |
@@ -68,7 +68,7 @@ Extension-only changes use:
 ```bash
 corepack pnpm run check:kicad-studio
 corepack pnpm run test:kicad-studio
-corepack pnpm --filter kicadstudio run test:a11y
+corepack pnpm --filter kicadstudiokit run test:a11y
 corepack pnpm run build:kicad-studio
 corepack pnpm run package:kicad-studio
 ```
@@ -349,7 +349,7 @@ or artifact.
 | OASLANA-81  | VS Code runtime/API compatibility regressions.                                              | Scheduled VS Code stable/insiders/minimum canary lane                                                         |
 | OASLANA-82  | KiCad CLI/file-format compatibility regressions.                                            | Scheduled KiCad version canary lane                                                                           |
 | OASLANA-124 | Performance regressions without shared limits or PR evidence.                               | Shared baselines, CI budget report artifacts, and drift thresholds                                            |
-| OASLANA-125 | Accessibility claims without an explicit WCAG target or automated evidence.                 | WCAG 2.1 AA policy plus `corepack pnpm --filter kicadstudio run test:a11y`                                    |
+| OASLANA-125 | Accessibility claims without an explicit WCAG target or automated evidence.                 | WCAG 2.1 AA policy plus `corepack pnpm --filter kicadstudiokit run test:a11y`                                    |
 
 ### Known Repeatable Bug Areas
 
@@ -376,10 +376,10 @@ before pushing.
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
 | Root docs or governance        | `corepack pnpm run check:testing-strategy`                                                                  | `corepack pnpm run check`                      |
 | Performance baselines          | `corepack pnpm run check:performance-budgets`                                                               | CI `performance-budgets` artifact lane         |
-| Extension unit behavior        | `corepack pnpm --filter kicadstudio run test:unit -- <test file>`                                           | `corepack pnpm run check:kicad-studio`         |
-| Extension accessibility        | `corepack pnpm --filter kicadstudio run test:a11y`                                                          | `corepack pnpm run check:kicad-studio`         |
-| Extension integration behavior | `corepack pnpm --filter kicadstudio run test:integration`                                                   | `corepack pnpm run check:kicad-studio`         |
-| Extension webview/E2E behavior | `corepack pnpm --filter kicadstudio run test:e2e`                                                           | Nightly quality gate once snapshots are stable |
+| Extension unit behavior        | `corepack pnpm --filter kicadstudiokit run test:unit -- <test file>`                                           | `corepack pnpm run check:kicad-studio`         |
+| Extension accessibility        | `corepack pnpm --filter kicadstudiokit run test:a11y`                                                          | `corepack pnpm run check:kicad-studio`         |
+| Extension integration behavior | `corepack pnpm --filter kicadstudiokit run test:integration`                                                   | `corepack pnpm run check:kicad-studio`         |
+| Extension webview/E2E behavior | `corepack pnpm --filter kicadstudiokit run test:e2e`                                                           | Nightly quality gate once snapshots are stable |
 | MCP unit behavior              | `uv run --project packages/mcp-server --all-extras pytest packages/mcp-server/tests/unit/<test_file>.py -q` | `corepack pnpm run check:kicad-mcp-pro`        |
 | MCP full behavior              | `corepack pnpm --dir packages/mcp-server run test`                                                          | `corepack pnpm run check:kicad-mcp-pro`        |
 | Protocol or compatibility      | `corepack pnpm run test:contract`                                                                           | `corepack pnpm run check`                      |

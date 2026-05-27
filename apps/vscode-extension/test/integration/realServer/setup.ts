@@ -11,6 +11,8 @@ import * as path from 'node:path';
 import { isMcpVersionSupported } from '../../../src/mcp/compat';
 import { MCP_PROTOCOL_VERSION } from '../../../src/mcp/compatibilityMatrix';
 
+const EXTENSION_PACKAGE_NAME = 'kicadstudiokit';
+
 interface JsonRpcEnvelope<T> {
   result?: T;
   error?: {
@@ -204,12 +206,7 @@ async function startRealServer(): Promise<RealServerHarness> {
     async readResource(uri) {
       const result = await postJsonRpc<{
         contents?: Array<{ text?: string }>;
-      }>(
-        endpoint,
-        'resources/read',
-        { uri },
-        sessionId
-      );
+      }>(endpoint, 'resources/read', { uri }, sessionId);
       sessionId = result.sessionId ?? sessionId;
       if (result.json.error) {
         throw new Error(
@@ -263,7 +260,9 @@ function localMcpServerProject(): string {
 
 function resolveArtifactDir(tempRoot: string): string {
   const configured = process.env['REAL_SERVER_ARTIFACT_DIR'];
-  return configured ? path.resolve(configured) : path.join(tempRoot, 'artifacts');
+  return configured
+    ? path.resolve(configured)
+    : path.join(tempRoot, 'artifacts');
 }
 
 async function readWellKnownVersion(
@@ -320,7 +319,7 @@ function extensionRoot(): string {
         const parsed = JSON.parse(fs.readFileSync(manifest, 'utf8')) as {
           name?: unknown;
         };
-        if (parsed.name === 'kicadstudio') {
+        if (parsed.name === EXTENSION_PACKAGE_NAME) {
           return cursor;
         }
       } catch {
@@ -333,7 +332,9 @@ function extensionRoot(): string {
     }
     cursor = next;
   }
-  throw new Error(`Unable to locate kicadstudio package root from ${__dirname}`);
+  throw new Error(
+    `Unable to locate ${EXTENSION_PACKAGE_NAME} package root from ${__dirname}`
+  );
 }
 
 async function waitForInitialize(

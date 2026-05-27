@@ -56,8 +56,8 @@ function wellKnownServerInfoResult() {
           testedAgainst: '3.5.2'
         },
         kicadMcpPro: {
-          required: '>=2.8.3 <3.0.0',
-          testedAgainst: '2.8.3'
+          required: '>=1.0.0 <2.0.0',
+          testedAgainst: '1.0.0'
         }
       },
       transport: {
