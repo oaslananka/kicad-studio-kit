@@ -15,6 +15,10 @@ Pull requests and scheduled workflows keep the supply chain surface visible:
 - `Scorecard` publishes repository health findings through code scanning.
 - PyPI and TestPyPI publish jobs use Trusted Publishing through GitHub OIDC and
   upload registry-native attestations through `pypa/gh-action-pypi-publish`.
+- pnpm 11 supply-chain defaults are made explicit in `pnpm-workspace.yaml`:
+  `minimumReleaseAge: 1440` delays newly published npm versions by 24 hours,
+  and `blockExoticSubdeps: true` keeps transitive dependencies on trusted
+  registry, workspace, local, or trusted upstream sources.
 - GHCR image publishing uses GitHub Container Registry, BuildKit SBOM and
   provenance, Trivy image scanning, and keyless Sigstore `cosign` signing.
 - Release publish workflows validate package contents, emit SHA-256 checksum
@@ -51,6 +55,22 @@ corepack pnpm --dir packages/mcp-server run security:local
 
 That gate requires `gitleaks`, workflow linting, and `zizmor`; scanner findings
 must be fixed or triaged before release work proceeds.
+
+## pnpm Lockfile Trust
+
+Keep `trustLockfile` disabled for this public repository. pnpm 11.3 can skip
+the supply-chain verification pass for already-trusted lockfiles, but pull
+requests can include lockfile edits, so CI must continue re-applying
+`minimumReleaseAge` and trust-policy checks during installs. Re-evaluate this
+only if lockfile writes become maintainer-only and the repo has upgraded to
+pnpm 11.3 or newer.
+
+Validate the policy with:
+
+```bash
+corepack pnpm run check:supply-chain
+corepack pnpm config list
+```
 
 Secrets are limited to marketplace publishing where OIDC is not available:
 

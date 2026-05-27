@@ -8,6 +8,7 @@ import {
   createDoctorReport,
   detectDevelopmentEnvironment,
   formatHumanReport,
+  selectWindowsCommand,
   satisfiesSimpleRange,
 } from "./dev-doctor.mjs";
 
@@ -40,6 +41,21 @@ test("dev-doctor enforces the repository Node runtime policy", () => {
   assert.equal(satisfiesSimpleRange("24.16.0", ">=24.11.0 <25"), true);
   assert.equal(satisfiesSimpleRange("24.10.0", ">=24.11.0 <25"), false);
   assert.equal(satisfiesSimpleRange("25.0.0", ">=24.11.0 <25"), false);
+});
+
+test("dev-doctor prefers executable Windows command shims", () => {
+  assert.equal(
+    selectWindowsCommand(
+      "corepack",
+      [
+        "C:\\Program Files\\nodejs\\corepack",
+        "C:\\Program Files\\nodejs\\corepack.cmd",
+        "",
+      ].join("\r\n"),
+    ),
+    "C:\\Program Files\\nodejs\\corepack.cmd",
+  );
+  assert.equal(selectWindowsCommand("missing", ""), "missing");
 });
 
 test("dev-doctor reports the full CI-safe monorepo environment contract", async () => {

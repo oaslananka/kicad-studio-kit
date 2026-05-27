@@ -82,6 +82,8 @@ Vulnerability-fix PRs skip the weekly schedule and should be reviewed first. Kee
 Defer an update when:
 
 - The upstream release is less than the configured minimum release age.
+- The update requires disabling `minimumReleaseAge` or `blockExoticSubdeps` in
+  `pnpm-workspace.yaml`.
 - CI fails because of an upstream regression.
 - The update changes a supported KiCad, VS Code, MCP, Python, Node, pnpm, or package-publish contract.
 - A major update lacks migration notes.

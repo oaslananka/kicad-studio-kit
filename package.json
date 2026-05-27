@@ -59,6 +59,7 @@
     "check:version": "node scripts/check-version-consistency.mjs && pnpm run check:release-please",
     "check:compatibility": "uv run --project packages/mcp-server --all-extras python packages/mcp-server/scripts/check_compatibility_matrix.py",
     "check:runtime-policy": "uv run --project packages/mcp-server --all-extras python packages/mcp-server/scripts/runtime_policy.py check",
+    "check:supply-chain": "node scripts/check-pnpm-supply-chain.mjs && node --test scripts/check-pnpm-supply-chain.test.mjs",
     "check:repo-governance": "node scripts/check-repo-governance.mjs",
     "check:governance": "node scripts/sync-governance-project-items.mjs --self-test && pnpm run check:repo-governance",
     "test:ci-lanes": "node --test scripts/check-ci-lanes.test.mjs",
@@ -86,7 +87,7 @@
     "check:docs-site": "pnpm --dir packages/mcp-server run docs:tools:check && pnpm run docs:check-generated && pnpm run docs:lint && pnpm run docs:links && vitepress build docs",
     "check:publish": "node scripts/check-publish-preflight.mjs",
     "governance:sync:dry-run": "node scripts/sync-governance-project-items.mjs --dry-run --chunk-size 10",
-    "check": "pnpm run check:forbidden-refs && pnpm run check:boundaries && pnpm run check:version && pnpm run check:compatibility && pnpm run check:runtime-policy && pnpm run check:governance && pnpm run check:fixtures && pnpm run check:protocol-schemas && pnpm run check:ci-lanes && pnpm run check:testing-strategy && pnpm run check:regression-policy && pnpm run check:protocol-pr-template && pnpm run check:kicad-gui-smoke && pnpm run check:dev-doctor && pnpm run check:devcontainer && pnpm run check:performance-budgets && pnpm run check:beta-program && pnpm run check:agent-configs && pnpm run check:examples && pnpm run check:docs-site && pnpm run release:dry-run && pnpm run release:verify && pnpm -r run check"
+    "check": "pnpm run check:forbidden-refs && pnpm run check:boundaries && pnpm run check:version && pnpm run check:compatibility && pnpm run check:runtime-policy && pnpm run check:supply-chain && pnpm run check:governance && pnpm run check:fixtures && pnpm run check:protocol-schemas && pnpm run check:ci-lanes && pnpm run check:testing-strategy && pnpm run check:regression-policy && pnpm run check:protocol-pr-template && pnpm run check:kicad-gui-smoke && pnpm run check:dev-doctor && pnpm run check:devcontainer && pnpm run check:performance-budgets && pnpm run check:beta-program && pnpm run check:agent-configs && pnpm run check:examples && pnpm run check:docs-site && pnpm run release:dry-run && pnpm run release:verify && pnpm -r run check"
   },
   "devDependencies": {
     "@commitlint/cli": "21.0.0",
