@@ -103,6 +103,10 @@ and reduced-motion media. Golden changes must be reviewed in PRs like source
 changes: the PR should explain why the UI changed, include the command above,
 and avoid updating snapshots together with unrelated code.
 
+CI visual snapshots run on the Windows extension lane with the runner Chrome
+channel selected through `KICADSTUDIO_PLAYWRIGHT_CHANNEL=chrome`; local runs keep
+using Playwright's bundled Chromium unless that environment variable is set.
+
 MCP server changes use:
 
 ```bash
