@@ -162,7 +162,6 @@ def test_workflow_lint_does_not_branch_on_local_actionlint_binary(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     module = _load_script("check_workflows.py")
-    script_text = (ROOT / "scripts" / "check_workflows.py").read_text(encoding="utf-8")
     workflows = tmp_path / ".github" / "workflows"
     workflows.mkdir(parents=True)
     (workflows / "example.yml").write_text(
@@ -176,5 +175,16 @@ def test_workflow_lint_does_not_branch_on_local_actionlint_binary(
 
     module.main()
 
-    assert "shutil.which" not in script_text
+    assert module.WORKSPACE_ACTIONLINT_COMMAND[0] == "corepack"
     assert commands == [["corepack", "pnpm", "--filter", "kicadstudio", "run", "workflows:lint"]]
+
+
+def test_workflow_lint_resolves_windows_command_shims(monkeypatch: pytest.MonkeyPatch) -> None:
+    module = _load_script("check_workflows.py")
+    monkeypatch.setattr(module.shutil, "which", lambda name: f"C:/tools/{name}.CMD")
+
+    assert module._resolve_command(["corepack", "pnpm", "--version"]) == [
+        "C:/tools/corepack.CMD",
+        "pnpm",
+        "--version",
+    ]

@@ -94,6 +94,37 @@ function firstLine(value) {
   return String(value).split(/\r?\n/u).find(Boolean) ?? "";
 }
 
+export function selectWindowsCommand(command, whereOutput) {
+  const candidates = String(whereOutput)
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const executable = candidates.find((candidate) =>
+    [".exe", ".cmd", ".bat", ".com"].includes(
+      path.extname(candidate).toLowerCase(),
+    ),
+  );
+  return executable ?? candidates[0] ?? command;
+}
+
+function resolveCommand(command) {
+  if (
+    process.platform !== "win32" ||
+    path.isAbsolute(command) ||
+    command.includes("/") ||
+    command.includes("\\")
+  ) {
+    return command;
+  }
+  const lookup = spawnSync("where.exe", [command], {
+    encoding: "utf8",
+    shell: false,
+  });
+  return lookup.status === 0
+    ? selectWindowsCommand(command, lookup.stdout)
+    : command;
+}
+
 function run(command, args, options = {}) {
   if (options.commandRunner) {
     const result = options.commandRunner(command, args, {
@@ -108,11 +139,19 @@ function run(command, args, options = {}) {
     };
   }
 
-  const result = spawnSync(command, args, {
-    cwd: options.cwd ?? DEFAULT_REPO_ROOT,
-    encoding: "utf8",
-    shell: false,
-  });
+  const executable = resolveCommand(command);
+  const isWindowsCommandScript =
+    process.platform === "win32" &&
+    [".bat", ".cmd"].includes(path.extname(executable).toLowerCase());
+  const result = spawnSync(
+    isWindowsCommandScript ? (process.env.ComSpec ?? "cmd.exe") : executable,
+    isWindowsCommandScript ? ["/d", "/c", executable, ...args] : args,
+    {
+      cwd: options.cwd ?? DEFAULT_REPO_ROOT,
+      encoding: "utf8",
+      shell: false,
+    },
+  );
   return {
     ok: result.status === 0,
     status: result.status,

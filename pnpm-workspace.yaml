@@ -6,6 +6,9 @@ packages:
   - "packages/kicad-fixtures"
   - "packages/test-harness"
 
+minimumReleaseAge: 1440
+blockExoticSubdeps: true
+
 allowBuilds:
   "@go-task/cli": true
   "@vscode/vsce-sign": true

@@ -282,12 +282,14 @@ def _reviewer_prompts_check() -> CheckResult:
 
 def _readme_check() -> CheckResult:
     text = (ROOT / "README.md").read_text(encoding="utf-8")
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    version = pyproject["project"]["version"]
     required = {
         "canonical repository": "https://github.com/oaslananka/kicad-studio-kit/tree/main/packages/mcp-server",
         "PyPI package": "kicad-mcp-pro",
         "npm wrapper": "kicad-mcp-pro",
         "MCP Registry name": "io.github.oaslananka/kicad-mcp-pro",
-        "version": "1.0.0",
+        "version": f"- Version: `{version}`",
     }
     missing = [label for label, marker in required.items() if marker not in text]
     if missing:

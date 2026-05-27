@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import shutil
 import subprocess
 
 import yaml
@@ -19,8 +20,16 @@ WORKSPACE_ACTIONLINT_COMMAND = [
 ]
 
 
+def _resolve_command(command: list[str]) -> list[str]:
+    executable = shutil.which(command[0])
+    if executable is None:
+        msg = f"{command[0]} not found on PATH"
+        raise RuntimeError(msg)
+    return [executable, *command[1:]]
+
+
 def _run(command: list[str]) -> None:
-    result = subprocess.run(command, check=False)
+    result = subprocess.run(_resolve_command(command), check=False)
     if result.returncode != 0:
         raise SystemExit(result.returncode)
 
