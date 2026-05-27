@@ -433,24 +433,38 @@ def register(mcp: FastMCP, *, include_low_level_exports: bool = True) -> None:
         """Export the schematic to PDF."""
         return _with_low_level_export_notice(_export_sch_pdf())
 
-    def _export_step(output_path: str = "") -> str:
+    def _export_3d_model(
+        cli_command: str,
+        output_path: str,
+        *,
+        supported: bool,
+        default_name: str,
+        label: str,
+    ) -> str:
         pcb_file = _get_pcb_file()
-        caps = get_cli_capabilities(get_config().kicad_cli)
-        if not caps.supports_step:
-            return "STEP export is not supported by the detected KiCad CLI."
+        if not supported:
+            return f"{label} export is not supported by the detected KiCad CLI."
 
         try:
-            out_file = _resolve_output_file("3d", output_path, default_name="board.step")
+            out_file = _resolve_output_file("3d", output_path, default_name=default_name)
         except ValueError as exc:
             return f"Invalid output path: {exc}"
         variant_args = _active_variant_args()
         code, _, stderr = _run_cli_variants(
             [
-                ["pcb", "export", "step", *variant_args, "--output", str(out_file), str(pcb_file)],
                 [
                     "pcb",
                     "export",
-                    "step",
+                    cli_command,
+                    *variant_args,
+                    "--output",
+                    str(out_file),
+                    str(pcb_file),
+                ],
+                [
+                    "pcb",
+                    "export",
+                    cli_command,
                     *variant_args,
                     "--input",
                     str(pcb_file),
@@ -460,8 +474,38 @@ def register(mcp: FastMCP, *, include_low_level_exports: bool = True) -> None:
             ]
         )
         if code != 0:
-            return f"STEP export failed: {stderr or 'unknown error'}"
-        return f"STEP model exported to {out_file}"
+            return f"{label} export failed: {stderr or 'unknown error'}"
+        return f"{label} model exported to {out_file}"
+
+    def _export_step(output_path: str = "") -> str:
+        caps = get_cli_capabilities(get_config().kicad_cli)
+        return _export_3d_model(
+            "step",
+            output_path,
+            supported=caps.supports_step,
+            default_name="board.step",
+            label="STEP",
+        )
+
+    def _export_stepz(output_path: str = "") -> str:
+        caps = get_cli_capabilities(get_config().kicad_cli)
+        return _export_3d_model(
+            "stpz",
+            output_path,
+            supported=caps.supports_stepz,
+            default_name="board.stepz",
+            label="STEPZ",
+        )
+
+    def _export_xao(output_path: str = "") -> str:
+        caps = get_cli_capabilities(get_config().kicad_cli)
+        return _export_3d_model(
+            "xao",
+            output_path,
+            supported=caps.supports_xao,
+            default_name="board.xao",
+            label="XAO",
+        )
 
     @headless_compatible
     def export_3d_step() -> str:
@@ -472,6 +516,16 @@ def register(mcp: FastMCP, *, include_low_level_exports: bool = True) -> None:
     def export_step(output_path: str = "") -> str:
         """Alias for STEP export with an optional explicit output path."""
         return _with_low_level_export_notice(_export_step(output_path))
+
+    @headless_compatible
+    def export_stepz(output_path: str = "") -> str:
+        """Export a gzip-compressed STEPZ model using KiCad's stpz CLI command."""
+        return _with_low_level_export_notice(_export_stepz(output_path))
+
+    @headless_compatible
+    def export_xao(output_path: str = "") -> str:
+        """Export an XAO model for the active board using KiCad CLI."""
+        return _with_low_level_export_notice(_export_xao(output_path))
 
     def _export_3d_pdf(output_path: str = "", board_only: bool = False) -> str:
         pcb_file = _get_pcb_file()
@@ -859,6 +913,8 @@ def register(mcp: FastMCP, *, include_low_level_exports: bool = True) -> None:
         mcp.tool()(export_sch_pdf)
         mcp.tool()(export_3d_step)
         mcp.tool()(export_step)
+        mcp.tool()(export_stepz)
+        mcp.tool()(export_xao)
         mcp.tool()(pcb_export_3d_pdf)
         mcp.tool()(export_3d_render)
         mcp.tool()(export_pick_and_place)

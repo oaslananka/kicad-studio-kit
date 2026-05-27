@@ -56,7 +56,7 @@ exports.
 
 | KiCad line | Tested patch | Support state | Required validation                         | Extension feature state                                                                                                                                                                          |
 | ---------- | ------------ | ------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 10.0.x     | 10.0.3       | Primary       | Required release gate and KiCad canary lane | Core DRC/ERC, BOM/netlist, Gerbers/drill, jobsets, design variants, 3D PDF, and ODB++ are supported when command probes pass.                                                                    |
+| 10.0.x     | 10.0.3       | Primary       | Required release gate and KiCad canary lane | Core DRC/ERC, BOM/netlist, Gerbers/drill, jobsets, design variants, 3D PDF, STEPZ/XAO, and ODB++ are supported when command probes pass.                                                         |
 | 9.x        | 9.0.9        | Deprecated    | Scheduled non-blocking KiCad canary lane    | Core DRC/ERC, BOM/netlist, Gerbers/drill, jobsets, ODB++, and manufacturing package workflows remain best-effort when command probes pass; KiCad 10-only variants and 3D PDF remain unavailable. |
 | 8.x        | 8.0.x        | Deprecated    | Manual compatibility check                  | Core file-level read, migration, DRC/ERC, BOM/netlist, and Gerber workflows are best-effort when command probes pass; jobsets, variants, 3D PDF, and ODB++ remain unavailable.                   |
 | <8         | none         | Unsupported   | None                                        | KiCad Studio reports the detected CLI as unsupported and does not claim feature compatibility.                                                                                                   |
@@ -119,7 +119,7 @@ Status surfaces:
 
 - The status bar shows the detected KiCad support line and warns on deprecated or unsupported CLIs.
 - The `KiCad Studio Commands` status menu lists feature-level availability with precise unsupported reasons.
-- Advanced commands such as ODB++ and 3D PDF export require both their documented KiCad line and a successful `kicad-cli` capability probe.
+- Advanced commands such as ODB++, 3D PDF, STEPZ, and XAO export require both their documented KiCad line and a successful `kicad-cli` capability probe.
 - KiCad 9.x remains in feature gates for migration compatibility, but status
   surfaces label it deprecated because upstream active maintenance ended after
   KiCad 10.0.0.

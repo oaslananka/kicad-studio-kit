@@ -182,6 +182,8 @@ def test_release_heavy_tools_are_rate_limited() -> None:
         "project_quality_gate",
         "check_design_for_manufacture",
         "export_gerber",
+        "export_stepz",
+        "export_xao",
         "pcb_export_3d_pdf",
         "export_manufacturing_package",
         "route_export_dsn",
@@ -197,6 +199,8 @@ def test_cli_failure_tools_are_structured_error_candidates() -> None:
         "run_drc",
         "run_erc",
         "export_gerber",
+        "export_stepz",
+        "export_xao",
         "get_board_stats",
         "pcb_export_3d_pdf",
     }
@@ -965,6 +969,8 @@ async def test_export_path_traversal_rejection_strengthened(
         lambda _cli: CliCapabilities(
             version="KiCad 10.0.1",
             supports_step=True,
+            supports_stepz=True,
+            supports_xao=True,
         ),
     )
     server = build_server("full")
@@ -981,9 +987,10 @@ async def test_export_path_traversal_rejection_strengthened(
         "..",
     ]
 
-    for path in traversals:
-        result = await call_tool_text(server, "export_step", {"output_path": path})
-        assert "Invalid output path" in result or "traversal" in result.lower()
+    for tool_name in ("export_step", "export_stepz", "export_xao"):
+        for path in traversals:
+            result = await call_tool_text(server, tool_name, {"output_path": path})
+            assert "Invalid output path" in result or "traversal" in result.lower()
 
 
 def test_tool_registry_invariants_and_profiles() -> None:

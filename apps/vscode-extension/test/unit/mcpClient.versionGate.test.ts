@@ -169,6 +169,8 @@ function wellKnownServerInfoResult() {
           svg: false,
           dxf: false,
           step: false,
+          stepz: false,
+          xao: false,
           render: false,
           spiceNetlist: false
         }

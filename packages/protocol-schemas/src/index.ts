@@ -125,6 +125,8 @@ export interface McpServerInfoContract {
       svg: boolean;
       dxf: boolean;
       step: boolean;
+      stepz?: boolean;
+      xao?: boolean;
       render: boolean;
       spiceNetlist: boolean;
     };

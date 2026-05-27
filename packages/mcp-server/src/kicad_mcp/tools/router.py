@@ -237,6 +237,8 @@ TOOL_CATEGORIES: dict[str, ToolCategory] = {
             "export_sch_pdf",
             "export_3d_step",
             "export_step",
+            "export_stepz",
+            "export_xao",
             "export_3d_render",
             "export_pick_and_place",
             "export_ipc2581",

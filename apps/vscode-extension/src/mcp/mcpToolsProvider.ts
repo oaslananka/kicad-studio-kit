@@ -70,6 +70,8 @@ const CLI_EXPORT_LABELS: Record<
   svg: 'SVG export',
   dxf: 'DXF export',
   step: 'STEP export',
+  stepz: 'STEPZ export',
+  xao: 'XAO export',
   render: 'render export',
   spiceNetlist: 'SPICE netlist export'
 };

@@ -145,10 +145,14 @@ def _fake_cli_run_factory(sample_project: Path):
             assert output_path is not None
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text("pdf", encoding="utf-8")
-        elif "step" in cmd:
+        elif "step" in cmd or "stpz" in cmd:
             assert output_path is not None
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text("step", encoding="utf-8")
+        elif "xao" in cmd:
+            assert output_path is not None
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text("xao", encoding="utf-8")
         elif "render" in cmd:
             assert output_path is not None
             output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -204,7 +208,7 @@ def _fake_cli_run_factory(sample_project: Path):
             return subprocess.CompletedProcess(
                 cmd,
                 0,
-                stdout="gerber drill positions ipc2581 svg dxf step render spice",
+                stdout="gerber drill positions ipc2581 svg dxf step stpz xao render spice",
                 stderr="",
             )
 
@@ -238,7 +242,7 @@ async def test_pcb_and_routing_surface(
             return subprocess.CompletedProcess(
                 cmd,
                 0,
-                stdout="gerbers positions ipc2581 svg dxf step render spice",
+                stdout="gerbers positions ipc2581 svg dxf step stpz xao render spice",
                 stderr="",
             )
         ses_path = Path(cmd[cmd.index("-do") + 1])
@@ -650,6 +654,8 @@ async def test_export_and_validation_surface(
             supports_svg=True,
             supports_dxf=True,
             supports_step=True,
+            supports_stepz=True,
+            supports_xao=True,
             supports_render=True,
             supports_spice_netlist=True,
         ),
@@ -669,6 +675,8 @@ async def test_export_and_validation_surface(
         await call_tool_text(server, "export_sch_pdf", {}),
         await call_tool_text(server, "export_step", {"output_path": ""}),
         await call_tool_text(server, "export_3d_step", {}),
+        await call_tool_text(server, "export_stepz", {"output_path": ""}),
+        await call_tool_text(server, "export_xao", {"output_path": ""}),
         await call_tool_text(
             server,
             "export_3d_render",
@@ -707,6 +715,8 @@ async def test_export_and_validation_surface(
     assert "PCB PDF exported" in joined
     assert "Schematic PDF exported" in joined
     assert "STEP model exported" in joined
+    assert "STEPZ model exported" in joined
+    assert "XAO model exported" in joined
     assert "Rendered board image" in joined
     assert "Pick and place data exported" in joined
     assert "IPC-2581 exported" in joined

@@ -86,6 +86,8 @@ async def test_export_gerber_prefers_modern_command_then_legacy_fallback(
             drill_command="drill",
             position_command="pos",
             supports_step=True,
+            supports_stepz=True,
+            supports_xao=True,
             supports_render=True,
         ),
     )
@@ -111,6 +113,8 @@ async def test_export_paths_reject_traversal_and_absolute_outputs(
             drill_command="drill",
             position_command="pos",
             supports_step=True,
+            supports_stepz=True,
+            supports_xao=True,
             supports_render=True,
         ),
     )
@@ -123,6 +127,12 @@ async def test_export_paths_reject_traversal_and_absolute_outputs(
         "export_step",
         {"output_path": str(sample_project.parent / "escape.step")},
     )
+    stepz = await call_tool_text(server, "export_stepz", {"output_path": "../escape.stepz"})
+    xao = await call_tool_text(
+        server,
+        "export_xao",
+        {"output_path": str(sample_project.parent / "escape.xao")},
+    )
     render = await call_tool_text(server, "export_3d_render", {"output_file": "nested/render.png"})
     render_backslash = await call_tool_text(
         server,
@@ -132,10 +142,14 @@ async def test_export_paths_reject_traversal_and_absolute_outputs(
 
     assert gerber.startswith(LOW_LEVEL_EXPORT_NOTICE)
     assert step.startswith(LOW_LEVEL_EXPORT_NOTICE)
+    assert stepz.startswith(LOW_LEVEL_EXPORT_NOTICE)
+    assert xao.startswith(LOW_LEVEL_EXPORT_NOTICE)
     assert render.startswith(LOW_LEVEL_EXPORT_NOTICE)
     assert render_backslash.startswith(LOW_LEVEL_EXPORT_NOTICE)
     assert "Invalid output path" in gerber
     assert "Invalid output path" in step
+    assert "Invalid output path" in stepz
+    assert "Invalid output path" in xao
     assert "Invalid output path" in render
     assert "Invalid output path" in render_backslash
 
@@ -167,6 +181,8 @@ async def test_export_step_and_render_keep_relative_names_under_output_dir(
             drill_command="drill",
             position_command="pos",
             supports_step=True,
+            supports_stepz=True,
+            supports_xao=True,
             supports_render=True,
         ),
     )
@@ -174,14 +190,24 @@ async def test_export_step_and_render_keep_relative_names_under_output_dir(
     await call_tool_text(server, "kicad_set_project", {"project_dir": str(sample_project)})
 
     step = await call_tool_text(server, "export_step", {"output_path": "board.step"})
+    stepz = await call_tool_text(server, "export_stepz", {"output_path": "board.stepz"})
+    xao = await call_tool_text(server, "export_xao", {"output_path": "board.xao"})
     render = await call_tool_text(server, "export_3d_render", {"output_file": "render.png"})
 
     assert step.startswith(LOW_LEVEL_EXPORT_NOTICE)
+    assert stepz.startswith(LOW_LEVEL_EXPORT_NOTICE)
+    assert xao.startswith(LOW_LEVEL_EXPORT_NOTICE)
     assert render.startswith(LOW_LEVEL_EXPORT_NOTICE)
     assert "STEP model exported" in step
+    assert "STEPZ model exported" in stepz
+    assert "XAO model exported" in xao
     assert "Rendered board image exported" in render
     assert str(sample_project / "output" / "3d" / "board.step") in commands[0]
-    assert str(sample_project / "output" / "3d" / "render.png") in commands[1]
+    assert "stpz" in commands[1]
+    assert str(sample_project / "output" / "3d" / "board.stepz") in commands[1]
+    assert "xao" in commands[2]
+    assert str(sample_project / "output" / "3d" / "board.xao") in commands[2]
+    assert str(sample_project / "output" / "3d" / "render.png") in commands[3]
 
 
 @pytest.mark.anyio

@@ -440,6 +440,8 @@ function serverInfoFixture(
         svg: true,
         dxf: true,
         step: true,
+        stepz: true,
+        xao: true,
         render: true,
         spiceNetlist: true
       },

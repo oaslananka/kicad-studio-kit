@@ -213,6 +213,8 @@ _register_many(
         "export_bom",
         "export_netlist",
         "export_step",
+        "export_stepz",
+        "export_xao",
         "export_pdf",
         "export_svg",
         "export_dxf",

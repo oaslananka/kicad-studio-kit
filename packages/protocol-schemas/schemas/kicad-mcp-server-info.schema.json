@@ -272,6 +272,12 @@
             "step": {
               "type": "boolean"
             },
+            "stepz": {
+              "type": "boolean"
+            },
+            "xao": {
+              "type": "boolean"
+            },
             "render": {
               "type": "boolean"
             },

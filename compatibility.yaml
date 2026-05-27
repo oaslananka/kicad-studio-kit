@@ -244,21 +244,25 @@ kicad10FeatureParity:
           - "path:packages/mcp-server/scripts/kicad_canary.py"
         notes: "STEP is a release-gated 3D export with path-safety tests."
       stepz:
-        status: "future"
-        nativeSurface: "kicad-cli pcb export stepz"
-        productSurface: "No first-class KiCad Studio Kit command or MCP tool yet"
-        issue: "https://github.com/oaslananka/kicad-studio-kit/issues/232"
+        status: "supported"
+        nativeSurface: "kicad-cli pcb export stpz (STEPZ/GZIP-compressed STEP)"
+        productSurface: "MCP export_stepz tool; no VS Code command-palette surface"
         evidence:
+          - "path:packages/mcp-server/tests/integration/test_export_tools.py"
+          - "path:packages/mcp-server/tests/integration/test_pcb_export_validation_surface.py"
+          - "path:packages/mcp-server/tests/unit/test_server_info_contract.py"
           - "source:https://docs.kicad.org/10.0/en/cli/cli.html"
-        notes: "Documented upstream CLI export; product adoption is intentionally tracked separately."
+        notes: "KiCad documents the user-facing export as STEPZ while the CLI subcommand is stpz; the product exposes it through MCP for agent/headless workflows."
       xao:
-        status: "future"
+        status: "supported"
         nativeSurface: "kicad-cli pcb export xao"
-        productSurface: "No first-class KiCad Studio Kit command or MCP tool yet"
-        issue: "https://github.com/oaslananka/kicad-studio-kit/issues/232"
+        productSurface: "MCP export_xao tool; no VS Code command-palette surface"
         evidence:
+          - "path:packages/mcp-server/tests/integration/test_export_tools.py"
+          - "path:packages/mcp-server/tests/integration/test_pcb_export_validation_surface.py"
+          - "path:packages/mcp-server/tests/unit/test_server_info_contract.py"
           - "source:https://docs.kicad.org/10.0/en/cli/cli.html"
-        notes: "Documented upstream CLI export; product adoption is intentionally tracked separately."
+        notes: "XAO is exposed through MCP for headless interchange workflows rather than as a niche VS Code command."
     gui_editor:
       design_blocks:
         status: "supported"
@@ -296,14 +300,13 @@ kicad10FeatureParity:
           - "source:https://docs.kicad.org/10.0/en/pcbnew/pcbnew.html"
         notes: "Headless barcode insertion is supported; native visual editing remains in KiCad."
       time_domain_tuning:
-        status: "partial"
+        status: "supported"
         nativeSurface: "KiCad 10 interactive time-domain tuning workflows"
         productSurface: "MCP route_tune_time_domain and tuning profile helpers"
-        issue: "https://github.com/oaslananka/kicad-studio-kit/issues/232"
         evidence:
           - "path:packages/mcp-server/tests/unit/test_kicad10_parity_tools.py"
           - "path:packages/mcp-server/tests/integration/test_routing_tools.py"
-        notes: "The MCP tools model tuning intent, but they do not replace native interactive routing UX."
+        notes: "Product support models and documents tuning intent for headless workflows; native interactive routing UX remains a KiCad GUI surface."
     ipc:
       kicad_python_ipc:
         status: "supported"

@@ -47,6 +47,8 @@ class CliCapabilities:
     supports_svg: bool = False
     supports_dxf: bool = False
     supports_step: bool = False
+    supports_stepz: bool = False
+    supports_xao: bool = False
     supports_render: bool = False
     supports_3d_pdf: bool = False
     supports_spice_netlist: bool = False
@@ -190,6 +192,8 @@ def get_cli_capabilities(cli_path: Path) -> CliCapabilities:
         supports_svg=" export svg" in blob or " svg " in blob,
         supports_dxf=" export dxf" in blob or " dxf " in blob,
         supports_step=" export step" in blob or " step " in blob,
+        supports_stepz="stpz" in tokens or "stepz" in tokens,
+        supports_xao="xao" in tokens,
         supports_render=" render " in blob,
         supports_3d_pdf="3dpdf" in blob or "3d pdf" in blob,
         supports_spice_netlist="spice" in blob,

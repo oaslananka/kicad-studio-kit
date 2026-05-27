@@ -61,7 +61,10 @@ def test_kicad10_feature_parity_matrix_tracks_gaps_and_evidence() -> None:
     assert parity["baseline"] == matrix["kicad"]["latestVerified"]
     assert set(parity["allowedStatuses"]) == KICAD10_FEATURE_STATUSES
     assert surfaces["importers"]["allegro"]["status"] == "blocked"
-    assert surfaces["exports"]["stepz"]["issue"].endswith("/issues/232")
+    assert surfaces["exports"]["stepz"]["status"] == "supported"
+    assert "stpz" in surfaces["exports"]["stepz"]["nativeSurface"]
+    assert surfaces["exports"]["xao"]["status"] == "supported"
+    assert surfaces["gui_editor"]["time_domain_tuning"]["status"] == "supported"
     assert surfaces["gui_editor"]["graphical_drc_rule_editor"]["status"] == "not-applicable"
     assert surfaces["mcp_server"]["empty_project_read_tools"]["issue"].endswith("/issues/228")
     assert parity["kicad11Readiness"]["protocol_upgrade"]["issue"].endswith("/issues/197")

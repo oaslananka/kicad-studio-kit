@@ -85,6 +85,8 @@ def get_server_info_contract(*, probe_live_context: bool = True) -> dict[str, ob
                 "svg": bool(cli.capabilities and cli.capabilities.supports_svg),
                 "dxf": bool(cli.capabilities and cli.capabilities.supports_dxf),
                 "step": bool(cli.capabilities and cli.capabilities.supports_step),
+                "stepz": bool(cli.capabilities and cli.capabilities.supports_stepz),
+                "xao": bool(cli.capabilities and cli.capabilities.supports_xao),
                 "render": bool(cli.capabilities and cli.capabilities.supports_render),
                 "spiceNetlist": bool(cli.capabilities and cli.capabilities.supports_spice_netlist),
             },
