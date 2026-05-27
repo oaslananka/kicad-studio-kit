@@ -1,6 +1,6 @@
 # Release
 
-The `1.0.0` baseline is represented in:
+Current product versions are represented in:
 
 - `.release-please-manifest.json`
 - `apps/vscode-extension/package.json`

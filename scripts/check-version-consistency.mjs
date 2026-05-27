@@ -1,12 +1,6 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 
-const baseline = "1.0.0";
-const branchName =
-  process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || "";
-const isReleasePleaseBranch = branchName.startsWith(
-  "release-please--branches--",
-);
 const checks = [];
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
@@ -60,41 +54,34 @@ for (const [key, value] of Object.entries(manifest)) {
   add(".release-please-manifest.json", key, value);
 }
 
-const expectedByField = new Map(
-  isReleasePleaseBranch
-    ? [
-        [
-          "apps/vscode-extension/package.json $.version",
-          manifest["apps/vscode-extension"],
-        ],
-        [
-          "packages/mcp-server/pyproject.toml [project].version",
-          manifest["packages/mcp-server"],
-        ],
-        [
-          "packages/mcp-server/src/kicad_mcp/__init__.py __version__",
-          manifest["packages/mcp-server"],
-        ],
-        [
-          "packages/mcp-server/mcp.json $.version",
-          manifest["packages/mcp-server"],
-        ],
-        [
-          "packages/mcp-server/server.json $.version",
-          manifest["packages/mcp-server"],
-        ],
-        [
-          "packages/mcp-npm/package.json $.version",
-          manifest["packages/mcp-npm"],
-        ],
-      ]
-    : [],
-);
+const expectedByField = new Map([
+  [
+    "apps/vscode-extension/package.json $.version",
+    manifest["apps/vscode-extension"],
+  ],
+  [
+    "packages/mcp-server/pyproject.toml [project].version",
+    manifest["packages/mcp-server"],
+  ],
+  [
+    "packages/mcp-server/src/kicad_mcp/__init__.py __version__",
+    manifest["packages/mcp-server"],
+  ],
+  [
+    "packages/mcp-server/mcp.json $.version",
+    manifest["packages/mcp-server"],
+  ],
+  [
+    "packages/mcp-server/server.json $.version",
+    manifest["packages/mcp-server"],
+  ],
+  [
+    "packages/mcp-npm/package.json $.version",
+    manifest["packages/mcp-npm"],
+  ],
+]);
 
 function expectedFor(check) {
-  if (!isReleasePleaseBranch) {
-    return baseline;
-  }
   const key = `${check.file} ${check.field}`;
   if (expectedByField.has(key)) {
     return expectedByField.get(key);
@@ -114,7 +101,7 @@ function expectedFor(check) {
   if (check.file === ".release-please-manifest.json") {
     return manifest[check.field];
   }
-  return baseline;
+  return undefined;
 }
 
 const drift = checks
@@ -156,8 +143,4 @@ if (drift.length > 0) {
   process.exit(1);
 }
 
-if (isReleasePleaseBranch) {
-  console.log("Release Please branch versions are internally consistent.");
-} else {
-  console.log(`All release surfaces are ${baseline}.`);
-}
+console.log("All release surfaces match .release-please-manifest.json.");

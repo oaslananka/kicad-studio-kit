@@ -342,7 +342,7 @@ def make_schematic_viewer():
 
     draw_statusbar_items(d, [
         ("✔ KiCad Studio", TEXT_BRIGHT),
-        ("⬡ kicad-mcp-pro 1.0.0", TEXT_BRIGHT),
+        ("⬡ kicad-mcp-pro 3.5.2", TEXT_BRIGHT),
         ("ERC: 0", TEXT_BRIGHT),
     ])
 
@@ -475,7 +475,7 @@ def make_pcb_viewer():
 
     draw_statusbar_items(d, [
         ("✔ KiCad Studio", TEXT_BRIGHT),
-        ("⬡ kicad-mcp-pro 1.0.0", TEXT_BRIGHT),
+        ("⬡ kicad-mcp-pro 3.5.2", TEXT_BRIGHT),
         ("DRC: 0", TEXT_BRIGHT),
         ("68×53 mm", TEXT_BRIGHT),
     ])
@@ -570,7 +570,7 @@ def make_drc_results():
 
     draw_statusbar_items(d, [
         ("✔ KiCad Studio", TEXT_BRIGHT),
-        ("⬡ kicad-mcp-pro 1.0.0", TEXT_BRIGHT),
+        ("⬡ kicad-mcp-pro 3.5.2", TEXT_BRIGHT),
         ("⊗ 3  ⚠ 5", TEXT_BRIGHT),
     ])
 
@@ -660,7 +660,7 @@ def make_bom_table():
 
     draw_statusbar_items(d, [
         ("✔ KiCad Studio", TEXT_BRIGHT),
-        ("⬡ kicad-mcp-pro 1.0.0", TEXT_BRIGHT),
+        ("⬡ kicad-mcp-pro 3.5.2", TEXT_BRIGHT),
         ("18 components", TEXT_BRIGHT),
     ])
 
@@ -767,7 +767,7 @@ def make_component_search():
 
     draw_statusbar_items(d, [
         ("✔ KiCad Studio", TEXT_BRIGHT),
-        ("⬡ kicad-mcp-pro 1.0.0", TEXT_BRIGHT),
+        ("⬡ kicad-mcp-pro 3.5.2", TEXT_BRIGHT),
         ("5 results", TEXT_BRIGHT),
     ])
 
@@ -1016,7 +1016,7 @@ def make_quality_gates():
     draw_rect(d, [ACTBAR_W+4, y, ACTBAR_W+SIDEBAR_W-4, y+1], fill=BORDER)
     y += 8
     y = draw_sidebar_header(d, "MCP STATUS", y=y)
-    draw_text(d, (ACTBAR_W+8, y), "●  kicad-mcp-pro 1.0.0", _sans(10), SUCCESS)
+    draw_text(d, (ACTBAR_W+8, y), "●  kicad-mcp-pro 3.5.2", _sans(10), SUCCESS)
     y += 16
     draw_text(d, (ACTBAR_W+8, y), "Profile: full", _sans(10), TEXT_DIM)
     y += 20
@@ -1036,7 +1036,7 @@ def make_quality_gates():
     # Header
     draw_rect(d, [ex, ey, ew, ey+48], fill="#252540")
     draw_text(d, (ex+16, ey+10), "Manufacturing Release Gates", _sans(14, bold=True), TEXT_BRIGHT)
-    draw_text(d, (ex+16, ey+30), "arduino_uno  |  kicad-mcp-pro 1.0.0  |  Last run: just now", _sans(10), TEXT_DIM)
+    draw_text(d, (ex+16, ey+30), "arduino_uno  |  kicad-mcp-pro 3.5.2  |  Last run: just now", _sans(10), TEXT_DIM)
     # overall badge
     draw_rect(d, [ew-150, ey+8, ew-8, ey+40], fill="#3d1515", radius=4)
     draw_text(d, (ew-79, ey+24), "⊗  NOT READY", _sans(11, bold=True), ERROR, anchor="mm")
@@ -1114,7 +1114,7 @@ def make_quality_gates():
 
     draw_statusbar_items(d, [
         ("✔ KiCad Studio", TEXT_BRIGHT),
-        ("⬡ kicad-mcp-pro 1.0.0", SUCCESS),
+        ("⬡ kicad-mcp-pro 3.5.2", SUCCESS),
         ("Gates: 2/4 passed", WARN),
     ])
 

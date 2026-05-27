@@ -150,7 +150,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
           return {
             ok: true,
             status: 0,
-            stdout: JSON.stringify({ package: { version: "1.0.0" } }),
+            stdout: JSON.stringify({ package: { version: "3.5.2" } }),
             stderr: "",
           };
         }
@@ -215,7 +215,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
     );
     assert.equal(byId.get("kicad-cli").required, false);
     assert.equal(byId.get("cloudflared").required, false);
-    assert.equal(byId.get("mcp-version").detail, "kicad-mcp-pro 1.0.0");
+    assert.equal(byId.get("mcp-version").detail, "kicad-mcp-pro 3.5.2");
     assert.equal(
       byId.get("mcp-doctor").detail,
       "doctor degraded; 1 recent issue",

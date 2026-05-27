@@ -62,13 +62,13 @@ def test_server_info_contract_matches_protocol_schema(monkeypatch, sample_projec
     assert payload["toolSchemaVersion"] == "1.0.0"
     assert payload["compatibilityRange"] == {
         "kicadStudio": {
-            "required": ">=1.0.0 <2.0.0",
-            "recommended": ">=1.0.0 <2.0.0",
-            "testedAgainst": "1.0.0",
+            "required": ">=3.5.2 <4.0.0",
+            "recommended": ">=3.5.2 <4.0.0",
+            "testedAgainst": "3.5.2",
         },
         "kicadMcpPro": {
-            "required": ">=1.0.0 <2.0.0",
-            "testedAgainst": "1.0.0",
+            "required": ">=2.8.3 <3.0.0",
+            "testedAgainst": "2.8.3",
         },
     }
     assert payload["transport"] == {

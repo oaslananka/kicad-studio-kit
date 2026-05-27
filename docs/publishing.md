@@ -5,16 +5,16 @@ Publishing is GitHub-only and uses the canonical repository `oaslananka/kicad-st
 ## Version Availability
 
 ```bash
-npm view kicad-mcp-pro@1.0.0 version --json || true
+npm view kicad-mcp-pro@3.5.2 version --json || true
 python -m pip index versions kicad-mcp-pro || true
 ```
 
 ```powershell
-npm view 'kicad-mcp-pro@1.0.0' version --json
+npm view 'kicad-mcp-pro@3.5.2' version --json
 python -m pip index versions kicad-mcp-pro
 ```
 
-If `1.0.0` already exists on a target registry, the publish preflight must fail. Do not automatically bump the version.
+If the target version from `packages/mcp-server/pyproject.toml` already exists on a target registry, the publish preflight must fail. Do not automatically bump the version.
 
 Before publishing, run `corepack pnpm run check:compatibility` and confirm `compatibility.yaml` matches the release notes and [support matrix](support-matrix.md).
 

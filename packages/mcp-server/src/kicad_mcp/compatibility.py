@@ -22,18 +22,18 @@ COMPATIBILITY_MATRIX: Final[dict[str, object]] = {
     },
     "products": {
         "kicad-studio": {
-            "version": "1.0.0",
+            "version": "2.8.3",
             "compatibleMcpPro": {
-                "required": ">=1.0.0 <2.0.0",
-                "recommended": ">=1.0.0 <2.0.0",
-                "testedAgainst": "1.0.0",
+                "required": ">=3.5.2 <4.0.0",
+                "recommended": ">=3.5.2 <4.0.0",
+                "testedAgainst": "3.5.2",
             },
         },
         "kicad-mcp-pro": {
-            "version": "1.0.0",
+            "version": "3.5.2",
             "compatibleExtension": {
-                "required": ">=1.0.0 <2.0.0",
-                "testedAgainst": "1.0.0",
+                "required": ">=2.8.3 <3.0.0",
+                "testedAgainst": "2.8.3",
             },
         },
     },

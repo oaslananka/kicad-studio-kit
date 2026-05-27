@@ -43,7 +43,7 @@ export async function runManufacturingReleaseWizard(
       title: 'Manufacturing release output folder',
       value: defaultOutput,
       prompt:
-        'kicad-mcp-pro 1.0.0 uses its configured output directory; this path is recorded for user confirmation.'
+        'kicad-mcp-pro 3.5.2 uses its configured output directory; this path is recorded for user confirmation.'
     });
 
     await vscode.window.withProgress(

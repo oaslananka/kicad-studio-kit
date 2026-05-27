@@ -140,7 +140,7 @@ describe('McpToolsProvider', () => {
         found: true,
         command: 'uvx',
         source: 'uvx',
-        version: '1.0.0'
+        version: '3.5.2'
       }
     });
     const stdioChildren = stdioProvider.getChildren();
@@ -209,7 +209,7 @@ describe('McpToolsProvider', () => {
         connected: false,
         message: 'Using cached MCP server metadata while reconnecting.',
         server: {
-          version: '1.0.0',
+          version: '3.5.2',
           compat: 'ok',
           capturedAt: '2026-05-20T12:00:00.000Z',
           capabilities: {
@@ -247,7 +247,7 @@ describe('McpToolsProvider', () => {
 
     expect(flattenTree(provider)).toMatchInlineSnapshot(`
       [
-        "MCP connected with degraded capabilities :: 1.0.0",
+        "MCP connected with degraded capabilities :: 3.5.2",
         "Compatibility dashboard :: degraded",
         "Compatibility dashboard > Compatibility state :: Connected but degraded",
         "Compatibility dashboard > Server contract :: 8",
@@ -289,7 +289,7 @@ describe('McpToolsProvider', () => {
         "Actions > Switch endpoint ::",
         "Actions > Launch local MCP server ::",
         "Actions > Open compatibility docs ::",
-        "Install :: uvx 1.0.0",
+        "Install :: uvx 3.5.2",
         "Raw advertised capabilities :: 3 tools, 1 resources, 1 prompts",
         "Raw advertised capabilities > Capability diagnostics :: none",
         "Raw advertised capabilities > KiCad runtime :: live PCB",
@@ -333,10 +333,10 @@ function connectedState(options: {
       found: true,
       command: 'uvx',
       source: 'uvx',
-      version: '1.0.0'
+      version: '3.5.2'
     },
     server: {
-      version: '1.0.0',
+      version: '3.5.2',
       compat: options.diagnostics?.length ? 'warn' : 'ok',
       capturedAt: '2026-05-20T12:00:00.000Z',
       capabilities: {
@@ -360,18 +360,18 @@ function serverInfoFixture(
   const base: McpServerInfoContract = {
     schemaVersion: '1.2.0',
     server: 'kicad-mcp-pro',
-    version: '1.0.0',
+    version: '3.5.2',
     mcpProtocolVersion: '2025-11-25',
     toolSchemaVersion: '1.0.0',
     compatibilityRange: {
       kicadStudio: {
-        required: '>=1.0.0 <2.0.0',
-        recommended: '>=1.0.0 <2.0.0',
-        testedAgainst: '1.0.0'
+        required: '>=3.5.2 <4.0.0',
+        recommended: '>=3.5.2 <4.0.0',
+        testedAgainst: '3.5.2'
       },
       kicadMcpPro: {
-        required: '>=1.0.0 <2.0.0',
-        testedAgainst: '1.0.0'
+        required: '>=2.8.3 <3.0.0',
+        testedAgainst: '2.8.3'
       }
     },
     transport: {
