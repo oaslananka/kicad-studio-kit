@@ -7,9 +7,8 @@
     "declarationMap": false,
     "allowJs": true,
     "checkJs": false,
-    "baseUrl": ".",
     "paths": {
-      "@oaslananka/kicad-protocol-schemas": ["dist/index.d.ts"]
+      "@oaslananka/kicad-protocol-schemas": ["./dist/index.d.ts"]
     }
   },
   "include": ["test/**/*.ts"],
