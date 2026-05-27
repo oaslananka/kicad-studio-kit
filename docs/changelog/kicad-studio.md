@@ -16,24 +16,24 @@ published.
 
 ### Added
 
-- Surface KiCad 8.x, 9.x, and 10.0.x compatibility state in the status
+- Surfaced KiCad 8.x, 9.x, and 10.0.x compatibility state in the status
   bar/menu with feature-level capability probe results.
-- Add explicit KiCanvas/CLI SVG fallback/metadata-only viewer engine state,
+- Added explicit KiCanvas/CLI SVG fallback/metadata-only viewer engine state,
   toolbar engine badges, unsupported-control disabling, and regression coverage
   for fallback diagnostics.
 
 ### Changed
 
-- Clarify Codex support as an external MCP client workflow, remove it from the
-  direct extension provider settings, and migrate legacy
+- Clarified Codex support as an external MCP client workflow, removed it from the
+  direct extension provider settings, and migrated legacy
   `kicadstudio.ai.provider=codex` selections to GitHub Copilot.
-- Restyle the KiCanvas viewer toolbar with VS Code theme tokens, compact
+- Restyled the KiCanvas viewer toolbar with VS Code theme tokens, compact
   spacing, and a single primary reload action for dark, light, and high-contrast
   themes.
 
 ### Deprecated
 
-- Mark KiCad 9.x as a deprecated best-effort compatibility line in status
+- Marked KiCad 9.x as a deprecated best-effort compatibility line in status
   surfaces now that upstream active maintenance has ended.
 
 ## [1.0.0] - 2026-05-20

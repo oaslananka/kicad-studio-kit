@@ -14,15 +14,15 @@ published.
 
 ### Added
 
-- Add `kicad-mcp-pro doctor`, JSON diagnostics, and redacted support bundles for
+- Added `kicad-mcp-pro doctor`, JSON diagnostics, and redacted support bundles for
   setup troubleshooting.
-- Add real KiCad CLI contract canaries with shared fixtures, Windows primary
+- Added real KiCad CLI contract canaries with shared fixtures, Windows primary
   KiCad 10.0.3 smoke coverage, scheduled 9.x/10.x lanes, and structured
   unsupported-feature artifacts.
 
 ### Deprecated
 
-- Mark KiCad 9.x as a deprecated best-effort compatibility line in MCP
+- Marked KiCad 9.x as a deprecated best-effort compatibility line in MCP
   discovery metadata while retaining scheduled non-blocking canary coverage.
 
 ## [1.0.0] - 2026-05-20

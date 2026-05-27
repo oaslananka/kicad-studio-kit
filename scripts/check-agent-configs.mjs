@@ -261,7 +261,7 @@ const requiredReferences = {
     "docs/agents/codex-support.md",
   ],
   "apps/vscode-extension/CHANGELOG.md": [
-    "Clarify Codex support as an external MCP client workflow",
+    "Clarified Codex support as an external MCP client workflow",
     "kicadstudio.ai.provider=codex",
   ],
   "packages/mcp-server/docs/client-configuration.md": [
