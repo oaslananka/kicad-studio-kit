@@ -41,23 +41,23 @@ function wellKnownServerInfoResult() {
   return {
     serverInfo: {
       name: 'kicad-mcp-pro',
-      version: '1.0.0'
+      version: '3.5.2'
     },
     serverInfoContract: {
       schemaVersion: '1.2.0',
       server: 'kicad-mcp-pro',
-      version: '1.0.0',
+      version: '3.5.2',
       mcpProtocolVersion: '2025-11-25',
       toolSchemaVersion: '1.0.0',
       compatibilityRange: {
         kicadStudio: {
-          required: '>=1.0.0 <2.0.0',
-          recommended: '>=1.0.0 <2.0.0',
-          testedAgainst: '1.0.0'
+          required: '>=3.5.2 <4.0.0',
+          recommended: '>=3.5.2 <4.0.0',
+          testedAgainst: '3.5.2'
         },
         kicadMcpPro: {
-          required: '>=1.0.0 <2.0.0',
-          testedAgainst: '1.0.0'
+          required: '>=2.8.3 <3.0.0',
+          testedAgainst: '2.8.3'
         }
       },
       transport: {
@@ -212,9 +212,9 @@ describe('McpClient version gate', () => {
   }
 
   it.each([
-    ['1.0.0', 'ok'],
-    ['1.1.0', 'ok'],
-    ['1.9.9', 'ok']
+    ['3.5.2', 'ok'],
+    ['3.6.0', 'ok'],
+    ['3.9.9', 'ok']
   ])(
     'connects to supported server version %s as %s',
     async (version, compat) => {
@@ -237,7 +237,7 @@ describe('McpClient version gate', () => {
     }
   );
 
-  it.each(['0.9.9', '2.0.0', undefined])(
+  it.each(['3.5.1', '4.0.0', undefined])(
     'marks unsupported or missing version %s as incompatible',
     async (version) => {
       const fetchMock = jest
@@ -258,7 +258,7 @@ describe('McpClient version gate', () => {
     global.fetch = jest
       .fn()
       .mockResolvedValueOnce(createJsonResponse(initializeResult('1.27.0')))
-      .mockResolvedValueOnce(createJsonResponse(wellKnownResult('1.0.0')))
+      .mockResolvedValueOnce(createJsonResponse(wellKnownResult('3.5.2')))
       .mockResolvedValueOnce(
         createJsonResponse({ result: { tools: [] } })
       ) as typeof fetch;
@@ -266,7 +266,7 @@ describe('McpClient version gate', () => {
     const state = await createClient().testConnection();
 
     expect(state.kind).toBe('Connected');
-    expect(state.server?.version).toBe('1.0.0');
+    expect(state.server?.version).toBe('3.5.2');
     expect(state.server?.compat).toBe('ok');
   });
 
@@ -299,7 +299,7 @@ describe('McpClient version gate', () => {
       .mockResolvedValueOnce(createJsonResponse(initializeResult('1.27.0')))
       .mockResolvedValueOnce(
         createJsonResponse({
-          ...wellKnownResult('1.0.0'),
+          ...wellKnownResult('3.5.2'),
           serverInfoContract: {
             schemaVersion: '1.2.0',
             server: 'other-server'
@@ -320,7 +320,7 @@ describe('McpClient version gate', () => {
   it('marks MCP degraded when tools/list violates the discovery schema', async () => {
     global.fetch = jest
       .fn()
-      .mockResolvedValueOnce(createJsonResponse(initializeResult('1.0.0')))
+      .mockResolvedValueOnce(createJsonResponse(initializeResult('3.5.2')))
       .mockResolvedValueOnce(
         createJsonResponse({ result: { resources: [] } })
       ) as typeof fetch;
@@ -338,7 +338,7 @@ describe('McpClient version gate', () => {
     global.fetch = jest
       .fn()
       .mockResolvedValueOnce(
-        createJsonResponse(initializeResult('1.0.0', 'kicad-mcp-pro'))
+        createJsonResponse(initializeResult('3.5.2', 'kicad-mcp-pro'))
       )
       .mockResolvedValueOnce(createJsonResponse(wellKnownServerInfoResult()))
       .mockResolvedValueOnce(
@@ -355,7 +355,7 @@ describe('McpClient version gate', () => {
     global.fetch = jest
       .fn()
       .mockResolvedValueOnce(
-        createJsonResponse(initializeResult('2.0.0'))
+        createJsonResponse(initializeResult('4.0.0'))
       ) as typeof fetch;
 
     await expect(createClient().callTool('project_ping', {})).rejects.toThrow(
@@ -366,7 +366,7 @@ describe('McpClient version gate', () => {
   it('normalizes structured quality gate reports and text gate responses', async () => {
     global.fetch = jest
       .fn()
-      .mockResolvedValueOnce(createJsonResponse(initializeResult('1.0.0')))
+      .mockResolvedValueOnce(createJsonResponse(initializeResult('3.5.2')))
       .mockResolvedValueOnce(
         createJsonResponse({
           result: {
@@ -415,7 +415,7 @@ describe('McpClient version gate', () => {
   it('throws structured MCP tool errors', async () => {
     global.fetch = jest
       .fn()
-      .mockResolvedValueOnce(createJsonResponse(initializeResult('1.0.0')))
+      .mockResolvedValueOnce(createJsonResponse(initializeResult('3.5.2')))
       .mockResolvedValueOnce(
         createJsonResponse({
           result: {

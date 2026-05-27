@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 
-const version = "1.0.0";
+const pyproject = readFileSync("packages/mcp-server/pyproject.toml", "utf8");
+const version = pyproject.match(/^version = "([^"]+)"/m)?.[1];
+if (!version) {
+  console.error("Unable to read kicad-mcp-pro version from pyproject.toml");
+  process.exit(1);
+}
 const requiredEnvironments = [
   "extension-marketplaces",
   "pypi",

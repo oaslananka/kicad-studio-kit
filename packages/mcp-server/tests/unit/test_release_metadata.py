@@ -122,8 +122,8 @@ def test_kicad_studio_contract_documents_current_http_bridge() -> None:
     studio_doc = (ROOT / "docs" / "integration" / "kicad-studio.md").read_text(encoding="utf-8")
     mkdocs = (ROOT / "mkdocs.yml").read_text(encoding="utf-8")
 
-    assert "1.0.x" in studio_doc
-    assert ">=1.0.0,<2.0.0" in studio_doc
+    assert "2.8.x" in studio_doc
+    assert ">=3.5.2,<4.0.0" in studio_doc
     assert "http://127.0.0.1:27185/mcp" in studio_doc
     assert "KICAD_MCP_LEGACY_SSE=true" in studio_doc
     assert "kicad-studio-kit/mcp/workflows/manufacturing-export/" in studio_doc

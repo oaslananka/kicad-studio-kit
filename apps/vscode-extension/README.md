@@ -9,8 +9,8 @@ KiCad Studio turns VS Code into a focused KiCad workspace for project navigation
 Canonical repository: https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension
 
 - Extension ID: `oaslananka.kicadstudio`
-- Version: `1.0.0`
-- Supported MCP: `kicad-mcp-pro >=1.0.0 <2.0.0`
+- Version: `2.8.3`
+- Supported MCP: `kicad-mcp-pro >=3.5.2 <4.0.0`
 - Supported KiCad projects: KiCad 8.x, 9.x, and 10.x project, schematic, PCB, DRC, and jobset files
 
 ## Quick Start
@@ -68,7 +68,7 @@ corepack pnpm --filter kicadstudio run package
 
 ## MCP Compatibility
 
-KiCad Studio 1.0.0 supports `kicad-mcp-pro >=1.0.0 <2.0.0` and was tested against `1.0.0`. If a connected server reports a version outside the required range, MCP-dependent commands are disabled while KiCad-only features continue to work.
+KiCad Studio 2.8.3 supports `kicad-mcp-pro >=3.5.2 <4.0.0` and was tested against `3.5.2`. If a connected server reports a version outside the required range, MCP-dependent commands are disabled while KiCad-only features continue to work.
 
 ## Marketplace Listing Copy
 

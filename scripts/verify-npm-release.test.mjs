@@ -9,6 +9,8 @@ import test from "node:test";
 
 import { verifyPublishedNpmDigest } from "./verify-npm-release.mjs";
 
+const PACKAGE_VERSION = "3.5.2";
+
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -32,17 +34,17 @@ test("verifies the published npm tarball SHA-256 digest", async () => {
   const checksum = sha256(tarball);
   const workspace = mkdtempSync(join(tmpdir(), "npm-release-"));
   const checksums = join(workspace, "SHA256SUMS.txt");
-  await writeFile(checksums, `${checksum}  kicad-mcp-pro-1.0.0.tgz\n`);
+  await writeFile(checksums, `${checksum}  kicad-mcp-pro-${PACKAGE_VERSION}.tgz\n`);
 
   await withRegistry(
     (request, response) => {
-      if (request.url === "/kicad-mcp-pro/1.0.0") {
+      if (request.url === `/kicad-mcp-pro/${PACKAGE_VERSION}`) {
         const baseUrl = `http://${request.headers.host}`;
         response.setHeader("content-type", "application/json");
         response.end(
           JSON.stringify({
             dist: {
-              tarball: `${baseUrl}/kicad-mcp-pro/-/kicad-mcp-pro-1.0.0.tgz`,
+              tarball: `${baseUrl}/kicad-mcp-pro/-/kicad-mcp-pro-${PACKAGE_VERSION}.tgz`,
             },
           }),
         );
@@ -53,7 +55,7 @@ test("verifies the published npm tarball SHA-256 digest", async () => {
     async (registryUrl) => {
       await verifyPublishedNpmDigest({
         packageName: "kicad-mcp-pro",
-        version: "1.0.0",
+        version: PACKAGE_VERSION,
         checksumsPath: checksums,
         outputDir: join(workspace, "verify"),
         registryUrl,
@@ -70,24 +72,24 @@ test("verifies the published npm tarball SHA-256 digest", async () => {
     ),
   );
   assert.equal(evidence.package, "kicad-mcp-pro");
-  assert.equal(evidence.version, "1.0.0");
+  assert.equal(evidence.version, PACKAGE_VERSION);
   assert.equal(evidence.sha256, checksum);
 });
 
 test("rejects a published npm tarball digest mismatch", async () => {
   const workspace = mkdtempSync(join(tmpdir(), "npm-release-"));
   const checksums = join(workspace, "SHA256SUMS.txt");
-  await writeFile(checksums, `${"0".repeat(64)}  kicad-mcp-pro-1.0.0.tgz\n`);
+  await writeFile(checksums, `${"0".repeat(64)}  kicad-mcp-pro-${PACKAGE_VERSION}.tgz\n`);
 
   await withRegistry(
     (request, response) => {
-      if (request.url === "/kicad-mcp-pro/1.0.0") {
+      if (request.url === `/kicad-mcp-pro/${PACKAGE_VERSION}`) {
         const baseUrl = `http://${request.headers.host}`;
         response.setHeader("content-type", "application/json");
         response.end(
           JSON.stringify({
             dist: {
-              tarball: `${baseUrl}/kicad-mcp-pro/-/kicad-mcp-pro-1.0.0.tgz`,
+              tarball: `${baseUrl}/kicad-mcp-pro/-/kicad-mcp-pro-${PACKAGE_VERSION}.tgz`,
             },
           }),
         );
@@ -99,7 +101,7 @@ test("rejects a published npm tarball digest mismatch", async () => {
       await assert.rejects(
         verifyPublishedNpmDigest({
           packageName: "kicad-mcp-pro",
-          version: "1.0.0",
+          version: PACKAGE_VERSION,
           checksumsPath: checksums,
           outputDir: join(workspace, "verify"),
           registryUrl,

@@ -160,7 +160,7 @@ test("validates shared protocol payload families", () => {
     validateMcpServerHealth({
       schemaVersion: "1.0.0",
       server: "kicad-mcp-pro",
-      version: "1.0.0",
+      version: "3.5.2",
       status: "ok",
       mcpProtocolVersion: "2025-11-25",
       toolSchemaVersion: "1.0.0",
@@ -178,8 +178,8 @@ test("validates shared protocol payload families", () => {
     validateCompatibilityManifest({
       schemaVersion: "1.0.0",
       products: {
-        "kicad-studio": { version: "1.0.0", supportedSchemaMajors: [1] },
-        "kicad-mcp-pro": { version: "1.0.0", supportedSchemaMajors: [1] },
+        "kicad-studio": { version: "2.8.3", supportedSchemaMajors: [1] },
+        "kicad-mcp-pro": { version: "3.5.2", supportedSchemaMajors: [1] },
       },
       schemas: {
         "kicad-mcp-server-info": {
@@ -206,18 +206,18 @@ function serverInfoFixture() {
       en: "KiCad MCP Pro server for PCB and schematic workflows.",
       tr: "PCB ve sematik is akislari icin KiCad MCP Pro sunucusu.",
     },
-    version: "1.0.0",
+    version: "3.5.2",
     mcpProtocolVersion: "2025-11-25",
     toolSchemaVersion: "1.0.0",
     compatibilityRange: {
       kicadStudio: {
-        required: ">=1.0.0 <2.0.0",
-        recommended: ">=1.0.0 <2.0.0",
-        testedAgainst: "1.0.0",
+        required: ">=3.5.2 <4.0.0",
+        recommended: ">=3.5.2 <4.0.0",
+        testedAgainst: "3.5.2",
       },
       kicadMcpPro: {
-        required: ">=1.0.0 <2.0.0",
-        testedAgainst: "1.0.0",
+        required: ">=2.8.3 <3.0.0",
+        testedAgainst: "2.8.3",
       },
     },
     transport: {

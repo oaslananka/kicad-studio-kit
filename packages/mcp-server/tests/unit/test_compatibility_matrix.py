@@ -16,7 +16,7 @@ def test_embedded_compatibility_metadata_declares_current_contract() -> None:
     assert COMPATIBILITY_MATRIX["kicad"]["primary"] == "10.0.x"
     assert (
         COMPATIBILITY_MATRIX["products"]["kicad-studio"]["compatibleMcpPro"]["required"]
-        == ">=1.0.0 <2.0.0"
+        == ">=3.5.2 <4.0.0"
     )
 
 

@@ -19,6 +19,8 @@ const mockedFs = require('node:fs') as {
   readFileSync: jest.MockedFunction<typeof import('node:fs').readFileSync>;
 };
 
+const MCP_SERVER_VERSION = '3.5.2';
+
 function createJsonResponse(
   body: unknown,
   init?: { status?: number; headers?: Record<string, string> }
@@ -29,7 +31,7 @@ function createJsonResponse(
     isEmptyResult(body)
       ? {
           result: {
-            serverInfo: { version: '1.0.0' },
+            serverInfo: { version: MCP_SERVER_VERSION },
             capabilities: { tools: [], resources: [], prompts: [] }
           }
         }
@@ -117,7 +119,7 @@ describe('McpClient', () => {
         resolve(
           createJsonResponse({
             result: {
-              serverInfo: { version: '1.0.0' },
+              serverInfo: { version: MCP_SERVER_VERSION },
               capabilities: { tools: [], resources: [], prompts: [] }
             }
           })
@@ -662,7 +664,7 @@ describe('McpClient', () => {
   it('does not mark cached server metadata as degraded when initialize fails before a live handshake', async () => {
     const context = createExtensionContextMock();
     await context.globalState.update('kicadstudio.mcp.lastServerCard', {
-      version: '1.0.0',
+      version: MCP_SERVER_VERSION,
       compat: 'compatible',
       capabilities: { tools: [], resources: [], prompts: [] },
       capturedAt: '2026-05-21T00:00:00.000Z'

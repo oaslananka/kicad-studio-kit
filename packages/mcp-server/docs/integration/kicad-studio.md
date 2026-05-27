@@ -58,7 +58,7 @@ Stable fields for extension consumption:
 
 | KiCad Studio | kicad-mcp-pro  | Notes                                                                                                                                      |
 | ------------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1.0.x        | >=1.0.0,<2.0.0 | Recommended HTTP bridge contract: local port `27185`, Streamable HTTP endpoint `/mcp`, optional legacy `/sse` only when explicitly enabled |
+| 2.8.x        | >=3.5.2,<4.0.0 | Recommended HTTP bridge contract: local port `27185`, Streamable HTTP endpoint `/mcp`, optional legacy `/sse` only when explicitly enabled |
 
 ## Recommended HTTP Bridge Environment
 
