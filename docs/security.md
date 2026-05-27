@@ -19,6 +19,10 @@ Pull requests and scheduled workflows keep the supply chain surface visible:
   `minimumReleaseAge: 1440` delays newly published npm versions by 24 hours,
   and `blockExoticSubdeps: true` keeps transitive dependencies on trusted
   registry, workspace, local, or trusted upstream sources.
+- `minimumReleaseAgeExclude` is limited by `check:supply-chain` to
+  version-scoped security patch exceptions. The current exception,
+  `tmp@0.2.6`, resolves GHSA-ph9p-34f9-6g65 without broadening the maturity
+  bypass to future `tmp` releases.
 - GHCR image publishing uses GitHub Container Registry, BuildKit SBOM and
   provenance, Trivy image scanning, and keyless Sigstore `cosign` signing.
 - Release publish workflows validate package contents, emit SHA-256 checksum
@@ -64,6 +68,11 @@ requests can include lockfile edits, so CI must continue re-applying
 `minimumReleaseAge` and trust-policy checks during installs. Re-evaluate this
 only if lockfile writes become maintainer-only and the repo has upgraded to
 pnpm 11.3 or newer.
+
+Emergency vulnerability patches that are newer than `minimumReleaseAge` may use
+a version-scoped `minimumReleaseAgeExclude` entry only when a reviewed advisory
+identifies the fixed version and `check:supply-chain` is updated to reject broad
+package-name exceptions.
 
 Validate the policy with:
 

@@ -75,6 +75,9 @@ Vulnerability-fix PRs skip the weekly schedule and should be reviewed first. Kee
 - Prefer the lowest patched version that resolves the alert.
 - Do not combine unrelated version updates with a vulnerability fix.
 - Run the full affected product check and security workflow commands.
+- If the patched npm version is newer than `minimumReleaseAge`, use only a
+  version-scoped `minimumReleaseAgeExclude` entry and document the advisory.
+  Do not add broad package-name exclusions.
 - If the vulnerability is not exploitable because of local usage, document the reasoning in the PR and leave the alert state consistent with repository policy.
 
 ## Deferring and pinning
