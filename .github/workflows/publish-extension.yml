@@ -155,7 +155,8 @@ jobs:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
           set -euo pipefail
-          VSIX_PATH="$(find release-assets/vscode-extension -type f -name '*.vsix' | sort | tail -n1)"
+          VSIX_DIR="$GITHUB_WORKSPACE/release-assets/vscode-extension"
+          VSIX_PATH="$(find "$VSIX_DIR" -type f -name '*.vsix' | sort | tail -n1)"
           test -n "$VSIX_PATH"
           test -f "$VSIX_PATH"
           test -n "$VSCE_PAT"
@@ -177,7 +178,15 @@ jobs:
           set -euo pipefail
           version="$(node -p "require('./apps/vscode-extension/package.json').version")"
           corepack pnpm --filter kicadstudio exec vsce show oaslananka.kicadstudio --json > vscode-marketplace.json
-          VERSION="$version" node -e "const fs = require('node:fs'); const data = JSON.parse(fs.readFileSync('vscode-marketplace.json', 'utf8')); if (!JSON.stringify(data).includes(process.env.VERSION)) throw new Error('Visual Studio Marketplace version not visible: ' + process.env.VERSION);"
+          VERSION="$version" node <<'NODE'
+          const fs = require("node:fs");
+          const data = JSON.parse(fs.readFileSync("vscode-marketplace.json", "utf8"));
+          if (!JSON.stringify(data).includes(process.env.VERSION)) {
+            throw new Error(
+              `Visual Studio Marketplace version not visible: ${process.env.VERSION}`,
+            );
+          }
+          NODE
 
   publish_openvsx:
     needs: [package, publish_vscode]
@@ -217,7 +226,8 @@ jobs:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
         run: |
           set -euo pipefail
-          VSIX_PATH="$(find release-assets/vscode-extension -type f -name '*.vsix' | sort | tail -n1)"
+          VSIX_DIR="$GITHUB_WORKSPACE/release-assets/vscode-extension"
+          VSIX_PATH="$(find "$VSIX_DIR" -type f -name '*.vsix' | sort | tail -n1)"
           test -n "$VSIX_PATH"
           test -f "$VSIX_PATH"
           test -n "$OVSX_PAT"
@@ -242,10 +252,11 @@ jobs:
         run: |
           set -euo pipefail
           version="$(node -p "require('./apps/vscode-extension/package.json').version")"
-          mkdir -p release-assets/openvsx-verify
-          corepack pnpm --filter kicadstudio exec ovsx get oaslananka.kicadstudio --metadata --versionRange "$version" > release-assets/openvsx-verify/metadata.json
-          corepack pnpm --filter kicadstudio exec ovsx get oaslananka.kicadstudio --versionRange "$version" --output release-assets/openvsx-verify
-          downloaded="$(find release-assets/openvsx-verify -type f -name '*.vsix' | sort | tail -n1)"
+          OPENVSX_VERIFY_DIR="$GITHUB_WORKSPACE/release-assets/openvsx-verify"
+          mkdir -p "$OPENVSX_VERIFY_DIR"
+          corepack pnpm --filter kicadstudio exec ovsx get oaslananka.kicadstudio --metadata --versionRange "$version" > "$OPENVSX_VERIFY_DIR/metadata.json"
+          corepack pnpm --filter kicadstudio exec ovsx get oaslananka.kicadstudio --versionRange "$version" --output "$OPENVSX_VERIFY_DIR"
+          downloaded="$(find "$OPENVSX_VERIFY_DIR" -type f -name '*.vsix' | sort | tail -n1)"
           test -n "$downloaded"
           expected="$(awk '{print $1}' release-assets/vscode-extension/SHA256SUMS.txt)"
           actual="$(sha256sum "$downloaded" | awk '{print $1}')"

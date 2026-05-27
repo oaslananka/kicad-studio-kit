@@ -84,6 +84,18 @@ function checkWorkflowEvidence(failures) {
   );
   expectIncludes(
     extension,
+    'VSIX_DIR="$GITHUB_WORKSPACE/release-assets/vscode-extension"',
+    "extension workflow",
+    failures,
+  );
+  expectIncludes(
+    extension,
+    'OPENVSX_VERIFY_DIR="$GITHUB_WORKSPACE/release-assets/openvsx-verify"',
+    "extension workflow",
+    failures,
+  );
+  expectIncludes(
+    extension,
     "vsce show oaslananka.kicadstudio --json",
     "extension workflow",
     failures,
