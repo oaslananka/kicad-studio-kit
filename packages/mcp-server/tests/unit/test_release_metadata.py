@@ -93,14 +93,20 @@ def test_release_metadata_is_synchronised() -> None:
         package for package in server_json["packages"] if package["registryType"] == "oci"
     )
     mcp_oci = next(package for package in mcp_json["packages"] if package["registryType"] == "oci")
-    assert all(package["version"] == version for package in server_json["packages"])
-    assert all(package["version"] == version for package in mcp_json["packages"])
+    assert all(
+        package.get("version") == version
+        for package in server_json["packages"]
+        if package.get("registryType") != "oci" and package.get("registry") != "container"
+    )
+    assert all(
+        package.get("version") == version
+        for package in mcp_json["packages"]
+        if package.get("registryType") != "oci" and package.get("registry") != "container"
+    )
     assert server_oci["registry"] == "container"
     assert server_oci["image"] == "ghcr.io/oaslananka/kicad-mcp-pro"
     assert server_oci["identifier"] == f"{server_oci['image']}:{version}"
     assert mcp_oci["identifier"] == f"{mcp_oci['image']}:{version}"
-    assert server_oci["version"] == version
-    assert mcp_oci["version"] == version
     assert mcp_json["version"] == version
     assert server_json["name"] == "io.github.oaslananka/kicad-mcp-pro"
     assert server_json["repository"]["url"] == "https://github.com/oaslananka/kicad-studio-kit"

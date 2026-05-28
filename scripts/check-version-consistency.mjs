@@ -32,15 +32,37 @@ add(
   init.match(/^__version__ = "([^"]+)"/m)?.[1],
 );
 
+const releaseManifest = readJson(".release-please-manifest.json");
+const expectedMcpVersion = releaseManifest["packages/mcp-server"];
 for (const file of [
   "packages/mcp-server/mcp.json",
   "packages/mcp-server/server.json",
 ]) {
   const data = readJson(file);
   add(file, "$.version", data.version);
-  data.packages.forEach((pkg, index) =>
-    add(file, `$.packages[${index}].version`, pkg.version),
-  );
+  data.packages.forEach((pkg, index) => {
+    const isOci =
+      pkg.registryType === "oci" || pkg.registry === "container";
+    if (isOci) {
+      if (pkg.version !== undefined) {
+        console.error(
+          `${file} $.packages[${index}].version: OCI packages must not define version; include version in identifier.`,
+        );
+        process.exit(1);
+      }
+      const identifier = pkg.identifier ?? "";
+      const tagMatch = identifier.match(/:([^@]+)$/);
+      const digestMatch = identifier.includes("@sha256:");
+      if (!digestMatch && (!tagMatch || tagMatch[1] !== expectedMcpVersion)) {
+        console.error(
+          `${file} $.packages[${index}].identifier: OCI tag expected :${expectedMcpVersion}, found ${identifier}`,
+        );
+        process.exit(1);
+      }
+    } else {
+      add(file, `$.packages[${index}].version`, pkg.version);
+    }
+  });
 }
 
 add(

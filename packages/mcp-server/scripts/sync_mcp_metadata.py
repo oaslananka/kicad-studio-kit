@@ -137,7 +137,6 @@ def _registry_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
             {
                 "registryType": "oci",
                 "identifier": f"{GHCR_IMAGE}:{metadata['version']}",
-                "version": metadata["version"],
                 "registry": "container",
                 "image": GHCR_IMAGE,
                 "runtimeHint": "docker",
