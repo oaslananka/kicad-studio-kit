@@ -110,13 +110,15 @@ function expectedFor(check) {
   }
   if (
     check.file === "packages/mcp-server/mcp.json" &&
-    check.field.startsWith("$.packages[")
+    check.field.startsWith("$.packages[") &&
+    check.field.endsWith(".version")
   ) {
     return manifest["packages/mcp-server"];
   }
   if (
     check.file === "packages/mcp-server/server.json" &&
-    check.field.startsWith("$.packages[")
+    check.field.startsWith("$.packages[") &&
+    check.field.endsWith(".version")
   ) {
     return manifest["packages/mcp-server"];
   }
