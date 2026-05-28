@@ -18,6 +18,8 @@ const ignoredDirs = new Set([
   "out",
   "site",
   ".codex-checkpoints",
+  ".omo",
+  ".hypothesis",
 ]);
 const ignoredFiles = new Set(["pnpm-lock.yaml", "uv.lock"]);
 const ignoredExts = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".whl", ".gz"]);

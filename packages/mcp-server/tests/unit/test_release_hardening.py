@@ -812,8 +812,16 @@ def test_version_synchronization_across_release_manifests() -> None:
     assert manifest["packages/mcp-npm"] == mcp_version
     assert wrapper["version"] == pyproject["project"]["version"] == mcp_version
     assert mcp["version"] == server["version"] == mcp_version
-    assert all(package["version"] == mcp_version for package in mcp["packages"])
-    assert all(package["version"] == mcp_version for package in server["packages"])
+    assert all(
+        package.get("version") == mcp_version
+        for package in mcp["packages"]
+        if package.get("registryType") != "oci" and package.get("registry") != "container"
+    )
+    assert all(
+        package.get("version") == mcp_version
+        for package in server["packages"]
+        if package.get("registryType") != "oci" and package.get("registry") != "container"
+    )
     assert f'__version__ = "{mcp_version}"' in init_py
     assert "https://oaslananka.github.io/kicad-studio-kit" in wrapper["homepage"]
     assert "release:dry-run:kicad-studio" in root_package["scripts"]

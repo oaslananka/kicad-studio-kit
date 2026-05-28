@@ -32,7 +32,11 @@ def test_checked_mcp_manifest_is_valid() -> None:
         "npx",
         "docker",
     ]
-    assert all(package["version"] == manifest["version"] for package in manifest["packages"])
+    assert all(
+        package.get("version") == manifest["version"]
+        for package in manifest["packages"]
+        if package.get("registryType") != "oci" and package.get("registry") != "container"
+    )
     assert manifest["packages"][2]["identifier"].endswith(f":{manifest['version']}")
 
 
@@ -209,11 +213,32 @@ def test_validator_rejects_oci_registry_base_url() -> None:
 def test_validator_rejects_missing_package_version() -> None:
     module = _load_validator()
     manifest = json.loads((ROOT / "mcp.json").read_text(encoding="utf-8"))
-    manifest["packages"][2].pop("version")
+    manifest["packages"][0].pop("version")
 
     errors = module.validate_manifest(manifest)
 
-    assert "packages[2] must define version." in errors
+    assert "packages[0] must define version." in errors
+
+
+def test_validator_rejects_oci_package_with_version() -> None:
+    module = _load_validator()
+    manifest = json.loads((ROOT / "mcp.json").read_text(encoding="utf-8"))
+    manifest["packages"][2]["version"] = "3.6.0"
+
+    errors = module.validate_manifest(manifest)
+
+    assert any("OCI packages must not define version field" in error for error in errors)
+
+
+def test_validator_accepts_oci_without_version() -> None:
+    module = _load_validator()
+    manifest = json.loads((ROOT / "mcp.json").read_text(encoding="utf-8"))
+    # OCI package (index 2) should not have version — confirm it passes
+    assert "version" not in manifest["packages"][2]
+
+    errors = module.validate_manifest(manifest)
+
+    assert not errors
 
 
 def test_validator_accepts_oci_identifier_with_digest() -> None:

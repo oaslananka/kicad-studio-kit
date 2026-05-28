@@ -30,7 +30,11 @@ __pycache__/
 Thumbs.db
 .vscode-test/
 .codex-checkpoints/
+.kicad_mcp/
+.omo/
+.hypothesis/
 *.log
+*.db
 
 # Secret-bearing local files
 .env

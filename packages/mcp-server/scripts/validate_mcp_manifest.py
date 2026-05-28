@@ -362,8 +362,14 @@ def validate_manifest(manifest: Mapping[str, Any]) -> list[str]:
             errors.append(f"packages[{index}] must define registryType or registry.")
         if not identifier:
             errors.append(f"packages[{index}] must define identifier, name, or image.")
-        if not _string(package.get("version")):
+        if not _is_oci_registry(registry, package) and not _string(package.get("version")):
             errors.append(f"packages[{index}] must define version.")
+        if _is_oci_registry(registry, package) and _string(package.get("version")):
+            errors.append(
+                f"packages[{index}] OCI packages must not define version field; "
+                "include version in identifier instead "
+                "(e.g., 'ghcr.io/owner/image:1.0.0')."
+            )
         if _is_oci_registry(registry, package):
             if "registryBaseUrl" in package:
                 errors.append(
