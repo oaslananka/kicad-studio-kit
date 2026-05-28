@@ -1,5 +1,5 @@
 schemaVersion: 1
-updated: "2026-05-27"
+updated: "2026-05-28"
 source: "https://github.com/oaslananka/kicad-studio-kit"
 
 kicad:
@@ -574,7 +574,7 @@ mcp:
 products:
   kicad-studio:
     packagePath: "apps/vscode-extension/package.json"
-    version: "1.0.0"
+    version: "1.1.0"
     compatibleMcpPro:
       required: ">=3.5.2 <4.0.0"
       recommended: ">=3.5.2 <4.0.0"
