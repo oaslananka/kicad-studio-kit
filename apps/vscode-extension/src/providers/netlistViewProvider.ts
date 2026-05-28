@@ -10,6 +10,11 @@ import { createNonce } from '../utils/nonce';
 import { findSiblingProjectFile } from '../utils/pathUtils';
 import type { ExportStateStore } from '../state/stateStores';
 
+type SchematicResolution = {
+  file?: string | undefined;
+  status?: string | undefined;
+};
+
 export class NetlistViewProvider
   implements vscode.WebviewViewProvider, vscode.Disposable
 {
@@ -26,7 +31,9 @@ export class NetlistViewProvider
     private readonly exportState?: ExportStateStore | undefined
   ) {
     this.disposables.push(
-      vscode.window.onDidChangeActiveTextEditor(() => this.scheduleRefresh(250)),
+      vscode.window.onDidChangeActiveTextEditor(() =>
+        this.scheduleRefresh(250)
+      ),
       vscode.workspace.onDidSaveTextDocument((doc) => {
         if (doc.fileName.endsWith('.kicad_sch')) {
           this.scheduleRefresh(0, true);
@@ -69,11 +76,15 @@ export class NetlistViewProvider
     if (!this.view) {
       return;
     }
-    const file = await this.findSchematicFile();
+    const resolution = await this.findSchematicFile();
+    const file = resolution.file;
     if (!file) {
       this._lastFile = '';
-      this.exportState?.complete('netlist', undefined, 'No schematic opened.');
-      await this.postNetlist([], 'No schematic opened.');
+      const status =
+        resolution.status ??
+        'No schematic file could be resolved. Active file: none. Project file: none. Discovered schematic candidates: none. Suggested command: open a .kicad_sch file or select a KiCad project.';
+      this.exportState?.complete('netlist', undefined, status);
+      await this.postNetlist([], status);
       return;
     }
     if (!force && this._lastFile !== undefined && file === this._lastFile) {
@@ -238,22 +249,101 @@ export class NetlistViewProvider
       );
   }
 
-  private async findSchematicFile(): Promise<string | undefined> {
+  private async findSchematicFile(): Promise<SchematicResolution> {
     const active = vscode.window.activeTextEditor?.document;
     if (active?.fileName.endsWith('.kicad_sch')) {
-      return active.fileName;
+      return { file: active.fileName };
     }
-    // Find all schematics and prefer ones that have a sibling .kicad_pro
-    // (root schematics) over hierarchical sub-sheets.
     const files = await vscode.workspace.findFiles(
       '**/*.kicad_sch',
       '**/node_modules/**',
       50
     );
-    if (files.length === 0) return undefined;
-    const rootSchematic = files.find(
-      (f) => findSiblingProjectFile(f.fsPath) !== undefined
+    const candidates = files.map((file) => file.fsPath);
+    const projectFile = this.findProjectFile(active?.fileName);
+    const projectSchematic = projectFile
+      ? this.findSchematicBesideProject(projectFile)
+      : undefined;
+    if (projectSchematic) {
+      return { file: projectSchematic };
+    }
+    if (candidates.length === 1) {
+      return { file: candidates[0] };
+    }
+    const rootSchematics = candidates.filter(
+      (candidate) => findSiblingProjectFile(candidate) !== undefined
     );
-    return (rootSchematic ?? files[0])!.fsPath;
+    if (rootSchematics.length === 1) {
+      return { file: rootSchematics[0] };
+    }
+    if (candidates.length > 1) {
+      const picked = await this.pickSchematic(candidates);
+      if (picked) {
+        return { file: picked };
+      }
+    }
+    return {
+      status: this.describeMissingSchematic(
+        active?.fileName,
+        projectFile,
+        candidates
+      )
+    };
+  }
+
+  private findProjectFile(activeFile: string | undefined): string | undefined {
+    if (!activeFile) {
+      return undefined;
+    }
+    if (activeFile.endsWith('.kicad_pro')) {
+      return activeFile;
+    }
+    if (
+      activeFile.endsWith('.kicad_pcb') ||
+      activeFile.endsWith('.kicad_sch')
+    ) {
+      return findSiblingProjectFile(activeFile);
+    }
+    return undefined;
+  }
+
+  private findSchematicBesideProject(projectFile: string): string | undefined {
+    const parsed = path.parse(projectFile);
+    const sibling = path.join(parsed.dir, `${parsed.name}.kicad_sch`);
+    return fs.existsSync(sibling) ? sibling : undefined;
+  }
+
+  private async pickSchematic(
+    candidates: string[]
+  ): Promise<string | undefined> {
+    const picked = await vscode.window.showQuickPick(
+      candidates.map((candidate) => ({
+        label: path.basename(candidate),
+        description: path.dirname(candidate),
+        path: candidate
+      })),
+      {
+        title: 'Select schematic for netlist',
+        placeHolder: 'Multiple KiCad schematics were found.'
+      }
+    );
+    return picked?.path;
+  }
+
+  private describeMissingSchematic(
+    activeFile: string | undefined,
+    projectFile: string | undefined,
+    candidates: string[]
+  ): string {
+    const candidateText = candidates.length
+      ? candidates.map((candidate) => path.basename(candidate)).join(', ')
+      : 'none';
+    return [
+      'No schematic file could be resolved.',
+      `Active file: ${activeFile ?? 'none'}.`,
+      `Project file: ${projectFile ?? 'none'}.`,
+      `Discovered schematic candidates: ${candidateText}.`,
+      'Suggested command: open a .kicad_sch file or select a KiCad project.'
+    ].join(' ');
   }
 }

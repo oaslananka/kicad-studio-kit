@@ -18,4 +18,4 @@ The extension checks:
 
 - Repository: https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension
 - MCP server: https://github.com/oaslananka/kicad-studio-kit/tree/main/packages/mcp-server
-- Manufacturing export docs: https://oaslananka.github.io/kicad-studio-kit/mcp/workflows/manufacturing-export/
+- Manufacturing export docs: https://oaslananka.github.io/kicad-studio-kit/workflows/manufacturing-export/

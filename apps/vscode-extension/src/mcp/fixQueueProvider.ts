@@ -15,14 +15,21 @@ import {
 class FixQueueTreeItem extends vscode.TreeItem {
   constructor(public readonly item: FixItem) {
     super(item.description, vscode.TreeItemCollapsibleState.None);
-    this.description = item.tool;
-    this.tooltip = item.preview ?? item.description;
-    this.contextValue = `fix-${item.severity}`;
-    this.command = {
-      command: COMMANDS.applyFixQueueItem,
-      title: 'Apply Fix',
-      arguments: [item]
-    };
+    const disabled = Boolean(item.disabledReason);
+    this.description = disabled ? `${item.tool} - read-only` : item.tool;
+    this.tooltip = [item.preview ?? item.description, item.disabledReason]
+      .filter(Boolean)
+      .join('\n\n');
+    this.contextValue = disabled
+      ? `fix-${item.severity}-disabled`
+      : `fix-${item.severity}`;
+    if (!disabled) {
+      this.command = {
+        command: COMMANDS.applyFixQueueItem,
+        title: 'Apply Fix',
+        arguments: [item]
+      };
+    }
     this.iconPath = new vscode.ThemeIcon(
       item.severity === 'error'
         ? 'error'
@@ -164,7 +171,9 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixQueueNode> {
   }
 
   async applyAll(): Promise<void> {
-    const pending = this.items.filter((item) => item.status === 'pending');
+    const pending = this.items.filter(
+      (item) => item.status === 'pending' && !item.disabledReason
+    );
     if (!pending.length) {
       return;
     }
@@ -198,6 +207,11 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixQueueNode> {
     item: FixItem,
     options: { confirm: boolean }
   ): Promise<void> {
+    if (item.disabledReason) {
+      void vscode.window.showInformationMessage(item.disabledReason);
+      return;
+    }
+
     const preview =
       item.preview ??
       (await this.adapter.previewToolCall({

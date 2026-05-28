@@ -73,6 +73,37 @@ describe('FixQueueProvider code-action support', () => {
     );
   });
 
+  it('renders file-backed queue suggestions as read-only and does not apply them', async () => {
+    const client = {
+      fetchFixQueue: jest.fn().mockResolvedValue([
+        {
+          id: 'file-backed-fix-1',
+          description: 'Review clearance',
+          severity: 'warning',
+          tool: 'pcb_score_placement',
+          args: {},
+          status: 'pending',
+          source: 'file-backed',
+          disabledReason: 'Read-only suggestion from file-backed diagnostics.'
+        }
+      ]),
+      applyFixTool: jest.fn()
+    };
+    const provider = new FixQueueProvider(client as never);
+    await provider.refresh();
+
+    const [item] = provider.getChildren() as FixItem[];
+    const treeItem = provider.getTreeItem(item as never);
+    await provider.applyFix(item!);
+
+    expect(treeItem.command).toBeUndefined();
+    expect(String(treeItem.description)).toContain('read-only');
+    expect(client.applyFixTool).not.toHaveBeenCalled();
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      'Read-only suggestion from file-backed diagnostics.'
+    );
+  });
+
   it('builds tree items for severities and stops bulk apply on failure', async () => {
     const client = {
       fetchFixQueue: jest.fn().mockResolvedValue([

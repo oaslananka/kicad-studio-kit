@@ -509,6 +509,90 @@ describe('McpClient', () => {
     );
   });
 
+  it('parses text fix queue resources as file-backed read-only suggestions', async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse(
+          { result: {} },
+          { headers: { 'MCP-Session-Id': 'session-text-fixes' } }
+        )
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          result: {
+            contents: [
+              {
+                text:
+                  'Project fix queue\n' +
+                  '- Blocking items: 1\n' +
+                  '1. [critical] Placement: track clearance Suggested tool: pcb_score_placement()'
+              }
+            ]
+          }
+        })
+      );
+    global.fetch = fetchMock as typeof fetch;
+
+    await expect(createClient().fetchFixQueue()).resolves.toEqual([
+      expect.objectContaining({
+        id: 'file-backed-fix-1',
+        source: 'file-backed',
+        disabledReason: expect.stringContaining('Read-only suggestion'),
+        tool: 'pcb_score_placement',
+        severity: 'error'
+      })
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('maps studio context pushes to the MCP server snake_case schema', async () => {
+    const rpcBodies: Array<{
+      method?: string;
+      params?: Record<string, unknown>;
+    }> = [];
+    const fetchMock = jest.fn(async (_url, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as {
+        method?: string;
+        params?: Record<string, unknown>;
+      };
+      rpcBodies.push(body);
+      return createJsonResponse(
+        body.method === 'tools/call'
+          ? { result: { structuredContent: { ok: true } } }
+          : { result: {} },
+        { headers: { 'MCP-Session-Id': 'context-session' } }
+      );
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await createClient().pushContext({
+      activeFile: 'C:/project/555.kicad_sch',
+      fileType: 'schematic',
+      drcErrors: ['clearance'],
+      projectFile: 'C:/project/555.kicad_pro',
+      projectRoot: 'C:/project',
+      selectedReference: 'U1'
+    });
+
+    const toolCall = rpcBodies.find((body) => body.method === 'tools/call');
+    expect(toolCall?.params).toEqual(
+      expect.objectContaining({
+        name: 'studio_push_context',
+        arguments: expect.objectContaining({
+          active_file: 'C:/project/555.kicad_sch',
+          file_type: 'schematic',
+          drc_errors: ['clearance'],
+          selected_reference: 'U1',
+          snapshot: expect.objectContaining({
+            projectFile: 'C:/project/555.kicad_pro',
+            projectRoot: 'C:/project'
+          })
+        })
+      })
+    );
+  });
+
   it('handles disabled context push and connection failures gracefully', async () => {
     __setConfiguration({
       'kicadstudio.mcp.endpoint': 'http://127.0.0.1:27185',

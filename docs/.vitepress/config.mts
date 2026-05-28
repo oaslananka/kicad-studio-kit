@@ -64,6 +64,15 @@ export default defineConfig({
         ],
       },
       {
+        text: "Workflows",
+        items: [
+          {
+            text: "Manufacturing Export",
+            link: "/workflows/manufacturing-export",
+          },
+        ],
+      },
+      {
         text: "MCP",
         items: [
           { text: "Overview", link: "/mcp/" },

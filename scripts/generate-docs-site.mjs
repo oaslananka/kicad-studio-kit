@@ -536,6 +536,7 @@ function renderSitemap() {
     "/mcp/transport.html",
     "/mcp/deployment.html",
     "/mcp/api-reference.html",
+    "/workflows/manufacturing-export.html",
     "/architecture/",
     "/support-matrix.html",
     "/versions.html",

@@ -5,4 +5,4 @@ KiCad Studio discovers `kicad-mcp-pro` from `uvx`, direct executables, `pipx`, o
 Documentation URLs use the canonical Pages site:
 
 - https://oaslananka.github.io/kicad-studio-kit
-- https://oaslananka.github.io/kicad-studio-kit/mcp/workflows/manufacturing-export/
+- https://oaslananka.github.io/kicad-studio-kit/workflows/manufacturing-export/

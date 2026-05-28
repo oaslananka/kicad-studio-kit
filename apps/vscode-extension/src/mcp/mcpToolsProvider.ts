@@ -50,6 +50,8 @@ type CompatibilityDashboard = {
   lastError: string;
   remediation: string;
   diagnostics: string[];
+  fileBackedReadAvailable: boolean;
+  liveContextUnavailable: boolean;
 };
 
 const REQUIRED_EXTENSION_TOOLS = [
@@ -174,7 +176,7 @@ function buildCompatibilityDashboard(
 
   return {
     status,
-    stateLabel: dashboardStateLabel(state, status),
+    stateLabel: dashboardStateLabel(state, status, serverInfo),
     serverName: serverInfo?.server ?? 'kicad-mcp-pro',
     serverVersion: server?.version ?? serverInfo?.version ?? 'unknown',
     endpoint,
@@ -196,7 +198,9 @@ function buildCompatibilityDashboard(
     lastHealthCheck: server?.capturedAt ?? 'never',
     lastError: state.message ?? 'none',
     remediation: remediationHint(state, status),
-    diagnostics
+    diagnostics,
+    fileBackedReadAvailable: hasFileBackedRead(serverInfo),
+    liveContextUnavailable: hasUnavailableLiveContext(serverInfo)
   };
 }
 
@@ -230,7 +234,8 @@ function dashboardStatus(
 
 function dashboardStateLabel(
   state: McpConnectionState,
-  status: DashboardStatus
+  status: DashboardStatus,
+  serverInfo: McpServerInfoContract | undefined
 ): string {
   if (state.kind === 'NotInstalled') {
     return 'No MCP installed';
@@ -240,6 +245,20 @@ function dashboardStateLabel(
   }
   if (state.kind === 'Incompatible') {
     return 'Connected but incompatible';
+  }
+  if (
+    status === 'degraded' &&
+    hasFileBackedRead(serverInfo) &&
+    serverInfo?.kicad.ipcAvailable === false
+  ) {
+    return 'MCP connected; live KiCad IPC unavailable, file-backed read-only features active';
+  }
+  if (
+    status === 'degraded' &&
+    hasFileBackedRead(serverInfo) &&
+    hasUnavailableLiveContext(serverInfo)
+  ) {
+    return 'MCP connected; live KiCad context unavailable, file-backed read-only features active';
   }
   if (state.kind === 'Degraded' || status === 'degraded') {
     return state.connected || state.kind === 'VsCodeStdio'
@@ -318,7 +337,10 @@ function compatibilityDashboardNode(
       ]),
       dashboardGroup('Advertised surface', [
         dashboardField('Advertised tools', countText(dashboard.toolCount)),
-        dashboardField('Advertised resources', countText(dashboard.resourceCount)),
+        dashboardField(
+          'Advertised resources',
+          countText(dashboard.resourceCount)
+        ),
         dashboardField('Advertised prompts', countText(dashboard.promptCount)),
         missingGroup(
           'Missing required tools',
@@ -346,13 +368,23 @@ function stateNode(
   dashboard: CompatibilityDashboard
 ): McpToolsNode {
   if (dashboard.status === 'degraded') {
+    const fileBackedDegraded =
+      dashboard.fileBackedReadAvailable && dashboard.liveContextUnavailable;
+    const degradedReason = dashboard.stateLabel.includes('context unavailable')
+      ? 'live KiCad context unavailable'
+      : 'live KiCad IPC unavailable';
     return {
-      label:
-        state.connected || state.kind === 'VsCodeStdio'
+      label: fileBackedDegraded
+        ? 'MCP connected; file-backed read-only features active'
+        : state.connected || state.kind === 'VsCodeStdio'
           ? 'MCP connected with degraded capabilities'
           : 'MCP degraded',
-      description: dashboard.serverVersion,
-      tooltip: dashboard.remediation,
+      description: fileBackedDegraded
+        ? degradedReason
+        : dashboard.serverVersion,
+      tooltip: fileBackedDegraded
+        ? `${sentenceCase(degradedReason)}; file-backed read-only features active.`
+        : dashboard.remediation,
       icon: 'warning',
       command: {
         command: COMMANDS.retryMcp,
@@ -398,7 +430,10 @@ function stateNode(
   return {
     label: dashboard.stateLabel,
     description: state.available ? 'detected, not connected' : 'not detected',
-    tooltip: dashboard.lastError === 'none' ? dashboard.remediation : dashboard.lastError,
+    tooltip:
+      dashboard.lastError === 'none'
+        ? dashboard.remediation
+        : dashboard.lastError,
     icon: state.available ? 'warning' : 'circle-slash',
     command: {
       command: state.available
@@ -413,10 +448,16 @@ function actionGroupNode(): McpToolsNode {
   return {
     label: 'Actions',
     description: 'MCP operations',
-    tooltip: 'Run common MCP setup, recovery, diagnostics, and profile actions.',
+    tooltip:
+      'Run common MCP setup, recovery, diagnostics, and profile actions.',
     icon: 'tools',
     children: [
-      actionNode('Reconnect', COMMANDS.retryMcp, 'Reconnect MCP endpoint', 'sync'),
+      actionNode(
+        'Reconnect',
+        COMMANDS.retryMcp,
+        'Reconnect MCP endpoint',
+        'sync'
+      ),
       actionNode(
         'Refresh capabilities',
         COMMANDS.retryMcp,
@@ -567,9 +608,14 @@ function kicadRuntimeNode(
   const cliStatus = serverInfo.kicad.cliFound
     ? (serverInfo.kicad.cliVersion ?? 'version unknown')
     : 'CLI unavailable';
+  const fileBackedRead = hasFileBackedRead(serverInfo);
   return {
     label: 'KiCad runtime',
-    description: serverInfo.kicad.livePcbContext ? 'live PCB' : 'degraded',
+    description: serverInfo.kicad.livePcbContext
+      ? 'live PCB'
+      : fileBackedRead
+        ? 'file-backed read available'
+        : 'degraded',
     tooltip: [
       `CLI: ${cliStatus}`,
       `Path: ${serverInfo.kicad.cliPath}`,
@@ -577,7 +623,8 @@ function kicadRuntimeNode(
       `IPC version: ${serverInfo.kicad.ipcVersion ?? 'unknown'}`,
       `IPC endpoint: ${serverInfo.kicad.ipcEndpointSource}`,
       `Live PCB: ${serverInfo.kicad.livePcbContext ? 'available' : 'unavailable'}`,
-      `Live schematic: ${serverInfo.kicad.liveSchematicContext ? 'available' : 'unavailable'}`
+      `Live schematic: ${serverInfo.kicad.liveSchematicContext ? 'available' : 'unavailable'}`,
+      `File-backed read: ${fileBackedRead ? 'available' : 'unavailable'}`
     ].join('\n'),
     icon: serverInfo.kicad.livePcbContext ? 'circuit-board' : 'warning'
   };
@@ -586,6 +633,7 @@ function kicadRuntimeNode(
 function operationModesNode(
   serverInfo: NonNullable<McpCapabilityCard['serverInfo']>
 ): McpToolsNode {
+  const fileBackedRead = hasFileBackedRead(serverInfo);
   const modes = [
     capabilityFlag('File-backed DRC', serverInfo.capabilities.fileBackedDrc),
     capabilityFlag('File-backed ERC', serverInfo.capabilities.fileBackedErc),
@@ -593,7 +641,13 @@ function operationModesNode(
       'File-backed exports',
       serverInfo.capabilities.fileBackedExports
     ),
-    capabilityFlag('Live PCB read', serverInfo.capabilities.livePcbRead),
+    capabilityFlag(
+      'Live PCB read',
+      serverInfo.capabilities.livePcbRead,
+      !serverInfo.capabilities.livePcbRead && fileBackedRead
+        ? 'unavailable; file-backed read available'
+        : undefined
+    ),
     capabilityFlag('Live PCB write', serverInfo.capabilities.livePcbWrite),
     capabilityFlag(
       'Live schematic read',
@@ -613,7 +667,8 @@ function operationModesNode(
     description: serverInfo.operatingMode.active,
     tooltip: modes
       .map(
-        (mode) => `${mode.label}: ${mode.enabled ? 'available' : 'unavailable'}`
+        (mode) =>
+          `${mode.label}: ${mode.description ?? (mode.enabled ? 'available' : 'unavailable')}`
       )
       .join('\n'),
     icon: 'checklist',
@@ -626,7 +681,8 @@ function operationModesNode(
       },
       ...modes.map((mode) => ({
         label: mode.label,
-        description: mode.enabled ? 'available' : 'unavailable',
+        description:
+          mode.description ?? (mode.enabled ? 'available' : 'unavailable'),
         icon: mode.enabled ? 'pass' : 'circle-slash'
       }))
     ]
@@ -648,9 +704,35 @@ function modeIcon(mode: string): string {
 
 function capabilityFlag(
   label: string,
-  enabled: boolean
-): { label: string; enabled: boolean } {
-  return { label, enabled };
+  enabled: boolean,
+  description?: string | undefined
+): { label: string; enabled: boolean; description?: string | undefined } {
+  return { label, enabled, description };
+}
+
+function hasFileBackedRead(
+  serverInfo: McpServerInfoContract | undefined
+): boolean {
+  return Boolean(
+    serverInfo?.capabilities.fileBackedDrc ||
+    serverInfo?.capabilities.fileBackedErc ||
+    serverInfo?.capabilities.fileBackedExports
+  );
+}
+
+function hasUnavailableLiveContext(
+  serverInfo: McpServerInfoContract | undefined
+): boolean {
+  if (!serverInfo) {
+    return false;
+  }
+  return (
+    !serverInfo.kicad.ipcAvailable ||
+    !serverInfo.kicad.livePcbContext ||
+    !serverInfo.kicad.liveSchematicContext ||
+    !serverInfo.capabilities.livePcbRead ||
+    !serverInfo.capabilities.liveSchematicRead
+  );
 }
 
 function capabilityGroup(label: string, values: string[]): McpToolsNode {
@@ -819,6 +901,10 @@ function availability(value: boolean | undefined): string {
     return 'unknown';
   }
   return value ? 'available' : 'unavailable';
+}
+
+function sentenceCase(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function countText(value: number | undefined): string {

@@ -49,7 +49,11 @@ describe('McpToolsProvider', () => {
       'Health and remediation'
     ]);
     expect(
-      labels(provider.getChildren(child(provider.getChildren(dashboard), 'Server contract')))
+      labels(
+        provider.getChildren(
+          child(provider.getChildren(dashboard), 'Server contract')
+        )
+      )
     ).toEqual([
       'Server',
       'Endpoint',
@@ -90,9 +94,9 @@ describe('McpToolsProvider', () => {
       'Launch local MCP server',
       'Open compatibility docs'
     ]);
-    expect(treeDescription(provider, children, 'Raw advertised capabilities')).toBe(
-      '2 tools, 1 resources, 1 prompts'
-    );
+    expect(
+      treeDescription(provider, children, 'Raw advertised capabilities')
+    ).toBe('2 tools, 1 resources, 1 prompts');
   });
 
   it('does not report connected-only status when live PCB context is unavailable', () => {
@@ -124,13 +128,32 @@ describe('McpToolsProvider', () => {
     const dashboard = child(children, 'Compatibility dashboard');
     const runtime = child(provider.getChildren(dashboard), 'KiCad runtime');
 
-    expect(child(children, 'MCP connected with degraded capabilities')).toBeDefined();
-    expect(treeDescription(provider, provider.getChildren(dashboard), 'Compatibility state')).toBe(
-      'Connected but degraded'
+    expect(
+      child(children, 'MCP connected; file-backed read-only features active')
+    ).toBeDefined();
+    expect(
+      treeDescription(
+        provider,
+        provider.getChildren(dashboard),
+        'Compatibility state'
+      )
+    ).toBe(
+      'MCP connected; live KiCad context unavailable, file-backed read-only features active'
     );
-    expect(treeDescription(provider, provider.getChildren(runtime), 'Live PCB context')).toBe(
-      'unavailable'
-    );
+    expect(
+      treeDescription(
+        provider,
+        provider.getChildren(runtime),
+        'Live PCB context'
+      )
+    ).toBe('unavailable');
+    expect(
+      treeDescription(
+        provider,
+        provider.getChildren(child(children, 'Raw advertised capabilities')),
+        'KiCad runtime'
+      )
+    ).toBe('file-backed read available');
 
     const stdioProvider = providerForState({
       kind: 'VsCodeStdio',

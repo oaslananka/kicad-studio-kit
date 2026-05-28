@@ -15,15 +15,29 @@ export function registerQualityGateCommands(
     ),
     registerTrustedCommand(
       COMMANDS.qualityGateRunThis,
-      (gate: QualityGateResult) => services.qualityGateProvider.runGate(gate),
+      (gate: QualityGateCommandArg) =>
+        services.qualityGateProvider.runGate(resolveGateArg(gate)),
       'Run Quality Gate'
     ),
     vscode.commands.registerCommand(
       COMMANDS.qualityGateShowRaw,
-      (gate: QualityGateResult) => services.qualityGateProvider.showRaw(gate)
+      (gate: QualityGateCommandArg) =>
+        services.qualityGateProvider.showRaw(resolveGateArg(gate))
     ),
-    vscode.commands.registerCommand(COMMANDS.qualityGateOpenDocs, () =>
-      services.qualityGateProvider.openDocs()
+    vscode.commands.registerCommand(
+      COMMANDS.qualityGateOpenDocs,
+      (gate?: QualityGateCommandArg) =>
+        services.qualityGateProvider.openDocs(
+          gate ? resolveGateArg(gate) : undefined
+        )
     )
   ];
+}
+
+type QualityGateCommandArg =
+  | QualityGateResult
+  | { kind: 'gate'; gate: QualityGateResult };
+
+function resolveGateArg(gate: QualityGateCommandArg): QualityGateResult {
+  return 'kind' in gate && gate.kind === 'gate' ? gate.gate : gate;
 }

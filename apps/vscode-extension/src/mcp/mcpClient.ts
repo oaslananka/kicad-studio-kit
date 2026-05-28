@@ -44,6 +44,8 @@ export interface McpClientOptions {
 const MCP_SESSION_ID_KEY = 'kicadstudio.mcp.sessionId';
 const MCP_LAST_SERVER_CARD_KEY = 'kicadstudio.mcp.lastServerCard';
 const KNOWN_MCP_SDK_VERSION_HINTS = new Set(['1.27.0']);
+const FILE_BACKED_FIX_DISABLED_REASON =
+  'Read-only suggestion from file-backed quality gates; start a write-capable live MCP session to apply it automatically.';
 const DEFAULT_RECONNECT_DELAYS_MS = [
   1000, 2000, 4000, 8000, 16000, 30000
 ] as const;
@@ -243,9 +245,10 @@ export class McpClient {
     }
 
     try {
-      await this.callTool('studio_push_context', {
-        ...context
-      });
+      await this.callTool(
+        'studio_push_context',
+        toStudioContextToolArgs(context)
+      );
     } catch (error) {
       this.logger.debug(
         `MCP context push skipped: ${error instanceof Error ? error.message : String(error)}`
@@ -333,9 +336,15 @@ export class McpClient {
     const items =
       (Array.isArray(resource?.['items']) ? resource['items'] : undefined) ??
       (Array.isArray(resource?.['fixes']) ? resource['fixes'] : undefined);
+    const textItems = parseFixQueueText(
+      typeof resource?.['text'] === 'string' ? resource['text'] : undefined
+    );
 
     if (items) {
       return items.map((item, index) => normalizeFixItem(item, index));
+    }
+    if (textItems) {
+      return textItems;
     }
 
     const toolResult = await this.callTool('project_get_fix_queue', args);
@@ -859,9 +868,48 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function toStudioContextToolArgs(
+  context: StudioContext
+): Record<string, unknown> {
+  const project = context.project;
+  const projectFile = context.projectFile ?? project?.projectFile;
+  const projectRoot = context.projectRoot ?? project?.rootPath;
+  return {
+    active_file: context.activeFile ?? null,
+    file_type: context.fileType,
+    drc_errors: context.drcErrors,
+    selected_net: context.selectedNet ?? null,
+    selected_reference: context.selectedReference ?? null,
+    cursor_position: context.cursorPosition ?? null,
+    snapshot: {
+      activeFile: context.activeFile ?? null,
+      fileType: context.fileType,
+      projectFile: projectFile ?? null,
+      projectRoot: projectRoot ?? null,
+      projectId: context.projectId ?? project?.id ?? null,
+      projectName: context.projectName ?? project?.name ?? null,
+      selectedArea: context.selectedArea ?? null,
+      activeVariant: context.activeVariant ?? null,
+      mcpConnected: context.mcpConnected ?? null,
+      activeSheetPath: context.activeSheetPath ?? null,
+      visibleLayers: context.visibleLayers ?? [],
+      viewerEngine: context.viewerEngine ?? null,
+      kicadVersion: context.kicadVersion ?? null,
+      designBlocks: context.designBlocks ?? []
+    }
+  };
+}
+
 function normalizeFixItem(value: unknown, index: number): FixItem {
   const item = typeof value === 'object' && value !== null ? value : {};
   const record = item as Record<string, unknown>;
+  const source =
+    record['source'] === 'mcp' ||
+    record['source'] === 'file-backed' ||
+    record['source'] === 'live-ipc' ||
+    record['source'] === 'cached'
+      ? record['source']
+      : undefined;
   return {
     id: String(record['id'] ?? `fix-${index + 1}`),
     title:
@@ -894,6 +942,10 @@ function normalizeFixItem(value: unknown, index: number): FixItem {
     ...(typeof record['preview'] === 'string'
       ? { preview: record['preview'] }
       : {}),
+    ...(source ? { source } : {}),
+    ...(typeof record['disabledReason'] === 'string'
+      ? { disabledReason: record['disabledReason'] }
+      : {}),
     ...(typeof record['path'] === 'string' ? { path: record['path'] } : {}),
     ...(typeof record['line'] === 'number'
       ? { line: record['line'] }
@@ -905,6 +957,69 @@ function normalizeFixItem(value: unknown, index: number): FixItem {
       ? { confidence: record['confidence'] }
       : {})
   };
+}
+
+function parseFixQueueText(text: string | undefined): FixItem[] | undefined {
+  if (text === undefined) {
+    return undefined;
+  }
+  if (/No blocking issues|No pending fixes|quality gate is PASS/iu.test(text)) {
+    return [];
+  }
+  const blocked = text.match(/^\s*-\s*BLOCKED:\s*(.+)$/imu);
+  if (blocked?.[1]) {
+    return [fileBackedFixItem(0, 'Fix Queue blocked', blocked[1], 'warning')];
+  }
+  const rows = [
+    ...text.matchAll(/^\s*\d+\.\s*\[([^\]]+)\]\s*([^:\n]+):\s*(.+)$/gimu)
+  ];
+  if (!rows.length) {
+    return undefined;
+  }
+  return rows.map((row, index) => {
+    const detail = row[3] ?? 'Review project quality gate output.';
+    const tool = detail.match(/Suggested tool:\s*([a-zA-Z0-9_]+)/u)?.[1];
+    return fileBackedFixItem(
+      index,
+      row[2] ?? 'Quality gate',
+      detail,
+      severityFromText(row[1] ?? ''),
+      tool
+    );
+  });
+}
+
+function fileBackedFixItem(
+  index: number,
+  title: string,
+  detail: string,
+  severity: FixItem['severity'],
+  tool = 'review_file_backed_quality_gate'
+): FixItem {
+  return {
+    id: `file-backed-fix-${index + 1}`,
+    title: title.trim(),
+    description: detail
+      .replace(/\s*Suggested tool:\s*[a-zA-Z0-9_]+(?:\(\))?/u, '')
+      .trim(),
+    severity,
+    tool,
+    args: {},
+    status: 'pending',
+    source: 'file-backed',
+    disabledReason: FILE_BACKED_FIX_DISABLED_REASON,
+    preview: detail.trim()
+  };
+}
+
+function severityFromText(value: string): FixItem['severity'] {
+  if (/critical|high|error|fail|blocked/iu.test(value)) {
+    return 'error';
+  }
+  if (/warn|medium/iu.test(value)) {
+    return 'warning';
+  }
+  return 'info';
 }
 
 function parseSseJsonRpc<T>(payload: string): JsonRpcResponse<T> {

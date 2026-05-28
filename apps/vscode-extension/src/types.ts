@@ -494,6 +494,8 @@ export interface FixItem {
   tool: string;
   args: Record<string, unknown>;
   status: 'pending' | 'applying' | 'done' | 'failed';
+  source?: 'mcp' | 'file-backed' | 'live-ipc' | 'cached' | undefined;
+  disabledReason?: string | undefined;
   preview?: string | undefined;
   path?: string | undefined;
   line?: number | undefined;

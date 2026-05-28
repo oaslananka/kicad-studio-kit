@@ -147,6 +147,9 @@ describe('QualityGateProvider', () => {
     expect(provider.getTreeItem(transfer as never).command).toEqual(
       expect.objectContaining({ command: 'kicadstudio.qualityGate.runThis' })
     );
+    expect(String(provider.getTreeItem(transfer as never).tooltip)).toContain(
+      'Primary action: Run gate.'
+    );
     expect(provider.getChildren(transfer as never)).toHaveLength(1);
   });
 
@@ -335,8 +338,29 @@ describe('QualityGateProvider', () => {
     await Promise.resolve();
     await provider.openDocs();
 
+    await provider.openDocs({
+      id: 'schematic',
+      label: 'Schematic',
+      status: 'PENDING',
+      summary: '',
+      details: [],
+      violations: []
+    });
+
     expect(client.runPlacementQualityGate).toHaveBeenCalledTimes(1);
-    expect(env.openExternal).toHaveBeenCalled();
+    expect(env.openExternal).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        fsPath:
+          'https://oaslananka.github.io/kicad-studio-kit/workflows/manufacturing-export/'
+      })
+    );
+    expect(env.openExternal).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        fsPath: 'https://oaslananka.github.io/kicad-studio-kit/extension/'
+      })
+    );
     jest.useRealTimers();
   });
 });

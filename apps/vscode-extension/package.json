@@ -739,7 +739,8 @@
       {
         "command": "kicadstudio.qualityGate.runThis",
         "title": "%kicadstudio.contributes.commands.65.title%",
-        "category": "%kicadstudio.contributes.commands.65.category%"
+        "category": "%kicadstudio.contributes.commands.65.category%",
+        "icon": "$(play)"
       },
       {
         "command": "kicadstudio.qualityGate.showRaw",
@@ -749,7 +750,8 @@
       {
         "command": "kicadstudio.qualityGate.openDocs",
         "title": "%kicadstudio.contributes.commands.67.title%",
-        "category": "%kicadstudio.contributes.commands.67.category%"
+        "category": "%kicadstudio.contributes.commands.67.category%",
+        "icon": "$(book)"
       },
       {
         "command": "kicadstudio.manufacturing.release",
@@ -997,6 +999,21 @@
         }
       ],
       "view/item/context": [
+        {
+          "when": "view == kicadstudio.qualityGate && viewItem =~ /^qualityGate-/ && kicadstudio.workspaceTrusted",
+          "command": "kicadstudio.qualityGate.runThis",
+          "group": "inline@1"
+        },
+        {
+          "when": "view == kicadstudio.qualityGate && viewItem =~ /^qualityGate-/",
+          "command": "kicadstudio.qualityGate.openDocs",
+          "group": "inline@2"
+        },
+        {
+          "when": "view == kicadstudio.qualityGate && viewItem =~ /^qualityGate-/",
+          "command": "kicadstudio.qualityGate.showRaw",
+          "group": "navigation"
+        },
         {
           "when": "view == kicadstudio.library && viewItem == pcmPackageAvailable && kicadstudio.workspaceTrusted",
           "command": "kicadstudio.pcm.install",

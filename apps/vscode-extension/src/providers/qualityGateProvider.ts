@@ -203,12 +203,8 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
     await vscode.window.showTextDocument(document);
   }
 
-  async openDocs(): Promise<void> {
-    await vscode.env.openExternal(
-      vscode.Uri.parse(
-        'https://oaslananka.github.io/kicad-studio-kit/workflows/manufacturing-export/'
-      )
-    );
+  async openDocs(gate?: QualityGateResult): Promise<void> {
+    await vscode.env.openExternal(vscode.Uri.parse(qualityGateDocsUrl(gate)));
   }
 
   private async persist(): Promise<void> {
@@ -302,6 +298,8 @@ function tooltipForGate(gate: QualityGateResult): string {
   const lines = [
     `${gate.label}: ${gate.status}`,
     gate.summary,
+    'Primary action: Run gate.',
+    'Secondary action: Open docs.',
     gate.lastRun
       ? `Last run: ${formatTimestamp(gate.lastRun)}`
       : 'Last run: never',
@@ -316,6 +314,14 @@ function tooltipForGate(gate: QualityGateResult): string {
     lines.push('', gate.raw);
   }
   return lines.join('\n');
+}
+
+function qualityGateDocsUrl(gate: QualityGateResult | undefined): string {
+  const base = 'https://oaslananka.github.io/kicad-studio-kit';
+  if (!gate || gate.id.includes('manufacturing')) {
+    return `${base}/workflows/manufacturing-export/`;
+  }
+  return `${base}/extension/`;
 }
 
 function iconForStatus(status: QualityGateStatus): string {

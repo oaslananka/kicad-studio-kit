@@ -125,3 +125,23 @@ async def test_studio_push_context_updates_resource_and_auto_sets_project(sample
     assert payload["selected_reference"] == "U1"
     assert get_config().project_dir == sample_project.resolve()
     assert "Studio context updated" in result
+
+
+@pytest.mark.anyio
+async def test_studio_push_context_returns_structured_missing_context_error() -> None:
+    server = create_server()
+
+    result = await call_tool_text(
+        server,
+        "studio_push_context",
+        {
+            "active_file": None,
+            "file_type": "other",
+            "drc_errors": [],
+        },
+    )
+
+    payload = json.loads(result)
+    assert payload["ok"] is False
+    assert payload["code"] == "NO_ACTIVE_PROJECT"
+    assert payload["fallbackAvailable"] is True
