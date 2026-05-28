@@ -12,6 +12,19 @@ and this package adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [3.6.0](https://github.com/oaslananka/kicad-studio-kit/compare/mcp-npm-v3.5.2...mcp-npm-v3.6.0) (2026-05-27)
+
+
+### Features
+
+* **kicad-studio/kicad-mcp-pro:** add product release provenance evidence ([#195](https://github.com/oaslananka/kicad-studio-kit/issues/195)) ([e2caccd](https://github.com/oaslananka/kicad-studio-kit/commit/e2caccd5663e394585b017554305ef0954b62d66))
+
+
+### Bug Fixes
+
+* **kicad-mcp-pro:** make npm launcher build smoke cross-platform ([f96baca](https://github.com/oaslananka/kicad-studio-kit/commit/f96baca8b349856ae61bd5ee21cfed33c670bcef)), closes [#191](https://github.com/oaslananka/kicad-studio-kit/issues/191)
+* **kicad-studio/kicad-mcp-pro:** raise public compatibility floors ([98283a7](https://github.com/oaslananka/kicad-studio-kit/commit/98283a7374fcd666c392044e95aafb0c330d896e)), closes [#209](https://github.com/oaslananka/kicad-studio-kit/issues/209)
+
 ## [Unreleased]
 
 ### Changed
