@@ -163,6 +163,14 @@ function assertPackageMetadata() {
   ) {
     fail('package.json must expose marketplace:check');
   }
+  if (!packageJson.baseImagesUrl) {
+    fail('package.json must set baseImagesUrl for marketplace image rendering');
+  }
+  if (
+    !packageJson.baseImagesUrl.startsWith('https://raw.githubusercontent.com/')
+  ) {
+    fail('package.json baseImagesUrl must point to raw.githubusercontent.com');
+  }
 }
 
 function assertMarketplaceAssets() {
@@ -193,13 +201,36 @@ function assertMarketplaceAssets() {
 }
 
 function assertMarketplaceMarkdown() {
+  const packageJson = readJson('package.json');
   const readme = readText('README.md');
   const listing = readText('docs/marketplace-listing.md');
   const firstLines = readme.split('\n').slice(0, 5).join('\n');
+  const expectedVersion = packageJson.version;
 
   if (!firstLines.includes('assets/marketplace/hero.png')) {
     fail('README.md must place the hero image at the top');
   }
+
+  // Version text in README must match package.json
+  const versionPattern = new RegExp(
+    `Version:\\s*\`${escapeRegExp(expectedVersion)}\``
+  );
+  if (!versionPattern.test(readme)) {
+    fail(
+      `README.md must declare Version: \`${expectedVersion}\` matching package.json`
+    );
+  }
+
+  // MCP Compatibility section version
+  const mcpCompatPattern = new RegExp(
+    `KiCad Studio ${escapeRegExp(expectedVersion)}\\s+supports`
+  );
+  if (!mcpCompatPattern.test(readme)) {
+    fail(
+      `README.md MCP Compatibility section must reference KiCad Studio ${expectedVersion}`
+    );
+  }
+
   for (const heading of [
     'Quick Start',
     'Feature Matrix',

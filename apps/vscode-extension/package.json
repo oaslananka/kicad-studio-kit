@@ -46,6 +46,8 @@
     "color": "#1a1a2e",
     "theme": "dark"
   },
+  "baseImagesUrl": "https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension",
+  "baseContentUrl": "https://github.com/oaslananka/kicad-studio-kit/blob/main/apps/vscode-extension",
   "repository": {
     "type": "git",
     "url": "https://github.com/oaslananka/kicad-studio-kit",
