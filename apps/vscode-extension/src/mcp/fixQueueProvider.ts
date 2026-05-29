@@ -65,6 +65,25 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixQueueNode> {
   getChildren(): FixQueueNode[] {
     const state = this.mcpState?.getState();
     if (state && !supportsHttpFixQueue(state)) {
+      if (state.kind === 'Degraded') {
+        const diagnostics = state.server?.capabilities?.diagnostics ?? [];
+        const detail = diagnostics.length
+          ? diagnostics.join(' ')
+          : fixQueueBlockMessage(state);
+        return [
+          sidebarState(
+            'error',
+            localize('fixQueueUnavailableLabel'),
+            localize('fixQueueRefreshErrorDescription'),
+            detail,
+            'warning',
+            {
+              command: COMMANDS.retryMcp,
+              title: localize('fixQueueRetryCommand')
+            }
+          )
+        ];
+      }
       return [
         sidebarState(
           'error',
@@ -255,9 +274,16 @@ function supportsHttpFixQueue(state: McpConnectionState): boolean {
 }
 
 function fixQueueBlockMessage(state: McpConnectionState): string {
-  return state.kind === 'VsCodeStdio'
-    ? localize('fixQueueBlockStdio')
-    : state.kind === 'Incompatible'
-      ? localize('fixQueueBlockIncompatible')
-      : localize('fixQueueBlockDefault');
+  if (state.kind === 'VsCodeStdio') {
+    return localize('fixQueueBlockStdio');
+  }
+  if (state.kind === 'Incompatible') {
+    return localize('fixQueueBlockIncompatible');
+  }
+  if (state.kind === 'Degraded') {
+    return localize('fixQueueBlockDegraded', {
+      message: state.message ?? 'The server is unreachable.'
+    });
+  }
+  return localize('fixQueueBlockDefault');
 }

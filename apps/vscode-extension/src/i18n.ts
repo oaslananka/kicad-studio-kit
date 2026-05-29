@@ -56,6 +56,8 @@ export const SOURCE_MESSAGES = {
     'Fix Queue needs the HTTP MCP transport; VS Code stdio cannot serve queued repair actions.',
   fixQueueBlockIncompatible:
     'Upgrade kicad-mcp-pro before loading AI repair actions.',
+  fixQueueBlockDegraded:
+    'The MCP connection was interrupted or is in a degraded state. {message} Retry the connection or check the MCP server status.',
   fixQueueBlockDefault:
     'Connect kicad-mcp-pro over HTTP before loading AI repair actions.',
   pcmNoLibrariesLabel: 'No PCM libraries indexed',
