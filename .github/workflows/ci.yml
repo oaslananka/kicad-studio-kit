@@ -74,6 +74,7 @@ jobs:
   vscode-extension:
     needs: ci-lanes
     if: ${{ needs.ci-lanes.outputs.vscode_extension == 'true' }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -100,8 +101,19 @@ jobs:
           corepack pnpm --filter kicadstudiokit exec playwright install-deps chromium
           google-chrome --version
           echo "KICADSTUDIO_PLAYWRIGHT_CHANNEL=chrome" >> "$GITHUB_ENV"
-      - if: runner.os == 'macOS'
-        run: corepack pnpm --filter kicadstudiokit exec playwright install chromium
+      - name: Use runner Chrome for Playwright macOS tests
+        if: runner.os == 'macOS'
+        timeout-minutes: 6
+        run: |
+          if [ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]; then
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version
+          elif command -v google-chrome >/dev/null 2>&1; then
+            google-chrome --version
+          else
+            echo "::error::Google Chrome is not available on this macOS runner."
+            exit 1
+          fi
+          echo "KICADSTUDIO_PLAYWRIGHT_CHANNEL=chrome" >> "$GITHUB_ENV"
       - name: Use runner Chrome for Playwright Windows tests
         if: runner.os == 'Windows'
         shell: pwsh
