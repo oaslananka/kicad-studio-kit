@@ -75,7 +75,7 @@ test("OASLANA-52 package owns every required compatibility schema", () => {
       ),
     );
     assert.equal(schema.type, "object");
-    assert.equal(schema["x-kicad-studio-kit"]?.linearIssue, "OASLANA-52");
+    assert.equal(schema["x-kicad-studio-kit"]?.trackingIssue, "OASLANA-52");
     assert.match(
       schema["x-kicad-studio-kit"]?.schemaVersion,
       /^[0-9]+\.[0-9]+\.[0-9]+$/u,

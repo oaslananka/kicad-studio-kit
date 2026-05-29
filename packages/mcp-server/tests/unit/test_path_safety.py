@@ -55,7 +55,7 @@ def test_path_utils_wrapper_resolves_safe_paths(tmp_path: Path) -> None:
 
 
 def test_cross_platform_path_fixture_covers_required_mcp_scenarios() -> None:
-    assert PATH_REGRESSION_CASES["linearIssue"] == "OASLANA-112"
+    assert PATH_REGRESSION_CASES["trackingIssue"] == "OASLANA-112"
     assert [scenario["id"] for scenario in PATH_REGRESSION_CASES["scenarios"]] == [
         "project-path-with-spaces",
         "unicode-project-path",

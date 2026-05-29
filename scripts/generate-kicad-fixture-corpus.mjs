@@ -1010,7 +1010,7 @@ function corpusManifest() {
   return {
     schemaVersion: 1,
     generatedBy: generatorPath,
-    linearIssue: "OASLANA-53",
+    trackingIssue: "OASLANA-53",
     githubIssue: 54,
     root: fixturesRootRelative,
     expectedRoot: expectedRootRelative,
