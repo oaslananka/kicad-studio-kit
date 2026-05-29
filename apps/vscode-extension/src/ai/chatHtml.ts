@@ -46,7 +46,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       margin: 0;
       height: 100vh;
       display: grid;
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: auto auto 1fr auto;
       background: var(--bg);
       color: var(--text);
       font: 13px/1.5 var(--vscode-font-family, "Segoe UI", sans-serif);
@@ -146,6 +146,14 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       flex-direction: column;
       gap: 10px;
     }
+    .quota-banner {
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in srgb, var(--danger) 10%, var(--panel));
+      color: var(--text);
+      font-size: 12px;
+    }
+    .quota-banner[hidden] { display: none; }
     .empty {
       align-self: center;
       margin-top: 15vh;
@@ -348,6 +356,12 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       <span id="cancel-disabled-reason" class="sr-only">Cancel is disabled until a response is streaming.</span>
     </div>
   </header>
+  <div id="quota-banner" class="quota-banner" style="background-color: var(--danger); color: white; padding: 8px; text-align: center;" role="status" hidden>
+     <span id="quota-banner-text"></span>
+     <button id="quota-banner-retry" style="margin-left: 8px; padding: 2px 6px; background: rgba(0,0,0,0.2); border: none; color: white; cursor: pointer;">
+       Retry
+     </button>
+  </div>
   <main id="messages" aria-live="polite">
     <div id="empty" class="empty">Ask about DRC/ERC issues, component choices, manufacturing risk, or the active KiCad file.</div>
   </main>
@@ -367,10 +381,20 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     const l10n = globalThis.kicadStudioL10n || { t: (value) => value, apply: () => {} };
-    const state = { history: [], busy: false, contextVisible: false, scrollPending: false };
+    const AUTO_SCROLL_THRESHOLD_PX = 96;
+    const MAX_RENDERED_MESSAGES = 240;
+    const state = {
+      history: [],
+      busy: false,
+      contextVisible: false,
+      scrollPending: false,
+      streamPending: false,
+      streamQueue: new Map()
+    };
     const nodes = {
       messages: document.getElementById('messages'),
       empty: document.getElementById('empty'),
+      quotaBanner: document.getElementById('quota-banner'),
       provider: document.getElementById('provider'),
       model: document.getElementById('model'),
       status: document.getElementById('status'),
@@ -380,7 +404,8 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       tokenEstimate: document.getElementById('token-estimate'),
       send: document.getElementById('send'),
       cancel: document.getElementById('cancel'),
-      toggleContext: document.getElementById('toggle-context')
+      toggleContext: document.getElementById('toggle-context'),
+      quotaBannerText: document.getElementById('quota-banner-text')
     };
 
     function text(value) {
@@ -407,8 +432,18 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       const date = new Date(Number(timestamp) || Date.now());
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
+    function setQuotaBanner(value) {
+      const status = text(value);
+      const quotaReached = /quota|rate limit|usage limit|limit reached/i.test(status);
+      nodes.quotaBanner.hidden = !quotaReached;
+      nodes.quotaBannerText.textContent = quotaReached
+        ? status || l10n.t('Chat quota reached. Retry after the provider resets quota.')
+        : '';
+    }
     function setStatus(value) {
-      nodes.status.textContent = value || l10n.t('Ready');
+      const next = value || l10n.t('Ready');
+      nodes.status.textContent = next;
+      setQuotaBanner(next);
     }
     function setBusy(busy) {
       state.busy = !!busy;
@@ -426,31 +461,24 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
         item.remove();
       }
     }
-    /**
-     * Scroll the message list to the bottom using requestAnimationFrame so
-     * multiple calls within the same event loop tick are coalesced into a
-     * single layout pass. While the assistant is actively streaming (state.busy)
-     * we always scroll so new chunks stay visible. Once streaming ends we only
-     * scroll when the user is already near the bottom (within 120 px) so
-     * manual scroll-up to read history is preserved.
-     */
-    function scheduleScrollToBottom() {
-      if (state.scrollPending) {
+    function isNearBottom(el) {
+      return el.scrollHeight - el.scrollTop - el.clientHeight < AUTO_SCROLL_THRESHOLD_PX;
+    }
+    function scheduleScrollToBottom(shouldStick) {
+      if (!shouldStick || state.scrollPending) {
         return;
       }
       state.scrollPending = true;
       requestAnimationFrame(() => {
         state.scrollPending = false;
-        const el = nodes.messages;
-        if (state.busy) {
-          el.scrollTop = el.scrollHeight;
-          return;
-        }
-        const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
-        if (nearBottom) {
-          el.scrollTop = el.scrollHeight;
-        }
+        nodes.messages.scrollTop = nodes.messages.scrollHeight;
       });
+    }
+    function pruneRenderedMessages() {
+      const rendered = [...nodes.messages.querySelectorAll('.message')];
+      for (const item of rendered.slice(0, Math.max(0, rendered.length - MAX_RENDERED_MESSAGES))) {
+        item.remove();
+      }
     }
     function actionButton(label, title, onClick) {
       const button = document.createElement('button');
@@ -546,6 +574,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       container.appendChild(actions);
     }
     function renderMessage(message, streaming) {
+      const shouldStick = isNearBottom(nodes.messages) || message.role === 'user';
       let article = nodes.messages.querySelector('[data-timestamp="' + String(message.timestamp) + '"]');
       if (!article) {
         article = document.createElement('article');
@@ -572,7 +601,8 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
         renderTools(article, message);
       }
       nodes.empty.style.display = nodes.messages.querySelector('.message') ? 'none' : 'block';
-      scheduleScrollToBottom();
+      pruneRenderedMessages();
+      scheduleScrollToBottom(shouldStick);
     }
 
     /**
@@ -609,7 +639,32 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
         // No chunk provided (e.g. called from outside streaming path) — full replace.
         pre.textContent = content;
       }
-      scheduleScrollToBottom();
+    }
+    function queueAssistantDelta(timestamp, content, chunk) {
+      const key = String(timestamp);
+      const entry = state.streamQueue.get(key) || {
+        timestamp,
+        content,
+        chunk: '',
+        shouldStick: false
+      };
+      entry.content = content;
+      entry.chunk += chunk;
+      entry.shouldStick = entry.shouldStick || isNearBottom(nodes.messages);
+      state.streamQueue.set(key, entry);
+      if (state.streamPending) {
+        return;
+      }
+      state.streamPending = true;
+      requestAnimationFrame(() => {
+        state.streamPending = false;
+        const batch = Array.from(state.streamQueue.values());
+        state.streamQueue.clear();
+        for (const queued of batch) {
+          updateStreamingBody(queued.timestamp, queued.content, queued.chunk);
+          scheduleScrollToBottom(queued.shouldStick);
+        }
+      });
     }
     function exportTranscript() {
       const lines = state.history.map((message) => {
@@ -623,6 +678,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
     document.getElementById('settings').addEventListener('click', () => vscode.postMessage({ type: 'openSettings' }));
     document.getElementById('clear').addEventListener('click', () => vscode.postMessage({ type: 'clear' }));
     document.getElementById('export').addEventListener('click', exportTranscript);
+    document.getElementById('quota-banner-retry').addEventListener('click', () => vscode.postMessage({ type: 'retry' }));
     nodes.cancel.addEventListener('click', () => vscode.postMessage({ type: 'cancel' }));
     nodes.send.addEventListener('click', sendPrompt);
     nodes.provider.addEventListener('change', postSelection);
@@ -668,9 +724,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
         if (target) {
           const chunk = text(message.text);
           target.content = text(target.content) + chunk;
-          // Fast path: only update the streaming text area — no full re-render.
-          // Pass chunk so updateStreamingBody can append rather than replace.
-          updateStreamingBody(message.timestamp, target.content, chunk);
+          queueAssistantDelta(message.timestamp, target.content, chunk);
         }
       } else if (message.type === 'assistantReplace') {
         const index = state.history.findIndex((item) => item.timestamp === message.message?.timestamp);

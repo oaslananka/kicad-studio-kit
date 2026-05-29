@@ -1,4 +1,6 @@
-jest.mock('vscode', () => jest.requireActual('./vscodeMock'), { virtual: true });
+jest.mock('vscode', () => jest.requireActual('./vscodeMock'), {
+  virtual: true
+});
 
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -91,6 +93,10 @@ describe('NetlistViewProvider', () => {
       path.join(os.tmpdir(), 'kicadstudio-netlist-test-')
     );
     jest.clearAllMocks();
+    const vscode =
+      jest.requireActual<typeof import('./vscodeMock')>('./vscodeMock');
+    vscode.window.activeTextEditor = undefined;
+    (vscode.window.showQuickPick as jest.Mock).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -110,9 +116,8 @@ describe('NetlistViewProvider', () => {
       const schFile = path.join(tmpDir, 'demo.kicad_sch');
       fs.writeFileSync(schFile, '(kicad_sch)', 'utf8');
 
-      const vscode = jest.requireActual<typeof import('./vscodeMock')>(
-        './vscodeMock'
-      );
+      const vscode =
+        jest.requireActual<typeof import('./vscodeMock')>('./vscodeMock');
       jest
         .spyOn(vscode.workspace, 'findFiles')
         .mockResolvedValueOnce([{ fsPath: schFile }] as never);
@@ -139,9 +144,8 @@ describe('NetlistViewProvider', () => {
       const schFile = path.join(tmpDir, 'demo.kicad_sch');
       fs.writeFileSync(schFile, '(kicad_sch)', 'utf8');
 
-      const vscode = jest.requireActual<typeof import('./vscodeMock')>(
-        './vscodeMock'
-      );
+      const vscode =
+        jest.requireActual<typeof import('./vscodeMock')>('./vscodeMock');
       jest
         .spyOn(vscode.workspace, 'findFiles')
         .mockResolvedValueOnce([{ fsPath: schFile }] as never);
@@ -165,13 +169,49 @@ describe('NetlistViewProvider', () => {
       provider.dispose();
     });
 
+    it('resolves the schematic beside the active project file', async () => {
+      const proFile = path.join(tmpDir, '555.kicad_pro');
+      const schFile = path.join(tmpDir, '555.kicad_sch');
+      fs.writeFileSync(proFile, '{}', 'utf8');
+      fs.writeFileSync(schFile, '(kicad_sch)', 'utf8');
+
+      const vscode =
+        jest.requireActual<typeof import('./vscodeMock')>('./vscodeMock');
+      vscode.window.activeTextEditor = {
+        document: { fileName: proFile }
+      } as never;
+      jest
+        .spyOn(vscode.workspace, 'findFiles')
+        .mockResolvedValueOnce([] as never);
+
+      const runner = makeRunner('success', MINIMAL_NETLIST);
+      const provider = new NetlistViewProvider(
+        {} as never,
+        new SExpressionParser(),
+        runner as never
+      );
+      const webview = makeWebview();
+      injectView(provider, webview);
+
+      await provider['refresh']();
+
+      expect(runner.runWithProgress).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: expect.arrayContaining([schFile])
+        })
+      );
+      expect(lastNetlistMsg(webview)!.payload.status).toContain(
+        '555.kicad_sch'
+      );
+      provider.dispose();
+    });
+
     it('includes multiple nodes per net', async () => {
       const schFile = path.join(tmpDir, 'demo.kicad_sch');
       fs.writeFileSync(schFile, '(kicad_sch)', 'utf8');
 
-      const vscode = jest.requireActual<typeof import('./vscodeMock')>(
-        './vscodeMock'
-      );
+      const vscode =
+        jest.requireActual<typeof import('./vscodeMock')>('./vscodeMock');
       jest
         .spyOn(vscode.workspace, 'findFiles')
         .mockResolvedValueOnce([{ fsPath: schFile }] as never);
@@ -201,9 +241,8 @@ describe('NetlistViewProvider', () => {
       const schFile = path.join(tmpDir, 'empty.kicad_sch');
       fs.writeFileSync(schFile, '(kicad_sch)', 'utf8');
 
-      const vscode = jest.requireActual<typeof import('./vscodeMock')>(
-        './vscodeMock'
-      );
+      const vscode =
+        jest.requireActual<typeof import('./vscodeMock')>('./vscodeMock');
       jest
         .spyOn(vscode.workspace, 'findFiles')
         .mockResolvedValueOnce([{ fsPath: schFile }] as never);
@@ -229,9 +268,8 @@ describe('NetlistViewProvider', () => {
       const schFile = path.join(tmpDir, 'demo.kicad_sch');
       fs.writeFileSync(schFile, '(kicad_sch)', 'utf8');
 
-      const vscode = jest.requireActual<typeof import('./vscodeMock')>(
-        './vscodeMock'
-      );
+      const vscode =
+        jest.requireActual<typeof import('./vscodeMock')>('./vscodeMock');
       jest
         .spyOn(vscode.workspace, 'findFiles')
         .mockResolvedValue([{ fsPath: schFile }] as never);
@@ -257,9 +295,8 @@ describe('NetlistViewProvider', () => {
       const schFile = path.join(tmpDir, 'demo.kicad_sch');
       fs.writeFileSync(schFile, '(kicad_sch)', 'utf8');
 
-      const vscode = jest.requireActual<typeof import('./vscodeMock')>(
-        './vscodeMock'
-      );
+      const vscode =
+        jest.requireActual<typeof import('./vscodeMock')>('./vscodeMock');
       jest
         .spyOn(vscode.workspace, 'findFiles')
         .mockResolvedValue([{ fsPath: schFile }] as never);
@@ -286,9 +323,8 @@ describe('NetlistViewProvider', () => {
       const schFile = path.join(tmpDir, 'demo.kicad_sch');
       fs.writeFileSync(schFile, '(kicad_sch)', 'utf8');
 
-      const vscode = jest.requireActual<typeof import('./vscodeMock')>(
-        './vscodeMock'
-      );
+      const vscode =
+        jest.requireActual<typeof import('./vscodeMock')>('./vscodeMock');
       jest
         .spyOn(vscode.workspace, 'findFiles')
         .mockResolvedValueOnce([{ fsPath: schFile }] as never);
@@ -315,9 +351,8 @@ describe('NetlistViewProvider', () => {
       const schFile = path.join(tmpDir, 'demo.kicad_sch');
       fs.writeFileSync(schFile, '(kicad_sch)', 'utf8');
 
-      const vscode = jest.requireActual<typeof import('./vscodeMock')>(
-        './vscodeMock'
-      );
+      const vscode =
+        jest.requireActual<typeof import('./vscodeMock')>('./vscodeMock');
       jest
         .spyOn(vscode.workspace, 'findFiles')
         .mockResolvedValueOnce([{ fsPath: schFile }] as never);
@@ -342,9 +377,8 @@ describe('NetlistViewProvider', () => {
       const schFile = path.join(tmpDir, 'demo.kicad_sch');
       fs.writeFileSync(schFile, '(kicad_sch)', 'utf8');
 
-      const vscode = jest.requireActual<typeof import('./vscodeMock')>(
-        './vscodeMock'
-      );
+      const vscode =
+        jest.requireActual<typeof import('./vscodeMock')>('./vscodeMock');
       jest
         .spyOn(vscode.workspace, 'findFiles')
         .mockResolvedValueOnce([{ fsPath: schFile }] as never);
@@ -367,10 +401,9 @@ describe('NetlistViewProvider', () => {
   });
 
   describe('no schematic in workspace', () => {
-    it('posts "No schematic opened." when workspace has no .kicad_sch files', async () => {
-      const vscode = jest.requireActual<typeof import('./vscodeMock')>(
-        './vscodeMock'
-      );
+    it('posts actionable context when workspace has no .kicad_sch files', async () => {
+      const vscode =
+        jest.requireActual<typeof import('./vscodeMock')>('./vscodeMock');
       jest
         .spyOn(vscode.workspace, 'findFiles')
         .mockResolvedValueOnce([] as never);
@@ -387,7 +420,13 @@ describe('NetlistViewProvider', () => {
       await provider['refresh']();
 
       const msg = lastNetlistMsg(webview);
-      expect(msg!.payload.status).toBe('No schematic opened.');
+      expect(msg!.payload.status).toContain(
+        'No schematic file could be resolved.'
+      );
+      expect(msg!.payload.status).toContain('Active file: none.');
+      expect(msg!.payload.status).toContain(
+        'Discovered schematic candidates: none.'
+      );
       expect(runner.runWithProgress).not.toHaveBeenCalled();
       provider.dispose();
     });
@@ -422,7 +461,9 @@ describe('NetlistViewProvider', () => {
       );
       expect(nodes).toHaveLength(2);
       const refs = nodes?.map((n) => {
-        const refNode = n.children?.find((c) => c.children?.[0]?.value === 'ref');
+        const refNode = n.children?.find(
+          (c) => c.children?.[0]?.value === 'ref'
+        );
         return refNode?.children?.[1]?.value;
       });
       expect(refs).toEqual(['R1', 'C1']);
