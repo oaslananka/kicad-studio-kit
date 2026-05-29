@@ -103,7 +103,7 @@
     }
   },
   "x-kicad-studio-kit": {
-    "linearIssue": "OASLANA-52",
+    "trackingIssue": "OASLANA-52",
     "schemaVersion": "1.0.0"
   }
 }

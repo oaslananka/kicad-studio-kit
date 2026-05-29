@@ -62,7 +62,7 @@ test("OASLANA-53 shared package owns the deterministic KiCad fixture corpus", ()
 
   const manifest = readJson("packages/kicad-fixtures/manifest.json");
   assert.equal(manifest.schemaVersion, 1);
-  assert.equal(manifest.linearIssue, "OASLANA-53");
+  assert.equal(manifest.trackingIssue, "OASLANA-53");
   assert.equal(manifest.githubIssue, 54);
   assert.equal(manifest.root, "packages/kicad-fixtures/fixtures");
   assert.equal(manifest.expectedRoot, "packages/kicad-fixtures/expected");

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedBy": "scripts/generate-kicad-fixture-corpus.mjs",
-  "linearIssue": "OASLANA-53",
+  "trackingIssue": "OASLANA-53",
   "githubIssue": 54,
   "root": "packages/kicad-fixtures/fixtures",
   "expectedRoot": "packages/kicad-fixtures/expected",

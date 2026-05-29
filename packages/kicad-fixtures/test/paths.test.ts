@@ -17,7 +17,7 @@ import {
 test("loads the shared KiCad fixture manifest with stable semantic IDs", () => {
   const manifest = loadKicadFixtureManifest();
 
-  assert.equal(manifest.linearIssue, "OASLANA-53");
+  assert.equal(manifest.trackingIssue, "OASLANA-53");
   assert.equal(manifest.githubIssue, 54);
   assert.deepEqual(
     manifest.fixtures.map((fixture) => fixture.id),

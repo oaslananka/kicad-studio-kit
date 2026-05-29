@@ -61,7 +61,7 @@ export interface KicadFixtureManifestEntry {
 export interface KicadFixtureManifest {
   schemaVersion: 1;
   generatedBy: string;
-  linearIssue: "OASLANA-53";
+  trackingIssue: "OASLANA-53";
   githubIssue: 54;
   root: string;
   expectedRoot: string;

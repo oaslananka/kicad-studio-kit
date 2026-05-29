@@ -34,7 +34,7 @@ def test_protocol_schema_package_exposes_required_contracts() -> None:
     for schema_file in REQUIRED_SCHEMA_FILES:
         schema = _load_schema(schema_file)
         assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
-        assert schema["x-kicad-studio-kit"]["linearIssue"] == "OASLANA-52"
+        assert schema["x-kicad-studio-kit"]["trackingIssue"] == "OASLANA-52"
 
 
 def test_advertised_tool_metadata_matches_shared_capability_schema() -> None:
