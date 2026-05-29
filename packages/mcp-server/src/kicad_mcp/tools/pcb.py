@@ -679,6 +679,27 @@ def _board_file_diagnostic_payload(
     }
 
 
+def _with_pcb_diagnostics(message: str) -> str:
+    """Append active board diagnostics to a live-IPC empty-state read response.
+
+    Used when KiCad IPC is available but the board has empty results (no nets,
+    no vias, etc.).  For the file-backed fallback path the diagnostics are
+    already added by ``_format_file_backed_diagnostics``.
+    """
+    cfg = get_config()
+    board_file = _configured_board_file()
+    project_path = cfg.project_dir if cfg.project_dir is not None else "(not configured)"
+    return "\n".join(
+        [
+            message,
+            "Diagnostics:",
+            "- Source: live-gui",
+            f"- Active project path: {project_path}",
+            f"- Board file: {board_file if board_file is not None else '(not configured)'}",
+        ]
+    )
+
+
 def _load_file_backed_board(ipc_error: BaseException) -> tuple[Path, str, list[str]] | str:
     board_file = _configured_board_file()
     if board_file is None:
@@ -2231,8 +2252,10 @@ def register(mcp: FastMCP) -> None:
         tracks, total, page_count = _paginate(all_tracks, page=page, page_size=page_size)
         if total == 0:
             if filter_layer or filter_net:
-                return "No tracks match the supplied filters on the active board."
-            return "No tracks are present on the active board."
+                return _with_pcb_diagnostics(
+                    "No tracks match the supplied filters on the active board."
+                )
+            return _with_pcb_diagnostics("No tracks are present on the active board.")
         if not tracks:
             return f"Track page {page} is out of range. Available pages: 1-{page_count}."
 
@@ -2263,7 +2286,7 @@ def register(mcp: FastMCP) -> None:
         except (KiCadConnectionError, OSError) as exc:
             return _file_backed_vias(exc)
         if not vias:
-            return "No vias are present on the active board."
+            return _with_pcb_diagnostics("No vias are present on the active board.")
 
         lines = [f"Vias ({total} total):", "- Source: live-gui"]
         for index, via in enumerate(vias, start=1):
@@ -2301,8 +2324,10 @@ def register(mcp: FastMCP) -> None:
         footprints, total, page_count = _paginate(all_footprints, page=page, page_size=page_size)
         if total == 0:
             if filter_layer:
-                return "No footprints match the supplied layer filter on the active board."
-            return "No footprints are present on the active board."
+                return _with_pcb_diagnostics(
+                    "No footprints match the supplied layer filter on the active board."
+                )
+            return _with_pcb_diagnostics("No footprints are present on the active board.")
         if not footprints:
             return f"Footprint page {page} is out of range. Available pages: 1-{page_count}."
 
@@ -2366,7 +2391,7 @@ def register(mcp: FastMCP) -> None:
         except (KiCadConnectionError, OSError) as exc:
             return _file_backed_nets(exc)
         if not nets:
-            return "No nets are present on the active board."
+            return _with_pcb_diagnostics("No nets are present on the active board.")
         lines = [f"Nets ({total} total):", "- Source: live-gui"]
         lines.extend(f"- {net.name or '(unnamed)'}" for net in nets)
         return "\n".join(lines)
@@ -2380,7 +2405,7 @@ def register(mcp: FastMCP) -> None:
         except (KiCadConnectionError, OSError) as exc:
             return _file_backed_zones(exc)
         if not zones:
-            return "No zones are present on the active board."
+            return _with_pcb_diagnostics("No zones are present on the active board.")
 
         lines = [f"Zones ({total} total):", "- Source: live-gui"]
         for index, zone in enumerate(zones, start=1):
@@ -2398,7 +2423,7 @@ def register(mcp: FastMCP) -> None:
         """List graphical board shapes."""
         shapes, total = _limit(cast(Iterable[Any], get_board().get_shapes()))
         if not shapes:
-            return "No graphic shapes are present on the active board."
+            return _with_pcb_diagnostics("No graphic shapes are present on the active board.")
         lines = [f"Shapes ({total} total):"]
         for index, shape in enumerate(shapes, start=1):
             layer = getattr(shape, "layer", BoardLayer.BL_UNDEFINED)
@@ -2411,7 +2436,7 @@ def register(mcp: FastMCP) -> None:
         """List board pads."""
         pads, total = _limit(cast(Iterable[_PadLike], get_board().get_pads()))
         if not pads:
-            return "No pads are present on the active board."
+            return _with_pcb_diagnostics("No pads are present on the active board.")
         lines = [f"Pads ({total} total):"]
         for index, pad in enumerate(pads, start=1):
             lines.append(
