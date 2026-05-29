@@ -29,7 +29,17 @@ _READ_ONLY_PREFIXES = (
     "run_drc",
     "run_erc",
     "kicad_get_",
+    "kicad_help",
+    "kicad_list_",
+    "kicad_scan_",
     "project_get_",
+    "drc_list_",
+    "lib_get_",
+    "lib_list_",
+    "lib_recommend_",
+    "lib_check_",
+    "lib_find_",
+    "mfg_check_",
 )
 _WRITE_PREFIXES = (
     "add_",
@@ -134,6 +144,8 @@ def infer_tool_annotations(
                 "_route_",
                 "_set_",
                 "_update_",
+                "_export_",
+                "_import_",
             )
         )
         or any(
