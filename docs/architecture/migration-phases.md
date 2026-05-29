@@ -49,3 +49,20 @@ M0 completion evidence: [M0 completion audit](m0-completion-audit.md).
 - [ ] Add full real-pair E2E contract tests.
 
 Related issues: #37, #53, #54, #55, #76.
+
+## Phase M2 - MCP 2026-07-28 Protocol Upgrade
+
+- [ ] Add `nextProtocolVersion: "2026-07-28"` tracking field to `compatibility.yaml`
+- [ ] Create ADR 0008 with phased upgrade plan
+- [ ] P0: Update transport layer — `Mcp-Method`/`Mcp-Name` headers, remove session handshake
+- [ ] P0: Add `server/discover` response for capability discovery
+- [ ] P1: Bump MCP Python SDK when RC with 2026-07-28 support ships
+- [ ] P1: Update protocol version in `compatibility.py`, `server_info.py`, schemas
+- [ ] P1: Add CI protocol contract check against 2026-07-28
+- [ ] P2: Adopt Tasks extension for long-running tools (DRC, ERC, export, simulation, routing)
+- [ ] P2: Add `ttlMs`/`cacheScope` to list/resource responses
+- [ ] P2: Update tool schemas to JSON Schema 2020-12
+- [ ] P3: Phase out legacy SSE transport
+- [ ] P3: Evaluate OAuth 2.1/OIDC auth hardening for remote deployments
+
+Related issues: #197, ADR 0008.

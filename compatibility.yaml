@@ -568,6 +568,7 @@ runtimePolicy:
 
 mcp:
   protocolVersion: "2025-11-25"
+  nextProtocolVersion: "2026-07-28"
   toolSchema: "1.0"
   registrySchema: "2025-12-11"
 
