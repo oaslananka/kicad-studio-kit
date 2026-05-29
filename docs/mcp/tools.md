@@ -86,7 +86,7 @@ Total public tools: 257.
 | `lib_search_footprints` | agent_full, builder, full, schematic, schematic_only, simulation | yes | no | no | yes | no | Search footprint libraries by footprint name. This KiCad MCP Pro tool supports production EDA automation workflows fo... |
 | `lib_search_symbols` | agent_full, builder, full, schematic, schematic_only, simulation | yes | no | no | yes | no | Search symbol libraries by name, description, or keywords. This KiCad MCP Pro tool supports production EDA automation... |
 | `manufacturing_quality_gate` | agent_full, analysis, builder, critic, full, high_speed, manufacturing, pcb, power, release_manager, schematic | yes | no | no | yes | no | Evaluate manufacturing readiness against the active or requested DFM profile. |
-| `mfg_check_import_support` | agent_full, full, manufacturing | no | yes | yes | yes | no | Report whether the detected KiCad CLI advertises a given board-import format. |
+| `mfg_check_import_support` | agent_full, full, manufacturing | yes | no | yes | yes | no | Report whether the detected KiCad CLI advertises a given board-import format. |
 | `mfg_correct_cpl_rotations` | agent_full, full, manufacturing | no | no | no | yes | no | Apply JLCPCB CPL rotation corrections to a KiCad-exported pick-and-place CSV. |
 | `mfg_generate_release_manifest` | agent_full, full, manufacturing | no | no | yes | yes | no | Generate a SHA256-signed release manifest for the manufacturing package. |
 | `mfg_generate_test_plan` | agent_full, full, manufacturing | no | no | no | yes | no | Generate a bring-up test plan from the project design intent. |
@@ -346,7 +346,7 @@ Total public tools: 257.
 - `lib_search_footprints`: profiles=agent_full, builder, full, schematic, schematic_only, simulation; readOnly=yes; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
 - `lib_search_symbols`: profiles=agent_full, builder, full, schematic, schematic_only, simulation; readOnly=yes; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
 - `manufacturing_quality_gate`: profiles=agent_full, analysis, builder, critic, full, high_speed, manufacturing, pcb, power, release_manager, schematic; readOnly=yes; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
-- `mfg_check_import_support`: profiles=agent_full, full, manufacturing; readOnly=no; destructive=yes; openWorld=yes; headless=yes; requiresKiCadRunning=no.
+- `mfg_check_import_support`: profiles=agent_full, full, manufacturing; readOnly=yes; destructive=no; openWorld=yes; headless=yes; requiresKiCadRunning=no.
 - `mfg_correct_cpl_rotations`: profiles=agent_full, full, manufacturing; readOnly=no; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.
 - `mfg_generate_release_manifest`: profiles=agent_full, full, manufacturing; readOnly=no; destructive=no; openWorld=yes; headless=yes; requiresKiCadRunning=no.
 - `mfg_generate_test_plan`: profiles=agent_full, full, manufacturing; readOnly=no; destructive=no; openWorld=no; headless=yes; requiresKiCadRunning=no.

@@ -58,3 +58,48 @@ def test_direct_tool_references_for_static_coverage_lint() -> None:
     }
 
     assert direct_references <= declared_tools
+
+
+def test_read_only_prefix_takes_precedence_over_write_infix() -> None:
+    """Read-only prefix classification must win over broad write-infix tokens.
+
+    Regression test: mfg_check_import_support contains "_import_" but starts
+    with the read-only prefix "mfg_check_". It must NOT be marked destructive.
+    """
+    # -- Read-only tool with misleading infix (the regression case) --
+    ro_ann = infer_tool_annotations("mfg_check_import_support").model_dump(exclude_none=True)
+    assert ro_ann.get("readOnlyHint") is True, (
+        "mfg_check_import_support: mfg_check_ prefix must override _import_ infix"
+    )
+    assert ro_ann.get("destructiveHint") is None, (
+        "mfg_check_import_support must NOT be destructiveHint=True"
+    )
+
+    # -- Actual import/export tools must remain destructive --
+    for destructive_tool in (
+        "mfg_import_allegro",
+        "mfg_import_geda",
+        "mfg_import_pads",
+        "route_import_ses",
+        "route_export_dsn",
+        "pcb_export_3d_pdf",
+    ):
+        ann = infer_tool_annotations(destructive_tool).model_dump(exclude_none=True)
+        assert ann.get("destructiveHint") is True, (
+            f"{destructive_tool} must be destructiveHint=True"
+        )
+        assert ann.get("readOnlyHint") is None, f"{destructive_tool} must NOT be readOnlyHint=True"
+
+    # -- Other read-only prefixes that contain write-like substrings --
+    for readonly_tool in (
+        "drc_list_rules",
+        "kicad_help",
+        "kicad_get_version",
+        "lib_check_footprint",
+        "mfg_check_import_support",
+    ):
+        ann = infer_tool_annotations(readonly_tool).model_dump(exclude_none=True)
+        assert ann.get("readOnlyHint") is True, f"{readonly_tool} must be readOnlyHint=True"
+        assert ann.get("destructiveHint") is None, (
+            f"{readonly_tool} must NOT be destructiveHint=True"
+        )
