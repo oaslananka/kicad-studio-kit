@@ -16,6 +16,7 @@ type PackageJson = {
     color?: string;
     theme?: string;
   };
+  baseImagesUrl?: string;
   scripts?: Record<string, string>;
 };
 
@@ -90,6 +91,9 @@ describe('marketplace listing assets', () => {
     });
     expect(packageJson.scripts?.['marketplace:check']).toBe(
       'node scripts/check-marketplace-assets.js'
+    );
+    expect(packageJson.baseImagesUrl).toBe(
+      'https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension'
     );
   });
 
