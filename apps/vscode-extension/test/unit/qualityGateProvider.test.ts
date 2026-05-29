@@ -144,9 +144,7 @@ describe('QualityGateProvider', () => {
     expect(provider.getTreeItem(transfer as never).iconPath).toEqual(
       expect.objectContaining({ id: 'error' })
     );
-    expect(provider.getTreeItem(transfer as never).command).toEqual(
-      expect.objectContaining({ command: 'kicadstudio.qualityGate.runThis' })
-    );
+    expect(provider.getTreeItem(transfer as never).command).toBeUndefined();
     expect(String(provider.getTreeItem(transfer as never).tooltip)).toContain(
       'Primary action: Run gate.'
     );

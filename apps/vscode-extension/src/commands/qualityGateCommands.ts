@@ -39,5 +39,5 @@ type QualityGateCommandArg =
   | { kind: 'gate'; gate: QualityGateResult };
 
 function resolveGateArg(gate: QualityGateCommandArg): QualityGateResult {
-  return 'kind' in gate && gate.kind === 'gate' ? gate.gate : gate;
+  return 'kind' in gate && gate.kind === 'gate' ? gate.gate : (gate as QualityGateResult);
 }

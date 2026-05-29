@@ -260,6 +260,18 @@ export class NetlistViewProvider
       50
     );
     const candidates = files.map((file) => file.fsPath);
+
+    // If we have a cached last file and it's still in the workspace, prefer it
+    // over falling back to prompting if there are multiple candidates.
+    // Except if the user specifically opened a different project.
+    if (this._lastFile && candidates.includes(this._lastFile)) {
+       const activeProject = this.findProjectFile(active?.fileName);
+       const lastProject = this.findProjectFile(this._lastFile);
+       if (!activeProject || activeProject === lastProject) {
+         return { file: this._lastFile };
+       }
+    }
+
     const projectFile = this.findProjectFile(active?.fileName);
     const projectSchematic = projectFile
       ? this.findSchematicBesideProject(projectFile)

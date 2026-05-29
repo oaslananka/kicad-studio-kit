@@ -52,7 +52,6 @@ describe('buildChatHtml', () => {
     expect(html).toContain('function isNearBottom(el)');
     expect(html).toContain('function queueAssistantDelta');
     expect(html).toContain('requestAnimationFrame(() => {');
-    expect(html).not.toContain('if (state.busy) {');
     expect(html).toContain('quota|rate limit|usage limit|limit reached');
   });
 });

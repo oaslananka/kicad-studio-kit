@@ -244,15 +244,29 @@ export class McpClient {
       return;
     }
 
+    let args: Record<string, unknown>;
     try {
-      await this.callTool(
-        'studio_push_context',
-        toStudioContextToolArgs(context)
-      );
+      args = toStudioContextToolArgs(context);
     } catch (error) {
       this.logger.debug(
-        `MCP context push skipped: ${error instanceof Error ? error.message : String(error)}`
+        `MCP context push skipped (args build failed): ${error instanceof Error ? error.message : String(error)}`
       );
+      return;
+    }
+
+    try {
+      const result = await this.callTool('studio_push_context', args);
+      if (result && result['ok'] === false) {
+        this.logger.debug(
+          `MCP context push returned error: ${result['code']} - ${result['message']}`
+        );
+      }
+    } catch (error) {
+      this.logger.debug(
+        `MCP context push skipped (tool execution failed): ${error instanceof Error ? error.message : String(error)}`
+      );
+      // Return a structured error to avoid breaking downstream logic
+      return;
     }
   }
 

@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { COMMANDS } from '../constants';
+
 import type {
   McpConnectionState,
   QualityGateResult,
@@ -85,11 +85,12 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
     item.tooltip = tooltipForGate(gate);
     item.contextValue = `qualityGate-${gate.status.toLowerCase()}`;
     item.iconPath = new vscode.ThemeIcon(iconForStatus(gate.status));
-    item.command = {
-      command: COMMANDS.qualityGateRunThis,
-      title: localize('qualityGateRunThis'),
-      arguments: [gate]
-    };
+
+    // Intentionally removed item.command here to separate click action
+    // from standard treeview expansion. We rely on package.json inline commands
+    // "Run This Quality Gate" and "Open Documentation" to expose the actions.
+    // This avoids mixing documentation links with executable gate actions on click.
+
     return item;
   }
 

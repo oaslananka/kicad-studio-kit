@@ -356,7 +356,12 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       <span id="cancel-disabled-reason" class="sr-only">Cancel is disabled until a response is streaming.</span>
     </div>
   </header>
-  <div id="quota-banner" class="quota-banner" role="status" hidden></div>
+  <div id="quota-banner" class="quota-banner" style="background-color: var(--danger); color: white; padding: 8px; text-align: center;" role="status" hidden>
+     <span id="quota-banner-text"></span>
+     <button id="quota-banner-retry" style="margin-left: 8px; padding: 2px 6px; background: rgba(0,0,0,0.2); border: none; color: white; cursor: pointer;">
+       Retry
+     </button>
+  </div>
   <main id="messages" aria-live="polite">
     <div id="empty" class="empty">Ask about DRC/ERC issues, component choices, manufacturing risk, or the active KiCad file.</div>
   </main>
@@ -399,7 +404,9 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       tokenEstimate: document.getElementById('token-estimate'),
       send: document.getElementById('send'),
       cancel: document.getElementById('cancel'),
-      toggleContext: document.getElementById('toggle-context')
+      toggleContext: document.getElementById('toggle-context'),
+      quotaBanner: document.getElementById('quota-banner'),
+      quotaBannerText: document.getElementById('quota-banner-text')
     };
 
     function text(value) {
@@ -430,7 +437,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       const status = text(value);
       const quotaReached = /quota|rate limit|usage limit|limit reached/i.test(status);
       nodes.quotaBanner.hidden = !quotaReached;
-      nodes.quotaBanner.textContent = quotaReached
+      nodes.quotaBannerText.textContent = quotaReached
         ? status || l10n.t('Chat quota reached. Retry after the provider resets quota.')
         : '';
     }
@@ -671,6 +678,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
     document.getElementById('settings').addEventListener('click', () => vscode.postMessage({ type: 'openSettings' }));
     document.getElementById('clear').addEventListener('click', () => vscode.postMessage({ type: 'clear' }));
     document.getElementById('export').addEventListener('click', exportTranscript);
+    document.getElementById('quota-banner-retry').addEventListener('click', () => vscode.postMessage({ type: 'retry' }));
     nodes.cancel.addEventListener('click', () => vscode.postMessage({ type: 'cancel' }));
     nodes.send.addEventListener('click', sendPrompt);
     nodes.provider.addEventListener('change', postSelection);
