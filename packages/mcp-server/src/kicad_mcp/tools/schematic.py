@@ -4597,7 +4597,10 @@ def register(mcp: FastMCP) -> None:
 
         requested = payload.symbol_list or [str(sym["reference"]) for sym in sch_data["symbols"]]
         if not requested:
-            return "The active schematic contains no symbols to auto-place."
+            return _with_schematic_diagnostics(
+                "The active schematic contains no symbols to auto-place.",
+                sch_file,
+            )
 
         requested_set = set(requested)
 
@@ -4977,7 +4980,10 @@ def register(mcp: FastMCP) -> None:
 
         requested: list[str] = symbol_list or [str(s["reference"]) for s in sch_data["symbols"]]
         if not requested:
-            return "The active schematic contains no symbols to place."
+            return _with_schematic_diagnostics(
+                "The active schematic contains no symbols to place.",
+                sch_file,
+            )
 
         from .project import load_design_intent
 
