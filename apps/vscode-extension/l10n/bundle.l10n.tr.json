@@ -35,6 +35,7 @@
   "Fix Queue could not refresh": "Düzeltme kuyruğu yenilenemedi",
   "Retry MCP connection": "MCP bağlantısını yeniden deneyin",
   "Retry MCP Connection": "MCP bağlantısını yeniden dene",
+  "The MCP connection was interrupted or is in a degraded state. {message} Retry the connection or check the MCP server status.": "MCP bağlantısı kesildi veya bozuk durumda. {message} Bağlantıyı yeniden deneyin veya MCP sunucu durumunu kontrol edin.",
   "Fix Queue needs the HTTP MCP transport; VS Code stdio cannot serve queued repair actions.": "Düzeltme Kuyruğu HTTP MCP taşımasına ihtiyaç duyar; VS Code stdio kuyruktaki onarım eylemlerini sunamaz.",
   "Upgrade kicad-mcp-pro before loading AI repair actions.": "AI onarım eylemlerini yüklemeden önce kicad-mcp-pro'yu yükseltin.",
   "Connect kicad-mcp-pro over HTTP before loading AI repair actions.": "AI onarım eylemlerini yüklemeden önce kicad-mcp-pro'yu HTTP üzerinden bağlayın.",
