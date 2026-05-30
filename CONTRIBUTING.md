@@ -62,6 +62,28 @@ Changing `engines.vscode`, Python `requires-python`, or the primary KiCad suppor
 the matching `compatibility.yaml` update, this support matrix update, and product changelog context
 when a lower runtime boundary is introduced.
 
+## Architecture Decision Records
+
+Architecture, product, protocol, release, and security decisions that affect
+the monorepo structure, integration surface, or compatibility policy must be
+documented as Architecture Decision Records (ADRs).
+
+An ADR is **required** for:
+
+- Monorepo structure changes (adding, removing, or merging workspaces).
+- MCP protocol or schema breaking changes.
+- KiCad version support policy changes.
+- Release model changes.
+- Product dependency boundary changes.
+- Bundling or distribution changes.
+- Security or supply-chain policy changes.
+
+An ADR is **not required** for routine dependency updates, bug fixes,
+cosmetic changes, CI/tooling changes, or test-only changes.
+
+See [docs/adr/README.md](docs/adr/README.md) for the full process, template,
+and index of existing ADRs.
+
 ## Dev Container
 
 The repository includes a VS Code Dev Containers and GitHub Codespaces setup in
