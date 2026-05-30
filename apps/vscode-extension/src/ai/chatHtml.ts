@@ -141,6 +141,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
     }
     #messages {
       overflow: auto;
+      overflow-anchor: auto;
       padding: 14px;
       display: flex;
       flex-direction: column;
@@ -465,12 +466,17 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
       return el.scrollHeight - el.scrollTop - el.clientHeight < AUTO_SCROLL_THRESHOLD_PX;
     }
     function scheduleScrollToBottom(shouldStick) {
-      if (!shouldStick || state.scrollPending) {
+      if (state.scrollPending) {
         return;
       }
       state.scrollPending = true;
       requestAnimationFrame(() => {
         state.scrollPending = false;
+        // Re-check: if the user scrolled away between scheduling and the frame,
+        // do not steal their scroll position.
+        if (shouldStick && !isNearBottom(nodes.messages)) {
+          return;
+        }
         nodes.messages.scrollTop = nodes.messages.scrollHeight;
       });
     }
@@ -733,8 +739,11 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
         } else {
           state.history.push(message.message);
         }
-        // Full render with markdown now that streaming is complete.
-        renderMessage(message.message, false);
+        // Defer full markdown render to the next animation frame so the browser
+        // can settle pending streaming layout before the expensive DOM rebuild.
+        requestAnimationFrame(() => {
+          renderMessage(message.message, false);
+        });
       } else if (message.type === 'status') {
         setStatus(message.text || l10n.t('Ready'));
       } else if (message.type === 'busy') {
