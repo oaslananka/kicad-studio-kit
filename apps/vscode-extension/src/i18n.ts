@@ -30,6 +30,11 @@ export const SOURCE_MESSAGES = {
   qualityGateClickRunWhenReady:
     'Click to run this gate when the project is ready.',
   qualityGateClickRerun: 'Click to rerun this gate.',
+  qualityGateRunningAll: 'Running all quality gates...',
+  qualityGateRunning: 'Running {gate} quality gate...',
+  qualityGateStdioWarning:
+    'Quality Gates are not available when kicad-mcp-pro is connected via VS Code stdio. ' +
+    'Start kicad-mcp-pro with the HTTP transport (port 27185) to enable this feature.',
   drcRulesNoFileLabel: 'No DRC rules file',
   drcRulesNoFileDescription: 'Create or open a .kicad_dru file',
   drcRulesNoFileDetail:
