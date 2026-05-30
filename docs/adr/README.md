@@ -91,6 +91,17 @@ that was not recorded.
 
 ## Creating a New ADR
 
+The next number is `max(existing numbered ADR) + 1`. `0000-template.md` and
+`README.md` are not counted. Superseded ADRs keep their numbers and remain in
+the sequence.
+
 ```bash
-cp docs/adr/0000-template.md docs/adr/$(printf '%04d' $(($(ls docs/adr/*.md | wc -l)))).md
+next="$(
+  python - <<'PY'
+from pathlib import Path
+numbers = [int(p.stem[:4]) for p in Path("docs/adr").glob("[0-9][0-9][0-9][0-9]-*.md") if p.name != "0000-template.md"]
+print(f"{max(numbers, default=0) + 1:04d}")
+PY
+)"
+cp docs/adr/0000-template.md "docs/adr/${next}-kebab-case-title.md"
 ```
