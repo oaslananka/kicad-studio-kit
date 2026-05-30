@@ -84,7 +84,16 @@ export const SOURCE_MESSAGES = {
   settingsMigrationUpdatedDeprecatedSettings:
     'KiCad Studio updated deprecated settings to the current schema.',
   feedbackOpenFailed:
-    'Could not open the feedback form automatically. You can access it manually at: {url}'
+    'Could not open the feedback form automatically. You can access it manually at: {url}',
+  boardReadyOpsNotConfigured:
+    'BoardReadyOps is not configured. Enable it in the KiCad Studio settings to check board readiness.',
+  boardReadyOpsOpenSettingsAction: 'Open Settings',
+  boardReadyOpsRunning:
+    'BoardReadyOps check queued. Results will appear when the service responds.',
+  boardReadyOpsReportNotAvailable:
+    'No BoardReadyOps report is available yet. Configure and run a readiness check first.',
+  boardReadyOpsDocsOpenFailed:
+    'Could not open the BoardReadyOps documentation automatically.'
 } as const;
 
 export type SourceMessageKey = keyof typeof SOURCE_MESSAGES;

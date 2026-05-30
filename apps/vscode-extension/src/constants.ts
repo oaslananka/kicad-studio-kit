@@ -158,7 +158,11 @@ export const COMMANDS = {
   importPcad: 'kicadstudio.importPcad',
   importSolidworks: 'kicadstudio.importSolidworks',
   importGeda: 'kicadstudio.importGeda',
-  importAllegro: 'kicadstudio.importAllegro'
+  importAllegro: 'kicadstudio.importAllegro',
+  boardReadyOpsCheck: 'kicadstudio.boardReadyOps.check',
+  boardReadyOpsConfigure: 'kicadstudio.boardReadyOps.configure',
+  boardReadyOpsShowReport: 'kicadstudio.boardReadyOps.showReport',
+  boardReadyOpsOpenDocs: 'kicadstudio.boardReadyOps.openDocs'
 } as const;
 export const CONTEXT_KEYS = {
   hasProject: 'kicadstudio.hasProject',
@@ -180,7 +184,8 @@ export const CONTEXT_KEYS = {
   mcpExperimentalMode: 'kicadstudio.mcpExperimentalMode',
   hasVariants: 'kicadstudio.hasVariants',
   allegroImportSupported: 'kicadstudio.allegroImportSupported',
-  workspaceTrusted: 'kicadstudio.workspaceTrusted'
+  workspaceTrusted: 'kicadstudio.workspaceTrusted',
+  boardReadyOpsAvailable: 'kicadstudio.boardReadyOpsAvailable'
 } as const;
 export const SETTINGS = {
   cliPath: 'kicadstudio.kicadCliPath',
@@ -228,7 +233,9 @@ export const SETTINGS = {
   viewerEnableSnapshotExport: 'kicadstudio.viewer.enableSnapshotExport',
   telemetryEnabled: 'kicadstudio.telemetry.enabled',
   telemetryEndpoint: 'kicadstudio.telemetry.endpoint',
-  telemetryBufferLimit: 'kicadstudio.telemetry.bufferLimit'
+  telemetryBufferLimit: 'kicadstudio.telemetry.bufferLimit',
+  boardReadyOpsEnabled: 'kicadstudio.boardReadyOps.enabled',
+  boardReadyOpsSpecFile: 'kicadstudio.boardReadyOps.specFile'
 } as const;
 export const DEFAULT_BOM_FIELDS = [
   'Reference',

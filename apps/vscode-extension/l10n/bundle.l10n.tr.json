@@ -316,5 +316,10 @@
   "Could not open the feedback form automatically. You can access it manually at: {url}": "KiCad Studio beta geri bildirim formu otomatik olarak açılamadı. Manuel olarak buradan erişebilirsiniz: {url}",
   "Running all quality gates...": "Tüm kalite kapıları çalıştırılıyor...",
   "Running {gate} quality gate...": "{gate} kalite kapısı çalıştırılıyor...",
-  "Quality Gates are not available when kicad-mcp-pro is connected via VS Code stdio. Start kicad-mcp-pro with the HTTP transport (port 27185) to enable this feature.": "kicad-mcp-pro, VS Code stdio üzerinden bağlandığında Kalite Kapıları kullanılamaz. Bu özelliği etkinleştirmek için kicad-mcp-pro'yu HTTP taşımasıyla (port 27185) başlatın."
+  "Quality Gates are not available when kicad-mcp-pro is connected via VS Code stdio. Start kicad-mcp-pro with the HTTP transport (port 27185) to enable this feature.": "kicad-mcp-pro, VS Code stdio üzerinden bağlandığında Kalite Kapıları kullanılamaz. Bu özelliği etkinleştirmek için kicad-mcp-pro'yu HTTP taşımasıyla (port 27185) başlatın.",
+  "BoardReadyOps is not configured. Enable it in the KiCad Studio settings to check board readiness.": "BoardReadyOps yapılandırılmamış. Kart hazırlık denetimlerini çalıştırmak için KiCad Studio ayarlarından etkinleştirin.",
+  "Open Settings": "Ayarları Aç",
+  "BoardReadyOps check queued. Results will appear when the service responds.": "BoardReadyOps denetimi sıraya alındı. Sonuçlar hizmet yanıt verdiğinde görünecek.",
+  "No BoardReadyOps report is available yet. Configure and run a readiness check first.": "Henüz BoardReadyOps raporu mevcut değil. Önce bir hazırlık denetimi yapılandırın ve çalıştırın.",
+  "Could not open the BoardReadyOps documentation automatically.": "BoardReadyOps belgeleri otomatik olarak açılamadı."
 }

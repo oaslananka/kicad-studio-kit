@@ -851,6 +851,41 @@
         "category": "%kicadstudio.contributes.commands.85.category%"
       },
       {
+        "command": "kicadstudio.pcm.refresh",
+        "title": "%kicadstudio.contributes.commands.86.title%",
+        "category": "%kicadstudio.contributes.commands.86.category%"
+      },
+      {
+        "command": "kicadstudio.pcm.filter",
+        "title": "%kicadstudio.contributes.commands.87.title%",
+        "category": "%kicadstudio.contributes.commands.87.category%"
+      },
+      {
+        "command": "kicadstudio.pcm.install",
+        "title": "%kicadstudio.contributes.commands.88.title%",
+        "category": "%kicadstudio.contributes.commands.88.category%"
+      },
+      {
+        "command": "kicadstudio.pcm.update",
+        "title": "%kicadstudio.contributes.commands.89.title%",
+        "category": "%kicadstudio.contributes.commands.89.category%"
+      },
+      {
+        "command": "kicadstudio.pcm.updateAll",
+        "title": "%kicadstudio.contributes.commands.90.title%",
+        "category": "%kicadstudio.contributes.commands.90.category%"
+      },
+      {
+        "command": "kicadstudio.pcm.uninstall",
+        "title": "%kicadstudio.contributes.commands.91.title%",
+        "category": "%kicadstudio.contributes.commands.91.category%"
+      },
+      {
+        "command": "kicadstudio.sendFeedback",
+        "title": "%kicadstudio.contributes.commands.92.title%",
+        "category": "%kicadstudio.contributes.commands.92.category%"
+      },
+      {
         "command": "kicadstudio.importAllegro",
         "title": "%kicadstudio.contributes.commands.93.title%",
         "category": "%kicadstudio.contributes.commands.93.category%"
@@ -858,44 +893,62 @@
       {
         "command": "kicadstudio.pcm.refresh",
         "title": "%kicadstudio.contributes.commands.86.title%",
-        "category": "%kicadstudio.contributes.commands.86.category%",
-        "icon": "$(refresh)"
+        "category": "%kicadstudio.contributes.commands.86.category%"
       },
       {
         "command": "kicadstudio.pcm.filter",
         "title": "%kicadstudio.contributes.commands.87.title%",
-        "category": "%kicadstudio.contributes.commands.87.category%",
-        "icon": "$(filter)"
+        "category": "%kicadstudio.contributes.commands.87.category%"
       },
       {
         "command": "kicadstudio.pcm.install",
         "title": "%kicadstudio.contributes.commands.88.title%",
-        "category": "%kicadstudio.contributes.commands.88.category%",
-        "icon": "$(cloud-download)"
+        "category": "%kicadstudio.contributes.commands.88.category%"
       },
       {
         "command": "kicadstudio.pcm.update",
         "title": "%kicadstudio.contributes.commands.89.title%",
-        "category": "%kicadstudio.contributes.commands.89.category%",
-        "icon": "$(sync)"
+        "category": "%kicadstudio.contributes.commands.89.category%"
       },
       {
         "command": "kicadstudio.pcm.updateAll",
         "title": "%kicadstudio.contributes.commands.90.title%",
-        "category": "%kicadstudio.contributes.commands.90.category%",
-        "icon": "$(sync)"
+        "category": "%kicadstudio.contributes.commands.90.category%"
       },
       {
         "command": "kicadstudio.pcm.uninstall",
         "title": "%kicadstudio.contributes.commands.91.title%",
-        "category": "%kicadstudio.contributes.commands.91.category%",
-        "icon": "$(trash)"
+        "category": "%kicadstudio.contributes.commands.91.category%"
       },
       {
         "command": "kicadstudio.sendFeedback",
         "title": "%kicadstudio.contributes.commands.92.title%",
-        "category": "%kicadstudio.contributes.commands.92.category%",
-        "icon": "$(comment-discussion)"
+        "category": "%kicadstudio.contributes.commands.92.category%"
+      },
+      {
+        "command": "kicadstudio.importAllegro",
+        "title": "%kicadstudio.contributes.commands.93.title%",
+        "category": "%kicadstudio.contributes.commands.93.category%"
+      },
+      {
+        "command": "kicadstudio.boardReadyOps.check",
+        "title": "%kicadstudio.contributes.commands.94.title%",
+        "category": "%kicadstudio.contributes.commands.94.category%"
+      },
+      {
+        "command": "kicadstudio.boardReadyOps.configure",
+        "title": "%kicadstudio.contributes.commands.95.title%",
+        "category": "%kicadstudio.contributes.commands.95.category%"
+      },
+      {
+        "command": "kicadstudio.boardReadyOps.showReport",
+        "title": "%kicadstudio.contributes.commands.96.title%",
+        "category": "%kicadstudio.contributes.commands.96.category%"
+      },
+      {
+        "command": "kicadstudio.boardReadyOps.openDocs",
+        "title": "%kicadstudio.contributes.commands.97.title%",
+        "category": "%kicadstudio.contributes.commands.97.category%"
       }
     ],
     "menus": {
@@ -1381,6 +1434,22 @@
         {
           "command": "kicadstudio.importAllegro",
           "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject && kicadstudio.allegroImportSupported"
+        },
+        {
+          "command": "kicadstudio.boardReadyOps.check",
+          "when": "kicadstudio.workspaceTrusted"
+        },
+        {
+          "command": "kicadstudio.boardReadyOps.configure",
+          "when": "kicadstudio.workspaceTrusted"
+        },
+        {
+          "command": "kicadstudio.boardReadyOps.showReport",
+          "when": "kicadstudio.workspaceTrusted"
+        },
+        {
+          "command": "kicadstudio.boardReadyOps.openDocs",
+          "when": "kicadstudio.workspaceTrusted"
         }
       ]
     },
@@ -1732,6 +1801,16 @@
           "minimum": 0,
           "maximum": 1000,
           "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.telemetry.bufferLimit.description%"
+        },
+        "kicadstudio.boardReadyOps.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.boardReadyOps.enabled.description%"
+        },
+        "kicadstudio.boardReadyOps.specFile": {
+          "type": "string",
+          "default": "",
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.boardReadyOps.specFile.description%"
         }
       }
     },
