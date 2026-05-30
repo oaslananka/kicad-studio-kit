@@ -9,6 +9,7 @@ import { registerSecretCommands } from './secretCommands';
 import { registerSettingsCommands } from './settingsCommands';
 import { registerViewerCommands } from './viewerCommands';
 import { registerFeedbackCommands } from './feedbackCommands';
+import { registerBoardReadyOpsCommands } from './boardReadyOpsCommands';
 import type { CommandServices } from './types';
 
 export type { CommandServices } from './types';
@@ -34,6 +35,7 @@ export function registerAllCommands(
     ...registerSecretCommands(services),
     ...registerSettingsCommands(extensionContext, services),
     ...registerViewerCommands(services),
-    ...registerFeedbackCommands()
+    ...registerFeedbackCommands(),
+    ...registerBoardReadyOpsCommands()
   );
 }
