@@ -313,5 +313,8 @@
   "Run {label}": "{label} çalıştır",
   "KiCad Studio settings migration failed. Existing settings were left at the last successful schema version; check the KiCad Studio output for details.": "KiCad Studio ayar geçişi başarısız oldu. Mevcut ayarlar son başarılı şema sürümünde bırakıldı; ayrıntılar için KiCad Studio çıktısını kontrol edin.",
   "KiCad Studio updated deprecated settings to the current schema.": "KiCad Studio, kullanımdan kaldırılmış ayarları geçerli şemaya güncelledi.",
-  "Could not open the feedback form automatically. You can access it manually at: {url}": "KiCad Studio beta geri bildirim formu otomatik olarak açılamadı. Manuel olarak buradan erişebilirsiniz: {url}"
+  "Could not open the feedback form automatically. You can access it manually at: {url}": "KiCad Studio beta geri bildirim formu otomatik olarak açılamadı. Manuel olarak buradan erişebilirsiniz: {url}",
+  "Running all quality gates...": "Tüm kalite kapıları çalıştırılıyor...",
+  "Running {gate} quality gate...": "{gate} kalite kapısı çalıştırılıyor...",
+  "Quality Gates are not available when kicad-mcp-pro is connected via VS Code stdio. Start kicad-mcp-pro with the HTTP transport (port 27185) to enable this feature.": "kicad-mcp-pro, VS Code stdio üzerinden bağlandığında Kalite Kapıları kullanılamaz. Bu özelliği etkinleştirmek için kicad-mcp-pro'yu HTTP taşımasıyla (port 27185) başlatın."
 }

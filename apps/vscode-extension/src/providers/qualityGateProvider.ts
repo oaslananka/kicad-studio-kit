@@ -123,28 +123,36 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
       return;
     }
 
-    try {
-      const [project, placement, transfer, manufacturing] = await Promise.all([
-        this.mcpAdapter.runProjectQualityGate(),
-        this.mcpAdapter.runPlacementQualityGate(),
-        this.mcpAdapter.runTransferQualityGate(),
-        this.mcpAdapter.runManufacturingQualityGate()
-      ]);
-      this.gates = markRunTime(
-        mergeGates([...project, placement, transfer, manufacturing])
-      );
-      await this.persist();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes('stdio')) {
-        void vscode.window.showInformationMessage(
-          'Quality Gates are not available when kicad-mcp-pro is connected via VS Code stdio. ' +
-            'Start kicad-mcp-pro with the HTTP transport (port 27185) to enable this feature.'
-        );
-        return;
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Window,
+        title: localize('qualityGateRunningAll')
+      },
+      async () => {
+        try {
+          const [project, placement, transfer, manufacturing] =
+            await Promise.all([
+              this.mcpAdapter.runProjectQualityGate(),
+              this.mcpAdapter.runPlacementQualityGate(),
+              this.mcpAdapter.runTransferQualityGate(),
+              this.mcpAdapter.runManufacturingQualityGate()
+            ]);
+          this.gates = markRunTime(
+            mergeGates([...project, placement, transfer, manufacturing])
+          );
+          await this.persist();
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (msg.includes('stdio')) {
+            void vscode.window.showInformationMessage(
+              localize('qualityGateStdioWarning')
+            );
+            return;
+          }
+          throw err;
+        }
       }
-      throw err;
-    }
+    );
     this.onDidChangeTreeDataEmitter.fire(undefined);
   }
 
@@ -153,17 +161,27 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
       return;
     }
 
-    const next = gate.id.includes('placement')
-      ? await this.mcpAdapter.runPlacementQualityGate()
-      : gate.id.includes('transfer')
-        ? await this.mcpAdapter.runTransferQualityGate()
-        : gate.id.includes('manufacturing')
-          ? await this.mcpAdapter.runManufacturingQualityGate()
-          : ((await this.mcpAdapter.runProjectQualityGate())[0] ?? gate);
-    this.gates = markRunTime(
-      mergeGates(this.gates.map((item) => (item.id === gate.id ? next : item)))
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Window,
+        title: localize('qualityGateRunning', { gate: gate.label })
+      },
+      async () => {
+        const next = gate.id.includes('placement')
+          ? await this.mcpAdapter.runPlacementQualityGate()
+          : gate.id.includes('transfer')
+            ? await this.mcpAdapter.runTransferQualityGate()
+            : gate.id.includes('manufacturing')
+              ? await this.mcpAdapter.runManufacturingQualityGate()
+              : ((await this.mcpAdapter.runProjectQualityGate())[0] ?? gate);
+        this.gates = markRunTime(
+          mergeGates(
+            this.gates.map((item) => (item.id === gate.id ? next : item))
+          )
+        );
+        await this.persist();
+      }
     );
-    await this.persist();
     this.onDidChangeTreeDataEmitter.fire(undefined);
   }
 
@@ -357,7 +375,6 @@ function orderGates(gates: QualityGateResult[]): QualityGateResult[] {
       a.label.localeCompare(b.label)
   );
 }
-
 
 function defaultGateOrder(id: string): number {
   const index = DEFAULT_GATES.findIndex((gate) => gate.id === id);

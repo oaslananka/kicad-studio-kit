@@ -237,6 +237,27 @@ function awaitImportGenerator() {
   }
 }
 
+function checkQualityGateDocs() {
+  // Known quality gate docs routes from qualityGateProvider.ts.
+  // Each route must map to an existing local docs markdown file so that
+  // "Open documentation" links in the Quality Gates panel stay valid.
+  const knownRoutes = ["/workflows/manufacturing-export/", "/extension/"];
+
+  for (const route of knownRoutes) {
+    const docPath = route.replace(/^\/|\/$/gu, "");
+    const candidates = [
+      path.join(docsRoot, `${docPath}.md`),
+      path.join(docsRoot, docPath, "index.md"),
+    ];
+    const existing = candidates.find((c) => fs.existsSync(c));
+    if (!existing) {
+      fail(
+        `quality gate docs route ${route} has no matching doc file in docs/ (tried: ${candidates.join(", ")})`,
+      );
+    }
+  }
+}
+
 const files = walk(docsRoot);
 if (checkAll || args.has("--generated")) {
   checkGeneratedFreshness();
@@ -246,6 +267,9 @@ if (checkAll || args.has("--markdown")) {
 }
 if (checkAll || args.has("--links")) {
   checkLinks(files);
+}
+if (checkAll || args.has("--quality-gate-docs")) {
+  checkQualityGateDocs();
 }
 
 if (process.exitCode) {

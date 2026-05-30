@@ -965,11 +965,6 @@
           "group": "navigation"
         },
         {
-          "when": "view == kicadstudio.qualityGate",
-          "command": "kicadstudio.qualityGate.openDocs",
-          "group": "navigation"
-        },
-        {
           "when": "view == kicadstudio.drcRules && kicadstudio.workspaceTrusted && kicadstudio.mcpConnected && kicadstudio.mcpWriteMode",
           "command": "kicadstudio.drcRule.addWithMcp",
           "group": "navigation"
