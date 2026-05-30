@@ -305,6 +305,62 @@ describe('QualityGateProvider', () => {
     expect(client.runProjectQualityGate).toHaveBeenCalled();
   });
 
+  it('handles stdio connection errors in runGate gracefully', async () => {
+    const client = {
+      runProjectQualityGate: jest
+        .fn()
+        .mockRejectedValue(new Error('stdio connection refused')),
+      runPlacementQualityGate: jest.fn(),
+      runTransferQualityGate: jest.fn(),
+      runManufacturingQualityGate: jest.fn()
+    };
+    const provider = new QualityGateProvider(
+      createExtensionContextMock() as never,
+      client as never
+    );
+
+    await expect(
+      provider.runGate({
+        id: 'schematic',
+        label: 'Schematic',
+        status: 'PENDING',
+        summary: '',
+        details: [],
+        violations: []
+      })
+    ).resolves.toBeUndefined();
+
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Quality Gates are not available')
+    );
+  });
+
+  it('re-throws non-stdio errors from runGate', async () => {
+    const client = {
+      runProjectQualityGate: jest
+        .fn()
+        .mockRejectedValue(new Error('MCP server crashed')),
+      runPlacementQualityGate: jest.fn(),
+      runTransferQualityGate: jest.fn(),
+      runManufacturingQualityGate: jest.fn()
+    };
+    const provider = new QualityGateProvider(
+      createExtensionContextMock() as never,
+      client as never
+    );
+
+    await expect(
+      provider.runGate({
+        id: 'schematic',
+        label: 'Schematic',
+        status: 'PENDING',
+        summary: '',
+        details: [],
+        violations: []
+      })
+    ).rejects.toThrow('MCP server crashed');
+  });
+
   it('debounces DRC refreshes and opens documentation', async () => {
     jest.useFakeTimers();
     const client = {

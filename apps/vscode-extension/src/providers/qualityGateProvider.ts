@@ -167,19 +167,30 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
         title: localize('qualityGateRunning', { gate: gate.label })
       },
       async () => {
-        const next = gate.id.includes('placement')
-          ? await this.mcpAdapter.runPlacementQualityGate()
-          : gate.id.includes('transfer')
-            ? await this.mcpAdapter.runTransferQualityGate()
-            : gate.id.includes('manufacturing')
-              ? await this.mcpAdapter.runManufacturingQualityGate()
-              : ((await this.mcpAdapter.runProjectQualityGate())[0] ?? gate);
-        this.gates = markRunTime(
-          mergeGates(
-            this.gates.map((item) => (item.id === gate.id ? next : item))
-          )
-        );
-        await this.persist();
+        try {
+          const next = gate.id.includes('placement')
+            ? await this.mcpAdapter.runPlacementQualityGate()
+            : gate.id.includes('transfer')
+              ? await this.mcpAdapter.runTransferQualityGate()
+              : gate.id.includes('manufacturing')
+                ? await this.mcpAdapter.runManufacturingQualityGate()
+                : ((await this.mcpAdapter.runProjectQualityGate())[0] ?? gate);
+          this.gates = markRunTime(
+            mergeGates(
+              this.gates.map((item) => (item.id === gate.id ? next : item))
+            )
+          );
+          await this.persist();
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (msg.includes('stdio')) {
+            void vscode.window.showInformationMessage(
+              localize('qualityGateStdioWarning')
+            );
+            return;
+          }
+          throw err;
+        }
       }
     );
     this.onDidChangeTreeDataEmitter.fire(undefined);
