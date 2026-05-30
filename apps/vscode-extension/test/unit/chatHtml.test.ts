@@ -54,4 +54,33 @@ describe('buildChatHtml', () => {
     expect(html).toContain('requestAnimationFrame(() => {');
     expect(html).toContain('quota|rate limit|usage limit|limit reached');
   });
+
+  it('enables native CSS scroll anchoring on the messages container', () => {
+    const html = buildChatHtml({
+      webview: createWebviewMock(),
+      extensionUri: vscode.Uri.file('/extension')
+    });
+
+    expect(html).toContain('overflow-anchor: auto');
+  });
+
+  it('re-checks near-bottom in rAF callback to prevent scroll stealing', () => {
+    const html = buildChatHtml({
+      webview: createWebviewMock(),
+      extensionUri: vscode.Uri.file('/extension')
+    });
+
+    expect(html).toContain('if (shouldStick && !isNearBottom(nodes.messages))');
+  });
+
+  it('defers assistantReplace markdown render with requestAnimationFrame', () => {
+    const html = buildChatHtml({
+      webview: createWebviewMock(),
+      extensionUri: vscode.Uri.file('/extension')
+    });
+
+    expect(html).toContain("message.type === 'assistantReplace'");
+    expect(html).toContain('requestAnimationFrame(() => {');
+    expect(html).toContain('renderMessage(message.message, false)');
+  });
 });
