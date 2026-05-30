@@ -1434,6 +1434,22 @@
         {
           "command": "kicadstudio.importAllegro",
           "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject && kicadstudio.allegroImportSupported"
+        },
+        {
+          "command": "kicadstudio.boardReadyOps.check",
+          "when": "kicadstudio.workspaceTrusted"
+        },
+        {
+          "command": "kicadstudio.boardReadyOps.configure",
+          "when": "kicadstudio.workspaceTrusted"
+        },
+        {
+          "command": "kicadstudio.boardReadyOps.showReport",
+          "when": "kicadstudio.workspaceTrusted"
+        },
+        {
+          "command": "kicadstudio.boardReadyOps.openDocs",
+          "when": "kicadstudio.workspaceTrusted"
         }
       ]
     },
