@@ -3,7 +3,7 @@
 Machine-maintained from the VS Code extension configuration schema.
 Refresh with `corepack pnpm run docs:generate`.
 
-Total settings: 45.
+Total settings: 47.
 
 | Setting | Type | Default | Allowed values | Description |
 | --- | --- | --- | --- | --- |
@@ -52,3 +52,5 @@ Total settings: 45.
 | `kicadstudio.telemetry.enabled` | boolean | `false` |  | Enable opt-in KiCad Studio usage and error telemetry. Disabled by default and capped by VS Code's telemetry.telemetryLevel setting. |
 | `kicadstudio.telemetry.endpoint` | string | `` |  | HTTP endpoint for a self-hosted Sentry relay, OpenTelemetry collector, or compatible telemetry intake. Empty disables network export. |
 | `kicadstudio.telemetry.bufferLimit` | number | `100` |  | Maximum number of redacted telemetry events retained in the offline retry buffer. |
+| `kicadstudio.boardReadyOps.enabled` | boolean | `false` |  | Enable BoardReadyOps readiness checks for the active board. |
+| `kicadstudio.boardReadyOps.specFile` | string | `` |  | Path to the board specification file used by BoardReadyOps checks. |

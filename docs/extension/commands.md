@@ -3,7 +3,7 @@
 Machine-maintained from `apps/vscode-extension/package.json` and `package.nls.json`.
 Refresh with `corepack pnpm run docs:generate`.
 
-Total contributed commands: 94.
+Total contributed commands: 91.
 
 | Command ID | Title | Category |
 | --- | --- | --- |
@@ -94,10 +94,7 @@ Total contributed commands: 94.
 | `kicadstudio.importSolidworks` | KiCad: Import SolidWorks PCB | KiCad Import |
 | `kicadstudio.importGeda` | KiCad: Import gEDA/Lepton PCB | KiCad Import |
 | `kicadstudio.importAllegro` | KiCad: Import Allegro Board | KiCad Import |
-| `kicadstudio.pcm.refresh` | KiCad: Refresh PCM Repositories | KiCad Library |
-| `kicadstudio.pcm.filter` | KiCad: Filter PCM Packages | KiCad Library |
-| `kicadstudio.pcm.install` | KiCad: Install PCM Package | KiCad Library |
-| `kicadstudio.pcm.update` | KiCad: Update PCM Package | KiCad Library |
-| `kicadstudio.pcm.updateAll` | KiCad: Update All PCM Packages | KiCad Library |
-| `kicadstudio.pcm.uninstall` | KiCad: Uninstall PCM Package | KiCad Library |
-| `kicadstudio.sendFeedback` | KiCad Studio: Send Feedback | KiCad Studio |
+| `kicadstudio.boardReadyOps.check` | BoardReadyOps: Check Board Readiness | KiCad BoardReadyOps |
+| `kicadstudio.boardReadyOps.configure` | BoardReadyOps: Configure Checks | KiCad BoardReadyOps |
+| `kicadstudio.boardReadyOps.showReport` | BoardReadyOps: Show Readiness Report | KiCad BoardReadyOps |
+| `kicadstudio.boardReadyOps.openDocs` | BoardReadyOps: Open Documentation | KiCad BoardReadyOps |
