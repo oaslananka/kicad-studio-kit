@@ -65,7 +65,7 @@ def main() -> int:
             errors.append(f"{path} must silence intentional root pip install warnings")
 
     dockerfile = dockerfiles["Dockerfile"]
-    if "python:3.13.11-alpine3.22@sha256:" not in dockerfile:
+    if "python:3.13.12-alpine3.22@sha256:" not in dockerfile:
         errors.append("Dockerfile must use the Trivy-clean pinned Python Alpine base")
     if (
         "ENV PYTHONDONTWRITEBYTECODE=1" not in dockerfile
