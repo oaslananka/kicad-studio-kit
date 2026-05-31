@@ -293,7 +293,11 @@ Machine-maintained from \`compatibility.yaml\`. Refresh with
 | Node | \`${compatibility.node.range}\` |
 | pnpm | \`${compatibility.pnpm.range}\` |
 | Python | \`${compatibility.python.range}\` |
-| MCP protocol | \`${compatibility.mcp.protocolVersion}\` |
+| MCP protocol | \`${compatibility.mcp.protocolVersion}\` |${
+    compatibility.mcp.nextProtocolVersion
+      ? `\n| MCP protocol (next) | \`${compatibility.mcp.nextProtocolVersion}\` |`
+      : ""
+  }
 
 ### KiCad Support
 

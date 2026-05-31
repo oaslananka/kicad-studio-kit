@@ -20,6 +20,7 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 | pnpm | `>=11.0.0 <12` |
 | Python | `>=3.13` |
 | MCP protocol | `2025-11-25` |
+| MCP protocol (next) | `2026-07-28` |
 
 ### KiCad Support
 
@@ -160,6 +161,13 @@ Freshness sources checked on 2026-05-27:
 | Node         | 24.x       | `>=24.11.0 <25`        | older      | root and extension package metadata      |
 | pnpm         | 11.x       | `>=11.0.0 <12`         | older      | root package metadata                    |
 | Python       | 3.13       | 3.13, 3.14             | older      | `pyproject.toml` and CI                  |
+
+The MCP protocol revision `2026-07-28` is the tracked next protocol target. It is
+recorded as `nextProtocolVersion` in `compatibility.yaml` and surfaced in the
+generated runtime baseline above, but it is not yet adopted: the active protocol
+stays `2025-11-25` until the Python MCP SDK ships 2026-07-28 support. The phased
+upgrade plan and per-file change list are maintained in
+[ADR 0008](adr/0008-mcp-2026-07-28-protocol-upgrade.md).
 
 ## Minimum-Bump Policy
 
