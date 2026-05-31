@@ -32,6 +32,8 @@ This monorepo uses Renovate as the dependency maintenance bot. Repository-local 
 | `actionlint`                       | `2.0.6`   |
 | `authlib`                          | `1.7.2`   |
 | `diff` (pnpm override)             | `9.0.0`   |
+| `eslint`                           | `10.4.1`  |
+| `@eslint/js`                       | `10.0.1`  |
 
 `diff` is a transitive dev/build-tooling dependency (consumed by `mocha`,
 `release-please`, and `code-suggester`); the repo pins a single resolved version through
@@ -43,12 +45,22 @@ this matches the existing pattern (the `8.0.4` override already exceeded `mocha`
 `parsePatch`/`formatPatch` behavior; the full lint, typecheck, test, build, and
 `release-please` dry-run suites pass with `9.0.0`.
 
+`eslint` and `@eslint/js` were raised from `9.39.4` to the `10` major. The extension
+already uses flat config (`eslint.config.cjs`), so no config-format migration was needed;
+`@typescript-eslint` `8.59.2` already declares `eslint` `^10.0.0` as a supported peer. Two
+adjustments were required: the `lint` script dropped the removed `--ext` flag
+(`eslint src test scripts`; flat config drives extension matching via its `files`
+patterns), and three findings from rules newly enabled in ESLint 10's `recommended` set
+were fixed (`no-useless-assignment` in `scripts/check-review-threads.mjs`, and
+`preserve-caught-error` in `scripts/create-release-assets.js` and `src/library/pcmService.ts`,
+now chaining the caught error via `{ cause }`). Lint, format check, typecheck, the unit
+suite (638 tests), and the production build all pass on `10.4.1`.
+
 ## Postponed Major Updates
 
 | Dependency                                | Reason                                                                                                                                                                                                                                                                                                                                 |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | TypeScript 6                              | Postponed to avoid compiler and lint churn in the same release-hardening branch. `typescript-eslint` 8.59.x supports TS 6, but the repo remains on a conservative TS 5.9.x baseline for this pass.                                                                                                                                     |
-| ESLint 10 and `@eslint/js` 10             | Postponed until the flat config migration can be validated on all matrix runners.                                                                                                                                                                                                                                                      |
 | Jest 30, `@types/jest` 30, `jest-util` 30 | Postponed until unit, integration, mocks, and extension host tests are migrated together.                                                                                                                                                                                                                                              |
 | Vite 8 (pnpm override)                    | Blocked by `vitepress` 1.6.4 (the newest stable VitePress; only `2.0.0-alpha` supports Vite 8). The `vite` override drives the VitePress docs build, and Vite 8 (Rolldown bundler, removed `transformWithEsbuild`) fails `vitepress build docs` against VitePress 1.6.4. Revisit once a stable VitePress releases with Vite 8 support. |
 | `@types/node` 25                          | Rejected for now because the runtime target is Node 24.x.                                                                                                                                                                                                                                                                              |

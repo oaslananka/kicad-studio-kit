@@ -322,7 +322,7 @@ function classifyThread(thread) {
   );
 
   let actionable = false;
-  let reason = 'ignored';
+  let reason;
   if (thread.isResolved) {
     reason = 'resolved';
   } else if (thread.isOutdated) {
