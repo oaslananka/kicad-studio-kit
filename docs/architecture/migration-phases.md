@@ -52,8 +52,9 @@ Related issues: #37, #53, #54, #55, #76.
 
 ## Phase M2 - MCP 2026-07-28 Protocol Upgrade
 
-- [ ] Add `nextProtocolVersion: "2026-07-28"` tracking field to `compatibility.yaml`
-- [ ] Create ADR 0008 with phased upgrade plan
+- [x] Add `nextProtocolVersion: "2026-07-28"` tracking field to `compatibility.yaml`
+- [x] Create ADR 0008 with phased upgrade plan
+- [x] Surface `2026-07-28` as the tracked next protocol line in `docs/support-matrix.md`
 - [ ] P0: Update transport layer — `Mcp-Method`/`Mcp-Name` headers, remove session handshake
 - [ ] P0: Add `server/discover` response for capability discovery
 - [ ] P1: Bump MCP Python SDK when RC with 2026-07-28 support ships
