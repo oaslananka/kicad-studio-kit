@@ -97,6 +97,40 @@ Pin or hold a dependency only when the support boundary is explicit. Examples:
 - Node typings stay inside the Node 24 runtime declared by the workspace.
 - Protocol/runtime packages require dashboard approval because they can affect both the extension and MCP server.
 
+## Abandoned dependencies
+
+Renovate flags a dependency as abandoned when it exceeds the inherited
+`abandonments:recommended` inactivity threshold (one year without a release). Abandonment
+is a maintenance signal, not a vulnerability; security exposure is handled separately by
+`vulnerabilityAlerts` and OSV alerts.
+
+Triage an abandonment flag by deciding one of:
+
+- **Retain** when the package is feature-complete, still actively used, and has no
+  maintained drop-in replacement. Record the decision by adding the package to the
+  abandonment-suppression `packageRules` in `renovate.json` (`abandonmentThreshold: null`,
+  scoped by `matchDatasources` and `matchPackageNames`) so the dashboard stops re-flagging
+  a reviewed steady state. Genuinely new abandonment still surfaces.
+- **Replace** when a maintained alternative exists. Migrate in a scoped PR and remove the
+  suppression entry.
+- **Remove** when the dependency is no longer used.
+
+Reviewed and retained (suppressed) under #244, all still in active use:
+
+| Package                  | Datasource | Used for                                                |
+| ------------------------ | ---------- | ------------------------------------------------------- |
+| `@vscode/test-electron`  | npm        | VS Code extension integration test harness              |
+| `actionlint`             | npm        | GitHub Actions workflow linting                         |
+| `exceljs` (+ `unzipper`) | npm        | spreadsheet/BOM export                                  |
+| `husky`                  | npm        | git hook management                                     |
+| `pngjs`                  | npm        | PNG snapshot/image tooling                              |
+| `docker`                 | pypi       | `freerouting` optional extra (container-driven routing) |
+| `mkdocs-minify-plugin`   | pypi       | documentation site minification                         |
+| `radon`                  | pypi       | code-complexity metrics gate                            |
+
+Revisit a suppressed entry if the package starts blocking a supported KiCad, VS Code, MCP,
+Python, or Node contract, or once a maintained replacement is adopted.
+
 ## Escalation
 
 Create or link a compatibility-regression issue when a dependency update fails canary, contract, or fixture tests. The issue must include:

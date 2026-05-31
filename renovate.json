@@ -153,6 +153,25 @@
       "matchPackageNames": ["@types/node"],
       "allowedVersions": "<25",
       "description": "Keep Node typings aligned with the Node 24 runtime declared by the workspace."
+    },
+    {
+      "description": "Reviewed under #244: these npm packages are flagged abandoned by release inactivity but are intentionally retained, feature-complete tooling that is still actively used; suppress the abandonment flag so the dashboard surfaces only new abandonment. See docs/dependency-lifecycle.md.",
+      "matchDatasources": ["npm"],
+      "matchPackageNames": [
+        "@vscode/test-electron",
+        "actionlint",
+        "exceljs",
+        "unzipper",
+        "husky",
+        "pngjs"
+      ],
+      "abandonmentThreshold": null
+    },
+    {
+      "description": "Reviewed under #244: these Python packages are flagged abandoned by release inactivity but are intentionally retained, feature-complete tooling that is still actively used; suppress the abandonment flag so the dashboard surfaces only new abandonment. See docs/dependency-lifecycle.md.",
+      "matchDatasources": ["pypi"],
+      "matchPackageNames": ["docker", "mkdocs-minify-plugin", "radon"],
+      "abandonmentThreshold": null
     }
   ],
   "vulnerabilityAlerts": {
