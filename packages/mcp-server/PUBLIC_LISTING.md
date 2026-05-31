@@ -5,11 +5,18 @@ This file is intentionally maintained in the repository root so reviewers and ma
 
 ## Listing Targets
 
-| Target                        | Status        | Submitted (UTC) | Approved (UTC) | Listing URL |
-| ----------------------------- | ------------- | --------------- | -------------- | ----------- |
-| Anthropic Connector Directory | Not submitted |                 |                |             |
-| ChatGPT Apps                  | Not submitted |                 |                |             |
-| OpenAI/MCP Registry           | Not submitted |                 |                |             |
+| Target                        | Status                  | Submitted (UTC)      | Approved (UTC)       | Listing URL                                                                |
+| ----------------------------- | ----------------------- | -------------------- | -------------------- | -------------------------------------------------------------------------- |
+| Anthropic Connector Directory | Not submitted           |                      |                      |                                                                            |
+| ChatGPT Apps                  | Not submitted           |                      |                      |                                                                            |
+| OpenAI/MCP Registry           | Listed (stale: `2.1.0`) | 2026-04-15T21:15:40Z | 2026-04-15T21:15:40Z | <https://registry.modelcontextprotocol.io/v0/servers?search=kicad-mcp-pro> |
+
+> OpenAI/MCP Registry status verified 2026-05-31 (issue #272): the server
+> `io.github.oaslananka/kicad-mcp-pro` is `active` in the official registry but pinned at
+> `2.1.0` from before the monorepo migration, while the current product line is `3.6.0`.
+> Refreshing the listing requires a production publish — see
+> [`docs/submission/openai-mcp-registry.md`](docs/submission/openai-mcp-registry.md)
+> "Verified Registry Status" for the update path. No publish was performed during verification.
 
 ## Pre-submission Gate
 
@@ -43,8 +50,9 @@ Replace the five screenshots in `docs/assets/screenshots/` with real 1920x1080 c
 
 ## Submission Log
 
-| Date (UTC) | Target | Version | Outcome | Notes |
-| ---------- | ------ | ------- | ------- | ----- |
+| Date (UTC) | Target              | Version | Outcome            | Notes                                                                                                         |
+| ---------- | ------------------- | ------- | ------------------ | ------------------------------------------------------------------------------------------------------------- |
+| 2026-04-15 | OpenAI/MCP Registry | 2.1.0   | Published (active) | Pre-monorepo publish; discovered during #272 verification on 2026-05-31. Listing is stale vs current `3.6.0`. |
 
 ## Target Field Values
 

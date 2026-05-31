@@ -9,6 +9,64 @@ This document covers the registry publish path driven by `server.json`.
 - Keep `mcp.json` synchronized with `server.json` and `pyproject.toml`.
 - Version must match `src/kicad_mcp/__init__.py`.
 
+## Verified Registry Status (2026-05-31)
+
+Verification of the official MCP Registry (`registry.modelcontextprotocol.io`) for
+`io.github.oaslananka/kicad-mcp-pro`, per issue #272. No publish was performed and no
+version, tag, or release identity was changed.
+
+| Field            | Official registry record                              | Canonical repo (`server.json`)                   |
+| ---------------- | ----------------------------------------------------- | ------------------------------------------------ |
+| Listing status   | `active`, `isLatest: true`                            | n/a                                              |
+| Published (UTC)  | `2026-04-15T21:15:40Z`                                | n/a                                              |
+| Version          | `2.1.0`                                               | `3.6.0`                                          |
+| Packages         | `pypi` only                                           | `pypi`, `npm`, `oci`                             |
+| `repository.url` | legacy standalone `kicad-mcp-pro` repo (pre-monorepo) | `https://github.com/oaslananka/kicad-studio-kit` |
+
+Findings:
+
+- The server **is** listed and active in the official registry, so the historical
+  "Not submitted" entry in `PUBLIC_LISTING.md` was inaccurate and has been corrected.
+- The listing is **stale**: the registry shows `2.1.0` while the current product line is
+  `3.6.0` (PyPI already has `3.6.0`). The record predates the monorepo migration, so its
+  `repository.url` still points at the legacy standalone repository and it advertises only
+  the PyPI package.
+- `server.json` and `mcp.json` both validate against the official
+  `2025-12-11` `server.schema.json`, and `metadata:check` / `submission:check` pass, so the
+  current manifest is publish-ready.
+
+Verification commands:
+
+```bash
+# Listing status + version in the official registry
+curl -fsS "https://registry.modelcontextprotocol.io/v0/servers?search=kicad-mcp-pro"
+
+# Local manifest validity + publish payload (target/endpoint, no publish)
+corepack pnpm --dir packages/mcp-server run mcp:manifest:check
+corepack pnpm --dir packages/mcp-server run publish:mcp:dry-run
+```
+
+### Endpoint and Workflow Verification
+
+- `publish_mcp_registry.py` defaults `MCP_REGISTRY_TARGET=official`; with no
+  `MCP_REGISTRY_URL` override it delegates to the pinned `mcp-publisher` CLI, which targets
+  the official registry (`registry.modelcontextprotocol.io`) by default. Endpoint confirmed
+  correct.
+- `.github/workflows/publish-mcp-registry.yml` `publish` job runs `mcp-publisher login
+github-oidc` then `mcp-publisher publish` from `packages/mcp-server`, gated to
+  `release: published` or `workflow_dispatch` with `dry_run=false`.
+
+### Update Path (to refresh the listing to the current version)
+
+No stored registry API token is required — the official target authenticates via GitHub
+OIDC under the `oaslananka` namespace (`id-token: write`).
+
+1. Confirm PyPI/GHCR artifacts exist for the target version (PyPI `3.6.0` already published).
+2. Trigger the publish job via a GitHub `release: published` event, or manually via
+   `workflow_dispatch` with `dry_run=false`.
+3. Approve the `mcp-registry` GitHub Environment when prompted (manual environment gate).
+4. Re-run the `search` command above and confirm `version` and `repository.url` updated.
+
 ## Dry Run Flow
 
 - [ ] Run `pnpm run submission:check` first.
