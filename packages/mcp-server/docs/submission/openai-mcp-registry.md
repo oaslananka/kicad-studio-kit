@@ -52,8 +52,8 @@ corepack pnpm --dir packages/mcp-server run publish:mcp:dry-run
   `MCP_REGISTRY_URL` override it delegates to the pinned `mcp-publisher` CLI, which targets
   the official registry (`registry.modelcontextprotocol.io`) by default. Endpoint confirmed
   correct.
-- `.github/workflows/publish-mcp-registry.yml` `publish` job runs `mcp-publisher login
-github-oidc` then `mcp-publisher publish` from `packages/mcp-server`, gated to
+- `.github/workflows/publish-mcp-registry.yml` `publish` job runs `mcp-publisher login github-oidc`
+  then `mcp-publisher publish` from `packages/mcp-server`, gated to
   `release: published` or `workflow_dispatch` with `dry_run=false`.
 
 ### Update Path (to refresh the listing to the current version)
