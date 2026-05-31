@@ -26,7 +26,7 @@ overrides:
   exceljs>archiver: 8.0.0
   exceljs>fast-csv: 5.0.7
   exceljs>unzipper: 0.12.3
-  diff: 8.0.4
+  diff: 9.0.0
   esbuild: 0.25.0
   glob: 13.0.6
   mocha>serialize-javascript: 7.0.5

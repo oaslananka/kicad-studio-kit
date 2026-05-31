@@ -31,6 +31,17 @@ This monorepo uses Renovate as the dependency maintenance bot. Repository-local 
 | `ovsx`                             | `0.10.12` |
 | `actionlint`                       | `2.0.6`   |
 | `authlib`                          | `1.7.2`   |
+| `diff` (pnpm override)             | `9.0.0`   |
+
+`diff` is a transitive dev/build-tooling dependency (consumed by `mocha`,
+`release-please`, and `code-suggester`); the repo pins a single resolved version through
+the `pnpm-workspace.yaml` `overrides` block. The override was raised from `8.0.4` to the
+`9.0.0` major. The consuming tools still declare sub-`9` ranges (`mocha` `^7.0.0`,
+`release-please`/`code-suggester` `^8.0.3`), so the override forces the major onto them;
+this matches the existing pattern (the `8.0.4` override already exceeded `mocha`'s
+`^7.0.0`). `diff` 9 drops ES5 support (fine for the Node 24 runtime) and changes
+`parsePatch`/`formatPatch` behavior; the full lint, typecheck, test, build, and
+`release-please` dry-run suites pass with `9.0.0`.
 
 ## Postponed Major Updates
 
