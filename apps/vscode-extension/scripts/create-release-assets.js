@@ -82,7 +82,8 @@ function parseJsonOutput(output) {
     throw new Error(
       `pnpm sbom did not return valid JSON: ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
+      { cause: error }
     );
   }
 }

@@ -900,7 +900,8 @@ function parseJsonObject(bytes: Buffer, label: string): Record<string, unknown> 
     }
   } catch (error) {
     throw new Error(
-      `PCM JSON parse failed for ${label}: ${error instanceof Error ? error.message : String(error)}`
+      `PCM JSON parse failed for ${label}: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error }
     );
   }
   throw new Error(`PCM JSON from ${label} was not an object.`);
