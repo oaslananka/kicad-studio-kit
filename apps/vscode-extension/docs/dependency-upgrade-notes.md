@@ -15,7 +15,7 @@ This monorepo uses Renovate as the dependency maintenance bot. Repository-local 
 
 | Package                            | Version   |
 | ---------------------------------- | --------- |
-| `semver`                           | `7.7.4`   |
+| `semver`                           | `7.8.1`   |
 | `@commitlint/cli`                  | `20.5.3`  |
 | `@commitlint/config-conventional`  | `20.5.3`  |
 | `@typescript-eslint/eslint-plugin` | `8.59.2`  |
@@ -55,6 +55,14 @@ were fixed (`no-useless-assignment` in `scripts/check-review-threads.mjs`, and
 `preserve-caught-error` in `scripts/create-release-assets.js` and `src/library/pcmService.ts`,
 now chaining the caught error via `{ cause }`). Lint, format check, typecheck, the unit
 suite (638 tests), and the production build all pass on `10.4.1`.
+
+`semver` was raised from `7.8.0` to `7.8.1`. It is a runtime `dependency` consumed by
+`src/mcp/compat.ts` (`coerce`/`satisfies` against the kicad-mcp-pro compatibility ranges),
+so Renovate gates it behind dashboard approval as a `risk:high` protocol-surface package.
+`7.8.1` is a patch release with only two bug fixes (strip build metadata before comparator
+trimming; handle prerelease bounds in `subset`); neither touches the plain range checks
+used here. The dedicated `mcpCompat` unit test plus the full unit suite, lint, typecheck,
+and build all pass on `7.8.1`.
 
 ## Postponed Major Updates
 
