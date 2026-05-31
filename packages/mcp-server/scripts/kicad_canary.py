@@ -266,6 +266,8 @@ def _command_plan(
         "kicad10AdvancedExports",
         kicad_range,
     )
+    board_stats_skip = _feature_skip_reason(compatibility, "kicad10BoardStats", kicad_range)
+    pcb_import_skip = _feature_skip_reason(compatibility, "kicad10PcbImport", kicad_range)
     steps = [
         CanaryStep(name="version", fixture="compatibility", args=("version",)),
         CanaryStep(
@@ -447,12 +449,14 @@ def _command_plan(
                 str(clean_board),
             ),
             outputs=(reports / "board-stats.txt",),
+            skip_reason=board_stats_skip,
         ),
         CanaryStep(
             name="pads-import-capability",
             fixture="kicad-10-0-3-regressions",
             args=("pcb", "import", "--help"),
             required_output_tokens=("--format", "pads"),
+            skip_reason=pcb_import_skip,
         ),
         CanaryStep(
             name="allegro-import-capability",
@@ -460,6 +464,7 @@ def _command_plan(
             args=("pcb", "import", "--help"),
             required_output_tokens=("allegro",),
             optional_capability=True,
+            skip_reason=pcb_import_skip,
         ),
         CanaryStep(
             name="step",
@@ -486,6 +491,7 @@ def _command_plan(
                 str(path_with_spaces_board),
             ),
             outputs=(reports / "path-with-spaces-board-stats.txt",),
+            skip_reason=board_stats_skip,
         ),
         CanaryStep(
             name="unicode-path-board-stats",
@@ -499,6 +505,7 @@ def _command_plan(
                 str(unicode_path_board),
             ),
             outputs=(reports / "unicode-path-board-stats.txt",),
+            skip_reason=board_stats_skip,
         ),
         CanaryStep(
             name="read-only-output-failure",
@@ -513,6 +520,7 @@ def _command_plan(
             ),
             expects_failure=True,
             readonly_dirs=(readonly_output,),
+            skip_reason=board_stats_skip,
         ),
     ]
 

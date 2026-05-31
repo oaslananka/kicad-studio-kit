@@ -38,6 +38,12 @@ def _compatibility_matrix() -> dict[str, object]:
             "kicad10AdvancedExports": {
                 "kicad": ["10.0.x"],
             },
+            "kicad10BoardStats": {
+                "kicad": ["10.0.x"],
+            },
+            "kicad10PcbImport": {
+                "kicad": ["10.0.x"],
+            },
         },
     }
 
@@ -207,6 +213,11 @@ def test_unsupported_feature_steps_are_structured_skips(tmp_path: Path) -> None:
         steps["schematic-pdf-no-property-popups"].skip_reason
         == "kicad10AdvancedExports is not enabled for KiCad 8.x"
     )
+    assert steps["board-stats"].skip_reason == "kicad10BoardStats is not enabled for KiCad 8.x"
+    assert (
+        steps["pads-import-capability"].skip_reason
+        == "kicad10PcbImport is not enabled for KiCad 8.x"
+    )
 
     result = kicad_canary._run_step(Path(sys.executable), steps["gerbers"], tmp_path)
 
@@ -221,6 +232,39 @@ def test_kicad_canary_gates_manufacturing_exports_by_compatibility_range() -> No
     assert supports_feature_gate(compatibility, "manufacturingExports", "10.0.x")
     assert supports_feature_gate(compatibility, "manufacturingExports", "9.x")
     assert not supports_feature_gate(compatibility, "manufacturingExports", "8.x")
+
+
+def test_issue_276_deprecated_kicad9_lane_skips_kicad10_only_cli_steps(tmp_path: Path) -> None:
+    # Regression for #276: the KiCad 9.x deprecated canary lane failed because
+    # `pcb export stats` and `pcb import` are KiCad 10-only CLI surfaces that
+    # KiCad 9.0.9 does not provide. They must be gated as structured skips so
+    # the best-effort deprecated lane only exercises core workflows.
+    compatibility = _compatibility_matrix()
+    assert not supports_feature_gate(compatibility, "kicad10BoardStats", "9.x")
+    assert not supports_feature_gate(compatibility, "kicad10PcbImport", "9.x")
+    assert supports_feature_gate(compatibility, "kicad10BoardStats", "10.0.x")
+    assert supports_feature_gate(compatibility, "kicad10PcbImport", "10.0.x")
+
+    steps = {step.name: step for step in kicad_canary._command_plan(tmp_path, compatibility, "9.x")}
+
+    for name in [
+        "board-stats",
+        "path-with-spaces-board-stats",
+        "unicode-path-board-stats",
+        "read-only-output-failure",
+    ]:
+        assert steps[name].skip_reason == "kicad10BoardStats is not enabled for KiCad 9.x"
+    for name in ["pads-import-capability", "allegro-import-capability"]:
+        assert steps[name].skip_reason == "kicad10PcbImport is not enabled for KiCad 9.x"
+
+    # Core best-effort workflows stay active on the deprecated lane.
+    for name in ["clean-erc", "clean-drc", "bom", "netlist", "gerbers", "step"]:
+        assert steps[name].skip_reason is None
+
+    skipped = kicad_canary._run_step(Path(sys.executable), steps["board-stats"], tmp_path)
+    assert skipped["ok"] is True
+    assert skipped["skipped"] is True
+    assert skipped["reason"] == "kicad10BoardStats is not enabled for KiCad 9.x"
 
 
 def test_missing_cli_writes_structured_summary(tmp_path: Path, monkeypatch) -> None:

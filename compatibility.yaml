@@ -606,6 +606,12 @@ featureGates:
   kicad10AdvancedExports:
     kicad: ["10.0.x"]
     tools: ["export_odb", "pcb_export_3d_pdf"]
+  kicad10BoardStats:
+    kicad: ["10.0.x"]
+    tools: ["get_board_stats"]
+  kicad10PcbImport:
+    kicad: ["10.0.x"]
+    tools: ["mfg_check_import_support", "mfg_import_pads", "mfg_import_allegro"]
 
 mcpTools:
   required:
