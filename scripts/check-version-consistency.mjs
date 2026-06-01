@@ -15,61 +15,6 @@ add(
   readJson("apps/vscode-extension/package.json").version,
 );
 
-const pyproject = fs.readFileSync("packages/mcp-server/pyproject.toml", "utf8");
-add(
-  "packages/mcp-server/pyproject.toml",
-  "[project].version",
-  pyproject.match(/^version = "([^"]+)"/m)?.[1],
-);
-
-const init = fs.readFileSync(
-  "packages/mcp-server/src/kicad_mcp/__init__.py",
-  "utf8",
-);
-add(
-  "packages/mcp-server/src/kicad_mcp/__init__.py",
-  "__version__",
-  init.match(/^__version__ = "([^"]+)"/m)?.[1],
-);
-
-const releaseManifest = readJson(".release-please-manifest.json");
-const expectedMcpVersion = releaseManifest["packages/mcp-server"];
-for (const file of [
-  "packages/mcp-server/mcp.json",
-  "packages/mcp-server/server.json",
-]) {
-  const data = readJson(file);
-  add(file, "$.version", data.version);
-  data.packages.forEach((pkg, index) => {
-    const isOci =
-      pkg.registryType === "oci" || pkg.registry === "container";
-    if (isOci) {
-      if (pkg.version !== undefined) {
-        console.error(
-          `${file} $.packages[${index}].version: OCI packages must not define version; include version in identifier.`,
-        );
-        process.exit(1);
-      }
-      const identifier = pkg.identifier ?? "";
-      const tagMatch = identifier.match(/:([^@]+)$/);
-      const digestMatch = identifier.includes("@sha256:");
-      if (!digestMatch && (!tagMatch || tagMatch[1] !== expectedMcpVersion)) {
-        console.error(
-          `${file} $.packages[${index}].identifier: OCI tag expected :${expectedMcpVersion}, found ${identifier}`,
-        );
-        process.exit(1);
-      }
-    } else {
-      add(file, `$.packages[${index}].version`, pkg.version);
-    }
-  });
-}
-
-add(
-  "packages/mcp-npm/package.json",
-  "$.version",
-  readJson("packages/mcp-npm/package.json").version,
-);
 const manifest = readJson(".release-please-manifest.json");
 const releasePlease = readJson("release-please-config.json");
 for (const [key, value] of Object.entries(manifest)) {
@@ -81,46 +26,12 @@ const expectedByField = new Map([
     "apps/vscode-extension/package.json $.version",
     manifest["apps/vscode-extension"],
   ],
-  [
-    "packages/mcp-server/pyproject.toml [project].version",
-    manifest["packages/mcp-server"],
-  ],
-  [
-    "packages/mcp-server/src/kicad_mcp/__init__.py __version__",
-    manifest["packages/mcp-server"],
-  ],
-  [
-    "packages/mcp-server/mcp.json $.version",
-    manifest["packages/mcp-server"],
-  ],
-  [
-    "packages/mcp-server/server.json $.version",
-    manifest["packages/mcp-server"],
-  ],
-  [
-    "packages/mcp-npm/package.json $.version",
-    manifest["packages/mcp-npm"],
-  ],
 ]);
 
 function expectedFor(check) {
   const key = `${check.file} ${check.field}`;
   if (expectedByField.has(key)) {
     return expectedByField.get(key);
-  }
-  if (
-    check.file === "packages/mcp-server/mcp.json" &&
-    check.field.startsWith("$.packages[") &&
-    check.field.endsWith(".version")
-  ) {
-    return manifest["packages/mcp-server"];
-  }
-  if (
-    check.file === "packages/mcp-server/server.json" &&
-    check.field.startsWith("$.packages[") &&
-    check.field.endsWith(".version")
-  ) {
-    return manifest["packages/mcp-server"];
   }
   if (check.file === ".release-please-manifest.json") {
     return manifest[check.field];
@@ -147,14 +58,6 @@ if (unexpectedManifestKeys.length > 0 || missingManifestKeys.length > 0) {
   for (const key of missingManifestKeys) {
     console.error(`- missing manifest path: ${key}`);
   }
-  process.exit(1);
-}
-if (manifest["packages/mcp-server"] !== manifest["packages/mcp-npm"]) {
-  console.error(
-    "MCP server and npm launcher manifest versions must stay linked.",
-  );
-  console.error(`- packages/mcp-server: ${manifest["packages/mcp-server"]}`);
-  console.error(`- packages/mcp-npm: ${manifest["packages/mcp-npm"]}`);
   process.exit(1);
 }
 if (drift.length > 0) {

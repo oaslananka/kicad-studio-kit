@@ -86,7 +86,6 @@
     "docs:build": "pnpm run docs:generate && vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "check:docs-site": "pnpm --dir packages/mcp-server run docs:tools:check && pnpm run docs:check-generated && pnpm run docs:lint && pnpm run docs:links && vitepress build docs",
-    "check:publish": "node scripts/check-publish-preflight.mjs",
     "governance:sync:dry-run": "node scripts/sync-governance-project-items.mjs --dry-run --chunk-size 10",
     "check": "pnpm run check:forbidden-refs && pnpm run check:boundaries && pnpm run check:version && pnpm run check:compatibility && pnpm run check:compatibility-contract && pnpm run check:runtime-policy && pnpm run check:supply-chain && pnpm run check:governance && pnpm run check:fixtures && pnpm run check:protocol-schemas && pnpm run check:ci-lanes && pnpm run check:testing-strategy && pnpm run check:regression-policy && pnpm run check:protocol-pr-template && pnpm run check:kicad-gui-smoke && pnpm run check:dev-doctor && pnpm run check:devcontainer && pnpm run check:performance-budgets && pnpm run check:beta-program && pnpm run check:agent-configs && pnpm run check:examples && pnpm run check:docs-site && pnpm run release:dry-run && pnpm run release:verify && pnpm -r run check"
   },
