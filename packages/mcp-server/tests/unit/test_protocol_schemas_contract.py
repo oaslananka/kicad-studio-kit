@@ -7,7 +7,13 @@ from jsonschema import Draft202012Validator
 
 from kicad_mcp.capabilities import all_protocol_metadata
 
-SCHEMA_ROOT = Path(__file__).resolve().parents[3] / "protocol-schemas" / "schemas"
+SCHEMA_ROOT = (
+    Path(__file__).resolve().parents[4]
+    / "node_modules"
+    / "@oaslananka"
+    / "kicad-protocol-schemas"
+    / "schemas"
+)
 
 REQUIRED_SCHEMA_FILES = {
     "bom-netlist-summary.schema.json",

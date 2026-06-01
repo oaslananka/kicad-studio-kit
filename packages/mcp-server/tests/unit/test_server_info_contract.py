@@ -14,8 +14,10 @@ from kicad_mcp.server_info import get_server_info_contract
 from tests.conftest import call_tool_payload
 
 SCHEMA_PATH = (
-    Path(__file__).resolve().parents[3]
-    / "protocol-schemas"
+    Path(__file__).resolve().parents[4]
+    / "node_modules"
+    / "@oaslananka"
+    / "kicad-protocol-schemas"
     / "schemas"
     / "kicad-mcp-server-info.schema.json"
 )
