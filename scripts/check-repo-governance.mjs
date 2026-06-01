@@ -76,16 +76,6 @@ function validateRenovate() {
       files: ["apps/vscode-extension/package.json"],
       scope: "vscode-extension",
     },
-    {
-      groupName: "mcp npm wrapper dependencies",
-      files: ["packages/mcp-npm/package.json"],
-      scope: "mcp-npm",
-    },
-    {
-      groupName: "python mcp server dependencies",
-      files: ["packages/mcp-server/pyproject.toml"],
-      scope: "mcp-server",
-    },
   ];
 
   for (const surface of patchMinorSurfaces) {
@@ -113,52 +103,6 @@ function validateRenovate() {
         rule.platformAutomerge === true,
     ),
     "Low-risk dev-dependency patch updates must be eligible for PR automerge",
-  );
-}
-
-function validatePublishing() {
-  const workflow = read(".github/workflows/publish-python.yml");
-  const docs = read("docs/publishing.md");
-
-  requireCondition(
-    workflow.includes("id-token: write"),
-    "publish-python.yml must grant id-token: write for trusted publishing jobs",
-  );
-  requireCondition(
-    workflow.includes("name: testpypi") && workflow.includes("name: pypi"),
-    "publish-python.yml must use the testpypi and pypi environments",
-  );
-  requireCondition(
-    !/\b(?:PYPI_TOKEN|TEST_PYPI_TOKEN|TWINE_PASSWORD|API_TOKEN)\b/.test(
-      workflow,
-    ),
-    "publish-python.yml must not reference long-lived PyPI token secrets",
-  );
-  requireCondition(
-    !/password:\s*\$\{\{\s*secrets\./.test(workflow),
-    "publish-python.yml must not pass a secret password to pypi-publish",
-  );
-  requireCondition(
-    (
-      workflow.match(
-        /pypa\/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b/g,
-      ) ?? []
-    ).length === 2,
-    "publish-python.yml must use the pinned pypa/gh-action-pypi-publish action for both PyPI targets",
-  );
-  requireCondition(
-    (workflow.match(/attestations:\s*true/g) ?? []).length === 2,
-    "publish-python.yml must explicitly enable pypi-publish attestations for both PyPI targets",
-  );
-  requireCondition(
-    docs.includes(
-      "authentication: PyPI Trusted Publishing through GitHub OIDC",
-    ) &&
-      docs.includes(
-        "authentication: TestPyPI Trusted Publishing through GitHub OIDC",
-      ) &&
-      docs.includes("attestations: true"),
-    "docs/publishing.md must document Trusted Publishing and PyPI attestations",
   );
 }
 
@@ -206,10 +150,6 @@ function validateRepoHealth() {
     "docs.yml",
     "release-please.yml",
     "publish-extension.yml",
-    "publish-python.yml",
-    "publish-npm.yml",
-    "publish-mcp-registry.yml",
-    "publish-mcp-container.yml",
   ];
 
   requireCondition(
@@ -228,20 +168,9 @@ function validateRepoHealth() {
       `.repo-health.yaml must require ${workflow}`,
     );
   }
-
-  requireCondition(
-    health.includes("pypi_trusted_publishing: true") &&
-      health.includes("pypi_attestations: true") &&
-      health.includes("pypi_long_lived_tokens_allowed: false") &&
-      health.includes("ghcr_container_publishing: true") &&
-      health.includes("ghcr_workflow: publish-mcp-container.yml") &&
-      health.includes("ghcr_image: ghcr.io/oaslananka/kicad-mcp-pro"),
-    ".repo-health.yaml must declare the PyPI and GHCR publishing posture",
-  );
 }
 
 validateRenovate();
-validatePublishing();
 validateCanonicalPolicy();
 validateReusableWorkflowGap();
 validateRepoHealth();

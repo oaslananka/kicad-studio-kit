@@ -14,7 +14,6 @@ const REPO_ROOT = path.resolve(
 const ALLOWED_SCOPES = ["kicad-studio", "kicad-mcp-pro", "repo", "deps"];
 const PRODUCTS = {
   "kicad-studio": ["apps/vscode-extension"],
-  "kicad-mcp-pro": ["packages/mcp-server", "packages/mcp-npm"],
 };
 const REPO_RELEASE_GOVERNANCE_PREFIXES = [
   ".github/",
@@ -22,9 +21,6 @@ const REPO_RELEASE_GOVERNANCE_PREFIXES = [
   "scripts/",
   "apps/vscode-extension/docs/",
   "apps/vscode-extension/scripts/",
-  "packages/mcp-server/docs/",
-  "packages/mcp-server/scripts/",
-  "packages/mcp-server/tests/unit/test_release_",
 ];
 const EXPECTED_PACKAGES = {
   "apps/vscode-extension": {
@@ -34,28 +30,8 @@ const EXPECTED_PACKAGES = {
     component: "vscode-extension",
     versionFile: "apps/vscode-extension/package.json",
   },
-  "packages/mcp-server": {
-    product: "kicad-mcp-pro",
-    releaseType: "python",
-    packageName: "kicad-mcp-pro",
-    component: "mcp-server",
-    versionFile: "packages/mcp-server/pyproject.toml",
-  },
-  "packages/mcp-npm": {
-    product: "kicad-mcp-pro",
-    releaseType: "node",
-    packageName: "kicad-mcp-pro",
-    component: "mcp-npm",
-    versionFile: "packages/mcp-npm/package.json",
-  },
 };
-const SNAPSHOT_UPDATE_PATHS = [
-  ".release-please-manifest.json",
-  "packages/mcp-npm/CHANGELOG.md",
-  "packages/mcp-npm/package.json",
-  "packages/mcp-server/CHANGELOG.md",
-  "packages/mcp-server/pyproject.toml",
-];
+const SNAPSHOT_UPDATE_PATHS = [".release-please-manifest.json"];
 
 export function validateRepositoryPolicy(repoRoot = REPO_ROOT) {
   const errors = [];
@@ -126,19 +102,6 @@ export function validateRepositoryPolicy(repoRoot = REPO_ROOT) {
     }
   }
   errors.push(...validateLinkedVersionGroups(config, manifest));
-
-  const linkedComponents = new Set(
-    (config.plugins ?? [])
-      .filter(
-        (plugin) =>
-          plugin?.type === "linked-versions" &&
-          plugin?.groupName === "kicad-mcp-pro",
-      )
-      .flatMap((plugin) => plugin.components ?? []),
-  );
-  if (!sameList([...linkedComponents].sort(), ["mcp-npm", "mcp-server"])) {
-    errors.push("linked-versions plugin must link only mcp-server and mcp-npm");
-  }
 
   const releaseDocs = readText(repoRoot, "docs/release.md");
   for (const scope of ALLOWED_SCOPES) {
@@ -307,34 +270,6 @@ export async function runSyntheticReleasePleaseDryRun(
       "docs(repo): update release governance",
     ]);
 
-    if (options.scenario !== "root-only") {
-      fs.writeFileSync(
-        path.join(
-          tempRoot,
-          "packages",
-          "mcp-server",
-          "src",
-          "kicad_mcp",
-          "dry_run_feature.py",
-        ),
-        'FEATURE = "synthetic release-please dry-run"\n',
-        "utf8",
-      );
-      git(tempRoot, [
-        "add",
-        "packages/mcp-server/src/kicad_mcp/dry_run_feature.py",
-      ]);
-      git(tempRoot, [
-        "-c",
-        "user.name=Release Test",
-        "-c",
-        "user.email=release-test@example.com",
-        "commit",
-        "-m",
-        "feat(kicad-mcp-pro): add server dry-run feature",
-      ]);
-    }
-
     const result = spawnReleasePlease(
       resolveExecutable("pnpm"),
       [
@@ -405,8 +340,6 @@ export function parseReleasePleaseDryRun(output) {
   return {
     pullRequestCount,
     titles,
-    includesMcpServerRelease: /<summary>mcp-server:/.test(output),
-    includesMcpNpmRelease: /<summary>mcp-npm:/.test(output),
     includesVsCodeExtensionRelease: /<summary>vscode-extension:/.test(output),
     includesRootOnlyRelease: /<summary>repo:|release repo/.test(output),
     updatedPaths,
@@ -465,18 +398,14 @@ function productsForFiles(files) {
     if (file.startsWith("apps/vscode-extension/")) {
       products.add("kicad-studio");
     }
-    if (
-      file.startsWith("packages/mcp-server/") ||
-      file.startsWith("packages/mcp-npm/")
-    ) {
-      products.add("kicad-mcp-pro");
-    }
   }
   return products;
 }
 
 function isRepoScopedReleaseGovernanceCommit(parsed, files) {
-  return parsed.scopes.includes("repo") && files.every(isRepoReleaseGovernancePath);
+  return (
+    parsed.scopes.includes("repo") && files.every(isRepoReleaseGovernancePath)
+  );
 }
 
 function isRepoReleaseGovernancePath(file) {
@@ -487,13 +416,8 @@ function isRepoReleaseGovernancePath(file) {
 
 function readProductVersions(repoRoot) {
   const extension = readJson(repoRoot, "apps/vscode-extension/package.json");
-  const mcpNpm = readJson(repoRoot, "packages/mcp-npm/package.json");
-  const pyproject = readText(repoRoot, "packages/mcp-server/pyproject.toml");
-  const mcpServerVersion = pyproject.match(/^version = "([^"]+)"/m)?.[1];
   return {
     "apps/vscode-extension": extension.version,
-    "packages/mcp-server": mcpServerVersion,
-    "packages/mcp-npm": mcpNpm.version,
   };
 }
 
@@ -503,13 +427,6 @@ function createSyntheticReleaseRepo(repoRoot, tempRoot) {
     ".release-please-manifest.json",
     "apps/vscode-extension/package.json",
     "apps/vscode-extension/CHANGELOG.md",
-    "packages/mcp-server/pyproject.toml",
-    "packages/mcp-server/CHANGELOG.md",
-    "packages/mcp-server/src/kicad_mcp/__init__.py",
-    "packages/mcp-server/mcp.json",
-    "packages/mcp-server/server.json",
-    "packages/mcp-npm/package.json",
-    "packages/mcp-npm/CHANGELOG.md",
   ];
 
   git(tempRoot, ["init", "-q", "-b", "main"]);
@@ -529,8 +446,6 @@ function createSyntheticReleaseRepo(repoRoot, tempRoot) {
     "chore(repo): baseline",
   ]);
   git(tempRoot, ["tag", "vscode-extension-v1.0.0"]);
-  git(tempRoot, ["tag", "mcp-server-v1.0.0"]);
-  git(tempRoot, ["tag", "mcp-npm-v1.0.0"]);
 }
 
 export function listCommitsForPullRequest(repoRoot, pullRequest) {
@@ -598,10 +513,13 @@ export function listCommits(repoRoot, range) {
     return {
       sha,
       subject,
-      files: git(
-        repoRoot,
-        ["diff-tree", "--no-commit-id", "--name-only", "-r", sha],
-      )
+      files: git(repoRoot, [
+        "diff-tree",
+        "--no-commit-id",
+        "--name-only",
+        "-r",
+        sha,
+      ])
         .split("\n")
         .filter(Boolean),
     };

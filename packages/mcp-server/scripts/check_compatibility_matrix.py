@@ -26,7 +26,14 @@ REQUIRED_IPC_AREAS = (
 )
 KICAD_SUPPORT_STATES = {"primary", "supported", "deprecated"}
 KICAD_CI_MODES = {"required", "scheduled", "manual"}
-KICAD10_FEATURE_STATUSES = {"supported", "not-applicable", "partial", "blocked", "future"}
+KICAD10_FEATURE_STATUSES = {
+    "supported",
+    "not-applicable",
+    "partial",
+    "blocked",
+    "future",
+    "external",
+}
 PRODUCT_EVIDENCE_PREFIXES = ("path:", "fixture:", "command:", "smoke:")
 ISSUE_URL_RE = re.compile(r"^https://github\.com/oaslananka/kicad-studio-kit/issues/\d+$")
 URL_RE = re.compile(r"^https://[^\s]+$")
@@ -158,18 +165,19 @@ def _validate_kicad10_feature(
     for key in ("nativeSurface", "productSurface", "notes"):
         if not isinstance(detail.get(key), str) or not detail[key]:
             errors.append(f"{label}.{key} must be a non-empty string")
-    errors.extend(
-        _validate_feature_evidence(
-            detail,
-            label,
-            require_product_evidence=status == "supported",
+    if status != "external":
+        errors.extend(
+            _validate_feature_evidence(
+                detail,
+                label,
+                require_product_evidence=status == "supported",
+            )
         )
-    )
     if status in {"partial", "blocked"}:
         errors.extend(_validate_issue_url(detail.get("issue"), f"{label}.issue"))
     elif "issue" in detail:
         errors.extend(_validate_issue_url(detail.get("issue"), f"{label}.issue"))
-    if feature not in docs_text:
+    if status != "external" and feature not in docs_text:
         errors.append(f"{label} is not documented in the parity docs page")
     return errors
 
