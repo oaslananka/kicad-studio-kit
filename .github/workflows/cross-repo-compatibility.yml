@@ -72,9 +72,9 @@ jobs:
       - name: Check resolved npm protocol-schemas version
         id: npm-check
         run: |
-          VERSION=$(node -e "console.log(require('@oaslananka/kicad-protocol-schemas/package.json').version)")
+          VERSION=$(npm view @oaslananka/kicad-protocol-schemas version)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "✓ @oaslananka/kicad-protocol-schemas resolves from node_modules (v$VERSION)"
+          echo "✓ @oaslananka/kicad-protocol-schemas resolves from npm registry (v$VERSION)"
           node -e "
             const pkg = require('@oaslananka/kicad-protocol-schemas');
             const ok = typeof pkg.readSchema === 'function';
