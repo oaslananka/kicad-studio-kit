@@ -1,6 +1,6 @@
 # MCP API Reference
 
-Machine-maintained from `packages/protocol-schemas/schemas/kicad-mcp-server-info.schema.json`
+Machine-maintained from `@oaslananka/kicad-protocol-schemas/schemas/kicad-mcp-server-info.schema.json`
 and `compatibility.yaml`. Refresh with `corepack pnpm run docs:generate`.
 
 ## Current Contract
