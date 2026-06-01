@@ -51,13 +51,17 @@ Each repo's `compatibility.yaml` declares the sibling product's acceptable range
 | `mcp.protocolVersion`                        | `2025-11-25`     | same field |
 | `kicad.primary`                              | `10.0.x`         | same field |
 
-### Current CI coverage gaps
+### Current CI coverage
 
-1. **kicad-studio CI has no job installing the latest published kicad-mcp-pro from
-   PyPI/npm and running contract tests.** The `check:compatibility` and
-   `test:contract` checks exist as commands but are only exercised when the
-   local workspace provides the sibling product. After the repo split, there is
-   no automated gate that validates against the published sibling release.
+1. **Cross-repo compatibility canary** (`.github/workflows/cross-repo-compatibility.yml`):
+   - Runs on `workflow_dispatch`, `push to main`, and PRs touching relevant files.
+   - Validates published artifacts: npm `@oaslananka/kicad-protocol-schemas` resolves
+     and imports correctly, and published `kicad-mcp-pro` is smoketested from PyPI.
+   - Guards against re-introducing the local `packages/protocol-schemas` directory.
+   - Runs `check:compatibility` and `check:protocol-schemas` against published artifacts,
+     not the local workspace sibling.
+   - Does **not** require a real KiCad installation.
+   - See `scripts/check-cross-repo-compatibility.mjs` for the helper script.
 
 2. **kicad-mcp CI has no job installing the latest published kicadstudiokit VSIX
    and running compatibility checks.** The kicad-mcp workflow tests the MCP
@@ -65,7 +69,24 @@ Each repo's `compatibility.yaml` declares the sibling product's acceptable range
 
 3. **No scheduled cross-repo cron job detects protocol drift.** Neither repo has
    a periodic workflow that fetches the latest sibling release and runs the full
-   compatibility gate.
+   compatibility gate beyond the canary.
+
+### Canary scope
+
+The cross-repo compatibility canary validates **published artifacts only**:
+
+| Check                                    | What it verifies                                                |
+| ---------------------------------------- | --------------------------------------------------------------- |
+| npm `@oaslananka/kicad-protocol-schemas` | Package resolves, imports correctly (`readSchema` present)      |
+| PyPI `kicad-mcp-pro`                     | Published version resolves (smoke-test, not full integration)   |
+| `compatibility.yaml`                     | `kicad-mcp-pro` section and `compatibleExtension` range present |
+| Guard                                    | `packages/protocol-schemas` local directory must NOT exist      |
+| `check:protocol-schemas`                 | Existing npm-schema resolution check                            |
+| `check:compatibility`                    | Existing compatibility matrix validation                        |
+
+The canary does **not** replace a full cross-repo contract test (which would require
+installing a VSIX or running the complete MCP server via PyPI). It is a lightweight
+regression gate that publishes a compatibility summary on every relevant change.
 
 ### Release coordination
 
@@ -94,7 +115,7 @@ The protocol-schemas package (`@oaslananka/kicad-protocol-schemas`) serves as
 the lowest-common-denominator contract — both products consume the same JSON
 Schema files and validators, reducing the surface area for silent drift.
 
-Work items for closing the CI gaps are tracked in
+Work items for further cross-repo compatibility hardening are tracked in
 [issue #288](https://github.com/oaslananka/kicad-studio-kit/issues/288 "Phase 2 — Step 3: Cross-repo compatibility and release coordination").
 
 ## Release Lifecycle

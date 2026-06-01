@@ -49,6 +49,11 @@ const LANE_DEFINITIONS = [
     label: "Real-pair compatibility",
     output: "real_pair_compatibility",
   },
+  {
+    key: "crossRepoCompatibility",
+    label: "Cross-repo compatibility canary",
+    output: "cross_repo_compatibility",
+  },
 ];
 
 const GLOBAL_ALL_FILES = new Set([
@@ -128,6 +133,7 @@ function markAllProductLanes(reasons, reason) {
     "integrationContracts",
     "performanceBudgets",
     "realPairCompatibility",
+    "crossRepoCompatibility",
   ]) {
     addReason(reasons, lane, reason);
   }
@@ -191,6 +197,11 @@ function classifyChangedFiles(changedFiles, options = {}) {
         reasons,
         "realPairCompatibility",
         `${file} affects cross-product runtime compatibility.`,
+      );
+      addReason(
+        reasons,
+        "crossRepoCompatibility",
+        `${file} affects cross-product compatibility metadata.`,
       );
       continue;
     }
@@ -305,6 +316,16 @@ function classifyChangedFiles(changedFiles, options = {}) {
         markAllProductLanes(
           reasons,
           `${file} is a workflow change and needs full CI validation.`,
+        );
+      }
+      if (
+        file === ".github/workflows/cross-repo-compatibility.yml" ||
+        file === "scripts/check-cross-repo-compatibility.mjs"
+      ) {
+        addReason(
+          reasons,
+          "crossRepoCompatibility",
+          `${file} is part of the cross-repo compatibility canary.`,
         );
       }
     }

@@ -1,0 +1,128 @@
+# Cross-repo compatibility canary
+#
+# Verifies kicad-studio-kit can consume published kicad-mcp artifacts (npm + PyPI)
+# without relying on local MCP source code.  This is the minimal "canary" for
+# #288 Item A — a prerequisite for later mcp-server / mcp-npm cleanup (#286).
+#
+# Triggers:
+#   - workflow_dispatch  (manual)
+#   - push to main       (post-merge regression guard)
+#   - pull_request       when relevant files change
+
+name: Cross-repo Compatibility
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - compatibility.yaml
+      - docs/protocol-schemas.md
+      - docs/**/compat**
+      - scripts/**
+      - package.json
+      - pnpm-lock.yaml
+      - apps/vscode-extension/**
+      - .github/workflows/cross-repo-compatibility.yml
+  pull_request:
+    paths:
+      - compatibility.yaml
+      - docs/protocol-schemas.md
+      - docs/**/compat**
+      - scripts/**
+      - package.json
+      - pnpm-lock.yaml
+      - apps/vscode-extension/**
+      - .github/workflows/cross-repo-compatibility.yml
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  canary:
+    name: canary
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Node / pnpm setup ──────────────────────────────────────────────
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: corepack enable && pnpm install --frozen-lockfile
+
+      # ── Guard: no local packages/protocol-schemas ──────────────────────
+      - name: Guard — packages/protocol-schemas must NOT exist
+        run: |
+          if [ -d packages/protocol-schemas ]; then
+            echo "❌ packages/protocol-schemas still exists — migration remnant"
+            exit 1
+          fi
+          echo "✓ packages/protocol-schemas is absent"
+
+      # ── A. npm protocol-schema package ──────────────────────────────────
+      - name: Check resolved npm protocol-schemas version
+        id: npm-check
+        run: |
+          VERSION=$(node -e "console.log(require('@oaslananka/kicad-protocol-schemas/package.json').version)")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "✓ @oaslananka/kicad-protocol-schemas resolves from node_modules (v$VERSION)"
+          node -e "
+            const pkg = require('@oaslananka/kicad-protocol-schemas');
+            const ok = typeof pkg.readSchema === 'function';
+            console.log(ok
+              ? '✓ protocol-schemas import smoke: readSchema present'
+              : '⚠ readSchema not found — check package API');
+          "
+
+      - name: Run check:protocol-schemas
+        run: pnpm run check:protocol-schemas
+
+      # ── B. Python PyPI package ──────────────────────────────────────────
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Smoke-test published kicad-mcp-pro from PyPI
+        run: |
+          UV_TOOL_DIR=$(uv tool dir)
+          mkdir -p "$UV_TOOL_DIR"
+          echo "Checking kicad-mcp-pro on PyPI…"
+          VERSION=$(uv run --with kicad-mcp-pro --no-project python -c "import kicad_mcp_pro; print(kicad_mcp_pro.__version__)" 2>&1 || true)
+          if echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
+            echo "✓ kicad-mcp-pro resolves from PyPI (v$VERSION)"
+            echo "pypi_version=$VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "⚠ kicad-mcp-pro not installed from PyPI: $VERSION"
+            echo "pypi_version=not-found" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── C. Studio compatibility checks ──────────────────────────────────
+      - name: Run check:compatibility (compatibility.yaml validation)
+        run: pnpm run check:compatibility
+
+      - name: Run compatibility summary script
+        id: compat-script
+        run: |
+          node scripts/check-cross-repo-compatibility.mjs
+
+      # ── D. Summary ──────────────────────────────────────────────────────
+      - name: Compatibility summary
+        run: |
+          echo "━━━ Cross-repo Compatibility Canary ━━━"
+          echo "npm  @oaslananka/kicad-protocol-schemas: v${{ steps.npm-check.outputs.version }}"
+          echo "PyPI kicad-mcp-pro:                     v${{ steps.pypi-check.outputs.pypi_version }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

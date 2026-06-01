@@ -18,6 +18,7 @@ test("extension-only changes run extension and performance lanes, not MCP packag
   assert.equal(report.lanes.mcpServer, false);
   assert.equal(report.lanes.mcpNpm, false);
   assert.equal(report.lanes.integrationContracts, false);
+  assert.equal(report.lanes.crossRepoCompatibility, false);
 });
 
 test("extension MCP adapter changes run integration compatibility", () => {
@@ -54,6 +55,7 @@ test("local protocol-schemas directory changes no longer trigger CI lanes (npm-s
   assert.equal(report.lanes.mcpNpm, false);
   assert.equal(report.lanes.integrationContracts, false);
   assert.equal(report.lanes.realPairCompatibility, false);
+  assert.equal(report.lanes.crossRepoCompatibility, false);
 });
 
 test("test harness changes run shared and cross-product compatibility gates", () => {
