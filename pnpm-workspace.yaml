@@ -2,13 +2,15 @@ packages:
   - "apps/vscode-extension"
   - "packages/mcp-server"
   - "packages/mcp-npm"
-  - "packages/protocol-schemas"
+  # packages/protocol-schemas removed from workspace — consumed from npm as @oaslananka/kicad-protocol-schemas
+  # Local directory kept temporarily for migration; will be cleaned up in a follow-up PR.
   - "packages/kicad-fixtures"
   - "packages/test-harness"
 
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - tmp@0.2.6
+  - "@oaslananka/kicad-protocol-schemas@1.1.0"
 blockExoticSubdeps: true
 
 allowBuilds:

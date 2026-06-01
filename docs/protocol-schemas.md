@@ -1,12 +1,19 @@
 # Protocol Schemas
 
-KiCad Studio Kit uses `packages/protocol-schemas` as the compatibility contract
-source of truth between the VS Code extension and `kicad-mcp-pro`.
+KiCad Studio Kit consumes `@oaslananka/kicad-protocol-schemas` from npm as the
+compatibility contract source of truth between the VS Code extension and
+`kicad-mcp-pro`. The canonical source repository is
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
 
 The schemas are product-neutral JSON Schema Draft 2020-12 documents. They do
 not import VS Code APIs, Python server modules, or product runtime code. The
 extension consumes the package validators, while MCP server contract tests load
 the same `schemas/*.schema.json` files directly with Python `jsonschema`.
+
+> **Migration remnant**: The `packages/protocol-schemas/` directory remains on
+> disk as a local reference during the transition. Studio no longer resolves
+> schemas from this path. The directory will be removed in a follow-up cleanup
+> PR after the npm-based consumption is fully validated in CI.
 
 ## Contracts
 
