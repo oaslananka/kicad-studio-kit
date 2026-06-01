@@ -48,20 +48,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ── Node / pnpm setup ──────────────────────────────────────────────
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
+      # ── Node / pnpm setup (corepack — repo standard) ────────────────────
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .node-version
           cache: pnpm
 
       - name: Install dependencies
-        run: corepack enable && pnpm install --frozen-lockfile
+        run: |
+          corepack enable
+          corepack pnpm install --frozen-lockfile
 
       # ── Guard: no local packages/protocol-schemas ──────────────────────
       - name: Guard — packages/protocol-schemas must NOT exist
