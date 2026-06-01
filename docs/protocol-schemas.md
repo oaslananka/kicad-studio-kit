@@ -90,6 +90,11 @@ regression gate that publishes a compatibility summary on every relevant change.
 
 ### Release coordination
 
+> **Note**: The [Release Coordination Runbook](./RELEASE-COORDINATION.md) is
+> the standalone single-source-of-truth for sequencing, verifying, and
+> recovering from multi-product releases. This section summarizes the
+> protocol-specific parts; the runbook has the full operational details.
+
 Both products currently ship independently from their own release-please
 workflows, with overlapping version ranges providing backward-compatibility
 guarantees. Protocol-breaking changes must follow a sequenced two-step release:
@@ -106,7 +111,9 @@ If a kicad-mcp-pro release breaks a deployed kicad-studio instance:
 
 - **Option A (preferred)**: Yank the broken PyPI/npm version, pin the
   affected extension range to the last known good version, cut a patch
-  extension release with a pinned `compatibleMcpPro` upper bound.
+  extension release with a pinned `compatibleMcpPro` upper bound. See
+  [Rollback, pin, and yank](./RELEASE-COORDINATION.md#d-release-freeze-rollback-pin-and-yank)
+  in the runbook for per-registry procedures.
 - **Option B (mitigation)**: kicad-studio issues an advisory pin with
   `required: "<current-fixed-version"` and validates against a canary
   before widening again.
