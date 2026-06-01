@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 import { parse as parseYaml } from "yaml";
 import { docsSiteUrl } from "./lib/docs-site-config.mjs";
 
@@ -197,10 +198,12 @@ unified documentation site by \`corepack pnpm run docs:generate\`.
 ${generated}`;
 }
 
+const _require = createRequire(import.meta.url);
+
 function resolveSchemaFile(name) {
   const pkgRoot = path.dirname(
     path.dirname(
-      require.resolve("@oaslananka/kicad-protocol-schemas/package.json"),
+      _require.resolve("@oaslananka/kicad-protocol-schemas/package.json"),
     ),
   );
   return path.join(pkgRoot, "schemas", name);
