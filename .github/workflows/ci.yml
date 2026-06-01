@@ -68,6 +68,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - run: corepack pnpm run check:compatibility
+      - run: corepack pnpm run check:compatibility-contract
       - run: corepack pnpm run check:governance
       - run: corepack pnpm run check:agent-configs
 
