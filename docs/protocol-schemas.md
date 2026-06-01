@@ -118,6 +118,11 @@ If a kicad-mcp-pro release breaks a deployed kicad-studio instance:
   `required: "<current-fixed-version"` and validates against a canary
   before widening again.
 
+For the full operational playbook — including incident type identification,
+freeze rules, per-registry recovery commands, a decision tree, and a
+post-incident checklist — see
+[Emergency release flow](./EMERGENCY-RELEASE-FLOW.md).
+
 The protocol-schemas package (`@oaslananka/kicad-protocol-schemas`) serves as
 the lowest-common-denominator contract — both products consume the same JSON
 Schema files and validators, reducing the surface area for silent drift.

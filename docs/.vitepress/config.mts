@@ -120,6 +120,7 @@ export default defineConfig({
         text: "Release",
         items: [
           { text: "Publishing", link: "/publishing" },
+          { text: "Emergency Release Flow", link: "/EMERGENCY-RELEASE-FLOW" },
           { text: "Release Coordination", link: "/RELEASE-COORDINATION" },
           { text: "Release Runbook", link: "/release" },
           { text: "Beta Program", link: "/beta-program" },

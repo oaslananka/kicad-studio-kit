@@ -9,7 +9,8 @@
 > **Related**: [Release model](architecture/release-model.md) (ownership, compatibility gate),
 > [Release](release.md) (dry-runs, manifest, scopes), [Publishing](publishing.md) (environments,
 > tokens, evidence, rollback), [Protocol schemas](protocol-schemas.md) (schema lifecycle,
-> cross-repo CI).
+> cross-repo CI), [Emergency release flow](./EMERGENCY-RELEASE-FLOW.md) (incident playbooks,
+> recovery procedures).
 
 ## A — Release order
 
