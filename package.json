@@ -92,7 +92,7 @@
   "devDependencies": {
     "@commitlint/cli": "21.0.0",
     "@commitlint/config-conventional": "21.0.0",
-    "@oaslananka/kicad-protocol-schemas": "1.1.1",
+    "@oaslananka/kicad-protocol-schemas": "1.1.0",
     "prettier": "3.8.3",
     "typescript": "6.0.3",
     "vitepress": "1.6.4",
