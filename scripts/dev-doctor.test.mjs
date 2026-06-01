@@ -68,9 +68,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
     mkdirSync(path.join(repoRoot, "packages/kicad-fixtures"), {
       recursive: true,
     });
-    mkdirSync(path.join(repoRoot, "packages/protocol-schemas/schemas"), {
-      recursive: true,
-    });
+
     writeFileSync(
       path.join(repoRoot, "package.json"),
       JSON.stringify(
@@ -119,17 +117,6 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
     writeFileSync(
       path.join(repoRoot, "packages/kicad-fixtures/manifest.json"),
       JSON.stringify({ schemaVersion: 1, fixtureCount: 1, fixtures: [] }),
-    );
-    writeFileSync(
-      path.join(
-        repoRoot,
-        "packages/protocol-schemas/schemas/kicad-mcp-server-info.schema.json",
-      ),
-      JSON.stringify({
-        $schema: "https://json-schema.org/draft/2020-12/schema",
-        $id: "https://example.invalid/schema.json",
-        type: "object",
-      }),
     );
 
     const report = await createDoctorReport(repoRoot, {

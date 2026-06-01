@@ -352,7 +352,6 @@ kicad10FeatureParity:
         productSurface: "kicad_get_server_info compatibility and capability payload"
         evidence:
           - "path:packages/mcp-server/tests/unit/test_server_info_contract.py"
-          - "path:packages/protocol-schemas/test/index.test.ts"
           - "path:docs/mcp/api-reference.md"
         notes: "Server-info schema and generated docs are release-gated."
       empty_project_read_tools:

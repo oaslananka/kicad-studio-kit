@@ -45,9 +45,6 @@ Shared contracts are consumed from
 (published from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)).
 See the [schema release lifecycle](../protocol-schemas.md#release-lifecycle) for
 the cross-repo release process and CI validation gates.
-The local `packages/protocol-schemas/` directory is a migration remnant and will
-be removed after the npm-based consumption is validated in CI (tracked in
-[#288](https://github.com/oaslananka/kicad-studio-kit/issues/288)).
 Shared test utilities live under
 `packages/test-harness`. Shared packages must stay under `packages/` and must
 not import from any product workspace.

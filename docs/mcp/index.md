@@ -19,7 +19,7 @@ release-quality checks to MCP clients.
 - Python package: `packages/mcp-server/pyproject.toml`
 - Server entrypoint: `packages/mcp-server/src/kicad_mcp/server.py`
 - Tool modules: `packages/mcp-server/src/kicad_mcp/tools/`
-- Server-info schema: `packages/protocol-schemas/schemas/kicad-mcp-server-info.schema.json`
+- Server-info schema: `@oaslananka/kicad-protocol-schemas/schemas/kicad-mcp-server-info.schema.json`
 
 The MCP tool catalog is generated from the registered server tools with:
 

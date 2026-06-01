@@ -44,7 +44,7 @@ Enable CODEOWNERS review. Path ownership is declared in `.github/CODEOWNERS`:
 - `apps/vscode-extension/`: KiCad Studio extension.
 - `packages/mcp-server/`: KiCad MCP Pro Python server and MCP Registry metadata.
 - `packages/mcp-npm/`: npm launcher.
-- `packages/protocol-schemas/`: protocol schemas and compatibility contracts.
+- `packages/protocol-schemas/`: (removed — consumed from npm as `@oaslananka/kicad-protocol-schemas`).
 - `examples/`: user-facing KiCad examples and smoke-test projects.
 
 ## Protection settings

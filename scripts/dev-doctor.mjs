@@ -310,17 +310,11 @@ function fixtureManifestCheck(repoRoot) {
 }
 
 function protocolSchemasCheck(repoRoot) {
-  let pkgRoot;
-  try {
-    pkgRoot = path.dirname(
-      path.dirname(
-        require.resolve("@oaslananka/kicad-protocol-schemas/package.json"),
-      ),
-    );
-  } catch {
-    // Fall back to local path during migration transition
-    pkgRoot = path.join(repoRoot, "packages", "protocol-schemas");
-  }
+  const pkgRoot = path.dirname(
+    path.dirname(
+      require.resolve("@oaslananka/kicad-protocol-schemas/package.json"),
+    ),
+  );
   const schemaRoot = path.join(pkgRoot, "schemas");
   try {
     const schemaFiles = readdirSync(schemaRoot).filter((file) =>
@@ -335,20 +329,17 @@ function protocolSchemasCheck(repoRoot) {
         invalid.push(file);
       }
     }
-    const fromNpm = pkgRoot.includes("node_modules");
     return makeCheck({
       id: "protocol-schemas",
-      label: `Protocol schemas${fromNpm ? " (npm package)" : " (local fallback)"}`,
+      label: "Protocol schemas (npm)",
       category: "protocol",
       required: true,
       ok: schemaFiles.length > 0 && invalid.length === 0,
       detail:
         invalid.length === 0
-          ? `${schemaFiles.length} schema file(s) parsed${fromNpm ? " from @oaslananka/kicad-protocol-schemas" : " from local packages/protocol-schemas (migration remnant)"}`
+          ? `${schemaFiles.length} schema file(s) parsed from @oaslananka/kicad-protocol-schemas`
           : `invalid schema metadata: ${invalid.join(", ")}`,
-      hint: fromNpm
-        ? "Source of truth is oaslananka/kicad-mcp. Studio consumes from npm."
-        : "Local packages/protocol-schemas is a migration remnant. Run pnpm install to switch to npm package.",
+      hint: "Source of truth is oaslananka/kicad-mcp. Studio consumes from npm.",
     });
   } catch (error) {
     return makeCheck({

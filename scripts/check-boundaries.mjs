@@ -45,16 +45,6 @@ const WORKSPACES = [
     forbiddenModules: [/^kicadstudio(?:\/|$)/, /^kicad_mcp(?:\.|$)/],
   },
   {
-    // protocol-schemas removed from boundary checks — consumed from npm as @oaslananka/kicad-protocol-schemas
-    // Local packages/protocol-schemas directory kept temporarily as migration remnant.
-    name: "protocol-schemas",
-    path: "packages/protocol-schemas",
-    sourceRoots: [],
-    productionSourceRoots: [],
-    forbiddenTokens: [],
-    forbiddenModules: [],
-  },
-  {
     name: "test-harness",
     path: "packages/test-harness",
     sourceRoots: ["src", "test"],

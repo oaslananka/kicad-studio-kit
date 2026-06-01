@@ -10,11 +10,6 @@ not import VS Code APIs, Python server modules, or product runtime code. The
 extension consumes the package validators, while MCP server contract tests load
 the same `schemas/*.schema.json` files directly with Python `jsonschema`.
 
-> **Migration remnant**: The `packages/protocol-schemas/` directory remains on
-> disk as a local reference during the transition. Studio no longer resolves
-> schemas from this path. The directory will be removed in a follow-up cleanup
-> PR after the npm-based consumption is fully validated in CI.
-
 ## Contracts
 
 - `mcp-tool-discovery.schema.json` validates `tools/list` discovery payloads.
@@ -109,15 +104,6 @@ When a new protocol-schemas version must bypass this window (e.g. a CI pipeline
 consuming a schema release from minutes ago), add the exact version to
 `minimumReleaseAgeExclude`. Revert the exclusion when the age requirement is
 satisfied or on the next version bump.
-
-### cleanup
-
-The local `packages/protocol-schemas/` directory is a migration remnant from
-the pre-npm era. It remains on disk only as a reference during the transition
-and will be removed in a follow-up PR once the npm-based consumption is fully
-validated in CI (tracked in
-[#288](https://github.com/oaslananka/kicad-studio-kit/issues/288)). Do not
-introduce new code that depends on the local path.
 
 ## Migration
 
