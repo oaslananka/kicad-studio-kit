@@ -198,11 +198,13 @@ ${generated}`;
 }
 
 function resolveSchemaFile(name) {
-  const pkgEntry = fileURLToPath(
-    import.meta.resolve("@oaslananka/kicad-protocol-schemas"),
+  return path.join(
+    "node_modules",
+    "@oaslananka",
+    "kicad-protocol-schemas",
+    "schemas",
+    name,
   );
-  const pkgRoot = path.dirname(path.dirname(pkgEntry));
-  return path.join(pkgRoot, "schemas", name);
 }
 
 function renderMcpApiReference() {
