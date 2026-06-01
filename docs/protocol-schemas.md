@@ -34,6 +34,69 @@ Consumers must reject unknown major versions by default. A fallback path may
 only be used when the caller explicitly chooses degraded compatibility behavior
 and records the diagnostic.
 
+## Cross-repo Compatibility
+
+The kicad-studio VS Code extension and kicad-mcp-pro MCP server define their
+compatibility contract in `compatibility.yaml`. Both repositories maintain an
+independent copy of this file with overlapping ranges for the two products.
+
+### Compatibility contract (compatibility.yaml)
+
+Each repo's `compatibility.yaml` declares the sibling product's acceptable range:
+
+| Field                                        | kicad-studio-kit | kicad-mcp  |
+| -------------------------------------------- | ---------------- | ---------- |
+| `products.kicad-studio.compatibleMcpPro`     | `>=3.5.2 <4.0.0` | —          |
+| `products.kicad-mcp-pro.compatibleExtension` | `>=1.0.0 <2.0.0` | same field |
+| `mcp.protocolVersion`                        | `2025-11-25`     | same field |
+| `kicad.primary`                              | `10.0.x`         | same field |
+
+### Current CI coverage gaps
+
+1. **kicad-studio CI has no job installing the latest published kicad-mcp-pro from
+   PyPI/npm and running contract tests.** The `check:compatibility` and
+   `test:contract` checks exist as commands but are only exercised when the
+   local workspace provides the sibling product. After the repo split, there is
+   no automated gate that validates against the published sibling release.
+
+2. **kicad-mcp CI has no job installing the latest published kicadstudiokit VSIX
+   and running compatibility checks.** The kicad-mcp workflow tests the MCP
+   server against schemas and local tools, but never against a real VSIX.
+
+3. **No scheduled cross-repo cron job detects protocol drift.** Neither repo has
+   a periodic workflow that fetches the latest sibling release and runs the full
+   compatibility gate.
+
+### Release coordination
+
+Both products currently ship independently from their own release-please
+workflows, with overlapping version ranges providing backward-compatibility
+guarantees. Protocol-breaking changes must follow a sequenced two-step release:
+
+1. **kicad-mcp-pro ships first** with backward-compatible protocol — widens
+   `compatibleExtension` range.
+2. **kicad-studio ships second** with tightened `compatibleMcpPro` range.
+
+Non-breaking releases can ship independently in any order.
+
+### Emergency flow
+
+If a kicad-mcp-pro release breaks a deployed kicad-studio instance:
+
+- **Option A (preferred)**: Yank the broken PyPI/npm version, pin the
+  affected extension range to the last known good version, cut a patch
+  extension release with a pinned `compatibleMcpPro` upper bound.
+- **Option B (mitigation)**: kicad-studio issues an advisory pin with
+  `required: "<current-fixed-version"` and validates against a canary
+  before widening again.
+
+The protocol-schemas package (`@oaslananka/kicad-protocol-schemas`) serves as
+the lowest-common-denominator contract — both products consume the same JSON
+Schema files and validators, reducing the surface area for silent drift.
+
+Work items for closing the CI gaps are tracked in
+[issue #288](https://github.com/oaslananka/kicad-studio-kit/issues/288 "Phase 2 — Step 3: Cross-repo compatibility and release coordination").
+
 ## Release Lifecycle
 
 ### Source of truth
