@@ -197,9 +197,18 @@ unified documentation site by \`corepack pnpm run docs:generate\`.
 ${generated}`;
 }
 
+function resolveSchemaFile(name) {
+  const pkgRoot = path.dirname(
+    path.dirname(
+      require.resolve("@oaslananka/kicad-protocol-schemas/package.json"),
+    ),
+  );
+  return path.join(pkgRoot, "schemas", name);
+}
+
 function renderMcpApiReference() {
   const schema = readJson(
-    "packages/protocol-schemas/schemas/kicad-mcp-server-info.schema.json",
+    resolveSchemaFile("kicad-mcp-server-info.schema.json"),
   );
   const compatibility = readYaml("compatibility.yaml");
   const required = new Set(schema.required ?? []);
@@ -230,7 +239,7 @@ function renderMcpApiReference() {
   ];
   return `# MCP API Reference
 
-Machine-maintained from \`packages/protocol-schemas/schemas/kicad-mcp-server-info.schema.json\`
+Machine-maintained from \`@oaslananka/kicad-protocol-schemas/schemas/kicad-mcp-server-info.schema.json\`
 and \`compatibility.yaml\`. Refresh with \`corepack pnpm run docs:generate\`.
 
 ## Current Contract

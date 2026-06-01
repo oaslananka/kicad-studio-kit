@@ -89,7 +89,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
             "check:kicad-fixtures":
               "pnpm --dir packages/kicad-fixtures run check",
             "check:protocol-schemas":
-              "node --test scripts/check-protocol-schemas-package.test.mjs && pnpm --dir packages/protocol-schemas run check",
+              "node --test scripts/check-protocol-schemas-package.test.mjs && node -e \"console.log(require.resolve('@oaslananka/kicad-protocol-schemas/package.json'))\"",
             "test:contract":
               "pnpm --dir packages/mcp-server run test:transport-contract",
           },

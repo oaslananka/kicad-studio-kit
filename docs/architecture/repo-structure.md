@@ -4,7 +4,7 @@ KiCad Studio Kit is one GitHub repository with three independently validated rel
 
 | Workspace               | Product role                                        | Public surface                                         |
 | ----------------------- | --------------------------------------------------- | ------------------------------------------------------ |
-| `apps/vscode-extension` | KiCad Studio VS Code and Open VSX extension         | `oaslananka.kicadstudiokit`                               |
+| `apps/vscode-extension` | KiCad Studio VS Code and Open VSX extension         | `oaslananka.kicadstudiokit`                            |
 | `packages/mcp-server`   | KiCad MCP Pro Python server and MCP Registry source | `kicad-mcp-pro` / `io.github.oaslananka/kicad-mcp-pro` |
 | `packages/mcp-npm`      | Thin npm launcher for the Python server             | `kicad-mcp-pro`                                        |
 | `packages/test-harness` | Private shared test utilities                       | Not published                                          |
@@ -40,7 +40,11 @@ npm launcher changes belong under `packages/mcp-npm` unless they update Python p
 
 ## Shared work
 
-Shared contracts live under repository-level compatibility metadata and
-`packages/protocol-schemas`. Shared test utilities live under
+Shared contracts are consumed from
+[`@oaslananka/kicad-protocol-schemas`](https://www.npmjs.com/package/@oaslananka/kicad-protocol-schemas)
+(published from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)).
+The local `packages/protocol-schemas/` directory is a migration remnant and will
+be removed after the npm-based consumption is validated in CI. Shared test
+utilities live under
 `packages/test-harness`. Shared packages must stay under `packages/` and must
 not import from any product workspace.

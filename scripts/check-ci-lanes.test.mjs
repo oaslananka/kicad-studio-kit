@@ -43,17 +43,17 @@ test("MCP server changes run MCP, npm launcher, performance, and integration lan
   assert.equal(report.lanes.vscodeExtension, false);
 });
 
-test("shared schema changes run both product compatibility gates", () => {
+test("local protocol-schemas directory changes no longer trigger CI lanes (npm-sourced)", () => {
   const report = classifyChangedFiles([
     "packages/protocol-schemas/schemas/kicad-mcp-server-info.schema.json",
   ]);
 
-  assert.equal(report.lanes.sharedPackages, true);
-  assert.equal(report.lanes.vscodeExtension, true);
-  assert.equal(report.lanes.mcpServer, true);
-  assert.equal(report.lanes.mcpNpm, true);
-  assert.equal(report.lanes.integrationContracts, true);
-  assert.equal(report.lanes.realPairCompatibility, true);
+  assert.equal(report.lanes.sharedPackages, false);
+  assert.equal(report.lanes.vscodeExtension, false);
+  assert.equal(report.lanes.mcpServer, false);
+  assert.equal(report.lanes.mcpNpm, false);
+  assert.equal(report.lanes.integrationContracts, false);
+  assert.equal(report.lanes.realPairCompatibility, false);
 });
 
 test("test harness changes run shared and cross-product compatibility gates", () => {

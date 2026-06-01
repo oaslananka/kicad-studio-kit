@@ -70,11 +70,7 @@ const RELEASE_AND_COMPATIBILITY_FILES = new Set([
 const EXTENSION_PREFIXES = ["apps/vscode-extension/", "apps/kicad-studio/"];
 const MCP_SERVER_PREFIXES = ["packages/mcp-server/", "apps/kicad-mcp-pro/"];
 const MCP_NPM_PREFIXES = ["packages/mcp-npm/"];
-const SHARED_PREFIXES = [
-  "packages/protocol-schemas/",
-  "packages/kicad-fixtures/",
-  "packages/test-harness/",
-];
+const SHARED_PREFIXES = ["packages/kicad-fixtures/", "packages/test-harness/"];
 const CI_POLICY_PREFIXES = ["scripts/", ".github/"];
 const DOC_PREFIXES = [
   "docs/",

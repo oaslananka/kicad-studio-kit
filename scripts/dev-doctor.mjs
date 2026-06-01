@@ -248,7 +248,7 @@ function workspaceScriptsCheck(packageJson) {
       "node scripts/generate-kicad-fixture-corpus.mjs --check && node --test scripts/check-kicad-fixtures-package.test.mjs && pnpm --dir packages/kicad-fixtures run check",
     "check:kicad-fixtures": "pnpm --dir packages/kicad-fixtures run check",
     "check:protocol-schemas":
-      "node --test scripts/check-protocol-schemas-package.test.mjs && pnpm --dir packages/protocol-schemas run check",
+      "node --test scripts/check-protocol-schemas-package.test.mjs && node --input-type=module -e \"import pkg from '@oaslananka/kicad-protocol-schemas'; console.log('protocol-schemas resolves OK:', typeof pkg.readSchema === 'function' ? 'readSchema present' : 'readSchema missing')\"",
   };
   const includesScripts = {
     "test:contract":
@@ -310,12 +310,18 @@ function fixtureManifestCheck(repoRoot) {
 }
 
 function protocolSchemasCheck(repoRoot) {
-  const schemaRoot = path.join(
-    repoRoot,
-    "packages",
-    "protocol-schemas",
-    "schemas",
-  );
+  let pkgRoot;
+  try {
+    pkgRoot = path.dirname(
+      path.dirname(
+        require.resolve("@oaslananka/kicad-protocol-schemas/package.json"),
+      ),
+    );
+  } catch {
+    // Fall back to local path during migration transition
+    pkgRoot = path.join(repoRoot, "packages", "protocol-schemas");
+  }
+  const schemaRoot = path.join(pkgRoot, "schemas");
   try {
     const schemaFiles = readdirSync(schemaRoot).filter((file) =>
       file.endsWith(".schema.json"),
@@ -329,17 +335,20 @@ function protocolSchemasCheck(repoRoot) {
         invalid.push(file);
       }
     }
+    const fromNpm = pkgRoot.includes("node_modules");
     return makeCheck({
       id: "protocol-schemas",
-      label: "Protocol schemas",
+      label: `Protocol schemas${fromNpm ? " (npm package)" : " (local fallback)"}`,
       category: "protocol",
       required: true,
       ok: schemaFiles.length > 0 && invalid.length === 0,
       detail:
         invalid.length === 0
-          ? `${schemaFiles.length} schema file(s) parsed`
+          ? `${schemaFiles.length} schema file(s) parsed${fromNpm ? " from @oaslananka/kicad-protocol-schemas" : " from local packages/protocol-schemas (migration remnant)"}`
           : `invalid schema metadata: ${invalid.join(", ")}`,
-      hint: "Keep packages/protocol-schemas/schemas/*.schema.json parseable and versioned.",
+      hint: fromNpm
+        ? "Source of truth is oaslananka/kicad-mcp. Studio consumes from npm."
+        : "Local packages/protocol-schemas is a migration remnant. Run pnpm install to switch to npm package.",
     });
   } catch (error) {
     return makeCheck({
@@ -349,7 +358,7 @@ function protocolSchemasCheck(repoRoot) {
       required: true,
       ok: false,
       detail: error.message,
-      hint: "Restore packages/protocol-schemas/schemas and run protocol contract checks.",
+      hint: "Run pnpm install. If missing, verify @oaslananka/kicad-protocol-schemas is in root devDependencies.",
     });
   }
 }
