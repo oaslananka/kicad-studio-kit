@@ -101,7 +101,7 @@ tag or release. Cross-repo coordination is limited to:
 | PyPI / TestPyPI     | `kicad-mcp-pro`                      | Trusted publishing (OIDC) | `oaslananka`                       |
 | VS Code Marketplace | `oaslananka.kicadstudiokit`          | `VSCE_PAT`                | `oaslananka`                       |
 | Open VSX            | `oaslananka.kicadstudiokit`          | `OVSX_PAT`                | `oaslananka` (Eclipse Foundation)  |
-| GHCR                | `oaslananka/kicad-mcp-pro`           | `GITHUB_TOKEN`            | `oaslananka`                       |
+| GHCR                | `ghcr.io/oaslananka/kicad-mcp-pro`   | `GITHUB_TOKEN`            | `oaslananka`                       |
 | MCP Registry        | `io.github.oaslananka/kicad-mcp-pro` | GitHub OIDC               | `oaslananka`                       |
 
 ## C — Required checks before release
@@ -213,8 +213,8 @@ a real extension build failure is actionable.
 
 After the publish workflow completes, verify:
 
-1. **VSIX**: Marketplace shows the new version at
-   `https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit`.
+1. **VSIX**: Marketplace shows the new version at the VS Code marketplace
+   extension page for `oaslananka.kicadstudiokit`.
 2. **PyPI**: `python -m pip index versions kicad-mcp-pro` includes the new version.
 3. **npm**: `npm view kicad-mcp-pro versions --json` includes the new version.
 4. **GHCR**: `ghcr.io/oaslananka/kicad-mcp-pro:<version>` digest matches the
@@ -237,8 +237,8 @@ Do not publish any product when any of the following is true:
 - A known-breaking protocol schema version is published but the MCP server
   or extension has not yet updated its `compatibility.yaml` range.
 - The cross-repo compatibility canary is failing on `main`.
-- A `critical`-severity code scanning or Dependabot alert is open on the
-  release branch without a documented accept-risk decision.
+- A `critical`-severity code scanning or automated dependency alert is open on
+  the release branch without a documented accept-risk decision.
 - An active secret scanning alert exists on the repository (P0 — rotate
   the secret first).
 
