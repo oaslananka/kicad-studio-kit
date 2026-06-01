@@ -43,8 +43,11 @@ npm launcher changes belong under `packages/mcp-npm` unless they update Python p
 Shared contracts are consumed from
 [`@oaslananka/kicad-protocol-schemas`](https://www.npmjs.com/package/@oaslananka/kicad-protocol-schemas)
 (published from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)).
+See the [schema release lifecycle](../protocol-schemas.md#release-lifecycle) for
+the cross-repo release process and CI validation gates.
 The local `packages/protocol-schemas/` directory is a migration remnant and will
-be removed after the npm-based consumption is validated in CI. Shared test
-utilities live under
+be removed after the npm-based consumption is validated in CI (tracked in
+[#288](https://github.com/oaslananka/kicad-studio-kit/issues/288)).
+Shared test utilities live under
 `packages/test-harness`. Shared packages must stay under `packages/` and must
 not import from any product workspace.
