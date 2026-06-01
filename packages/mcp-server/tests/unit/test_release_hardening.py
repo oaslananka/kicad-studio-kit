@@ -601,10 +601,7 @@ def _workflow(name: str) -> str:
 
 def test_release_and_publish_workflows_are_monorepo_ready() -> None:
     release_please = _workflow("release-please.yml")
-    publish_python = _workflow("publish-python.yml")
-    publish_npm = _workflow("publish-npm.yml")
     publish_extension = _workflow("publish-extension.yml")
-    publish_mcp = _workflow("publish-mcp-registry.yml")
 
     assert (
         "googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7"
@@ -612,44 +609,15 @@ def test_release_and_publish_workflows_are_monorepo_ready() -> None:
     )
     assert "config-file: release-please-config.json" in release_please
     assert "manifest-file: .release-please-manifest.json" in release_please
-    assert "set -euo pipefail" in release_please
-    assert 'branch_output="$(gh pr list \\' in release_please
-    assert 'startswith("release-please--branches--main")' in release_please
-    assert "mapfile -t branches < <(gh pr list" not in release_please
-    assert "for branch in" in release_please
-    assert "HEAD:${branch}" in release_please
-    assert "--head release-please--branches--main" not in release_please
-
-    assert "id-token: write" in publish_python
-    assert "pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b" in publish_python
-    assert "PYPI_TOKEN" not in publish_python
-    assert "TEST_PYPI_TOKEN" not in publish_python
-
-    assert "id-token: write" in publish_npm
-    assert (
-        'npm publish "${{ steps.npm-evidence.outputs.tarball }}" --access public --provenance'
-        in publish_npm
-    )
-    assert "NPM_TOKEN" not in publish_npm
 
     assert "VSCE_PAT" in publish_extension
     assert "OVSX_PAT" in publish_extension
     assert ("dev." + "azure.com") not in publish_extension
     assert ("visual" + "studio.com") not in publish_extension
 
-    assert "mcp-publisher login github-oidc" in publish_mcp
-    assert "MCP_PUBLISHER_VERSION: v1.7.9" in publish_mcp
-    assert "releases/latest" not in publish_mcp
-    assert "pull_request:" in publish_mcp
-    assert "apps/kicad-mcp-pro/**" in publish_mcp
-    assert "packages/mcp-server/**" in publish_mcp
-    assert "corepack pnpm --dir packages/mcp-server run publish:mcp:dry-run" in publish_mcp
-    assert "if: github.event_name == 'release' ||" in publish_mcp
-
 
 def test_security_and_publish_workflows_emit_supply_chain_evidence() -> None:
     security = _workflow("security.yml")
-    publish_python = _workflow("publish-python.yml")
     publish_extension = _workflow("publish-extension.yml")
 
     assert "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294" in security
@@ -661,21 +629,9 @@ def test_security_and_publish_workflows_emit_supply_chain_evidence() -> None:
     assert "apps/vscode-extension/sbom.cdx.json" in publish_extension
     assert "subject-checksums: release-assets/vscode-extension/SHA256SUMS.txt" in publish_extension
 
-    assert "Generate Python release evidence" in publish_python
-    assert "packages/mcp-server/release-evidence/SHA256SUMS.txt" in publish_python
-    assert "packages/mcp-server/dist/SHA256SUMS.txt" not in publish_python
-    assert (
-        "subject-checksums: packages/mcp-server/release-evidence/SHA256SUMS.txt" in publish_python
-    )
-    assert "name: python-release-evidence" in publish_python
-    assert "\n          path: packages/mcp-server/dist/*\n" not in publish_python
-    assert "packages/mcp-server/dist/*.whl" in publish_python
-    assert "packages/mcp-server/dist/*.tar.gz" in publish_python
-
-    for workflow in (publish_python, publish_extension):
-        assert "attestations: write" in workflow
-        assert "artifact-metadata: write" in workflow
-        assert "actions/attest@" in workflow
+    assert "attestations: write" in publish_extension
+    assert "artifact-metadata: write" in publish_extension
+    assert "actions/attest@" in publish_extension
 
 
 def test_docker_metadata_contains_mcp_oci_label_and_release_image_contract() -> None:
@@ -683,8 +639,6 @@ def test_docker_metadata_contains_mcp_oci_label_and_release_image_contract() -> 
     dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")
     kicad_dockerfile = (root / "Dockerfile.kicad10").read_text(encoding="utf-8")
     compose = (root / "docker-compose.yml").read_text(encoding="utf-8")
-    registry_workflow = _workflow("publish-mcp-registry.yml")
-    container_workflow = _workflow("publish-mcp-container.yml")
     uv_toml = (root / "uv.toml").read_text(encoding="utf-8")
     docker_install = (root / "docs" / "install" / "docker.md").read_text(encoding="utf-8")
     publishing = (root / "docs" / "publishing.md").read_text(encoding="utf-8")
@@ -723,38 +677,9 @@ def test_docker_metadata_contains_mcp_oci_label_and_release_image_contract() -> 
     assert "ENV KICAD_MCP_HOST=127.0.0.1" in kicad_dockerfile
     assert "ghcr.io/freerouting/freerouting:2.1.0@sha256:" in compose
     assert ":latest" not in compose
-    assert "type=raw,value=latest" not in registry_workflow
     assert "ghcr.io/oaslananka/kicad-studio-kit/kicad-mcp-pro" not in docker_install
     assert "ghcr.io/oaslananka/kicad-studio-kit/kicad-mcp-pro" not in publishing
     assert "ghcr.io/oaslananka/kicad-studio-kit/kicad-mcp-pro" not in deployment
-
-    assert "ghcr.io/oaslananka/kicad-mcp-pro" in container_workflow
-    assert "linux/amd64,linux/arm64" in container_workflow
-    assert "outputs: type=cacheonly" in container_workflow
-    assert "mcp-server-v" in container_workflow
-    assert "ghcr.io/oaslananka/kicad-mcp-pro:latest" in container_workflow
-    assert "packages: write" in container_workflow
-    assert "id-token: write" in container_workflow
-    assert "docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a" in container_workflow
-    assert "tonistiigi/binfmt:qemu-v10.0.4@sha256:" in container_workflow
-    assert (
-        "docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5" in container_workflow
-    )
-    assert "moby/buildkit:v0.26.2@sha256:" in container_workflow
-    assert "docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee" in container_workflow
-    assert "docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9" in container_workflow
-    assert "docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf" in container_workflow
-    assert (
-        "sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6" in container_workflow
-    )
-    assert "cosign-release: v3.0.6" in container_workflow
-    assert (
-        "aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25" in container_workflow
-    )
-    assert "version: v0.70.0" in container_workflow
-    assert "sbom: true" in container_workflow
-    assert "provenance: mode=max" in container_workflow
-    assert "cosign sign --yes" in container_workflow
 
 
 def test_scorecard_workflow_uses_pinned_actions_without_artifact_storage() -> None:
@@ -768,7 +693,6 @@ def test_scorecard_workflow_uses_pinned_actions_without_artifact_storage() -> No
 
 def test_version_synchronization_across_release_manifests() -> None:
     repo = _repo_root()
-    root = Path(__file__).resolve().parents[2]
     root_package = json.loads((repo / "package.json").read_text(encoding="utf-8"))
     extension = json.loads(
         (repo / "apps" / "vscode-extension" / "package.json").read_text(encoding="utf-8")
@@ -776,59 +700,16 @@ def test_version_synchronization_across_release_manifests() -> None:
     config = (repo / "release-please-config.json").read_text(encoding="utf-8")
     release_please = json.loads(config)
     manifest = json.loads((repo / ".release-please-manifest.json").read_text(encoding="utf-8"))
-    wrapper = json.loads(
-        (repo / "packages" / "mcp-npm" / "package.json").read_text(encoding="utf-8")
-    )
-    pyproject = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
-    mcp = json.loads((root / "mcp.json").read_text(encoding="utf-8"))
-    server = json.loads((root / "server.json").read_text(encoding="utf-8"))
-    init_py = (root / "src" / "kicad_mcp" / "__init__.py").read_text(encoding="utf-8")
 
     extension_version = manifest["apps/vscode-extension"]
-    mcp_version = manifest["packages/mcp-server"]
     assert set(manifest) == {
         "apps/vscode-extension",
-        "packages/mcp-server",
-        "packages/mcp-npm",
     }
     assert release_please["separate-pull-requests"] is True
-    linked_version_components = {
-        component
-        for plugin in release_please["plugins"]
-        if isinstance(plugin, dict)
-        and plugin.get("type") == "linked-versions"
-        and plugin.get("groupName") == "kicad-mcp-pro"
-        for component in plugin.get("components", [])
-    }
-    assert linked_version_components == {"mcp-server", "mcp-npm"}
-    assert "vscode-extension" not in linked_version_components
-    extra_files = release_please["packages"]["packages/mcp-server"]["extra-files"]
-    assert ("mcp.json", "$.packages[2].version") in {
-        (entry["path"], entry.get("jsonpath"))
-        for entry in extra_files
-        if entry.get("type") == "json"
-    }
     assert extension["version"] == extension_version
-    assert manifest["packages/mcp-npm"] == mcp_version
-    assert wrapper["version"] == pyproject["project"]["version"] == mcp_version
-    assert mcp["version"] == server["version"] == mcp_version
-    assert all(
-        package.get("version") == mcp_version
-        for package in mcp["packages"]
-        if package.get("registryType") != "oci" and package.get("registry") != "container"
-    )
-    assert all(
-        package.get("version") == mcp_version
-        for package in server["packages"]
-        if package.get("registryType") != "oci" and package.get("registry") != "container"
-    )
-    assert f'__version__ = "{mcp_version}"' in init_py
-    assert "https://oaslananka.github.io/kicad-studio-kit" in wrapper["homepage"]
     assert "release:dry-run:kicad-studio" in root_package["scripts"]
-    assert "release:dry-run:kicad-mcp-pro" in root_package["scripts"]
     assert "release:dry-run" in root_package["scripts"]
     assert "release:dry-run:kicad-studio" in root_package["scripts"]["release:dry-run"]
-    assert "release:dry-run:kicad-mcp-pro" in root_package["scripts"]["release:dry-run"]
     assert "release:dry-run" in root_package["scripts"]["check"]
 
 

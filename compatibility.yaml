@@ -93,6 +93,7 @@ kicad10FeatureParity:
     - "partial"
     - "blocked"
     - "future"
+    - "external"
   sources:
     releaseNotes: "https://www.kicad.org/blog/2026/05/KiCad-10.0.3-Release/"
     releaseTag: "https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.3"
@@ -383,23 +384,17 @@ kicad10FeatureParity:
           - "path:docs/release.md"
         notes: "Release provenance is validated by the release verification gate."
       wheel_provenance:
-        status: "supported"
+        status: "external"
         nativeSurface: "Python wheel and source distribution"
         productSurface: "PyPI trusted publishing, checksums, SBOM, and attestations"
-        evidence:
-          - "path:.github/workflows/publish-python.yml"
-          - "path:packages/mcp-server/tests/unit/test_release_hardening.py"
-          - "path:docs/publishing.md"
-        notes: "Release evidence is product-scoped for the Python package."
+        externalRepo: "oaslananka/kicad-mcp"
+        notes: "MCP Python package publishing is owned by oaslananka/kicad-mcp."
       npm_tarball_provenance:
-        status: "supported"
+        status: "external"
         nativeSurface: "npm launcher tarball"
         productSurface: "npm provenance, checksum verification, and SBOM workflow"
-        evidence:
-          - "path:.github/workflows/publish-npm.yml"
-          - "path:scripts/check-release-provenance.mjs"
-          - "path:docs/release.md"
-        notes: "npm release evidence is tied to the version-linked MCP product."
+        externalRepo: "oaslananka/kicad-mcp"
+        notes: "MCP npm launcher publishing is owned by oaslananka/kicad-mcp."
   kicad11Readiness:
     protocol_upgrade:
       status: "future"
