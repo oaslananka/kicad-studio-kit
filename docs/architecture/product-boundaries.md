@@ -4,13 +4,13 @@ The monorepo has three product workspaces, but the products must stay decoupled 
 
 ## Allowed dependencies
 
-| From                    | May depend on                                                                                          |
-| ----------------------- | ------------------------------------------------------------------------------------------------------ |
-| `apps/vscode-extension` | npm dependencies, VS Code APIs, KiCad CLI process calls, MCP protocol data, test harness in tests only |
-| `packages/mcp-server`   | Python dependencies, KiCad Python/CLI integrations, MCP protocol data                                  |
-| `packages/mcp-npm`      | Node standard library and the published Python package name                                            |
-| `packages/test-harness` | Node standard library and shared packages only                                                         |
-| future shared packages  | external dependencies and other shared packages only                                                   |
+| From                    | May depend on                                                                                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/vscode-extension` | npm dependencies, VS Code APIs, KiCad CLI process calls, MCP protocol data, test harness in tests only                                                             |
+| `packages/mcp-server`   | Python dependencies, KiCad Python/CLI integrations, MCP protocol data (transitional — see [ADR-0009](../adr/0009-split-kicad-mcp-pro-into-separate-repository.md)) |
+| `packages/mcp-npm`      | Node standard library and the published Python package name (transitional — will move to `oaslananka/kicad-mcp`)                                                   |
+| `packages/test-harness` | Node standard library and shared packages only                                                                                                                     |
+| future shared packages  | external dependencies and other shared packages only                                                                                                               |
 
 ## Forbidden dependencies
 

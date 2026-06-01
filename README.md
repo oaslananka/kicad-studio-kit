@@ -9,8 +9,8 @@
 Monorepo for:
 
 - KiCad Studio VS Code extension (`apps/vscode-extension`)
-- KiCad MCP Pro server (`packages/mcp-server`)
-- npm launcher wrapper (`packages/mcp-npm`)
+- KiCad MCP Pro server (`packages/mcp-server`) — transitional; canonical source is [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)
+- npm launcher wrapper (`packages/mcp-npm`) — transitional; will move to [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)
 - shared test harness (`packages/test-harness`)
 
 Canonical repository: https://github.com/oaslananka/kicad-studio-kit

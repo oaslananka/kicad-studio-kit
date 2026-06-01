@@ -1,8 +1,9 @@
 # kicad-mcp-pro
 
-`kicad-mcp-pro` is the MCP server in `packages/mcp-server`. It exposes KiCad project discovery,
+`kicad-mcp-pro` is the MCP server published from
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp). It exposes KiCad project discovery,
 schematic and PCB inspection, validation, exports, manufacturing workflows, library lookup, and
-release-quality checks to MCP clients.
+release-quality checks to MCP clients. The in-repo development copy lives in `packages/mcp-server`.
 
 ## Main User Paths
 
@@ -16,9 +17,8 @@ release-quality checks to MCP clients.
 
 ## Source Files
 
-- Python package: `packages/mcp-server/pyproject.toml`
-- Server entrypoint: `packages/mcp-server/src/kicad_mcp/server.py`
-- Tool modules: `packages/mcp-server/src/kicad_mcp/tools/`
+- Published package: `kicad-mcp-pro` (PyPI) / `ghcr.io/oaslananka/kicad-mcp-pro` (Docker)
+- Development source: `packages/mcp-server/` (transitional — will move to `oaslananka/kicad-mcp`)
 - Server-info schema: `@oaslananka/kicad-protocol-schemas/schemas/kicad-mcp-server-info.schema.json`
 
 The MCP tool catalog is generated from the registered server tools with:

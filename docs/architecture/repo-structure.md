@@ -9,6 +9,8 @@ KiCad Studio Kit is one GitHub repository with three independently validated rel
 | `packages/mcp-npm`      | Thin npm launcher for the Python server             | `kicad-mcp-pro`                                        |
 | `packages/test-harness` | Private shared test utilities                       | Not published                                          |
 
+> **Note:** `packages/mcp-server` and `packages/mcp-npm` are transitional copies. The canonical MCP source is [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp). See [ADR-0009](../adr/0009-split-kicad-mcp-pro-into-separate-repository.md).
+
 The folder names intentionally preserve the package roots used by the current publish workflows:
 
 - `apps/vscode-extension` keeps VS Code extension-root semantics for VSIX packaging.
