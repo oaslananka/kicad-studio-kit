@@ -24,14 +24,14 @@ const WORKSPACES = [
     name: "test-harness",
     path: "packages/test-harness",
     sourceRoots: ["src", "test"],
-    forbiddenTokens: ["apps/vscode-extension/src", "packages/mcp-npm/bin"],
+    forbiddenTokens: ["apps/vscode-extension/src"],
     forbiddenModules: [/^kicadstudio(?:\/|$)/, /^kicad_mcp(?:\.|$)/],
   },
   {
     name: "kicad-fixtures",
     path: "packages/kicad-fixtures",
     sourceRoots: ["src", "test", "scripts"],
-    forbiddenTokens: ["apps/vscode-extension/src", "packages/mcp-npm/bin"],
+    forbiddenTokens: ["apps/vscode-extension/src"],
     forbiddenModules: [/^kicadstudio(?:\/|$)/, /^kicad_mcp(?:\.|$)/],
   },
 ].map((workspace) => ({

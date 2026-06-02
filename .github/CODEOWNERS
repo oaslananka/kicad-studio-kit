@@ -2,7 +2,6 @@
 /.github/ @oaslananka
 /docs/architecture/ @oaslananka
 /apps/vscode-extension/ @oaslananka
-/packages/protocol-schemas/ @oaslananka
 /packages/kicad-fixtures/ @oaslananka
 /packages/test-harness/ @oaslananka
 /examples/ @oaslananka
