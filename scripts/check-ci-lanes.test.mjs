@@ -16,7 +16,6 @@ test("extension-only changes run extension and performance lanes, not MCP packag
   assert.equal(report.lanes.vscodeExtension, true);
   assert.equal(report.lanes.performanceBudgets, true);
   assert.equal(report.lanes.mcpServer, false);
-  assert.equal(report.lanes.mcpNpm, false);
   assert.equal(report.lanes.integrationContracts, false);
   assert.equal(report.lanes.crossRepoCompatibility, false);
 });
@@ -31,26 +30,22 @@ test("extension MCP adapter changes run integration compatibility", () => {
   assert.equal(report.lanes.realPairCompatibility, true);
 });
 
-test("MCP server changes run MCP, npm launcher, performance, and integration lanes", () => {
-  const report = classifyChangedFiles([]);
+test("kicad-mcp-pro changes run MCP, performance, and integration lanes", () => {
+  const report = classifyChangedFiles(["apps/kicad-mcp-pro/src/server.ts"]);
 
   assert.equal(report.lanes.mcpServer, true);
-  assert.equal(report.lanes.mcpNpm, true);
   assert.equal(report.lanes.performanceBudgets, true);
-  assert.equal(report.lanes.integrationContracts, true);
-  assert.equal(report.lanes.realPairCompatibility, true);
   assert.equal(report.lanes.vscodeExtension, false);
+  assert.equal(report.lanes.integrationContracts, false);
+  assert.equal(report.lanes.realPairCompatibility, false);
 });
 
-test("local protocol-schemas directory changes no longer trigger CI lanes (npm-sourced)", () => {
-  const report = classifyChangedFiles([
-    "packages/protocol-schemas/schemas/kicad-mcp-server-info.schema.json",
-  ]);
+test("external consumer paths that don't exist locally no longer trigger CI lanes", () => {
+  const report = classifyChangedFiles(["docs/consuming-protocol-schemas.md"]);
 
   assert.equal(report.lanes.sharedPackages, false);
   assert.equal(report.lanes.vscodeExtension, false);
   assert.equal(report.lanes.mcpServer, false);
-  assert.equal(report.lanes.mcpNpm, false);
   assert.equal(report.lanes.integrationContracts, false);
   assert.equal(report.lanes.realPairCompatibility, false);
   assert.equal(report.lanes.crossRepoCompatibility, false);
@@ -62,7 +57,6 @@ test("test harness changes run shared and cross-product compatibility gates", ()
   assert.equal(report.lanes.sharedPackages, true);
   assert.equal(report.lanes.vscodeExtension, true);
   assert.equal(report.lanes.mcpServer, true);
-  assert.equal(report.lanes.mcpNpm, true);
   assert.equal(report.lanes.integrationContracts, true);
   assert.equal(report.lanes.realPairCompatibility, true);
   assert.equal(report.lanes.performanceBudgets, true);

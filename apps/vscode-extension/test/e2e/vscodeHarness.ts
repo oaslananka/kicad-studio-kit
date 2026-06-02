@@ -11,7 +11,7 @@ import {
   type Page
 } from '@playwright/test';
 
-const VSCODE_VERSION = '1.120.0';
+const VSCODE_VERSION = '1.122.0';
 
 export interface VsCodeSession {
   browser: Browser;
