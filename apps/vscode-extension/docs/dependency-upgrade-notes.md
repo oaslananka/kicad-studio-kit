@@ -5,7 +5,7 @@ This monorepo uses Renovate as the dependency maintenance bot. Repository-local 
 ## Current Cleanup
 
 - Renovate covers npm, GitHub Actions, Dockerfile, and PEP 621 Python dependencies.
-- Renovate lock-file maintenance refreshes `pnpm-lock.yaml` and `packages/mcp-server/uv.lock` on the weekly maintenance window.
+- Renovate lock-file maintenance refreshes `pnpm-lock.yaml` on the weekly maintenance window. (Python MCP server lock files are managed in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).)
 - GitHub Action references remain pinned to immutable commit SHAs.
 - `@types/node` stays below `25` while the workspace runtime is Node 24.
 - `@types/vscode` stays aligned with `engines.vscode: ^1.120.0`.

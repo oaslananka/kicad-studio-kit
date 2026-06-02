@@ -199,31 +199,40 @@ Target: All groundwork done so upgrade is a SDK-bump + validation.
 
 ### Phase 1 (SDK Upgrade)
 
-| File                                                                   | Change                                                                   |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `packages/mcp-server/pyproject.toml`                                   | Bump MCP SDK dependency version                                          |
-| `packages/mcp-server/src/kicad_mcp/compatibility.py`                   | Change `MCP_PROTOCOL_VERSION` to `"2026-07-28"`                          |
-| `compatibility.yaml`                                                   | Change `protocolVersion` to `"2026-07-28"`; update registry schema       |
-| `packages/mcp-server/src/kicad_mcp/server_info.py`                     | Update `SERVER_INFO_SCHEMA_VERSION`; review `get_server_info_contract()` |
-| `packages/mcp-server/src/kicad_mcp/wellknown.py`                       | Update protocol version in well-known card                               |
-| `packages/mcp-server/src/kicad_mcp/config.py`                          | Update transport config if SDK changes transport model                   |
-| `packages/protocol-schemas/schemas/kicad-mcp-server-info.schema.json`  | Update for new server-info fields                                        |
-| `packages/protocol-schemas/schemas/compatibility-manifest.schema.json` | Update for new MCP fields                                                |
-| `packages/mcp-server/scripts/validate_mcp_manifest.py`                 | Update validation logic for 2026-07-28                                   |
-| `packages/mcp-server/scripts/check_compatibility_matrix.py`            | Add 2026-07-28 matrix entry                                              |
-| `.github/workflows/kicad-canary.yml`                                   | Add protocol contract check with new SDK                                 |
+| File                                         | Change                          |
+| -------------------------------------------- | ------------------------------- |
+| (in `oaslananka/kicad-mcp`) `pyproject.toml` | Bump MCP SDK dependency version |
+
+| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/compatibility.py` | Change `MCP_PROTOCOL_VERSION` to `"2026-07-28"` |
+
+| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/server_info.py` | Update `SERVER_INFO_SCHEMA_VERSION`; review `get_server_info_contract()` |
+
+| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/wellknown.py` | Update protocol version in well-known card |
+
+| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/config.py` | Update transport config if SDK changes transport model |
+| `packages/protocol-schemas/schemas/kicad-mcp-server-info.schema.json` | Update for new server-info fields |
+| `packages/protocol-schemas/schemas/compatibility-manifest.schema.json` | Update for new MCP fields |
+| (in `oaslananka/kicad-mcp`) `scripts/validate_mcp_manifest.py` | Update validation logic for 2026-07-28 |
+| (in `oaslananka/kicad-mcp`) `scripts/check_compatibility_matrix.py` | Add 2026-07-28 matrix entry |
+| `.github/workflows/kicad-canary.yml` | Add protocol contract check with new SDK |
 
 ### Phase 2 (Feature Adoption)
 
-| File                                                    | Change                                      |
-| ------------------------------------------------------- | ------------------------------------------- |
-| `packages/mcp-server/src/kicad_mcp/tools/*.py`          | Tasks extension for long-running tools      |
-| `packages/mcp-server/src/kicad_mcp/tools/metadata.py`   | Update annotations for new SEPs             |
-| `packages/mcp-server/src/kicad_mcp/tools/export.py`     | Tasks: `export_manufacturing_package`       |
-| `packages/mcp-server/src/kicad_mcp/tools/validation.py` | Tasks: `run_drc`, `run_erc`                 |
-| `packages/mcp-server/src/kicad_mcp/tools/simulation.py` | Tasks: simulation progress                  |
-| `packages/mcp-server/src/kicad_mcp/tools/routing.py`    | Tasks: routing progress                     |
-| `packages/mcp-server/src/kicad_mcp/*.py`                | JSON Schema 2020-12, caching, trace context |
+| File                                                   | Change                                 |
+| ------------------------------------------------------ | -------------------------------------- |
+| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/tools/*.py` | Tasks extension for long-running tools |
+
+| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/tools/metadata.py` | Update annotations for new SEPs |
+
+| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/tools/export.py` | Tasks: `export_manufacturing_package` |
+
+| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/tools/validation.py` | Tasks: `run_drc`, `run_erc` |
+
+| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/tools/simulation.py` | Tasks: simulation progress |
+
+| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/tools/routing.py` | Tasks: routing progress |
+
+| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/*.py` | JSON Schema 2020-12, caching, trace context |
 
 ## Consequences
 

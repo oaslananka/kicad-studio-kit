@@ -14,9 +14,6 @@ workflows:
 - `vscode-extension (ubuntu-24.04)`
 - `vscode-extension (windows-2025-vs2026)`
 - `vscode-extension (macos-15)`
-- `mcp-server (ubuntu-24.04)`
-- `mcp-server (windows-2025-vs2026)`
-- `mcp-server (macos-15)`
 - `real-pair-compatibility`
 - `analyze (javascript-typescript)`
 - `analyze (python)`
@@ -39,7 +36,7 @@ Enable CODEOWNERS review. Path ownership is declared in `.github/CODEOWNERS`:
 - `.github/`: CI, release, labels, and governance.
 - `docs/architecture/`: architecture and release model.
 - `apps/vscode-extension/`: KiCad Studio extension.
-- `packages/mcp-server/`: KiCad MCP Pro Python server and MCP Registry metadata (transitional — canonical source at [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)).
+- (removed — see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)): KiCad MCP Pro Python server and MCP Registry metadata.
 - `packages/protocol-schemas/`: (removed — consumed from npm as `@oaslananka/kicad-protocol-schemas`).
 - `examples/`: user-facing KiCad examples and smoke-test projects.
 

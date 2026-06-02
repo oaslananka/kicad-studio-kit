@@ -9,7 +9,7 @@
 Monorepo for:
 
 - KiCad Studio VS Code extension (`apps/vscode-extension`)
-- KiCad MCP Pro server (`packages/mcp-server`) — transitional; canonical source is [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)
+- KiCad MCP Pro server (source removed — see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp))
 - shared test harness (`packages/test-harness`)
 
 Canonical repository: https://github.com/oaslananka/kicad-studio-kit
@@ -38,14 +38,10 @@ coverage level, and feature gates are maintained in
 corepack enable
 corepack pnpm run dev:doctor
 corepack pnpm install --frozen-lockfile
-uv sync --all-extras --frozen --project packages/mcp-server
 corepack pnpm run check:forbidden-refs
 corepack pnpm run check:version
 corepack pnpm --filter kicadstudiokit run check
 corepack pnpm --filter kicadstudiokit run package
-Push-Location packages/mcp-server
-corepack pnpm run check
-Pop-Location
 
 ```
 

@@ -94,15 +94,6 @@
       "prPriority": 1
     },
     {
-      "description": "Group Python project patch and minor updates inside the MCP server package.",
-      "matchManagers": ["pep621"],
-      "matchFileNames": ["packages/mcp-server/pyproject.toml"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "python mcp server dependencies",
-      "semanticCommitScope": "mcp-server",
-      "addLabels": ["product:mcp-server"]
-    },
-    {
       "description": "Protocol and runtime-surface updates require compatibility review.",
       "matchPackageNames": [
         "mcp",
@@ -121,16 +112,6 @@
       "groupName": "github actions",
       "semanticCommitScope": "github-actions",
       "addLabels": ["ci", "risk:medium"],
-      "dependencyDashboardApproval": true,
-      "automerge": false,
-      "prPriority": 3
-    },
-    {
-      "description": "Container image updates affect MCP runtime packaging and require explicit review.",
-      "matchManagers": ["dockerfile"],
-      "groupName": "container base images",
-      "semanticCommitScope": "containers",
-      "addLabels": ["product:mcp-server", "risk:medium"],
       "dependencyDashboardApproval": true,
       "automerge": false,
       "prPriority": 3

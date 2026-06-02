@@ -22,10 +22,10 @@ Adopt a contract-first integration model:
 1. **Compatibility metadata** — All integration surfaces are declared in
    `compatibility.yaml` at the repository root, with matching assertions in
    the extension (`apps/vscode-extension/src/mcp/compatibilityMatrix.ts`) and
-   the MCP server (`packages/mcp-server/src/kicad_mcp/compatibility.py`).
+   the MCP server (`oaslananka/kicad-mcp/src/kicad_mcp/compatibility.py`).
 
 2. **MCP manifests** — The MCP server declares its capabilities through
-   `mcp.json` and `server.json` under `packages/mcp-server/`. The extension
+   `mcp.json` and `server.json` under the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository. The extension
    reads these manifests at runtime to determine which tools and features
    are available.
 

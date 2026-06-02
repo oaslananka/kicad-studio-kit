@@ -11,13 +11,13 @@ Date: 2026-06-01
 The KiCad Studio Kit monorepo (`oaslananka/kicad-studio-kit`) currently hosts
 two product workspaces and three shared packages:
 
-| Surface           | Path                         | Ecosystem         | Release Cadence |
-| ----------------- | ---------------------------- | ----------------- | --------------- |
-| **kicad-studio**  | `apps/vscode-extension/`     | VS Code extension | Independent     |
-| **kicad-mcp-pro** | `packages/mcp-server/`       | PyPI (Python)     | Independent     |
-| protocol-schemas  | `packages/protocol-schemas/` | npm (schemas)     | Shared          |
-| kicad-fixtures    | `packages/kicad-fixtures/`   | Test fixtures     | Shared          |
-| test-harness      | `packages/test-harness/`     | npm (test utils)  | Shared          |
+| Surface           | Path                                           | Ecosystem         | Release Cadence |
+| ----------------- | ---------------------------------------------- | ----------------- | --------------- |
+| **kicad-studio**  | `apps/vscode-extension/`                       | VS Code extension | Independent     |
+| **kicad-mcp-pro** | `packages/mcp-server/` (removed — see archive) | PyPI (Python)     | Independent     |
+| protocol-schemas  | `packages/protocol-schemas/`                   | npm (schemas)     | Shared          |
+| kicad-fixtures    | `packages/kicad-fixtures/`                     | Test fixtures     | Shared          |
+| test-harness      | `packages/test-harness/`                       | npm (test utils)  | Shared          |
 
 The two products have fundamentally different consumers:
 
@@ -80,9 +80,9 @@ Artifacts:
 
 1. **Create `oaslananka/kicad-mcp`** — new GitHub repository with identical
    branch protection, CODEOWNERS, and repository settings.
-2. **Fork product code** — copy `packages/mcp-server/`
+2. **Fork product code** — copy `packages/mcp-server/` (completed)
    (with `git history` using `git filter-repo` or subtree split) into the new
-   repo. (The npm launcher was migrated separately in Phase 2.)
+   repo. `packages/mcp-server` has been removed from this monorepo. (The npm launcher was migrated separately in Phase 2.)
 3. **Publish shared packages** — `packages/protocol-schemas/` published to npm
    as public package. Both repos consume from npm.
 4. **Split CI/CD** — each repo gets its own CI, publish workflows, and
@@ -90,11 +90,11 @@ Artifacts:
 5. **Split compatibility.yaml** — each repo maintains its own copy; the
    cross-product contract (compatibleMcpPro/compatibleExtension) is the
    overlapping section.
-6. **Remove from monorepo** — `packages/mcp-server/` is
-   removed from `kicad-studio-kit`. Release-please-config is simplified.
+6. **Remove from monorepo** — `packages/mcp-server/` has been
+   removed from `kicad-studio-kit` (completed). Release-please-config is simplified.
    (`packages/mcp-npm/` was removed in Phase 2 step 6a.)
 7. **Update docs** — ADR 0001 status updated to Superseded;
-   product-boundaries.md updated; README badges and URLs updated in both repos.
+   product-boundaries.md updated; README badges and URLs updated in both repos (completed).
 
 ## Consequences
 
@@ -277,9 +277,11 @@ artifacts instead of workspace references.
 | `.github/workflows/publish-mcp-registry.yml` | New (copied from monorepo)                                              |
 | `.github/CODEOWNERS`                         | New: all @oaslananka                                                    |
 
-| `packages/mcp-server/pyproject.toml` | Update repository URLs |
-| `packages/mcp-server/server.json` | Update repo URL |
-| `packages/mcp-server/mcp.json` | Update repo URL |
+| `packages/mcp-server/pyproject.toml` | Update repository URLs (completed — now in kicad-mcp repo) |
+
+| `packages/mcp-server/server.json` | Update repo URL (completed) |
+
+| `packages/mcp-server/mcp.json` | Update repo URL (completed) |
 | `packages/protocol-schemas` | Add as npm dependency instead of workspace package |
 | `README.md` | New: MCP-focused README with badges pointing to kicad-mcp |
 

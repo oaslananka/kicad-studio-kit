@@ -27,7 +27,6 @@ from the repository. The `postCreateCommand.sh` script runs:
 ```bash
 corepack enable pnpm
 corepack pnpm install --frozen-lockfile
-uv sync --all-extras --frozen --project packages/mcp-server
 corepack pnpm --filter kicadstudiokit exec playwright install --with-deps chromium
 corepack pnpm run check:dev-doctor
 corepack pnpm run check:devcontainer
@@ -42,11 +41,7 @@ corepack pnpm run typecheck
 corepack pnpm run test
 corepack pnpm run build
 corepack pnpm run verify:dist
-uv run --project packages/mcp-server --all-extras pytest
-```
-
-`corepack pnpm run check:devcontainer` validates the container contract without
-building the image. `corepack pnpm run dev:doctor -- --json` emits a
+corepack pnpm run check:devcontainer `corepack pnpm run dev:doctor -- --json` emits a
 machine-readable environment report for CI/debug logs.
 `corepack pnpm run dev-doctor -- --require-devcontainer` checks the active
 environment marker and the required command-line tools.
@@ -58,12 +53,7 @@ tests are supported where the host container runtime permits nested Electron and
 browser processes. The image includes `xvfb`, Playwright Linux dependencies, and
 the VS Code extension test dependencies installed from the root lockfile.
 
-MCP server tests are supported through the normal uv workflow:
-
-```bash
-uv sync --all-extras --frozen --project packages/mcp-server
-uv run --project packages/mcp-server --all-extras pytest
-```
+MCP server tests are now run from the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.`
 
 ## KiCad Limitations
 
@@ -87,3 +77,4 @@ default branch. GitHub prebuilds do not run `postCreateCommand`, so dependency
 prewarming should be moved to `onCreateCommand` or `updateContentCommand` only
 after a measured prebuild pass proves the command duration and cache behavior are
 acceptable.
+```

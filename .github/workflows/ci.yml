@@ -19,7 +19,6 @@ jobs:
     outputs:
       metadata: ${{ steps.detect.outputs.metadata }}
       vscode_extension: ${{ steps.detect.outputs.vscode_extension }}
-      mcp_server: ${{ steps.detect.outputs.mcp_server }}
       shared_packages: ${{ steps.detect.outputs.shared_packages }}
       integration_contracts: ${{ steps.detect.outputs.integration_contracts }}
       performance_budgets: ${{ steps.detect.outputs.performance_budgets }}
@@ -58,7 +57,7 @@ jobs:
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
         with:
           enable-cache: true
-          version-file: packages/mcp-server/uv.toml
+
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm run check:forbidden-refs
@@ -66,7 +65,6 @@ jobs:
       - run: corepack pnpm run check:version
         env:
           GITHUB_TOKEN: ${{ github.token }}
-      - run: corepack pnpm run check:compatibility
       - run: corepack pnpm run check:compatibility-contract
       - run: corepack pnpm run check:governance
       - run: corepack pnpm run check:agent-configs
@@ -142,37 +140,6 @@ jobs:
       - name: Verify extension package and no VS Code Web target
         run: corepack pnpm --filter kicadstudiokit run package:validate
 
-  mcp-server:
-    needs: ci-lanes
-    if: ${{ needs.ci-lanes.outputs.mcp_server == 'true' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, windows-2025-vs2026, macos-15]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
-        with:
-          node-version-file: .node-version
-          package-manager-cache: false
-      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
-        with:
-          enable-cache: true
-          version-file: packages/mcp-server/uv.toml
-      - run: corepack enable
-      - run: corepack pnpm install --frozen-lockfile
-      - run: uv sync --all-extras --frozen --project packages/mcp-server
-      - run: corepack pnpm --dir packages/mcp-server run metadata:check
-      - run: corepack pnpm --dir packages/mcp-server run format:check
-      - run: corepack pnpm --dir packages/mcp-server run lint
-      - run: corepack pnpm --dir packages/mcp-server run typecheck
-      - run: corepack pnpm --dir packages/mcp-server run test:unit
-      - run: corepack pnpm --dir packages/mcp-server run mcp:manifest:check
-      - run: corepack pnpm --dir packages/mcp-server run package:check
-
   shared-packages:
     needs: ci-lanes
     if: ${{ needs.ci-lanes.outputs.shared_packages == 'true' }}
@@ -188,13 +155,10 @@ jobs:
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
         with:
           enable-cache: true
-          version-file: packages/mcp-server/uv.toml
+
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
-      - run: uv sync --all-extras --frozen --project packages/mcp-server
       - run: corepack pnpm run check:fixtures
-      - run: corepack pnpm run check:compatibility
-      - run: corepack pnpm run test:contract
 
   performance-budgets:
     needs: ci-lanes
@@ -211,23 +175,17 @@ jobs:
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
         with:
           enable-cache: true
-          version-file: packages/mcp-server/uv.toml
+
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
-      - run: uv sync --all-extras --frozen --project packages/mcp-server
       - name: Measure extension performance budgets
         env:
           KICAD_EXTENSION_PERFORMANCE_MEASUREMENTS_JSON: performance-results/extension-performance.json
         run: corepack pnpm --filter kicadstudiokit run test:perf
-      - name: Measure MCP performance budgets
-        env:
-          KICAD_PERFORMANCE_MEASUREMENTS_JSON: performance-results/mcp-tools-list.json
-        run: uv run --project packages/mcp-server --all-extras pytest packages/mcp-server/tests/unit/test_benchmark_latency.py
       - name: Check performance budgets
         run: >-
           node scripts/check-performance-budgets.mjs
           --measurements performance-results/extension-performance.json
-          --measurements performance-results/mcp-tools-list.json
           --output performance-results/budget-report.json
       - name: Upload performance budget artifacts
         if: always()
@@ -253,10 +211,9 @@ jobs:
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
         with:
           enable-cache: true
-          version-file: packages/mcp-server/uv.toml
+
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
-      - run: uv sync --all-extras --frozen --project packages/mcp-server
       - name: Run real-pair compatibility tests
         env:
           REAL_SERVER_ARTIFACT_DIR: apps/vscode-extension/test-results/real-server

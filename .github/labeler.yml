@@ -1,9 +1,6 @@
 extension:
   - changed-files:
       - any-glob-to-any-file: "apps/vscode-extension/**"
-mcp-server:
-  - changed-files:
-      - any-glob-to-any-file: "packages/mcp-server/**"
 ci:
   - changed-files:
       - any-glob-to-any-file: ".github/workflows/**"

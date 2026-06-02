@@ -18,9 +18,7 @@ Compatibility is tracked in:
 
 - `compatibility.yaml`
 - `apps/vscode-extension/src/mcp/compatibilityMatrix.ts`
-- `packages/mcp-server/src/kicad_mcp/compatibility.py`
-- `packages/mcp-server/server.json`
-- `packages/mcp-server/mcp.json`
+- `oaslananka/kicad-mcp` (MCP server source in [separate repository](https://github.com/oaslananka/kicad-mcp))
 
 Run:
 

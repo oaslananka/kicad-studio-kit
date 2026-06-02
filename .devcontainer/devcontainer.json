@@ -25,7 +25,7 @@
     "UV_PYTHON": "3.13"
   },
   "remoteEnv": {
-    "PATH": "${containerEnv:PATH}:${workspaceFolder}/packages/mcp-server/.venv/bin"
+    "PATH": "${containerEnv:PATH}"
   },
   "mounts": [
     "source=kicad-studio-kit-pnpm-store,target=/home/vscode/.local/share/pnpm/store,type=volume",
@@ -51,7 +51,6 @@
         "tamasfe.even-better-toml"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "${workspaceFolder}/packages/mcp-server/.venv/bin/python",
         "typescript.tsdk": "${workspaceFolder}/node_modules/typescript/lib"
       }
     }

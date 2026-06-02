@@ -1,9 +1,6 @@
 - name: extension
   color: "1d76db"
   description: VS Code extension changes
-- name: mcp-server
-  color: "0e8a16"
-  description: Python MCP server changes
 - name: ci
   color: "fbca04"
   description: CI and workflow changes
@@ -28,9 +25,6 @@
 - name: product:vscode-extension
   color: "5319e7"
   description: KiCad Studio VS Code extension workspace
-- name: product:mcp-server
-  color: "0052cc"
-  description: KiCad MCP Pro Python server workspace
 - name: risk:low
   color: "c2e0c6"
   description: Low-risk patch, lockfile, or docs-only dependency update

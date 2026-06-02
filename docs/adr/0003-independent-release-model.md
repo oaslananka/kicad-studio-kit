@@ -27,9 +27,9 @@ Adopt an independent release model where each product version is decoupled:
 
 1. **Version sources** — Each product owns its version file:
    - Extension: `apps/vscode-extension/package.json`
-   - Python MCP server: `packages/mcp-server/pyproject.toml`
+   - Python MCP server: `oaslananka/kicad-mcp` (source moved to separate repository)
 
-2. **MCP server** — `packages/mcp-server` releases as the
+2. **MCP server** — `oaslananka/kicad-mcp` releases as the
    `kicad-mcp-pro` product.
 
 3. **Extension independence** — The extension is intentionally not part of

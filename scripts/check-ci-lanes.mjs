@@ -68,7 +68,7 @@ const RELEASE_AND_COMPATIBILITY_FILES = new Set([
 ]);
 
 const EXTENSION_PREFIXES = ["apps/vscode-extension/", "apps/kicad-studio/"];
-const MCP_SERVER_PREFIXES = ["packages/mcp-server/", "apps/kicad-mcp-pro/"];
+const MCP_SERVER_PREFIXES = ["apps/kicad-mcp-pro/"];
 
 const SHARED_PREFIXES = ["packages/kicad-fixtures/", "packages/test-harness/"];
 const CI_POLICY_PREFIXES = ["scripts/", ".github/"];
@@ -90,14 +90,7 @@ const EXTENSION_INTEGRATION_PREFIXES = [
   "apps/vscode-extension/test/e2e/",
 ];
 
-const MCP_INTEGRATION_PREFIXES = [
-  "packages/mcp-server/src/",
-  "packages/mcp-server/tests/unit/test_mcp",
-  "packages/mcp-server/tests/integration/",
-  "packages/mcp-server/tests/e2e/",
-  "packages/mcp-server/mcp.json",
-  "packages/mcp-server/server.json",
-];
+const MCP_INTEGRATION_PREFIXES = [];
 
 function normalizeChangedFile(file) {
   return file.trim().replaceAll("\\", "/").replace(/^\.\//u, "");

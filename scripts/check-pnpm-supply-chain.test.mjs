@@ -9,14 +9,12 @@ import { validatePnpmSupplyChain } from "./check-pnpm-supply-chain.mjs";
 function createFixture(overrides = {}) {
   const repoRoot = mkdtempSync(path.join(os.tmpdir(), "pnpm-supply-chain-"));
   mkdirSync(path.join(repoRoot, ".github/workflows"), { recursive: true });
-  mkdirSync(path.join(repoRoot, "packages/mcp-server"), { recursive: true });
 
   writeFileSync(
     path.join(repoRoot, "pnpm-workspace.yaml"),
     overrides.workspace ??
       [
         "packages:",
-        '  - "packages/mcp-server"',
         "minimumReleaseAge: 1440",
         "minimumReleaseAgeExclude:",
         "  - tmp@0.2.6",
@@ -34,21 +32,6 @@ function createFixture(overrides = {}) {
     ),
   );
   writeFileSync(
-    path.join(repoRoot, "packages/mcp-server/package.json"),
-    JSON.stringify(
-      overrides.mcpPackage ?? {
-        scripts: {
-          "security:bandit":
-            "uv run --all-extras python -m bandit -r src/ -ll -s B104",
-          "security:audit":
-            "uv run --all-extras python scripts/audit_dependencies.py",
-          security:
-            "corepack pnpm run security:bandit && corepack pnpm run security:audit",
-        },
-      },
-    ),
-  );
-  writeFileSync(
     path.join(repoRoot, ".npmrc"),
     overrides.npmrc ?? "audit=true\n",
   );
@@ -62,7 +45,6 @@ function createFixture(overrides = {}) {
         '    - cron: "23 3 * * 1"',
         "steps:",
         "  - run: corepack pnpm audit --audit-level high",
-        "  - run: corepack pnpm --dir packages/mcp-server run security",
         "",
       ].join("\n"),
   );
@@ -87,7 +69,6 @@ test("disabled pnpm supply-chain controls fail validation", () => {
   const repoRoot = createFixture({
     workspace: [
       "packages:",
-      '  - "packages/mcp-server"',
       "minimumReleaseAge: 0",
       "minimumReleaseAgeExclude:",
       "  - tmp",

@@ -89,13 +89,10 @@ function renderEnum(schema) {
 function productVersions() {
   const root = readJson("package.json");
   const extension = readJson("apps/vscode-extension/package.json");
-  const mcpPyproject = readText("packages/mcp-server/pyproject.toml");
-  const mcpVersion =
-    mcpPyproject.match(/^version = "([^"]+)"/mu)?.[1] ?? "unknown";
   return {
     root: root.version,
     extension: extension.version,
-    mcpServer: mcpVersion,
+    mcpServer: "unknown",
   };
 }
 
@@ -177,22 +174,6 @@ ${renderTable(["View ID", "Name", "Container", "Type", "When"], viewRows)}
 
 ${renderTable(["View type", "Display name", "Selector", "Priority"], editorRows)}
 `;
-}
-
-function renderMcpTools() {
-  const generated = readText(
-    "packages/mcp-server/docs/tools-reference.generated.md",
-  );
-  return `# MCP Tool Catalog
-
-Machine-maintained from \`kicad-mcp-pro\` source via
-\`packages/mcp-server/scripts/generate_tools_reference.py\`.
-
-The canonical source catalog remains
-\`packages/mcp-server/docs/tools-reference.generated.md\`; this page is copied into the
-unified documentation site by \`corepack pnpm run docs:generate\`.
-
-${generated}`;
 }
 
 function resolveSchemaFile(name) {
@@ -591,7 +572,6 @@ function main() {
   writeGenerated("extension/commands.md", renderExtensionCommands());
   writeGenerated("extension/settings.md", renderExtensionSettings());
   writeGenerated("extension/views.md", renderExtensionViews());
-  writeGenerated("mcp/tools.md", renderMcpTools());
   writeGenerated("mcp/api-reference.md", renderMcpApiReference());
   updateSupportMatrix();
   writeGenerated("versions.md", renderVersions());
@@ -603,11 +583,6 @@ function main() {
     "apps/vscode-extension/CHANGELOG.md",
     "changelog/kicad-studio.md",
     "KiCad Studio Changelog",
-  );
-  copyChangelog(
-    "packages/mcp-server/CHANGELOG.md",
-    "changelog/kicad-mcp-pro.md",
-    "kicad-mcp-pro Changelog",
   );
   writeGenerated("public/robots.txt", renderRobots());
   writeGenerated("public/sitemap.xml", renderSitemap());

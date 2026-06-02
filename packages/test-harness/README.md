@@ -19,7 +19,7 @@ production dependency for any released product.
 ## Usage Rules
 
 - Product tests may import helpers from this package.
-- Production code under `apps/vscode-extension/src` and `packages/mcp-server/src`
+- Production code under `apps/vscode-extension/src` and the `oaslananka/kicad-mcp` repository
   must not import this package.
 - The harness must not import product internals. Keep it limited to Node
   standard library utilities and other shared packages.

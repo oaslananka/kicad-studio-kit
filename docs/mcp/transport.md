@@ -9,8 +9,11 @@ Use Streamable HTTP when a client needs a stable local endpoint, session handlin
 authentication, or integration with ChatGPT-style connectors.
 
 ```bash
-uv run --project packages/mcp-server --all-extras kicad-mcp-pro --transport streamable-http --host 127.0.0.1 --port 3334
+pip install kicad-mcp-pro
+kicad-mcp-pro --transport streamable-http --host 127.0.0.1 --port 3334
 ```
+
+The source lives in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
 
 The default MCP path is `/mcp`. Set `KICAD_MCP_MOUNT_PATH` when a client or
 reverse proxy requires a different endpoint such as `/custom-mcp`.
@@ -37,8 +40,7 @@ Deprecated HTTP+SSE routes are disabled by default. Set
 the compatibility routes are exposed alongside `/mcp` as `/sse` and
 `/messages`.
 
-Transport conformance coverage lives in
-`packages/mcp-server/tests/unit/test_mcp_protocol_contract.py` and runs through:
+Transport conformance coverage lives in the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository and runs through:
 
 ```bash
 corepack pnpm run test:contract
@@ -50,7 +52,8 @@ Use stdio when the MCP client launches the server process directly and keeps it 
 client session.
 
 ```bash
-uv run --project packages/mcp-server --all-extras kicad-mcp-pro --transport stdio
+pip install kicad-mcp-pro
+kicad-mcp-pro --transport stdio
 ```
 
 ## Compatibility

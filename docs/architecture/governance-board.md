@@ -6,7 +6,7 @@ This repository is managed as a two-product monorepo. GitHub Projects should be 
 
 | Field    | Values                                                                                                                   |
 | -------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Product  | `vscode-extension`, `mcp-server`, `shared`, `repo`                                                                       |
+| Product  | `vscode-extension`, `shared`, `repo`                                                                                     |
 | Area     | `architecture`, `testing`, `mcp`, `viewer`, `diagnostics`, `release`, `security`, `docs`, `ci`, `ui-ux`, `compatibility` |
 | Priority | `P0`, `P1`, `P2`, `P3`                                                                                                   |
 | Phase    | `M0 foundation`, `M1 test foundation`, `M2 MCP compatibility`, `M3 premium UI/UX`, `M4 release hardening`                |

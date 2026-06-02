@@ -84,81 +84,10 @@ const requiredRootExamples = [
   },
 ];
 
-const requiredPackageExamples = [
-  {
-    file: "packages/mcp-server/docs/examples/clients/vscode.mcp.json",
-    format: "json",
-    rootKey: "servers",
-    type: "stdio",
-    profile: "pcb_only",
-  },
-  {
-    file: "packages/mcp-server/docs/examples/clients/codex-config.toml",
-    format: "toml",
-    rootKey: "mcp_servers",
-    type: "stdio",
-    profile: "pcb_only",
-  },
-  {
-    file: "packages/mcp-server/docs/examples/clients/claude-code.mcp.json",
-    format: "json",
-    rootKey: "mcpServers",
-    type: "stdio",
-    profile: "pcb_only",
-  },
-  {
-    file: "packages/mcp-server/docs/examples/clients/claude-desktop.json",
-    format: "json",
-    rootKey: "mcpServers",
-    type: "stdio",
-    profile: "pcb_only",
-  },
-  {
-    file: "packages/mcp-server/docs/examples/clients/cursor.mcp.json",
-    format: "json",
-    rootKey: "mcpServers",
-    type: "stdio",
-    profile: "pcb_only",
-  },
-  {
-    file: "packages/mcp-server/docs/examples/clients/gemini-settings.json",
-    format: "json",
-    rootKey: "mcpServers",
-    type: "stdio",
-    profile: "pcb_only",
-  },
-  {
-    file: "packages/mcp-server/docs/examples/clients/generic-mcp-client.json",
-    format: "json",
-    rootKey: "mcpServers",
-    type: "stdio",
-    profile: "pcb_only",
-  },
-  {
-    file: "packages/mcp-server/docs/examples/clients/vscode-http.mcp.json",
-    format: "json",
-    rootKey: "servers",
-    type: "http",
-  },
-  {
-    file: "packages/mcp-server/docs/examples/clients/codex-http-config.toml",
-    format: "toml",
-    rootKey: "mcp_servers",
-    type: "http",
-  },
-  {
-    file: "packages/mcp-server/docs/examples/clients/gemini-http-settings.json",
-    format: "json",
-    rootKey: "mcpServers",
-    type: "http",
-  },
-];
-
 const requiredReferences = {
   "AGENTS.md": [
     "Codex, Claude Code, Claude Desktop, GitHub Copilot, Gemini CLI, and Cursor",
     "apps/vscode-extension",
-    "packages/mcp-server",
 
     "docs/support-matrix.md",
     "docs/release.md",
@@ -263,21 +192,6 @@ const requiredReferences = {
   "apps/vscode-extension/CHANGELOG.md": [
     "Clarified Codex support as an external MCP client workflow",
     "kicadstudio.ai.provider=codex",
-  ],
-  "packages/mcp-server/docs/client-configuration.md": [
-    "KICAD_MCP_OPERATING_MODE=readonly",
-    "KICAD_MCP_PROFILE=pcb_only",
-    "Linux and macOS:",
-    "Windows PowerShell:",
-    "gemini mcp add --scope project --transport stdio",
-    "uvx kicad-mcp-pro --transport http",
-    "## Destination Paths",
-    "%APPDATA%\\Claude\\claude_desktop_config.json",
-    "%USERPROFILE%\\.gemini\\settings.json",
-    "KICAD_MCP_AUTH_TOKEN",
-    "bearer token",
-    "../../../docs/agents/client-configs.md",
-    "https://developers.openai.com/codex/config-reference",
   ],
   "docs/.vitepress/config.mts": ["/agents/", "/agents/client-configs"],
 };
@@ -626,9 +540,6 @@ export function validateAgentConfigs(options = {}) {
   }
   validateRequiredReferences(repoRoot, errors);
   for (const descriptor of requiredRootExamples) {
-    validateDescriptor(repoRoot, descriptor, errors);
-  }
-  for (const descriptor of requiredPackageExamples) {
     validateDescriptor(repoRoot, descriptor, errors);
   }
   validateWorkspaceDefaults(repoRoot, errors);

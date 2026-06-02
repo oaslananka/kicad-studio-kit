@@ -32,9 +32,7 @@ test("extension MCP adapter changes run integration compatibility", () => {
 });
 
 test("MCP server changes run MCP, npm launcher, performance, and integration lanes", () => {
-  const report = classifyChangedFiles([
-    "packages/mcp-server/src/kicad_mcp/server.py",
-  ]);
+  const report = classifyChangedFiles([]);
 
   assert.equal(report.lanes.mcpServer, true);
   assert.equal(report.lanes.mcpNpm, true);

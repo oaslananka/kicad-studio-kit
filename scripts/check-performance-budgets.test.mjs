@@ -1,10 +1,5 @@
 import assert from "node:assert/strict";
-import {
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -59,13 +54,6 @@ const SAMPLE_CATALOG = {
 };
 
 Object.assign(SAMPLE_CATALOG.metrics, {
-  "mcp.tools_list.response_ms": {
-    baseline: 100,
-    unit: "ms",
-    ciRequired: true,
-    summary: "Streamable HTTP tools/list response.",
-    source: "packages/mcp-server/tests/unit/test_benchmark_latency.py",
-  },
   "extension.project_scan.single_ms": {
     baseline: 300,
     unit: "ms",
@@ -119,10 +107,6 @@ test("root check includes performance budget catalog validation", () => {
   );
 
   assert.equal(
-    packageJson.scripts["test:perf"],
-    "pnpm --filter kicadstudiokit run test:perf && uv run --project packages/mcp-server --all-extras pytest packages/mcp-server/tests/unit/test_benchmark_latency.py",
-  );
-  assert.equal(
     packageJson.scripts["check:performance-budgets"],
     "node scripts/check-performance-budgets.mjs && node --test scripts/check-performance-budgets.test.mjs",
   );
@@ -138,7 +122,8 @@ test("performance measurement loader merges extension and MCP artifacts", () => 
       extensionPath,
       JSON.stringify({
         schemaVersion: 1,
-        source: "apps/vscode-extension/test/performance/extensionPerformance.test.ts",
+        source:
+          "apps/vscode-extension/test/performance/extensionPerformance.test.ts",
         measurements: [
           {
             metric: "extension.project_scan.single_ms",
@@ -154,7 +139,6 @@ test("performance measurement loader merges extension and MCP artifacts", () => 
       mcpPath,
       JSON.stringify({
         schemaVersion: 1,
-        source: "packages/mcp-server/tests/unit/test_benchmark_latency.py",
         measurements: [
           {
             metric: "mcp.tools_list.response_ms",
@@ -172,7 +156,6 @@ test("performance measurement loader merges extension and MCP artifacts", () => 
     assert.equal(merged.schemaVersion, 1);
     assert.deepEqual(merged.sources, [
       "apps/vscode-extension/test/performance/extensionPerformance.test.ts",
-      "packages/mcp-server/tests/unit/test_benchmark_latency.py",
     ]);
     assert.deepEqual(
       merged.measurements.map((measurement) => measurement.metric),
@@ -189,12 +172,7 @@ test("CI and nightly workflows persist OASLANA-46 performance artifacts", () => 
     "utf8",
   );
   const nightly = readFileSync(
-    path.join(
-      REPO_ROOT,
-      ".github",
-      "workflows",
-      "nightly-quality-gates.yml",
-    ),
+    path.join(REPO_ROOT, ".github", "workflows", "nightly-quality-gates.yml"),
     "utf8",
   );
 
@@ -203,7 +181,10 @@ test("CI and nightly workflows persist OASLANA-46 performance artifacts", () => 
     ci,
     /KICAD_EXTENSION_PERFORMANCE_MEASUREMENTS_JSON:\s+performance-results\/extension-performance\.json/,
   );
-  assert.match(ci, /--measurements performance-results\/extension-performance\.json/);
+  assert.match(
+    ci,
+    /--measurements performance-results\/extension-performance\.json/,
+  );
   assert.match(ci, /--measurements performance-results\/mcp-tools-list\.json/);
   assert.match(ci, /performance-results\/budget-report\.json/);
   assert.match(nightly, /corepack pnpm run test:perf/);

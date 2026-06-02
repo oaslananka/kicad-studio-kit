@@ -128,27 +128,6 @@
       "summary": "Export command cancellation response for a hanging KiCad CLI process.",
       "source": "apps/vscode-extension/test/performance/extensionPerformance.test.ts"
     },
-    "mcp.tools_list.response_ms": {
-      "baseline": 100,
-      "unit": "ms",
-      "ciRequired": true,
-      "summary": "MCP tools/list response latency.",
-      "source": "packages/mcp-server/tests/unit/test_benchmark_latency.py"
-    },
-    "mcp.pcb_board_summary.medium_ms": {
-      "baseline": 500,
-      "unit": "ms",
-      "ciRequired": false,
-      "summary": "pcb_get_board_summary on a medium PCB fixture.",
-      "source": "OASLANA-46 MCP performance harness"
-    },
-    "mcp.session.establishment_ms": {
-      "baseline": 200,
-      "unit": "ms",
-      "ciRequired": false,
-      "summary": "MCP session establishment.",
-      "source": "OASLANA-46 MCP performance harness"
-    },
     "extension.memory.idle_mb": {
       "baseline": 150,
       "unit": "MB",
