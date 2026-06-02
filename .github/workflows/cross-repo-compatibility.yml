@@ -108,8 +108,8 @@ jobs:
           fi
 
       # ── C. Studio compatibility checks ──────────────────────────────────
-      - name: Run check:compatibility (compatibility.yaml validation)
-        run: pnpm run check:compatibility
+      - name: Run check:compatibility-contract (compatibility contract validation)
+        run: pnpm run check:compatibility-contract
 
       - name: Run compatibility summary script
         id: compat-script

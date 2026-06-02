@@ -6,7 +6,7 @@
 // Checks:
 //   1. packages/protocol-schemas is absent (migration guard)
 //   2. @oaslananka/kicad-protocol-schemas resolves from node_modules
-//   3. compatibility.yaml references kicad-mcp-pro and its compatibleExtension
+//   3. compatibility.yaml declares compatibleMcpPro range (extension → external MCP contract)
 //
 // Returns 0 on success, 1 on failure.
 
@@ -80,30 +80,14 @@ function checkCompatibilityYaml() {
   try {
     const raw = readFileSync(yamlPath, "utf8");
 
-    if (raw.includes("kicad-mcp-pro:")) {
-      ok("products.kicad-mcp-pro section present");
-    } else {
-      fail("kicad-mcp-pro", "section not found in compatibility.yaml");
-    }
-
-    if (raw.includes("compatibleExtension:")) {
-      ok("compatibleExtension range declared");
-    } else {
-      fail("compatibleExtension", "not found in kicad-mcp-pro section");
-    }
-
+    // kicad-mcp-pro is external (oaslananka/kicad-mcp); no local product section.
+    // The extension declares compatibleMcpPro range in kicad-studio section.
     if (raw.includes("compatibleMcpPro:")) {
-      ok("compatibleMcpPro range declared");
+      ok(
+        "kicad-studio.compatibleMcpPro range declared — extension → external MCP contract",
+      );
     } else {
       fail("compatibleMcpPro", "not found in kicad-studio section");
-    }
-
-    // Verify the kicad-mcp-pro section references a version
-    const mcpProMatch = raw.match(
-      /kicad-mcp-pro:\n\s+packagePath:.*\n\s+version: "([^"]+)"/,
-    );
-    if (mcpProMatch) {
-      ok(`kicad-mcp-pro version ${mcpProMatch[1]} in compatibility.yaml`);
     }
   } catch (err) {
     fail("read compatibility.yaml", err.message);
