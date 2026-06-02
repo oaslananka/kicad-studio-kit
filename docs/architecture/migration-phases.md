@@ -6,7 +6,7 @@ This checklist tracks the monorepo foundation work in reviewable phases. Each ph
 
 - [x] Keep one canonical GitHub repository.
 - [x] Preserve VS Code extension root at `apps/vscode-extension`.
-- [x] Preserve Python MCP server root at `packages/mcp-server`.
+- [x] Preserve Python MCP server root at `packages/mcp-server` (later split to separate repo — see [ADR-0009](../adr/0009-split-kicad-mcp-pro-into-separate-repository.md)).
 - [x] Preserve npm launcher root at `packages/mcp-npm`.
 - [x] Document the topology in `docs/architecture/repo-structure.md`.
 

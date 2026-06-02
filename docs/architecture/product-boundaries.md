@@ -4,10 +4,10 @@ The monorepo has three product workspaces, but the products must stay decoupled 
 
 ## Allowed dependencies
 
-| From                    | May depend on                                                                                                                                                      |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `apps/vscode-extension` | npm dependencies, VS Code APIs, KiCad CLI process calls, MCP protocol data, test harness in tests only                                                             |
-| `packages/mcp-server`   | Python dependencies, KiCad Python/CLI integrations, MCP protocol data (transitional — see [ADR-0009](../adr/0009-split-kicad-mcp-pro-into-separate-repository.md)) |
+| From                                                                            | May depend on                                                                                          |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `apps/vscode-extension`                                                         | npm dependencies, VS Code APIs, KiCad CLI process calls, MCP protocol data, test harness in tests only |
+| (removed — see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)) | Python dependencies, KiCad Python/CLI integrations, MCP protocol data                                  |
 
 | `packages/test-harness` | Node standard library and shared packages only |
 | future shared packages | external dependencies and other shared packages only |
@@ -27,9 +27,7 @@ The products integrate through MCP protocol and metadata:
 
 - `compatibility.yaml`
 - `apps/vscode-extension/src/mcp/compatibilityMatrix.ts`
-- `packages/mcp-server/src/kicad_mcp/compatibility.py`
-- `packages/mcp-server/mcp.json`
-- `packages/mcp-server/server.json`
+- `oaslananka/kicad-mcp` (source lives in the [kicad-mcp repo](https://github.com/oaslananka/kicad-mcp))
 - contract and compatibility checks
 
 Protocol changes must update both product surfaces and the compatibility validation scripts.

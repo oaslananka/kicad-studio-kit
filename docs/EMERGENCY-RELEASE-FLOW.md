@@ -40,12 +40,12 @@ A broken Python MCP server published to PyPI. Detection:
 - A deployed kicad-studio instance fails to connect to the MCP server.
 - Extension webview or panel reports "MCP connection error".
 
-**Root cause**: `packages/mcp-server` shipped with a logic regression,
+**Root cause**: `oaslananka/kicad-mcp` shipped with a logic regression,
 incompatible `compatibility.yaml` range, or protocol schema drift.
 
 ### A.3 Bad npm kicad-mcp-pro launcher
 
-A broken npm launcher published from `packages/mcp-npm` (now migrated to `oaslananka/kicad-mcp`). Detection:
+A broken npm launcher published from `oaslananka/kicad-mcp`. Detection:
 
 - `npm view kicad-mcp-pro` and `npm install kicad-mcp-pro` fail.
 - The cross-repo canary finds the launcher version but cannot invoke it.
@@ -196,13 +196,13 @@ echo "protocol-schemas:      <known-good>"  >> incident-evidence.md
 
 ### C.2 PyPI / TestPyPI (`kicad-mcp-pro`)
 
-| Action                        | Command / Procedure                                                                            |
-| ----------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Yank** (block new installs) | PyPI admin console → Release → Options → "Yank release". Existing installs continue.           |
-| **Pin in consuming repo**     | Tighten `compatibility.yaml`—`compatibleMcpPro` upper bound to `"<known-good"`                 |
-| **Publish fix**               | Bump `packages/mcp-server/pyproject.toml`, let Release Please + `publish-python.yml` handle it |
-| **Verify fix**                | Run cross-repo canary on the release PR branch                                                 |
-| **Un-yank**                   | PyPI admin console → Release → Options → "Un-yank release"                                     |
+| Action                        | Command / Procedure                                                                         |
+| ----------------------------- | ------------------------------------------------------------------------------------------- |
+| **Yank** (block new installs) | PyPI admin console → Release → Options → "Yank release". Existing installs continue.        |
+| **Pin in consuming repo**     | Tighten `compatibility.yaml`—`compatibleMcpPro` upper bound to `"<known-good"`              |
+| **Publish fix**               | Bump version in `oaslananka/kicad-mcp`, let Release Please + `publish-python.yml` handle it |
+| **Verify fix**                | Run cross-repo canary on the release PR branch                                              |
+| **Un-yank**                   | PyPI admin console → Release → Options → "Un-yank release"                                  |
 
 **What PyPI does NOT allow:**
 
@@ -373,12 +373,12 @@ document what happened, what was fixed, and what evidence was preserved.
 Issue #286 (simplify compatibility) and source cleanup are blocked on the
 emergency flow being in place. The following dependencies apply:
 
-| #286 task                              | Depends on                                   |
-| -------------------------------------- | -------------------------------------------- |
-| Remove deprecated compatibility fields | Emergency flow and runbook being operational |
-| Consolidate version sources            | Emergency flow and runbook being operational |
-| Delete packages/mcp-server             | Emergency flow consensus (not yet reached)   |
-| Merge cross-repo cleanup PRs           | Release path verified green after this flow  |
+| #286 task                              | Depends on                                         |
+| -------------------------------------- | -------------------------------------------------- |
+| Remove deprecated compatibility fields | Emergency flow and runbook being operational       |
+| Consolidate version sources            | Emergency flow and runbook being operational       |
+| Delete packages/mcp-server             | Completed — source moved to `oaslananka/kicad-mcp` |
+| Merge cross-repo cleanup PRs           | Release path verified green after this flow        |
 
 Approach for #286:
 
@@ -387,5 +387,4 @@ Approach for #286:
    runbook (pre-flight → publish → post-publish verification).
 3. Only then begin #286 cleanup, starting with small, reversible PRs
    (remove deprecated fields, consolidate sources).
-4. Do **not** delete or rename `packages/mcp-server`
-   in any #286 PR until emergency flow consensus is reached.
+4. `packages/mcp-server` has been removed — the source now lives in `oaslananka/kicad-mcp`.

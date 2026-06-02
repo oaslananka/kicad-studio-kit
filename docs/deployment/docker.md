@@ -6,7 +6,7 @@
 ghcr.io/oaslananka/kicad-mcp-pro
 ```
 
-The image is built from `packages/mcp-server/Dockerfile`, runs as a non-root
+The image is built from the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository, runs as a non-root
 user, exposes `3334/tcp`, and starts `kicad-mcp-pro --transport
 streamable-http` by default. Inside the container it binds to `0.0.0.0` so
 Docker port publishing can reach the server; keep the published host port bound
@@ -75,7 +75,7 @@ Set `KICAD_PROJECT_DIR` to mount a project other than the bundled LED example.
 
 The published image keeps KiCad external. Local derivative images can install
 the Alpine KiCad package with `--build-arg KICAD_CLI_APK_PACKAGE=kicad`, or can
-use `packages/mcp-server/Dockerfile.kicad10` with an official KiCad 10 AppImage
+use `Dockerfile.kicad10` from the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository with an official KiCad 10 AppImage
 URL.
 
 Redistributing an image that bundles KiCad CLI adds KiCad's upstream license

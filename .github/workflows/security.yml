@@ -34,13 +34,11 @@ jobs:
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
         with:
           enable-cache: true
-          version-file: packages/mcp-server/uv.toml
+
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
-      - run: uv sync --all-extras --frozen --project packages/mcp-server
       - run: corepack pnpm run check:forbidden-refs
       - run: corepack pnpm audit --audit-level high
-      - run: corepack pnpm --dir packages/mcp-server run security
 
   extension-security-regressions:
     runs-on: ubuntu-24.04

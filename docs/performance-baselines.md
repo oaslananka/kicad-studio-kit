@@ -10,11 +10,11 @@ regressions before they merge.
 
 The catalog uses one tolerance policy for every metric:
 
-| Measurement result          | Checker behavior                                      |
-| --------------------------- | ----------------------------------------------------- |
-| At or below 110% baseline   | Pass.                                                 |
-| Above 110% baseline         | Report a drift warning in the budget result artifact. |
-| Above 120% baseline         | Fail the budget check.                                |
+| Measurement result        | Checker behavior                                      |
+| ------------------------- | ----------------------------------------------------- |
+| At or below 110% baseline | Pass.                                                 |
+| Above 110% baseline       | Report a drift warning in the budget result artifact. |
+| Above 120% baseline       | Fail the budget check.                                |
 
 Measured data must name a catalog metric, keep its unit, and carry a positive
 value. CI-required metrics fail closed when a producer does not emit them.
@@ -24,7 +24,7 @@ value. CI-required metrics fail closed when a producer does not emit them.
 PR enforcement uses the GitHub-hosted `ubuntu-24.04` x64 runner from
 `.github/workflows/ci.yml` as the reference machine. That lane reads the
 repository-pinned Node version from `.node-version` and the MCP Python toolchain
-selection from `packages/mcp-server/uv.toml`.
+selection from the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
 
 The catalog still records platform-specific activation budgets for Windows and
 macOS/Linux because those budgets are product requirements. Cross-platform
@@ -33,8 +33,8 @@ their artifacts before they set another metric to `ciRequired`.
 
 The current catalog covers these surfaces:
 
-| Surface      | Metrics                                                                      |
-| ------------ | ---------------------------------------------------------------------------- |
+| Surface      | Metrics                                                                       |
+| ------------ | ----------------------------------------------------------------------------- |
 | Activation   | Cold Windows, cold POSIX, and warm extension activation                       |
 | Project scan | Single-project, medium workspace, and large workspace scan                    |
 | Viewer       | Schematic first render, PCB first render, large PCB first render, and reload  |
@@ -69,9 +69,7 @@ their combined budget report with:
 ```bash
 KICAD_EXTENSION_PERFORMANCE_MEASUREMENTS_JSON=performance-results/extension-performance.json \
   corepack pnpm --filter kicadstudiokit run test:perf
-KICAD_PERFORMANCE_MEASUREMENTS_JSON=performance-results/mcp-tools-list.json \
-  uv run --project packages/mcp-server --all-extras \
-  pytest packages/mcp-server/tests/unit/test_benchmark_latency.py
+KICAD_PERFORMANCE_MEASUREMENTS_JSON=performance-results/mcp-tools-list.json
 node scripts/check-performance-budgets.mjs \
   --measurements performance-results/extension-performance.json \
   --measurements performance-results/mcp-tools-list.json \
@@ -91,11 +89,11 @@ request and on pushes to `main`. Its reference environment is the GitHub-hosted
 
 The job uploads `performance-budget-artifacts` for 14 days:
 
-| Artifact path                                      | Contents                                              |
-| -------------------------------------------------- | ----------------------------------------------------- |
-| `performance-results/extension-performance.json`   | Raw extension host, viewer, parser, and cancel samples. |
-| `performance-results/mcp-tools-list.json`          | Raw MCP samples and the p95 measurement.              |
-| `performance-results/budget-report.json`           | Budget thresholds and checker result for each metric. |
+| Artifact path                                    | Contents                                                |
+| ------------------------------------------------ | ------------------------------------------------------- |
+| `performance-results/extension-performance.json` | Raw extension host, viewer, parser, and cancel samples. |
+| `performance-results/mcp-tools-list.json`        | Raw MCP samples and the p95 measurement.                |
+| `performance-results/budget-report.json`         | Budget thresholds and checker result for each metric.   |
 
 Keep reports from the relevant PR when investigating drift. Trend dashboards
 can consume the same JSON without coupling the producer to a hosted service.

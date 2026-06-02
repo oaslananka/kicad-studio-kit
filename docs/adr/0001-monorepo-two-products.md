@@ -25,11 +25,11 @@ This follows the pnpm convention (`apps/` for deployable applications,
 
 Adopt the following monorepo topology as binding policy:
 
-| Path                    | Role                          | Published                 |
-| ----------------------- | ----------------------------- | ------------------------- |
-| `apps/vscode-extension` | VS Code / Open VSX extension  | VSIX                      |
-| `packages/mcp-server`   | Python MCP server             | sdist/wheel, MCP Registry |
-| `packages/test-harness` | Private shared test utilities | Never                     |
+| Path                            | Role                                                                                         | Published                 |
+| ------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------- |
+| `apps/vscode-extension`         | VS Code / Open VSX extension                                                                 | VSIX                      |
+| `packages/mcp-server` (removed) | Python MCP server (moved to [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)) | sdist/wheel, MCP Registry |
+| `packages/test-harness`         | Private shared test utilities                                                                | Never                     |
 
 Additional rules:
 

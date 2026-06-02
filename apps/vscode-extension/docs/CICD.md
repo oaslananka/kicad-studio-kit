@@ -6,7 +6,7 @@ KiCad Studio Kit uses `https://github.com/oaslananka/kicad-studio-kit` as the on
 
 - Canonical repository: `https://github.com/oaslananka/kicad-studio-kit`
 - VS Code extension package root: `apps/vscode-extension`
-- Python MCP package root: `packages/mcp-server`
+- Python MCP package root: [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) (removed from this monorepo)
 - npm launcher package root: `packages/mcp-npm` (now migrated to `oaslananka/kicad-mcp`).
 
 ## Trigger Policy

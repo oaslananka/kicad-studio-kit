@@ -8,7 +8,6 @@ does that.
 ## Project Shape
 
 - `apps/vscode-extension` contains the VS Code extension.
-- `packages/mcp-server` contains the Python `kicad-mcp-pro` MCP server.
 - `packages/test-harness` contains private shared test helpers.
 
 ## Coding Rules
@@ -52,7 +51,7 @@ corepack pnpm run build
 corepack pnpm run verify:dist
 ```
 
-For MCP server or Python changes, also run the Python validation documented in
+For Python changes, also run the Python validation documented in
 `AGENTS.md`.
 
 ## MCP Defaults

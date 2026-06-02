@@ -64,7 +64,6 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
     mkdirSync(path.join(repoRoot, "apps/vscode-extension/node_modules/.bin"), {
       recursive: true,
     });
-    mkdirSync(path.join(repoRoot, "packages/mcp-server"), { recursive: true });
     mkdirSync(path.join(repoRoot, "packages/kicad-fixtures"), {
       recursive: true,
     });
@@ -80,7 +79,6 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
             "dev:doctor": "node scripts/dev-doctor.mjs",
             "check:dev-doctor": "node scripts/dev-doctor.mjs --ci --strict",
             "check:kicad-studio": "pnpm --filter kicadstudiokit run check",
-            "check:kicad-mcp-pro": "pnpm --dir packages/mcp-server run check",
             "check:mcp-npm": "pnpm --dir packages/mcp-npm run check",
             "check:fixtures":
               "node scripts/generate-kicad-fixture-corpus.mjs --check && node --test scripts/check-kicad-fixtures-package.test.mjs && pnpm --dir packages/kicad-fixtures run check",
@@ -88,8 +86,6 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
               "pnpm --dir packages/kicad-fixtures run check",
             "check:protocol-schemas":
               "node --test scripts/check-protocol-schemas-package.test.mjs && node -e \"console.log(require.resolve('@oaslananka/kicad-protocol-schemas/package.json'))\"",
-            "test:contract":
-              "pnpm --dir packages/mcp-server run test:transport-contract",
           },
         },
         null,

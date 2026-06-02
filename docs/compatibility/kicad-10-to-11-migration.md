@@ -26,19 +26,21 @@ matrix that maps user-facing MCP tools to tests and canary probes.
 Production code must not import or call the legacy SWIG Python `pcbnew` module.
 The only repository allowlist entries are:
 
-- `packages/mcp-server/scripts/check_no_pcbnew.py`, because it names the
+- The `check_no_pcbnew.py` guard in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp), because it names the
   forbidden API while enforcing the guard.
-- `packages/mcp-server/tests/**`, because tests may construct examples that
+- The test suite in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp), because tests may construct examples that
   prove the guard fails.
 
 Run the guard locally:
 
 ```bash
-uv run --project packages/mcp-server --all-extras python packages/mcp-server/scripts/check_no_pcbnew.py
+# Run from the oaslananka/kicad-mcp repository
+uv run python scripts/check_no_pcbnew.py
 ```
 
 ```powershell
-uv run --project packages/mcp-server --all-extras python packages/mcp-server/scripts/check_no_pcbnew.py
+# Run from the oaslananka/kicad-mcp repository
+uv run python scripts/check_no_pcbnew.py
 ```
 
 ## Manual KiCad 11 Smoke Path

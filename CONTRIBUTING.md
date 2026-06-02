@@ -30,10 +30,9 @@ corepack pnpm run build:kicad-studio
 corepack pnpm run package:kicad-studio
 ```
 
-For MCP server work (transitional — canonical source at [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)):
+For MCP server work (source at [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)):
 
 ```bash
-uv sync --all-extras --frozen --project packages/mcp-server
 corepack pnpm run check:kicad-mcp-pro
 corepack pnpm run test:kicad-mcp-pro
 corepack pnpm run build:kicad-mcp-pro
@@ -110,7 +109,7 @@ CODEOWNERS review should match the changed paths:
 - `.github/` for CI, release, labels, and governance.
 - `docs/architecture/` for architecture and release model.
 - `apps/vscode-extension/` for KiCad Studio extension work.
-- `packages/mcp-server/` for KiCad MCP Pro server and MCP Registry metadata (transitional — canonical source is [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)).
+- `packages/mcp-server/` (removed — see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)) for KiCad MCP Pro server and MCP Registry metadata (canonical source at [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)).
 - `packages/test-harness/` for shared test-only fixtures, mocks, golden
   assertions, temporary workspaces, and MCP/webview helpers.
 - `examples/` for user-facing KiCad examples.

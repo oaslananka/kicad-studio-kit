@@ -3,7 +3,7 @@
 The repository is split by release surface:
 
 - `apps/vscode-extension`: VS Code and Open VSX extension root.
-- `packages/mcp-server`: Python package and MCP Registry source of truth (transitional — canonical source at [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)).
+- (removed — MCP server source now at [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)).
 
 Root metadata only orchestrates workspace checks, release automation, documentation, and publish workflows.
 

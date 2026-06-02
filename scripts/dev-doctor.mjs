@@ -242,26 +242,15 @@ function workspaceScriptsCheck(packageJson) {
     "dev:doctor": "node scripts/dev-doctor.mjs",
     "check:dev-doctor": "node scripts/dev-doctor.mjs --ci --strict",
     "check:kicad-studio": "pnpm --filter kicadstudiokit run check",
-    "check:kicad-mcp-pro": "pnpm --dir packages/mcp-server run check",
-
     "check:fixtures":
       "node scripts/generate-kicad-fixture-corpus.mjs --check && node --test scripts/check-kicad-fixtures-package.test.mjs && pnpm --dir packages/kicad-fixtures run check",
     "check:kicad-fixtures": "pnpm --dir packages/kicad-fixtures run check",
     "check:protocol-schemas":
       "node --test scripts/check-protocol-schemas-package.test.mjs && node --input-type=module -e \"import pkg from '@oaslananka/kicad-protocol-schemas'; console.log('protocol-schemas resolves OK:', typeof pkg.readSchema === 'function' ? 'readSchema present' : 'readSchema missing')\"",
   };
-  const includesScripts = {
-    "test:contract":
-      "pnpm --dir packages/mcp-server run test:transport-contract",
-  };
   const missing = Object.entries(exactScripts)
     .filter(([name, expected]) => scripts[name] !== expected)
     .map(([name]) => name);
-  missing.push(
-    ...Object.entries(includesScripts)
-      .filter(([name, expected]) => !scripts[name]?.includes(expected))
-      .map(([name]) => name),
-  );
 
   return makeCheck({
     id: "workspace-scripts",
@@ -599,33 +588,6 @@ export async function createDoctorReport(
     }),
   );
 
-  const mcpWorkspace = run(
-    "uv",
-    [
-      "run",
-      "--project",
-      "packages/mcp-server",
-      "--all-extras",
-      "python",
-      "-c",
-      "import kicad_mcp; print('kicad_mcp import ok')",
-    ],
-    commandOptions,
-  );
-  checks.push(
-    makeCheck({
-      id: "mcp-workspace",
-      label: "uv resolves MCP server workspace",
-      category: "workspace",
-      required: true,
-      ok: mcpWorkspace.ok,
-      detail: firstLine(
-        mcpWorkspace.stdout || mcpWorkspace.stderr || mcpWorkspace.error || "",
-      ),
-      hint: "Run `uv sync --all-extras --frozen --project packages/mcp-server`.",
-    }),
-  );
-
   const kicad = run("kicad-cli", ["version"], commandOptions);
   const kicadDetail = firstLine(
     kicad.stdout || kicad.stderr || kicad.error || "",
@@ -643,82 +605,6 @@ export async function createDoctorReport(
   );
 
   checks.push(extensionDependenciesCheck(repoRoot));
-
-  const mcpHelp = run(
-    "uv",
-    [
-      "run",
-      "--project",
-      "packages/mcp-server",
-      "--all-extras",
-      "kicad-mcp-pro",
-      "--help",
-    ],
-    commandOptions,
-  );
-  checks.push(
-    makeCheck({
-      id: "mcp-help",
-      label: "kicad-mcp-pro --help",
-      category: "mcp",
-      required: true,
-      ok: mcpHelp.ok,
-      detail: firstLine(
-        mcpHelp.stdout || mcpHelp.stderr || mcpHelp.error || "",
-      ),
-      hint: "Run `uv sync --all-extras --frozen --project packages/mcp-server`.",
-    }),
-  );
-
-  const mcpVersion = run(
-    "uv",
-    [
-      "run",
-      "--project",
-      "packages/mcp-server",
-      "--all-extras",
-      "kicad-mcp-pro",
-      "version",
-      "--json",
-    ],
-    commandOptions,
-  );
-  checks.push(
-    makeCheck({
-      id: "mcp-version",
-      label: "kicad-mcp-pro version",
-      category: "mcp",
-      required: true,
-      ok: mcpVersion.ok,
-      detail: mcpVersionDetail(mcpVersion),
-      hint: "Verify the MCP server CLI can report version metadata.",
-    }),
-  );
-
-  const mcpDoctor = run(
-    "uv",
-    [
-      "run",
-      "--project",
-      "packages/mcp-server",
-      "--all-extras",
-      "kicad-mcp-pro",
-      "doctor",
-      "--json",
-    ],
-    commandOptions,
-  );
-  checks.push(
-    makeCheck({
-      id: "mcp-doctor",
-      label: "kicad-mcp-pro doctor",
-      category: "mcp",
-      required: true,
-      ok: mcpDoctor.ok,
-      detail: mcpDoctorDetail(mcpDoctor),
-      hint: "Run `uv run --project packages/mcp-server --all-extras kicad-mcp-pro doctor --json`.",
-    }),
-  );
 
   checks.push(
     commandCheck(

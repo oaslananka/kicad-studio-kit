@@ -14,7 +14,7 @@ npm view 'kicad-mcp-pro@3.5.2' version --json
 python -m pip index versions kicad-mcp-pro
 ```
 
-If the target version from `packages/mcp-server/pyproject.toml` already exists on a target registry, the publish preflight must fail. Do not automatically bump the version.
+If the target version already exists on a target registry, the publish preflight must fail. Do not automatically bump the version.
 
 Before publishing, run `corepack pnpm run check:compatibility` and confirm `compatibility.yaml` matches the release notes and [support matrix](support-matrix.md).
 
@@ -24,13 +24,12 @@ Run the product-specific dry-run before merging release PRs or release tooling c
 
 ```bash
 corepack pnpm run release:dry-run:kicad-studio
-corepack pnpm run release:dry-run:kicad-mcp-pro
 corepack pnpm run release:dry-run
 ```
 
 `release:dry-run:kicad-studio` validates the extension release-please package path, product changelog path, component tag naming, and that the extension is not linked to the MCP product version.
 
-`release:dry-run:kicad-mcp-pro` validates MCP metadata synchronization, MCP release preflight, and compatibility metadata. The Python package is the only remaining kicad-mcp-pro artifact.
+`release:dry-run:kicad-mcp-pro` is now run from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
 
 Protocol or tool-schema changes must update compatibility metadata and release notes for both products before publishing.
 
@@ -56,40 +55,9 @@ Do not configure package registry tokens for PyPI, TestPyPI, or npm. Those publi
 
 ## Trusted Publisher Setup
 
-PyPI:
+PyPI and TestPyPI are now configured and published from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
 
-- owner: `oaslananka`
-- repository: `kicad-studio-kit`
-- workflow: `publish-python.yml`
-- environment: `pypi`
-- package: `kicad-mcp-pro`
-- authentication: PyPI Trusted Publishing through GitHub OIDC
-- provenance: `pypa/gh-action-pypi-publish` uploads PyPI attestations with
-  `attestations: true`
-
-TestPyPI:
-
-- owner: `oaslananka`
-- repository: `kicad-studio-kit`
-- workflow: `publish-python.yml`
-- environment: `testpypi`
-- package: `kicad-mcp-pro`
-- authentication: TestPyPI Trusted Publishing through GitHub OIDC
-- provenance: `pypa/gh-action-pypi-publish` uploads PyPI attestations with
-  `attestations: true`
-
-Npm:
-
-- package: `kicad-mcp-pro`
-- provider: GitHub Actions
-- organization/user: `oaslananka`
-- repository: `kicad-studio-kit`
-- workflow filename: `publish-npm.yml`
-- environment: `npm`
-- runner: GitHub-hosted `ubuntu-24.04`
-- provenance: npm trusted publishing automatically emits provenance for public
-  packages from public GitHub repositories; the workflow keeps
-  `npm publish --provenance` as an explicit release guard.
+Npm publishes for `kicad-mcp-pro` are now managed from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
 
 Open VSX:
 
@@ -116,16 +84,15 @@ VS Code Marketplace:
 MCP Registry:
 
 - server name: `io.github.oaslananka/kicad-mcp-pro`
-- repo: `oaslananka/kicad-studio-kit`
-- workflow: `publish-mcp-registry.yml`
+- repo: `oaslananka/kicad-mcp`
+- workflow: `publish-mcp-registry.yml` (in kicad-mcp repo)
 - auth: GitHub OIDC
-- server.json path: `packages/mcp-server/server.json`
 
 GHCR:
 
 - image: `ghcr.io/oaslananka/kicad-mcp-pro`
-- repo: `oaslananka/kicad-studio-kit`
-- workflow: `publish-mcp-container.yml`
+- repo: `oaslananka/kicad-mcp`
+- workflow: `publish-mcp-container.yml` (in kicad-mcp repo)
 - environment: `ghcr`
 - auth: built-in `GITHUB_TOKEN` with `packages: write`
 - signing: keyless Sigstore `cosign` with GitHub OIDC

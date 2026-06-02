@@ -19,12 +19,12 @@ contract-first integration model (ADR 0002).
 
 Adopt strict product dependency boundaries as binding policy:
 
-| From                    | May depend on                                                                                  |
-| ----------------------- | ---------------------------------------------------------------------------------------------- |
-| `apps/vscode-extension` | npm deps, VS Code APIs, KiCad CLI process calls, MCP protocol data, test harness in tests only |
-| `packages/mcp-server`   | Python deps, KiCad Python/CLI integrations, MCP protocol data                                  |
-| `packages/test-harness` | Node stdlib and shared packages only                                                           |
-| Future shared packages  | External deps and other shared packages only                                                   |
+| From                                   | May depend on                                                                                  |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `apps/vscode-extension`                | npm deps, VS Code APIs, KiCad CLI process calls, MCP protocol data, test harness in tests only |
+| (removed — see `oaslananka/kicad-mcp`) | Python deps, KiCad Python/CLI integrations, MCP protocol data                                  |
+| `packages/test-harness`                | Node stdlib and shared packages only                                                           |
+| Future shared packages                 | External deps and other shared packages only                                                   |
 
 Explicitly forbidden:
 

@@ -8,7 +8,7 @@ system and operator instructions first, then these repo rules.
 - Canonical repo: `oaslananka/kicad-studio-kit`.
 - Product surfaces:
   - `apps/vscode-extension`: KiCad Studio VS Code extension.
-  - `packages/mcp-server`: `kicad-mcp-pro` Python MCP server.
+  - `packages/mcp-server` (removed — see `oaslananka/kicad-mcp`): `kicad-mcp-pro` Python MCP server.
 
   - `packages/test-harness`: private shared test utilities.
 
@@ -29,7 +29,7 @@ files. For repo-wide orientation, start with:
 - `docs/testing-strategy.md`
 - `docs/support-matrix.md`
 - `docs/release.md`
-- `packages/mcp-server/docs/client-configuration.md`
+- MCP server docs (see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp))
 - `docs/agents/client-configs.md`
 - `docs/agents/codex-support.md`
 - `docs/architecture/protocol-change-checklist.md`
@@ -60,21 +60,7 @@ corepack pnpm run build
 corepack pnpm run verify:dist
 ```
 
-When Python or MCP server code changes, also run:
-
-Linux/macOS:
-
-```bash
-uv sync --all-extras --frozen --project packages/mcp-server
-uv run --project packages/mcp-server --all-extras pytest
-```
-
-Windows PowerShell:
-
-```powershell
-uv sync --all-extras --frozen --project packages/mcp-server
-uv run --project packages/mcp-server --all-extras pytest
-```
+Python/MCP server tests now run from the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
 
 Repo-policy checks that are often relevant:
 

@@ -56,15 +56,6 @@
             "context": "vscode-extension (macos-15)"
           },
           {
-            "context": "mcp-server (ubuntu-24.04)"
-          },
-          {
-            "context": "mcp-server (windows-2025-vs2026)"
-          },
-          {
-            "context": "mcp-server (macos-15)"
-          },
-          {
             "context": "real-pair-compatibility"
           },
           {

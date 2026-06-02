@@ -30,9 +30,9 @@ kicad-mcp (external repo)
 | Release surface      | Repository                    | Artifact(s)                          | Published from |
 | -------------------- | ----------------------------- | ------------------------------------ | -------------- |
 | Protocol schemas     | `oaslananka/kicad-mcp`        | `@oaslananka/kicad-protocol-schemas` | npm            |
-| MCP server (Python)  | `oaslananka/kicad-studio-kit` | `kicad-mcp-pro` (PyPI)               | GitHub Actions |
-| MCP container        | `oaslananka/kicad-studio-kit` | `ghcr.io/oaslananka/kicad-mcp-pro`   | GitHub Actions |
-| MCP Registry listing | `oaslananka/kicad-studio-kit` | registry metadata                    | GitHub Actions |
+| MCP server (Python)  | `oaslananka/kicad-mcp`        | `kicad-mcp-pro` (PyPI)               | GitHub Actions |
+| MCP container        | `oaslananka/kicad-mcp`        | `ghcr.io/oaslananka/kicad-mcp-pro`   | GitHub Actions |
+| MCP Registry listing | `oaslananka/kicad-mcp`        | registry metadata                    | GitHub Actions |
 | VS Code extension    | `oaslananka/kicad-studio-kit` | VSIX (Marketplace + Open VSX)        | GitHub Actions |
 
 ### A.2 Sequencing rules
@@ -60,7 +60,7 @@ incompatible):
 
 ### A.3 Version-linked MCP product
 
-The Python MCP server (`packages/mcp-server`) is the only remaining kicad-mcp-pro source path. It was formerly version-linked with the npm launcher through Release Please `linked-versions`, which is no longer in use.
+The Python MCP server source has moved to [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp). It was formerly version-linked with the npm launcher through Release Please `linked-versions`, which is no longer in use.
 
 The VS Code extension is **not** version-linked to the MCP product. It
 releases independently from its own Release Please PR.
@@ -72,7 +72,7 @@ releases independently from its own Release Please PR.
 | Artifact                                          | Owned by                            | Release trigger                                         |
 | ------------------------------------------------- | ----------------------------------- | ------------------------------------------------------- |
 | `@oaslananka/kicad-protocol-schemas`              | `oaslananka/kicad-mcp`              | Tag push in kicad-mcp                                   |
-| PyPI `kicad-mcp-pro`                              | This repo (`packages/mcp-server`)   | Release Please + `publish-python.yml`                   |
+| PyPI `kicad-mcp-pro`                              | `oaslananka/kicad-mcp`              | Release Please + `publish-python.yml`                   |
 | `ghcr.io/oaslananka/kicad-mcp-pro`                | This repo                           | MCP server GitHub Release + `publish-mcp-container.yml` |
 | MCP Registry `io.github.oaslananka/kicad-mcp-pro` | This repo                           | MCP server GitHub Release + `publish-mcp-registry.yml`  |
 | VS Code Marketplace `oaslananka.kicadstudiokit`   | This repo (`apps/vscode-extension`) | Release Please + `publish-extension.yml`                |
@@ -143,13 +143,12 @@ See [Product Dry Runs](publishing.md#product-dry-runs) for what each validates.
 
 ### C.3 Pre-publish checks (per release PR)
 
-**For a kicad-mcp-pro release PR:**
+**For a kicad-mcp-pro release PR (in `oaslananka/kicad-mcp`):**
 
 - [ ] `pyproject.toml` version bumped (Release Please handles this).
 - [ ] `CHANGELOG.md` written (Release Please handles this).
 - [ ] `compatibility.yaml` ranges reflect the new version.
-- [ ] `packages/mcp-server/server.json` metadata matches the new version.
-- [ ] `packages/mcp-server/mcp.json` metadata matches.
+- [ ] Server metadata matches the new version.
 - [ ] `docs/support-matrix.md` updated if KiCad, VS Code, MCP protocol,
       Node, pnpm, Python, or tool-schema support changed.
 - [ ] Cross-repo compatibility canary passes on the release PR branch.

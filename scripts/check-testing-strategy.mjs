@@ -35,7 +35,6 @@ const requiredPhrases = [
   "corepack pnpm run test:kicad-studio",
   "corepack pnpm run build:kicad-studio",
   "corepack pnpm run package:kicad-studio",
-  "uv sync --all-extras --frozen --project packages/mcp-server",
   "corepack pnpm run check:kicad-mcp-pro",
   "corepack pnpm run test:kicad-mcp-pro",
   "corepack pnpm run build:kicad-mcp-pro",

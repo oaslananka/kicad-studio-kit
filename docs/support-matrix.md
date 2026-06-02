@@ -11,31 +11,31 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 
 ### Runtime Baseline
 
-| Runtime | Policy |
-| --- | --- |
-| KiCad primary | `10.0.x` |
-| KiCad latest verified | `10.0.3` |
-| VS Code minimum | `1.120.0` |
-| Node | `>=24.11.0 <25` |
-| pnpm | `>=11.0.0 <12` |
-| Python | `>=3.13` |
-| MCP protocol | `2025-11-25` |
-| MCP protocol (next) | `2026-07-28` |
+| Runtime               | Policy          |
+| --------------------- | --------------- |
+| KiCad primary         | `10.0.x`        |
+| KiCad latest verified | `10.0.3`        |
+| VS Code minimum       | `1.120.0`       |
+| Node                  | `>=24.11.0 <25` |
+| pnpm                  | `>=11.0.0 <12`  |
+| Python                | `>=3.13`        |
+| MCP protocol          | `2025-11-25`    |
+| MCP protocol (next)   | `2026-07-28`    |
 
 ### KiCad Support
 
-| Range | State | CI | Notes |
-| --- | --- | --- | --- |
-| 10.0.x | primary | required | Primary optimized KiCad CLI and file-format target. |
-| 9.x | deprecated | scheduled | Upstream KiCad 9.x is no longer actively maintained; core workflows remain best-effort while scheduled canaries gather removal evidence. |
-| 8.x | deprecated | manual | File-level read and migration support only; removal requires a release note. |
+| Range  | State      | CI        | Notes                                                                                                                                    |
+| ------ | ---------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 10.0.x | primary    | required  | Primary optimized KiCad CLI and file-format target.                                                                                      |
+| 9.x    | deprecated | scheduled | Upstream KiCad 9.x is no longer actively maintained; core workflows remain best-effort while scheduled canaries gather removal evidence. |
+| 8.x    | deprecated | manual    | File-level read and migration support only; removal requires a release note.                                                             |
 
 ### Product Versions
 
-| Product | Version | Manifest | Compatibility range |
-| --- | --- | --- | --- |
-| kicad-studio | 1.1.0 | apps/vscode-extension/package.json | &gt;=3.5.2 &lt;4.0.0 |
-| kicad-mcp-pro | 3.6.0 | packages/mcp-server/pyproject.toml | &gt;=1.0.0 &lt;2.0.0 |
+| Product       | Version | Manifest                           | Compatibility range  |
+| ------------- | ------- | ---------------------------------- | -------------------- |
+| kicad-studio  | 1.1.0   | apps/vscode-extension/package.json | &gt;=3.5.2 &lt;4.0.0 |
+| kicad-mcp-pro | 3.6.0   | oaslananka/kicad-mcp               | &gt;=1.0.0 &lt;2.0.0 |
 
 ### Release Gate Inputs
 
@@ -106,15 +106,15 @@ KiCad 11 is not a primary support target yet. The readiness contract is tracked
 separately from the current KiCad 10.0.x support boundary so release gates keep
 protecting users on the stable line while maintainers test the next major line.
 
-| Readiness item         | Current contract                                                                                   |
-| ---------------------- | -------------------------------------------------------------------------------------------------- |
-| Stable baseline        | KiCad 10.0.x remains primary and release-blocking.                                                 |
-| Direct SWIG imports    | Production `pcbnew` imports are forbidden by `packages/mcp-server/scripts/check_no_pcbnew.py`.     |
-| Allowed `pcbnew` paths | Only the guard script and `packages/mcp-server/tests/**`.                                          |
-| IPC parity matrix      | `compatibility.yaml` `kicadIpcReadiness.ipcApi.requiredFor`.                                       |
-| Current nightly smoke  | `corepack pnpm run test:kicad-cli-contract:nightly` with a configured nightly `kicad-cli`.         |
-| KiCad 11 RC smoke      | `corepack pnpm run test:kicad-cli-contract:future` once the installed prerelease reports `11.0.x`. |
-| Migration guide        | [`docs/compatibility/kicad-10-to-11-migration.md`](compatibility/kicad-10-to-11-migration.md).     |
+| Readiness item         | Current contract                                                                                                                           |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Stable baseline        | KiCad 10.0.x remains primary and release-blocking.                                                                                         |
+| Direct SWIG imports    | Production `pcbnew` imports are forbidden by a guard script in the [`oaslananka/kicad-mcp`](https://github.com/oaslananka/kicad-mcp) repo. |
+| Allowed `pcbnew` paths | Guarded by the kicad-mcp repository.                                                                                                       |
+| IPC parity matrix      | `compatibility.yaml` `kicadIpcReadiness.ipcApi.requiredFor`.                                                                               |
+| Current nightly smoke  | `corepack pnpm run test:kicad-cli-contract:nightly` with a configured nightly `kicad-cli`.                                                 |
+| KiCad 11 RC smoke      | `corepack pnpm run test:kicad-cli-contract:future` once the installed prerelease reports `11.0.x`.                                         |
+| Migration guide        | [`docs/compatibility/kicad-10-to-11-migration.md`](compatibility/kicad-10-to-11-migration.md).                                             |
 
 Status surfaces:
 
@@ -185,12 +185,11 @@ VS Code:
 
 Python:
 
-- `packages/mcp-server/pyproject.toml` `requires-python` is the MCP server install-time floor.
+- `requires-python` in the kicad-mcp-pro source (see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)) is the MCP server install-time floor.
 - The supported Python window is two minor versions wide for the current stable product line.
-- The current 1.0.x line tracks the official two-minor bugfix window: Python 3.13 and 3.14.
+- The current product line tracks the official two-minor bugfix window: Python 3.13 and 3.14.
   The drift workflow opens a tracking issue when the official bugfix window moves again.
-- Lowering the floor is blocked in CI unless `packages/mcp-server/CHANGELOG.md` changes in the
-  same PR with compatibility context.
+- Lowering the floor is blocked in CI unless the MCP server changelog changes in the same PR with compatibility context.
 
 KiCad:
 
@@ -209,8 +208,7 @@ Authoritative drift sources are declared in `compatibility.yaml` under `runtimeP
 
 ## Automated Drift Detection
 
-Runtime drift is enforced by `packages/mcp-server/scripts/runtime_policy.py` and
-`.github/workflows/runtime-drift.yml`.
+Runtime drift is enforced by scripts in the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
 
 Pull requests run local policy checks that:
 
@@ -231,9 +229,6 @@ Run the compatibility gate before any release PR is merged:
 
 ```powershell
 corepack pnpm run check:compatibility
-Push-Location packages/mcp-server
-corepack pnpm run release:check
-Pop-Location
 ```
 
 The gate fails when:

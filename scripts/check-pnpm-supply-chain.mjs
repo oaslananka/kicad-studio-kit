@@ -116,7 +116,6 @@ function validateSecurityWorkflow(errors, workflow) {
     "pull_request:",
     "schedule:",
     "corepack pnpm audit --audit-level high",
-    "corepack pnpm --dir packages/mcp-server run security",
   ]) {
     assertCondition(
       errors,
@@ -133,35 +132,10 @@ function sameStringList(actual, expected) {
   return expected.every((value, index) => actual[index] === value);
 }
 
-function validateMcpSecurityScripts(errors, packageJson) {
-  const scripts = packageJson?.scripts ?? {};
-  assertCondition(
-    errors,
-    scripts.security ===
-      "corepack pnpm run security:bandit && corepack pnpm run security:audit",
-    "packages/mcp-server package.json must run bandit and audit in security",
-  );
-  assertCondition(
-    errors,
-    Boolean(scripts["security:bandit"]),
-    "security:bandit must exist",
-  );
-  assertCondition(
-    errors,
-    Boolean(scripts["security:audit"]),
-    "security:audit must exist",
-  );
-}
-
 export function validatePnpmSupplyChain(repoRoot = DEFAULT_REPO_ROOT) {
   const errors = [];
   const workspace = readYaml(repoRoot, "pnpm-workspace.yaml", errors);
   const rootPackage = readJson(repoRoot, "package.json", errors);
-  const mcpPackage = readJson(
-    repoRoot,
-    "packages/mcp-server/package.json",
-    errors,
-  );
   const npmrc = readText(repoRoot, ".npmrc", errors, { optional: true });
   const securityWorkflow = readText(
     repoRoot,
@@ -171,7 +145,6 @@ export function validatePnpmSupplyChain(repoRoot = DEFAULT_REPO_ROOT) {
 
   validateWorkspace(errors, workspace);
   validatePackageJson(errors, rootPackage);
-  validateMcpSecurityScripts(errors, mcpPackage);
   validateNpmrc(errors, npmrc);
   validateSecurityWorkflow(errors, securityWorkflow);
 

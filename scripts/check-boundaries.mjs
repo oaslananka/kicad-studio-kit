@@ -17,40 +17,21 @@ const WORKSPACES = [
     path: "apps/vscode-extension",
     sourceRoots: ["src", "test", "scripts"],
     productionSourceRoots: ["src"],
-    forbiddenTokens: ["packages/mcp-server/src", "packages/kicad-fixtures/src"],
+    forbiddenTokens: ["packages/kicad-fixtures/src"],
     forbiddenModules: [/^kicad_mcp(?:\.|$)/],
-  },
-  {
-    name: "mcp-server",
-    path: "packages/mcp-server",
-    sourceRoots: ["src", "tests", "scripts"],
-    productionSourceRoots: ["src"],
-    forbiddenTokens: [
-      "apps/vscode-extension/src",
-      "packages/kicad-fixtures/src",
-    ],
-    forbiddenModules: [/^kicadstudio(?:\/|$)/],
   },
   {
     name: "test-harness",
     path: "packages/test-harness",
     sourceRoots: ["src", "test"],
-    forbiddenTokens: [
-      "apps/vscode-extension/src",
-      "packages/mcp-server/src",
-      "packages/mcp-npm/bin",
-    ],
+    forbiddenTokens: ["apps/vscode-extension/src", "packages/mcp-npm/bin"],
     forbiddenModules: [/^kicadstudio(?:\/|$)/, /^kicad_mcp(?:\.|$)/],
   },
   {
     name: "kicad-fixtures",
     path: "packages/kicad-fixtures",
     sourceRoots: ["src", "test", "scripts"],
-    forbiddenTokens: [
-      "apps/vscode-extension/src",
-      "packages/mcp-server/src",
-      "packages/mcp-npm/bin",
-    ],
+    forbiddenTokens: ["apps/vscode-extension/src", "packages/mcp-npm/bin"],
     forbiddenModules: [/^kicadstudio(?:\/|$)/, /^kicad_mcp(?:\.|$)/],
   },
 ].map((workspace) => ({
@@ -81,12 +62,7 @@ const SCANNED_EXTENSIONS = new Set([
   ".tsx",
   ".py",
 ]);
-const ALLOWED_METADATA_READS = new Map([
-  [
-    "packages/mcp-server/scripts/check_compatibility_matrix.py",
-    new Set(["apps/vscode-extension/src"]),
-  ],
-]);
+const ALLOWED_METADATA_READS = new Map([]);
 const IMPORT_PATTERNS = [
   /\b(?:import|export)\s+(?:type\s+)?(?:[^'"]*?\s+from\s+)?["']([^"']+)["']/g,
   /\b(?:require|import)\(\s*["']([^"']+)["']\s*\)/g,
