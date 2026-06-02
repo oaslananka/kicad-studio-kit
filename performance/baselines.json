@@ -128,14 +128,6 @@
       "summary": "Export command cancellation response for a hanging KiCad CLI process.",
       "source": "apps/vscode-extension/test/performance/extensionPerformance.test.ts"
     },
-
-    "mcp.session.establishment_ms": {
-      "baseline": 200,
-      "unit": "ms",
-      "ciRequired": false,
-      "summary": "MCP session establishment.",
-      "source": "OASLANA-46 MCP performance harness"
-    },
     "extension.memory.idle_mb": {
       "baseline": 150,
       "unit": "MB",
