@@ -8,15 +8,14 @@ The monorepo has three product workspaces, but the products must stay decoupled 
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `apps/vscode-extension` | npm dependencies, VS Code APIs, KiCad CLI process calls, MCP protocol data, test harness in tests only                                                             |
 | `packages/mcp-server`   | Python dependencies, KiCad Python/CLI integrations, MCP protocol data (transitional — see [ADR-0009](../adr/0009-split-kicad-mcp-pro-into-separate-repository.md)) |
-| `packages/mcp-npm`      | Node standard library and the published Python package name (transitional — will move to `oaslananka/kicad-mcp`)                                                   |
-| `packages/test-harness` | Node standard library and shared packages only                                                                                                                     |
-| future shared packages  | external dependencies and other shared packages only                                                                                                               |
+
+| `packages/test-harness` | Node standard library and shared packages only |
+| future shared packages | external dependencies and other shared packages only |
 
 ## Forbidden dependencies
 
 - The extension must not import Python server modules such as `kicad_mcp.*`.
-- The MCP server must not import VS Code extension source or npm wrapper implementation.
-- The npm launcher must not import extension source or Python server source.
+- The MCP server must not import VS Code extension source.
 - No product may reach into another product with relative imports.
 - Production source must not import `@oaslananka/kicad-test-harness` or
   path-reference `packages/test-harness`.
@@ -52,6 +51,6 @@ harness, or when the test harness imports product internals. CI runs the same
 check in the metadata job.
 
 Ownership is declared in `.github/CODEOWNERS` for `.github/`, architecture docs,
-examples, the extension, the MCP server, the npm wrapper, and shared protocol
+examples, the extension, the MCP server, and shared protocol
 schemas. Branch protection guidance is documented in
 [branch-protection.md](branch-protection.md).

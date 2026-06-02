@@ -12,7 +12,7 @@ Current product versions are represented in:
 
 `.release-please-manifest.json` tracks product package paths only. The private repository root is not released.
 
-Release PRs are created by `.github/workflows/release-please.yml` with separate Release Please pull requests per product package path. The VS Code extension can release independently from `kicad-mcp-pro`; the MCP server Python package and npm launcher stay version-linked as one MCP product. Release publication workflows run from GitHub Releases and protected environments.
+Release PRs are created by `.github/workflows/release-please.yml` with separate Release Please pull requests per product package path. The VS Code extension can release independently from the MCP server. Release publication workflows run from GitHub Releases and protected environments.
 
 The publish workflows keep release evidence product-scoped:
 
@@ -29,10 +29,6 @@ The publish workflows keep release evidence product-scoped:
   trusted publishing. The publish jobs verify local checksums before upload and
   verify PyPI/TestPyPI SHA-256 digests after upload. The `python-dist` artifact
   intentionally contains only `*.whl` and `*.tar.gz` files.
-- `publish-npm.yml` packs the `kicad-mcp-pro` npm launcher tarball, emits
-  `SHA256SUMS.txt` and a CycloneDX SBOM, creates GitHub artifact attestations,
-  publishes with npm provenance, and downloads the published tarball to verify
-  its SHA-256 digest.
 - `publish-mcp-container.yml` validates the Docker image on pull requests and
   publishes signed multi-arch GHCR images with BuildKit SBOM/provenance for
   `mcp-server-v*` GitHub Releases.
@@ -44,7 +40,7 @@ Release dry-runs also validate `compatibility.yaml` through the MCP server relea
 Release Please derives product changelogs from Conventional Commits, so pull request titles and product-changing commits must use one of these scopes:
 
 - `kicad-studio` for `apps/vscode-extension`.
-- `kicad-mcp-pro` for `packages/mcp-server` and `packages/mcp-npm`.
+- `kicad-mcp-pro` for `packages/mcp-server`.
 - `repo` for repository governance, documentation, workflow, and shared release policy changes.
 - `deps` for dependency-only updates.
 

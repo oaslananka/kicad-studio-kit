@@ -19,8 +19,8 @@ production dependency for any released product.
 ## Usage Rules
 
 - Product tests may import helpers from this package.
-- Production code under `apps/vscode-extension/src`, `packages/mcp-server/src`,
-  and `packages/mcp-npm/bin` must not import this package.
+- Production code under `apps/vscode-extension/src` and `packages/mcp-server/src`
+  must not import this package.
 - The harness must not import product internals. Keep it limited to Node
   standard library utilities and other shared packages.
 - New helpers should be deterministic and should not require a running VS Code

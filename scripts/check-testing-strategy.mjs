@@ -40,7 +40,7 @@ const requiredPhrases = [
   "corepack pnpm run test:kicad-mcp-pro",
   "corepack pnpm run build:kicad-mcp-pro",
   "corepack pnpm run package:kicad-mcp-pro",
-  "corepack pnpm run check:mcp-npm",
+
   "corepack pnpm run check:performance-budgets",
   "corepack pnpm run check:ci-lanes",
   "corepack pnpm run check:kicad-gui-smoke",

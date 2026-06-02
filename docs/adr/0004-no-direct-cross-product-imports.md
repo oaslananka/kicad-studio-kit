@@ -23,16 +23,13 @@ Adopt strict product dependency boundaries as binding policy:
 | ----------------------- | ---------------------------------------------------------------------------------------------- |
 | `apps/vscode-extension` | npm deps, VS Code APIs, KiCad CLI process calls, MCP protocol data, test harness in tests only |
 | `packages/mcp-server`   | Python deps, KiCad Python/CLI integrations, MCP protocol data                                  |
-| `packages/mcp-npm`      | Node stdlib and the published Python package name only                                         |
 | `packages/test-harness` | Node stdlib and shared packages only                                                           |
 | Future shared packages  | External deps and other shared packages only                                                   |
 
 Explicitly forbidden:
 
 - The extension must not import Python server modules (`kicad_mcp.*`).
-- The MCP server must not import VS Code extension source or npm wrapper
-  implementation.
-- The npm launcher must not import extension source or Python server source.
+- The MCP server must not import VS Code extension source.
 - No product may use relative imports into another product workspace.
 - Production source must not import `@oaslananka/kicad-test-harness` or
   path-reference `packages/test-harness`.

@@ -6,8 +6,8 @@ Date: 2026-05-30
 
 ## Context
 
-The monorepo produces three release surfaces: a VS Code extension (VSIX), a
-Python MCP server (sdist/wheel + MCP Registry), and an npm launcher wrapper.
+The monorepo produces two release surfaces: a VS Code extension (VSIX) and a
+Python MCP server (sdist/wheel + MCP Registry).
 Before this ADR, the release model used Release Please with linked versions
 for the MCP product but the relationship between product versions and the
 root version was not formally documented.
@@ -17,8 +17,6 @@ The products have different release cadences:
 - The extension may release multiple times in a week for UI fixes.
 - The MCP server releases are driven by protocol changes or KiCad
   compatibility updates.
-- The npm launcher only changes when the Python package name or version
-  coordination changes.
 
 Locking all products to the same version would force unnecessary releases
 and create version bloat.
@@ -30,18 +28,16 @@ Adopt an independent release model where each product version is decoupled:
 1. **Version sources** — Each product owns its version file:
    - Extension: `apps/vscode-extension/package.json`
    - Python MCP server: `packages/mcp-server/pyproject.toml`
-   - npm launcher: `packages/mcp-npm/package.json`
 
-2. **Linked MCP product** — `packages/mcp-server` and `packages/mcp-npm` are
-   linked through Release Please's `linked-versions` plugin and release as a
-   single `kicad-mcp-pro` product.
+2. **MCP server** — `packages/mcp-server` releases as the
+   `kicad-mcp-pro` product.
 
 3. **Extension independence** — The extension is intentionally not part of
    the `kicad-mcp-pro` linked-version group. It can release independently.
 
 4. **Conventional Commit scopes** define the release boundary:
    - `kicad-studio` → extension-only release PR.
-   - `kicad-mcp-pro` → MCP server + npm launcher release PR.
+   - `kicad-mcp-pro` → MCP server release PR.
    - `repo` → repository governance, docs, CI (no product release).
    - `deps` → dependency-only updates (no product release unless a product
      manifest changed).

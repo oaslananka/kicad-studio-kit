@@ -6,7 +6,6 @@ import argparse
 import json
 import sys
 import tomllib
-from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +14,6 @@ PYPROJECT = ROOT / "pyproject.toml"
 PACKAGE_INIT = ROOT / "src" / "kicad_mcp" / "__init__.py"
 MCP_JSON = ROOT / "mcp.json"
 SERVER_JSON = ROOT / "server.json"
-NPM_WRAPPER_PACKAGE = ROOT.parent / "mcp-npm" / "package.json"
 MCP_SERVER_NAME = "io.github.oaslananka/kicad-mcp-pro"
 REPOSITORY = "https://github.com/oaslananka/kicad-studio-kit"
 WEBSITE = "https://oaslananka.github.io/kicad-studio-kit"
@@ -82,10 +80,6 @@ def _project_metadata() -> dict[str, Any]:
         "description": project["description"],
         "license": _license_text(project),
     }
-
-
-def _load_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _dump_json(data: dict[str, Any]) -> str:
@@ -218,22 +212,6 @@ def _updated_init(metadata: dict[str, Any], original: str) -> str:
     return "\n".join(rendered) + "\n"
 
 
-def _updated_npm_wrapper_package(
-    metadata: dict[str, Any], original: dict[str, Any]
-) -> dict[str, Any]:
-    updated = deepcopy(original)
-    updated["version"] = metadata["version"]
-    updated["homepage"] = WEBSITE
-    updated["mcpName"] = MCP_SERVER_NAME
-    updated["repository"] = {
-        "type": "git",
-        "url": f"git+{REPOSITORY}.git",
-        "directory": "packages/mcp-npm",
-    }
-    updated["bugs"] = {"url": f"{REPOSITORY}/issues"}
-    return updated
-
-
 def _planned_updates() -> dict[Path, str]:
     metadata = _project_metadata()
     registry = _registry_metadata(metadata)
@@ -241,9 +219,6 @@ def _planned_updates() -> dict[Path, str]:
         PACKAGE_INIT: _updated_init(metadata, PACKAGE_INIT.read_text(encoding="utf-8")),
         MCP_JSON: _dump_json(registry),
         SERVER_JSON: _dump_json(registry),
-        NPM_WRAPPER_PACKAGE: _dump_json(
-            _updated_npm_wrapper_package(metadata, _load_json(NPM_WRAPPER_PACKAGE))
-        ),
     }
 
 

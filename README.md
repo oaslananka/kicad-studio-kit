@@ -10,7 +10,6 @@ Monorepo for:
 
 - KiCad Studio VS Code extension (`apps/vscode-extension`)
 - KiCad MCP Pro server (`packages/mcp-server`) — transitional; canonical source is [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)
-- npm launcher wrapper (`packages/mcp-npm`) — transitional; will move to [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)
 - shared test harness (`packages/test-harness`)
 
 Canonical repository: https://github.com/oaslananka/kicad-studio-kit
@@ -22,7 +21,7 @@ All release surfaces are pinned to `1.0.0`:
 
 - VS Code extension: `oaslananka.kicadstudiokit`
 - Python package: `kicad-mcp-pro`
-- npm wrapper: `kicad-mcp-pro`
+
 - MCP Registry name: `io.github.oaslananka/kicad-mcp-pro`
 
 ## KiCad Compatibility
@@ -47,9 +46,7 @@ corepack pnpm --filter kicadstudiokit run package
 Push-Location packages/mcp-server
 corepack pnpm run check
 Pop-Location
-Push-Location packages/mcp-npm
-npm pack --dry-run
-Pop-Location
+
 ```
 
 Product-scoped entrypoints are available from the root:
@@ -57,7 +54,7 @@ Product-scoped entrypoints are available from the root:
 ```powershell
 corepack pnpm run check:kicad-studio
 corepack pnpm run check:kicad-mcp-pro
-corepack pnpm run check:mcp-npm
+
 corepack pnpm --dir packages/test-harness run check
 corepack pnpm run test:contract
 corepack pnpm run check:dev-doctor

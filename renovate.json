@@ -62,15 +62,6 @@
       "addLabels": ["product:vscode-extension"]
     },
     {
-      "description": "Group npm launcher wrapper patch and minor updates separately from extension dependencies.",
-      "matchManagers": ["npm"],
-      "matchFileNames": ["packages/mcp-npm/package.json"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "mcp npm wrapper dependencies",
-      "semanticCommitScope": "mcp-npm",
-      "addLabels": ["product:mcp-npm"]
-    },
-    {
       "description": "Runtime dependencies are reviewed separately from build and test tooling.",
       "matchManagers": ["npm"],
       "matchDepTypes": [

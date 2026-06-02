@@ -6,7 +6,7 @@
 - CI, tests, docs, security scans, labels, release drafting, and publishing workflows run from this repository only.
 - The VS Code extension root is `apps/vscode-extension`.
 - The Python MCP server root is `packages/mcp-server`.
-- The npm launcher root is `packages/mcp-npm`.
+- The npm launcher root was `packages/mcp-npm` (now migrated to `oaslananka/kicad-mcp`).
 
 Release and publish jobs should rely on GitHub environments and least-privilege workflow permissions. Do not add secondary repository guards, repository sync jobs, or alternate publish remotes.
 
@@ -68,8 +68,6 @@ corepack pnpm run check:forbidden-refs
 corepack pnpm run check:version
 corepack pnpm --filter kicadstudiokit run check
 corepack pnpm --filter kicadstudiokit run package
-(cd packages/mcp-server && corepack pnpm run check)
-(cd packages/mcp-npm && npm pack --dry-run)
 ```
 
 `corepack pnpm --filter kicadstudiokit run package` is the safe VSIX packaging check. Production marketplace publishing must use `.github/workflows/publish-extension.yml`.
@@ -95,7 +93,6 @@ Publishing is split by package surface:
 
 - VS Code Marketplace and Open VSX: `.github/workflows/publish-extension.yml`
 - TestPyPI and PyPI: `.github/workflows/publish-python.yml`
-- npm: `.github/workflows/publish-npm.yml`
 - MCP Registry: `.github/workflows/publish-mcp-registry.yml`
 
 Required secrets:

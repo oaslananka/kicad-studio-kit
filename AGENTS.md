@@ -9,8 +9,9 @@ system and operator instructions first, then these repo rules.
 - Product surfaces:
   - `apps/vscode-extension`: KiCad Studio VS Code extension.
   - `packages/mcp-server`: `kicad-mcp-pro` Python MCP server.
-  - `packages/mcp-npm`: npm launcher wrapper.
+
   - `packages/test-harness`: private shared test utilities.
+
 - Do not introduce another canonical repository or release root.
 - Keep issue scope narrow. Do not mix unrelated Linear/GitHub issues in one branch or PR.
 - Treat Codex, Claude Code, Claude Desktop, GitHub Copilot, Gemini CLI, and Cursor as

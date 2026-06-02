@@ -6,7 +6,6 @@ KiCad Studio Kit uses one repository and separate product release surfaces.
 | -------------------- | ------------------------------------ | ----------------- | -------------------------- |
 | VS Code extension    | `apps/vscode-extension/package.json` | VSIX              | `publish-extension.yml`    |
 | Python MCP server    | `packages/mcp-server/pyproject.toml` | sdist / wheel     | `publish-python.yml`       |
-| npm launcher         | `packages/mcp-npm/package.json`      | npm package       | `publish-npm.yml`          |
 | MCP Registry listing | `packages/mcp-server/server.json`    | registry metadata | `publish-mcp-registry.yml` |
 
 Release Please owns version proposals through `.release-please-manifest.json` and `release-please-config.json`. The manifest tracks product package paths only; the private repository root is not a release surface.
@@ -14,11 +13,11 @@ Release Please owns version proposals through `.release-please-manifest.json` an
 Release PRs are product-scoped:
 
 - `apps/vscode-extension` releases as the VS Code extension product.
-- `packages/mcp-server` and `packages/mcp-npm` release as the `kicad-mcp-pro` product and keep one version through the `linked-versions` plugin.
+- `packages/mcp-server` is the only remaining `kicad-mcp-pro` source path. The linked-versions plugin is no longer needed.
 
-The extension is intentionally not part of the `kicad-mcp-pro` linked-version group. A change that only affects the extension can produce only an extension release PR, and a change that only affects the MCP server product can produce only an MCP release PR.
+The extension is intentionally not version-linked to the MCP product. It releases independently from its own Release Please PR.
 
-Conventional Commit scopes are part of the release boundary. Use `kicad-studio` for extension-only changes, `kicad-mcp-pro` for MCP server or npm launcher changes, `repo` for repository governance and release policy, and `deps` for dependency-only updates. A single commit that touches both product directories must either be split or use `kicad-studio/kicad-mcp-pro` so CI can reject changelog cross-contamination before Release Please runs.
+Conventional Commit scopes are part of the release boundary. Use `kicad-studio` for extension-only changes, `kicad-mcp-pro` for MCP server changes, `repo` for repository governance and release policy, and `deps` for dependency-only updates. A single commit that touches both product directories must either be split or use `kicad-studio/kicad-mcp-pro` so CI can reject changelog cross-contamination before Release Please runs.
 
 ## Compatibility gate
 
