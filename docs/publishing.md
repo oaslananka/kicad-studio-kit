@@ -30,7 +30,7 @@ corepack pnpm run release:dry-run
 
 `release:dry-run:kicad-studio` validates the extension release-please package path, product changelog path, component tag naming, and that the extension is not linked to the MCP product version.
 
-`release:dry-run:kicad-mcp-pro` validates MCP metadata synchronization, MCP release preflight, compatibility metadata, and the npm launcher package dry-run. The Python package and npm launcher remain one versioned MCP product.
+`release:dry-run:kicad-mcp-pro` validates MCP metadata synchronization, MCP release preflight, and compatibility metadata. The Python package is the only remaining kicad-mcp-pro artifact.
 
 Protocol or tool-schema changes must update compatibility metadata and release notes for both products before publishing.
 
@@ -162,11 +162,10 @@ workflow uploads product-scoped build artifacts, `SHA256SUMS.txt`,
 `sbom.cdx.json`, GitHub artifact attestations, and post-publish verification
 records when a GitHub Release triggers the workflow.
 
-| Product                | Release assets                                                                 | Publish verification                                                                                 |
-| ---------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Product                | Release assets                                                                    | Publish verification                                                                                 |
+| ---------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | VSIX                   | `kicadstudiokit-<version>.vsix`, `vscode-extension-SHA256SUMS.txt`, SBOM evidence | Verify checksum before Marketplace/Open VSX publish; verify Marketplace version and Open VSX digest. |
-| Python wheel and sdist | wheel, sdist, `kicad-mcp-pro-python-SHA256SUMS.txt`, SBOM evidence             | Verify local checksums before publish; verify PyPI/TestPyPI SHA-256 digests after publish.           |
-| npm launcher tarball   | `kicad-mcp-pro-<version>.tgz`, `mcp-npm-SHA256SUMS.txt`, SBOM evidence         | Verify local checksum before publish; download npm tarball and verify SHA-256 after publish.         |
+| Python wheel and sdist | wheel, sdist, `kicad-mcp-pro-python-SHA256SUMS.txt`, SBOM evidence                | Verify local checksums before publish; verify PyPI/TestPyPI SHA-256 digests after publish.           |
 
 Local release policy verification:
 

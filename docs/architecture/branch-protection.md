@@ -17,9 +17,6 @@ workflows:
 - `mcp-server (ubuntu-24.04)`
 - `mcp-server (windows-2025-vs2026)`
 - `mcp-server (macos-15)`
-- `mcp-npm (ubuntu-24.04)`
-- `mcp-npm (windows-2025-vs2026)`
-- `mcp-npm (macos-15)`
 - `real-pair-compatibility`
 - `analyze (javascript-typescript)`
 - `analyze (python)`
@@ -42,8 +39,7 @@ Enable CODEOWNERS review. Path ownership is declared in `.github/CODEOWNERS`:
 - `.github/`: CI, release, labels, and governance.
 - `docs/architecture/`: architecture and release model.
 - `apps/vscode-extension/`: KiCad Studio extension.
-- `packages/mcp-server/`: KiCad MCP Pro Python server and MCP Registry metadata.
-- `packages/mcp-npm/`: npm launcher.
+- `packages/mcp-server/`: KiCad MCP Pro Python server and MCP Registry metadata (transitional — canonical source at [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)).
 - `packages/protocol-schemas/`: (removed — consumed from npm as `@oaslananka/kicad-protocol-schemas`).
 - `examples/`: user-facing KiCad examples and smoke-test projects.
 

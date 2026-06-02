@@ -4,9 +4,6 @@
 - name: mcp-server
   color: "0e8a16"
   description: Python MCP server changes
-- name: mcp-npm
-  color: "5319e7"
-  description: npm wrapper changes
 - name: ci
   color: "fbca04"
   description: CI and workflow changes
@@ -34,9 +31,6 @@
 - name: product:mcp-server
   color: "0052cc"
   description: KiCad MCP Pro Python server workspace
-- name: product:mcp-npm
-  color: "5319e7"
-  description: KiCad MCP Pro npm launcher workspace
 - name: risk:low
   color: "c2e0c6"
   description: Low-risk patch, lockfile, or docs-only dependency update

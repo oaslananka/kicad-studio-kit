@@ -63,7 +63,6 @@ Product-specific checks:
 
 - Extension updates: `corepack pnpm --filter kicadstudiokit run check`.
 - MCP server updates: `Push-Location packages/mcp-server; corepack pnpm run check; Pop-Location`.
-- npm wrapper updates: `Push-Location packages/mcp-npm; npm pack --dry-run; Pop-Location`.
 - Root, CI, or release updates: root checks plus affected workflow commands.
 
 Compatibility-sensitive updates must also run the relevant contract or fixture tests before merge. If support boundaries change, update `compatibility.yaml`, [support-matrix.md](support-matrix.md), and the nearest release note in the same PR.

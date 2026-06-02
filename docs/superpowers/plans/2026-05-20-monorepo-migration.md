@@ -4,7 +4,7 @@
 
 **Goal:** Convert the extracted KiCad Studio IDE and KiCad MCP Pro projects into the canonical `oaslananka/kicad-studio-kit` monorepo with version `1.0.0` and GitHub-only CI/publish metadata.
 
-**Architecture:** Keep the VS Code extension as `apps/vscode-extension`, the Python MCP server as `packages/mcp-server`, and the npm launcher as `packages/mcp-npm`. Root files orchestrate workspace checks, releases, docs, and publish workflows without becoming a publishable package.
+**Architecture:** Keep the VS Code extension as `apps/vscode-extension` and the Python MCP server as `packages/mcp-server`. Root files orchestrate workspace checks, releases, docs, and publish workflows without becoming a publishable package.
 
 **Tech Stack:** Node 24, pnpm 11, TypeScript, VS Code extension tooling, Python 3.12, uv, PyPI trusted publishing, npm trusted publishing, GitHub Actions, MCP Registry metadata.
 
@@ -14,10 +14,9 @@
 
 **Files:**
 
-- Create directories: `apps/vscode-extension`, `packages/mcp-server`, `packages/mcp-npm`, `docs`, `scripts`, `.github/workflows`
+- Create directories: `apps/vscode-extension`, `packages/mcp-server`, `docs`, `scripts`, `.github/workflows`
 - Move/copy source: `kicad-studio-ide/*` to `apps/vscode-extension/*`
 - Move/copy source: `kicad-studio-mcp/*` to `packages/mcp-server/*`
-- Move/copy source: `packages/mcp-server/npm-wrapper/*` to `packages/mcp-npm/*`
 
 - [ ] Copy extracted projects into the target layout.
 - [ ] Remove generated artifacts: extension `dist/`, extension `out/`, MCP `dist/`, MCP `site/`, coverage outputs, and Hypothesis temp data.
@@ -33,7 +32,7 @@
 
 - [ ] Write root workspace metadata and scripts exactly around version `1.0.0`.
 - [ ] Keep root `private: true` and use it only for orchestration.
-- [ ] Add release-please monorepo config for the extension, Python server, and npm wrapper.
+- [ ] Add release-please monorepo config for the extension and Python server.
 
 ### Task 3: Patch Package Metadata
 
@@ -44,8 +43,6 @@
 - Modify: `packages/mcp-server/src/kicad_mcp/__init__.py`
 - Modify: `packages/mcp-server/mcp.json`
 - Modify: `packages/mcp-server/server.json`
-- Modify: `packages/mcp-npm/package.json`
-- Modify: `packages/mcp-npm/bin/kicad-mcp-pro.js`
 
 - [ ] Set every package version to `1.0.0`.
 - [ ] Set repository, homepage, bugs, docs, and MCP identity fields to `oaslananka/kicad-studio-kit`.
@@ -59,7 +56,6 @@
 - Create/modify: `.github/workflows/release-please.yml`
 - Create/modify: `.github/workflows/publish-extension.yml`
 - Create/modify: `.github/workflows/publish-python.yml`
-- Create/modify: `.github/workflows/publish-npm.yml`
 - Create/modify: `.github/workflows/publish-mcp-registry.yml`
 - Create/modify: `.github/workflows/docs.yml`
 - Create/modify: `.github/workflows/security.yml`
@@ -99,7 +95,6 @@
 - `corepack pnpm --filter kicadstudiokit run build`
 - `corepack pnpm --filter kicadstudiokit run package`
 - `Push-Location packages/mcp-server; uv build; corepack pnpm run mcp:manifest:check; Pop-Location`
-- `Push-Location packages/mcp-npm; npm pack --dry-run; Pop-Location`
 
 - [ ] Run the narrow required checks and fix failures.
 - [ ] Run broader checks where the local toolchain supports them.

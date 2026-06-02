@@ -159,7 +159,7 @@ const requiredReferences = {
     "Codex, Claude Code, Claude Desktop, GitHub Copilot, Gemini CLI, and Cursor",
     "apps/vscode-extension",
     "packages/mcp-server",
-    "packages/mcp-npm",
+
     "docs/support-matrix.md",
     "docs/release.md",
     "docs/architecture/protocol-change-checklist.md",

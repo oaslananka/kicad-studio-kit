@@ -6,16 +6,16 @@ KiCad Studio Kit is one GitHub repository with three independently validated rel
 | ----------------------- | --------------------------------------------------- | ------------------------------------------------------ |
 | `apps/vscode-extension` | KiCad Studio VS Code and Open VSX extension         | `oaslananka.kicadstudiokit`                            |
 | `packages/mcp-server`   | KiCad MCP Pro Python server and MCP Registry source | `kicad-mcp-pro` / `io.github.oaslananka/kicad-mcp-pro` |
-| `packages/mcp-npm`      | Thin npm launcher for the Python server             | `kicad-mcp-pro`                                        |
-| `packages/test-harness` | Private shared test utilities                       | Not published                                          |
 
-> **Note:** `packages/mcp-server` and `packages/mcp-npm` are transitional copies. The canonical MCP source is [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp). See [ADR-0009](../adr/0009-split-kicad-mcp-pro-into-separate-repository.md).
+| `packages/test-harness` | Private shared test utilities | Not published |
+
+> **Note:** `packages/mcp-server` is a transitional copy. The canonical MCP source is [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp). See [ADR-0009](../adr/0009-split-kicad-mcp-pro-into-separate-repository.md).
 
 The folder names intentionally preserve the package roots used by the current publish workflows:
 
 - `apps/vscode-extension` keeps VS Code extension-root semantics for VSIX packaging.
 - `packages/mcp-server` keeps the Python package, Docker, docs, and MCP Registry metadata together.
-- `packages/mcp-npm` remains a separate npm wrapper so npm publishing does not mix with Python packaging.
+
 - `packages/test-harness` is private test-only infrastructure used by product
   tests and CI gates. It is never a production dependency or release surface.
 
@@ -37,8 +37,6 @@ The root package is `private: true` and is never published.
 Extension-only changes belong under `apps/vscode-extension` unless they update root CI, docs, or release metadata.
 
 MCP server changes belong under `packages/mcp-server` unless they update the npm wrapper, root CI, docs, or compatibility metadata.
-
-npm launcher changes belong under `packages/mcp-npm` unless they update Python package version coordination or release metadata.
 
 ## Shared work
 

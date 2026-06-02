@@ -28,7 +28,6 @@ Product-scoped checks:
 ```bash
 corepack pnpm run check:kicad-studio
 corepack pnpm run check:kicad-mcp-pro
-corepack pnpm run check:mcp-npm
 corepack pnpm run test:contract
 ```
 

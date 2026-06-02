@@ -9,7 +9,6 @@ does that.
 
 - `apps/vscode-extension` contains the VS Code extension.
 - `packages/mcp-server` contains the Python `kicad-mcp-pro` MCP server.
-- `packages/mcp-npm` contains the npm launcher wrapper.
 - `packages/test-harness` contains private shared test helpers.
 
 ## Coding Rules

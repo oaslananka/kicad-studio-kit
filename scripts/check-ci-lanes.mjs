@@ -25,11 +25,6 @@ const LANE_DEFINITIONS = [
     output: "mcp_server",
   },
   {
-    key: "mcpNpm",
-    label: "MCP npm launcher",
-    output: "mcp_npm",
-  },
-  {
     key: "sharedPackages",
     label: "Shared packages",
     output: "shared_packages",
@@ -74,7 +69,7 @@ const RELEASE_AND_COMPATIBILITY_FILES = new Set([
 
 const EXTENSION_PREFIXES = ["apps/vscode-extension/", "apps/kicad-studio/"];
 const MCP_SERVER_PREFIXES = ["packages/mcp-server/", "apps/kicad-mcp-pro/"];
-const MCP_NPM_PREFIXES = ["packages/mcp-npm/"];
+
 const SHARED_PREFIXES = ["packages/kicad-fixtures/", "packages/test-harness/"];
 const CI_POLICY_PREFIXES = ["scripts/", ".github/"];
 const DOC_PREFIXES = [
@@ -128,7 +123,6 @@ function markAllProductLanes(reasons, reason) {
   for (const lane of [
     "vscodeExtension",
     "mcpServer",
-    "mcpNpm",
     "sharedPackages",
     "integrationContracts",
     "performanceBudgets",
@@ -177,11 +171,6 @@ function classifyChangedFiles(changedFiles, options = {}) {
         reasons,
         "mcpServer",
         `${file} affects compatibility or release metadata.`,
-      );
-      addReason(
-        reasons,
-        "mcpNpm",
-        `${file} affects MCP package release metadata.`,
       );
       addReason(
         reasons,
@@ -236,11 +225,6 @@ function classifyChangedFiles(changedFiles, options = {}) {
       addReason(reasons, "mcpServer", `${file} is owned by kicad-mcp-pro.`);
       addReason(
         reasons,
-        "mcpNpm",
-        `${file} can affect the npm launcher packaging surface.`,
-      );
-      addReason(
-        reasons,
         "performanceBudgets",
         `${file} may affect MCP performance baselines.`,
       );
@@ -259,11 +243,6 @@ function classifyChangedFiles(changedFiles, options = {}) {
       continue;
     }
 
-    if (matchesPrefix(file, MCP_NPM_PREFIXES)) {
-      addReason(reasons, "mcpNpm", `${file} is owned by the MCP npm launcher.`);
-      continue;
-    }
-
     if (matchesPrefix(file, SHARED_PREFIXES)) {
       addReason(
         reasons,
@@ -279,11 +258,6 @@ function classifyChangedFiles(changedFiles, options = {}) {
         reasons,
         "mcpServer",
         `${file} must remain compatible with kicad-mcp-pro.`,
-      );
-      addReason(
-        reasons,
-        "mcpNpm",
-        `${file} can affect packaged MCP compatibility.`,
       );
       addReason(
         reasons,

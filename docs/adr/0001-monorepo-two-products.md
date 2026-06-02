@@ -6,9 +6,9 @@ Date: 2026-05-30
 
 ## Context
 
-KiCad Studio Kit ships two independently released products — a VS Code
-extension (`kicadstudiokit`) and a Python MCP server with an npm launcher
-wrapper (`kicad-mcp-pro`) — plus a private shared test harness. Before this
+KiCad Studio Kit ships a VS Code
+extension (`kicadstudiokit`) and a Python MCP server
+(`kicad-mcp-pro`) — plus a private shared test harness. Before this
 ADR, the repository used a pnpm workspace structure but did not formally
 document which paths are product workspaces, which are shared infrastructure,
 and which are root-owned orchestration.
@@ -16,7 +16,7 @@ and which are root-owned orchestration.
 The repository had accumulated a mix of workspace layouts:
 
 - `apps/` for the VS Code extension.
-- `packages/` for the MCP server, npm launcher, and test harness.
+- `packages/` for the MCP server and test harness.
 
 This follows the pnpm convention (`apps/` for deployable applications,
 `packages/` for libraries and utilities) but the distinction was implicit.
@@ -25,12 +25,11 @@ This follows the pnpm convention (`apps/` for deployable applications,
 
 Adopt the following monorepo topology as binding policy:
 
-| Path                    | Role                               | Published                 |
-| ----------------------- | ---------------------------------- | ------------------------- |
-| `apps/vscode-extension` | VS Code / Open VSX extension       | VSIX                      |
-| `packages/mcp-server`   | Python MCP server                  | sdist/wheel, MCP Registry |
-| `packages/mcp-npm`      | npm launcher for the Python server | npm                       |
-| `packages/test-harness` | Private shared test utilities      | Never                     |
+| Path                    | Role                          | Published                 |
+| ----------------------- | ----------------------------- | ------------------------- |
+| `apps/vscode-extension` | VS Code / Open VSX extension  | VSIX                      |
+| `packages/mcp-server`   | Python MCP server             | sdist/wheel, MCP Registry |
+| `packages/test-harness` | Private shared test utilities | Never                     |
 
 Additional rules:
 

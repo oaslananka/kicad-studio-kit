@@ -20,7 +20,6 @@ jobs:
       metadata: ${{ steps.detect.outputs.metadata }}
       vscode_extension: ${{ steps.detect.outputs.vscode_extension }}
       mcp_server: ${{ steps.detect.outputs.mcp_server }}
-      mcp_npm: ${{ steps.detect.outputs.mcp_npm }}
       shared_packages: ${{ steps.detect.outputs.shared_packages }}
       integration_contracts: ${{ steps.detect.outputs.integration_contracts }}
       performance_budgets: ${{ steps.detect.outputs.performance_budgets }}
@@ -280,29 +279,6 @@ jobs:
             apps/vscode-extension/test-results
           if-no-files-found: ignore
           retention-days: 7
-
-  mcp-npm:
-    needs: ci-lanes
-    if: ${{ needs.ci-lanes.outputs.mcp_npm == 'true' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, windows-2025-vs2026, macos-15]
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        working-directory: packages/mcp-npm
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
-        with:
-          node-version-file: .node-version
-          package-manager-cache: false
-      - run: npm ci --ignore-scripts=false
-      - run: npm pack --dry-run
-      - run: npm run build
 
   forbidden-refs:
     needs: ci-lanes

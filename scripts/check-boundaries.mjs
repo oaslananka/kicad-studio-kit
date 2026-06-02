@@ -17,11 +17,7 @@ const WORKSPACES = [
     path: "apps/vscode-extension",
     sourceRoots: ["src", "test", "scripts"],
     productionSourceRoots: ["src"],
-    forbiddenTokens: [
-      "packages/mcp-server/src",
-      "packages/mcp-npm/bin",
-      "packages/kicad-fixtures/src",
-    ],
+    forbiddenTokens: ["packages/mcp-server/src", "packages/kicad-fixtures/src"],
     forbiddenModules: [/^kicad_mcp(?:\.|$)/],
   },
   {
@@ -31,18 +27,9 @@ const WORKSPACES = [
     productionSourceRoots: ["src"],
     forbiddenTokens: [
       "apps/vscode-extension/src",
-      "packages/mcp-npm/bin",
       "packages/kicad-fixtures/src",
     ],
     forbiddenModules: [/^kicadstudio(?:\/|$)/],
-  },
-  {
-    name: "mcp-npm",
-    path: "packages/mcp-npm",
-    sourceRoots: ["bin"],
-    productionSourceRoots: ["bin"],
-    forbiddenTokens: ["apps/vscode-extension/src", "packages/mcp-server/src"],
-    forbiddenModules: [/^kicadstudio(?:\/|$)/, /^kicad_mcp(?:\.|$)/],
   },
   {
     name: "test-harness",

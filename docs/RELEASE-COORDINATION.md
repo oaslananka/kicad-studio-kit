@@ -31,7 +31,6 @@ kicad-mcp (external repo)
 | -------------------- | ----------------------------- | ------------------------------------ | -------------- |
 | Protocol schemas     | `oaslananka/kicad-mcp`        | `@oaslananka/kicad-protocol-schemas` | npm            |
 | MCP server (Python)  | `oaslananka/kicad-studio-kit` | `kicad-mcp-pro` (PyPI)               | GitHub Actions |
-| MCP launcher (npm)   | `oaslananka/kicad-studio-kit` | `kicad-mcp-pro` (npm)                | GitHub Actions |
 | MCP container        | `oaslananka/kicad-studio-kit` | `ghcr.io/oaslananka/kicad-mcp-pro`   | GitHub Actions |
 | MCP Registry listing | `oaslananka/kicad-studio-kit` | registry metadata                    | GitHub Actions |
 | VS Code extension    | `oaslananka/kicad-studio-kit` | VSIX (Marketplace + Open VSX)        | GitHub Actions |
@@ -61,9 +60,7 @@ incompatible):
 
 ### A.3 Version-linked MCP product
 
-The Python MCP server (`packages/mcp-server`) and npm launcher
-(`packages/mcp-npm`) are linked through Release Please `linked-versions`.
-They always ship the same version in the same release PR.
+The Python MCP server (`packages/mcp-server`) is the only remaining kicad-mcp-pro source path. It was formerly version-linked with the npm launcher through Release Please `linked-versions`, which is no longer in use.
 
 The VS Code extension is **not** version-linked to the MCP product. It
 releases independently from its own Release Please PR.
@@ -76,7 +73,6 @@ releases independently from its own Release Please PR.
 | ------------------------------------------------- | ----------------------------------- | ------------------------------------------------------- |
 | `@oaslananka/kicad-protocol-schemas`              | `oaslananka/kicad-mcp`              | Tag push in kicad-mcp                                   |
 | PyPI `kicad-mcp-pro`                              | This repo (`packages/mcp-server`)   | Release Please + `publish-python.yml`                   |
-| npm `kicad-mcp-pro`                               | This repo (`packages/mcp-npm`)      | Release Please + `publish-npm.yml`                      |
 | `ghcr.io/oaslananka/kicad-mcp-pro`                | This repo                           | MCP server GitHub Release + `publish-mcp-container.yml` |
 | MCP Registry `io.github.oaslananka/kicad-mcp-pro` | This repo                           | MCP server GitHub Release + `publish-mcp-registry.yml`  |
 | VS Code Marketplace `oaslananka.kicadstudiokit`   | This repo (`apps/vscode-extension`) | Release Please + `publish-extension.yml`                |

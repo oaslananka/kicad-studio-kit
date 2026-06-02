@@ -15,7 +15,6 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 REPO_ROOT = ROOT.parents[1]
-WRAPPER_ROOT = ROOT.parent / "mcp-npm"
 REGISTRY_SCHEMA = "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json"
 
 
@@ -75,7 +74,6 @@ def test_release_metadata_is_synchronised() -> None:
     version = pyproject["project"]["version"]
     server_json = json.loads((ROOT / "server.json").read_text(encoding="utf-8"))
     mcp_json = json.loads((ROOT / "mcp.json").read_text(encoding="utf-8"))
-    npm_wrapper = json.loads((WRAPPER_ROOT / "package.json").read_text(encoding="utf-8"))
     package_init = (ROOT / "src" / "kicad_mcp" / "__init__.py").read_text(encoding="utf-8")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     mkdocs = (ROOT / "mkdocs.yml").read_text(encoding="utf-8")
@@ -111,12 +109,6 @@ def test_release_metadata_is_synchronised() -> None:
     assert server_json["name"] == "io.github.oaslananka/kicad-mcp-pro"
     assert server_json["repository"]["url"] == "https://github.com/oaslananka/kicad-studio-kit"
     assert mcp_json["repository"]["url"] == "https://github.com/oaslananka/kicad-studio-kit"
-    assert npm_wrapper["version"] == version
-    assert npm_wrapper["homepage"] == "https://oaslananka.github.io/kicad-studio-kit"
-    assert npm_wrapper["mcpName"] == "io.github.oaslananka/kicad-mcp-pro"
-    assert (
-        npm_wrapper["repository"]["url"] == "git+https://github.com/oaslananka/kicad-studio-kit.git"
-    )
     assert f'__version__ = "{version}"  # x-release-please-version' in package_init
     assert "<!-- mcp-name: io.github.oaslananka/kicad-mcp-pro -->" in readme
     assert "development/v2-migration.md" in mkdocs

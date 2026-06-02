@@ -243,7 +243,7 @@ function workspaceScriptsCheck(packageJson) {
     "check:dev-doctor": "node scripts/dev-doctor.mjs --ci --strict",
     "check:kicad-studio": "pnpm --filter kicadstudiokit run check",
     "check:kicad-mcp-pro": "pnpm --dir packages/mcp-server run check",
-    "check:mcp-npm": "pnpm --dir packages/mcp-npm run check",
+
     "check:fixtures":
       "node scripts/generate-kicad-fixture-corpus.mjs --check && node --test scripts/check-kicad-fixtures-package.test.mjs && pnpm --dir packages/kicad-fixtures run check",
     "check:kicad-fixtures": "pnpm --dir packages/kicad-fixtures run check",

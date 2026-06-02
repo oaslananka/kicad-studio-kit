@@ -45,7 +45,7 @@ incompatible `compatibility.yaml` range, or protocol schema drift.
 
 ### A.3 Bad npm kicad-mcp-pro launcher
 
-A broken npm launcher published from `packages/mcp-npm`. Detection:
+A broken npm launcher published from `packages/mcp-npm` (now migrated to `oaslananka/kicad-mcp`). Detection:
 
 - `npm view kicad-mcp-pro` and `npm install kicad-mcp-pro` fail.
 - The cross-repo canary finds the launcher version but cannot invoke it.
@@ -373,12 +373,12 @@ document what happened, what was fixed, and what evidence was preserved.
 Issue #286 (simplify compatibility) and source cleanup are blocked on the
 emergency flow being in place. The following dependencies apply:
 
-| #286 task                                      | Depends on                                   |
-| ---------------------------------------------- | -------------------------------------------- |
-| Remove deprecated compatibility fields         | Emergency flow and runbook being operational |
-| Consolidate version sources                    | Emergency flow and runbook being operational |
-| Delete packages/mcp-server or packages/mcp-npm | Emergency flow consensus (not yet reached)   |
-| Merge cross-repo cleanup PRs                   | Release path verified green after this flow  |
+| #286 task                              | Depends on                                   |
+| -------------------------------------- | -------------------------------------------- |
+| Remove deprecated compatibility fields | Emergency flow and runbook being operational |
+| Consolidate version sources            | Emergency flow and runbook being operational |
+| Delete packages/mcp-server             | Emergency flow consensus (not yet reached)   |
+| Merge cross-repo cleanup PRs           | Release path verified green after this flow  |
 
 Approach for #286:
 
@@ -387,5 +387,5 @@ Approach for #286:
    runbook (pre-flight → publish → post-publish verification).
 3. Only then begin #286 cleanup, starting with small, reversible PRs
    (remove deprecated fields, consolidate sources).
-4. Do **not** delete or rename `packages/mcp-server` or `packages/mcp-npm`
+4. Do **not** delete or rename `packages/mcp-server`
    in any #286 PR until emergency flow consensus is reached.
