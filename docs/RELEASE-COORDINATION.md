@@ -71,7 +71,7 @@ releases independently from its own Release Please PR.
 
 | Artifact                                          | Owned by                            | Release trigger                                         |
 | ------------------------------------------------- | ----------------------------------- | ------------------------------------------------------- |
-| `@oaslananka/kicad-protocol-schemas`              | `oaslananka/kicad-mcp`              | Tag push in kicad-mcp                                   |
+| `@oaslananka/kicad-protocol-schemas`              | `oaslananka/kicad-mcp`              | Release published (tag-based) + `workflow_dispatch`     |
 | PyPI `kicad-mcp-pro`                              | `oaslananka/kicad-mcp`              | Release Please + `publish-python.yml`                   |
 | `ghcr.io/oaslananka/kicad-mcp-pro`                | This repo                           | MCP server GitHub Release + `publish-mcp-container.yml` |
 | MCP Registry `io.github.oaslananka/kicad-mcp-pro` | This repo                           | MCP server GitHub Release + `publish-mcp-registry.yml`  |
@@ -172,7 +172,7 @@ See [Product Dry Runs](publishing.md#product-dry-runs) for what each validates.
 
 **For a protocol schemas release (kicad-mcp repo):**
 
-- [ ] Version tag pushed triggers publish workflow automatically.
+- [ ] GitHub Release published or `workflow_dispatch` triggers the publish workflow.
 - [ ] After publish, this repo (kicad-studio-kit) must:
   1. Bump `@oaslananka/kicad-protocol-schemas` in `package.json`.
   2. Run `corepack pnpm install --frozen-lockfile` to update lockfile.

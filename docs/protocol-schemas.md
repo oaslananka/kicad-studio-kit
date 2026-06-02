@@ -136,10 +136,21 @@ Work items for further cross-repo compatibility hardening are tracked in
 
 The canonical schema source lives in
 [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp). Publishing a
-new version of `@oaslananka/kicad-protocol-schemas` requires a version tag push
-in the **kicad-mcp** repository. The kicad-mcp npm publish workflow creates a
-GitHub release and pushes the package to npm. The kicad-studio-kit repository
-then consumes the published version as a dependency.
+new version of `@oaslananka/kicad-protocol-schemas` is owned by the
+**kicad-mcp** repository. The kicad-studio-kit repository then consumes the
+published version as a dependency.
+
+### CI trigger
+
+The kicad-mcp publish workflow (`publish-protocol-schemas.yml`) triggers on
+**GitHub Release published** (tag-based, via Release Please) and supports
+manual `workflow_dispatch` for ad-hoc or emergency publishes. This is the
+finalized CI trigger for protocol-schema releases.
+
+The v1.x line starts with the dual trigger (release + manual dispatch).
+Graduating to tag-only publishing may be considered once the release trust
+is well established. Renovate handles consumer dependency updates regardless
+of the trigger choice.
 
 ### When to release
 
@@ -166,12 +177,15 @@ In those cases, consume the existing npm version without bumping the dependency.
 ### Cross-repo release process
 
 1. Schema change committed and tagged in `oaslananka/kicad-mcp`.
-2. Tag push triggers the kicad-mcp publish workflow: `npm publish` + GitHub
-   Release creation.
-3. Published version becomes available on npm after registry propagation.
-4. `minimumReleaseAge` in `pnpm-workspace.yaml` must be satisfied (or the new
+2. Release Please creates a GitHub Release, which triggers the kicad-mcp
+   publish workflow (`publish-protocol-schemas.yml`): `npm publish` + GitHub
+   Release assets.
+3. For ad-hoc or emergency publishes, `workflow_dispatch` may be used directly
+   from the kicad-mcp Actions tab.
+4. Published version becomes available on npm after registry propagation.
+5. `minimumReleaseAge` in `pnpm-workspace.yaml` must be satisfied (or the new
    version added to `minimumReleaseAgeExclude`) before CI accepts the version.
-5. Studio bumps the dependency in `package.json`, runs the protocol-schemas
+6. Studio bumps the dependency in `package.json`, runs the protocol-schemas
    contract gate, and completes a PR targeting the studio main branch.
 
 ### CI validation gates
