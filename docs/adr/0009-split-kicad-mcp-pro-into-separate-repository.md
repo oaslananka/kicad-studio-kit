@@ -4,7 +4,13 @@ Status: Accepted
 
 Supersedes: ADR 0001 (in part — see Consequences)
 
-Date: 2026-06-01
+Date: 2026-06-01 (updated 2026-06-02 — Phase 2 completed)
+
+Phase 2 of this ADR is complete. All local MCP source (`packages/mcp-server`,
+`packages/mcp-npm`) has been removed from this monorepo. Protocol schemas are
+published from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+Cross-repo compatibility is enforced by the compatibility canary and contract
+automation. See companion issues #286, #287, #288, #295, #290 for execution details.
 
 ## Context
 
@@ -76,25 +82,28 @@ Artifacts:
 1. This ADR (0009)
 2. GitHub issues tracking each Phase 2 work stream (companion issues)
 
-### Phase 2: Migration (future)
+### Phase 2: Migration (completed 2026-06-02)
 
-1. **Create `oaslananka/kicad-mcp`** — new GitHub repository with identical
-   branch protection, CODEOWNERS, and repository settings.
-2. **Fork product code** — copy `packages/mcp-server/` (completed)
-   (with `git history` using `git filter-repo` or subtree split) into the new
-   repo. `packages/mcp-server` has been removed from this monorepo. (The npm launcher was migrated separately in Phase 2.)
-3. **Publish shared packages** — `packages/protocol-schemas/` published to npm
-   as public package. Both repos consume from npm.
-4. **Split CI/CD** — each repo gets its own CI, publish workflows, and
+All Phase 2 items are complete:
+
+1. **`oaslananka/kicad-mcp`** — created with branch protection, CODEOWNERS,
+   and repository settings.
+2. **Product code forked** — `packages/mcp-server/` and `packages/mcp-npm/`
+   copied (with history) into the new repo, then removed from this monorepo.
+3. **Protocol schemas published** — `@oaslananka/kicad-protocol-schemas`
+   published to npm. Both repos consume from npm.
+4. **CI/CD split** — each repo owns independent CI, publish workflows, and
    release-please configuration.
-5. **Split compatibility.yaml** — each repo maintains its own copy; the
-   cross-product contract (compatibleMcpPro/compatibleExtension) is the
-   overlapping section.
-6. **Remove from monorepo** — `packages/mcp-server/` has been
-   removed from `kicad-studio-kit` (completed). Release-please-config is simplified.
-   (`packages/mcp-npm/` was removed in Phase 2 step 6a.)
-7. **Update docs** — ADR 0001 status updated to Superseded;
-   product-boundaries.md updated; README badges and URLs updated in both repos (completed).
+5. **compatibility.yaml split** — each repo maintains its own copy; the
+   cross-product contract (`compatibleMcpPro`/`compatibleExtension`) is the
+   overlapping section validated by cross-repo canary.
+6. **Monorepo cleaned** — `packages/mcp-server/`, `packages/mcp-npm/` removed;
+   `release-please-config.json`, `.release-please-manifest.json` simplified.
+7. **Docs updated** — ADR 0001 status updated to Superseded by 0009;
+   product-boundaries.md, README badges, and URLs updated in both repos.
+8. **Guardrails in place** — cross-repo compatibility canary, compatibility
+   contract automation, release coordination runbook, and emergency release
+   flow documented and green.
 
 ## Consequences
 
@@ -239,31 +248,30 @@ This matches the existing contract-first model — compatibility.yaml already
 defines the version ranges. The only difference is that testing uses published
 artifacts instead of workspace references.
 
-## Files Requiring Changes (Phase 2)
+## Files Changed (Phase 2 — Completed)
 
 ### kicad-studio-kit changes
 
-| File                                                            | Change                                                                                                                  |
-| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `release-please-config.json`                                    | Remove `mcp-server` package; remove `linked-versions` plugin                                                            |
-| `.release-please-manifest.json`                                 | Remove mcp-server entry                                                                                                 |
-| `compatibility.yaml`                                            | Remove `products.kicad-mcp-pro` section; update `source` URL; keep `compatibleMcpPro` range as external contract        |
-| `docs/adr/0001-monorepo-two-products.md`                        | Set status to `Superseded by 0009`                                                                                      |
-| `docs/adr/0009-split-kicad-mcp-pro-into-separate-repository.md` | Set status to `Accepted`                                                                                                |
-| `docs/architecture/product-boundaries.md`                       | Remove MCP server/npm from allowed dependencies table; remove "Do not introduce additional canonical repositories" note |
-| `docs/architecture/release-model.md`                            | Remove MCP server/npm release rows                                                                                      |
-| `docs/architecture/protocol-change-checklist.md`                | References to mcp-server point to new repo                                                                              |
-| `README.md`                                                     | Update badges, remove MCP references or redirect to new repo                                                            |
-| `.github/workflows/ci.yml`                                      | Remove mcp-server, mcp-npm matrix jobs                                                                                  |
-| `.github/workflows/publish-python.yml`                          | Delete or archive (moved to kicad-mcp)                                                                                  |
-| `.github/workflows/publish-mcp-registry.yml`                    | Delete or archive (moved to kicad-mcp)                                                                                  |
-| `.github/CODEOWNERS`                                            | Remove mcp-server entry                                                                                                 |
-| `package.json`                                                  | Remove mcp-server from workspace config                                                                                 |
-| Root `pnpm-workspace.yaml`                                      | Remove mcp-server from workspace                                                                                        |
-| `tsconfig.json` (root)                                          | Remove path aliases referencing mcp-server                                                                              |
-| `packages/protocol-schemas/package.json`                        | Change from `"workspace:^"` deps to published npm versions                                                              |
-| `apps/vscode-extension/package.json`                            | Change `@oaslananka/kicad-protocol-schemas` from workspace to npm version                                               |
-| `scripts/check-release-please-monorepo.mjs`                     | Remove or simplify; no longer needed for single-product config                                                          |
+| File                                                            | Change (completed)                                                                                           |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `release-please-config.json`                                    | Removed mcp-server package; removed linked-versions plugin                                                   |
+| `.release-please-manifest.json`                                 | Removed mcp-server entry                                                                                     |
+| `compatibility.yaml`                                            | Removed products.kicad-mcp-pro section; updated source URL; kept compatibleMcpPro range as external contract |
+| `docs/adr/0001-monorepo-two-products.md`                        | Status updated to Superseded by 0009                                                                         |
+| `docs/adr/0009-split-kicad-mcp-pro-into-separate-repository.md` | Status set to Accepted; Phase 2 marked complete                                                              |
+| `docs/architecture/product-boundaries.md`                       | Removed MCP server/npm from allowed dependencies table; removed no-intro note                                |
+| `docs/architecture/release-model.md`                            | Removed MCP server/npm release rows                                                                          |
+| `docs/architecture/protocol-change-checklist.md`                | References to mcp-server point to new repo                                                                   |
+| `README.md`                                                     | Badges updated; MCP references redirected to new repo                                                        |
+| `.github/workflows/ci.yml`                                      | Removed mcp-server, mcp-npm matrix jobs                                                                      |
+| `.github/workflows/publish-python.yml`                          | Deleted (moved to kicad-mcp)                                                                                 |
+| `.github/workflows/publish-mcp-registry.yml`                    | Deleted (moved to kicad-mcp)                                                                                 |
+| `.github/CODEOWNERS`                                            | Removed mcp-server entry                                                                                     |
+| `package.json`                                                  | Removed mcp-server from workspace config                                                                     |
+| Root `pnpm-workspace.yaml`                                      | Removed mcp-server from workspace                                                                            |
+| `tsconfig.json` (root)                                          | Removed path aliases referencing mcp-server                                                                  |
+| `apps/vscode-extension/package.json`                            | Changed `@oaslananka/kicad-protocol-schemas` from workspace to npm version                                   |
+| `scripts/check-release-please-monorepo.mjs`                     | Removed (no longer needed for single-product config)                                                         |
 
 ### kicad-mcp changes (new repo)
 
