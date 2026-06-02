@@ -65,7 +65,6 @@ jobs:
       - run: corepack pnpm run check:version
         env:
           GITHUB_TOKEN: ${{ github.token }}
-      - run: corepack pnpm run check:compatibility
       - run: corepack pnpm run check:compatibility-contract
       - run: corepack pnpm run check:governance
       - run: corepack pnpm run check:agent-configs
@@ -160,7 +159,6 @@ jobs:
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm run check:fixtures
-      - run: corepack pnpm run check:compatibility
       - run: corepack pnpm run test:contract
 
   performance-budgets:

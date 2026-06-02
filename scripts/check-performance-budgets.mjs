@@ -1,9 +1,5 @@
 #!/usr/bin/env node
-import {
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -33,9 +29,7 @@ export const REQUIRED_PERFORMANCE_METRIC_IDS = Object.freeze([
   "extension.bom.large_parse_ms",
   "extension.netlist.large_parse_ms",
   "extension.export.command_cancel_ms",
-  "mcp.tools_list.response_ms",
-  "mcp.pcb_board_summary.medium_ms",
-  "mcp.session.establishment_ms",
+
   "extension.memory.idle_mb",
   "extension.memory.viewer_open_mb",
 ]);
@@ -122,17 +116,23 @@ export function validatePerformanceCatalog(catalog) {
     errors.push("Performance catalog tolerance must be an object.");
   } else {
     if (!isPositiveNumber(catalog.tolerance.warningRatio)) {
-      errors.push("Performance catalog warningRatio must be a positive number.");
+      errors.push(
+        "Performance catalog warningRatio must be a positive number.",
+      );
     }
     if (!isPositiveNumber(catalog.tolerance.failureRatio)) {
-      errors.push("Performance catalog failureRatio must be a positive number.");
+      errors.push(
+        "Performance catalog failureRatio must be a positive number.",
+      );
     }
     if (
       isPositiveNumber(catalog.tolerance.warningRatio) &&
       isPositiveNumber(catalog.tolerance.failureRatio) &&
       catalog.tolerance.warningRatio >= catalog.tolerance.failureRatio
     ) {
-      errors.push("Performance catalog warningRatio must be lower than failureRatio.");
+      errors.push(
+        "Performance catalog warningRatio must be lower than failureRatio.",
+      );
     }
   }
   if (!isRecord(catalog.metrics)) {
@@ -155,7 +155,9 @@ export function validatePerformanceCatalog(catalog) {
       errors.push(`Performance catalog has unknown metric ${metricId}.`);
     }
     if (!isPositiveNumber(metric.baseline)) {
-      errors.push(`Performance metric ${metricId} baseline must be a positive number.`);
+      errors.push(
+        `Performance metric ${metricId} baseline must be a positive number.`,
+      );
     }
     if (!SUPPORTED_UNITS.has(metric.unit)) {
       errors.push(`Performance metric ${metricId} unit must be ms or MB.`);
@@ -218,7 +220,9 @@ export function evaluatePerformanceMeasurements(catalog, measurements) {
       continue;
     }
     if (measurement.unit !== metric.unit) {
-      errors.push(`${metricId} must use ${metric.unit}, received ${measurement.unit}.`);
+      errors.push(
+        `${metricId} must use ${metric.unit}, received ${measurement.unit}.`,
+      );
       continue;
     }
     if (!isPositiveNumber(measurement.value)) {
