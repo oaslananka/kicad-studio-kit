@@ -11,30 +11,30 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 
 ### Runtime Baseline
 
-| Runtime               | Policy          |
-| --------------------- | --------------- |
-| KiCad primary         | `10.0.x`        |
-| KiCad latest verified | `10.0.3`        |
-| VS Code minimum       | `1.122.0`       |
-| Node                  | `>=24.11.0 <25` |
-| pnpm                  | `>=11.0.0 <12`  |
-| Python                | `>=3.13`        |
-| MCP protocol          | `2025-11-25`    |
-| MCP protocol (next)   | `2026-07-28`    |
+| Runtime | Policy |
+| --- | --- |
+| KiCad primary | `10.0.x` |
+| KiCad latest verified | `10.0.3` |
+| VS Code minimum | `1.122.0` |
+| Node | `>=24.11.0 <25` |
+| pnpm | `>=11.0.0 <12` |
+| Python | `>=3.13` |
+| MCP protocol | `2025-11-25` |
+| MCP protocol (next) | `2026-07-28` |
 
 ### KiCad Support
 
-| Range  | State      | CI        | Notes                                                                                                                                    |
-| ------ | ---------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| 10.0.x | primary    | required  | Primary optimized KiCad CLI and file-format target.                                                                                      |
-| 9.x    | deprecated | scheduled | Upstream KiCad 9.x is no longer actively maintained; core workflows remain best-effort while scheduled canaries gather removal evidence. |
-| 8.x    | deprecated | manual    | File-level read and migration support only; removal requires a release note.                                                             |
+| Range | State | CI | Notes |
+| --- | --- | --- | --- |
+| 10.0.x | primary | required | Primary optimized KiCad CLI and file-format target. |
+| 9.x | deprecated | scheduled | Upstream KiCad 9.x is no longer actively maintained; core workflows remain best-effort while scheduled canaries gather removal evidence. |
+| 8.x | deprecated | manual | File-level read and migration support only; removal requires a release note. |
 
 ### Product Versions
 
-| Product      | Version | Manifest                           | Compatibility range  |
-| ------------ | ------- | ---------------------------------- | -------------------- |
-| kicad-studio | 1.1.0   | apps/vscode-extension/package.json | &gt;=3.5.2 &lt;4.0.0 |
+| Product | Version | Manifest | Compatibility range |
+| --- | --- | --- | --- |
+| kicad-studio | 1.1.0 | apps/vscode-extension/package.json | &gt;=3.5.2 &lt;4.0.0 |
 
 ### Release Gate Inputs
 
