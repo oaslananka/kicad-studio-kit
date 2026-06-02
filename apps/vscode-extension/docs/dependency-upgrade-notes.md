@@ -8,7 +8,7 @@ This monorepo uses Renovate as the dependency maintenance bot. Repository-local 
 - Renovate lock-file maintenance refreshes `pnpm-lock.yaml` on the weekly maintenance window. (Python MCP server lock files are managed in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).)
 - GitHub Action references remain pinned to immutable commit SHAs.
 - `@types/node` stays below `25` while the workspace runtime is Node 24.
-- `@types/vscode` stays aligned with `engines.vscode: ^1.120.0`.
+- `@types/vscode` stays aligned with `engines.vscode: ^1.122.0`.
 - Python dependency updates are applied through `pyproject.toml` plus `uv.lock`.
 
 ## Applied Updates
@@ -23,7 +23,7 @@ This monorepo uses Renovate as the dependency maintenance bot. Repository-local 
 | `prettier`                         | `3.8.3`   |
 | `typescript`                       | `5.9.3`   |
 | `@types/node`                      | `24.12.3` |
-| `@types/vscode`                    | `1.120.0` |
+| `@types/vscode`                    | `1.122.0` |
 | `webpack-cli`                      | `7.0.2`   |
 | `c8`                               | `11.0.0`  |
 | `lint-staged`                      | `17.0.4`  |
@@ -72,7 +72,7 @@ and build all pass on `7.8.1`.
 | Jest 30, `@types/jest` 30, `jest-util` 30 | Postponed until unit, integration, mocks, and extension host tests are migrated together.                                                                                                                                                                                                                                              |
 | Vite 8 (pnpm override)                    | Blocked by `vitepress` 1.6.4 (the newest stable VitePress; only `2.0.0-alpha` supports Vite 8). The `vite` override drives the VitePress docs build, and Vite 8 (Rolldown bundler, removed `transformWithEsbuild`) fails `vitepress build docs` against VitePress 1.6.4. Revisit once a stable VitePress releases with Vite 8 support. |
 | `@types/node` 25                          | Rejected for now because the runtime target is Node 24.x.                                                                                                                                                                                                                                                                              |
-| `@types/vscode` 1.121                     | Rejected for now because the package is not published yet; `1.120.0` is the newest registry version aligned with `engines.vscode: ^1.120.0`.                                                                                                                                                                                           |
+| `@types/vscode` 1.121                     | Rejected for now because the package was not published at the time; `1.120.0` was the newest registry version aligned with the previous `engines.vscode: ^1.120.0`.                                                                                                                                                                    |
 
 ## Security Review
 

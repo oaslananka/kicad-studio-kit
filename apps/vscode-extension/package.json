@@ -5,7 +5,7 @@
   "version": "1.1.0",
   "publisher": "oaslananka",
   "engines": {
-    "vscode": "^1.120.0",
+    "vscode": "^1.122.0",
     "node": "24.x"
   },
   "packageManager": "pnpm@11.5.0",

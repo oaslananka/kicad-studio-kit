@@ -13,7 +13,7 @@ KiCad 10 introduces workflow changes that matter to extension users:
 ## Recommended Upgrade Path
 
 1. Update your local KiCad installation to KiCad 10.
-2. Update VS Code to 1.120 or newer before installing KiCad Studio 1.0.0.
+2. Update VS Code to 1.122 or newer before installing KiCad Studio 1.0.0.
 3. Re-run `KiCad: Detect kicad-cli` so the extension refreshes CLI capability detection.
 4. Open the project in KiCad 10 once and save it before testing in VS Code.
 5. Confirm that your `.kicad_pro` contains the expected variant data if you plan to use the Variants sidebar.

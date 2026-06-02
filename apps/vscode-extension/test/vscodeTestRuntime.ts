@@ -1,4 +1,4 @@
-export const DEFAULT_VSCODE_TEST_VERSION = '1.120.0';
+export const DEFAULT_VSCODE_TEST_VERSION = '1.122.0';
 
 type TestEnvironment = Record<string, string | undefined>;
 

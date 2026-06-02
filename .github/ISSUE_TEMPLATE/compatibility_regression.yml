@@ -59,7 +59,7 @@ body:
     id: vscode-version
     attributes:
       label: VS Code version
-      placeholder: "1.120.0"
+      placeholder: "1.122.0"
   - type: input
     id: mcp-protocol
     attributes:
