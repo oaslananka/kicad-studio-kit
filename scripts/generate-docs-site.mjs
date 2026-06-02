@@ -89,7 +89,6 @@ function renderEnum(schema) {
 function productVersions() {
   const root = readJson("package.json");
   const extension = readJson("apps/vscode-extension/package.json");
-  const mcpNpm = readJson("packages/mcp-npm/package.json");
   const mcpPyproject = readText("packages/mcp-server/pyproject.toml");
   const mcpVersion =
     mcpPyproject.match(/^version = "([^"]+)"/mu)?.[1] ?? "unknown";
@@ -97,7 +96,6 @@ function productVersions() {
     root: root.version,
     extension: extension.version,
     mcpServer: mcpVersion,
-    mcpNpm: mcpNpm.version,
   };
 }
 
@@ -363,7 +361,6 @@ documentation site always follows the same release history as the repository.
 | Monorepo | \`${versions.root}\` | [Root changelog](root.md) |
 | KiCad Studio extension | \`${versions.extension}\` | [Extension changelog](kicad-studio.md) |
 | kicad-mcp-pro Python server | \`${versions.mcpServer}\` | [MCP server changelog](kicad-mcp-pro.md) |
-| npm launcher | \`${versions.mcpNpm}\` | [npm launcher changelog](mcp-npm.md) |
 `;
 }
 
@@ -421,7 +418,6 @@ Product-scoped checks:
 \`\`\`bash
 corepack pnpm run check:kicad-studio
 corepack pnpm run check:kicad-mcp-pro
-corepack pnpm run check:mcp-npm
 corepack pnpm run test:contract
 \`\`\`
 
@@ -518,7 +514,6 @@ Refresh with \`corepack pnpm run docs:generate\`.
 | Monorepo baseline | \`${versions.root}\` |
 | KiCad Studio extension | \`${versions.extension}\` |
 | kicad-mcp-pro Python server | \`${versions.mcpServer}\` |
-| npm launcher | \`${versions.mcpNpm}\` |
 | VS Code engine | \`${compatibility.vscode.enginesRange}\` |
 | Node | \`${compatibility.node.range}\` |
 | pnpm | \`${compatibility.pnpm.range}\` |
@@ -613,11 +608,6 @@ function main() {
     "packages/mcp-server/CHANGELOG.md",
     "changelog/kicad-mcp-pro.md",
     "kicad-mcp-pro Changelog",
-  );
-  copyChangelog(
-    "packages/mcp-npm/CHANGELOG.md",
-    "changelog/mcp-npm.md",
-    "npm Launcher Changelog",
   );
   writeGenerated("public/robots.txt", renderRobots());
   writeGenerated("public/sitemap.xml", renderSitemap());
