@@ -1,6 +1,6 @@
 # ADR 0001: Monorepo Two Products
 
-Status: Accepted
+Status: Superseded by 0009
 
 Date: 2026-05-30
 
