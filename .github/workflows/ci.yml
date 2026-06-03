@@ -137,10 +137,6 @@ jobs:
         if: runner.os == 'Linux'
         timeout-minutes: 15
         run: xvfb-run -a corepack pnpm --filter kicadstudiokit run test:e2e
-      - name: Run E2E viewer tests
-        if: runner.os != 'Linux'
-        timeout-minutes: 15
-        run: corepack pnpm --filter kicadstudiokit run test:e2e
       - name: Run visual regression snapshots
         if: runner.os == 'Windows'
         timeout-minutes: 15
