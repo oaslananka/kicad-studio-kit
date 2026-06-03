@@ -221,12 +221,12 @@
       },
       {
         "language": "kicad-layout-rules",
-        "scopeName": "source.kicad.prl",
-        "path": "./syntaxes/kicad-schematic.tmLanguage.json"
+        "scopeName": "source.kicad.pro",
+        "path": "./syntaxes/kicad-project.tmLanguage.json"
       },
       {
         "language": "kicad-worksheet",
-        "scopeName": "source.kicad.wks",
+        "scopeName": "source.kicad.sch",
         "path": "./syntaxes/kicad-schematic.tmLanguage.json"
       }
     ],
