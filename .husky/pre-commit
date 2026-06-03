@@ -1,2 +1,2 @@
 #!/usr/bin/env sh
-pnpm run check:staged
+pnpm --filter kicadstudiokit exec lint-staged

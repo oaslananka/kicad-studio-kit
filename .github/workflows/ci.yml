@@ -92,6 +92,13 @@ jobs:
       - run: corepack pnpm --filter kicadstudiokit run lint
       - run: corepack pnpm --filter kicadstudiokit run typecheck
       - run: corepack pnpm --filter kicadstudiokit run test:unit:coverage
+      - name: Upload coverage summary
+        if: matrix.os == 'ubuntu-24.04' && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: coverage-summary
+          path: apps/vscode-extension/coverage/coverage-summary.json
+          if-no-files-found: ignore
       - name: Use runner Chrome with Playwright Linux dependencies
         if: runner.os == 'Linux'
         timeout-minutes: 6
@@ -126,6 +133,14 @@ jobs:
           & $chromePath --version
           "KICADSTUDIO_PLAYWRIGHT_CHANNEL=chrome" >> $env:GITHUB_ENV
       - run: corepack pnpm --filter kicadstudiokit run test:webview
+      - name: Run E2E viewer tests
+        if: runner.os == 'Linux'
+        timeout-minutes: 15
+        run: xvfb-run -a corepack pnpm --filter kicadstudiokit run test:e2e
+      - name: Run E2E viewer tests
+        if: runner.os != 'Linux'
+        timeout-minutes: 15
+        run: corepack pnpm --filter kicadstudiokit run test:e2e
       - name: Run visual regression snapshots
         if: runner.os == 'Windows'
         timeout-minutes: 15
@@ -236,6 +251,22 @@ jobs:
             apps/vscode-extension/test-results
           if-no-files-found: ignore
           retention-days: 7
+
+  coverage-report:
+    needs: vscode-extension
+    if: github.event_name == 'pull_request' && needs.vscode-extension.result == 'success'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: coverage-summary
+      - uses: MishaKav/jest-coverage-comment@b8a96942d027b4b156f330638b73e0294d7bfbb3
+        with:
+          coverage-summary-path: coverage-summary.json
+          title: Coverage Report
 
   forbidden-refs:
     needs: ci-lanes

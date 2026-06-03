@@ -8,6 +8,7 @@ module.exports = {
   moduleFileExtensions: ['ts', 'js', 'json'],
   collectCoverage: true,
   coverageDirectory: 'coverage',
+  coverageReporters: ['json-summary', 'text', 'lcov'],
   coverageThreshold: {
     global: {
       branches: 70,
