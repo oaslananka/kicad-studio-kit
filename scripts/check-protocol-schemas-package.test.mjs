@@ -43,7 +43,7 @@ test("OASLANA-52 protocol schemas are consumed from npm package", () => {
   const packageJson = readJson(path.join(pkgRoot, "package.json"));
 
   assert.equal(packageJson.name, "@oaslananka/kicad-protocol-schemas");
-  assert.equal(packageJson.version, "1.1.0");
+  assert.equal(packageJson.version, "1.1.1");
   assert.equal(packageJson.main, "dist/index.js");
   assert.equal(packageJson.types, "dist/index.d.ts");
   assert.deepEqual(packageJson.files, ["dist/", "schemas/", "README.md"]);
@@ -53,7 +53,7 @@ test("OASLANA-52 protocol schemas are consumed from npm package", () => {
   );
   assert.equal(
     rootPackage.devDependencies["@oaslananka/kicad-protocol-schemas"],
-    "1.1.0",
+    "1.1.1",
   );
   assert.match(
     rootPackage.scripts["check:protocol-schemas"],
