@@ -1234,8 +1234,7 @@
           "command": "kicadstudio.sendFeedback"
         },
         {
-          "command": "kicadstudio.setupMcpIntegration",
-          "when": "kicadstudio.workspaceTrusted"
+          "command": "kicadstudio.setupMcpIntegration"
         },
         {
           "command": "kicadstudio.mcp.launchHttp",
