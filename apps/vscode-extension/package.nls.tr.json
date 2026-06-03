@@ -10,6 +10,8 @@
   "kicadstudio.contributes.languages.3.aliases.0": "KiCad Footprint",
   "kicadstudio.contributes.languages.4.aliases.0": "KiCad Projesi",
   "kicadstudio.contributes.languages.5.aliases.0": "KiCad DRC Kuralları",
+  "kicadstudio.contributes.languages.prl.aliases.0": "KiCad Yerleşim Kuralları",
+  "kicadstudio.contributes.languages.wks.aliases.0": "KiCad Çalışma Sayfası",
   "kicadstudio.contributes.customEditors.0.displayName": "KiCad Şematik Görüntüleyici",
   "kicadstudio.contributes.customEditors.1.displayName": "KiCad PCB Görüntüleyici",
   "kicadstudio.contributes.viewsContainers.activitybar.0.title": "KiCad Studio",
