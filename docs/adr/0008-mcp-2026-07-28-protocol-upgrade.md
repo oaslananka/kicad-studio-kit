@@ -163,7 +163,9 @@ Target: All groundwork done so upgrade is a SDK-bump + validation.
 6. **Update `validate_mcp_manifest.py`** for 2026-07-28 schema validation.
 7. **Update `check_compatibility_matrix.py`**: add 2026-07-28 protocol matrix
    entry.
-8. **Add CI protocol contract check** in `kicad-canary.yml`.
+8. **Add CI protocol contract checks** to the extension canary and the
+   [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) server
+   canary.
 
 ### Phase 2: Feature Adoption (Post SDK upgrade)
 
@@ -214,7 +216,7 @@ Target: All groundwork done so upgrade is a SDK-bump + validation.
 | `packages/protocol-schemas/schemas/compatibility-manifest.schema.json` | Update for new MCP fields |
 | (in `oaslananka/kicad-mcp`) `scripts/validate_mcp_manifest.py` | Update validation logic for 2026-07-28 |
 | (in `oaslananka/kicad-mcp`) `scripts/check_compatibility_matrix.py` | Add 2026-07-28 matrix entry |
-| `.github/workflows/kicad-canary.yml` | Add protocol contract check with new SDK |
+| `.github/workflows/vscode-canary.yml` and `oaslananka/kicad-mcp` canary workflows | Add protocol contract check with new SDK |
 
 ### Phase 2 (Feature Adoption)
 

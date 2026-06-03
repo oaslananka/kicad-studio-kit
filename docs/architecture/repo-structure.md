@@ -1,11 +1,12 @@
 # Repository Structure
 
-KiCad Studio Kit is one GitHub repository with three independently validated release surfaces:
+KiCad Studio Kit is one GitHub repository with one local release surface and
+cross-repo compatibility coverage for the external MCP server:
 
 | Workspace                                                                       | Product role                                        | Public surface                                         |
 | ------------------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------ |
 | `apps/vscode-extension`                                                         | KiCad Studio VS Code and Open VSX extension         | `oaslananka.kicadstudiokit`                            |
-| (removed — see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)) | KiCad MCP Pro Python server and MCP Registry source | `kicad-mcp-pro` / `io.github.oaslananka/kicad-mcp-pro` |
+| (external — see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)) | KiCad MCP Pro Python server and MCP Registry source | `kicad-mcp-pro` / `io.github.oaslananka/kicad-mcp-pro` |
 
 | `packages/test-harness` | Private shared test utilities | Not published |
 

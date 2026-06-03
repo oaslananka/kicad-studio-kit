@@ -298,14 +298,30 @@ function fixtureManifestCheck(repoRoot) {
   }
 }
 
-function protocolSchemasCheck(repoRoot) {
-  const pkgRoot = path.dirname(
-    path.dirname(
-      require.resolve("@oaslananka/kicad-protocol-schemas/package.json"),
-    ),
+function resolveProtocolSchemasPackageRoot() {
+  const entryPath = fileURLToPath(
+    import.meta.resolve("@oaslananka/kicad-protocol-schemas"),
   );
-  const schemaRoot = path.join(pkgRoot, "schemas");
+  let current = path.dirname(entryPath);
+  while (current !== path.dirname(current)) {
+    const packageJsonPath = path.join(current, "package.json");
+    if (existsSync(packageJsonPath)) {
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+      if (packageJson.name === "@oaslananka/kicad-protocol-schemas") {
+        return current;
+      }
+    }
+    current = path.dirname(current);
+  }
+  throw new Error(
+    "Unable to locate @oaslananka/kicad-protocol-schemas package root.",
+  );
+}
+
+function protocolSchemasCheck(repoRoot) {
   try {
+    const pkgRoot = resolveProtocolSchemasPackageRoot();
+    const schemaRoot = path.join(pkgRoot, "schemas");
     const schemaFiles = readdirSync(schemaRoot).filter((file) =>
       file.endsWith(".schema.json"),
     );

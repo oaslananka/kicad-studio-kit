@@ -13,20 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  matrix:
-    runs-on: ubuntu-24.04
-    outputs:
-      lanes: ${{ steps.lanes.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          persist-credentials: false
-      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
-        with:
-          enable-cache: true
-
   extension-host:
-    needs: matrix
     runs-on: ubuntu-24.04
     continue-on-error: ${{ matrix.continue_on_error }}
     permissions:
@@ -34,7 +21,20 @@ jobs:
       issues: write
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.matrix.outputs.lanes) }}
+      matrix:
+        include:
+          - id: minimum
+            state: primary
+            version: 1.122.0
+            continue_on_error: false
+          - id: stable
+            state: primary
+            version: stable
+            continue_on_error: false
+          - id: insiders
+            state: preview
+            version: insiders
+            continue_on_error: true
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:

@@ -60,13 +60,14 @@ corepack pnpm run check:protocol-pr-template
 Protocol-impacting changes still need the contract gate:
 
 ```bash
-corepack pnpm run test:contract
+corepack pnpm run check:protocol-schemas
+corepack pnpm run check:compatibility-contract
 ```
 
 When compatibility metadata or KiCad fixtures are touched, also run:
 
 ```bash
-corepack pnpm run check:compatibility
+corepack pnpm run check:compatibility-contract
 corepack pnpm run test:fixtures
 ```
 

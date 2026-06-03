@@ -5,11 +5,12 @@ import path from "node:path";
 const root = process.cwd();
 const strategyPath = path.join(root, "docs", "testing-strategy.md");
 const packagePath = path.join(root, "package.json");
-const nightlyWorkflowPath = path.join(
+const ciWorkflowPath = path.join(root, ".github", "workflows", "ci.yml");
+const vscodeCanaryWorkflowPath = path.join(
   root,
   ".github",
   "workflows",
-  "nightly-quality-gates.yml",
+  "vscode-canary.yml",
 );
 
 const requiredSections = [
@@ -20,7 +21,7 @@ const requiredSections = [
   "## Bug-Fix Regression Requirement",
   "## Path-Filtered CI Lanes",
   "## Performance Budgets",
-  "## Nightly Quality Gates",
+  "## Scheduled Compatibility Gates",
   "## Regression Coverage Map",
   "## Local Commands",
   "## CI Ownership",
@@ -35,17 +36,12 @@ const requiredPhrases = [
   "corepack pnpm run test:kicad-studio",
   "corepack pnpm run build:kicad-studio",
   "corepack pnpm run package:kicad-studio",
-  "corepack pnpm run check:kicad-mcp-pro",
-  "corepack pnpm run test:kicad-mcp-pro",
-  "corepack pnpm run build:kicad-mcp-pro",
-  "corepack pnpm run package:kicad-mcp-pro",
-
+  "corepack pnpm run check:protocol-schemas",
+  "corepack pnpm run check:compatibility-contract",
+  "Run from the `oaslananka/kicad-mcp` repository",
   "corepack pnpm run check:performance-budgets",
   "corepack pnpm run check:ci-lanes",
   "corepack pnpm run check:kicad-gui-smoke",
-  "corepack pnpm run test:kicad-gui-smoke",
-  "corepack pnpm run test:contract",
-  "test:transport-contract",
   "corepack pnpm run test:fixtures",
   "GitHub issue #62",
   "A reference to the related issue ID",
@@ -62,7 +58,8 @@ const requiredPhrases = [
   "visual regression",
   "accessibility",
   "manual smoke",
-  ".github/workflows/kicad-gui-smoke.yml",
+  ".github/workflows/vscode-canary.yml",
+  ".github/workflows/cross-repo-compatibility.yml",
 ];
 
 const roadmapIssueIds = [
@@ -104,7 +101,8 @@ function assertIncludes(haystack, needle, source) {
 
 const strategy = readText(strategyPath);
 const packageJson = JSON.parse(readText(packagePath));
-const nightlyWorkflow = readText(nightlyWorkflowPath);
+const ciWorkflow = readText(ciWorkflowPath);
+const vscodeCanaryWorkflow = readText(vscodeCanaryWorkflowPath);
 
 for (const section of requiredSections) {
   assertIncludes(strategy, section, "docs/testing-strategy.md");
@@ -135,23 +133,23 @@ if (!scripts.check?.includes("pnpm run check:testing-strategy")) {
 }
 
 assertIncludes(
-  nightlyWorkflow,
-  "name: Nightly Quality Gates",
-  "nightly-quality-gates workflow",
-);
-assertIncludes(nightlyWorkflow, "cron:", "nightly-quality-gates workflow");
-assertIncludes(
-  nightlyWorkflow,
-  "corepack pnpm run check",
-  "nightly-quality-gates workflow",
+  ciWorkflow,
+  "Measure extension performance budgets",
+  "ci workflow",
 );
 assertIncludes(
-  nightlyWorkflow,
-  "corepack pnpm run test:contract",
-  "nightly-quality-gates workflow",
+  ciWorkflow,
+  "corepack pnpm --filter kicadstudiokit run test:perf",
+  "ci workflow",
 );
 assertIncludes(
-  nightlyWorkflow,
-  "corepack pnpm run test:fixtures",
-  "nightly-quality-gates workflow",
+  vscodeCanaryWorkflow,
+  "name: VS Code Canary",
+  "vscode-canary workflow",
+);
+assertIncludes(vscodeCanaryWorkflow, "cron:", "vscode-canary workflow");
+assertIncludes(
+  vscodeCanaryWorkflow,
+  "corepack pnpm --filter kicadstudiokit run test:integration",
+  "vscode-canary workflow",
 );

@@ -81,7 +81,6 @@ test("commit scope gate allows repo-scoped release governance across products", 
         subject: "ci(repo): add supply-chain release evidence",
         files: [
           ".github/workflows/publish-extension.yml",
-          ".github/workflows/publish-python.yml",
           ".github/workflows/security.yml",
           "apps/vscode-extension/scripts/lint-workflows.js",
           "docs/release.md",

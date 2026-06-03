@@ -111,8 +111,8 @@ protecting users on the stable line while maintainers test the next major line.
 | Direct SWIG imports    | Production `pcbnew` imports are forbidden by a guard script in the [`oaslananka/kicad-mcp`](https://github.com/oaslananka/kicad-mcp) repo. |
 | Allowed `pcbnew` paths | Guarded by the kicad-mcp repository.                                                                                                       |
 | IPC parity matrix      | `compatibility.yaml` `kicadIpcReadiness.ipcApi.requiredFor`.                                                                               |
-| Current nightly smoke  | `corepack pnpm run test:kicad-cli-contract:nightly` with a configured nightly `kicad-cli`.                                                 |
-| KiCad 11 RC smoke      | `corepack pnpm run test:kicad-cli-contract:future` once the installed prerelease reports `11.0.x`.                                         |
+| Current nightly smoke  | Run from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) with a configured nightly `kicad-cli`.                            |
+| KiCad 11 RC smoke      | Run from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) once the installed prerelease reports `11.0.x`.                    |
 | Migration guide        | [`docs/compatibility/kicad-10-to-11-migration.md`](compatibility/kicad-10-to-11-migration.md).                                             |
 
 Status surfaces:
@@ -227,7 +227,7 @@ Python support, or KiCad primary support after canary validation passes.
 Run the compatibility gate before any release PR is merged:
 
 ```powershell
-corepack pnpm run check:compatibility
+corepack pnpm run check:compatibility-contract
 ```
 
 The gate fails when:

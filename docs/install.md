@@ -1,6 +1,6 @@
 # Install
 
-KiCad Studio Kit has three install surfaces:
+KiCad Studio Kit has two install surfaces:
 
 | Surface                        | Use when                                                                                                               | Install path                                                                                                     |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
@@ -18,8 +18,10 @@ Run the product checks before using a local build:
 
 ```bash
 corepack pnpm run check:kicad-studio
-corepack pnpm run check:kicad-mcp-pro
 ```
+
+Run MCP server checks from the
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
 
 ## Extension Development Build
 

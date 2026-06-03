@@ -55,9 +55,9 @@ const SAMPLE_CATALOG = {
 
 Object.assign(SAMPLE_CATALOG.metrics, {
   "extension.project_scan.single_ms": {
-    baseline: 300,
+    baseline: 100,
     unit: "ms",
-    ciRequired: false,
+    ciRequired: true,
     summary: "Single project scan.",
     source: "OASLANA-46",
   },
@@ -72,7 +72,6 @@ test("repository performance catalog defines every OASLANA-124 metric", () => {
     Object.keys(catalog.metrics).sort(),
     [...REQUIRED_PERFORMANCE_METRIC_IDS].sort(),
   );
-  assert.equal(catalog.metrics["mcp.tools_list.response_ms"].ciRequired, true);
   assert.equal(
     catalog.metrics["extension.viewer.large_pcb_first_render_ms"].unit,
     "ms",
@@ -113,13 +112,13 @@ test("root check includes performance budget catalog validation", () => {
   assert.match(packageJson.scripts.check, /pnpm run check:performance-budgets/);
 });
 
-test("performance measurement loader merges extension and MCP artifacts", () => {
+test("performance measurement loader merges extension artifacts", () => {
   const tempDir = mkdtempSync(path.join(os.tmpdir(), "kicadstudio-perf-"));
   try {
-    const extensionPath = path.join(tempDir, "extension.json");
-    const mcpPath = path.join(tempDir, "mcp.json");
+    const projectScanPath = path.join(tempDir, "project-scan.json");
+    const viewerPath = path.join(tempDir, "viewer.json");
     writeFileSync(
-      extensionPath,
+      projectScanPath,
       JSON.stringify({
         schemaVersion: 1,
         source:
@@ -136,13 +135,15 @@ test("performance measurement loader merges extension and MCP artifacts", () => 
       }),
     );
     writeFileSync(
-      mcpPath,
+      viewerPath,
       JSON.stringify({
         schemaVersion: 1,
+        source:
+          "apps/vscode-extension/test/performance/viewerPerformance.test.ts",
         measurements: [
           {
-            metric: "mcp.tools_list.response_ms",
-            value: 12,
+            metric: "extension.viewer.reload_ms",
+            value: 125,
             unit: "ms",
             statistic: "p95",
             samples: 5,
@@ -151,28 +152,25 @@ test("performance measurement loader merges extension and MCP artifacts", () => 
       }),
     );
 
-    const merged = loadPerformanceMeasurements([extensionPath, mcpPath]);
+    const merged = loadPerformanceMeasurements([projectScanPath, viewerPath]);
 
     assert.equal(merged.schemaVersion, 1);
     assert.deepEqual(merged.sources, [
       "apps/vscode-extension/test/performance/extensionPerformance.test.ts",
+      "apps/vscode-extension/test/performance/viewerPerformance.test.ts",
     ]);
     assert.deepEqual(
       merged.measurements.map((measurement) => measurement.metric),
-      ["extension.project_scan.single_ms", "mcp.tools_list.response_ms"],
+      ["extension.project_scan.single_ms", "extension.viewer.reload_ms"],
     );
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
 });
 
-test("CI and nightly workflows persist OASLANA-46 performance artifacts", () => {
+test("CI workflow persists OASLANA-46 performance artifacts", () => {
   const ci = readFileSync(
     path.join(REPO_ROOT, ".github", "workflows", "ci.yml"),
-    "utf8",
-  );
-  const nightly = readFileSync(
-    path.join(REPO_ROOT, ".github", "workflows", "nightly-quality-gates.yml"),
     "utf8",
   );
 
@@ -185,9 +183,7 @@ test("CI and nightly workflows persist OASLANA-46 performance artifacts", () => 
     ci,
     /--measurements performance-results\/extension-performance\.json/,
   );
-  assert.match(ci, /--measurements performance-results\/mcp-tools-list\.json/);
   assert.match(ci, /performance-results\/budget-report\.json/);
-  assert.match(nightly, /corepack pnpm run test:perf/);
 });
 
 test("budget evaluation warns at 10 percent drift and fails above 20 percent", () => {
@@ -195,7 +191,7 @@ test("budget evaluation warns at 10 percent drift and fails above 20 percent", (
     schemaVersion: 1,
     measurements: [
       {
-        metric: "mcp.tools_list.response_ms",
+        metric: "extension.project_scan.single_ms",
         value: 111,
         unit: "ms",
         statistic: "p95",
@@ -215,7 +211,7 @@ test("budget evaluation warns at 10 percent drift and fails above 20 percent", (
     schemaVersion: 1,
     measurements: [
       {
-        metric: "mcp.tools_list.response_ms",
+        metric: "extension.project_scan.single_ms",
         value: 121,
         unit: "ms",
         statistic: "p95",
@@ -225,7 +221,10 @@ test("budget evaluation warns at 10 percent drift and fails above 20 percent", (
   });
 
   assert.equal(failure.summary.fail, 1);
-  assert.match(failure.errors.join("\n"), /mcp\.tools_list\.response_ms/);
+  assert.match(
+    failure.errors.join("\n"),
+    /extension\.project_scan\.single_ms/,
+  );
   assert.match(failure.errors.join("\n"), /121\.00 ms > 120\.00 ms/);
 });
 
@@ -237,14 +236,14 @@ test("budget evaluation requires CI measurements and rejects unit drift", () => 
 
   assert.match(
     missing.errors.join("\n"),
-    /Missing CI-required performance measurement: mcp\.tools_list\.response_ms/,
+    /Missing CI-required performance measurement: extension\.project_scan\.single_ms/,
   );
 
   const mismatched = evaluatePerformanceMeasurements(SAMPLE_CATALOG, {
     schemaVersion: 1,
     measurements: [
       {
-        metric: "mcp.tools_list.response_ms",
+        metric: "extension.project_scan.single_ms",
         value: 50,
         unit: "MB",
         statistic: "p95",
@@ -255,6 +254,6 @@ test("budget evaluation requires CI measurements and rejects unit drift", () => 
 
   assert.match(
     mismatched.errors.join("\n"),
-    /mcp\.tools_list\.response_ms must use ms, received MB/,
+    /extension\.project_scan\.single_ms must use ms, received MB/,
   );
 });

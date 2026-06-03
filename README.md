@@ -3,7 +3,6 @@
 [![CI](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml)
 [![Security](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml)
-[![MCP Registry](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/publish-mcp-registry.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/publish-mcp-registry.yml)
 [![Open VSX](https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX)](https://open-vsx.org/extension/oaslananka/kicadstudiokit)
 
 Monorepo for:
@@ -17,12 +16,12 @@ Searchable documentation: https://oaslananka.github.io/kicad-studio-kit/
 
 ## Version Baseline
 
-All release surfaces are pinned to `1.0.0`:
+This repository's local release surface is:
 
-- VS Code extension: `oaslananka.kicadstudiokit`
-- Python package: `kicad-mcp-pro`
+- VS Code extension: `oaslananka.kicadstudiokit` (`1.1.0`)
 
-- MCP Registry name: `io.github.oaslananka/kicad-mcp-pro`
+The Python package `kicad-mcp-pro`, container image, and MCP Registry listing
+are released from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
 
 ## KiCad Compatibility
 
@@ -49,12 +48,15 @@ Product-scoped entrypoints are available from the root:
 
 ```powershell
 corepack pnpm run check:kicad-studio
-corepack pnpm run check:kicad-mcp-pro
 
 corepack pnpm --dir packages/test-harness run check
-corepack pnpm run test:contract
+corepack pnpm run check:protocol-schemas
+corepack pnpm run check:compatibility-contract
 corepack pnpm run check:dev-doctor
 ```
+
+Python/MCP server checks run from the
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
 
 For a reproducible VS Code Dev Containers or GitHub Codespaces environment, use
 the checked-in [devcontainer configuration](docs/devcontainer.md). The container

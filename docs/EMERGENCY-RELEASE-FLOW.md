@@ -26,7 +26,7 @@ break when:
 
 - `check:protocol-schemas` fails after a dependency bump in this repo.
 - The cross-repo compatibility canary reports a protocol contract mismatch.
-- `check:compatibility` fails with a schema validation error.
+- `check:compatibility-contract` fails with a schema validation error.
 
 **Root cause**: schema files pushed to npm with incorrect `$ref`, missing
 definitions, or breaking changes that the TypeScript/Python validators reject.
@@ -85,7 +85,7 @@ Detection:
 
 - `.github/workflows/cross-repo-compatibility.yml` run on `main` after a
   publish workflow completes reports a failure.
-- `check:compatibility` or `check:protocol-schemas` fails on `main` with
+- `check:compatibility-contract` or `check:protocol-schemas` fails on `main` with
   an error that did not appear on the release branch.
 
 **Root cause**: timestamp skew between the release PR branch and the published

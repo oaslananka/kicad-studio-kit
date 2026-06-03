@@ -16,7 +16,7 @@ python -m pip index versions kicad-mcp-pro
 
 If the target version already exists on a target registry, the publish preflight must fail. Do not automatically bump the version.
 
-Before publishing, run `corepack pnpm run check:compatibility` and confirm `compatibility.yaml` matches the release notes and [support matrix](support-matrix.md).
+Before publishing, run `corepack pnpm run check:compatibility-contract` and confirm `compatibility.yaml` matches the release notes and [support matrix](support-matrix.md).
 
 ## Product Dry Runs
 
@@ -29,7 +29,7 @@ corepack pnpm run release:dry-run
 
 `release:dry-run:kicad-studio` validates the extension release-please package path, product changelog path, component tag naming, and that the extension is not linked to the MCP product version.
 
-`release:dry-run:kicad-mcp-pro` is now run from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+MCP server release dry-runs are now owned by [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
 
 Protocol or tool-schema changes must update compatibility metadata and release notes for both products before publishing.
 

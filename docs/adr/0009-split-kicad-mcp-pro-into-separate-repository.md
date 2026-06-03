@@ -237,7 +237,8 @@ in-flight sibling, each repo validates against the **last published** version
 of the other product:
 
 1. **Before kicad-mcp-pro release**: CI installs latest published
-   `kicadstudiokit` VSIX and runs `check:compatibility` and `test:contract`.
+   `kicadstudiokit` VSIX and runs the compatibility contract checks from
+   [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
 2. **Before kicad-studio release**: CI installs latest published
    `kicad-mcp-pro` from PyPI/npm and runs compatibility checks.
 3. **Breaking protocol changes**: Must release kicad-mcp-pro first (with

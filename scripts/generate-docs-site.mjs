@@ -381,8 +381,7 @@ Run the root checks before opening a pull request:
 corepack pnpm run check:forbidden-refs
 corepack pnpm run check:boundaries
 corepack pnpm run check:version
-corepack pnpm run check:compatibility
-corepack pnpm run check:runtime-policy
+corepack pnpm run check:compatibility-contract
 corepack pnpm run check:dev-doctor
 corepack pnpm run check:devcontainer
 \`\`\`
@@ -398,9 +397,12 @@ Product-scoped checks:
 
 \`\`\`bash
 corepack pnpm run check:kicad-studio
-corepack pnpm run check:kicad-mcp-pro
-corepack pnpm run test:contract
+corepack pnpm run check:protocol-schemas
+corepack pnpm run check:compatibility-contract
 \`\`\`
+
+MCP server product checks run from the
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
 
 ## Protocol Changes
 

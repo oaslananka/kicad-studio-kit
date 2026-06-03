@@ -73,8 +73,8 @@ releases independently from its own Release Please PR.
 | ------------------------------------------------- | ----------------------------------- | ------------------------------------------------------- |
 | `@oaslananka/kicad-protocol-schemas`              | `oaslananka/kicad-mcp`              | Release published (tag-based) + `workflow_dispatch`     |
 | PyPI `kicad-mcp-pro`                              | `oaslananka/kicad-mcp`              | Release Please + `publish-python.yml`                   |
-| `ghcr.io/oaslananka/kicad-mcp-pro`                | This repo                           | MCP server GitHub Release + `publish-mcp-container.yml` |
-| MCP Registry `io.github.oaslananka/kicad-mcp-pro` | This repo                           | MCP server GitHub Release + `publish-mcp-registry.yml`  |
+| `ghcr.io/oaslananka/kicad-mcp-pro`                | `oaslananka/kicad-mcp`              | MCP server GitHub Release + `publish-mcp-container.yml` |
+| MCP Registry `io.github.oaslananka/kicad-mcp-pro` | `oaslananka/kicad-mcp`              | MCP server GitHub Release + `publish-mcp-registry.yml`  |
 | VS Code Marketplace `oaslananka.kicadstudiokit`   | This repo (`apps/vscode-extension`) | Release Please + `publish-extension.yml`                |
 | Open VSX `oaslananka.kicadstudiokit`              | This repo (same VSIX)               | Same workflow, non-blocking after Marketplace           |
 
@@ -114,11 +114,11 @@ git log --oneline -5
 corepack pnpm run check:version
 
 ## 3. Compatibility matrix against published schemas
-corepack pnpm run check:compatibility
+corepack pnpm run check:compatibility-contract
 
 ## 4. Protocol schema contract suite
 corepack pnpm run check:protocol-schemas
-corepack pnpm run test:contract
+corepack pnpm run check:compatibility-contract
 
 ## 5. Standard CI gate
 corepack pnpm run lint
@@ -134,10 +134,12 @@ Before merging a release PR or merging a change to release workflows:
 
 ```bash
 corepack pnpm run release:dry-run:kicad-studio
-corepack pnpm run release:dry-run:kicad-mcp-pro
 corepack pnpm run release:dry-run
 corepack pnpm run check:release-please
 ```
+
+Run `kicad-mcp-pro` dry-runs from the
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
 
 See [Product Dry Runs](publishing.md#product-dry-runs) for what each validates.
 
@@ -176,7 +178,7 @@ See [Product Dry Runs](publishing.md#product-dry-runs) for what each validates.
 - [ ] After publish, this repo (kicad-studio-kit) must:
   1. Bump `@oaslananka/kicad-protocol-schemas` in `package.json`.
   2. Run `corepack pnpm install --frozen-lockfile` to update lockfile.
-  3. Run `check:protocol-schemas`, `check:compatibility`, `test:contract`.
+  3. Run `check:protocol-schemas` and `check:compatibility-contract`.
   4. Create a PR if any of those gates fail or the dependency version
      needs to be recorded.
   5. Add the new version to `minimumReleaseAgeExclude` in
@@ -194,7 +196,7 @@ All PRs — release or not — must pass these CI gates before merging:
 | `test`                       | Unit and integration tests                               |
 | `build` / `verify:dist`      | Compilation and packaging                                |
 | `check:version`              | Release-please scope policy (conventional commit scopes) |
-| `check:compatibility`        | Compatibility matrix consistency                         |
+| `check:compatibility-contract` | Compatibility matrix consistency                       |
 | `check:protocol-schemas`     | Published schema contract compliance                     |
 | `check:protocol-pr-template` | Protocol-impact PRs fill the template                    |
 | `cross-repo-compatibility`   | Published artifact compatibility (canary)                |

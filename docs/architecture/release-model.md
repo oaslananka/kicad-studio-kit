@@ -2,11 +2,11 @@
 
 KiCad Studio Kit uses one repository and separate product release surfaces.
 
-| Product              | Version file                                          | Artifact          | Publish workflow           |
-| -------------------- | ----------------------------------------------------- | ----------------- | -------------------------- |
-| VS Code extension    | `apps/vscode-extension/package.json`                  | VSIX              | `publish-extension.yml`    |
-| Python MCP server    | `oaslananka/kicad-mcp` (source removed from monorepo) | sdist / wheel     | `publish-python.yml`       |
-| MCP Registry listing | `oaslananka/kicad-mcp` (source removed from monorepo) | registry metadata | `publish-mcp-registry.yml` |
+| Product              | Version file                                          | Artifact          | Publish workflow                         |
+| -------------------- | ----------------------------------------------------- | ----------------- | ---------------------------------------- |
+| VS Code extension    | `apps/vscode-extension/package.json`                  | VSIX              | `publish-extension.yml` in this repo     |
+| Python MCP server    | `oaslananka/kicad-mcp` (source removed from monorepo) | sdist / wheel     | `publish-python.yml` in `oaslananka/kicad-mcp` |
+| MCP Registry listing | `oaslananka/kicad-mcp` (source removed from monorepo) | registry metadata | `publish-mcp-registry.yml` in `oaslananka/kicad-mcp` |
 
 Release Please owns version proposals through `.release-please-manifest.json` and `release-please-config.json`. The manifest tracks product package paths only; the private repository root is not a release surface.
 
@@ -25,8 +25,8 @@ Before release, compatibility metadata must agree across the root matrix, extens
 
 ```bash
 corepack pnpm run check:version
-corepack pnpm run check:compatibility
-corepack pnpm run test:contract
+corepack pnpm run check:compatibility-contract
+corepack pnpm run check:protocol-schemas
 corepack pnpm run release:dry-run
 ```
 
