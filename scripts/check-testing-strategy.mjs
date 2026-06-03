@@ -1,15 +1,24 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { parse } from "yaml";
 
 const root = process.cwd();
+const compatibilityPath = path.join(root, "compatibility.yaml");
 const strategyPath = path.join(root, "docs", "testing-strategy.md");
 const packagePath = path.join(root, "package.json");
-const nightlyWorkflowPath = path.join(
+const ciWorkflowPath = path.join(root, ".github", "workflows", "ci.yml");
+const vscodeCanaryWorkflowPath = path.join(
   root,
   ".github",
   "workflows",
-  "nightly-quality-gates.yml",
+  "vscode-canary.yml",
+);
+const extensionPackagePath = path.join(
+  root,
+  "apps",
+  "vscode-extension",
+  "package.json",
 );
 
 const requiredSections = [
@@ -20,7 +29,7 @@ const requiredSections = [
   "## Bug-Fix Regression Requirement",
   "## Path-Filtered CI Lanes",
   "## Performance Budgets",
-  "## Nightly Quality Gates",
+  "## Scheduled Compatibility Gates",
   "## Regression Coverage Map",
   "## Local Commands",
   "## CI Ownership",
@@ -35,17 +44,12 @@ const requiredPhrases = [
   "corepack pnpm run test:kicad-studio",
   "corepack pnpm run build:kicad-studio",
   "corepack pnpm run package:kicad-studio",
-  "corepack pnpm run check:kicad-mcp-pro",
-  "corepack pnpm run test:kicad-mcp-pro",
-  "corepack pnpm run build:kicad-mcp-pro",
-  "corepack pnpm run package:kicad-mcp-pro",
-
+  "corepack pnpm run check:protocol-schemas",
+  "corepack pnpm run check:compatibility-contract",
+  "Run from the `oaslananka/kicad-mcp` repository",
   "corepack pnpm run check:performance-budgets",
   "corepack pnpm run check:ci-lanes",
   "corepack pnpm run check:kicad-gui-smoke",
-  "corepack pnpm run test:kicad-gui-smoke",
-  "corepack pnpm run test:contract",
-  "test:transport-contract",
   "corepack pnpm run test:fixtures",
   "GitHub issue #62",
   "A reference to the related issue ID",
@@ -62,7 +66,8 @@ const requiredPhrases = [
   "visual regression",
   "accessibility",
   "manual smoke",
-  ".github/workflows/kicad-gui-smoke.yml",
+  ".github/workflows/vscode-canary.yml",
+  ".github/workflows/cross-repo-compatibility.yml",
 ];
 
 const roadmapIssueIds = [
@@ -102,9 +107,28 @@ function assertIncludes(haystack, needle, source) {
   }
 }
 
+function requireString(value, source) {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(`${source} must be a non-empty string`);
+  }
+  return value;
+}
+
 const strategy = readText(strategyPath);
+const compatibility = parse(readText(compatibilityPath));
 const packageJson = JSON.parse(readText(packagePath));
-const nightlyWorkflow = readText(nightlyWorkflowPath);
+const extensionPackageJson = JSON.parse(readText(extensionPackagePath));
+const ciWorkflow = readText(ciWorkflowPath);
+const vscodeCanaryWorkflow = readText(vscodeCanaryWorkflowPath);
+const vscodeCanaryWorkflowConfig = parse(vscodeCanaryWorkflow);
+const vscodeMinimum = requireString(
+  compatibility?.vscode?.minimum,
+  "compatibility.yaml vscode.minimum",
+);
+const vscodeEnginesRange = requireString(
+  compatibility?.vscode?.enginesRange,
+  "compatibility.yaml vscode.enginesRange",
+);
 
 for (const section of requiredSections) {
   assertIncludes(strategy, section, "docs/testing-strategy.md");
@@ -135,23 +159,54 @@ if (!scripts.check?.includes("pnpm run check:testing-strategy")) {
 }
 
 assertIncludes(
-  nightlyWorkflow,
-  "name: Nightly Quality Gates",
-  "nightly-quality-gates workflow",
-);
-assertIncludes(nightlyWorkflow, "cron:", "nightly-quality-gates workflow");
-assertIncludes(
-  nightlyWorkflow,
-  "corepack pnpm run check",
-  "nightly-quality-gates workflow",
+  ciWorkflow,
+  "Measure extension performance budgets",
+  "ci workflow",
 );
 assertIncludes(
-  nightlyWorkflow,
-  "corepack pnpm run test:contract",
-  "nightly-quality-gates workflow",
+  ciWorkflow,
+  "corepack pnpm --filter kicadstudiokit run test:perf",
+  "ci workflow",
 );
 assertIncludes(
-  nightlyWorkflow,
-  "corepack pnpm run test:fixtures",
-  "nightly-quality-gates workflow",
+  vscodeCanaryWorkflow,
+  "name: VS Code Canary",
+  "vscode-canary workflow",
 );
+assertIncludes(vscodeCanaryWorkflow, "cron:", "vscode-canary workflow");
+assertIncludes(
+  vscodeCanaryWorkflow,
+  "corepack pnpm --filter kicadstudiokit run test:integration",
+  "vscode-canary workflow",
+);
+
+if (extensionPackageJson.engines?.vscode !== vscodeEnginesRange) {
+  throw new Error(
+    `apps/vscode-extension/package.json engines.vscode must match compatibility.yaml vscode.enginesRange (${vscodeEnginesRange})`,
+  );
+}
+
+const canaryMatrixInclude =
+  vscodeCanaryWorkflowConfig?.jobs?.["extension-host"]?.strategy?.matrix
+    ?.include;
+if (!Array.isArray(canaryMatrixInclude)) {
+  throw new Error(
+    "vscode-canary workflow must define jobs.extension-host.strategy.matrix.include",
+  );
+}
+
+const canaryVersionsById = new Map(
+  canaryMatrixInclude.map((lane) => [lane?.id, lane?.version]),
+);
+for (const [laneId, expectedVersion] of [
+  ["minimum", vscodeMinimum],
+  ["stable", "stable"],
+  ["insiders", "insiders"],
+]) {
+  const actualVersion = canaryVersionsById.get(laneId);
+  if (String(actualVersion) !== expectedVersion) {
+    throw new Error(
+      `vscode-canary workflow lane ${laneId} must use version ${expectedVersion}; found ${actualVersion}`,
+    );
+  }
+}

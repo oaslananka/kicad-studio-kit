@@ -82,8 +82,8 @@ Status vocabulary:
 | Feature id               | State       | Product boundary                                                                        | Evidence or issue                         |
 | ------------------------ | ----------- | --------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `vsix_provenance`        | `supported` | VSIX release evidence includes checksums, SBOM, and artifact attestations.              | `.github/workflows/publish-extension.yml` |
-| `wheel_provenance`       | `supported` | Python release evidence includes checksums, SBOM, trusted publishing, and attestations. | `.github/workflows/publish-python.yml`    |
-| `npm_tarball_provenance` | `supported` | npm launcher release evidence includes checksums, SBOM, and provenance.                 | `.github/workflows/publish-npm.yml`       |
+| `wheel_provenance`       | `supported` | Python release evidence includes checksums, SBOM, trusted publishing, and attestations. | `oaslananka/kicad-mcp/.github/workflows/publish-python.yml` |
+| `npm_tarball_provenance` | `supported` | npm launcher release evidence includes checksums, SBOM, and provenance.                 | `oaslananka/kicad-mcp` release workflows  |
 
 ## KiCad 11 Readiness
 
@@ -92,7 +92,7 @@ KiCad 11 readiness is represented separately from KiCad 10.0.3 parity:
 | Feature id           | State       | Product boundary                                                                                   | Evidence or issue                                                 |
 | -------------------- | ----------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | `protocol_upgrade`   | `future`    | MCP protocol and KiCad 11 support planning remain separate from the stable KiCad 10 gate.          | [#197](https://github.com/oaslananka/kicad-studio-kit/issues/197) |
-| `nightly_canary`     | `supported` | Manual nightly canary commands track prerelease behavior without changing the stable support line. | `corepack pnpm run test:kicad-cli-contract:nightly`               |
+| `nightly_canary`     | `supported` | Manual nightly canary commands track prerelease behavior without changing the stable support line. | `oaslananka/kicad-mcp` KiCad canary suite                         |
 | `swig_removal_guard` | `supported` | The direct-`pcbnew` guard keeps production code away from APIs planned for removal.                | `oaslananka/kicad-mcp` — `scripts/check_no_pcbnew.py`             |
 
 ## Validation
@@ -100,16 +100,16 @@ KiCad 11 readiness is represented separately from KiCad 10.0.3 parity:
 Linux and macOS:
 
 ```bash
-corepack pnpm run check:compatibility
-corepack pnpm run test:contract
+corepack pnpm run check:compatibility-contract
+corepack pnpm run check:protocol-schemas
 corepack pnpm run test:fixtures
 ```
 
 Windows 11 PowerShell:
 
 ```powershell
-corepack pnpm run check:compatibility
-corepack pnpm run test:contract
+corepack pnpm run check:compatibility-contract
+corepack pnpm run check:protocol-schemas
 corepack pnpm run test:fixtures
 ```
 

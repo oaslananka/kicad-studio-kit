@@ -23,7 +23,8 @@ Compatibility is tracked in:
 Run:
 
 ```bash
-corepack pnpm run test:contract
+corepack pnpm run check:protocol-schemas
+corepack pnpm run check:compatibility-contract
 ```
 
 ## Change rules

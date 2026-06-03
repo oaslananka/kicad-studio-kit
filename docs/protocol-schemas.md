@@ -58,7 +58,7 @@ Each repo's `compatibility.yaml` declares the sibling product's acceptable range
    - Validates published artifacts: npm `@oaslananka/kicad-protocol-schemas` resolves
      and imports correctly, and published `kicad-mcp-pro` is smoketested from PyPI.
    - Guards against re-introducing the local `packages/protocol-schemas` directory.
-   - Runs `check:compatibility` and `check:protocol-schemas` against published artifacts,
+   - Runs `check:compatibility-contract` and `check:protocol-schemas` against published artifacts,
      not the local workspace sibling.
    - Does **not** require a real KiCad installation.
    - See `scripts/check-cross-repo-compatibility.mjs` for the helper script.
@@ -82,7 +82,7 @@ The cross-repo compatibility canary validates **published artifacts only**:
 | `compatibility.yaml`                     | `kicad-mcp-pro` section and `compatibleExtension` range present |
 | Guard                                    | `packages/protocol-schemas` local directory must NOT exist      |
 | `check:protocol-schemas`                 | Existing npm-schema resolution check                            |
-| `check:compatibility`                    | Existing compatibility matrix validation                        |
+| `check:compatibility-contract`           | Existing compatibility matrix validation                        |
 
 The canary does **not** replace a full cross-repo contract test (which would require
 installing a VSIX or running the complete MCP server via PyPI). It is a lightweight
@@ -199,11 +199,8 @@ corepack pnpm run check:protocol-schemas
 ## Protocol-impact PRs must complete the protocol section of the PR template
 corepack pnpm run check:protocol-pr-template
 
-## Compatibility matrix validates against published schemas
-corepack pnpm run check:compatibility
-
-## Full contract suite
-corepack pnpm run test:contract
+## Compatibility contract validation
+corepack pnpm run check:compatibility-contract
 ```
 
 ### pnpm minimumReleaseAge policy

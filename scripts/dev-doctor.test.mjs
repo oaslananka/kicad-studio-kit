@@ -79,13 +79,12 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
             "dev:doctor": "node scripts/dev-doctor.mjs",
             "check:dev-doctor": "node scripts/dev-doctor.mjs --ci --strict",
             "check:kicad-studio": "pnpm --filter kicadstudiokit run check",
-            "check:mcp-npm": "pnpm --dir packages/mcp-npm run check",
             "check:fixtures":
               "node scripts/generate-kicad-fixture-corpus.mjs --check && node --test scripts/check-kicad-fixtures-package.test.mjs && pnpm --dir packages/kicad-fixtures run check",
             "check:kicad-fixtures":
               "pnpm --dir packages/kicad-fixtures run check",
             "check:protocol-schemas":
-              "node --test scripts/check-protocol-schemas-package.test.mjs && node -e \"console.log(require.resolve('@oaslananka/kicad-protocol-schemas/package.json'))\"",
+              "node --test scripts/check-protocol-schemas-package.test.mjs && node --input-type=module -e \"import * as pkg from '@oaslananka/kicad-protocol-schemas'; console.log('protocol-schemas resolves OK:', typeof pkg.readSchema === 'function' ? 'readSchema present' : 'readSchema missing')\"",
           },
         },
         null,
@@ -198,12 +197,8 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
         "pnpm",
         "python",
         "uv",
-        "mcp-workspace",
         "kicad-cli",
         "vscode-extension-deps",
-        "mcp-help",
-        "mcp-version",
-        "mcp-doctor",
         "cloudflared",
         "ports",
         "workspace-scripts",
@@ -214,11 +209,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
     );
     assert.equal(byId.get("kicad-cli").required, false);
     assert.equal(byId.get("cloudflared").required, false);
-    assert.equal(byId.get("mcp-version").detail, "kicad-mcp-pro 3.5.2");
-    assert.equal(
-      byId.get("mcp-doctor").detail,
-      "doctor degraded; 1 recent issue",
-    );
+    assert.match(byId.get("protocol-schemas").detail, /schema file\(s\) parsed/);
     assert.equal(
       report.checks.every(
         (check) => typeof check.hint === "string" && check.hint.length > 0,

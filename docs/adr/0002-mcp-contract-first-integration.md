@@ -34,9 +34,10 @@ Adopt a contract-first integration model:
    contract. Any change to these requires updating both product surfaces and
    the compatibility validation scripts.
 
-4. **Contract tests** — `corepack pnpm run test:contract` validates that
-   both sides agree on the integration surface. CI must run contract tests
-   when either product changes.
+4. **Contract checks** — `corepack pnpm run check:protocol-schemas` and
+   `corepack pnpm run check:compatibility-contract` validate the extension-side
+   protocol schema and compatibility metadata. MCP server contract checks run in
+   [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
 
 5. **Protocol change checklist** — The PR template requires a protocol impact
    section. The full checklist is documented in

@@ -57,18 +57,9 @@ The root repository check also runs this gate:
 corepack pnpm run check
 ```
 
-Real KiCad CLI contract lanes consume the same corpus and write their runtime
-artifacts outside the package:
-
-```bash
-corepack pnpm run test:kicad-cli-contract
-```
-
-The contract command requires a real `kicad-cli` on `PATH` or one of
-`KICAD_CANARY_KICAD_CLI`, `KICAD_MCP_KICAD_CLI`, or `KICAD_CLI_PATH`. When the
-CLI is missing, the harness writes `summary.json` and `failing-fixtures.txt`
-with a structured environment failure instead of crashing before artifacts are
-created.
+Real KiCad CLI contract lanes consume the same corpus from the
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository,
+where the CLI harness now lives.
 
 ## Fixture Coverage
 

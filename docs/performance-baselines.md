@@ -60,7 +60,7 @@ corepack pnpm run check:performance-budgets
 Run the full performance lane used by CI with:
 
 ```bash
-corepack pnpm run test:perf
+corepack pnpm --filter kicadstudiokit run test:perf
 ```
 
 Create the same extension and MCP measurements emitted by CI and evaluate
@@ -69,10 +69,8 @@ their combined budget report with:
 ```bash
 KICAD_EXTENSION_PERFORMANCE_MEASUREMENTS_JSON=performance-results/extension-performance.json \
   corepack pnpm --filter kicadstudiokit run test:perf
-KICAD_PERFORMANCE_MEASUREMENTS_JSON=performance-results/mcp-tools-list.json
 node scripts/check-performance-budgets.mjs \
   --measurements performance-results/extension-performance.json \
-  --measurements performance-results/mcp-tools-list.json \
   --output performance-results/budget-report.json
 ```
 

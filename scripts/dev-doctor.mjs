@@ -246,7 +246,7 @@ function workspaceScriptsCheck(packageJson) {
       "node scripts/generate-kicad-fixture-corpus.mjs --check && node --test scripts/check-kicad-fixtures-package.test.mjs && pnpm --dir packages/kicad-fixtures run check",
     "check:kicad-fixtures": "pnpm --dir packages/kicad-fixtures run check",
     "check:protocol-schemas":
-      "node --test scripts/check-protocol-schemas-package.test.mjs && node --input-type=module -e \"import pkg from '@oaslananka/kicad-protocol-schemas'; console.log('protocol-schemas resolves OK:', typeof pkg.readSchema === 'function' ? 'readSchema present' : 'readSchema missing')\"",
+      "node --test scripts/check-protocol-schemas-package.test.mjs && node --input-type=module -e \"import * as pkg from '@oaslananka/kicad-protocol-schemas'; console.log('protocol-schemas resolves OK:', typeof pkg.readSchema === 'function' ? 'readSchema present' : 'readSchema missing')\"",
   };
   const missing = Object.entries(exactScripts)
     .filter(([name, expected]) => scripts[name] !== expected)
@@ -298,14 +298,30 @@ function fixtureManifestCheck(repoRoot) {
   }
 }
 
-function protocolSchemasCheck(repoRoot) {
-  const pkgRoot = path.dirname(
-    path.dirname(
-      require.resolve("@oaslananka/kicad-protocol-schemas/package.json"),
-    ),
+function resolveProtocolSchemasPackageRoot() {
+  const entryPath = fileURLToPath(
+    import.meta.resolve("@oaslananka/kicad-protocol-schemas"),
   );
-  const schemaRoot = path.join(pkgRoot, "schemas");
+  let current = path.dirname(entryPath);
+  while (current !== path.dirname(current)) {
+    const packageJsonPath = path.join(current, "package.json");
+    if (existsSync(packageJsonPath)) {
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+      if (packageJson.name === "@oaslananka/kicad-protocol-schemas") {
+        return current;
+      }
+    }
+    current = path.dirname(current);
+  }
+  throw new Error(
+    "Unable to locate @oaslananka/kicad-protocol-schemas package root.",
+  );
+}
+
+function protocolSchemasCheck(repoRoot) {
   try {
+    const pkgRoot = resolveProtocolSchemasPackageRoot();
+    const schemaRoot = path.join(pkgRoot, "schemas");
     const schemaFiles = readdirSync(schemaRoot).filter((file) =>
       file.endsWith(".schema.json"),
     );

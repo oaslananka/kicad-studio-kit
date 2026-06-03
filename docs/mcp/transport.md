@@ -40,11 +40,8 @@ Deprecated HTTP+SSE routes are disabled by default. Set
 the compatibility routes are exposed alongside `/mcp` as `/sse` and
 `/messages`.
 
-Transport conformance coverage lives in the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository and runs through:
-
-```bash
-corepack pnpm run test:contract
-```
+Transport conformance coverage lives in the
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
 
 ## stdio
 

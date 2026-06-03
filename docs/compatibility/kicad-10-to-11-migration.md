@@ -48,27 +48,15 @@ candidate and switch to the next major version during the RC window. As of
 2026-05-26, KiCad 10.0.x is the stable line, so the next-major readiness smoke
 has two manual paths:
 
-```bash
-KICAD_CANARY_KICAD_CLI=/absolute/path/to/kicad-cli \
-  corepack pnpm run test:kicad-cli-contract:nightly
-```
-
-```powershell
-$Env:KICAD_CANARY_KICAD_CLI = "C:\Program Files\KiCad Nightly\bin\kicad-cli.exe"
-corepack pnpm run test:kicad-cli-contract:nightly
-```
+Run the nightly KiCad CLI contract suite from
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) with
+`KICAD_CANARY_KICAD_CLI` pointing at the nightly `kicad-cli`.
 
 Use the RC command once the installed prerelease reports `11.0.x`:
 
-```bash
-KICAD_CANARY_KICAD_CLI=/absolute/path/to/kicad-cli \
-  corepack pnpm run test:kicad-cli-contract:future
-```
-
-```powershell
-$Env:KICAD_CANARY_KICAD_CLI = "C:\Program Files\KiCad\11.0\bin\kicad-cli.exe"
-corepack pnpm run test:kicad-cli-contract:future
-```
+Run the future-line KiCad CLI contract suite from
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) once the
+installed prerelease reports `11.0.x`.
 
 The canary writes logs, reports, manufacturing outputs, `summary.json`, and
 `failing-fixtures.txt` under `artifacts/kicad-cli-contract/`.
@@ -89,11 +77,11 @@ The repository gate checks that every listed tool exists in the generated MCP
 tool reference and that every evidence path exists:
 
 ```bash
-corepack pnpm run check:compatibility
+corepack pnpm run check:compatibility-contract
 ```
 
 ```powershell
-corepack pnpm run check:compatibility
+corepack pnpm run check:compatibility-contract
 ```
 
 ## Promotion Checklist
