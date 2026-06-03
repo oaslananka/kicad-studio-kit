@@ -169,7 +169,7 @@
         "id": "kicad-layout-rules",
         "aliases": [
           "%kicadstudio.contributes.languages.prl.aliases.0%",
-          "KiCad Layout Rules"
+          "%kicadstudio.contributes.languages.prl.aliases.1%"
         ],
         "extensions": [
           ".kicad_prl"
@@ -180,7 +180,7 @@
         "id": "kicad-worksheet",
         "aliases": [
           "%kicadstudio.contributes.languages.wks.aliases.0%",
-          "KiCad Worksheet"
+          "%kicadstudio.contributes.languages.wks.aliases.1%"
         ],
         "extensions": [
           ".kicad_wks"
