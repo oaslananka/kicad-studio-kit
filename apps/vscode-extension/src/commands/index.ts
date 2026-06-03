@@ -36,6 +36,6 @@ export function registerAllCommands(
     ...registerSettingsCommands(extensionContext, services),
     ...registerViewerCommands(services),
     ...registerFeedbackCommands(),
-    ...registerBoardReadyOpsCommands()
+    ...registerBoardReadyOpsCommands(services)
   );
 }
