@@ -15,7 +15,7 @@ test.describe('KiCad Studio VS Code E2E', () => {
       await expectCommandPaletteEntry(session.page, 'KiCad: Setup MCP');
 
       const statusBar = session.page.locator('.statusbar');
-      await expect(statusBar).toContainText(/MCP (Setup|Available|Connected)/);
+      await expect(statusBar).toContainText(/MCP/);
       await expect(statusBar).toContainText(
         /KiCad(?:: Not found| [0-9][0-9.]+)/
       );

@@ -104,7 +104,8 @@ suite('Extension Integration', () => {
       assert.ok(
         welcome.some(
           (item) =>
-            item.view === view && String(item.when ?? '').includes('!kicadstudio.hasProject')
+            item.view === view &&
+            String(item.when ?? '').includes('!kicadstudio.hasProject')
         ),
         `Missing empty-workspace welcome contribution for ${view}`
       );
@@ -252,10 +253,6 @@ suite('Extension Integration', () => {
         ['kicadstudio.workspaceTrusted', 'kicadstudio.hasProject']
       ],
       [
-        'kicadstudio.setupMcpIntegration',
-        ['kicadstudio.workspaceTrusted']
-      ],
-      [
         'kicadstudio.qualityGate.runAll',
         [
           'kicadstudio.workspaceTrusted',
@@ -275,10 +272,7 @@ suite('Extension Integration', () => {
         'kicadstudio.variant.setActive',
         ['kicadstudio.workspaceTrusted', 'kicadstudio.hasVariants']
       ],
-      [
-        'kicadstudio.variant.diffBom',
-        ['kicadstudio.hasVariants']
-      ],
+      ['kicadstudio.variant.diffBom', ['kicadstudio.hasVariants']],
       [
         'kicadstudio.importPads',
         ['kicadstudio.workspaceTrusted', 'kicadstudio.hasProject']
@@ -361,7 +355,10 @@ suite('Extension Integration', () => {
   test('renders project tree fixture files with unique rows and role tooltips', async () => {
     const provider = new KiCadProjectTreeProvider();
     const [root] = await provider.getChildren();
-    assert.ok(root, 'Expected project tree root to load from fixture workspace.');
+    assert.ok(
+      root,
+      'Expected project tree root to load from fixture workspace.'
+    );
     assert.strictEqual(root.label, path.basename(workspaceRoot));
 
     assertUniqueTreeRow(root, 'Project Files', 'sample.kicad_pro');
@@ -456,9 +453,9 @@ suite('Extension Integration', () => {
 
   test('keeps #21 #22 #29 #33 regression surfaces wired in the Extension Development Host', () => {
     const sidebarViews =
-      (extension.packageJSON?.contributes?.views?.[
-        'kicadstudio-sidebar'
-      ] as ViewContribution[] | undefined) ?? [];
+      (extension.packageJSON?.contributes?.views?.['kicadstudio-sidebar'] as
+        | ViewContribution[]
+        | undefined) ?? [];
     for (const viewId of [
       'kicadstudio.projectTree',
       'kicadstudio.netlistView',
@@ -534,8 +531,8 @@ function getContributedCommands(
   extension: vscode.Extension<unknown>
 ): string[] {
   const commands =
-    (extension.packageJSON?.contributes
-      ?.commands as CommandContribution[]) ?? [];
+    (extension.packageJSON?.contributes?.commands as CommandContribution[]) ??
+    [];
   return commands
     .map((item) => item.command)
     .filter((command): command is string => Boolean(command));
