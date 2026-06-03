@@ -88,7 +88,9 @@
     "workspaceContains:**/*.kicad_jobset",
     "workspaceContains:**/*.kicad_sch",
     "workspaceContains:**/*.kicad_pcb",
-    "workspaceContains:**/*.kicad_dru"
+    "workspaceContains:**/*.kicad_dru",
+    "workspaceContains:**/*.kicad_prl",
+    "workspaceContains:**/*.kicad_wks"
   ],
   "contributes": {
     "languages": [
@@ -162,6 +164,28 @@
           ".kicad_dru"
         ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "kicad-layout-rules",
+        "aliases": [
+          "%kicadstudio.contributes.languages.prl.aliases.0%",
+          "%kicadstudio.contributes.languages.prl.aliases.1%"
+        ],
+        "extensions": [
+          ".kicad_prl"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "kicad-worksheet",
+        "aliases": [
+          "%kicadstudio.contributes.languages.wks.aliases.0%",
+          "%kicadstudio.contributes.languages.wks.aliases.1%"
+        ],
+        "extensions": [
+          ".kicad_wks"
+        ],
+        "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
@@ -194,6 +218,16 @@
         "language": "kicad-drc",
         "scopeName": "source.kicad.dru",
         "path": "./syntaxes/kicad-drc.tmLanguage.json"
+      },
+      {
+        "language": "kicad-layout-rules",
+        "scopeName": "source.kicad.pro",
+        "path": "./syntaxes/kicad-project.tmLanguage.json"
+      },
+      {
+        "language": "kicad-worksheet",
+        "scopeName": "source.kicad.sch",
+        "path": "./syntaxes/kicad-schematic.tmLanguage.json"
       }
     ],
     "jsonValidation": [
