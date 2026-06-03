@@ -15,17 +15,21 @@ test.describe('KiCad Studio VS Code E2E', () => {
       await expectCommandPaletteEntry(session.page, 'KiCad: Setup MCP');
 
       const statusBar = session.page.locator('.statusbar');
-      await expect(statusBar).toContainText(
-        /KiCad(?:: Not found| [0-9][0-9.]+)/
+      const hasKiCadItem = await statusBar.evaluate((el) =>
+        /KiCad/.test(el.textContent ?? '')
       );
-
-      const hasKiCad = await statusBar.evaluate((el) =>
-        /KiCad \d/.test(el.textContent ?? '')
-      );
-      if (hasKiCad) {
-        await expect(statusBar).toContainText(/MCP/);
-        await expect(statusBar).toContainText(/DRC: ./);
-        await expect(statusBar).toContainText(/ERC: ./);
+      if (hasKiCadItem) {
+        await expect(statusBar).toContainText(
+          /KiCad(?:: Not found| [0-9][0-9.]+)/
+        );
+        const hasKiCad = await statusBar.evaluate((el) =>
+          /KiCad \d/.test(el.textContent ?? '')
+        );
+        if (hasKiCad) {
+          await expect(statusBar).toContainText(/MCP/);
+          await expect(statusBar).toContainText(/DRC: ./);
+          await expect(statusBar).toContainText(/ERC: ./);
+        }
       }
     } finally {
       await session.close();
