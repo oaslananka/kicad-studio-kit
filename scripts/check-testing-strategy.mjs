@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { parse } from "yaml";
 
 const root = process.cwd();
+const compatibilityPath = path.join(root, "compatibility.yaml");
 const strategyPath = path.join(root, "docs", "testing-strategy.md");
 const packagePath = path.join(root, "package.json");
 const ciWorkflowPath = path.join(root, ".github", "workflows", "ci.yml");
@@ -11,6 +13,12 @@ const vscodeCanaryWorkflowPath = path.join(
   ".github",
   "workflows",
   "vscode-canary.yml",
+);
+const extensionPackagePath = path.join(
+  root,
+  "apps",
+  "vscode-extension",
+  "package.json",
 );
 
 const requiredSections = [
@@ -99,10 +107,28 @@ function assertIncludes(haystack, needle, source) {
   }
 }
 
+function requireString(value, source) {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(`${source} must be a non-empty string`);
+  }
+  return value;
+}
+
 const strategy = readText(strategyPath);
+const compatibility = parse(readText(compatibilityPath));
 const packageJson = JSON.parse(readText(packagePath));
+const extensionPackageJson = JSON.parse(readText(extensionPackagePath));
 const ciWorkflow = readText(ciWorkflowPath);
 const vscodeCanaryWorkflow = readText(vscodeCanaryWorkflowPath);
+const vscodeCanaryWorkflowConfig = parse(vscodeCanaryWorkflow);
+const vscodeMinimum = requireString(
+  compatibility?.vscode?.minimum,
+  "compatibility.yaml vscode.minimum",
+);
+const vscodeEnginesRange = requireString(
+  compatibility?.vscode?.enginesRange,
+  "compatibility.yaml vscode.enginesRange",
+);
 
 for (const section of requiredSections) {
   assertIncludes(strategy, section, "docs/testing-strategy.md");
@@ -153,3 +179,34 @@ assertIncludes(
   "corepack pnpm --filter kicadstudiokit run test:integration",
   "vscode-canary workflow",
 );
+
+if (extensionPackageJson.engines?.vscode !== vscodeEnginesRange) {
+  throw new Error(
+    `apps/vscode-extension/package.json engines.vscode must match compatibility.yaml vscode.enginesRange (${vscodeEnginesRange})`,
+  );
+}
+
+const canaryMatrixInclude =
+  vscodeCanaryWorkflowConfig?.jobs?.["extension-host"]?.strategy?.matrix
+    ?.include;
+if (!Array.isArray(canaryMatrixInclude)) {
+  throw new Error(
+    "vscode-canary workflow must define jobs.extension-host.strategy.matrix.include",
+  );
+}
+
+const canaryVersionsById = new Map(
+  canaryMatrixInclude.map((lane) => [lane?.id, lane?.version]),
+);
+for (const [laneId, expectedVersion] of [
+  ["minimum", vscodeMinimum],
+  ["stable", "stable"],
+  ["insiders", "insiders"],
+]) {
+  const actualVersion = canaryVersionsById.get(laneId);
+  if (String(actualVersion) !== expectedVersion) {
+    throw new Error(
+      `vscode-canary workflow lane ${laneId} must use version ${expectedVersion}; found ${actualVersion}`,
+    );
+  }
+}

@@ -84,7 +84,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
             "check:kicad-fixtures":
               "pnpm --dir packages/kicad-fixtures run check",
             "check:protocol-schemas":
-              "node --test scripts/check-protocol-schemas-package.test.mjs && node --input-type=module -e \"import pkg from '@oaslananka/kicad-protocol-schemas'; console.log('protocol-schemas resolves OK:', typeof pkg.readSchema === 'function' ? 'readSchema present' : 'readSchema missing')\"",
+              "node --test scripts/check-protocol-schemas-package.test.mjs && node --input-type=module -e \"import * as pkg from '@oaslananka/kicad-protocol-schemas'; console.log('protocol-schemas resolves OK:', typeof pkg.readSchema === 'function' ? 'readSchema present' : 'readSchema missing')\"",
           },
         },
         null,

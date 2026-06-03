@@ -199,9 +199,6 @@ corepack pnpm run check:protocol-schemas
 ## Protocol-impact PRs must complete the protocol section of the PR template
 corepack pnpm run check:protocol-pr-template
 
-## Compatibility matrix validates against published schemas
-corepack pnpm run check:compatibility-contract
-
 ## Compatibility contract validation
 corepack pnpm run check:compatibility-contract
 ```
