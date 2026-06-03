@@ -22,7 +22,15 @@ const ignoredDirs = new Set([
   ".hypothesis",
 ]);
 const ignoredFiles = new Set(["pnpm-lock.yaml", "uv.lock"]);
-const ignoredExts = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".whl", ".gz"]);
+const ignoredExts = new Set([
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+  ".gif",
+  ".whl",
+  ".gz",
+]);
 const rawPatterns = [
   "dev" + "\\.azure\\.com",
   "visual" + "studio\\.com",
@@ -59,13 +67,17 @@ const patterns = rawPatterns.map((pattern) => [
 const visualStudioHostPattern =
   /(?:^|[^A-Za-z0-9.-])([A-Za-z0-9.-]*visualstudio\.com)(?=[^A-Za-z0-9.-]|$)/gi;
 
-function isOfficialVscodeUpdateHostHit(line) {
+function isOfficialVscodeHostHit(line) {
   const hosts = [...line.matchAll(visualStudioHostPattern)].map((match) =>
     match[1].toLowerCase(),
   );
   return (
     hosts.length > 0 &&
-    hosts.every((host) => host === "update.code.visualstudio.com")
+    hosts.every(
+      (host) =>
+        host === "update.code.visualstudio.com" ||
+        host === "code.visualstudio.com",
+    )
   );
 }
 
@@ -73,7 +85,7 @@ function isAllowedHit(label, line) {
   return (
     (label === "(?<![@.])oaslananka/kicad-mcp-pro" &&
       line.includes("ghcr.io/oaslananka/kicad-mcp-pro")) ||
-    (label === "visualstudio.com" && isOfficialVscodeUpdateHostHit(line))
+    (label === "visualstudio.com" && isOfficialVscodeHostHit(line))
   );
 }
 
@@ -121,7 +133,9 @@ for (const file of walk(root)) {
 
 if (hits.length > 0) {
   for (const hit of hits) {
-    console.error(`${hit.file}:${hit.line}: forbidden reference ${hit.pattern}: ${hit.snippet}`);
+    console.error(
+      `${hit.file}:${hit.line}: forbidden reference ${hit.pattern}: ${hit.snippet}`,
+    );
   }
   process.exit(1);
 }
