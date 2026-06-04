@@ -1,0 +1,7 @@
+* Sample SPICE netlist
+.title Test circuit
+R1 1 0 1k
+V1 1 0 DC 5
+.tran 1u 1m
+.probe
+.end

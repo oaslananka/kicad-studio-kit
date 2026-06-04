@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "meta": {
+    "uri": "mysql://localhost/kicad_lib"
+  },
+  "libraries": []
+}

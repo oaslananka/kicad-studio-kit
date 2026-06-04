@@ -1,0 +1,61 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Excellon Drill",
+  "scopeName": "source.drill",
+  "fileTypes": ["drl", "xln"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#x2Attributes" },
+    { "include": "#header" },
+    { "include": "#toolDefinitions" },
+    { "include": "#toolSelect" },
+    { "include": "#gCodes" },
+    { "include": "#mCodes" },
+    { "include": "#coordinates" },
+    { "include": "#numbers" },
+    { "include": "#keywords" }
+  ],
+  "repository": {
+    "comments": {
+      "name": "comment.line.drill",
+      "match": ";.*$"
+    },
+    "x2Attributes": {
+      "name": "keyword.other.drill",
+      "match": ";\\s*#@!\\s+TF\\..*$",
+      "comment": "X2 style Gerber attributes embedded in Excellon comments"
+    },
+    "header": {
+      "name": "keyword.control.drill",
+      "match": "^(M48|METRIC|INCH|TZ|FMAT,2|%)$"
+    },
+    "toolDefinitions": {
+      "name": "entity.name.function.drill",
+      "match": "T\\d+C[\\d.]+"
+    },
+    "toolSelect": {
+      "name": "entity.name.tag.drill",
+      "match": "^T\\d+$"
+    },
+    "gCodes": {
+      "name": "keyword.operator.drill",
+      "match": "G\\d{2}"
+    },
+    "mCodes": {
+      "name": "keyword.control.drill",
+      "match": "M\\d{2}"
+    },
+    "coordinates": {
+      "name": "constant.numeric.drill",
+      "match": "[XY]-?\\d+\\.?\\d*"
+    },
+    "numbers": {
+      "name": "constant.numeric.drill",
+      "match": "\\b\\d+\\.?\\d*\\b"
+    },
+    "keywords": {
+      "name": "keyword.other.drill",
+      "match": "\\b(R|S)\\d+\\b"
+    }
+  }
+}

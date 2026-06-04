@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "meta": {
+    "uri": "https://example.com/kicad-lib"
+  },
+  "libraries": []
+}

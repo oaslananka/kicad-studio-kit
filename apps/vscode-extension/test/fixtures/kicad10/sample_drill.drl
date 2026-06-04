@@ -1,0 +1,11 @@
+M48
+; Drill test file
+FMAT,2
+METRIC
+T1C0.400
+%
+G90
+G05
+T1
+X10.0Y10.0
+M30

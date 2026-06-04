@@ -1,0 +1,103 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Gerber RS-274X",
+  "scopeName": "source.gerber",
+  "fileTypes": [
+    "gbr",
+    "gbrjob",
+    "gbr1",
+    "gko",
+    "pho",
+    "gtl",
+    "gbl",
+    "gal",
+    "gts",
+    "gbs",
+    "gto",
+    "gbo",
+    "gtp",
+    "gbp",
+    "gpt",
+    "gpb",
+    "gm1",
+    "gm2",
+    "gm3",
+    "gm4",
+    "gm5",
+    "gm6",
+    "gm7",
+    "gm8",
+    "gm9",
+    "gg1",
+    "gg2",
+    "gg3",
+    "gg4",
+    "gg5",
+    "gg6",
+    "gg7",
+    "gg8",
+    "gg9"
+  ],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#extendedCommands" },
+    { "include": "#operations" },
+    { "include": "#coordinates" },
+    { "include": "#numbers" },
+    { "include": "#endOfFile" }
+  ],
+  "repository": {
+    "comments": {
+      "name": "comment.line.gerber",
+      "match": "G04[^*]*\\*"
+    },
+    "extendedCommands": {
+      "name": "meta.extended.gerber",
+      "begin": "%",
+      "end": "%",
+      "patterns": [
+        { "include": "#x2Attributes" },
+        { "include": "#apertureDefinitions" },
+        { "include": "#apertureMacros" },
+        { "include": "#formatParameters" }
+      ]
+    },
+    "x2Attributes": {
+      "name": "support.function.gerber",
+      "match": "TF\\.[^*]+\\*?",
+      "captures": {
+        "0": { "name": "keyword.other.gerber" }
+      }
+    },
+    "apertureDefinitions": {
+      "name": "entity.name.function.gerber",
+      "match": "ADD\\d+[^,%]*"
+    },
+    "apertureMacros": {
+      "name": "entity.name.type.gerber",
+      "begin": "AM[^*]*",
+      "end": "%",
+      "patterns": [{ "include": "#numbers" }]
+    },
+    "formatParameters": {
+      "name": "keyword.control.gerber",
+      "match": "(FSLA?X\\d+Y\\d*|MO(IN|MM)|LPD|LPC|OF[^%]*|SF[^%]*|AS[^%]*|IP[^%]*|LN[^%]*|AB|TD|MI)"
+    },
+    "operations": {
+      "name": "keyword.operator.gerber",
+      "match": "(?<=[XY\\d])(D0[123]\\*)|^(D0[123]\\*)|(G0?[0-9]+\\*)|(G36\\*)|(G37\\*)|(G74\\*)|(G75\\*)"
+    },
+    "coordinates": {
+      "name": "constant.numeric.gerber",
+      "match": "[XY]-?\\d+(?:\\.\\d+)?(?=[XY*])"
+    },
+    "numbers": {
+      "name": "constant.numeric.gerber",
+      "match": "-?\\d+\\.?\\d*"
+    },
+    "endOfFile": {
+      "name": "keyword.control.gerber",
+      "match": "M0[02]\\*"
+    }
+  }
+}
