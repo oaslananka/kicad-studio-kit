@@ -19,7 +19,7 @@ This guide walks you through your first KiCad Studio experience. It takes about 
 ## 2. (Optional) Install kicad-cli
 
 Some features (DRC, ERC, exports) need `kicad-cli`. Install the full KiCad application
-from [kiad.org](https://www.kiad.org/download/) to get it.
+from [kicad.org](https://www.kicad.org/download/) to get it.
 
 To verify:
 
