@@ -15,6 +15,8 @@ permissions:
 jobs:
   analyze:
     runs-on: ubuntu-24.04
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     strategy:
       fail-fast: false
       matrix:
@@ -23,9 +25,9 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           persist-credentials: false
-      - uses: github/codeql-action/init@9e0d7b8d25671d64c341c19c0152d693099fb5ba
+      - uses: github/codeql-action/init@87557b9c84dde89fdd9b10e88954ac2f4248e463
         with:
           languages: ${{ matrix.language }}
-      - uses: github/codeql-action/analyze@9e0d7b8d25671d64c341c19c0152d693099fb5ba
+      - uses: github/codeql-action/analyze@87557b9c84dde89fdd9b10e88954ac2f4248e463
         with:
           category: "/language:${{ matrix.language }}"

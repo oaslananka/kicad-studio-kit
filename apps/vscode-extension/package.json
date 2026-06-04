@@ -90,7 +90,12 @@
     "workspaceContains:**/*.kicad_pcb",
     "workspaceContains:**/*.kicad_dru",
     "workspaceContains:**/*.kicad_prl",
-    "workspaceContains:**/*.kicad_wks"
+    "workspaceContains:**/*.kicad_wks",
+    "workspaceContains:**/*.kicad_dbl",
+    "workspaceContains:**/*.kicad_httplib",
+    "workspaceContains:**/*.cir",
+    "workspaceContains:**/*.gbr",
+    "workspaceContains:**/*.drl"
   ],
   "contributes": {
     "languages": [
@@ -186,6 +191,96 @@
           ".kicad_wks"
         ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "kicad-database-lib",
+        "aliases": [
+          "%kicadstudio.contributes.languages.dbl.aliases.0%"
+        ],
+        "extensions": [
+          ".kicad_dbl"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "kicad-http-lib",
+        "aliases": [
+          "%kicadstudio.contributes.languages.httplib.aliases.0%"
+        ],
+        "extensions": [
+          ".kicad_httplib"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "spice",
+        "aliases": [
+          "%kicadstudio.contributes.languages.spice.aliases.0%"
+        ],
+        "extensions": [
+          ".cir",
+          ".spice",
+          ".model",
+          ".sub",
+          ".lib",
+          ".mod",
+          ".sp"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "gerber",
+        "aliases": [
+          "%kicadstudio.contributes.languages.gerber.aliases.0%"
+        ],
+        "extensions": [
+          ".gbr",
+          ".gbrjob",
+          ".gbr1",
+          ".gko",
+          ".pho",
+          ".gtl",
+          ".gbl",
+          ".gal",
+          ".gts",
+          ".gbs",
+          ".gto",
+          ".gbo",
+          ".gtp",
+          ".gbp",
+          ".gpt",
+          ".gpb",
+          ".gm1",
+          ".gm2",
+          ".gm3",
+          ".gm4",
+          ".gm5",
+          ".gm6",
+          ".gm7",
+          ".gm8",
+          ".gm9",
+          ".gg1",
+          ".gg2",
+          ".gg3",
+          ".gg4",
+          ".gg5",
+          ".gg6",
+          ".gg7",
+          ".gg8",
+          ".gg9"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "drill",
+        "aliases": [
+          "%kicadstudio.contributes.languages.drill.aliases.0%"
+        ],
+        "extensions": [
+          ".drl",
+          ".xln"
+        ],
+        "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
@@ -226,8 +321,33 @@
       },
       {
         "language": "kicad-worksheet",
-        "scopeName": "source.kicad.sch",
-        "path": "./syntaxes/kicad-schematic.tmLanguage.json"
+        "scopeName": "source.kicad.wks",
+        "path": "./syntaxes/kicad-worksheet.tmLanguage.json"
+      },
+      {
+        "language": "kicad-database-lib",
+        "scopeName": "source.kicad.pro",
+        "path": "./syntaxes/kicad-project.tmLanguage.json"
+      },
+      {
+        "language": "kicad-http-lib",
+        "scopeName": "source.kicad.pro",
+        "path": "./syntaxes/kicad-project.tmLanguage.json"
+      },
+      {
+        "language": "spice",
+        "scopeName": "source.spice",
+        "path": "./syntaxes/spice.tmLanguage.json"
+      },
+      {
+        "language": "gerber",
+        "scopeName": "source.gerber",
+        "path": "./syntaxes/gerber.tmLanguage.json"
+      },
+      {
+        "language": "drill",
+        "scopeName": "source.drill",
+        "path": "./syntaxes/drill.tmLanguage.json"
       }
     ],
     "jsonValidation": [
@@ -1125,7 +1245,7 @@
         },
         {
           "command": "kicadstudio.openInKiCad",
-          "when": "kicadstudio.workspaceTrusted && resourceExtname =~ /\\.kicad_(sch|pcb|sym|mod|pro|jobset|dru)/"
+          "when": "kicadstudio.workspaceTrusted && resourceExtname =~ /\\.kicad_(sch|pcb|sym|mod|pro|jobset|dru|dbl|httplib)/"
         },
         {
           "command": "kicadstudio.detectCli",

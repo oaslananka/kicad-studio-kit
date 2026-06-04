@@ -61,6 +61,60 @@ suite('Editor Flows Integration', () => {
 
     assert.strictEqual(document.languageId, 'kicad-drc');
   });
+
+  test('assigns the KiCad Database Library language to .kicad_dbl files', async () => {
+    assert.ok(workspaceRoot, 'Expected test workspace root to be available.');
+    const doc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(
+        path.join(workspaceRoot, 'kicad10', 'sample_dbl.kicad_dbl')
+      )
+    );
+    assert.strictEqual(doc.languageId, 'kicad-database-lib');
+  });
+
+  test('assigns the KiCad HTTP Library language to .kicad_httplib files', async () => {
+    assert.ok(workspaceRoot, 'Expected test workspace root to be available.');
+    const doc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(
+        path.join(workspaceRoot, 'kicad10', 'sample_httplib.kicad_httplib')
+      )
+    );
+    assert.strictEqual(doc.languageId, 'kicad-http-lib');
+  });
+
+  test('assigns the SPICE language to .cir files', async () => {
+    assert.ok(workspaceRoot, 'Expected test workspace root to be available.');
+    const doc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(path.join(workspaceRoot, 'kicad10', 'sample_circuit.cir'))
+    );
+    assert.strictEqual(doc.languageId, 'spice');
+  });
+
+  test('assigns the Gerber language to .gbr files', async () => {
+    assert.ok(workspaceRoot, 'Expected test workspace root to be available.');
+    const doc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(path.join(workspaceRoot, 'kicad10', 'sample_board.gbr'))
+    );
+    assert.strictEqual(doc.languageId, 'gerber');
+  });
+
+  test('assigns the Drill language to .drl files', async () => {
+    assert.ok(workspaceRoot, 'Expected test workspace root to be available.');
+    const doc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(path.join(workspaceRoot, 'kicad10', 'sample_drill.drl'))
+    );
+    assert.strictEqual(doc.languageId, 'drill');
+  });
+
+  test('assigns the KiCad Worksheet language to .kicad_wks files', async () => {
+    assert.ok(workspaceRoot, 'Expected test workspace root to be available.');
+    const doc = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(
+        path.join(workspaceRoot, 'kicad10', 'sample_sheet.kicad_wks')
+      )
+    );
+    assert.strictEqual(doc.languageId, 'kicad-worksheet');
+  });
 });
 
 async function waitForCustomTab(

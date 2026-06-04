@@ -9,14 +9,32 @@
       "include": "#strings"
     },
     {
-      "include": "#keywords"
+      "include": "#constraint-types"
+    },
+    {
+      "include": "#disallow-values"
+    },
+    {
+      "include": "#severity-values"
+    },
+    {
+      "include": "#zone-connection-values"
+    },
+    {
+      "include": "#layer-values"
+    },
+    {
+      "include": "#structural-keywords"
+    },
+    {
+      "include": "#value-qualifiers"
     },
     {
       "match": "[()]",
       "name": "punctuation.section.parens.kicad"
     },
     {
-      "match": "\\b\\d+(?:\\.\\d+)?(?:mm|mil|inch)?\\b",
+      "match": "\\b\\d+(?:\\.\\d+)?(?:mm|mil|inch|ps|ns|us|ms|s|Hz|kHz|MHz|GHz)?\\b",
       "name": "constant.numeric.kicad"
     }
   ],
@@ -48,11 +66,67 @@
         }
       ]
     },
-    "keywords": {
+    "structural-keywords": {
       "patterns": [
         {
-          "match": "\\b(?:design_rules|rule|condition|constraint|severity|layer|clearance|min_width|min_hole|hole_to_hole|track_width)\\b",
+          "match": "\\b(?:rule|version|assign_component_class)\\b",
           "name": "keyword.control.kicad"
+        },
+        {
+          "match": "\\b(?:condition|constraint|severity|layer)\\b",
+          "name": "keyword.control.kicad"
+        },
+        {
+          "match": "\\b(?:net|pth|npth|board_edge)\\b",
+          "name": "keyword.operator.kicad"
+        }
+      ]
+    },
+    "value-qualifiers": {
+      "patterns": [
+        {
+          "match": "\\b(?:min|max|opt|within_diff_pairs)\\b",
+          "name": "keyword.operator.kicad"
+        }
+      ]
+    },
+    "constraint-types": {
+      "patterns": [
+        {
+          "match": "\\b(?:annular_width|assertion|bridged_mask|clearance|connection_width|courtyard_clearance|creepage|diff_pair_gap|diff_pair_uncoupled|disallow|edge_clearance|hole(?:_clearance|_size|_to_hole)|length|mechanical_clearance|mechanical_hole_clearance|min_resolved_spokes|net_chain_length|physical_clearance|physical_hole_clearance|return_path|silk_clearance|skew|solder_mask_expansion|solder_mask_sliver|solder_paste_abs_margin|solder_paste_rel_margin|stub_length|text_height|text_thickness|thermal_relief_gap|thermal_spoke_width|track_angle|track_width|track_segment_length|via_count|via_dangling|via_diameter|zone_connection)\\b",
+          "name": "entity.other.attribute-name.kicad"
+        }
+      ]
+    },
+    "disallow-values": {
+      "patterns": [
+        {
+          "match": "\\b(?:blind_via|buried_via|footprint|graphic|hole|micro_via|pad|text|through_via|track|via|zone)\\b",
+          "name": "constant.language.kicad"
+        }
+      ]
+    },
+    "severity-values": {
+      "patterns": [
+        {
+          "match": "\\b(?:error|exclusion|ignore|warning)\\b",
+          "name": "constant.language.kicad"
+        }
+      ]
+    },
+    "zone-connection-values": {
+      "patterns": [
+        {
+          "match": "\\b(?:none|solid|thermal_reliefs)\\b",
+          "name": "constant.language.kicad"
+        }
+      ]
+    },
+    "layer-values": {
+      "patterns": [
+        {
+          "match": "\\b(?:inner|outer)\\b",
+          "name": "constant.language.kicad"
         }
       ]
     }

@@ -1,0 +1,454 @@
+{
+  "scopeName": "source.spice",
+  "name": "SPICE Netlist",
+  "fileTypes": ["cir", "spice", "model", "sub", "lib", "mod", "sp"],
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#continuation"
+    },
+    {
+      "include": "#dot_commands"
+    },
+    {
+      "include": "#instance_lines"
+    },
+    {
+      "include": "#model_definitions"
+    },
+    {
+      "include": "#expressions"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#keywords"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "match": "^\\*.*$",
+          "name": "comment.line.asterisk.spice"
+        },
+        {
+          "match": ";.*$",
+          "name": "comment.line.semicolon.spice"
+        }
+      ]
+    },
+    "continuation": {
+      "match": "^(\\+)\\s*(.*)$",
+      "captures": {
+        "1": {
+          "name": "keyword.operator.continuation.spice"
+        },
+        "2": {
+          "patterns": [
+            {
+              "include": "#numbers"
+            },
+            {
+              "include": "#keywords"
+            },
+            {
+              "include": "#expressions"
+            }
+          ]
+        }
+      }
+    },
+    "dot_commands": {
+      "patterns": [
+        {
+          "begin": "^(\\.)(model)\\s+",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.dot.spice"
+            },
+            "2": {
+              "name": "keyword.control.spice"
+            }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "match": "\\S+",
+              "name": "entity.name.type.model.spice"
+            },
+            {
+              "match": "\\b(?:npn|pnp|nmos|pmos|njf|pjf|nmesfet|pmesfet|vdmos|d|ltra|urc|sw|nmos4|pmos4|bjt|jfet|mesfet|tline|lossy|cc|lvlnpnco|lvlnpncb|lvlnpn|hvnpnco|hvnpncb|hvnpn|lvpnpco|lvpnpcb|lvpnp|lvnnpn|lvnpnp|hvnpn|hvpnp|hvpnpco|hvpnpcb|nmos1|nmos2|nmos3|nmos4|nmos5|nmos6|nmos7|nmos8|nmos9|nmos10|nmos11|nmos12|nmos13|nmos19|nmos20|nmos21|nmos30|nmos31|nmos33|nmos39|nmos40|nmos41|nmos49|nmos50|nmos51|nmos52|nmos53|nmos54|nmos55|nmos56|nmos57|nmos58|nmos59|nmos61|nmos62|nmos64|nmos65|nmos66|nmos68|nmos71|nmos72|nmos73|pmos1|pmos2|pmos3|pmos4|pmos5|pmos6|pmos7|pmos8|pmos9|pmos10|pmos11|pmos12|pmos13|pmos19|pmos20|pmos21|pmos30|pmos31|pmos33|pmos39|pmos40|pmos41|pmos49|pmos50|pmos51|pmos52|pmos53|pmos54|pmos55|pmos56|pmos57|pmos58|pmos59|pmos61|pmos62|pmos64|pmos65|pmos66|pmos68|pmos71|pmos72|pmos73|nchan|pchan)\\b",
+              "name": "storage.type.model.spice"
+            },
+            {
+              "include": "#numbers"
+            },
+            {
+              "include": "#expressions"
+            },
+            {
+              "include": "#strings"
+            },
+            {
+              "match": "\\b[A-Za-z]\\w*\\b",
+              "name": "variable.parameter.spice"
+            },
+            {
+              "match": "[=()]",
+              "name": "punctuation.section.parens.spice"
+            }
+          ]
+        },
+        {
+          "begin": "^(\\.)(subckt)\\s+",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.dot.spice"
+            },
+            "2": {
+              "name": "keyword.control.spice"
+            }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "match": "\\S+",
+              "name": "entity.name.type.subcircuit.spice"
+            },
+            {
+              "include": "#numbers"
+            },
+            {
+              "match": "(?i)\\bparams?\\b",
+              "name": "keyword.other.spice"
+            },
+            {
+              "include": "#keywords"
+            }
+          ]
+        },
+        {
+          "begin": "^(\\.)(ends|endsubckt)\\s+",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.dot.spice"
+            },
+            "2": {
+              "name": "keyword.control.spice"
+            }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "match": "\\S+",
+              "name": "entity.name.type.subcircuit.spice"
+            }
+          ]
+        },
+        {
+          "match": "^(\\.)(title)\\b.*$",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.dot.spice"
+            },
+            "2": {
+              "name": "keyword.control.spice"
+            }
+          }
+        },
+        {
+          "begin": "^(\\.)(include|lib)\\s+",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.dot.spice"
+            },
+            "2": {
+              "name": "keyword.control.spice"
+            }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "include": "#strings"
+            }
+          ]
+        },
+        {
+          "match": "^(\\.)(?:ac|dc|tran|op|noise|pz|sens|tf|disto|four)\\b.*$",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.dot.spice"
+            },
+            "2": {
+              "name": "keyword.control.analysis.spice"
+            }
+          }
+        },
+        {
+          "match": "^(\\.)(?:probe|print|plot)\\b.*$",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.dot.spice"
+            },
+            "2": {
+              "name": "keyword.control.output.spice"
+            }
+          }
+        },
+        {
+          "match": "^(\\.)(?:param|func)\\b.*$",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.dot.spice"
+            },
+            "2": {
+              "name": "keyword.control.spice"
+            }
+          }
+        },
+        {
+          "match": "^(\\.)(?:option|options|save|ic|nodeset|global|connect|width)\\b.*$",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.dot.spice"
+            },
+            "2": {
+              "name": "keyword.control.spice"
+            }
+          }
+        },
+        {
+          "match": "^(\\.)(?:meas|measure)\\b.*$",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.dot.spice"
+            },
+            "2": {
+              "name": "keyword.control.spice"
+            }
+          }
+        },
+        {
+          "begin": "^(\\.)(control)\\s*$",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.dot.spice"
+            },
+            "2": {
+              "name": "keyword.control.spice"
+            }
+          },
+          "end": "^(\\.)(endc)\\s*$",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.dot.spice"
+            },
+            "2": {
+              "name": "keyword.control.spice"
+            }
+          },
+          "contentName": "meta.control.section.spice",
+          "patterns": [
+            {
+              "include": "#comments"
+            },
+            {
+              "include": "#strings"
+            },
+            {
+              "include": "#numbers"
+            },
+            {
+              "include": "#keywords"
+            }
+          ]
+        },
+        {
+          "match": "^(\\.)(end)\\s*$",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.dot.spice"
+            },
+            "2": {
+              "name": "keyword.control.spice"
+            }
+          }
+        },
+        {
+          "match": "^(\\.)\\S+.*$",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.dot.spice"
+            }
+          }
+        }
+      ]
+    },
+    "instance_lines": {
+      "begin": "^\\s*([RCLKDQJMZVEFGHBUXATWSOY]\\w*)",
+      "beginCaptures": {
+        "1": {
+          "name": "entity.name.function.instance.spice"
+        }
+      },
+      "end": "$",
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#expressions"
+        },
+        {
+          "include": "#numbers"
+        },
+        {
+          "include": "#strings"
+        },
+        {
+          "include": "#keywords"
+        },
+        {
+          "match": "(?i)\\b(?:params?|m=|l=|w=|temp|ic|abs|rel|ac|dc|tr|noise|disto)\\b",
+          "name": "keyword.other.spice"
+        },
+        {
+          "match": "\\b[A-Za-z]\\w*\\b",
+          "name": "variable.other.node.spice"
+        },
+        {
+          "match": "[=()]",
+          "name": "punctuation.section.parens.spice"
+        }
+      ]
+    },
+    "model_definitions": {
+      "begin": "\\b(MODEL)\\s+",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.spice"
+        }
+      },
+      "end": "$",
+      "patterns": [
+        {
+          "match": "\\S+",
+          "name": "entity.name.type.model.spice"
+        },
+        {
+          "match": "\\b(?:npn|pnp|nmos|pmos|njf|pjf|vdmos|d)\\b",
+          "name": "storage.type.model.spice"
+        }
+      ]
+    },
+    "expressions": {
+      "patterns": [
+        {
+          "begin": "\\{",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.expression.begin.spice"
+            }
+          },
+          "end": "\\}",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.expression.end.spice"
+            }
+          },
+          "name": "meta.expression.spice",
+          "patterns": [
+            {
+              "include": "#numbers"
+            },
+            {
+              "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b",
+              "name": "variable.other.spice"
+            },
+            {
+              "match": "[+\\-*/^()]|\\bABS|MIN|MAX|PWR|PWRS|LOG|LN|EXP|SQRT|SIN|COS|TAN|ATAN|ASIN|ACOS|SINH|COSH|TANH|ARCTAN|M\\b",
+              "name": "keyword.operator.spice"
+            },
+            {
+              "match": "\\bif\\b",
+              "name": "keyword.control.spice"
+            }
+          ]
+        },
+        {
+          "begin": "'",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.expression.begin.spice"
+            }
+          },
+          "end": "'",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.expression.end.spice"
+            }
+          },
+          "name": "meta.expression.spice"
+        }
+      ]
+    },
+    "strings": {
+      "begin": "\"",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.spice"
+        }
+      },
+      "end": "\"",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.spice"
+        }
+      },
+      "name": "string.quoted.double.spice"
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "match": "\\b\\d+(?:\\.\\d+)?(?:[MkmunpftG]|MEG)?\\b",
+          "name": "constant.numeric.spice"
+        },
+        {
+          "match": "\\b\\d+(?:\\.\\d+)?[eE][+\\-]?\\d+\\b",
+          "name": "constant.numeric.spice"
+        },
+        {
+          "match": "(?<![\\w)])\\d*[eE][+\\-]?\\d+(?:[MkmunpftG]|MEG)?\\b",
+          "name": "constant.numeric.spice"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "match": "(?i)\\b(?:ac|dc|tran|op|noise|pz|sens|tf|disto|four|probe|print|plot|save|option|options|param|func|include|lib|model|subckt|ends|end|control|endc|title|global|connect|meas|measure|ic|nodeset|width|params?)\\b",
+          "name": "keyword.control.spice"
+        },
+        {
+          "match": "(?i)\\b(?:npn|pnp|nmos|pmos|njf|pjf|nmesfet|pmesfet|vdmos|ltra|urc|sw)\\b",
+          "name": "storage.type.model.spice"
+        },
+        {
+          "match": "(?i)\\b(?:nchan|pchan)\\b",
+          "name": "storage.type.model.spice"
+        },
+        {
+          "match": "(?i)\\b(?:poly|pulse|sin|exp|pwl|sffm|am|trrandom|trnoise|sine)\\b",
+          "name": "support.function.source.spice"
+        }
+      ]
+    }
+  }
+}
