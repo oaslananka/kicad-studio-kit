@@ -123,7 +123,7 @@ jobs:
 
   publish_vscode:
     needs: package
-    if: ${{ github.event_name == 'release' || inputs.publish_vscode == 'true' }}
+    if: ${{ github.event_name == 'release' || inputs.publish_vscode }}
     runs-on: ubuntu-24.04
     environment: extension-marketplaces
     permissions:
@@ -198,7 +198,7 @@ jobs:
 
   publish_openvsx:
     needs: [package]
-    if: ${{ (github.event_name == 'release' || inputs.publish_openvsx == 'true') && needs.package.outputs.openvsx_prerelease_allowed == 'true' }}
+    if: ${{ (github.event_name == 'release' || inputs.publish_openvsx) && needs.package.outputs.openvsx_prerelease_allowed == 'true' }}
     continue-on-error: true
     runs-on: ubuntu-24.04
     environment: extension-marketplaces
