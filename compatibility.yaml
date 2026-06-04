@@ -463,8 +463,8 @@ kicadIpcReadiness:
         evidence: []
 
 vscode:
-  minimum: "1.122.0"
-  enginesRange: "^1.122.0"
+  minimum: "1.100.0"
+  enginesRange: "^1.100.0"
   stable: "current"
   insiders: "current"
   nodeRuntime: "24.x"

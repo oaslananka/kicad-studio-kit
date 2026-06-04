@@ -6,7 +6,7 @@ This guide walks you through your first KiCad Studio experience. It takes about 
 
 ## 1. Install VS Code and the Extension
 
-1. Install [VS Code](https://code.visualstudio.com/) (1.122.0 or later).
+1. Install [VS Code](https://code.visualstudio.com/) (1.100.0 or later).
 2. Open VS Code, go to the **Extensions** view (`Ctrl+Shift+X`).
 3. Search for **KiCad Studio Kit** and click **Install**.
 4. After installation, the KiCad Studio icon appears in the Activity Bar.

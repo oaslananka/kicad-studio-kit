@@ -80,7 +80,7 @@ Renovate is the only dependency update bot for this repository. It covers npm, G
 Major runtime-aligned dependencies are constrained until the supported runtime changes:
 
 - `@types/node` remains below `25` while Node 24 is the supported runtime.
-- `@types/vscode` remains aligned with `engines.vscode: ^1.122.0`.
+- `@types/vscode` remains aligned with `engines.vscode: ^1.100.0`.
 
 ## Review Thread Control
 
