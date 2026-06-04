@@ -58,6 +58,7 @@ export default defineConfig({
           { text: "Views", link: "/extension/views" },
           { text: "Commands", link: "/extension/commands" },
           { text: "Settings", link: "/extension/settings" },
+          { text: "BoardReadyOps", link: "/board-ready-ops" },
           { text: "Troubleshooting", link: "/extension/troubleshooting" },
           { text: "Accessibility", link: "/accessibility" },
           { text: "Telemetry", link: "/telemetry" },
