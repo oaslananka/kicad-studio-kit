@@ -10,6 +10,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.4.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.3.0...vscode-extension-v1.4.0) (2026-06-04)
+
+
+### Features
+
+* **kicad-studio:** downgrade vscode engine and improve mcp sidebar UX ([#316](https://github.com/oaslananka/kicad-studio-kit/issues/316)) ([257019b](https://github.com/oaslananka/kicad-studio-kit/commit/257019b417a5889b7196936ee84f3d562b43f2cd))
+
 ## [1.3.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.2.0...vscode-extension-v1.3.0) (2026-06-04)
 
 
