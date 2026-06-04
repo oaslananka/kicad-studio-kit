@@ -89,10 +89,11 @@ function renderEnum(schema) {
 function productVersions() {
   const root = readJson("package.json");
   const extension = readJson("apps/vscode-extension/package.json");
+  const compatibility = readYaml("compatibility.yaml");
   return {
     root: root.version,
     extension: extension.version,
-    mcpServer: "unknown",
+    mcpServer: compatibility.products["kicad-studio"]?.compatibleMcpPro?.testedAgainst ?? "unknown",
   };
 }
 

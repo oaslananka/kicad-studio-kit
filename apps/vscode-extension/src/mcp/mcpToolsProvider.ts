@@ -18,6 +18,7 @@ type McpToolsNode = {
   contextValue?: string | undefined;
   command?: vscode.Command | undefined;
   children?: McpToolsNode[] | undefined;
+  collapsedByDefault?: boolean | undefined;
 };
 
 type DashboardStatus =
@@ -137,7 +138,7 @@ export class McpToolsProvider implements vscode.TreeDataProvider<McpToolsNode> {
     }
 
     const cmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-    
+
     // First, run npx boardreadyops doctor --format json to get installation, version, and health status
     const runDoctor = (): Promise<{ stdout: string; stderr: string }> => {
       return new Promise((resolve, reject) => {
@@ -178,7 +179,7 @@ export class McpToolsProvider implements vscode.TreeDataProvider<McpToolsNode> {
       const { stdout: docStdout } = await runDoctor();
       const doc = JSON.parse(docStdout.trim());
       const version = doc.tool?.version ?? 'unknown';
-      
+
       let healthy = true;
       let message = 'BoardReadyOps is healthy.';
       if (Array.isArray(doc.checks)) {
@@ -187,7 +188,8 @@ export class McpToolsProvider implements vscode.TreeDataProvider<McpToolsNode> {
             for (const item of check.items) {
               if (item.severity === 'fail') {
                 healthy = false;
-                message = item.message || 'BoardReadyOps environment check failed.';
+                message =
+                  item.message || 'BoardReadyOps environment check failed.';
                 break;
               }
             }
@@ -262,12 +264,15 @@ export class McpToolsProvider implements vscode.TreeDataProvider<McpToolsNode> {
   }
 
   getTreeItem(element: McpToolsNode): vscode.TreeItem {
-    const item = new vscode.TreeItem(
-      element.label,
-      element.children?.length
-        ? vscode.TreeItemCollapsibleState.Expanded
-        : vscode.TreeItemCollapsibleState.None
-    );
+    let collapsibleState: vscode.TreeItemCollapsibleState;
+    if (!element.children?.length) {
+      collapsibleState = vscode.TreeItemCollapsibleState.None;
+    } else if (element.collapsedByDefault) {
+      collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+    } else {
+      collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+    }
+    const item = new vscode.TreeItem(element.label, collapsibleState);
     if (element.description !== undefined) {
       item.description = element.description;
     }
@@ -477,12 +482,13 @@ function compatibilityDashboardNode(
       `State: ${dashboard.stateLabel}`,
       `Server: ${dashboard.serverName} ${dashboard.serverVersion}`,
       `Transport: ${dashboard.transportMode}`,
-      `Missing required tools: ${dashboard.missingRequiredTools.length}`,
-      `Missing optional capabilities: ${dashboard.missingOptionalCapabilities.length}`,
+      `Unavailable tools: ${dashboard.missingRequiredTools.length}`,
+      `Unavailable capabilities: ${dashboard.missingOptionalCapabilities.length}`,
       `Last health check: ${dashboard.lastHealthCheck}`,
       `Remediation: ${dashboard.remediation}`
     ].join('\n'),
     icon: dashboardIcon(dashboard.status),
+    collapsedByDefault: dashboard.status !== 'incompatible',
     children: [
       dashboardField(
         'Compatibility state',
@@ -513,15 +519,17 @@ function compatibilityDashboardNode(
           countText(dashboard.resourceCount)
         ),
         dashboardField('Advertised prompts', countText(dashboard.promptCount)),
-        missingGroup(
-          'Missing required tools',
+        unavailableGroup(
+          'Unavailable tools',
           dashboard.missingRequiredTools,
-          'All required extension tools are advertised.'
+          'All required extension tools are advertised.',
+          'Connect to a kicad-mcp-pro server that advertises this tool.'
         ),
-        missingGroup(
-          'Missing optional capabilities',
+        unavailableGroup(
+          'Unavailable capabilities',
           dashboard.missingOptionalCapabilities,
-          'All optional capabilities are available.'
+          'All optional capabilities are available.',
+          'Launch KiCad with the target project or upgrade kicad-mcp-pro.'
         )
       ]),
       dashboardGroup('Health and remediation', [
@@ -542,20 +550,19 @@ function stateNode(
     const fileBackedDegraded =
       dashboard.fileBackedReadAvailable && dashboard.liveContextUnavailable;
     const degradedReason = dashboard.stateLabel.includes('context unavailable')
-      ? 'live KiCad context unavailable'
-      : 'live KiCad IPC unavailable';
+      ? 'live context unavailable'
+      : 'live IPC unavailable';
     return {
-      label: fileBackedDegraded
-        ? 'MCP connected; file-backed read-only features active'
-        : state.connected || state.kind === 'VsCodeStdio'
-          ? 'MCP connected with degraded capabilities'
-          : 'MCP degraded',
+      label: 'MCP Degraded',
       description: fileBackedDegraded
-        ? degradedReason
+        ? '📄 file-backed'
         : dashboard.serverVersion,
-      tooltip: fileBackedDegraded
-        ? `${sentenceCase(degradedReason)}; file-backed read-only features active.`
-        : dashboard.remediation,
+      tooltip: [
+        dashboard.stateLabel,
+        fileBackedDegraded
+          ? `${sentenceCase(degradedReason)}; file-backed read-only features active.`
+          : dashboard.remediation
+      ].join('\n'),
       icon: 'warning',
       command: {
         command: COMMANDS.retryMcp,
@@ -565,10 +572,10 @@ function stateNode(
   }
   if (state.kind === 'Incompatible') {
     return {
-      label: 'MCP incompatible',
+      label: 'MCP Incompatible',
       description: dashboard.serverVersion,
       tooltip:
-        'The detected kicad-mcp-pro version is outside the extension compatibility range.',
+        'The detected kicad-mcp-pro version is outside the extension compatibility range. Update kicad-mcp-pro to a compatible version.',
       icon: 'warning',
       command: {
         command: COMMANDS.openMcpUpgradeGuide,
@@ -578,8 +585,8 @@ function stateNode(
   }
   if (state.connected || state.kind === 'VsCodeStdio') {
     return {
-      label: 'MCP connected',
-      description: state.kind === 'VsCodeStdio' ? 'VS Code stdio' : 'HTTP',
+      label: 'MCP Connected',
+      description: state.kind === 'VsCodeStdio' ? 'stdio' : 'HTTP',
       tooltip:
         state.kind === 'VsCodeStdio'
           ? 'Connected through .vscode/mcp.json. HTTP-only Quality Gates and Fix Queue are unavailable in this transport.'
@@ -589,7 +596,7 @@ function stateNode(
   }
   if (state.kind === 'NotInstalled') {
     return {
-      label: 'MCP not installed',
+      label: 'MCP Not Installed',
       description: 'install required',
       icon: 'cloud-download',
       command: {
@@ -599,12 +606,14 @@ function stateNode(
     };
   }
   return {
-    label: dashboard.stateLabel,
-    description: state.available ? 'detected, not connected' : 'not detected',
-    tooltip:
+    label: 'MCP Disconnected',
+    description: state.available ? 'detected' : 'not detected',
+    tooltip: [
+      dashboard.stateLabel,
       dashboard.lastError === 'none'
         ? dashboard.remediation
-        : dashboard.lastError,
+        : dashboard.lastError
+    ].join('\n'),
     icon: state.available ? 'warning' : 'circle-slash',
     command: {
       command: state.available
@@ -630,42 +639,51 @@ function actionGroupNode(): McpToolsNode {
         'sync'
       ),
       actionNode(
-        'Refresh capabilities',
-        COMMANDS.retryMcp,
-        'Refresh server-info and advertised tools',
-        'refresh'
-      ),
-      actionNode('Open MCP log', COMMANDS.openMcpLog, 'Open MCP log', 'output'),
-      actionNode(
-        'Save diagnostic bundle',
-        COMMANDS.saveMcpLog,
-        'Save MCP diagnostic bundle',
-        'save'
-      ),
-      actionNode(
-        'Pick profile',
-        COMMANDS.pickMcpProfile,
-        'Pick MCP profile',
-        'settings'
-      ),
-      actionNode(
-        'Switch endpoint',
-        COMMANDS.setupMcpIntegration,
-        'Switch MCP endpoint or transport',
-        'plug'
-      ),
-      actionNode(
         'Launch local MCP server',
         COMMANDS.launchMcpHttp,
         'Launch local kicad-mcp-pro HTTP server',
         'server-process'
       ),
-      actionNode(
-        'Open compatibility docs',
-        COMMANDS.openMcpUpgradeGuide,
-        'Open MCP compatibility documentation',
-        'book'
-      )
+      actionNode('Open MCP log', COMMANDS.openMcpLog, 'Open MCP log', 'output'),
+      {
+        label: 'More actions',
+        description: '',
+        tooltip: 'Additional MCP setup and diagnostic actions.',
+        icon: 'ellipsis',
+        collapsedByDefault: true,
+        children: [
+          actionNode(
+            'Refresh capabilities',
+            COMMANDS.retryMcp,
+            'Refresh server-info and advertised tools',
+            'refresh'
+          ),
+          actionNode(
+            'Save diagnostic bundle',
+            COMMANDS.saveMcpLog,
+            'Save MCP diagnostic bundle',
+            'save'
+          ),
+          actionNode(
+            'Pick profile',
+            COMMANDS.pickMcpProfile,
+            'Pick MCP profile',
+            'settings'
+          ),
+          actionNode(
+            'Switch endpoint',
+            COMMANDS.setupMcpIntegration,
+            'Switch MCP endpoint or transport',
+            'plug'
+          ),
+          actionNode(
+            'Open compatibility docs',
+            COMMANDS.openMcpUpgradeGuide,
+            'Open MCP compatibility documentation',
+            'book'
+          )
+        ]
+      }
     ]
   };
 }
@@ -711,19 +729,23 @@ function dashboardField(
   };
 }
 
-function missingGroup(
+function unavailableGroup(
   label: string,
   values: string[],
-  emptyTooltip: string
+  emptyTooltip: string,
+  perItemHint: string
 ): McpToolsNode {
   return {
     label,
-    description: values.length ? `${values.length}` : 'none',
+    description: values.length ? `${values.length}` : '✓ none',
     tooltip: values.length ? values.join('\n') : emptyTooltip,
-    icon: values.length ? 'warning' : 'pass',
+    icon: values.length ? 'info' : 'pass',
+    collapsedByDefault: values.length === 0,
     children: values.map((value) => ({
       label: value,
-      icon: 'warning'
+      description: 'not connected',
+      tooltip: `${value} — ${perItemHint}`,
+      icon: 'info'
     }))
   };
 }
@@ -748,10 +770,11 @@ function capabilityNode(capabilities: McpCapabilityCard): McpToolsNode {
       ? `, ${diagnostics.length} diagnostic${diagnostics.length === 1 ? '' : 's'}`
       : ''
   }`;
+  // Operation modes kept here since it shows granular per-mode flags not in dashboard.
+  // KiCad runtime and diagnostics are already in the Compatibility Dashboard — avoid duplication.
   const details = capabilities.serverInfo
     ? [
         diagnosticsGroup(diagnostics),
-        kicadRuntimeNode(capabilities.serverInfo),
         operationModesNode(capabilities.serverInfo)
       ]
     : diagnostics.length
@@ -764,40 +787,13 @@ function capabilityNode(capabilities: McpCapabilityCard): McpToolsNode {
       ? diagnostics.join('\n')
       : 'Server-advertised MCP capability counts.',
     icon: 'symbol-namespace',
+    collapsedByDefault: true,
     children: [
       ...details,
       capabilityGroup('Tools', capabilities.tools),
       capabilityGroup('Resources', capabilities.resources),
       capabilityGroup('Prompts', capabilities.prompts)
     ]
-  };
-}
-
-function kicadRuntimeNode(
-  serverInfo: NonNullable<McpCapabilityCard['serverInfo']>
-): McpToolsNode {
-  const cliStatus = serverInfo.kicad.cliFound
-    ? (serverInfo.kicad.cliVersion ?? 'version unknown')
-    : 'CLI unavailable';
-  const fileBackedRead = hasFileBackedRead(serverInfo);
-  return {
-    label: 'KiCad runtime',
-    description: serverInfo.kicad.livePcbContext
-      ? 'live PCB'
-      : fileBackedRead
-        ? 'file-backed read available'
-        : 'degraded',
-    tooltip: [
-      `CLI: ${cliStatus}`,
-      `Path: ${serverInfo.kicad.cliPath}`,
-      `IPC: ${serverInfo.kicad.ipcAvailable ? 'available' : 'unavailable'}`,
-      `IPC version: ${serverInfo.kicad.ipcVersion ?? 'unknown'}`,
-      `IPC endpoint: ${serverInfo.kicad.ipcEndpointSource}`,
-      `Live PCB: ${serverInfo.kicad.livePcbContext ? 'available' : 'unavailable'}`,
-      `Live schematic: ${serverInfo.kicad.liveSchematicContext ? 'available' : 'unavailable'}`,
-      `File-backed read: ${fileBackedRead ? 'available' : 'unavailable'}`
-    ].join('\n'),
-    icon: serverInfo.kicad.livePcbContext ? 'circuit-board' : 'warning'
   };
 }
 
@@ -816,7 +812,7 @@ function operationModesNode(
       'Live PCB read',
       serverInfo.capabilities.livePcbRead,
       !serverInfo.capabilities.livePcbRead && fileBackedRead
-        ? 'unavailable; file-backed read available'
+        ? '✗ unavailable; 📄 file-backed read available'
         : undefined
     ),
     capabilityFlag('Live PCB write', serverInfo.capabilities.livePcbWrite),
@@ -839,10 +835,11 @@ function operationModesNode(
     tooltip: modes
       .map(
         (mode) =>
-          `${mode.label}: ${mode.description ?? (mode.enabled ? 'available' : 'unavailable')}`
+          `${mode.label}: ${mode.description ?? (mode.enabled ? '✓ available' : '✗ unavailable')}`
       )
       .join('\n'),
     icon: 'checklist',
+    collapsedByDefault: true,
     children: [
       {
         label: 'Active operating mode',
@@ -853,7 +850,7 @@ function operationModesNode(
       ...modes.map((mode) => ({
         label: mode.label,
         description:
-          mode.description ?? (mode.enabled ? 'available' : 'unavailable'),
+          mode.description ?? (mode.enabled ? '✓ available' : '✗ unavailable'),
         icon: mode.enabled ? 'pass' : 'circle-slash'
       }))
     ]
@@ -1123,64 +1120,120 @@ function isVersionDegraded(version: string): boolean {
   return false;
 }
 
-function boardReadyOpsNode(
-  status: {
-    installed: boolean;
-    version?: string;
-    healthy: boolean;
-    message?: string;
-    tools: string[];
-  }
-): McpToolsNode {
-  const enabled = vscode.workspace.getConfiguration().get<boolean>(SETTINGS.boardReadyOpsEnabled, false);
-  
+function boardReadyOpsNode(status: {
+  installed: boolean;
+  version?: string;
+  healthy: boolean;
+  message?: string;
+  tools: string[];
+}): McpToolsNode {
+  const enabled = vscode.workspace
+    .getConfiguration()
+    .get<boolean>(SETTINGS.boardReadyOpsEnabled, false);
+
   if (!status.installed) {
     return {
       label: 'BoardReadyOps',
       description: 'unavailable',
-      tooltip: status.message || 'BoardReadyOps CLI was not found. Install it to enable PCB preflight checks.',
+      tooltip:
+        status.message ||
+        'BoardReadyOps CLI was not found. Install it to enable PCB preflight checks.',
       icon: 'circle-slash',
+      collapsedByDefault: true,
       children: [
         dashboardField('CLI', 'not found', undefined, 'warning'),
-        actionNode('Configure Checks', COMMANDS.boardReadyOpsConfigure, 'Open BoardReadyOps extension settings', 'gear'),
-        actionNode('Open Documentation', COMMANDS.boardReadyOpsOpenDocs, 'Open BoardReadyOps documentation', 'book')
+        actionNode(
+          'Configure Checks',
+          COMMANDS.boardReadyOpsConfigure,
+          'Open BoardReadyOps extension settings',
+          'gear'
+        ),
+        actionNode(
+          'Open Documentation',
+          COMMANDS.boardReadyOpsOpenDocs,
+          'Open BoardReadyOps documentation',
+          'book'
+        )
       ]
     };
   }
 
   const isOld = isVersionDegraded(status.version ?? 'unknown');
   const healthy = status.healthy && !isOld;
-  const statusLabel = healthy ? 'healthy' : (isOld ? 'degraded (old version)' : 'degraded');
+  const statusLabel = healthy
+    ? 'healthy'
+    : isOld
+      ? 'degraded (old version)'
+      : 'degraded';
   const statusIcon = healthy ? 'pass' : 'warning';
-  
+
   const toolNodes = status.tools.map((tool) => ({
     label: tool,
-    description: healthy ? 'available' : 'degraded',
-    tooltip: `${tool} - BoardReadyOps rule check`,
+    description: healthy ? '✓ available' : 'degraded',
+    tooltip: `${tool} — BoardReadyOps rule check`,
     icon: healthy ? 'symbol-method' : 'warning'
   }));
 
   const children: McpToolsNode[] = [
-    dashboardField('CLI', `boardreadyops v${status.version}`, undefined, 'info'),
-    dashboardField('Health', statusLabel, status.message || (isOld ? 'Please upgrade BoardReadyOps to v1.2.0 or newer.' : undefined), statusIcon),
+    dashboardField(
+      'CLI',
+      `boardreadyops v${status.version}`,
+      undefined,
+      'info'
+    ),
+    dashboardField(
+      'Health',
+      statusLabel,
+      status.message ||
+        (isOld
+          ? 'Please upgrade BoardReadyOps to v1.2.0 or newer.'
+          : undefined),
+      statusIcon
+    ),
     {
       label: 'Advertised tools',
       description: `${status.tools.length}`,
       tooltip: 'BoardReadyOps preflight rules.',
       icon: 'list-tree',
+      collapsedByDefault: true,
       children: toolNodes
     },
-    actionNode('Check Board Readiness', COMMANDS.boardReadyOpsCheck, 'Run BoardReadyOps preflight checks on the active board', 'play'),
-    actionNode('Show Readiness Report', COMMANDS.boardReadyOpsShowReport, 'Show last BoardReadyOps run report', 'report'),
-    actionNode('Configure Checks', COMMANDS.boardReadyOpsConfigure, 'Open BoardReadyOps extension settings', 'gear'),
-    actionNode('Open Documentation', COMMANDS.boardReadyOpsOpenDocs, 'Open BoardReadyOps documentation', 'book')
+    actionNode(
+      'Check Board Readiness',
+      COMMANDS.boardReadyOpsCheck,
+      'Run BoardReadyOps preflight checks on the active board',
+      'play'
+    ),
+    actionNode(
+      'Show Readiness Report',
+      COMMANDS.boardReadyOpsShowReport,
+      'Show last BoardReadyOps run report',
+      'report'
+    ),
+    actionNode(
+      'Configure Checks',
+      COMMANDS.boardReadyOpsConfigure,
+      'Open BoardReadyOps extension settings',
+      'gear'
+    ),
+    actionNode(
+      'Open Documentation',
+      COMMANDS.boardReadyOpsOpenDocs,
+      'Open BoardReadyOps documentation',
+      'book'
+    )
   ];
 
   return {
     label: 'BoardReadyOps',
-    description: enabled ? (healthy ? `v${status.version}` : 'degraded') : 'disabled',
+    description: enabled
+      ? healthy
+        ? `v${status.version}`
+        : 'degraded'
+      : 'disabled',
     tooltip: `BoardReadyOps preflight checks: ${healthy ? 'active' : 'degraded'}`,
     icon: healthy ? 'verified' : 'warning',
+    collapsedByDefault: healthy,
     children
   };
 }

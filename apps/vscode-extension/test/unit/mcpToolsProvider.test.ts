@@ -30,7 +30,7 @@ describe('McpToolsProvider', () => {
     const children = provider.getChildren();
 
     expect(children.map((item) => item.label)).toEqual([
-      'MCP connected with degraded capabilities',
+      'MCP Degraded',
       'Compatibility dashboard',
       'Actions',
       'Install',
@@ -74,26 +74,22 @@ describe('McpToolsProvider', () => {
       treeDescription(
         provider,
         provider.getChildren(advertisedSurface),
-        'Missing required tools'
+        'Unavailable tools'
       )
     ).toBe('6');
     expect(
       treeDescription(
         provider,
         provider.getChildren(advertisedSurface),
-        'Missing optional capabilities'
+        'Unavailable capabilities'
       )
-    ).toBe('none');
+    ).toBe('✓ none');
 
     expect(labels(provider.getChildren(child(children, 'Actions')))).toEqual([
       'Reconnect',
-      'Refresh capabilities',
-      'Open MCP log',
-      'Save diagnostic bundle',
-      'Pick profile',
-      'Switch endpoint',
       'Launch local MCP server',
-      'Open compatibility docs'
+      'Open MCP log',
+      'More actions'
     ]);
     expect(
       treeDescription(provider, children, 'Raw advertised capabilities')
@@ -129,9 +125,7 @@ describe('McpToolsProvider', () => {
     const dashboard = child(children, 'Compatibility dashboard');
     const runtime = child(provider.getChildren(dashboard), 'KiCad runtime');
 
-    expect(
-      child(children, 'MCP connected; file-backed read-only features active')
-    ).toBeDefined();
+    expect(child(children, 'MCP Degraded')).toBeDefined();
     expect(
       treeDescription(
         provider,
@@ -148,13 +142,6 @@ describe('McpToolsProvider', () => {
         'Live PCB context'
       )
     ).toBe('unavailable');
-    expect(
-      treeDescription(
-        provider,
-        provider.getChildren(child(children, 'Raw advertised capabilities')),
-        'KiCad runtime'
-      )
-    ).toBe('file-backed read available');
 
     const stdioProvider = providerForState({
       kind: 'VsCodeStdio',
@@ -174,9 +161,7 @@ describe('McpToolsProvider', () => {
       'Advertised surface'
     );
 
-    expect(
-      child(stdioChildren, 'MCP connected with degraded capabilities')
-    ).toBeDefined();
+    expect(child(stdioChildren, 'MCP Degraded')).toBeDefined();
     expect(
       treeDescription(
         stdioProvider,
@@ -188,7 +173,7 @@ describe('McpToolsProvider', () => {
       treeDescription(
         stdioProvider,
         stdioProvider.getChildren(stdioSurface),
-        'Missing optional capabilities'
+        'Unavailable capabilities'
       )
     ).toBe('3');
   });
@@ -271,7 +256,7 @@ describe('McpToolsProvider', () => {
 
     expect(flattenTree(provider)).toMatchInlineSnapshot(`
       [
-        "MCP connected with degraded capabilities :: 3.5.2",
+        "MCP Degraded :: 3.5.2",
         "Compatibility dashboard :: degraded",
         "Compatibility dashboard > Compatibility state :: Connected but degraded",
         "Compatibility dashboard > Server contract :: 8",
@@ -292,13 +277,13 @@ describe('McpToolsProvider', () => {
         "Compatibility dashboard > Advertised surface > Advertised tools :: 3",
         "Compatibility dashboard > Advertised surface > Advertised resources :: 1",
         "Compatibility dashboard > Advertised surface > Advertised prompts :: 1",
-        "Compatibility dashboard > Advertised surface > Missing required tools :: 3",
-        "Compatibility dashboard > Advertised surface > Missing required tools > project_get_design_intent ::",
-        "Compatibility dashboard > Advertised surface > Missing required tools > export_bom ::",
-        "Compatibility dashboard > Advertised surface > Missing required tools > export_netlist ::",
-        "Compatibility dashboard > Advertised surface > Missing optional capabilities :: 2",
-        "Compatibility dashboard > Advertised surface > Missing optional capabilities > stateless Streamable HTTP transport ::",
-        "Compatibility dashboard > Advertised surface > Missing optional capabilities > ChatGPT connector compatibility ::",
+        "Compatibility dashboard > Advertised surface > Unavailable tools :: 3",
+        "Compatibility dashboard > Advertised surface > Unavailable tools > project_get_design_intent :: not connected",
+        "Compatibility dashboard > Advertised surface > Unavailable tools > export_bom :: not connected",
+        "Compatibility dashboard > Advertised surface > Unavailable tools > export_netlist :: not connected",
+        "Compatibility dashboard > Advertised surface > Unavailable capabilities :: 2",
+        "Compatibility dashboard > Advertised surface > Unavailable capabilities > stateless Streamable HTTP transport :: not connected",
+        "Compatibility dashboard > Advertised surface > Unavailable capabilities > ChatGPT connector compatibility :: not connected",
         "Compatibility dashboard > Health and remediation :: 4",
         "Compatibility dashboard > Health and remediation > Last health check :: 2026-05-20T12:00:00.000Z",
         "Compatibility dashboard > Health and remediation > Last error :: none",
@@ -306,27 +291,27 @@ describe('McpToolsProvider', () => {
         "Compatibility dashboard > Health and remediation > Capability diagnostics :: none",
         "Actions :: MCP operations",
         "Actions > Reconnect ::",
-        "Actions > Refresh capabilities ::",
-        "Actions > Open MCP log ::",
-        "Actions > Save diagnostic bundle ::",
-        "Actions > Pick profile ::",
-        "Actions > Switch endpoint ::",
         "Actions > Launch local MCP server ::",
-        "Actions > Open compatibility docs ::",
+        "Actions > Open MCP log ::",
+        "Actions > More actions ::",
+        "Actions > More actions > Refresh capabilities ::",
+        "Actions > More actions > Save diagnostic bundle ::",
+        "Actions > More actions > Pick profile ::",
+        "Actions > More actions > Switch endpoint ::",
+        "Actions > More actions > Open compatibility docs ::",
         "Install :: uvx 3.5.2",
         "Raw advertised capabilities :: 3 tools, 1 resources, 1 prompts",
         "Raw advertised capabilities > Capability diagnostics :: none",
-        "Raw advertised capabilities > KiCad runtime :: live PCB",
         "Raw advertised capabilities > Operation modes :: readonly",
         "Raw advertised capabilities > Operation modes > Active operating mode :: readonly",
-        "Raw advertised capabilities > Operation modes > File-backed DRC :: available",
-        "Raw advertised capabilities > Operation modes > File-backed ERC :: available",
-        "Raw advertised capabilities > Operation modes > File-backed exports :: available",
-        "Raw advertised capabilities > Operation modes > Live PCB read :: available",
-        "Raw advertised capabilities > Operation modes > Live PCB write :: available",
-        "Raw advertised capabilities > Operation modes > Live schematic read :: available",
-        "Raw advertised capabilities > Operation modes > Live schematic write :: available",
-        "Raw advertised capabilities > Operation modes > ChatGPT connector :: unavailable",
+        "Raw advertised capabilities > Operation modes > File-backed DRC :: ✓ available",
+        "Raw advertised capabilities > Operation modes > File-backed ERC :: ✓ available",
+        "Raw advertised capabilities > Operation modes > File-backed exports :: ✓ available",
+        "Raw advertised capabilities > Operation modes > Live PCB read :: ✓ available",
+        "Raw advertised capabilities > Operation modes > Live PCB write :: ✓ available",
+        "Raw advertised capabilities > Operation modes > Live schematic read :: ✓ available",
+        "Raw advertised capabilities > Operation modes > Live schematic write :: ✓ available",
+        "Raw advertised capabilities > Operation modes > ChatGPT connector :: ✗ unavailable",
         "Raw advertised capabilities > Tools :: 3",
         "Raw advertised capabilities > Tools > kicad_get_version ::",
         "Raw advertised capabilities > Tools > run_drc ::",
@@ -345,10 +330,11 @@ describe('McpToolsProvider', () => {
 
   describe('BoardReadyOps integration', () => {
     it('handles absent CLI state', () => {
-      const provider = providerForState(
-        connectedState({ tools: [] }),
-        { installed: false, healthy: false, message: 'Not found' }
-      );
+      const provider = providerForState(connectedState({ tools: [] }), {
+        installed: false,
+        healthy: false,
+        message: 'Not found'
+      });
       const children = provider.getChildren();
       const broNode = child(children, 'BoardReadyOps');
       const item = provider.getTreeItem(broNode);
@@ -361,17 +347,21 @@ describe('McpToolsProvider', () => {
         'Configure Checks',
         'Open Documentation'
       ]);
-      expect(provider.getTreeItem(child(broChildren, 'CLI')).description).toBe('not found');
+      expect(provider.getTreeItem(child(broChildren, 'CLI')).description).toBe(
+        'not found'
+      );
     });
 
     it('handles disabled state', () => {
       __setConfiguration({
         'kicadstudio.boardReadyOps.enabled': false
       });
-      const provider = providerForState(
-        connectedState({ tools: [] }),
-        { installed: true, version: '1.2.3', healthy: true, tools: ['bom.missing-mpn'] }
-      );
+      const provider = providerForState(connectedState({ tools: [] }), {
+        installed: true,
+        version: '1.2.3',
+        healthy: true,
+        tools: ['bom.missing-mpn']
+      });
       const children = provider.getChildren();
       const broNode = child(children, 'BoardReadyOps');
       const item = provider.getTreeItem(broNode);
@@ -383,10 +373,12 @@ describe('McpToolsProvider', () => {
       __setConfiguration({
         'kicadstudio.boardReadyOps.enabled': true
       });
-      const provider = providerForState(
-        connectedState({ tools: [] }),
-        { installed: true, version: '1.2.3', healthy: true, tools: ['bom.missing-mpn'] }
-      );
+      const provider = providerForState(connectedState({ tools: [] }), {
+        installed: true,
+        version: '1.2.3',
+        healthy: true,
+        tools: ['bom.missing-mpn']
+      });
       const children = provider.getChildren();
       const broNode = child(children, 'BoardReadyOps');
       const item = provider.getTreeItem(broNode);
@@ -403,21 +395,27 @@ describe('McpToolsProvider', () => {
         'Configure Checks',
         'Open Documentation'
       ]);
-      expect(provider.getTreeItem(child(broChildren, 'Health')).description).toBe('healthy');
-      
+      expect(
+        provider.getTreeItem(child(broChildren, 'Health')).description
+      ).toBe('healthy');
+
       const toolsNode = child(broChildren, 'Advertised tools');
       expect(provider.getTreeItem(toolsNode).description).toBe('1');
-      expect(labels(provider.getChildren(toolsNode))).toEqual(['bom.missing-mpn']);
+      expect(labels(provider.getChildren(toolsNode))).toEqual([
+        'bom.missing-mpn'
+      ]);
     });
 
     it('handles degraded state due to old version', () => {
       __setConfiguration({
         'kicadstudio.boardReadyOps.enabled': true
       });
-      const provider = providerForState(
-        connectedState({ tools: [] }),
-        { installed: true, version: '1.1.0', healthy: true, tools: ['bom.missing-mpn'] }
-      );
+      const provider = providerForState(connectedState({ tools: [] }), {
+        installed: true,
+        version: '1.1.0',
+        healthy: true,
+        tools: ['bom.missing-mpn']
+      });
       const children = provider.getChildren();
       const broNode = child(children, 'BoardReadyOps');
       const item = provider.getTreeItem(broNode);
@@ -433,10 +431,13 @@ describe('McpToolsProvider', () => {
       __setConfiguration({
         'kicadstudio.boardReadyOps.enabled': true
       });
-      const provider = providerForState(
-        connectedState({ tools: [] }),
-        { installed: true, version: '1.2.3', healthy: false, message: 'Doctor failed', tools: ['bom.missing-mpn'] }
-      );
+      const provider = providerForState(connectedState({ tools: [] }), {
+        installed: true,
+        version: '1.2.3',
+        healthy: false,
+        message: 'Doctor failed',
+        tools: ['bom.missing-mpn']
+      });
       const children = provider.getChildren();
       const broNode = child(children, 'BoardReadyOps');
       const item = provider.getTreeItem(broNode);
@@ -452,7 +453,9 @@ describe('McpToolsProvider', () => {
 
 function providerForState(
   state: McpConnectionState,
-  broStatusOverride: Partial<McpToolsProvider['broStatus']> = { installed: false }
+  broStatusOverride: Partial<McpToolsProvider['broStatus']> = {
+    installed: false
+  }
 ): McpToolsProvider {
   return new McpToolsProvider(
     { getState: () => state } as never,
