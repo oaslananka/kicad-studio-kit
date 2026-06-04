@@ -10,6 +10,19 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.3.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.2.0...vscode-extension-v1.3.0) (2026-06-04)
+
+
+### Features
+
+* **kicad-studio:** add .kicad_prl and .kicad_wks language support ([#313](https://github.com/oaslananka/kicad-studio-kit/issues/313)) ([b95391d](https://github.com/oaslananka/kicad-studio-kit/commit/b95391d03f0b1f8cc68a59b1cfb7839bf65fe1cb))
+* **kicad-studio:** add SPICE/Gerber/Drill/Worksheet grammars, update DRC with KiCad 10+ constraints ([f25bf7a](https://github.com/oaslananka/kicad-studio-kit/commit/f25bf7afa7dc913ec1e77fd94823cab1c5dc8272))
+
+
+### Bug Fixes
+
+* **repo:** align displayName with Marketplace listing (KiCad Studio Kit) ([939654a](https://github.com/oaslananka/kicad-studio-kit/commit/939654abb064a5c6623a91cff91d6721f1316502))
+
 ## [1.1.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.0.0...vscode-extension-v1.1.0) (2026-05-27)
 
 
