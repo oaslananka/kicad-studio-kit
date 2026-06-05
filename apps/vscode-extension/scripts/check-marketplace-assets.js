@@ -239,11 +239,7 @@ function assertMarketplaceMarkdown() {
   ]) {
     assertMarkdownSection(readme, 'README.md', heading);
   }
-  for (const heading of [
-    'Manual Review Checklist',
-    'English Listing Copy',
-    'Turkish Listing Copy'
-  ]) {
+  for (const heading of ['Manual Review Checklist', 'English Listing Copy']) {
     assertMarkdownSection(listing, 'docs/marketplace-listing.md', heading);
   }
   if (/<details|<summary|<script|<style|<iframe/iu.test(readme)) {

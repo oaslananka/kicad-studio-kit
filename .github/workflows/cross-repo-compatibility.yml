@@ -35,6 +35,9 @@ on:
       - apps/vscode-extension/**
       - .github/workflows/cross-repo-compatibility.yml
 
+permissions:
+  contents: read
+
 defaults:
   run:
     shell: bash
