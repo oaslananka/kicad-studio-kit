@@ -6,7 +6,7 @@ Refresh with `corepack pnpm run docs:generate`.
 | Surface | Version or range |
 | --- | --- |
 | Monorepo baseline | `1.0.0` |
-| KiCad Studio extension | `1.4.0` |
+| KiCad Studio extension | `1.4.1` |
 | kicad-mcp-pro Python server | `3.5.2` |
 | VS Code engine | `^1.100.0` |
 | Node | `>=24.11.0 <25` |

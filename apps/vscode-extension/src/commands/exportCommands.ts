@@ -67,6 +67,51 @@ export function registerExportCommands(
       'Export 3D PLY'
     ),
     registerTrustedCommand(
+      COMMANDS.export3DStep,
+      (resource?: vscode.Uri) => services.exportService.export3DStep(resource),
+      'Export 3D STEP'
+    ),
+    registerTrustedCommand(
+      COMMANDS.export3DStpz,
+      (resource?: vscode.Uri) => services.exportService.export3DStpz(resource),
+      'Export 3D STEPZ'
+    ),
+    registerTrustedCommand(
+      COMMANDS.export3DXao,
+      (resource?: vscode.Uri) => services.exportService.export3DXao(resource),
+      'Export 3D XAO'
+    ),
+    registerTrustedCommand(
+      COMMANDS.export3DStl,
+      (resource?: vscode.Uri) => services.exportService.export3DStl(resource),
+      'Export 3D STL'
+    ),
+    registerTrustedCommand(
+      COMMANDS.export3DU3d,
+      (resource?: vscode.Uri) => services.exportService.export3DU3d(resource),
+      'Export 3D U3D'
+    ),
+    registerTrustedCommand(
+      COMMANDS.export3DVrml,
+      (resource?: vscode.Uri) => services.exportService.export3DVrml(resource),
+      'Export 3D VRML'
+    ),
+    registerTrustedCommand(
+      COMMANDS.exportPcbPs,
+      (resource?: vscode.Uri) => services.exportService.exportPcbPs(resource),
+      'Export PCB PostScript'
+    ),
+    registerTrustedCommand(
+      COMMANDS.exportSchPs,
+      (resource?: vscode.Uri) => services.exportService.exportSchPs(resource),
+      'Export Schematic PostScript'
+    ),
+    registerTrustedCommand(
+      COMMANDS.exportStats,
+      (resource?: vscode.Uri) => services.exportService.exportStats(resource),
+      'Export Board Statistics'
+    ),
+    registerTrustedCommand(
       COMMANDS.exportGenCAD,
       (resource?: vscode.Uri) => services.exportService.exportGenCAD(resource),
       'Export GenCAD'

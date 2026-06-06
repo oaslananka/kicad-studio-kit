@@ -1045,46 +1045,6 @@
         "category": "%kicadstudio.contributes.commands.93.category%"
       },
       {
-        "command": "kicadstudio.pcm.refresh",
-        "title": "%kicadstudio.contributes.commands.86.title%",
-        "category": "%kicadstudio.contributes.commands.86.category%"
-      },
-      {
-        "command": "kicadstudio.pcm.filter",
-        "title": "%kicadstudio.contributes.commands.87.title%",
-        "category": "%kicadstudio.contributes.commands.87.category%"
-      },
-      {
-        "command": "kicadstudio.pcm.install",
-        "title": "%kicadstudio.contributes.commands.88.title%",
-        "category": "%kicadstudio.contributes.commands.88.category%"
-      },
-      {
-        "command": "kicadstudio.pcm.update",
-        "title": "%kicadstudio.contributes.commands.89.title%",
-        "category": "%kicadstudio.contributes.commands.89.category%"
-      },
-      {
-        "command": "kicadstudio.pcm.updateAll",
-        "title": "%kicadstudio.contributes.commands.90.title%",
-        "category": "%kicadstudio.contributes.commands.90.category%"
-      },
-      {
-        "command": "kicadstudio.pcm.uninstall",
-        "title": "%kicadstudio.contributes.commands.91.title%",
-        "category": "%kicadstudio.contributes.commands.91.category%"
-      },
-      {
-        "command": "kicadstudio.sendFeedback",
-        "title": "%kicadstudio.contributes.commands.92.title%",
-        "category": "%kicadstudio.contributes.commands.92.category%"
-      },
-      {
-        "command": "kicadstudio.importAllegro",
-        "title": "%kicadstudio.contributes.commands.93.title%",
-        "category": "%kicadstudio.contributes.commands.93.category%"
-      },
-      {
         "command": "kicadstudio.boardReadyOps.check",
         "title": "%kicadstudio.contributes.commands.94.title%",
         "category": "%kicadstudio.contributes.commands.94.category%"
@@ -1103,6 +1063,51 @@
         "command": "kicadstudio.boardReadyOps.openDocs",
         "title": "%kicadstudio.contributes.commands.97.title%",
         "category": "%kicadstudio.contributes.commands.97.category%"
+      },
+      {
+        "command": "kicadstudio.export3DStep",
+        "title": "%kicadstudio.contributes.commands.98.title%",
+        "category": "%kicadstudio.contributes.commands.98.category%"
+      },
+      {
+        "command": "kicadstudio.export3DStpz",
+        "title": "%kicadstudio.contributes.commands.99.title%",
+        "category": "%kicadstudio.contributes.commands.99.category%"
+      },
+      {
+        "command": "kicadstudio.export3DXao",
+        "title": "%kicadstudio.contributes.commands.100.title%",
+        "category": "%kicadstudio.contributes.commands.100.category%"
+      },
+      {
+        "command": "kicadstudio.export3DStl",
+        "title": "%kicadstudio.contributes.commands.101.title%",
+        "category": "%kicadstudio.contributes.commands.101.category%"
+      },
+      {
+        "command": "kicadstudio.export3DU3d",
+        "title": "%kicadstudio.contributes.commands.102.title%",
+        "category": "%kicadstudio.contributes.commands.102.category%"
+      },
+      {
+        "command": "kicadstudio.export3DVrml",
+        "title": "%kicadstudio.contributes.commands.103.title%",
+        "category": "%kicadstudio.contributes.commands.103.category%"
+      },
+      {
+        "command": "kicadstudio.exportPcbPs",
+        "title": "%kicadstudio.contributes.commands.104.title%",
+        "category": "%kicadstudio.contributes.commands.104.category%"
+      },
+      {
+        "command": "kicadstudio.exportSchPs",
+        "title": "%kicadstudio.contributes.commands.105.title%",
+        "category": "%kicadstudio.contributes.commands.105.category%"
+      },
+      {
+        "command": "kicadstudio.exportStats",
+        "title": "%kicadstudio.contributes.commands.106.title%",
+        "category": "%kicadstudio.contributes.commands.106.category%"
       }
     ],
     "menus": {
@@ -1290,6 +1295,42 @@
         {
           "command": "kicadstudio.export3DPdf",
           "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen && kicadstudio.kicad10Plus"
+        },
+        {
+          "command": "kicadstudio.export3DStep",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
+        },
+        {
+          "command": "kicadstudio.export3DStpz",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen && kicadstudio.kicad10Plus"
+        },
+        {
+          "command": "kicadstudio.export3DXao",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen && kicadstudio.kicad10Plus"
+        },
+        {
+          "command": "kicadstudio.export3DStl",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
+        },
+        {
+          "command": "kicadstudio.export3DU3d",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
+        },
+        {
+          "command": "kicadstudio.export3DVrml",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
+        },
+        {
+          "command": "kicadstudio.exportPcbPs",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
+        },
+        {
+          "command": "kicadstudio.exportSchPs",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
+        },
+        {
+          "command": "kicadstudio.exportStats",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
         },
         {
           "command": "kicadstudio.exportGenCAD",
@@ -2442,7 +2483,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "audit:ci": "pnpm audit --audit-level high",
     "check:staged": "lint-staged",
-    "check": "pnpm run format:check && pnpm run marketplace:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run test:security && pnpm run test:a11y && pnpm run build && pnpm run package && pnpm run package:validate",
+    "check": "pnpm run check:extension-manifest && pnpm run format:check && pnpm run marketplace:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run test:security && pnpm run test:a11y && pnpm run build && pnpm run package && pnpm run package:validate",
+    "check:extension-manifest": "node scripts/check-package-contributions.mjs",
     "check:workspace-trust": "node scripts/check-untrusted-workspace.js",
     "check:ci": "pnpm run audit:ci && pnpm run format:check && pnpm run docs:check && pnpm run workflows:lint && pnpm run lint && pnpm run typecheck && pnpm run check:workspace-trust && pnpm run test:unit:coverage && pnpm run test:security && pnpm run test:a11y && pnpm run build && pnpm run test:integration && pnpm run package && pnpm run package:validate && pnpm run release:dry-run && pnpm run check:bundle-size",
     "compile-tests": "tsc -p tsconfig.test.json",

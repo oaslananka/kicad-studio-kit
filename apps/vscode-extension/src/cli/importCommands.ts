@@ -35,7 +35,8 @@ const PCB_IMPORT_UNSUPPORTED_HINTS: Partial<
   Record<SupportedPcbImportFormat, string>
 > = {
   allegro:
-    'KiCad 10 PCB Editor supports Allegro .brd import, but this kicad-cli build does not expose --format allegro. Use KiCad PCB Editor File > Import > Non-KiCad Board File until a KiCad CLI build advertises Allegro import.'
+    'KiCad 10 PCB Editor supports Allegro .brd import, but this kicad-cli build does not expose --format allegro. Use KiCad PCB Editor File > Import > Non-KiCad Board File until a KiCad CLI build advertises Allegro import.',
+  geda: 'gEDA/Lepton board import was removed from kicad-cli after KiCad 9.x. Use KiCad PCB Editor File > Import > Non-KiCad File for gEDA boards, or migrate via KiCad 9.x CLI.'
 };
 
 export class KiCadImportService {

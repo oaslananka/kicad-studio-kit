@@ -35,6 +35,15 @@ export type ExportCommandKind =
   | 'export-glb'
   | 'export-brep'
   | 'export-ply'
+  | 'export-step'
+  | 'export-stpz'
+  | 'export-xao'
+  | 'export-stl'
+  | 'export-u3d'
+  | 'export-vrml'
+  | 'export-ps-pcb'
+  | 'export-ps-sch'
+  | 'export-stats'
   | 'export-gencad'
   | 'export-ipcd356'
   | 'export-dxf'
@@ -64,6 +73,7 @@ export interface ExportCommandBuildOptions {
   theme?: string;
   bomFields?: string[];
   gerberLayers?: string[];
+  variant?: string;
 }
 
 export function buildCliExportCommands(
@@ -261,10 +271,136 @@ export function buildCliExportCommands(
           'ply',
           '--output',
           inferOutputPath(file, outputDir, '', '.ply'),
-          '--include-tracks',
-          '--include-pads',
-          '--include-zones',
+          ...buildCommon3dArgs(),
+          file
+        ]
+      ];
+    case 'export-step':
+      if (versionMajor < 8) {
+        return [];
+      }
+      return [
+        [
+          'pcb',
+          'export',
+          'step',
+          '--output',
+          inferOutputPath(file, outputDir, '', '.step'),
+          ...buildCommon3dArgs(),
+          ...build3dVariantArgs(options.variant, versionMajor),
+          '--no-optimize-step',
+          file
+        ]
+      ];
+    case 'export-stpz':
+      if (versionMajor < 10) {
+        return [];
+      }
+      return [
+        [
+          'pcb',
+          'export',
+          'stpz',
+          '--output',
+          inferOutputPath(file, outputDir, '', '.stpz'),
+          ...buildCommon3dArgs(),
+          ...build3dVariantArgs(options.variant, versionMajor),
+          file
+        ]
+      ];
+    case 'export-xao':
+      if (versionMajor < 10) {
+        return [];
+      }
+      return [
+        [
+          'pcb',
+          'export',
+          'xao',
+          '--output',
+          inferOutputPath(file, outputDir, '', '.xao'),
+          ...buildCommon3dArgs(),
+          ...build3dVariantArgs(options.variant, versionMajor),
+          file
+        ]
+      ];
+    case 'export-stl':
+      if (versionMajor < 8) {
+        return [];
+      }
+      return [
+        [
+          'pcb',
+          'export',
+          'stl',
+          '--output',
+          inferOutputPath(file, outputDir, '', '.stl'),
+          ...buildCommon3dArgs(),
+          ...build3dVariantArgs(options.variant, versionMajor),
+          file
+        ]
+      ];
+    case 'export-u3d':
+      if (versionMajor < 8) {
+        return [];
+      }
+      return [
+        [
+          'pcb',
+          'export',
+          'u3d',
+          '--output',
+          inferOutputPath(file, outputDir, '', '.u3d'),
+          ...buildCommon3dArgs(),
+          ...build3dVariantArgs(options.variant, versionMajor),
+          file
+        ]
+      ];
+    case 'export-vrml':
+      if (versionMajor < 8) {
+        return [];
+      }
+      return [
+        [
+          'pcb',
+          'export',
+          'vrml',
+          '--output',
+          inferOutputPath(file, outputDir, '', '.wrl'),
           '--subst-models',
+          ...build3dVariantArgs(options.variant, versionMajor),
+          file
+        ]
+      ];
+    case 'export-ps-pcb':
+      return [
+        [
+          'pcb',
+          'export',
+          'ps',
+          '--output',
+          outputDir,
+          '--layers',
+          'F.Cu,B.Cu,Edge.Cuts,F.SilkS,B.SilkS,F.Mask,B.Mask,F.Fab,B.Fab',
+          file
+        ]
+      ];
+    case 'export-ps-sch':
+      return [
+        ['sch', 'export', 'ps', '--output', outputDir, '--theme', theme, file]
+      ];
+    case 'export-stats':
+      return [
+        [
+          'pcb',
+          'export',
+          'stats',
+          '--output',
+          inferOutputPath(file, outputDir, '-stats', '.json'),
+          '--format',
+          'json',
+          '--units',
+          'mm',
           file
         ]
       ];
@@ -592,6 +728,141 @@ export class KiCadExportService {
       resource,
       ['.kicad_pcb'],
       'Exporting 3D PLY'
+    );
+  }
+
+  async export3DStep(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('step'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support STEP export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-step',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting 3D STEP'
+    );
+  }
+
+  async export3DStpz(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('stpz'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support STEPZ export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-stpz',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting 3D STEPZ'
+    );
+  }
+
+  async export3DXao(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('xao'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support XAO export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-xao',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting 3D XAO'
+    );
+  }
+
+  async export3DStl(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('stl'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support STL export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-stl',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting 3D STL'
+    );
+  }
+
+  async export3DU3d(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('u3d'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support U3D export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-u3d',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting 3D U3D'
+    );
+  }
+
+  async export3DVrml(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('vrml'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support VRML export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-vrml',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting 3D VRML'
+    );
+  }
+
+  async exportPcbPs(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('psPcb'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support PostScript PCB export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-ps-pcb',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting PCB PostScript'
+    );
+  }
+
+  async exportSchPs(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('psSch'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support PostScript schematic export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-ps-sch',
+      resource,
+      ['.kicad_sch'],
+      'Exporting Schematic PostScript'
+    );
+  }
+
+  async exportStats(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('stats'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support board statistics export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-stats',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting board statistics'
     );
   }
 
@@ -1366,6 +1637,25 @@ export class KiCadExportService {
       ...(gerberLayers.length ? { gerberLayers } : {})
     };
   }
+}
+
+function buildCommon3dArgs(): string[] {
+  return [
+    '--include-tracks',
+    '--include-pads',
+    '--include-zones',
+    '--include-inner-copper',
+    '--include-silkscreen',
+    '--include-soldermask',
+    '--subst-models'
+  ];
+}
+
+function build3dVariantArgs(variant?: string, versionMajor?: number): string[] {
+  if (!variant || (versionMajor ?? 0) < 10) {
+    return [];
+  }
+  return ['--variant', variant];
 }
 
 function exportSurfaceFor(kind: ExportCommandKind): ExportSurfaceKind {

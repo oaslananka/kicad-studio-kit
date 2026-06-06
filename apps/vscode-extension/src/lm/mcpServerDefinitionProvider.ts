@@ -9,7 +9,7 @@ import {
 } from './api';
 
 export const KICAD_MCP_SERVER_PROVIDER_ID = 'kicadstudio.mcpServer';
-const KICAD_MCP_SERVER_LABEL = 'KiCad MCP Pro (bundled)';
+const KICAD_MCP_SERVER_LABEL = 'KiCad MCP Pro (detected)';
 
 export function registerMcpServerDefinitionProvider(
   context: vscode.ExtensionContext,
