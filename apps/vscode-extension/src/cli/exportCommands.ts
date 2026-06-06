@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { COMMANDS, SETTINGS } from '../constants';
+import { COMMANDS, EXTENSION_ID, SETTINGS } from '../constants';
 import { BomExporter } from '../bom/bomExporter';
 import { BomParser } from '../bom/bomParser';
 import type { ExportPreset } from '../types';
@@ -241,9 +241,11 @@ export function buildCliExportCommands(
           'glb',
           '--output',
           inferOutputPath(file, outputDir, '', '.glb'),
-          '--include-tracks',
-          '--include-zones',
-          '--subst-models',
+          ...buildCommon3dExportArgs({
+            includeTracks: true,
+            includeZones: true,
+            substModels: true
+          }),
           file
         ]
       ];
@@ -258,7 +260,9 @@ export function buildCliExportCommands(
           'brep',
           '--output',
           inferOutputPath(file, outputDir, '', '.brep'),
-          '--subst-models',
+          ...buildCommon3dExportArgs({
+            substModels: true
+          }),
           file
         ]
       ];
@@ -273,10 +277,12 @@ export function buildCliExportCommands(
           'ply',
           '--output',
           inferOutputPath(file, outputDir, '', '.ply'),
-          '--include-tracks',
-          '--include-pads',
-          '--include-zones',
-          '--subst-models',
+          ...buildCommon3dExportArgs({
+            includeTracks: true,
+            includePads: true,
+            includeZones: true,
+            substModels: true
+          }),
           file
         ]
       ];
@@ -316,50 +322,56 @@ export function buildCliExportCommands(
           file
         ]
       ];
-    case 'export-pos':
-      return [
-        [
-          'pcb',
-          'export',
-          'pos',
-          '--output',
-          inferOutputPath(file, outputDir, '-pos', '.csv'),
-          '--format',
-          'csv',
-          '--units',
-          'mm',
-          '--side',
-          'both',
-          file
-        ]
+    case 'export-pos': {
+      const posArgs = [
+        'pcb',
+        'export',
+        'pos',
+        '--output',
+        inferOutputPath(file, outputDir, '-pos', '.csv'),
+        '--format',
+        'csv',
+        '--units',
+        'mm',
+        '--side',
+        'both'
       ];
+      if (options.variant) {
+        posArgs.push('--variant', options.variant);
+      }
+      posArgs.push(file);
+      return [posArgs];
+    }
     case 'export-fp-svg':
       return [['fp', 'export', 'svg', '--output', outputDir, file]];
     case 'export-sym-svg':
       return [
         ['sym', 'export', 'svg', '--output', outputDir, '--theme', theme, file]
       ];
-    case 'export-sch-bom':
-      return [
-        [
-          'sch',
-          'export',
-          'bom',
-          '--output',
-          inferOutputPath(file, outputDir, '-bom', '.csv'),
-          '--fields',
-          bomFields.join(','),
-          '--group-by',
-          'Value,Footprint',
-          '--sort-field',
-          'Reference',
-          '--ref-range-delimiter',
-          '',
-          bomPresetFlag,
-          'CSV',
-          file
-        ]
+    case 'export-sch-bom': {
+      const bomArgs = [
+        'sch',
+        'export',
+        'bom',
+        '--output',
+        inferOutputPath(file, outputDir, '-bom', '.csv'),
+        '--fields',
+        bomFields.join(','),
+        '--group-by',
+        'Value,Footprint',
+        '--sort-field',
+        'Reference',
+        '--ref-range-delimiter',
+        '',
+        bomPresetFlag,
+        'CSV'
       ];
+      if (options.variant) {
+        bomArgs.push('--variant', options.variant);
+      }
+      bomArgs.push(file);
+      return [bomArgs];
+    }
     case 'export-netlist':
       return [
         [
@@ -373,40 +385,40 @@ export function buildCliExportCommands(
           file
         ]
       ];
-    case 'export-step': {
-      const stepArgs = [
-        'pcb',
-        'export',
-        'step',
-        '--output',
-        inferOutputPath(file, outputDir, '', '.step'),
-        '--subst-models',
-        '--include-tracks',
-        '--include-zones'
+    case 'export-step':
+      return [
+        [
+          'pcb',
+          'export',
+          'step',
+          '--output',
+          inferOutputPath(file, outputDir, '', '.step'),
+          ...buildCommon3dExportArgs({
+            substModels: true,
+            includeTracks: true,
+            includeZones: true,
+            variant: options.variant
+          }),
+          file
+        ]
       ];
-      if (options.variant) {
-        stepArgs.push('--variant', options.variant);
-      }
-      stepArgs.push(file);
-      return [stepArgs];
-    }
-    case 'export-stepz': {
-      const stepzArgs = [
-        'pcb',
-        'export',
-        'stepz',
-        '--output',
-        inferOutputPath(file, outputDir, '', '.stepz'),
-        '--subst-models',
-        '--include-tracks',
-        '--include-zones'
+    case 'export-stepz':
+      return [
+        [
+          'pcb',
+          'export',
+          'stepz',
+          '--output',
+          inferOutputPath(file, outputDir, '', '.stepz'),
+          ...buildCommon3dExportArgs({
+            substModels: true,
+            includeTracks: true,
+            includeZones: true,
+            variant: options.variant
+          }),
+          file
+        ]
       ];
-      if (options.variant) {
-        stepzArgs.push('--variant', options.variant);
-      }
-      stepzArgs.push(file);
-      return [stepzArgs];
-    }
     case 'export-xao':
       return [
         [
@@ -418,51 +430,51 @@ export function buildCliExportCommands(
           file
         ]
       ];
-    case 'export-stl': {
-      const stlArgs = [
-        'pcb',
-        'export',
-        'stl',
-        '--output',
-        inferOutputPath(file, outputDir, '', '.stl'),
-        '--subst-models'
+    case 'export-stl':
+      return [
+        [
+          'pcb',
+          'export',
+          'stl',
+          '--output',
+          inferOutputPath(file, outputDir, '', '.stl'),
+          ...buildCommon3dExportArgs({
+            substModels: true,
+            variant: options.variant
+          }),
+          file
+        ]
       ];
-      if (options.variant) {
-        stlArgs.push('--variant', options.variant);
-      }
-      stlArgs.push(file);
-      return [stlArgs];
-    }
-    case 'export-u3d': {
-      const u3dArgs = [
-        'pcb',
-        'export',
-        'u3d',
-        '--output',
-        inferOutputPath(file, outputDir, '', '.u3d'),
-        '--subst-models'
+    case 'export-u3d':
+      return [
+        [
+          'pcb',
+          'export',
+          'u3d',
+          '--output',
+          inferOutputPath(file, outputDir, '', '.u3d'),
+          ...buildCommon3dExportArgs({
+            substModels: true,
+            variant: options.variant
+          }),
+          file
+        ]
       ];
-      if (options.variant) {
-        u3dArgs.push('--variant', options.variant);
-      }
-      u3dArgs.push(file);
-      return [u3dArgs];
-    }
-    case 'export-vrml': {
-      const vrmlArgs = [
-        'pcb',
-        'export',
-        'vrml',
-        '--output',
-        inferOutputPath(file, outputDir, '', '.vrml'),
-        '--subst-models'
+    case 'export-vrml':
+      return [
+        [
+          'pcb',
+          'export',
+          'vrml',
+          '--output',
+          inferOutputPath(file, outputDir, '', '.vrml'),
+          ...buildCommon3dExportArgs({
+            substModels: true,
+            variant: options.variant
+          }),
+          file
+        ]
       ];
-      if (options.variant) {
-        vrmlArgs.push('--variant', options.variant);
-      }
-      vrmlArgs.push(file);
-      return [vrmlArgs];
-    }
     case 'export-ps':
       return [
         [
@@ -488,6 +500,75 @@ export function buildCliExportCommands(
     default:
       return buildCliExportCommands('export-sch-bom', file, outputDir, options);
   }
+}
+
+/**
+ * Options that apply to 3D export commands (step, stepz, stl, u3d, vrml, glb, brep, ply).
+ */
+export interface Common3dExportOptions {
+  includeTracks?: boolean | undefined;
+  includePads?: boolean | undefined;
+  includeZones?: boolean | undefined;
+  includeInnerCopper?: boolean | undefined;
+  includeSilkscreen?: boolean | undefined;
+  includeSoldermask?: boolean | undefined;
+  substModels?: boolean | undefined;
+  fuseShapes?: boolean | undefined;
+  fillAllVias?: boolean | undefined;
+  noExtraPadThickness?: boolean | undefined;
+  minDistance?: string | undefined;
+  netFilter?: string | undefined;
+  variant?: string | undefined;
+}
+
+/**
+ * Build common 3D export CLI arguments from options.
+ * Only includes options that KiCad 10+ supports for 3D exports.
+ */
+export function buildCommon3dExportArgs(
+  options: Common3dExportOptions
+): string[] {
+  const args: string[] = [];
+  if (options.substModels) {
+    args.push('--subst-models');
+  }
+  if (options.includeTracks) {
+    args.push('--include-tracks');
+  }
+  if (options.includePads) {
+    args.push('--include-pads');
+  }
+  if (options.includeZones) {
+    args.push('--include-zones');
+  }
+  if (options.includeInnerCopper) {
+    args.push('--include-inner-copper');
+  }
+  if (options.includeSilkscreen) {
+    args.push('--include-silkscreen');
+  }
+  if (options.includeSoldermask) {
+    args.push('--include-soldermask');
+  }
+  if (options.fuseShapes) {
+    args.push('--fuse-shapes');
+  }
+  if (options.fillAllVias) {
+    args.push('--fill-all-vias');
+  }
+  if (options.noExtraPadThickness) {
+    args.push('--no-extra-pad-thickness');
+  }
+  if (options.minDistance) {
+    args.push('--min-distance', options.minDistance);
+  }
+  if (options.netFilter) {
+    args.push('--net-filter', options.netFilter);
+  }
+  if (options.variant) {
+    args.push('--variant', options.variant);
+  }
+  return args;
 }
 
 export async function discoverGerberLayers(file: string): Promise<string[]> {
@@ -1012,29 +1093,45 @@ export class KiCadExportService {
       );
     }
 
-    const confirmed = await vscode.window.showInformationMessage(
-      `Run jobset "${path.basename(jobsetFile)}"?${
+    // Ask user for run mode: actual run or dry-run preview
+    const modeSelection = await vscode.window.showInformationMessage(
+      `Execute jobset "${path.basename(jobsetFile)}"?${
         outputs.length > 0 ? `\nOutputs: ${outputs.join(', ')}` : ''
       }\nOutput directory: ${outputDir}`,
       { modal: false },
-      'Run'
+      'Run',
+      'Dry-Run (preview only)'
     );
-    if (confirmed !== 'Run') {
+    if (!modeSelection) {
       return;
     }
 
+    if (modeSelection === 'Dry-Run (preview only)') {
+      void vscode.window.showInformationMessage(
+        `Dry-run complete. Jobset "${path.basename(jobsetFile)}" would output to ${outputDir}`
+      );
+      this.logger.info(
+        `Jobset dry-run: ${path.basename(jobsetFile)} -> ${outputDir}`
+      );
+      return;
+    }
+
+    const buildOptions = await this.getBuildOptions(projectFile);
+    const jobsetArgs = [
+      'jobset',
+      'run',
+      '--file',
+      jobsetFile,
+      '--output',
+      outputDir
+    ];
+    if (buildOptions.variant) {
+      jobsetArgs.push('--variant', buildOptions.variant);
+    }
+    jobsetArgs.push(projectFile);
+
     const success = await this.runCommandSequence(
-      [
-        [
-          'jobset',
-          'run',
-          '--file',
-          jobsetFile,
-          '--output',
-          outputDir,
-          projectFile
-        ]
-      ],
+      [jobsetArgs],
       path.dirname(projectFile),
       `Running jobset ${path.basename(jobsetFile)}`
     );
@@ -1043,7 +1140,20 @@ export class KiCadExportService {
       this.logger.info(
         `Jobset ${path.basename(jobsetFile)} completed. Output in ${outputDir}`
       );
-      this.logger.show(false);
+      void vscode.window
+        .showInformationMessage(
+          `Jobset "${path.basename(jobsetFile)}" completed successfully.`,
+          'Open Output Folder'
+        )
+        .then((action) => {
+          if (action === 'Open Output Folder') {
+            void vscode.env.openExternal(vscode.Uri.file(outputDir));
+          }
+        });
+    } else {
+      void vscode.window.showErrorMessage(
+        `Jobset "${path.basename(jobsetFile)}" failed. Check the KiCad Studio output channel for details.`
+      );
     }
   }
 
@@ -1144,26 +1254,30 @@ export class KiCadExportService {
       );
     }
 
+    const detected = await this.detector.detect();
+    const buildOptions = await this.getBuildOptions(pcbFile);
+    const manifest = {
+      createdBy: 'KiCad Studio',
+      extensionVersion:
+        vscode.extensions.getExtension(EXTENSION_ID)?.packageJSON?.version ??
+        'unknown',
+      kicadVersion: detected?.version ?? 'unknown',
+      profile: profile.label,
+      pcbFile: path.basename(pcbFile),
+      schematicFile: schematicFile ? path.basename(schematicFile) : undefined,
+      activeVariant: buildOptions.variant ?? undefined,
+      generatedAt: new Date().toISOString(),
+      includes: {
+        gerbers: true,
+        drill: true,
+        bom: Boolean(schematicFile),
+        pickAndPlace: await this.detector.hasCapability('pos')
+      }
+    };
+
     await fs.promises.writeFile(
       path.join(stagingDir, 'manifest.json'),
-      JSON.stringify(
-        {
-          createdBy: 'KiCad Studio',
-          profile: profile.label,
-          pcbFile: path.basename(pcbFile),
-          schematicFile: schematicFile
-            ? path.basename(schematicFile)
-            : undefined,
-          includes: {
-            gerbers: true,
-            drill: true,
-            bom: Boolean(schematicFile),
-            pickAndPlace: await this.detector.hasCapability('pos')
-          }
-        },
-        null,
-        2
-      ),
+      JSON.stringify(manifest, null, 2) + '\n',
       'utf8'
     );
 
