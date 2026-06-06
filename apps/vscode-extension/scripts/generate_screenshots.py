@@ -1122,7 +1122,199 @@ def make_quality_gates():
     print("✓ quality-gates.png")
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  9. PROJECT TREE
+# ─────────────────────────────────────────────────────────────────────────────
+def make_project_tree():
+    img, d = make_base("Project Explorer — KiCad Studio")
+    draw_activity_icons(d, active_index=0)
+
+    # sidebar: detailed project tree
+    y = draw_sidebar_header(d, "KICAD STUDIO EXPLORER")
+    y = draw_tree_item(d, ACTBAR_W+8, y, "▼", "arduino_uno", TEXT_BRIGHT, indent=0, selected=True)
+    y = draw_tree_item(d, ACTBAR_W+8, y, "▼", "KiCad Files", TEXT, indent=1)
+    y = draw_tree_item(d, ACTBAR_W+8, y, "📄", "arduino_uno.kicad_sch", TEXT_CYAN, indent=2)
+    y = draw_tree_item(d, ACTBAR_W+8, y, "📄", "arduino_uno.kicad_pcb", TEXT_GREEN, indent=2)
+    y = draw_tree_item(d, ACTBAR_W+8, y, "⚙", "arduino_uno.kicad_pro", TEXT_ORANGE, indent=2)
+    y = draw_tree_item(d, ACTBAR_W+8, y, "▶", "Libraries", TEXT, indent=1)
+    y = draw_tree_item(d, ACTBAR_W+8, y, "📂", "fp-lib-table", TEXT_DIM, indent=2)
+    y = draw_tree_item(d, ACTBAR_W+8, y, "📂", "sym-lib-table", TEXT_DIM, indent=2)
+    y += 6
+    draw_rect(d, [ACTBAR_W+4, y, ACTBAR_W+SIDEBAR_W-4, y+1], fill=BORDER)
+    y += 8
+    y = draw_sidebar_header(d, "OUTLINE", y=y)
+    outline_items = [
+        ("Schematic", ["+5V Rail", "USB Circuit", "MCU Section", "Power Filtering"]),
+        ("PCB", ["Board Outline", "Top Layer", "Bottom Layer", "Silkscreen"]),
+    ]
+    for section, children in outline_items:
+        y = draw_tree_item(d, ACTBAR_W+8, y, "▼", section, TEXT_BRIGHT, indent=0)
+        for child in children:
+            y = draw_tree_item(d, ACTBAR_W+8, y, "  ", child, TEXT_DIM, indent=1)
+
+    # tabs
+    draw_tabbar(d, [("README.md", False), ("arduino_uno.kicad_pro", False)], active=0)
+
+    # editor: README content
+    ex, ey, ew, eh = editor_area()
+    fill_editor(d)
+
+    # README header
+    ry = ey + 24
+    draw_text(d, (ex+24, ry), "# KiCad Studio — Arduino Uno Project", _sans(18, bold=True), TEXT_BRIGHT)
+    ry += 40
+    draw_text(d, (ex+24, ry), "Project structure overview and board status.", _sans(12), TEXT_DIM)
+    ry += 30
+
+    # Project info cards
+    card_w = (ew - ex - 56) // 2
+    for ci, (title, items) in enumerate([
+        ("Project Info", [
+            ("Board", "Arduino Uno R3"),
+            ("Version", "1.2.0"),
+            ("Layers", "2"),
+            ("Dimensions", "68.6 × 53.4 mm"),
+        ]),
+        ("Design Status", [
+            ("Schematic", "✓ Complete"),
+            ("PCB Layout", "✓ Routed 98%"),
+            ("DRC", "✓ 0 Errors"),
+            ("BOM", "✓ 42 Components"),
+        ]),
+    ]):
+        cx = ex + 24 + ci * (card_w + 8)
+        draw_rect(d, [cx, ry, cx+card_w, ry+140], fill="#252538", radius=6)
+        draw_rect(d, [cx, ry, cx+card_w, ry+32], fill="#1a1a3a", radius=6)
+        draw_text(d, (cx+12, ry+10), title, _sans(12, bold=True), TEXT_BRIGHT)
+        iy = ry + 40
+        for label, value in items:
+            draw_text(d, (cx+12, iy), label, _sans(10), TEXT_DIM)
+            draw_text(d, (cx+card_w//2, iy), value, _sans(10), TEXT_CYAN)
+            iy += 22
+
+    ry += 155
+    draw_rect(d, [ex+24, ry, ew-24, ry+1], fill=BORDER)
+
+    # Recent files section
+    ry += 12
+    draw_text(d, (ex+24, ry), "Recent Files", _sans(12, bold=True), TEXT_BRIGHT)
+    ry += 24
+    for file, modified in [
+        ("arduino_uno.kicad_sch", "2 minutes ago"),
+        ("arduino_uno.kicad_pcb", "15 minutes ago"),
+        ("arduino_uno.kicad_pro", "1 hour ago"),
+        ("fp-lib-table", "Yesterday"),
+    ]:
+        draw_text(d, (ex+36, ry), "📄 " + file, _sans(11), TEXT_CYAN)
+        draw_text(d, (ex+card_w+80, ry), modified, _sans(10), TEXT_DIM)
+        ry += 20
+
+    draw_statusbar_items(d, [
+        ("✔ KiCad Studio", TEXT_BRIGHT),
+        ("⬡ kicad-mcp-pro 3.5.2", SUCCESS),
+        ("Arduino Uno R3", TEXT_CYAN),
+    ])
+
+    img.save(os.path.join(OUT_DIR, "project-tree.png"), dpi=(96,96))
+    print("✓ project-tree.png")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 10. MCP TOOLS DASHBOARD
+# ─────────────────────────────────────────────────────────────────────────────
+def make_mcp_tools_dashboard():
+    img, d = make_base("MCP Tools Dashboard — KiCad Studio")
+    draw_activity_icons(d, active_index=4)
+
+    # sidebar: MCP connection panel
+    y = draw_sidebar_header(d, "MCP CONNECTION")
+    y = draw_tree_item(d, ACTBAR_W+8, y, "●", "kiCad MCP Server", SUCCESS, indent=0, selected=True)
+    y = draw_tree_item(d, ACTBAR_W+8, y, "  ", "Status: Connected", SUCCESS, indent=1)
+    y = draw_tree_item(d, ACTBAR_W+8, y, "  ", "Version: 3.5.2", TEXT_DIM, indent=1)
+    y = draw_tree_item(d, ACTBAR_W+8, y, "  ", "Mode: Readonly", TEXT_DIM, indent=1)
+    y += 6
+    draw_rect(d, [ACTBAR_W+4, y, ACTBAR_W+SIDEBAR_W-4, y+1], fill=BORDER)
+    y += 8
+    y = draw_sidebar_header(d, "AVAILABLE TOOLS", y=y)
+    tools = [
+        ("get_pcb_info", TEXT_CYAN),
+        ("run_drc", TEXT_GREEN),
+        ("get_schematic", TEXT_CYAN),
+        ("export_bom", TEXT_GREEN),
+        ("get_netlist", TEXT_ORANGE),
+        ("export_gerber", TEXT_ORANGE),
+        ("get_position", TEXT_DIM),
+        ("set_layer", TEXT_DIM),
+    ]
+    for tool_name, tool_color in tools:
+        y = draw_tree_item(d, ACTBAR_W+8, y, "🔧", tool_name, tool_color, indent=0)
+
+    # tabs
+    draw_tabbar(d, [("MCP Tools Dashboard (Webview)", False), ("arduino_uno.kicad_pcb", False)], active=0)
+
+    # editor: webview dashboard
+    ex, ey, ew, eh = editor_area()
+    fill_editor(d, "#1a1a2e")
+
+    # dashboard header
+    dy = ey + 16
+    draw_rect(d, [ex+16, dy, ew-16, dy+48], fill="#252540", radius=8)
+    draw_text(d, (ex+32, dy+14), "🤖  KiCad MCP Tools Dashboard", _sans(16, bold=True), TEXT_BRIGHT)
+    draw_badge(d, (ew-180, dy+14), "Connected ●", SUCCESS, radius=4)
+    dy += 68
+
+    # Tool cards grid
+    tool_cards = [
+        ("📐", "Get PCB Info", "Board dimensions, layers,\nstatistics & metadata", SUCCESS),
+        ("⚠", "Run DRC", "Design rule check with\ncustomizable rule set", TEXT_BLUE),
+        ("📋", "Export BOM", "Bill of materials in CSV,\nJSON or interactive HTML", TEXT_GREEN),
+        ("🔗", "Netlist Query", "Component connectivity\nand net analysis", TEXT_CYAN),
+        ("📄", "Get Schematic", "Schematic sheet data\nand hierarchy", TEXT_ORANGE),
+        ("🖨", "Export Gerber", "Manufacturing outputs\nwith layer selection", TEXT_PURPLE),
+    ]
+
+    card_w = (ew - ex - 56) // 3
+    card_h = 140
+    for ti, (icon, title, desc, color) in enumerate(tool_cards):
+        col = ti % 3
+        row = ti // 3
+        cx = ex + 16 + col * (card_w + 8)
+        cy = dy + row * (card_h + 8)
+
+        draw_rect(d, [cx, cy, cx+card_w, cy+card_h], fill="#252538", radius=8)
+        draw_rect(d, [cx, cy, cx+card_w, cy+3], fill=color, radius=2)
+
+        # icon
+        draw_text(d, (cx+16, cy+16), icon, _sans(28), TEXT_BRIGHT)
+        # title
+        draw_text(d, (cx+16, cy+52), title, _sans(12, bold=True), TEXT_BRIGHT)
+        # description
+        desc_lines = desc.split("\n")
+        dl_y = cy + 74
+        for line in desc_lines:
+            draw_text(d, (cx+16, dl_y), line, _sans(10), TEXT_DIM)
+            dl_y += 16
+        # hover effect gradient bar
+        draw_rect(d, [cx+16, cy+card_h-24, cx+card_w-16, cy+card_h-8], fill="#333355", radius=4)
+        draw_text(d, (cx+card_w//2, cy+card_h-16), "Click to execute →", _sans(9), TEXT_DIM, anchor="mm")
+
+    # bottom status area
+    dy2 = dy + 2*(card_h+8) + 12
+    draw_rect(d, [ex+16, dy2, ew-16, dy2+36], fill="#252540", radius=6)
+    draw_text(d, (ex+32, dy2+10), "⚡ Last DRC run: 0 errors, 0 warnings  ·  Board: Arduino Uno R3", _sans(11), TEXT_DIM)
+
+    draw_statusbar_items(d, [
+        ("✔ KiCad Studio", TEXT_BRIGHT),
+        ("⬡ kicad-mcp-pro 3.5.2", SUCCESS),
+        ("Mode: readonly", TEXT_DIM),
+    ])
+
+    img.save(os.path.join(OUT_DIR, "mcp-tools-dashboard.png"), dpi=(96,96))
+    print("✓ mcp-tools-dashboard.png")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
+    make_project_tree()
     make_schematic_viewer()
     make_pcb_viewer()
     make_drc_results()
@@ -1130,5 +1322,6 @@ if __name__ == "__main__":
     make_component_search()
     make_git_diff()
     make_ai_assistant()
+    make_mcp_tools_dashboard()
     make_quality_gates()
     print("\nAll screenshots saved to assets/screenshots/")

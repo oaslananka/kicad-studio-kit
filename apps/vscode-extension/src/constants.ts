@@ -168,6 +168,9 @@ export const COMMANDS = {
   importSolidworks: 'kicadstudio.importSolidworks',
   importGeda: 'kicadstudio.importGeda',
   importAllegro: 'kicadstudio.importAllegro',
+  importAuto: 'kicadstudio.importAuto',
+  exportTo: 'kicadstudio.exportTo',
+  importFrom: 'kicadstudio.importFrom',
   boardReadyOpsCheck: 'kicadstudio.boardReadyOps.check',
   boardReadyOpsConfigure: 'kicadstudio.boardReadyOps.configure',
   boardReadyOpsShowReport: 'kicadstudio.boardReadyOps.showReport',
@@ -244,7 +247,8 @@ export const SETTINGS = {
   telemetryEndpoint: 'kicadstudio.telemetry.endpoint',
   telemetryBufferLimit: 'kicadstudio.telemetry.bufferLimit',
   boardReadyOpsEnabled: 'kicadstudio.boardReadyOps.enabled',
-  boardReadyOpsSpecFile: 'kicadstudio.boardReadyOps.specFile'
+  boardReadyOpsSpecFile: 'kicadstudio.boardReadyOps.specFile',
+  jobsetStopOnError: 'kicadstudio.jobset.stopOnError'
 } as const;
 export const DEFAULT_BOM_FIELDS = [
   'Reference',
@@ -290,6 +294,165 @@ export const CLI_CAPABILITY_COMMANDS = {
   erc: ['sch', 'erc'],
   pcbImport: ['pcb', 'import']
 } as const;
+
+export type CapabilityCategory =
+  | 'export-2d'
+  | 'export-3d'
+  | 'validation'
+  | 'import'
+  | 'manufacturing'
+  | 'utility';
+
+export interface CommandMetadata {
+  /** Minimum KiCad major version required. */
+  minimumMajor: number;
+  /** Functional grouping. */
+  category: CapabilityCategory;
+  /** Human-readable description. */
+  description: string;
+}
+
+export const CLI_CAPABILITY_METADATA: {
+  [K in keyof typeof CLI_CAPABILITY_COMMANDS]: CommandMetadata;
+} = {
+  // validation
+  drc: {
+    minimumMajor: 8,
+    category: 'validation',
+    description: 'PCB design rule check'
+  },
+  erc: {
+    minimumMajor: 8,
+    category: 'validation',
+    description: 'Schematic electrical rule check'
+  },
+  // manufacturing
+  gerbers: {
+    minimumMajor: 8,
+    category: 'manufacturing',
+    description: 'Gerber fabrication files'
+  },
+  drill: {
+    minimumMajor: 8,
+    category: 'manufacturing',
+    description: 'Drill files'
+  },
+  bom: {
+    minimumMajor: 8,
+    category: 'manufacturing',
+    description: 'Bill of materials'
+  },
+  netlist: {
+    minimumMajor: 8,
+    category: 'manufacturing',
+    description: 'Netlist export'
+  },
+  pos: {
+    minimumMajor: 8,
+    category: 'manufacturing',
+    description: 'Pick and place file'
+  },
+  ipc2581: {
+    minimumMajor: 9,
+    category: 'manufacturing',
+    description: 'IPC-2581 fabrication data'
+  },
+  odb: {
+    minimumMajor: 9,
+    category: 'manufacturing',
+    description: 'ODB++ fabrication data'
+  },
+  gencad: {
+    minimumMajor: 8,
+    category: 'manufacturing',
+    description: 'GenCAD export'
+  },
+  ipcd356: {
+    minimumMajor: 8,
+    category: 'manufacturing',
+    description: 'IPC-D-356 netlist data'
+  },
+  // 2D schematic
+  pdfSch: {
+    minimumMajor: 8,
+    category: 'export-2d',
+    description: 'Schematic PDF'
+  },
+  svgSch: {
+    minimumMajor: 8,
+    category: 'export-2d',
+    description: 'Schematic SVG'
+  },
+  psSch: {
+    minimumMajor: 8,
+    category: 'export-2d',
+    description: 'Schematic PostScript'
+  },
+  // 2D PCB
+  pdfPcb: { minimumMajor: 8, category: 'export-2d', description: 'PCB PDF' },
+  svgPcb: { minimumMajor: 8, category: 'export-2d', description: 'PCB SVG' },
+  psPcb: {
+    minimumMajor: 8,
+    category: 'export-2d',
+    description: 'PCB PostScript'
+  },
+  dxf: { minimumMajor: 8, category: 'export-2d', description: 'DXF export' },
+  fpSvg: {
+    minimumMajor: 8,
+    category: 'export-2d',
+    description: 'Footprint SVG'
+  },
+  symSvg: { minimumMajor: 8, category: 'export-2d', description: 'Symbol SVG' },
+  // 3D
+  step: {
+    minimumMajor: 8,
+    category: 'export-3d',
+    description: 'STEP 3D model'
+  },
+  stpz: {
+    minimumMajor: 9,
+    category: 'export-3d',
+    description: 'Compressed STEP 3D model'
+  },
+  glb: {
+    minimumMajor: 9,
+    category: 'export-3d',
+    description: 'glTF binary 3D'
+  },
+  brep: {
+    minimumMajor: 9,
+    category: 'export-3d',
+    description: 'B-Rep 3D model'
+  },
+  ply: { minimumMajor: 9, category: 'export-3d', description: 'PLY 3D mesh' },
+  xao: { minimumMajor: 9, category: 'export-3d', description: 'XAO 3D model' },
+  stl: { minimumMajor: 9, category: 'export-3d', description: 'STL 3D mesh' },
+  u3d: { minimumMajor: 9, category: 'export-3d', description: 'U3D 3D model' },
+  vrml: {
+    minimumMajor: 9,
+    category: 'export-3d',
+    description: 'VRML 3D model'
+  },
+  pdf3d: { minimumMajor: 10, category: 'export-3d', description: '3D PDF' },
+  // utility
+  stats: {
+    minimumMajor: 8,
+    category: 'utility',
+    description: 'PCB statistics'
+  },
+  jobset: {
+    minimumMajor: 9,
+    category: 'utility',
+    description: 'Jobset runner'
+  },
+  // import
+  pcbImport: {
+    minimumMajor: 10,
+    category: 'import',
+    description: 'PCB import formats'
+  }
+};
+
 export const DOCUMENT_SELECTOR: vscode.DocumentSelector = KICAD_LANGUAGES.map(
   (language) => ({
     language

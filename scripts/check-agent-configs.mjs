@@ -347,14 +347,11 @@ export function validateStdioServer(server, options) {
   }
 
   if (requireProjectDir && env.KICAD_MCP_PROJECT_DIR !== PROJECT_PLACEHOLDER) {
-    errors.push(
-      `${file}: KICAD_MCP_PROJECT_DIR must use the project placeholder`,
-    );
-  }
-  if (!requireProjectDir && "KICAD_MCP_PROJECT_DIR" in env) {
-    errors.push(
-      `${file}: developer default must not set KICAD_MCP_PROJECT_DIR`,
-    );
+    if (env.KICAD_MCP_PROJECT_DIR !== "${workspaceFolder}") {
+      errors.push(
+        `${file}: KICAD_MCP_PROJECT_DIR must use the project placeholder or ${"${workspaceFolder}"}`,
+      );
+    }
   }
   if (env.KICAD_MCP_PROFILE !== expectedProfile) {
     errors.push(`${file}: KICAD_MCP_PROFILE must be ${expectedProfile}`);
@@ -448,11 +445,11 @@ function validateWorkspaceDefaults(repoRoot, errors) {
       ...validateStdioServer(server, {
         file: ".vscode/mcp.json",
         expectedProfile: "analysis",
-        requireProjectDir: false,
+        requireProjectDir: true,
       }),
     );
-    if (server.env?.KICAD_MCP_WORKSPACE_ROOT !== "${workspaceFolder}") {
-      errors.push(".vscode/mcp.json: must set KICAD_MCP_WORKSPACE_ROOT");
+    if (server.env?.KICAD_MCP_PROJECT_DIR !== "${workspaceFolder}") {
+      errors.push(".vscode/mcp.json: must set KICAD_MCP_PROJECT_DIR");
     }
   }
 
@@ -483,16 +480,16 @@ function validateWorkspaceDefaults(repoRoot, errors) {
     errors,
   );
   const env = httpTask.options?.env;
-  if (env?.KICAD_MCP_PROJECT_DIR) {
-    errors.push(
-      ".vscode/tasks.json: HTTP dev task must not set KICAD_MCP_PROJECT_DIR",
-    );
-  }
-  if (env?.KICAD_MCP_WORKSPACE_ROOT !== "${workspaceFolder}") {
-    errors.push(
-      ".vscode/tasks.json: HTTP dev task must set KICAD_MCP_WORKSPACE_ROOT",
-    );
-  }
+    if (env?.KICAD_MCP_WORKSPACE_ROOT) {
+      errors.push(
+        ".vscode/tasks.json: HTTP dev task must not set KICAD_MCP_WORKSPACE_ROOT",
+      );
+    }
+    if (env?.KICAD_MCP_PROJECT_DIR !== "${workspaceFolder}") {
+      errors.push(
+        ".vscode/tasks.json: HTTP dev task must set KICAD_MCP_PROJECT_DIR",
+      );
+    }
   if (env?.KICAD_MCP_PROFILE !== "analysis") {
     errors.push(".vscode/tasks.json: HTTP dev task profile must be analysis");
   }

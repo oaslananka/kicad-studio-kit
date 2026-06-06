@@ -235,6 +235,11 @@ export function registerExportCommands(
       COMMANDS.importAllegro,
       () => services.importService.importBoard('allegro'),
       'Import Allegro Board'
+    ),
+    registerTrustedCommand(
+      COMMANDS.importAuto,
+      () => services.importService.importBoard('auto'),
+      'Import Board (Auto-detect)'
     )
   ];
 }

@@ -121,6 +121,31 @@ published.
 
 ### Added
 
+- **CLI capability metadata registry**: Centralized `CLI_CAPABILITY_METADATA`
+  table covering all 35 CLI commands with category, minimum version, and
+  human-readable description; snapshot expanded from 11 to 26 probed commands
+  with `commandMinVersion` / `commandVersionStatus` fields.
+- **Extended feature support**: 7 new capability-gated features — 3D exports,
+  2D schematic exports, 2D PCB exports, manufacturing formats, pick-and-place,
+  footprint/symbol exports, and PCB import — with per-feature version checks.
+- **Import auto-detect format**: Added `auto` format to PCB import list; CLI
+  `--format` is omitted when auto mode is active, and a dedicated
+  `kicadstudio.importAuto` command is registered.
+- **Jobset UX enhancements**: Output directory picker with project-aware
+  defaults, sibling `.kicad_pro` auto-detection via `findSiblingProjectFile`,
+  success/failure notifications with "Open Output Folder" action, and
+  `kicadstudio.jobset.stopOnError` setting.
+- **Variant-aware export plumbing**: Active variant is read from `.kicad_pro`
+  and threaded through `ExportCommandBuildOptions` → `buildCliExportCommands`
+  → `build3dVariantArgs()`; `--variant` is only emitted when the CLI version
+  is ≥ 10.
+- **Consolidated QuickPick commands**: `kicadstudio.exportTo` (35 export
+  formats grouped by category: Schematic 2D, PCB 2D, Manufacturing, 3D
+  Models, Documentation, BOM/Netlist, Other) and `kicadstudio.importFrom` (10
+  import formats with Auto-detect).
+- **Debounced project scan watcher**: File system watcher for `.kicad_pro`
+  files with 500 ms debounce that refreshes contexts, project tree, and
+  variant tree when KiCad projects are created or deleted.
 - Surfaced KiCad 8.x, 9.x, and 10.0.x compatibility state in the status
   bar/menu with feature-level capability probe results.
 - Added explicit KiCanvas/CLI SVG fallback/metadata-only viewer engine state,
@@ -129,6 +154,18 @@ published.
 
 ### Changed
 
+- **Workspace Trust enforcement audit**: Verified all 40+ export, import,
+  and jobset commands are gated by `registerTrustedCommand()`; CLI detection,
+  MCP connection, and context bridge already check `isWorkspaceTrusted()`.
+- **Path security audit**: Confirmed `resolveWorkspaceOutputDir()` uses
+  `realpathSync.native` + `assertPathInside()` to block path traversal and
+  symlink escape; CLI binary normalization also resolves symlinks.
+- **Remote MCP endpoint security**: `validateEndpoint()` in `mcpClient.ts`
+  rejects non-loopback hosts unless `kicadstudio.mcp.allowRemoteEndpoint` is
+  explicitly enabled (default: off).
+- **Context bridge privacy audit**: `ContextBridge` validated — only file
+  paths, project metadata, DRC messages, viewer state, and variant names are
+  transmitted; no PII sent; debounce per trigger reason.
 - Clarified Codex support as an external MCP client workflow, removed it from the
   direct extension provider settings, and migrated legacy
   `kicadstudio.ai.provider=codex` selections to GitHub Copilot.

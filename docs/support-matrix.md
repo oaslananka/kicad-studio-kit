@@ -34,7 +34,7 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 
 | Product | Version | Manifest | Compatibility range |
 | --- | --- | --- | --- |
-| kicad-studio | 1.4.1 | apps/vscode-extension/package.json | &gt;=3.5.2 &lt;4.0.0 |
+| kicad-studio | 1.5.0 | apps/vscode-extension/package.json | &gt;=3.5.2 &lt;4.0.0 |
 
 ### Release Gate Inputs
 

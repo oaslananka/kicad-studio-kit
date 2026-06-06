@@ -26,7 +26,14 @@ export interface KiCadFeatureSupport {
     | 'variants'
     | 'odb-export'
     | 'three-d-pdf-export'
-    | 'allegro-pcb-import';
+    | 'allegro-pcb-import'
+    | '3d-exports'
+    | '2d-schematic-exports'
+    | '2d-pcb-exports'
+    | 'manufacturing-formats'
+    | 'pick-and-place'
+    | 'footprint-symbol-exports'
+    | 'pcb-import';
   label: string;
   state: KiCadFeatureState;
   summary: string;
@@ -197,6 +204,101 @@ export function buildKiCadFeatureSupport(options: {
         'Allegro import is enabled when `kicad-cli pcb import --help` advertises the Allegro format.',
       unsupportedReason:
         'Allegro import is available in the KiCad PCB Editor, but the extension command requires a KiCad 10+ CLI build that exposes `pcb import --format allegro`.'
+    }),
+    // ── Phase B new feature entries ──────────────────────────────────
+    feature({
+      id: '3d-exports',
+      label: '3D model exports',
+      major,
+      minimumMajor: 9,
+      capabilityKeys: [
+        'step',
+        'stpz',
+        'glb',
+        'brep',
+        'ply',
+        'xao',
+        'stl',
+        'u3d',
+        'vrml'
+      ],
+      capabilities,
+      supportedReason:
+        '3D model exports (STEP, STPZ, glTF, B-Rep, PLY, XAO, STL, U3D, VRML) are available for KiCad 9 and 10 when the corresponding CLI help probes pass.',
+      unsupportedReason:
+        '3D model exports require KiCad 9+ and a kicad-cli build that exposes the corresponding `pcb export` commands.'
+    }),
+    feature({
+      id: '2d-schematic-exports',
+      label: 'Schematic 2D exports',
+      major,
+      minimumMajor: 8,
+      capabilityKeys: ['pdfSch', 'svgSch', 'psSch'],
+      capabilities,
+      supportedReason:
+        'Schematic 2D exports (PDF, SVG, PostScript) are available for KiCad 8, 9, and 10 when the CLI help probes pass.',
+      unsupportedReason:
+        'Schematic 2D exports require a detected KiCad 8+ kicad-cli with `sch export` command support.'
+    }),
+    feature({
+      id: '2d-pcb-exports',
+      label: 'PCB 2D exports',
+      major,
+      minimumMajor: 8,
+      capabilityKeys: ['pdfPcb', 'svgPcb', 'psPcb', 'dxf'],
+      capabilities,
+      supportedReason:
+        'PCB 2D exports (PDF, SVG, PostScript, DXF) are available for KiCad 8, 9, and 10 when the CLI help probes pass.',
+      unsupportedReason:
+        'PCB 2D exports require a detected KiCad 8+ kicad-cli with `pcb export` command support.'
+    }),
+    feature({
+      id: 'manufacturing-formats',
+      label: 'Advanced fabrication formats',
+      major,
+      minimumMajor: 9,
+      capabilityKeys: ['ipc2581', 'gencad', 'ipcd356'],
+      capabilities,
+      supportedReason:
+        'Advanced fabrication formats (IPC-2581, GenCAD, IPC-D-356) are available for KiCad 9 and 10 when the CLI help probes pass.',
+      unsupportedReason:
+        'Advanced fabrication formats require KiCad 9+ and a kicad-cli build that exposes the corresponding `pcb export` commands.'
+    }),
+    feature({
+      id: 'pick-and-place',
+      label: 'Pick & place export',
+      major,
+      minimumMajor: 8,
+      capabilityKeys: ['pos'],
+      capabilities,
+      supportedReason:
+        'Pick and place file export is available for KiCad 8, 9, and 10 when `kicad-cli pcb export pos --help` succeeds.',
+      unsupportedReason:
+        'Pick and place export requires a detected KiCad 8+ kicad-cli with `pcb export pos` command support.'
+    }),
+    feature({
+      id: 'footprint-symbol-exports',
+      label: 'Footprint / symbol exports',
+      major,
+      minimumMajor: 8,
+      capabilityKeys: ['fpSvg', 'symSvg'],
+      capabilities,
+      supportedReason:
+        'Footprint and symbol SVG exports are available for KiCad 8, 9, and 10 when the CLI help probes pass.',
+      unsupportedReason:
+        'Footprint and symbol SVG exports require a detected KiCad 8+ kicad-cli with `fp export` and `sym export` command support.'
+    }),
+    feature({
+      id: 'pcb-import',
+      label: 'PCB import formats',
+      major,
+      minimumMajor: 10,
+      capabilityKeys: ['pcbImport'],
+      capabilities,
+      supportedReason:
+        'PCB import is available for KiCad 10 when `kicad-cli pcb import --help` succeeds.',
+      unsupportedReason:
+        'PCB import requires KiCad 10+ and a kicad-cli build that exposes `pcb import`.'
     })
   ];
 }

@@ -17,6 +17,12 @@ export interface ModelInfo {
   provider?: AiProviderId;
   apiMode?: 'responses' | 'chat-completions';
   maxOutputTokens?: number;
+  /** Whether the model supports image / vision inputs. */
+  supportsVision?: boolean;
+  /** Whether the model supports the OpenAI `responses` API. */
+  supportsResponsesAPI?: boolean;
+  /** Whether the model supports MCP tool calling. */
+  supportsMcpTools?: boolean;
 }
 
 export type AiModelInfo = ModelInfo & { provider: AiProviderId };
@@ -29,7 +35,9 @@ export const CLAUDE_MODELS: AiModelInfo[] = [
     maxTokens: 32000,
     maxOutputTokens: 32000,
     supportsStreaming: true,
-    contextWindow: 200000
+    contextWindow: 200000,
+    supportsVision: true,
+    supportsMcpTools: true
   },
   {
     id: 'claude-sonnet-4-6',
@@ -40,7 +48,9 @@ export const CLAUDE_MODELS: AiModelInfo[] = [
     supportsStreaming: true,
     contextWindow: 200000,
     recommended: true,
-    default: true
+    default: true,
+    supportsVision: true,
+    supportsMcpTools: true
   },
   {
     id: 'claude-haiku-4-5-20251001',
@@ -49,7 +59,9 @@ export const CLAUDE_MODELS: AiModelInfo[] = [
     maxTokens: 8192,
     maxOutputTokens: 8192,
     supportsStreaming: true,
-    contextWindow: 200000
+    contextWindow: 200000,
+    supportsVision: true,
+    supportsMcpTools: true
   }
 ];
 
@@ -64,7 +76,10 @@ export const OPENAI_MODELS: AiModelInfo[] = [
     contextWindow: 1000000,
     recommended: true,
     default: true,
-    apiMode: 'chat-completions'
+    apiMode: 'chat-completions',
+    supportsVision: true,
+    supportsResponsesAPI: true,
+    supportsMcpTools: true
   },
   {
     id: 'gpt-5-mini',
@@ -74,7 +89,10 @@ export const OPENAI_MODELS: AiModelInfo[] = [
     maxOutputTokens: 16384,
     supportsStreaming: true,
     contextWindow: 1000000,
-    apiMode: 'chat-completions'
+    apiMode: 'chat-completions',
+    supportsVision: true,
+    supportsResponsesAPI: true,
+    supportsMcpTools: true
   },
   {
     id: 'gpt-5.5',
@@ -84,7 +102,10 @@ export const OPENAI_MODELS: AiModelInfo[] = [
     maxOutputTokens: 16384,
     supportsStreaming: true,
     contextWindow: 128000,
-    apiMode: 'responses'
+    apiMode: 'responses',
+    supportsVision: true,
+    supportsResponsesAPI: true,
+    supportsMcpTools: true
   },
   {
     id: 'gpt-4.5',
@@ -94,7 +115,9 @@ export const OPENAI_MODELS: AiModelInfo[] = [
     maxOutputTokens: 16384,
     supportsStreaming: true,
     contextWindow: 128000,
-    apiMode: 'responses'
+    apiMode: 'responses',
+    supportsVision: true,
+    supportsResponsesAPI: true
   },
   {
     id: 'gpt-4o',
@@ -104,7 +127,9 @@ export const OPENAI_MODELS: AiModelInfo[] = [
     maxOutputTokens: 16384,
     supportsStreaming: true,
     contextWindow: 128000,
-    apiMode: 'chat-completions'
+    apiMode: 'chat-completions',
+    supportsVision: true,
+    supportsMcpTools: true
   },
   {
     id: 'gpt-4o-mini',
@@ -114,7 +139,9 @@ export const OPENAI_MODELS: AiModelInfo[] = [
     maxOutputTokens: 16384,
     supportsStreaming: true,
     contextWindow: 128000,
-    apiMode: 'chat-completions'
+    apiMode: 'chat-completions',
+    supportsVision: true,
+    supportsMcpTools: true
   },
   {
     id: 'o1',
@@ -148,7 +175,9 @@ export const GEMINI_MODELS: AiModelInfo[] = [
     supportsStreaming: true,
     contextWindow: 1000000,
     recommended: true,
-    default: true
+    default: true,
+    supportsVision: true,
+    supportsMcpTools: true
   },
   {
     id: 'gemini-2.0-flash',
@@ -157,7 +186,9 @@ export const GEMINI_MODELS: AiModelInfo[] = [
     maxTokens: 32768,
     maxOutputTokens: 32768,
     supportsStreaming: true,
-    contextWindow: 1000000
+    contextWindow: 1000000,
+    supportsVision: true,
+    supportsMcpTools: true
   },
   {
     id: 'gemini-1.5-pro',
@@ -166,7 +197,9 @@ export const GEMINI_MODELS: AiModelInfo[] = [
     maxTokens: 8192,
     maxOutputTokens: 8192,
     supportsStreaming: true,
-    contextWindow: 2000000
+    contextWindow: 2000000,
+    supportsVision: true,
+    supportsMcpTools: true
   }
 ];
 
@@ -179,7 +212,8 @@ export const OPENROUTER_MODELS: AiModelInfo[] = [
     supportsStreaming: true,
     contextWindow: 128000,
     recommended: true,
-    default: true
+    default: true,
+    supportsVision: true
   }
 ];
 
@@ -192,7 +226,8 @@ export const COPILOT_MODELS: AiModelInfo[] = [
     supportsStreaming: true,
     contextWindow: 128000,
     recommended: true,
-    default: true
+    default: true,
+    supportsMcpTools: true
   }
 ];
 

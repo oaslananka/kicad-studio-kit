@@ -3,7 +3,12 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import * as vscode from 'vscode';
-import { CLI_CAPABILITY_COMMANDS, SETTINGS } from '../constants';
+import {
+  CLI_CAPABILITY_COMMANDS,
+  CLI_CAPABILITY_METADATA,
+  SETTINGS
+} from '../constants';
+import { parseKiCadMajor } from './kicadCliSupport';
 import type { DetectedKiCadCli } from '../types';
 import { normalizeUserPath } from '../utils/pathUtils';
 
@@ -20,7 +25,34 @@ const STATUS_MENU_CAPABILITY_COMMANDS = [
   'pdf3d',
   'odb',
   'step',
-  'stats'
+  'stats',
+  // 2D exports
+  'pdfSch',
+  'pdfPcb',
+  'svgSch',
+  'svgPcb',
+  'dxf',
+  'psPcb',
+  'psSch',
+  // 3D formats
+  'stpz',
+  'xao',
+  'stl',
+  'u3d',
+  'vrml',
+  'glb',
+  'brep',
+  'ply',
+  // manufacturing
+  'ipc2581',
+  'gencad',
+  'ipcd356',
+  'pos',
+  // footprint / symbol
+  'fpSvg',
+  'symSvg',
+  // import
+  'pcbImport'
 ] as const satisfies ReadonlyArray<keyof typeof CLI_CAPABILITY_COMMANDS>;
 
 export type KiCadCliCapabilityName = keyof typeof CLI_CAPABILITY_COMMANDS;
@@ -29,6 +61,24 @@ export type KiCadCliCapabilitySnapshot = Partial<
 > & {
   variantOption?: boolean;
   allegroImport?: boolean;
+  /** The detected KiCad version string. */
+  version?: string;
+  /** Support state label: primary | deprecated | preview | unknown */
+  versionStatus?: string;
+  /** Absolute path to the detected kicad-cli binary. */
+  kicadCliPath?: string;
+  /** How the CLI was discovered: settings | common-path | path */
+  detectionSource?: string;
+  /** ISO timestamp of the last successful probe. */
+  lastProbeAt?: string;
+  /** Non-functional upstream CLI surfaces that are documented but not usable. */
+  nonFunctionalUpstream?: string[];
+  /** Probe errors or warnings. */
+  errors?: string[];
+  /** Per-command minimum KiCad major version from the metadata registry. */
+  commandMinVersion?: Partial<Record<KiCadCliCapabilityName, number>>;
+  /** Per-command version eligibility for the detected KiCad version line. */
+  commandVersionStatus?: Partial<Record<KiCadCliCapabilityName, string>>;
 };
 
 export function getCliCandidates(
@@ -268,11 +318,49 @@ export class KiCadCliDetector {
       this.commandHelpIncludes(['sch', 'export', 'pdf'], /--variant\b/),
       this.commandHelpIncludes(['pcb', 'import'], /\ballegro\b/i)
     ]);
-    return {
+
+    const major = parseKiCadMajor(detected);
+    let versionStatus: string = 'unknown';
+    if (typeof major === 'number') {
+      if (major === 10) versionStatus = 'primary';
+      else if (major >= 11) versionStatus = 'preview';
+      else if (major >= 8) versionStatus = 'deprecated';
+      else versionStatus = 'unsupported';
+    }
+
+    const snapshot: KiCadCliCapabilitySnapshot = {
       ...(Object.fromEntries(commandResults) as KiCadCliCapabilitySnapshot),
       variantOption,
-      allegroImport
+      allegroImport,
+      version: detected.version,
+      versionStatus,
+      kicadCliPath: detected.path,
+      detectionSource: detected.source,
+      lastProbeAt: new Date().toISOString()
     };
+
+    if (major === 10) {
+      snapshot.nonFunctionalUpstream = ['pcb export hpgl'];
+    }
+
+    // Enrich with per-command metadata
+    if (typeof major === 'number') {
+      const commandMinVersion: Record<string, number> = {};
+      const commandVersionStatus: Record<string, string> = {};
+      for (const cmd of STATUS_MENU_CAPABILITY_COMMANDS) {
+        const meta = CLI_CAPABILITY_METADATA[cmd];
+        if (!meta) continue;
+        commandMinVersion[cmd] = meta.minimumMajor;
+        commandVersionStatus[cmd] = deriveCommandVersionStatus(
+          major,
+          meta.minimumMajor
+        );
+      }
+      snapshot.commandMinVersion = commandMinVersion;
+      snapshot.commandVersionStatus = commandVersionStatus;
+    }
+
+    return snapshot;
   }
 
   private async validateCandidate(
@@ -418,4 +506,25 @@ function syncProbeOptions(): {
     timeout: SYNC_PROBE_TIMEOUT_MS,
     maxBuffer: SYNC_PROBE_MAX_BUFFER
   };
+}
+
+/** Derive the per-command version status from the detected KiCad major version
+ *  and the command's minimum required major version. */
+export function deriveCommandVersionStatus(
+  detectedMajor: number,
+  commandMinimumMajor: number
+): string {
+  if (detectedMajor < commandMinimumMajor) {
+    return 'unsupported';
+  }
+  if (detectedMajor === 10) {
+    return 'primary';
+  }
+  if (detectedMajor >= 11) {
+    return 'preview';
+  }
+  if (detectedMajor >= 8) {
+    return 'deprecated';
+  }
+  return 'unknown';
 }

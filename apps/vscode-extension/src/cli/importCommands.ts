@@ -6,6 +6,7 @@ import { KiCadCliDetector } from './kicadCliDetector';
 import { Logger } from '../utils/logger';
 
 export const PCB_IMPORT_FORMATS = [
+  'auto',
   'pads',
   'altium',
   'eagle',
@@ -20,6 +21,7 @@ export const PCB_IMPORT_FORMATS = [
 export type SupportedPcbImportFormat = (typeof PCB_IMPORT_FORMATS)[number];
 
 const PCB_IMPORT_FORMAT_LABELS: Record<SupportedPcbImportFormat, string> = {
+  auto: 'Auto-detect',
   pads: 'PADS',
   altium: 'Altium',
   eagle: 'Eagle',
@@ -48,7 +50,9 @@ export class KiCadImportService {
 
   async importBoard(format: SupportedPcbImportFormat): Promise<void> {
     if (!(await this.isImportFormatSupported(format))) {
-      void vscode.window.showWarningMessage(unsupportedImportMessage(format));
+      if (format !== 'auto') {
+        void vscode.window.showWarningMessage(unsupportedImportMessage(format));
+      }
       return;
     }
 
@@ -69,13 +73,14 @@ export class KiCadImportService {
       `${path.parse(inputFile).name}.kicad_pcb`
     );
 
+    const formatArgs = format === 'auto' ? [] : ['--format', format];
+
     try {
       await this.runner.runWithProgress<string>({
         command: [
           'pcb',
           'import',
-          '--format',
-          format,
+          ...formatArgs,
           '--output',
           outputFile,
           inputFile

@@ -13,6 +13,7 @@ import {
 } from '../utils/fileUtils';
 import {
   assertPathInside,
+  findSiblingProjectFile,
   isKiCadFile,
   resolveWorkspaceOutputDir
 } from '../utils/pathUtils';
@@ -74,6 +75,28 @@ export interface ExportCommandBuildOptions {
   bomFields?: string[];
   gerberLayers?: string[];
   variant?: string;
+  /** 3D export: include tracks (default true) */
+  includeTracks?: boolean;
+  /** 3D export: include pads (default true) */
+  includePads?: boolean;
+  /** 3D export: include zones (default true) */
+  includeZones?: boolean;
+  /** 3D export: include inner copper layers (default true) */
+  includeInnerCopper?: boolean;
+  /** 3D export: include silkscreen (default true) */
+  includeSilkscreen?: boolean;
+  /** 3D export: include soldermask (default true) */
+  includeSoldermask?: boolean;
+  /** 3D export: substitute 3D models (default true) */
+  substModels?: boolean;
+  /** 3D STEP export: disable STEP optimisation (KiCad 8+) */
+  noOptimizeStep?: boolean;
+  /** 3D export: board-only mode (KiCad 10+) */
+  boardOnly?: boolean;
+  /** 3D export: translate Do Not Populate (KiCad 10+) */
+  translateDNP?: boolean;
+  /** 3D export: leave unspecified fields empty (KiCad 10+) */
+  noUnspecified?: boolean;
 }
 
 export function buildCliExportCommands(
@@ -170,13 +193,7 @@ export function buildCliExportCommands(
           '3dpdf',
           '--output',
           inferOutputPath(file, outputDir, '', '.pdf'),
-          '--include-tracks',
-          '--include-pads',
-          '--include-zones',
-          '--include-inner-copper',
-          '--include-silkscreen',
-          '--include-soldermask',
-          '--subst-models',
+          ...buildCommon3dExportArgs(options, versionMajor),
           file
         ]
       ];
@@ -271,7 +288,7 @@ export function buildCliExportCommands(
           'ply',
           '--output',
           inferOutputPath(file, outputDir, '', '.ply'),
-          ...buildCommon3dArgs(),
+          ...buildCommon3dExportArgs(options, versionMajor),
           file
         ]
       ];
@@ -286,9 +303,11 @@ export function buildCliExportCommands(
           'step',
           '--output',
           inferOutputPath(file, outputDir, '', '.step'),
-          ...buildCommon3dArgs(),
-          ...build3dVariantArgs(options.variant, versionMajor),
-          '--no-optimize-step',
+          ...buildCommon3dExportArgs(options, versionMajor),
+          ...build3dVariantArgs('export-step', options.variant, versionMajor),
+          ...((options.noOptimizeStep ?? true) && versionMajor >= 8
+            ? ['--no-optimize-step']
+            : []),
           file
         ]
       ];
@@ -303,8 +322,8 @@ export function buildCliExportCommands(
           'stpz',
           '--output',
           inferOutputPath(file, outputDir, '', '.stpz'),
-          ...buildCommon3dArgs(),
-          ...build3dVariantArgs(options.variant, versionMajor),
+          ...buildCommon3dExportArgs(options, versionMajor),
+          ...build3dVariantArgs('export-stpz', options.variant, versionMajor),
           file
         ]
       ];
@@ -319,8 +338,8 @@ export function buildCliExportCommands(
           'xao',
           '--output',
           inferOutputPath(file, outputDir, '', '.xao'),
-          ...buildCommon3dArgs(),
-          ...build3dVariantArgs(options.variant, versionMajor),
+          ...buildCommon3dExportArgs(options, versionMajor),
+          ...build3dVariantArgs('export-xao', options.variant, versionMajor),
           file
         ]
       ];
@@ -335,8 +354,8 @@ export function buildCliExportCommands(
           'stl',
           '--output',
           inferOutputPath(file, outputDir, '', '.stl'),
-          ...buildCommon3dArgs(),
-          ...build3dVariantArgs(options.variant, versionMajor),
+          ...buildCommon3dExportArgs(options, versionMajor),
+          ...build3dVariantArgs('export-stl', options.variant, versionMajor),
           file
         ]
       ];
@@ -351,8 +370,8 @@ export function buildCliExportCommands(
           'u3d',
           '--output',
           inferOutputPath(file, outputDir, '', '.u3d'),
-          ...buildCommon3dArgs(),
-          ...build3dVariantArgs(options.variant, versionMajor),
+          ...buildCommon3dExportArgs(options, versionMajor),
+          ...build3dVariantArgs('export-u3d', options.variant, versionMajor),
           file
         ]
       ];
@@ -367,8 +386,8 @@ export function buildCliExportCommands(
           'vrml',
           '--output',
           inferOutputPath(file, outputDir, '', '.wrl'),
-          '--subst-models',
-          ...build3dVariantArgs(options.variant, versionMajor),
+          ...buildCommon3dExportArgs(options, versionMajor),
+          ...build3dVariantArgs('export-vrml', options.variant, versionMajor),
           file
         ]
       ];
@@ -1017,18 +1036,53 @@ export class KiCadExportService {
     if (!jobsetFile) {
       return;
     }
-    const projectFile = await this.resolveTargetFile(undefined, ['.kicad_pro']);
+
+    const projectFile = await this.resolveProjectForJobset(jobsetFile);
     if (!projectFile) {
       return;
     }
-    const outputDir = this.tryResolveOutputDir(projectFile);
+
+    const config = vscode.workspace.getConfiguration();
+    const stopOnError = config.get<boolean>(SETTINGS.jobsetStopOnError, true);
+
+    let outputDir = this.tryResolveOutputDir(projectFile);
     if (!outputDir) {
       return;
     }
 
-    await this.runCommandSequence(
+    const pickDir = await vscode.window.showQuickPick(
       [
-        [
+        {
+          label: `$(folder) Use default output: ${path.basename(outputDir)}`,
+          dir: outputDir
+        },
+        { label: '$(file-directory) Choose custom output directory', dir: '' }
+      ],
+      { title: 'Jobset output directory' }
+    );
+    if (!pickDir) {
+      return;
+    }
+    if (!pickDir.dir) {
+      const chosen = await vscode.window.showOpenDialog({
+        title: 'Select output directory for jobset',
+        canSelectFiles: false,
+        canSelectFolders: true,
+        canSelectMany: false
+      });
+      if (!chosen?.[0]) {
+        return;
+      }
+      outputDir = chosen[0].fsPath;
+    }
+
+    try {
+      this.logger.info(
+        `Running jobset ${path.basename(jobsetFile)} with project ${path.basename(projectFile)}`
+      );
+
+      await this.runner.runWithProgress<string>({
+        command: [
           'jobset',
           'run',
           '--file',
@@ -1036,11 +1090,73 @@ export class KiCadExportService {
           '--output',
           outputDir,
           projectFile
-        ]
-      ],
-      path.dirname(projectFile),
-      `Running jobset ${path.basename(jobsetFile)}`
+        ],
+        cwd: path.dirname(projectFile),
+        progressTitle: `Running jobset ${path.basename(jobsetFile)}`
+      });
+
+      void vscode.window
+        .showInformationMessage(
+          `Jobset "${path.basename(jobsetFile)}" completed.`,
+          'Open Output Folder'
+        )
+        .then((action) => {
+          if (action === 'Open Output Folder') {
+            void vscode.env.openExternal(vscode.Uri.file(outputDir));
+          }
+        });
+    } catch (error) {
+      this.logger.error(`Jobset ${path.basename(jobsetFile)} failed`, error);
+      const message =
+        error instanceof Error
+          ? `${error.message}\nWhat happened: jobset execution failed.\nHow to fix: validate the jobset file and verify kicad-cli is functional.`
+          : 'Jobset execution failed. Validate the jobset file and verify kicad-cli is functional.';
+      void vscode.window.showErrorMessage(message);
+      if (stopOnError) {
+        return;
+      }
+    }
+  }
+
+  private async resolveProjectForJobset(
+    jobsetFile: string
+  ): Promise<string | undefined> {
+    const siblingProject = findSiblingProjectFile(jobsetFile);
+    if (siblingProject) {
+      return siblingProject;
+    }
+
+    const workspaceProjectFiles = await vscode.workspace.findFiles(
+      '**/*.kicad_pro',
+      '**/node_modules/**',
+      20
     );
+
+    if (workspaceProjectFiles.length === 0) {
+      void vscode.window.showWarningMessage(
+        'No .kicad_pro project file found in the workspace.'
+      );
+      return undefined;
+    }
+
+    if (workspaceProjectFiles.length === 1) {
+      return workspaceProjectFiles[0]?.fsPath;
+    }
+
+    const picked = await vscode.window.showQuickPick(
+      workspaceProjectFiles.map((uri) => ({
+        label: path.basename(uri.fsPath),
+        description: path.dirname(uri.fsPath),
+        uri
+      })),
+      {
+        title: 'Select project file for jobset execution',
+        placeHolder:
+          'Multiple projects found; choose the one associated with this jobset.'
+      }
+    );
+
+    return picked?.uri.fsPath;
   }
 
   async exportManufacturingPackage(resource?: vscode.Uri): Promise<void> {
@@ -1615,6 +1731,7 @@ export class KiCadExportService {
         'Could not discover board layers. Gerber export will use the default fabrication layer set.'
       );
     }
+    const variant = file ? readActiveVariantFromProjectFile(file) : undefined;
     return {
       versionMajor,
       precision: String(
@@ -1634,25 +1751,133 @@ export class KiCadExportService {
       bomFields: vscode.workspace
         .getConfiguration()
         .get<string[]>(SETTINGS.bomFields, []),
-      ...(gerberLayers.length ? { gerberLayers } : {})
+      ...(gerberLayers.length ? { gerberLayers } : {}),
+      ...(variant ? { variant } : {})
     };
   }
 }
 
-function buildCommon3dArgs(): string[] {
-  return [
-    '--include-tracks',
-    '--include-pads',
-    '--include-zones',
-    '--include-inner-copper',
-    '--include-silkscreen',
-    '--include-soldermask',
-    '--subst-models'
-  ];
+/** Kinds that support the `--variant` CLI flag (KiCad 10+). */
+const VARIANT_AWARE_KINDS: ReadonlySet<ExportCommandKind> = new Set([
+  'export-step',
+  'export-stpz',
+  'export-xao',
+  'export-stl',
+  'export-u3d',
+  'export-vrml'
+]);
+
+/**
+ * Read the active variant name from the sibling .kicad_pro project file.
+ * Returns `undefined` when no project file or no active variant is configured.
+ */
+function readActiveVariantFromProjectFile(file: string): string | undefined {
+  const projectFile = findSiblingProjectFile(file);
+  if (!projectFile) {
+    return undefined;
+  }
+  try {
+    const document = JSON.parse(fs.readFileSync(projectFile, 'utf8')) as Record<
+      string,
+      unknown
+    >;
+    const activeVariant =
+      typeof document['activeVariant'] === 'string'
+        ? document['activeVariant']
+        : undefined;
+    const variants = Array.isArray(document['variants'])
+      ? (document['variants'] as Array<Record<string, unknown>>)
+      : Array.isArray(document['design_variants'])
+        ? (document['design_variants'] as Array<Record<string, unknown>>)
+        : [];
+    if (!activeVariant && variants.length > 0) {
+      const defaultVariant = variants.find(
+        (v) => v['isDefault'] === true || v['default'] === true
+      );
+      return typeof defaultVariant?.['name'] === 'string'
+        ? (defaultVariant['name'] as string)
+        : undefined;
+    }
+    return activeVariant;
+  } catch {
+    return undefined;
+  }
 }
 
-function build3dVariantArgs(variant?: string, versionMajor?: number): string[] {
-  if (!variant || (versionMajor ?? 0) < 10) {
+/**
+ * Cache for CLI option probe results. Cleared via `clearProbeCache()`
+ * when the CLI detection cache is invalidated.
+ */
+const _probeCache = new Map<string, boolean>();
+
+/**
+ * Check whether a CLI option name appears in the given help text.
+ * Results are cached per option name (help content is stable within a
+ * CLI binary version).
+ */
+export function probeOption(optionName: string, helpText: string): boolean {
+  const cached = _probeCache.get(optionName);
+  if (cached !== undefined) return cached;
+  const supported = helpText.includes(optionName);
+  _probeCache.set(optionName, supported);
+  return supported;
+}
+
+/** Clear the probe option cache (called when CLI detection cache is invalidated). */
+export function clearProbeCache(): void {
+  _probeCache.clear();
+}
+
+/**
+ * Conditionally append an item to an array if the CLI option is
+ * supported by the current CLI's help text.
+ */
+export function appendIfSupported<T>(
+  items: T[],
+  item: T,
+  optionName: string,
+  helpText: string
+): T[] {
+  if (probeOption(optionName, helpText)) {
+    return [...items, item];
+  }
+  return items;
+}
+
+/**
+ * Build common 3D export CLI arguments from structured options.
+ *
+ * Each include-* flag defaults to `true` to preserve the existing
+ * behaviour. Newer flags (`--no-optimize-step`, `--board-only`,
+ * `--translate-dnp`, `--no-unspecified`) are only emitted when
+ * explicitly set and when the CLI version supports them.
+ */
+function buildCommon3dExportArgs(
+  options: ExportCommandBuildOptions,
+  versionMajor: number
+): string[] {
+  const args: string[] = [];
+  if (options.includeTracks !== false) args.push('--include-tracks');
+  if (options.includePads !== false) args.push('--include-pads');
+  if (options.includeZones !== false) args.push('--include-zones');
+  if (options.includeInnerCopper !== false) args.push('--include-inner-copper');
+  if (options.includeSilkscreen !== false) args.push('--include-silkscreen');
+  if (options.includeSoldermask !== false) args.push('--include-soldermask');
+  if (options.substModels !== false) args.push('--subst-models');
+  if (options.noOptimizeStep) args.push('--no-optimize-step');
+  if (options.boardOnly && versionMajor >= 10) args.push('--board-only');
+  if (options.translateDNP && versionMajor >= 10) args.push('--translate-dnp');
+  if (options.noUnspecified && versionMajor >= 10)
+    args.push('--no-unspecified');
+  return args;
+}
+
+function build3dVariantArgs(
+  kind: ExportCommandKind,
+  variant?: string,
+  versionMajor?: number
+): string[] {
+  if (!variant || (versionMajor ?? 0) < 10 || !VARIANT_AWARE_KINDS.has(kind)) {
     return [];
   }
   return ['--variant', variant];

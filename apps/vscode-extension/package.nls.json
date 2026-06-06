@@ -337,7 +337,7 @@
   "kicadstudio.contributes.walkthroughs.1.steps.3.description": "Open the Quality Gates view and run the current project checks.\n[Run All Quality Gates](command:kicadstudio.qualityGate.runAll)",
   "kicadstudio.contributes.walkthroughs.1.steps.4.title": "Release a board",
   "kicadstudio.contributes.walkthroughs.1.steps.4.description": "Use the manufacturing release wizard after the quality gates are clean.\n[Open Release Wizard](command:kicadstudio.manufacturing.release)",
-  "kicadstudio.contributes.mcpServerDefinitionProviders.0.label": "KiCad MCP Pro (bundled)",
+  "kicadstudio.contributes.mcpServerDefinitionProviders.0.label": "KiCad MCP Pro (detected)",
   "kicadstudio.contributes.languageModelTools.0.displayName": "Run KiCad DRC",
   "kicadstudio.contributes.languageModelTools.0.userDescription": "Run KiCad DRC for the current or specified board.",
   "kicadstudio.contributes.languageModelTools.0.modelDescription": "Runs KiCad DRC on a .kicad_pcb file and returns a diagnostic summary plus machine-readable diagnostics. Use this when the user asks to check PCB design-rule violations.",

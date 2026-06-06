@@ -68,6 +68,7 @@ jobs:
       - run: corepack pnpm run check:compatibility-contract
       - run: corepack pnpm run check:governance
       - run: corepack pnpm run check:agent-configs
+      - run: corepack pnpm run check:extension-manifest
 
   vscode-extension:
     needs: ci-lanes
