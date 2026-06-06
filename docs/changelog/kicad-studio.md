@@ -12,6 +12,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.5.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.4.1...vscode-extension-v1.5.0) (2026-06-06)
+
+
+### Features
+
+* **kicad-studio:** 9 new export formats, v1.4.1 alignment, manifest check script ([c9085cb](https://github.com/oaslananka/kicad-studio-kit/commit/c9085cbb8f9f73212cee59372c7ebf18077fd0de))
+
 ## [1.4.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.4.0...vscode-extension-v1.4.1) (2026-06-05)
 
 
