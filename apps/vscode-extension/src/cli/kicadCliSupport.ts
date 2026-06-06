@@ -4,6 +4,7 @@ import type { KiCadCliCapabilitySnapshot } from './kicadCliDetector';
 
 export type KiCadSupportState =
   | 'primary'
+  | 'preview'
   | 'supported'
   | 'deprecated'
   | 'unsupported'
@@ -67,11 +68,19 @@ export function describeKiCadSupportLine(
         'Detected kicad-cli did not report a parseable KiCad major version.'
     };
   }
-  if (major >= 10) {
+  if (major === 10) {
     return {
       state: 'primary',
       label: `${cli.versionLabel} primary`,
       detail: `Primary release-blocking KiCad line: ${KI_CAD_PRIMARY_RANGE}.`
+    };
+  }
+  if (major >= 11) {
+    return {
+      state: 'preview',
+      label: `${cli.versionLabel} preview`,
+      detail:
+        'Preview KiCad line; not yet the primary release-blocking line. Verify compatibility before use.'
     };
   }
   if (major === 9) {

@@ -74,7 +74,7 @@ describe('language model MCP server definition provider', () => {
         version?: string;
       };
 
-      expect(definition.label).toBe('KiCad MCP Pro (bundled)');
+      expect(definition.label).toBe('KiCad MCP Pro (detected)');
       expect(definition.command).toBe('kicad-mcp-pro');
       expect(definition.env['KICAD_MCP_PROFILE']).toBe('full');
       expect(definition.cwd?.fsPath).toBe(

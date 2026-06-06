@@ -4,7 +4,7 @@ KiCad Studio integrates with `kicad-mcp-pro` as an optional capability for AI-as
 
 ## Compatibility
 
-KiCad Studio 1.0.0 requires and recommends `kicad-mcp-pro >=3.5.2 <4.0.0`. The extension was tested against `3.5.2`.
+KiCad Studio 1.4.1 requires and recommends `kicad-mcp-pro >=3.5.2 <4.0.0`. The extension was tested against `3.5.2`.
 
 ## Discovery
 

@@ -12,6 +12,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.4.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.4.0...vscode-extension-v1.4.1) (2026-06-05)
+
+
+### Bug Fixes
+
+* **kicad-studio:** align marketplace version checks ([39fb2f9](https://github.com/oaslananka/kicad-studio-kit/commit/39fb2f916fe6f12d2927be34972e62319b1f263c)), closes [#320](https://github.com/oaslananka/kicad-studio-kit/issues/320)
+
 ## [1.4.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.3.0...vscode-extension-v1.4.0) (2026-06-04)
 
 

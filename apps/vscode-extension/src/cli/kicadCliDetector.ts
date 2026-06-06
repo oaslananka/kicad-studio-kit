@@ -18,7 +18,9 @@ const STATUS_MENU_CAPABILITY_COMMANDS = [
   'drill',
   'jobset',
   'pdf3d',
-  'odb'
+  'odb',
+  'step',
+  'stats'
 ] as const satisfies ReadonlyArray<keyof typeof CLI_CAPABILITY_COMMANDS>;
 
 export type KiCadCliCapabilityName = keyof typeof CLI_CAPABILITY_COMMANDS;

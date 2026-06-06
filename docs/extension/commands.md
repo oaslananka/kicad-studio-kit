@@ -3,7 +3,7 @@
 Machine-maintained from `apps/vscode-extension/package.json` and `package.nls.json`.
 Refresh with `corepack pnpm run docs:generate`.
 
-Total contributed commands: 106.
+Total contributed commands: 107.
 
 | Command ID | Title | Category |
 | --- | --- | --- |
@@ -101,15 +101,16 @@ Total contributed commands: 106.
 | `kicadstudio.pcm.uninstall` | KiCad: Uninstall PCM Package | KiCad Library |
 | `kicadstudio.sendFeedback` | KiCad Studio: Send Feedback | KiCad Studio |
 | `kicadstudio.importAllegro` | KiCad: Import Allegro Board | KiCad Import |
-| `kicadstudio.pcm.refresh` | KiCad: Refresh PCM Repositories | KiCad Library |
-| `kicadstudio.pcm.filter` | KiCad: Filter PCM Packages | KiCad Library |
-| `kicadstudio.pcm.install` | KiCad: Install PCM Package | KiCad Library |
-| `kicadstudio.pcm.update` | KiCad: Update PCM Package | KiCad Library |
-| `kicadstudio.pcm.updateAll` | KiCad: Update All PCM Packages | KiCad Library |
-| `kicadstudio.pcm.uninstall` | KiCad: Uninstall PCM Package | KiCad Library |
-| `kicadstudio.sendFeedback` | KiCad Studio: Send Feedback | KiCad Studio |
-| `kicadstudio.importAllegro` | KiCad: Import Allegro Board | KiCad Import |
 | `kicadstudio.boardReadyOps.check` | BoardReadyOps: Check Board Readiness | KiCad BoardReadyOps |
 | `kicadstudio.boardReadyOps.configure` | BoardReadyOps: Configure Checks | KiCad BoardReadyOps |
 | `kicadstudio.boardReadyOps.showReport` | BoardReadyOps: Show Readiness Report | KiCad BoardReadyOps |
 | `kicadstudio.boardReadyOps.openDocs` | BoardReadyOps: Open Documentation | KiCad BoardReadyOps |
+| `kicadstudio.export3DStep` | KiCad: Export 3D Model (STEP) | KiCad Export |
+| `kicadstudio.export3DStpz` | KiCad: Export 3D Model (STEPZ) | KiCad Export |
+| `kicadstudio.export3DXao` | KiCad: Export 3D Model (XAO) | KiCad Export |
+| `kicadstudio.export3DStl` | KiCad: Export 3D Model (STL) | KiCad Export |
+| `kicadstudio.export3DU3d` | KiCad: Export 3D Model (U3D) | KiCad Export |
+| `kicadstudio.export3DVrml` | KiCad: Export 3D Model (VRML) | KiCad Export |
+| `kicadstudio.exportPcbPs` | KiCad: Export PCB PostScript | KiCad Export |
+| `kicadstudio.exportSchPs` | KiCad: Export Schematic PostScript | KiCad Export |
+| `kicadstudio.exportStats` | KiCad: Export Board Statistics | KiCad Export |

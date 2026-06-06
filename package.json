@@ -63,6 +63,7 @@
     "check:beta-program": "node scripts/check-beta-program.mjs && pnpm run test:beta-program",
     "test:agent-configs": "node --test scripts/check-agent-configs.test.mjs",
     "check:agent-configs": "node scripts/check-agent-configs.mjs && node --test scripts/check-agent-configs.test.mjs",
+    "check:extension-manifest": "pnpm --filter kicadstudiokit run check:extension-manifest",
     "check:examples": "node scripts/check-examples.mjs && node --test scripts/check-examples.test.mjs",
     "docs:generate": "node scripts/generate-docs-site.mjs",
     "docs:lint": "node scripts/check-docs-site.mjs --markdown",
