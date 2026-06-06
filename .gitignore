@@ -45,3 +45,6 @@ Thumbs.db
 credentials.json
 cookies.json
 storage_state.json
+
+
+TEMP/
