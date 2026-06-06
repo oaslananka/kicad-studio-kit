@@ -67,6 +67,46 @@ export function registerExportCommands(
       'Export 3D PLY'
     ),
     registerTrustedCommand(
+      COMMANDS.exportSTEP,
+      (resource?: vscode.Uri) => services.exportService.exportSTEP(resource),
+      'Export STEP 3D'
+    ),
+    registerTrustedCommand(
+      COMMANDS.exportSTEPZ,
+      (resource?: vscode.Uri) => services.exportService.exportSTEPZ(resource),
+      'Export STEPZ 3D'
+    ),
+    registerTrustedCommand(
+      COMMANDS.exportXAO,
+      (resource?: vscode.Uri) => services.exportService.exportXAO(resource),
+      'Export XAO 3D'
+    ),
+    registerTrustedCommand(
+      COMMANDS.exportSTL,
+      (resource?: vscode.Uri) => services.exportService.exportSTL(resource),
+      'Export STL 3D'
+    ),
+    registerTrustedCommand(
+      COMMANDS.exportU3D,
+      (resource?: vscode.Uri) => services.exportService.exportU3D(resource),
+      'Export U3D 3D'
+    ),
+    registerTrustedCommand(
+      COMMANDS.exportVRML,
+      (resource?: vscode.Uri) => services.exportService.exportVRML(resource),
+      'Export VRML 3D'
+    ),
+    registerTrustedCommand(
+      COMMANDS.exportPS,
+      (resource?: vscode.Uri) => services.exportService.exportPS(resource),
+      'Export PostScript'
+    ),
+    registerTrustedCommand(
+      COMMANDS.exportStats,
+      (resource?: vscode.Uri) => services.exportService.exportStats(resource),
+      'Export Board Statistics'
+    ),
+    registerTrustedCommand(
       COMMANDS.exportGenCAD,
       (resource?: vscode.Uri) => services.exportService.exportGenCAD(resource),
       'Export GenCAD'

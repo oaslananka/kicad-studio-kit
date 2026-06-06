@@ -6,6 +6,7 @@ import { KiCadCliDetector } from './kicadCliDetector';
 import { Logger } from '../utils/logger';
 
 export const PCB_IMPORT_FORMATS = [
+  'auto',
   'pads',
   'altium',
   'eagle',
@@ -20,6 +21,7 @@ export const PCB_IMPORT_FORMATS = [
 export type SupportedPcbImportFormat = (typeof PCB_IMPORT_FORMATS)[number];
 
 const PCB_IMPORT_FORMAT_LABELS: Record<SupportedPcbImportFormat, string> = {
+  auto: 'Auto-detect',
   pads: 'PADS',
   altium: 'Altium',
   eagle: 'Eagle',
@@ -35,7 +37,8 @@ const PCB_IMPORT_UNSUPPORTED_HINTS: Partial<
   Record<SupportedPcbImportFormat, string>
 > = {
   allegro:
-    'KiCad 10 PCB Editor supports Allegro .brd import, but this kicad-cli build does not expose --format allegro. Use KiCad PCB Editor File > Import > Non-KiCad Board File until a KiCad CLI build advertises Allegro import.'
+    'KiCad 10 PCB Editor supports Allegro .brd import, but this kicad-cli build does not expose --format allegro. Use KiCad PCB Editor File > Import > Non-KiCad Board File until a KiCad CLI build advertises Allegro import.',
+  geda: 'KiCad 10 PCB Editor supports gEDA/Lepton import, but this kicad-cli build does not advertise gEDA format. Use KiCad PCB Editor File > Import > Non-KiCad Board File until a KiCad CLI build advertises gEDA import.'
 };
 
 export class KiCadImportService {
@@ -51,9 +54,14 @@ export class KiCadImportService {
       return;
     }
 
-    const label = PCB_IMPORT_FORMAT_LABELS[format];
+    const resolvedFormat = format === 'auto' ? undefined : format;
+    const label = resolvedFormat
+      ? PCB_IMPORT_FORMAT_LABELS[resolvedFormat]
+      : 'PCB';
     const selection = await vscode.window.showOpenDialog({
-      title: `Import ${label} board`,
+      title: resolvedFormat
+        ? `Import ${label} board`
+        : 'Import board (auto-detect format)',
       canSelectFiles: true,
       canSelectFolders: false,
       canSelectMany: false
@@ -63,27 +71,59 @@ export class KiCadImportService {
       return;
     }
 
+    const detectFormat = resolvedFormat ?? autoDetectImportFormat(inputFile);
+    if (!detectFormat) {
+      void vscode.window.showWarningMessage(
+        `Could not auto-detect import format for ${path.extname(inputFile)}. Select a specific format instead.`
+      );
+      return;
+    }
+
     const outputFile = path.join(
       path.dirname(inputFile),
       `${path.parse(inputFile).name}.kicad_pcb`
     );
 
     try {
+      const detected = await this.detector.detect();
+      const kicadVersion = detected?.version ?? 'unknown';
+
+      const cmdArgs = [
+        'pcb',
+        'import',
+        ...(detectFormat !== 'auto' ? ['--format', detectFormat] : []),
+        '--output',
+        outputFile,
+        inputFile
+      ];
+
       await this.runner.runWithProgress<string>({
-        command: [
-          'pcb',
-          'import',
-          '--format',
-          format,
-          '--output',
-          outputFile,
-          inputFile
-        ],
+        command: cmdArgs,
         cwd: path.dirname(inputFile),
         progressTitle: `Importing ${label} board`
       });
 
       const projectFile = await ensureProjectForImportedBoard(outputFile);
+
+      // Write import manifest
+      const manifestPath = path.join(
+        path.dirname(outputFile),
+        `${path.parse(outputFile).name}_import_manifest.json`
+      );
+      const manifestData = {
+        projectPath: projectFile,
+        boardPath: outputFile,
+        sourceFormat: detectFormat,
+        cliCommand: `kicad-cli ${cmdArgs.join(' ')}`,
+        kicadVersion,
+        timestamp: new Date().toISOString()
+      };
+      await fs.promises.writeFile(
+        manifestPath,
+        JSON.stringify(manifestData, null, 2) + '\n',
+        'utf8'
+      );
+
       await vscode.commands.executeCommand(
         'vscode.open',
         vscode.Uri.file(projectFile)
@@ -121,6 +161,9 @@ export class KiCadImportService {
     if (!(await this.detector.hasCapability('pcbImport'))) {
       return false;
     }
+    if (format === 'auto') {
+      return true;
+    }
     const help = await this.detector.getCommandHelp(['pcb', 'import']);
     if (!help) {
       return false;
@@ -142,6 +185,33 @@ function importFormatHelpPattern(format: SupportedPcbImportFormat): RegExp {
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+const IMPORT_EXTENSION_MAP: Array<{
+  extensions: string[];
+  format: SupportedPcbImportFormat;
+}> = [
+  { extensions: ['.asc', '.pads', '.pads_pcb'], format: 'pads' },
+  { extensions: ['.pcbdoc', '.pcb'], format: 'altium' },
+  { extensions: ['.brd', '.sch'], format: 'eagle' },
+  { extensions: ['.cba', '.cad'], format: 'cadstar' },
+  { extensions: ['.fab', '.tgz'], format: 'fabmaster' },
+  { extensions: ['.pcb', '.pcad'], format: 'pcad' },
+  { extensions: ['.gbr', '.sch'], format: 'geda' },
+  { extensions: ['.sldprt', '.sldasm'], format: 'solidworks' },
+  { extensions: ['.brd', '.allegro'], format: 'allegro' }
+];
+
+function autoDetectImportFormat(
+  filePath: string
+): SupportedPcbImportFormat | undefined {
+  const ext = path.extname(filePath).toLowerCase();
+  for (const mapping of IMPORT_EXTENSION_MAP) {
+    if (mapping.extensions.includes(ext)) {
+      return mapping.format;
+    }
+  }
+  return undefined;
 }
 
 async function ensureProjectForImportedBoard(

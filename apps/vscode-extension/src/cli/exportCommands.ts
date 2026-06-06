@@ -19,9 +19,11 @@ import {
 import { Logger } from '../utils/logger';
 import { zipDirectory } from '../utils/zipUtils';
 import { KiCadCliDetector } from './kicadCliDetector';
+import { KiCadCliTimeoutError } from '../errors';
 import { ExportPresetStore } from './exportPresets';
 import { KiCadCliRunner } from './kicadCliRunner';
 import type { ExportStateStore, ExportSurfaceKind } from '../state/stateStores';
+import type { VariantProvider } from '../variants/variantProvider';
 
 export type ExportCommandKind =
   | 'export-gerbers'
@@ -42,7 +44,15 @@ export type ExportCommandKind =
   | 'export-fp-svg'
   | 'export-sym-svg'
   | 'export-sch-bom'
-  | 'export-netlist';
+  | 'export-netlist'
+  | 'export-step'
+  | 'export-stepz'
+  | 'export-xao'
+  | 'export-stl'
+  | 'export-u3d'
+  | 'export-vrml'
+  | 'export-ps'
+  | 'export-stats';
 
 const DEFAULT_GERBER_LAYERS = [
   'F.Cu',
@@ -64,6 +74,8 @@ export interface ExportCommandBuildOptions {
   theme?: string;
   bomFields?: string[];
   gerberLayers?: string[];
+  /** Optional project variant name for variant-aware exports (--variant flag). */
+  variant?: string;
 }
 
 export function buildCliExportCommands(
@@ -361,6 +373,118 @@ export function buildCliExportCommands(
           file
         ]
       ];
+    case 'export-step': {
+      const stepArgs = [
+        'pcb',
+        'export',
+        'step',
+        '--output',
+        inferOutputPath(file, outputDir, '', '.step'),
+        '--subst-models',
+        '--include-tracks',
+        '--include-zones'
+      ];
+      if (options.variant) {
+        stepArgs.push('--variant', options.variant);
+      }
+      stepArgs.push(file);
+      return [stepArgs];
+    }
+    case 'export-stepz': {
+      const stepzArgs = [
+        'pcb',
+        'export',
+        'stepz',
+        '--output',
+        inferOutputPath(file, outputDir, '', '.stepz'),
+        '--subst-models',
+        '--include-tracks',
+        '--include-zones'
+      ];
+      if (options.variant) {
+        stepzArgs.push('--variant', options.variant);
+      }
+      stepzArgs.push(file);
+      return [stepzArgs];
+    }
+    case 'export-xao':
+      return [
+        [
+          'pcb',
+          'export',
+          'xao',
+          '--output',
+          inferOutputPath(file, outputDir, '', '.xao'),
+          file
+        ]
+      ];
+    case 'export-stl': {
+      const stlArgs = [
+        'pcb',
+        'export',
+        'stl',
+        '--output',
+        inferOutputPath(file, outputDir, '', '.stl'),
+        '--subst-models'
+      ];
+      if (options.variant) {
+        stlArgs.push('--variant', options.variant);
+      }
+      stlArgs.push(file);
+      return [stlArgs];
+    }
+    case 'export-u3d': {
+      const u3dArgs = [
+        'pcb',
+        'export',
+        'u3d',
+        '--output',
+        inferOutputPath(file, outputDir, '', '.u3d'),
+        '--subst-models'
+      ];
+      if (options.variant) {
+        u3dArgs.push('--variant', options.variant);
+      }
+      u3dArgs.push(file);
+      return [u3dArgs];
+    }
+    case 'export-vrml': {
+      const vrmlArgs = [
+        'pcb',
+        'export',
+        'vrml',
+        '--output',
+        inferOutputPath(file, outputDir, '', '.vrml'),
+        '--subst-models'
+      ];
+      if (options.variant) {
+        vrmlArgs.push('--variant', options.variant);
+      }
+      vrmlArgs.push(file);
+      return [vrmlArgs];
+    }
+    case 'export-ps':
+      return [
+        [
+          'pcb',
+          'export',
+          'ps',
+          '--output',
+          inferOutputPath(file, outputDir, '', '.ps'),
+          file
+        ]
+      ];
+    case 'export-stats':
+      return [
+        [
+          'pcb',
+          'export',
+          'stats',
+          '--output',
+          inferOutputPath(file, outputDir, '', '.txt'),
+          file
+        ]
+      ];
     default:
       return buildCliExportCommands('export-sch-bom', file, outputDir, options);
   }
@@ -388,7 +512,8 @@ export class KiCadExportService {
     private readonly bomExporter: BomExporter,
     private readonly presets: ExportPresetStore,
     private readonly logger: Logger,
-    private readonly exportState?: ExportStateStore | undefined
+    private readonly exportState?: ExportStateStore | undefined,
+    private readonly variantProvider?: VariantProvider | undefined
   ) {}
 
   async exportGerbers(resource?: vscode.Uri): Promise<void> {
@@ -595,6 +720,126 @@ export class KiCadExportService {
     );
   }
 
+  async exportSTEP(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('step'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support STEP export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-step',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting STEP 3D'
+    );
+  }
+
+  async exportSTEPZ(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('stepz'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support STEPZ export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-stepz',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting STEPZ 3D'
+    );
+  }
+
+  async exportXAO(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('xao'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support XAO export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-xao',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting XAO 3D'
+    );
+  }
+
+  async exportSTL(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('stl'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support STL export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-stl',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting STL 3D'
+    );
+  }
+
+  async exportU3D(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('u3d'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support U3D export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-u3d',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting U3D 3D'
+    );
+  }
+
+  async exportVRML(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('vrml'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support VRML export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-vrml',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting VRML 3D'
+    );
+  }
+
+  async exportPS(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('ps'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support PostScript export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-ps',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting PostScript'
+    );
+  }
+
+  async exportStats(resource?: vscode.Uri): Promise<void> {
+    if (!(await this.detector.hasCapability('stats'))) {
+      void vscode.window.showWarningMessage(
+        'This KiCad version does not support board statistics export.'
+      );
+      return;
+    }
+    await this.runCliExport(
+      'export-stats',
+      resource,
+      ['.kicad_pcb'],
+      'Exporting board statistics'
+    );
+  }
+
   async exportGenCAD(resource?: vscode.Uri): Promise<void> {
     if (!(await this.detector.hasCapability('gencad'))) {
       void vscode.window.showWarningMessage(
@@ -755,7 +1000,30 @@ export class KiCadExportService {
       return;
     }
 
-    await this.runCommandSequence(
+    // Preview jobset outputs before running
+    const outputs = this.parseJobsetOutputs(jobsetFile);
+    if (outputs.length === 0) {
+      this.logger.warn(
+        `Jobset ${path.basename(jobsetFile)} has no recognizable outputs.`
+      );
+    } else {
+      this.logger.info(
+        `Jobset ${path.basename(jobsetFile)} outputs:\n  ${outputs.join('\n  ')}`
+      );
+    }
+
+    const confirmed = await vscode.window.showInformationMessage(
+      `Run jobset "${path.basename(jobsetFile)}"?${
+        outputs.length > 0 ? `\nOutputs: ${outputs.join(', ')}` : ''
+      }\nOutput directory: ${outputDir}`,
+      { modal: false },
+      'Run'
+    );
+    if (confirmed !== 'Run') {
+      return;
+    }
+
+    const success = await this.runCommandSequence(
       [
         [
           'jobset',
@@ -770,6 +1038,36 @@ export class KiCadExportService {
       path.dirname(projectFile),
       `Running jobset ${path.basename(jobsetFile)}`
     );
+
+    if (success) {
+      this.logger.info(
+        `Jobset ${path.basename(jobsetFile)} completed. Output in ${outputDir}`
+      );
+      this.logger.show(false);
+    }
+  }
+
+  private parseJobsetOutputs(jobsetFile: string): string[] {
+    try {
+      const raw = fs.readFileSync(jobsetFile, 'utf8');
+      const parsed = JSON.parse(raw);
+      const outputs: string[] = [];
+      if (Array.isArray(parsed.outputs)) {
+        for (const output of parsed.outputs) {
+          if (output?.name && typeof output.name === 'string') {
+            outputs.push(output.name);
+          } else if (output?.type && typeof output.type === 'string') {
+            outputs.push(output.type);
+          }
+        }
+      }
+      if (parsed.board && typeof parsed.board === 'string') {
+        outputs.unshift(`board: ${parsed.board}`);
+      }
+      return outputs;
+    } catch {
+      return [];
+    }
   }
 
   async exportManufacturingPackage(resource?: vscode.Uri): Promise<void> {
@@ -1019,27 +1317,63 @@ export class KiCadExportService {
     cwd: string,
     title: string
   ): Promise<boolean> {
-    try {
-      for (const [index, command] of commands.entries()) {
+    for (const [index, command] of commands.entries()) {
+      const success = await this.runSingleCommand(
+        cwd,
+        title,
+        index,
+        commands.length,
+        command
+      );
+      if (!success) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private async runSingleCommand(
+    cwd: string,
+    title: string,
+    index: number,
+    total: number,
+    command: string[]
+  ): Promise<boolean> {
+    const maxRetries = 1;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+      try {
         await this.runner.runWithProgress<string>({
           command,
           cwd,
-          progressTitle: `${title} (${index + 1}/${commands.length})`,
+          progressTitle: `${title} (${index + 1}/${total})`,
           onProgress: (message) => {
             this.logger.debug(`${title}: ${message}`);
           }
         });
+        return true;
+      } catch (error) {
+        const isTransient = error instanceof KiCadCliTimeoutError;
+        const isAbort = error instanceof Error && error.name === 'AbortError';
+
+        if (attempt < maxRetries && (isTransient || isAbort)) {
+          this.logger.warn(
+            `CLI command failed transiently (attempt ${attempt + 1}/${maxRetries + 1}), retrying: ${error instanceof Error ? error.message : String(error)}`
+          );
+          await sleep(1_000);
+          continue;
+        }
+
+        this.logger.error(title, error);
+        const message =
+          error instanceof Error
+            ? `${error.message}\nWhat happened: the export command failed.\nHow to fix: confirm kicad-cli is installed and the target file opens in KiCad.`
+            : 'The export command failed. Confirm kicad-cli is installed and the target file opens in KiCad.';
+        void vscode.window.showErrorMessage(message);
+        return false;
       }
-      return true;
-    } catch (error) {
-      this.logger.error(title, error);
-      const message =
-        error instanceof Error
-          ? `${error.message}\nWhat happened: the export command failed.\nHow to fix: confirm kicad-cli is installed and the target file opens in KiCad.`
-          : 'The export command failed. Confirm kicad-cli is installed and the target file opens in KiCad.';
-      void vscode.window.showErrorMessage(message);
-      return false;
     }
+    return false;
   }
 
   private async showOutputFolder(outputDir: string): Promise<void> {
@@ -1344,6 +1678,16 @@ export class KiCadExportService {
         'Could not discover board layers. Gerber export will use the default fabrication layer set.'
       );
     }
+
+    let activeVariant: string | undefined;
+    if (this.variantProvider && versionMajor >= 10) {
+      try {
+        activeVariant = await this.variantProvider.getActiveVariantName();
+      } catch {
+        activeVariant = undefined;
+      }
+    }
+
     return {
       versionMajor,
       precision: String(
@@ -1363,7 +1707,8 @@ export class KiCadExportService {
       bomFields: vscode.workspace
         .getConfiguration()
         .get<string[]>(SETTINGS.bomFields, []),
-      ...(gerberLayers.length ? { gerberLayers } : {})
+      ...(gerberLayers.length ? { gerberLayers } : {}),
+      ...(activeVariant ? { variant: activeVariant } : {})
     };
   }
 }
@@ -1373,6 +1718,10 @@ function exportSurfaceFor(kind: ExportCommandKind): ExportSurfaceKind {
     return 'netlist';
   }
   return kind === 'export-sch-bom' ? 'bom' : 'export';
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function collectFilesWithExtension(root: string, extension: string): string[] {

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "trackingIssue": "OASLANA-112",
-  "ciMatrix": ["ubuntu-24.04", "windows-2025-vs2026", "macos-15"],
+  "ciMatrix": ["ubuntu-24.04", "windows-2025", "macos-15"],
   "scenarios": [
     {
       "id": "project-path-with-spaces",

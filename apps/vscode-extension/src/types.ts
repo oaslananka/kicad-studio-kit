@@ -435,7 +435,6 @@ export type QualityGateStatus =
   | 'PENDING'
   | 'EMPTY';
 
-
 export interface QualityGateViolation {
   message: string;
   path?: string | undefined;
@@ -486,6 +485,8 @@ export interface StudioContext {
   viewerEngine?: ViewerEngineState | undefined;
   kicadVersion?: string | undefined;
   designBlocks?: string[] | undefined;
+  selectionText?: string | undefined;
+  fileContents?: string | undefined;
 }
 
 export interface FixItem {

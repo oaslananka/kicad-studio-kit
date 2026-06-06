@@ -764,6 +764,12 @@ function validateEndpoint(endpoint: string): void {
       `Refusing remote MCP endpoint ${endpoint}. Use a loopback endpoint or enable ${SETTINGS.mcpAllowRemoteEndpoint} intentionally.`
     );
   }
+
+  if (!isLoopback && parsed.protocol !== 'https:') {
+    throw new Error(
+      `Refusing non-HTTPS remote MCP endpoint ${endpoint}. Remote endpoints must use HTTPS for transport security.`
+    );
+  }
 }
 
 function getExtensionVersion(context: vscode.ExtensionContext): string {

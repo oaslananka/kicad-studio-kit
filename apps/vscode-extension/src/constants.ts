@@ -79,6 +79,14 @@ export const COMMANDS = {
   export3DGLB: 'kicadstudio.export3DGLB',
   export3DBREP: 'kicadstudio.export3DBREP',
   export3DPLY: 'kicadstudio.export3DPLY',
+  exportSTEP: 'kicadstudio.exportSTEP',
+  exportSTEPZ: 'kicadstudio.exportSTEPZ',
+  exportXAO: 'kicadstudio.exportXAO',
+  exportSTL: 'kicadstudio.exportSTL',
+  exportU3D: 'kicadstudio.exportU3D',
+  exportVRML: 'kicadstudio.exportVRML',
+  exportPS: 'kicadstudio.exportPS',
+  exportStats: 'kicadstudio.exportStats',
   exportGenCAD: 'kicadstudio.exportGenCAD',
   exportIPCD356: 'kicadstudio.exportIPCD356',
   exportDXF: 'kicadstudio.exportDXF',
@@ -223,6 +231,12 @@ export const SETTINGS = {
   mcpAllowLegacySse: 'kicadstudio.mcp.allowLegacySse',
   mcpTimeout: 'kicadstudio.mcp.timeout',
   mcpPushContext: 'kicadstudio.mcp.pushContext',
+  mcpContextBridgeEnabled: 'kicadstudio.mcp.contextBridge.enabled',
+  mcpContextBridgeIncludeSelectionText:
+    'kicadstudio.mcp.contextBridge.includeSelectionText',
+  mcpContextBridgeIncludeFileContents:
+    'kicadstudio.mcp.contextBridge.includeFileContents',
+  mcpContextBridgeMaxBytes: 'kicadstudio.mcp.contextBridge.maxBytes',
   mcpProfile: 'kicadstudio.mcp.profile',
   mcpLogSize: 'kicadstudio.mcp.logSize',
   pcmRepositoryUrls: 'kicadstudio.pcm.repositoryUrls',
@@ -270,7 +284,19 @@ export const CLI_CAPABILITY_COMMANDS = {
   netlist: ['sch', 'export', 'netlist'],
   drc: ['pcb', 'drc'],
   erc: ['sch', 'erc'],
-  pcbImport: ['pcb', 'import']
+  pcbImport: ['pcb', 'import'],
+  step: ['pcb', 'export', 'step'],
+  stepz: ['pcb', 'export', 'stepz'],
+  xao: ['pcb', 'export', 'xao'],
+  stl: ['pcb', 'export', 'stl'],
+  u3d: ['pcb', 'export', 'u3d'],
+  vrml: ['pcb', 'export', 'vrml'],
+  ps: ['pcb', 'export', 'ps'],
+  stats: ['pcb', 'export', 'stats'],
+  fpImport: ['fp', 'import'],
+  symImport: ['sym', 'import'],
+  upgradeSch: ['sch', 'upgrade'],
+  upgradeFp: ['fp', 'upgrade']
 } as const;
 export const DOCUMENT_SELECTOR: vscode.DocumentSelector = KICAD_LANGUAGES.map(
   (language) => ({

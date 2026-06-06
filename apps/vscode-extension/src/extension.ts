@@ -141,15 +141,7 @@ export async function activate(
   const bomParser = new BomParser(parser);
   const bomExporter = new BomExporter();
   const presetStore = new ExportPresetStore(context);
-  const exportService = new KiCadExportService(
-    cliRunner,
-    cliDetector,
-    bomParser,
-    bomExporter,
-    presetStore,
-    logger,
-    exportState
-  );
+
   const diagnosticsCollection = new KiCadDiagnosticsAggregator(
     vscode.languages.createDiagnosticCollection(DIAGNOSTIC_COLLECTION_NAME)
   );
@@ -179,20 +171,6 @@ export async function activate(
     logger,
     exportState
   );
-  const schematicEditorProvider = new SchematicEditorProvider(
-    context,
-    async (resource) => exportService.renderViewerSvg(resource),
-    viewerState,
-    (resource) => projectState.findProjectForResource(resource),
-    markViewerDiagnosticsStale
-  );
-  const pcbEditorProvider = new PcbEditorProvider(
-    context,
-    async (resource) => exportService.renderViewerSvg(resource),
-    viewerState,
-    (resource) => projectState.findProjectForResource(resource),
-    markViewerDiagnosticsStale
-  );
   const gitDiffDetector = new GitDiffDetector(parser);
   const diffEditorProvider = new DiffEditorProvider(context, gitDiffDetector);
   const aiProviders = new AIProviderRegistry(context);
@@ -209,6 +187,30 @@ export async function activate(
   const contextBridge = new ContextBridge(mcpToolAdapter);
   const mcpToolsProvider = new McpToolsProvider(mcpState);
   const variantProvider = new VariantProvider(mcpToolAdapter);
+  const exportService = new KiCadExportService(
+    cliRunner,
+    cliDetector,
+    bomParser,
+    bomExporter,
+    presetStore,
+    logger,
+    exportState,
+    variantProvider
+  );
+  const schematicEditorProvider = new SchematicEditorProvider(
+    context,
+    async (resource) => exportService.renderViewerSvg(resource),
+    viewerState,
+    (resource) => projectState.findProjectForResource(resource),
+    markViewerDiagnosticsStale
+  );
+  const pcbEditorProvider = new PcbEditorProvider(
+    context,
+    async (resource) => exportService.renderViewerSvg(resource),
+    viewerState,
+    (resource) => projectState.findProjectForResource(resource),
+    markViewerDiagnosticsStale
+  );
   const fixQueueProvider = new FixQueueProvider(mcpToolAdapter, mcpState);
   const qualityGateProvider = new QualityGateProvider(
     context,
@@ -246,6 +248,7 @@ export async function activate(
 
   context.subscriptions.push(
     logger,
+    cliDetector,
     statusBar,
     projectState,
     diagnosticState,
@@ -519,6 +522,34 @@ export async function activate(
       })
     );
   }
+  // FileSystemWatcher for KiCad project files — debounce and refresh on any change
+  const projectWatcher = vscode.workspace.createFileSystemWatcher(
+    '**/*.{kicad_pro,kicad_sch,kicad_pcb}',
+    false,
+    false,
+    false
+  );
+  let projectWatchTimer: NodeJS.Timeout | undefined;
+  const scheduleProjectRefresh = (): void => {
+    if (projectWatchTimer) {
+      clearTimeout(projectWatchTimer);
+    }
+    projectWatchTimer = setTimeout(() => {
+      projectWatchTimer = undefined;
+      void refreshContexts();
+    }, 500);
+  };
+  context.subscriptions.push(
+    projectWatcher,
+    projectWatcher.onDidCreate(scheduleProjectRefresh),
+    projectWatcher.onDidChange(scheduleProjectRefresh),
+    projectWatcher.onDidDelete(scheduleProjectRefresh),
+    {
+      dispose: () =>
+        projectWatchTimer !== undefined && clearTimeout(projectWatchTimer)
+    }
+  );
+
   void refreshMcpState();
   variantProvider.refresh();
   drcRulesProvider.refresh();
@@ -912,6 +943,7 @@ export async function activate(
   }
 
   async function buildStudioContext(): Promise<StudioContext> {
+    const config = vscode.workspace.getConfiguration();
     const activeUri = getActiveResourceUri();
     const activeEditor = vscode.window.activeTextEditor;
     const selectedProject = projectState.getActiveProject();
@@ -968,7 +1000,21 @@ export async function activate(
       activeVariant: await variantProvider.getActiveVariantName(),
       mcpConnected: mcpState?.connected ?? false,
       kicadVersion: cli?.version,
-      designBlocks: activeUri ? readDesignBlockNames(activeUri.fsPath) : []
+      designBlocks: activeUri ? readDesignBlockNames(activeUri.fsPath) : [],
+      selectionText:
+        activeEditor &&
+        config.get<boolean>(
+          SETTINGS.mcpContextBridgeIncludeSelectionText,
+          false
+        ) &&
+        !activeEditor.selection.isEmpty
+          ? activeEditor.document.getText(activeEditor.selection)
+          : undefined,
+      fileContents:
+        activeEditor &&
+        config.get<boolean>(SETTINGS.mcpContextBridgeIncludeFileContents, false)
+          ? activeEditor.document.getText()
+          : undefined
     };
   }
 

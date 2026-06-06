@@ -9,24 +9,41 @@ import { normalizeUserPath } from '../utils/pathUtils';
 
 const SYNC_PROBE_TIMEOUT_MS = 5_000;
 const SYNC_PROBE_MAX_BUFFER = 1024 * 1024;
-const STATUS_MENU_CAPABILITY_COMMANDS = [
-  'drc',
-  'erc',
-  'bom',
-  'netlist',
-  'gerbers',
-  'drill',
-  'jobset',
-  'pdf3d',
-  'odb'
-] as const satisfies ReadonlyArray<keyof typeof CLI_CAPABILITY_COMMANDS>;
+
+/** Commands whose --variant support is probed individually. */
+const VARIANT_PROBE_COMMANDS: ReadonlyArray<{
+  key: string;
+  args: readonly string[];
+}> = [
+  { key: 'variantSchPdf', args: ['sch', 'export', 'pdf'] },
+  { key: 'variantPcbPdf', args: ['pcb', 'export', 'pdf'] },
+  { key: 'variantPcbStep', args: ['pcb', 'export', 'step'] },
+  { key: 'variantPcbStl', args: ['pcb', 'export', 'stl'] }
+] as const;
+
+/** Cache TTL for capability probes (5 minutes). */
+const CAPABILITY_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export type KiCadCliCapabilityName = keyof typeof CLI_CAPABILITY_COMMANDS;
 export type KiCadCliCapabilitySnapshot = Partial<
   Record<KiCadCliCapabilityName, boolean>
 > & {
+  /** --variant option on `sch export pdf` (legacy compat key) */
   variantOption?: boolean;
   allegroImport?: boolean;
+  /** Per-command variant option availability */
+  variantSchPdf?: boolean;
+  variantPcbPdf?: boolean;
+  variantPcbStep?: boolean;
+  variantPcbStl?: boolean;
+  /** Snapshot metadata */
+  lastProbeAt?: string;
+  kicadCliPath?: string;
+  detectionSource?: DetectedKiCadCli['source'];
+  cliVersion?: string;
+  cliVersionLabel?: string;
+  /** Errors accumulated during probe */
+  probeErrors?: string[];
 };
 
 export function getCliCandidates(
@@ -108,11 +125,26 @@ export function getCliCandidates(
   return [...new Set(candidates)];
 }
 
-export class KiCadCliDetector {
+export class KiCadCliDetector implements vscode.Disposable {
   private detected: DetectedKiCadCli | undefined;
   private readonly capabilityCache = new Map<string, boolean>();
   private readonly helpCache = new Map<string, string | undefined>();
+  private cachedSnapshot: KiCadCliCapabilitySnapshot | undefined;
+  private lastSnapshotProbeAt = 0;
   private warnedWorkspaceConfiguredPath = false;
+  private readonly configDisposable: vscode.Disposable;
+
+  constructor() {
+    this.configDisposable = vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration(SETTINGS.cliPath)) {
+        this.clearCache();
+      }
+    });
+  }
+
+  dispose(): void {
+    this.configDisposable.dispose();
+  }
 
   async detect(notifyOnMissing = false): Promise<DetectedKiCadCli | undefined> {
     if (this.detected) {
@@ -178,6 +210,19 @@ export class KiCadCliDetector {
     this.detected = undefined;
     this.capabilityCache.clear();
     this.helpCache.clear();
+    this.cachedSnapshot = undefined;
+    this.lastSnapshotProbeAt = 0;
+  }
+
+  /** Force a fresh probe on next `getCapabilitySnapshot()` call. */
+  invalidateSnapshotCache(): void {
+    this.cachedSnapshot = undefined;
+    this.lastSnapshotProbeAt = 0;
+  }
+
+  /** Force a full re-detection on the next `detect()` call. */
+  forceRedetect(): void {
+    this.clearCache();
   }
 
   getVersion(): number | undefined {
@@ -256,21 +301,65 @@ export class KiCadCliDetector {
       return undefined;
     }
 
-    const [commandResults, variantOption, allegroImport] = await Promise.all([
+    // Return cached snapshot if within TTL
+    const now = Date.now();
+    if (
+      this.cachedSnapshot &&
+      now - this.lastSnapshotProbeAt < CAPABILITY_CACHE_TTL_MS
+    ) {
+      return this.cachedSnapshot;
+    }
+
+    const probeErrors: string[] = [];
+
+    // Probe all CLI_CAPABILITY_COMMANDS (not just the status menu subset)
+    const allCommandKeys = Object.keys(CLI_CAPABILITY_COMMANDS) as Array<
+      keyof typeof CLI_CAPABILITY_COMMANDS
+    >;
+
+    const [commandEntries, variantIncludes, allegroImport] = await Promise.all([
       Promise.all(
-        STATUS_MENU_CAPABILITY_COMMANDS.map(
-          async (command) =>
-            [command, await this.hasCapability(command)] as const
-        )
+        allCommandKeys.map(async (command) => {
+          try {
+            const supported = await this.hasCapability(command);
+            return [command, supported] as const;
+          } catch (err) {
+            probeErrors.push(
+              `${command}: ${err instanceof Error ? err.message : String(err)}`
+            );
+            return [command, false] as const;
+          }
+        })
       ),
-      this.commandHelpIncludes(['sch', 'export', 'pdf'], /--variant\b/),
+      // Variant probes — check --variant on multiple export commands
+      Promise.all(
+        VARIANT_PROBE_COMMANDS.map(async ({ key, args }) => {
+          const supported = await this.commandHelpIncludes(args, /--variant\b/);
+          return [key, supported] as const;
+        })
+      ),
       this.commandHelpIncludes(['pcb', 'import'], /\ballegro\b/i)
     ]);
-    return {
-      ...(Object.fromEntries(commandResults) as KiCadCliCapabilitySnapshot),
-      variantOption,
-      allegroImport
+
+    const variantSchPdf =
+      variantIncludes.find(([k]) => k === 'variantSchPdf')?.[1] ?? false;
+    const snapshot: KiCadCliCapabilitySnapshot = {
+      ...(Object.fromEntries(commandEntries) as KiCadCliCapabilitySnapshot),
+      // Legacy compat: variantOption mirrors variantSchPdf
+      variantOption: variantSchPdf,
+      ...(Object.fromEntries(variantIncludes) as KiCadCliCapabilitySnapshot),
+      allegroImport,
+      lastProbeAt: new Date().toISOString(),
+      kicadCliPath: detected.path,
+      detectionSource: detected.source,
+      cliVersion: detected.version,
+      cliVersionLabel: detected.versionLabel,
+      ...(probeErrors.length > 0 ? { probeErrors } : {})
     };
+
+    this.cachedSnapshot = snapshot;
+    this.lastSnapshotProbeAt = now;
+    return snapshot;
   }
 
   private async validateCandidate(

@@ -32,7 +32,29 @@ describe('language model MCP server definition provider', () => {
 
     expect(definition.value.command).toBe('uvx');
     expect(definition.value.args).toEqual(['kicad-mcp-pro']);
-    expect(definition.value.env['KICAD_MCP_PROFILE']).toBe('full');
+    expect(definition.value.env['KICAD_MCP_PROFILE']).toBe('analysis');
+    expect(definition.value.env['KICAD_MCP_OPERATING_MODE']).toBe('readonly');
+  });
+
+  it('withholds the definition when the workspace is untrusted', async () => {
+    const originalTrusted = workspace.isTrusted;
+    (workspace as { isTrusted: boolean }).isTrusted = false;
+    try {
+      const definition = await createKicadMcpServerDefinition(
+        {
+          detectKicadMcpPro: jest.fn()
+        } as never,
+        {
+          found: true,
+          command: 'uvx',
+          version: '0.8.0',
+          source: 'uvx'
+        }
+      );
+      expect(definition).toBeUndefined();
+    } finally {
+      (workspace as { isTrusted: boolean }).isTrusted = originalTrusted;
+    }
   });
 
   it('falls back to the VS Code 1.115 positional stdio constructor', async () => {
@@ -74,9 +96,10 @@ describe('language model MCP server definition provider', () => {
         version?: string;
       };
 
-      expect(definition.label).toBe('KiCad MCP Pro (bundled)');
+      expect(definition.label).toBe('KiCad MCP Pro (detected)');
       expect(definition.command).toBe('kicad-mcp-pro');
-      expect(definition.env['KICAD_MCP_PROFILE']).toBe('full');
+      expect(definition.env['KICAD_MCP_PROFILE']).toBe('analysis');
+      expect(definition.env['KICAD_MCP_OPERATING_MODE']).toBe('readonly');
       expect(definition.cwd?.fsPath).toBe(
         workspace.workspaceFolders[0]?.uri.fsPath
       );

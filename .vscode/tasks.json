@@ -28,7 +28,7 @@
       "problemMatcher": [],
       "options": {
         "env": {
-          "KICAD_MCP_WORKSPACE_ROOT": "${workspaceFolder}",
+          "KICAD_MCP_PROJECT_DIR": "${workspaceFolder}",
           "KICAD_MCP_PROFILE": "analysis",
           "KICAD_MCP_OPERATING_MODE": "readonly"
         }

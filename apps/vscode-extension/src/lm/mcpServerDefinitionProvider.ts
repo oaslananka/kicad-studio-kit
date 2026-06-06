@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { SETTINGS } from '../constants';
 import { McpDetector } from '../mcp/mcpDetector';
 import type { McpInstallStatus } from '../types';
 import { Logger } from '../utils/logger';
@@ -9,7 +10,7 @@ import {
 } from './api';
 
 export const KICAD_MCP_SERVER_PROVIDER_ID = 'kicadstudio.mcpServer';
-const KICAD_MCP_SERVER_LABEL = 'KiCad MCP Pro (bundled)';
+const KICAD_MCP_SERVER_LABEL = 'KiCad MCP Pro (detected)';
 
 export function registerMcpServerDefinitionProvider(
   context: vscode.ExtensionContext,
@@ -47,11 +48,17 @@ export async function createKicadMcpServerDefinition(
   detector: McpDetector,
   status?: McpInstallStatus
 ): Promise<unknown | undefined> {
+  if (!vscode.workspace.isTrusted) {
+    return undefined; // Workspace Trust kapalıysa server auto-start yapma
+  }
   const install = status ?? (await detector.detectKicadMcpPro());
   const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   if (!install.found || !workspaceRoot) {
     return undefined;
   }
+
+  const config = vscode.workspace.getConfiguration();
+  const profile = config.get<string>(SETTINGS.mcpProfile, 'analysis');
 
   return createMcpStdioServerDefinition({
     label: KICAD_MCP_SERVER_LABEL,
@@ -60,7 +67,8 @@ export async function createKicadMcpServerDefinition(
     cwd: vscode.Uri.file(workspaceRoot),
     env: {
       KICAD_MCP_PROJECT_DIR: workspaceRoot,
-      KICAD_MCP_PROFILE: 'full'
+      KICAD_MCP_PROFILE: profile,
+      KICAD_MCP_OPERATING_MODE: 'readonly'
     },
     ...(install.version ? { version: install.version } : {})
   });

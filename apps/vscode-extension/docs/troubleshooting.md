@@ -24,6 +24,15 @@ The MCP server rejected the current environment or project configuration. Check 
 
 The MCP server invoked a KiCad CLI command that exited unsuccessfully. Open the KiCad Studio MCP log, inspect the redacted request/response pair, and reproduce the equivalent KiCad CLI command if needed.
 
-## tool-execution-failed
+## KiCad CLI Unavailable (Local/Extension UX)
 
-The MCP server accepted the request but the tool failed during execution. Re-run the relevant quality gate, inspect the structured hint, and retry after correcting the blocking condition.
+If the local `kicad-cli` is not found on your system, the extension runs in a degraded mode. The following features will be disabled or blocked:
+
+- **ERC/DRC Checks**: Schematic Electrical Rules Checker and PCB Design Rules Checker.
+- **Manufacturing Exports**: Generating Gerbers, Drill Files, IPC-2581, ODB++, SVG, PDF, BOM, and Netlists.
+- **3D Exports**: Exporting STEP, STL, VRML, U3D, GLB, and PLY formats.
+- **Third-Party Imports**: Importing Altium, Eagle, PADS, CADSTAR, SolidWorks, and Fabmaster boards.
+- **Jobset Runner**: Running automated batch configuration and export runs (.kicad_jobset).
+- **Auto-Fixes**: MCP tools requiring KiCad execution.
+
+_To restore these features, install KiCad 10.0.x on your local machine and ensure `kicad-cli` is added to your system PATH or configured explicitly in `kicadstudio.cliPath`._

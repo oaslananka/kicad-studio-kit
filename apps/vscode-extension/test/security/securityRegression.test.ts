@@ -250,6 +250,35 @@ describe('OASLANA-45 security regression gates', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  it('rejects remote MCP endpoints that are HTTP even if remote endpoints are allowed', async () => {
+    __setConfiguration({
+      [SETTINGS.mcpEndpoint]: 'http://mcp.example.com',
+      [SETTINGS.mcpAllowRemoteEndpoint]: true,
+      [SETTINGS.mcpAllowLegacySse]: false,
+      [SETTINGS.mcpPushContext]: true
+    });
+    global.fetch = jest.fn() as typeof fetch;
+    const client = new McpClient(
+      createExtensionContextMock() as never,
+      {
+        detectKicadMcpPro: jest
+          .fn()
+          .mockResolvedValue({ found: true, source: 'uvx' })
+      } as never,
+      {
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        debug: jest.fn()
+      } as never
+    );
+
+    await expect(client.testConnection()).rejects.toThrow(
+      'Refusing non-HTTPS remote MCP endpoint'
+    );
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('never prints plaintext stored secrets in the disclosure command', async () => {
     const context = createExtensionContextMock();
     await context.secrets.store(OCTOPART_SECRET_KEY, 'octopart-secret-value');

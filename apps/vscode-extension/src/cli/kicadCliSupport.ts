@@ -7,6 +7,7 @@ export type KiCadSupportState =
   | 'supported'
   | 'deprecated'
   | 'unsupported'
+  | 'preview'
   | 'unknown';
 
 export type KiCadFeatureState = 'available' | 'unsupported' | 'unknown';
@@ -25,7 +26,14 @@ export interface KiCadFeatureSupport {
     | 'variants'
     | 'odb-export'
     | 'three-d-pdf-export'
-    | 'allegro-pcb-import';
+    | 'allegro-pcb-import'
+    | 'step-export'
+    | 'three-d-exports'
+    | 'stats-export'
+    | 'pcb-import'
+    | 'fp-import'
+    | 'sym-import'
+    | 'upgrade';
   label: string;
   state: KiCadFeatureState;
   summary: string;
@@ -67,11 +75,19 @@ export function describeKiCadSupportLine(
         'Detected kicad-cli did not report a parseable KiCad major version.'
     };
   }
-  if (major >= 10) {
+  if (major === 10) {
     return {
       state: 'primary',
       label: `${cli.versionLabel} primary`,
       detail: `Primary release-blocking KiCad line: ${KI_CAD_PRIMARY_RANGE}.`
+    };
+  }
+  if (major >= 11) {
+    return {
+      state: 'preview',
+      label: `${cli.versionLabel} preview`,
+      detail:
+        'KiCad 11 is in preview status; not verified as a primary baseline. Use KiCad 10.0.x for release workflows.'
     };
   }
   if (major === 9) {
@@ -188,6 +204,101 @@ export function buildKiCadFeatureSupport(options: {
         'Allegro import is enabled when `kicad-cli pcb import --help` advertises the Allegro format.',
       unsupportedReason:
         'Allegro import is available in the KiCad PCB Editor, but the extension command requires a KiCad 10+ CLI build that exposes `pcb import --format allegro`.'
+    }),
+    feature({
+      id: 'step-export',
+      label: 'STEP 3D export',
+      major,
+      minimumMajor: 10,
+      capabilityKeys: ['step'],
+      capabilities,
+      supportedReason:
+        'STEP 3D export is available for KiCad 10 when the `pcb export step` command probe passes.',
+      unsupportedReason:
+        'STEP 3D export requires KiCad 10+ and a kicad-cli build that exposes `pcb export step`.'
+    }),
+    feature({
+      id: 'three-d-exports',
+      label:
+        '3D model exports (GLB, STEP, STL, VRML, STEPZ, XAO, U3D, BREP, PLY)',
+      major,
+      minimumMajor: 10,
+      capabilityKeys: [
+        'glb',
+        'step',
+        'stl',
+        'vrml',
+        'stepz',
+        'xao',
+        'u3d',
+        'brep',
+        'ply'
+      ],
+      capabilities,
+      supportedReason:
+        '3D model exports are available for KiCad 10 when the corresponding `pcb export` command probes pass.',
+      unsupportedReason:
+        '3D model exports require KiCad 10+ with kicad-cli support for the specific 3D format.'
+    }),
+    feature({
+      id: 'stats-export',
+      label: 'Board statistics export',
+      major,
+      minimumMajor: 10,
+      capabilityKeys: ['stats'],
+      capabilities,
+      supportedReason:
+        'Board statistics export is available for KiCad 10 when the `pcb export stats` command probe passes.',
+      unsupportedReason:
+        'Board statistics export requires KiCad 10+ and a kicad-cli build that exposes `pcb export stats`.'
+    }),
+    feature({
+      id: 'pcb-import',
+      label: 'PCB import (non-Allegro)',
+      major,
+      minimumMajor: 8,
+      capabilityKeys: ['pcbImport'],
+      capabilities,
+      supportedReason:
+        'PCB import is available when the `pcb import` command probe passes.',
+      unsupportedReason:
+        'PCB import requires a kicad-cli build that exposes `pcb import`.'
+    }),
+    feature({
+      id: 'fp-import',
+      label: 'Footprint import',
+      major,
+      minimumMajor: 10,
+      capabilityKeys: ['fpImport'],
+      capabilities,
+      supportedReason:
+        'Footprint import is available for KiCad 10 when the `fp import` command probe passes.',
+      unsupportedReason:
+        'Footprint import requires KiCad 10+ and a kicad-cli build that exposes `fp import`.'
+    }),
+    feature({
+      id: 'sym-import',
+      label: 'Symbol import',
+      major,
+      minimumMajor: 10,
+      capabilityKeys: ['symImport'],
+      capabilities,
+      supportedReason:
+        'Symbol import is available for KiCad 10 when the `sym import` command probe passes.',
+      unsupportedReason:
+        'Symbol import requires KiCad 10+ and a kicad-cli build that exposes `sym import`.'
+    }),
+    feature({
+      id: 'upgrade',
+      label: 'KiCad project/symbol upgrade',
+      major,
+      minimumMajor: 10,
+      capabilityKeys: ['upgradeSch', 'upgradeFp'],
+      capabilities,
+      supportedReason:
+        'Upgrade commands are available for KiCad 10 when `sch upgrade` and `fp upgrade` command probes pass.',
+      unsupportedReason:
+        'KiCad project upgrade requires KiCad 10+ and kicad-cli build that exposes `sch upgrade` and `fp upgrade`.'
     })
   ];
 }

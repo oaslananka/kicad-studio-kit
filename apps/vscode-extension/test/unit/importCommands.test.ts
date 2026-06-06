@@ -36,6 +36,9 @@ describe('KiCadImportService', () => {
         .mockResolvedValue(
           'Usage: kicad-cli pcb import --format pads|altium|geda'
         ),
+      detect: jest
+        .fn()
+        .mockResolvedValue({ version: '10.0.3', source: 'default' }),
       ...overrides.detector
     };
     const logger = {
@@ -113,7 +116,9 @@ describe('KiCadImportService', () => {
       expect.stringContaining('does not advertise Allegro PCB import support')
     );
     expect(window.showWarningMessage).toHaveBeenCalledWith(
-      expect.stringContaining('KiCad 10 PCB Editor supports Allegro .brd import')
+      expect.stringContaining(
+        'KiCad 10 PCB Editor supports Allegro .brd import'
+      )
     );
     expect(window.showOpenDialog).not.toHaveBeenCalled();
     expect(runner.runWithProgress).not.toHaveBeenCalled();
@@ -205,6 +210,21 @@ describe('KiCadImportService', () => {
         file: 'legacy-board.kicad_pcb'
       }
     });
+
+    const manifestFile = path.join(
+      tempDir,
+      'legacy-board_import_manifest.json'
+    );
+    expect(fs.existsSync(manifestFile)).toBe(true);
+    expect(JSON.parse(fs.readFileSync(manifestFile, 'utf8'))).toEqual({
+      projectPath: projectFile,
+      boardPath: outputFile,
+      sourceFormat: 'pads',
+      cliCommand: `kicad-cli pcb import --format pads --output ${outputFile} ${inputFile}`,
+      kicadVersion: '10.0.3',
+      timestamp: expect.any(String)
+    });
+
     expect(commands.executeCommand).toHaveBeenCalledWith(
       'vscode.open',
       expect.objectContaining({ fsPath: projectFile })
@@ -292,5 +312,57 @@ describe('KiCadImportService', () => {
     expect(window.showErrorMessage).toHaveBeenCalledTimes(1);
     expect(commands.executeCommand).not.toHaveBeenCalled();
     expect(window.showInformationMessage).not.toHaveBeenCalled();
+  });
+
+  it('auto-detects a known format from file extension when format is auto', async () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kicad-import-'));
+    const inputFile = path.join(tempDir, 'legacy-board.asc');
+    fs.writeFileSync(inputFile, 'legacy board', 'utf8');
+    const { service, runner } = createService();
+    (window.showOpenDialog as jest.Mock).mockResolvedValue([
+      Uri.file(inputFile)
+    ]);
+
+    await service.importBoard('auto');
+
+    expect(runner.runWithProgress).toHaveBeenCalledWith(
+      expect.objectContaining({
+        command: expect.arrayContaining(['--format', 'pads'])
+      })
+    );
+  });
+
+  it('warns and stops if format is auto but file extension is unknown', async () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kicad-import-'));
+    const inputFile = path.join(tempDir, 'legacy-board.unknown');
+    fs.writeFileSync(inputFile, 'legacy board', 'utf8');
+    const { service, runner } = createService();
+    (window.showOpenDialog as jest.Mock).mockResolvedValue([
+      Uri.file(inputFile)
+    ]);
+
+    await service.importBoard('auto');
+
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Could not auto-detect import format')
+    );
+    expect(runner.runWithProgress).not.toHaveBeenCalled();
+  });
+
+  it('handles escapeRegExp branch for formats with special regex characters', async () => {
+    const { service } = createService({
+      detector: {
+        hasCapability: jest.fn().mockResolvedValue(true),
+        getCommandHelp: jest
+          .fn()
+          .mockResolvedValue(
+            'Usage: kicad-cli pcb import --format pads|altium|pa.ds'
+          )
+      }
+    });
+
+    await expect(service.isImportFormatSupported('pa.ds' as any)).resolves.toBe(
+      true
+    );
   });
 });

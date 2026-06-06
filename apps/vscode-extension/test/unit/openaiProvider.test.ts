@@ -42,6 +42,42 @@ describe('OpenAIProvider', () => {
     global.fetch = fetchMock;
   });
 
+  it('uses custom responsesUrl and chatCompletionsUrl when options are provided', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ output: [{ content: [{ text: 'OK' }] }] })
+    );
+    const provider = new OpenAIProvider('key', 'gpt-4.1', 'responses', {
+      responsesUrl: 'https://my-custom.api/v1/responses',
+      chatCompletionsUrl: 'https://my-custom.api/v1/chat/completions'
+    });
+
+    await provider.analyze('Explain', 'context', 'system');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://my-custom.api/v1/responses',
+      expect.any(Object)
+    );
+
+    fetchMock.mockClear();
+    fetchMock.mockResolvedValue(
+      jsonResponse({ choices: [{ message: { content: 'OK' } }] })
+    );
+    const chatProvider = new OpenAIProvider(
+      'key',
+      'gpt-4.1',
+      'chat-completions',
+      {
+        responsesUrl: 'https://my-custom.api/v1/responses',
+        chatCompletionsUrl: 'https://my-custom.api/v1/chat/completions'
+      }
+    );
+
+    await chatProvider.analyze('Explain', 'context', 'system');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://my-custom.api/v1/chat/completions',
+      expect.any(Object)
+    );
+  });
+
   it('streams response deltas in Responses API mode', async () => {
     fetchMock.mockResolvedValue(
       sseResponse([

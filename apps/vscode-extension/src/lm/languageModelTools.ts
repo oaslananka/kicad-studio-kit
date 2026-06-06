@@ -33,6 +33,7 @@ const TOOL_NAMES = {
   runDrc: 'kicadstudio_runDrc',
   runErc: 'kicadstudio_runErc',
   exportGerbers: 'kicadstudio_exportGerbers',
+  exportBoard: 'kicadstudio_exportBoard',
   openFile: 'kicadstudio_openFile',
   searchComponent: 'kicadstudio_searchComponent',
   searchSymbol: 'kicadstudio_searchSymbol',
@@ -64,6 +65,12 @@ interface SearchToolInput {
 }
 
 interface SwitchVariantToolInput {
+  variant?: string | undefined;
+}
+
+interface ExportBoardToolInput {
+  format?: string | undefined;
+  boardPath?: string | undefined;
   variant?: string | undefined;
 }
 
@@ -135,7 +142,8 @@ export function registerLanguageModelTools(
       [TOOL_NAMES.searchFootprint, createSearchFootprintTool(services)],
       [TOOL_NAMES.getActiveContext, createGetActiveContextTool(services)],
       [TOOL_NAMES.listVariants, createListVariantsTool(services)],
-      [TOOL_NAMES.switchVariant, createSwitchVariantTool(services)]
+      [TOOL_NAMES.switchVariant, createSwitchVariantTool(services)],
+      [TOOL_NAMES.exportBoard, createExportBoardTool(services)]
     ];
 
     for (const [name, tool] of toolMap) {
@@ -369,6 +377,107 @@ function createExportGerbersTool(
           variant: activeVariant,
           commands
         }
+      );
+    }
+  };
+}
+
+const EXPORT_BOARD_FORMATS = [
+  'step',
+  'stepz',
+  'stl',
+  'xao',
+  'u3d',
+  'vrml',
+  'ps',
+  'stats'
+] as const;
+
+function createExportBoardTool(
+  services: LanguageModelToolServices
+): LanguageModelTool<ExportBoardToolInput> {
+  const supportedKinds: Record<string, string> = {
+    step: 'export-step',
+    stepz: 'export-stepz',
+    stl: 'export-stl',
+    xao: 'export-xao',
+    u3d: 'export-u3d',
+    vrml: 'export-vrml',
+    ps: 'export-ps',
+    stats: 'export-stats'
+  };
+
+  return {
+    async prepareInvocation(options) {
+      const format = options.input.format?.trim().toLowerCase() ?? '';
+      const variant = options.input.variant?.trim();
+      return {
+        invocationMessage: `Exporting KiCad board as ${format}`,
+        confirmationMessages: {
+          title: `Export KiCad board as ${format}`,
+          message: createMarkdownString(
+            [
+              `Export board in \`${format}\` format to the configured KiCad Studio output directory?`,
+              variant ? `Variant override: \`${variant}\`` : undefined
+            ]
+              .filter(Boolean)
+              .join('\n\n')
+          )
+        }
+      };
+    },
+    async invoke(options, token) {
+      const format = options.input.format?.trim().toLowerCase() ?? '';
+      const kind = supportedKinds[format];
+      if (!kind) {
+        const available = EXPORT_BOARD_FORMATS.join(', ');
+        throw new Error(
+          `Unsupported export format "${format}". Supported formats: ${available}.`
+        );
+      }
+
+      const file = await resolveTargetFile(
+        options.input.boardPath,
+        '.kicad_pcb',
+        services.projectState?.getActiveProject()?.rootPath
+      );
+      if (!file) {
+        throw new Error(
+          'No KiCad PCB file is available. Provide an absolute boardPath or open a .kicad_pcb file.'
+        );
+      }
+
+      const outputDir = resolveOutputDir(file);
+      const detected = await services.cliDetector.detect(true);
+      const versionMajor = Number(detected?.version.split('.')[0] ?? '9');
+      const variantName =
+        options.input.variant?.trim() ||
+        (await services.variantProvider.getActiveVariantName());
+
+      const exportCommands = buildCliExportCommands(
+        kind as Parameters<typeof buildCliExportCommands>[0],
+        file,
+        outputDir,
+        {
+          versionMajor,
+          ...(variantName ? { variant: variantName } : {})
+        }
+      );
+
+      for (const [index, command] of exportCommands.entries()) {
+        await services.cliRunner.run({
+          command,
+          cwd: path.dirname(file),
+          progressTitle: `Exporting ${format} (${index + 1}/${exportCommands.length})`,
+          signal: token.isCancellationRequested
+            ? AbortSignal.abort()
+            : undefined
+        });
+      }
+
+      return buildToolResult(
+        `Board export (${format}) completed for ${path.basename(file)} into ${outputDir}.`,
+        { file, outputDir, format, variant: variantName }
       );
     }
   };

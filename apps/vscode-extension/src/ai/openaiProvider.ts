@@ -214,7 +214,7 @@ export class OpenAIProvider implements AIProvider {
     context: string,
     systemPrompt: string
   ): Promise<string> {
-    const response = await this.request('https://api.openai.com/v1/responses', {
+    const response = await this.request(this.responsesUrl, {
       model: this.model,
       max_output_tokens: AI_MAX_TOKENS,
       input: [
@@ -233,7 +233,9 @@ export class OpenAIProvider implements AIProvider {
 
     const json = (await response.json()) as OpenAIResponsesResponse;
     if (Array.isArray(json.output_text)) {
-      return json.output_text.join('\n').trim() || `No response from ${this.name}.`;
+      return (
+        json.output_text.join('\n').trim() || `No response from ${this.name}.`
+      );
     }
     if (typeof json.output_text === 'string') {
       return json.output_text.trim() || `No response from ${this.name}.`;
@@ -252,19 +254,16 @@ export class OpenAIProvider implements AIProvider {
     context: string,
     systemPrompt: string
   ): Promise<string> {
-    const response = await this.request(
-      this.chatCompletionsUrl,
-      {
-        model: this.model,
-        // Newer OpenAI models (gpt-4.5, gpt-5, gpt-5-mini, o-series) require
-        // max_completion_tokens instead of the deprecated max_tokens parameter.
-        max_completion_tokens: AI_MAX_TOKENS,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: this.buildUserMessage(prompt, context) }
-        ]
-      }
-    );
+    const response = await this.request(this.chatCompletionsUrl, {
+      model: this.model,
+      // Newer OpenAI models (gpt-4.5, gpt-5, gpt-5-mini, o-series) require
+      // max_completion_tokens instead of the deprecated max_tokens parameter.
+      max_completion_tokens: AI_MAX_TOKENS,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: this.buildUserMessage(prompt, context) }
+      ]
+    });
 
     const json = (await response.json()) as OpenAIChatResponse;
     return (

@@ -120,12 +120,10 @@ describe('cross-platform path regression suite', () => {
 
     expect(pathRegressionCases.ciMatrix).toEqual([
       'ubuntu-24.04',
-      'windows-2025-vs2026',
+      'windows-2025',
       'macos-15'
     ]);
-    expect(workflow).toContain(
-      'os: [ubuntu-24.04, windows-2025-vs2026, macos-15]'
-    );
+    expect(workflow).toContain('os: [ubuntu-24.04, windows-2025, macos-15]');
     expect(workflow).toContain(
       'corepack pnpm --filter kicadstudiokit run test:unit:coverage'
     );

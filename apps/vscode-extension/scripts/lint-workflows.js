@@ -14,8 +14,7 @@ const ignoredMessages = [
   // artifact attestation docs require these scopes for provenance metadata.
   /unknown permission scope "attestations"/,
   /unknown permission scope "artifact-metadata"/,
-  // The npm WASM build also lags current hosted runner labels.
-  /label "(ubuntu-24\.04|windows-2025-vs2026|macos-15)" is unknown/
+  /label "(ubuntu-24\.04|windows-2025|macos-15)" is unknown/
 ];
 
 main().catch((error) => {

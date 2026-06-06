@@ -3,7 +3,7 @@
 Machine-maintained from the VS Code extension configuration schema.
 Refresh with `corepack pnpm run docs:generate`.
 
-Total settings: 47.
+Total settings: 51.
 
 | Setting | Type | Default | Allowed values | Description |
 | --- | --- | --- | --- | --- |
@@ -46,6 +46,10 @@ Total settings: 47.
 | `kicadstudio.mcp.allowLegacySse` | boolean | `false` |  | Allow a best-effort fallback to the legacy /sse MCP transport when Streamable HTTP is unavailable. |
 | `kicadstudio.mcp.timeout` | number | `15` |  | MCP HTTP request timeout in seconds. |
 | `kicadstudio.mcp.pushContext` | boolean | `true` |  | Push active file, DRC summary, and lasso selection context to kicad-mcp-pro. |
+| `kicadstudio.mcp.contextBridge.enabled` | boolean | `true` |  | Enable the MCP cursor and workspace context bridge. |
+| `kicadstudio.mcp.contextBridge.includeSelectionText` | boolean | `false` |  | Include the currently selected editor text in the pushed context. |
+| `kicadstudio.mcp.contextBridge.includeFileContents` | boolean | `false` |  | Include active file contents in the pushed context. |
+| `kicadstudio.mcp.contextBridge.maxBytes` | number | `65536` |  | Maximum allowed payload size (in bytes) for pushed context. |
 | `kicadstudio.mcp.profile` | string | `full` | `full`, `minimal`, `schematic_only`, `pcb_only`, `manufacturing`, `high_speed`, `power`, `simulation`, `analysis`, `agent_full` | Preferred kicad-mcp-pro profile when no workspace .vscode/mcp.json overrides it. |
 | `kicadstudio.mcp.logSize` | number | `200` |  | Number of recent MCP request/response log entries retained in memory. |
 | `kicadstudio.exportPresets` | array | `[]` |  | Saved export presets managed by the extension. |

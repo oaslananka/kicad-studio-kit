@@ -1045,46 +1045,6 @@
         "category": "%kicadstudio.contributes.commands.93.category%"
       },
       {
-        "command": "kicadstudio.pcm.refresh",
-        "title": "%kicadstudio.contributes.commands.86.title%",
-        "category": "%kicadstudio.contributes.commands.86.category%"
-      },
-      {
-        "command": "kicadstudio.pcm.filter",
-        "title": "%kicadstudio.contributes.commands.87.title%",
-        "category": "%kicadstudio.contributes.commands.87.category%"
-      },
-      {
-        "command": "kicadstudio.pcm.install",
-        "title": "%kicadstudio.contributes.commands.88.title%",
-        "category": "%kicadstudio.contributes.commands.88.category%"
-      },
-      {
-        "command": "kicadstudio.pcm.update",
-        "title": "%kicadstudio.contributes.commands.89.title%",
-        "category": "%kicadstudio.contributes.commands.89.category%"
-      },
-      {
-        "command": "kicadstudio.pcm.updateAll",
-        "title": "%kicadstudio.contributes.commands.90.title%",
-        "category": "%kicadstudio.contributes.commands.90.category%"
-      },
-      {
-        "command": "kicadstudio.pcm.uninstall",
-        "title": "%kicadstudio.contributes.commands.91.title%",
-        "category": "%kicadstudio.contributes.commands.91.category%"
-      },
-      {
-        "command": "kicadstudio.sendFeedback",
-        "title": "%kicadstudio.contributes.commands.92.title%",
-        "category": "%kicadstudio.contributes.commands.92.category%"
-      },
-      {
-        "command": "kicadstudio.importAllegro",
-        "title": "%kicadstudio.contributes.commands.93.title%",
-        "category": "%kicadstudio.contributes.commands.93.category%"
-      },
-      {
         "command": "kicadstudio.boardReadyOps.check",
         "title": "%kicadstudio.contributes.commands.94.title%",
         "category": "%kicadstudio.contributes.commands.94.category%"
@@ -1909,6 +1869,28 @@
           "default": true,
           "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.mcp.pushContext.description%"
         },
+        "kicadstudio.mcp.contextBridge.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.mcp.contextBridge.enabled.description%"
+        },
+        "kicadstudio.mcp.contextBridge.includeSelectionText": {
+          "type": "boolean",
+          "default": false,
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.mcp.contextBridge.includeSelectionText.description%"
+        },
+        "kicadstudio.mcp.contextBridge.includeFileContents": {
+          "type": "boolean",
+          "default": false,
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.mcp.contextBridge.includeFileContents.description%"
+        },
+        "kicadstudio.mcp.contextBridge.maxBytes": {
+          "type": "number",
+          "default": 65536,
+          "minimum": 1024,
+          "maximum": 524288,
+          "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.mcp.contextBridge.maxBytes.description%"
+        },
         "kicadstudio.mcp.profile": {
           "type": "string",
           "default": "full",
@@ -2418,6 +2400,51 @@
             "variant"
           ]
         }
+      },
+      {
+        "name": "kicadstudio_exportBoard",
+        "tags": [
+          "kicad",
+          "export",
+          "3d"
+        ],
+        "toolReferenceName": "exportBoard",
+        "displayName": "%kicadstudio.contributes.languageModelTools.10.displayName%",
+        "userDescription": "%kicadstudio.contributes.languageModelTools.10.userDescription%",
+        "modelDescription": "%kicadstudio.contributes.languageModelTools.10.modelDescription%",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(package)",
+        "when": "kicadstudio.hasProject",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "description": "%kicadstudio.contributes.languageModelTools.10.inputSchema.properties.format.description%",
+              "enum": [
+                "step",
+                "stepz",
+                "stl",
+                "xao",
+                "u3d",
+                "vrml",
+                "ps",
+                "stats"
+              ]
+            },
+            "boardPath": {
+              "type": "string",
+              "description": "%kicadstudio.contributes.languageModelTools.10.inputSchema.properties.boardPath.description%"
+            },
+            "variant": {
+              "type": "string",
+              "description": "%kicadstudio.contributes.languageModelTools.10.inputSchema.properties.variant.description%"
+            }
+          },
+          "required": [
+            "format"
+          ]
+        }
       }
     ],
     "languageModelChatProviders": [
@@ -2467,6 +2494,7 @@
     "package:ls": "vsce ls --tree --no-dependencies",
     "package:validate": "node scripts/validate-package.js && node scripts/validate-vsix-metadata.js && node --test scripts/validate-package.test.mjs scripts/validate-vsix-metadata.test.mjs",
     "release:assets": "node scripts/create-release-assets.js",
+    "check:manifest": "node scripts/check-package-contributions.mjs",
     "docs:check": "node scripts/validate-docs.js",
     "workflows:lint": "node scripts/lint-workflows.js",
     "publish": "node scripts/refuse-direct-publish.mjs",
