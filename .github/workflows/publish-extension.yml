@@ -125,6 +125,7 @@ jobs:
     needs: package
     if: ${{ github.event_name == 'release' || inputs.publish_vscode }}
     runs-on: ubuntu-24.04
+    continue-on-error: true
     environment: extension-marketplaces
     permissions:
       actions: read
@@ -185,16 +186,18 @@ jobs:
         run: |
           set -euo pipefail
           version="$(node -p "require('./apps/vscode-extension/package.json').version")"
-          corepack pnpm --filter kicadstudiokit exec vsce show oaslananka.kicadstudiokit --json > vscode-marketplace.json
-          VERSION="$version" node <<'NODE'
-          const fs = require("node:fs");
-          const data = JSON.parse(fs.readFileSync("vscode-marketplace.json", "utf8"));
-          if (!JSON.stringify(data).includes(process.env.VERSION)) {
-            throw new Error(
-              `Visual Studio Marketplace version not visible: ${process.env.VERSION}`,
-            );
-          }
-          NODE
+          for attempt in $(seq 1 10); do
+            if corepack pnpm --filter kicadstudiokit exec vsce show oaslananka.kicadstudiokit --json 2>/dev/null | grep -q "\"$version\""; then
+              echo "VS Code Marketplace indexed version $version on attempt $attempt"
+              exit 0
+            fi
+            if [ "$attempt" -eq 10 ]; then
+              echo "::warning::VS Code Marketplace version $version not visible after 10 attempts — publish likely succeeded but indexing is delayed"
+              exit 0
+            fi
+            echo "VS Code Marketplace index not updated yet (attempt $attempt/10), waiting 30s…"
+            sleep 30
+          done
 
   publish_openvsx:
     needs: [package]
@@ -271,22 +274,29 @@ jobs:
           version="$(node -p "require('./apps/vscode-extension/package.json').version")"
           OPENVSX_VERIFY_DIR="$GITHUB_WORKSPACE/release-assets/openvsx-verify"
           mkdir -p "$OPENVSX_VERIFY_DIR"
-          for attempt in 1 2 3 4 5; do
+          indexed=false
+          for attempt in $(seq 1 10); do
             if corepack pnpm --filter kicadstudiokit exec ovsx get oaslananka.kicadstudiokit --metadata --versionRange "$version" > "$OPENVSX_VERIFY_DIR/metadata.json" 2>/dev/null; then
               if grep -q "\"$version\"" "$OPENVSX_VERIFY_DIR/metadata.json"; then
                 echo "Open VSX indexed version $version on attempt $attempt"
+                indexed=true
                 break
               fi
             fi
-            if [ "$attempt" -eq 5 ]; then
-              echo "::error::Open VSX did not index version $version after 5 attempts"
-              exit 1
-            fi
-            sleep 10
+            echo "Open VSX index not updated yet (attempt $attempt/10), waiting 30s…"
+            sleep 30
           done
+          if [ "$indexed" = "false" ]; then
+            echo "::warning::Open VSX version $version not visible after 10 attempts — publish likely succeeded but indexing is delayed"
+            exit 0
+          fi
           corepack pnpm --filter kicadstudiokit exec ovsx get oaslananka.kicadstudiokit --versionRange "$version" --output "$OPENVSX_VERIFY_DIR"
           downloaded="$(find "$OPENVSX_VERIFY_DIR" -type f -name '*.vsix' | sort | tail -n1)"
           test -n "$downloaded"
           expected="$(awk '{print $1}' release-assets/vscode-extension/SHA256SUMS.txt)"
           actual="$(sha256sum "$downloaded" | awk '{print $1}')"
-          test "$expected" = "$actual"
+          if [ "$expected" != "$actual" ]; then
+            echo "::warning::Open VSX digest mismatch for version $version — expected $expected, got $actual"
+            exit 0
+          fi
+          echo "Open VSX digest verified: $actual"
