@@ -19,6 +19,7 @@ import * as childProcess from 'node:child_process';
 import * as vscode from 'vscode';
 import { __setConfiguration } from './vscodeMock';
 import {
+  deriveCommandVersionStatus,
   getCliCandidates,
   KiCadCliDetector
 } from '../../src/cli/kicadCliDetector';
@@ -300,7 +301,10 @@ describe('KiCadCliDetector', () => {
       .mockImplementation(async (command: string) => command !== 'odb');
     detector.commandHelpIncludes = jest.fn().mockResolvedValue(true);
 
-    await expect(detector.getCapabilitySnapshot()).resolves.toEqual(
+    const snapshot = await detector.getCapabilitySnapshot();
+
+    // Existing command booleans
+    expect(snapshot).toEqual(
       expect.objectContaining({
         drc: true,
         erc: true,
@@ -311,7 +315,25 @@ describe('KiCadCliDetector', () => {
         allegroImport: true
       })
     );
+    // New command booleans
+    expect(snapshot).toHaveProperty('stpz', true);
+    expect(snapshot).toHaveProperty('glb', true);
+    expect(snapshot).toHaveProperty('dxf', true);
+    expect(snapshot).toHaveProperty('ipc2581', true);
+    expect(snapshot).toHaveProperty('fpSvg', true);
+    expect(snapshot).toHaveProperty('pcbImport', true);
     expect(detector.hasCapability).toHaveBeenCalledWith('jobset');
+
+    // Per-command metadata enrichment
+    expect(snapshot.commandMinVersion).toBeDefined();
+    expect(snapshot.commandMinVersion?.drc).toBe(8);
+    expect(snapshot.commandMinVersion?.pdf3d).toBe(10);
+    expect(snapshot.commandMinVersion?.stpz).toBe(9);
+    expect(snapshot.commandVersionStatus).toBeDefined();
+    expect(snapshot.commandVersionStatus?.drc).toBe('primary');
+    expect(snapshot.commandVersionStatus?.stpz).toBe('primary');
+    expect(snapshot.commandVersionStatus?.pdf3d).toBe('primary');
+
     expect(detector.commandHelpIncludes).toHaveBeenCalledWith(
       ['sch', 'export', 'pdf'],
       /--variant\b/
@@ -320,6 +342,27 @@ describe('KiCadCliDetector', () => {
       ['pcb', 'import'],
       /\ballegro\b/i
     );
+  });
+
+  it('deriveCommandVersionStatus returns correct status strings', () => {
+    // detected major 10 (primary line)
+    expect(deriveCommandVersionStatus(10, 8)).toBe('primary');
+    expect(deriveCommandVersionStatus(10, 9)).toBe('primary');
+    expect(deriveCommandVersionStatus(10, 10)).toBe('primary');
+    // detected major >= 11 (preview)
+    expect(deriveCommandVersionStatus(11, 8)).toBe('preview');
+    expect(deriveCommandVersionStatus(12, 9)).toBe('preview');
+    // detected major < command minimum -> unsupported
+    expect(deriveCommandVersionStatus(8, 10)).toBe('unsupported');
+    expect(deriveCommandVersionStatus(9, 10)).toBe('unsupported');
+    // detected major 8 or 9 but >= min -> deprecated
+    expect(deriveCommandVersionStatus(8, 8)).toBe('deprecated');
+    expect(deriveCommandVersionStatus(9, 8)).toBe('deprecated');
+    expect(deriveCommandVersionStatus(9, 9)).toBe('deprecated');
+    // detected < minimum -> unsupported
+    expect(deriveCommandVersionStatus(7, 8)).toBe('unsupported');
+    // below KiCad 8 baseline -> unknown
+    expect(deriveCommandVersionStatus(7, 7)).toBe('unknown');
   });
 
   it('handles empty candidates, missing files, and failed PATH lookups', async () => {

@@ -38,6 +38,10 @@ Release Please derives product changelogs from Conventional Commits, so pull req
 - `kicad-studio` for `apps/vscode-extension`.
 - `kicad-mcp-pro` for `oaslananka/kicad-mcp` (source in separate repository).
 - `repo` for repository governance, documentation, workflow, and shared release policy changes.
+- `docs` for documentation-only changes (changelogs, README, architecture docs, spec documents).
+- `superpowers` for cross-cutting capability or spec-design documentation.
+- `.gitignore` for `.gitignore` file changes (single-file repo governance).
+- `deps` for dependency and tooling updates.
 - `deps` for dependency-only updates.
 
 Release Please generated PRs retain their upstream `chore(main): release ...` title format and are exempt from the human PR title scope gate.

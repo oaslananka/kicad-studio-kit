@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { registerExportCommands } from './exportCommands';
+import { registerExportPickerCommands } from './exportPickerCommands';
 import { registerCheckCommands } from './checkCommands';
 import { registerAiCommands } from './aiCommands';
 import { registerMcpCommands } from './mcpCommands';
@@ -27,6 +28,7 @@ export function registerAllCommands(
 ): void {
   extensionContext.subscriptions.push(
     ...registerExportCommands(services),
+    ...registerExportPickerCommands(services),
     ...registerCheckCommands(services),
     ...registerAiCommands(extensionContext, services),
     ...registerMcpCommands(extensionContext, services),

@@ -110,6 +110,12 @@ let extensionLogger: Logger | undefined;
 let extensionMcpClient: McpClient | undefined;
 const S_EXPRESSION_LANGUAGE_IDS = new Set<string>(KICAD_S_EXPRESSION_LANGUAGES);
 
+// Debounced project re-scan — coalesces rapid file-system events into a single
+// refresh so that externally-created or deleted .kicad_pro files are picked up
+// without overwhelming the extension host.
+let refreshProjectsTimer: NodeJS.Timeout | undefined;
+const REFRESH_PROJECTS_DEBOUNCE_MS = 500;
+
 export async function activate(
   context: vscode.ExtensionContext
 ): Promise<void> {
@@ -436,6 +442,23 @@ export async function activate(
       const nextTheme = isDark ? 'dark' : 'light';
       schematicEditorProvider.setTheme(nextTheme);
       pcbEditorProvider.setTheme(nextTheme);
+    })
+  );
+
+  // Watch for externally-created/deleted .kicad_pro files so that the project
+  // tree, status bar, and context keys stay current without requiring a tab
+  // switch or editor focus change.
+  const projectFileWatcher =
+    vscode.workspace.createFileSystemWatcher('**/*.kicad_pro');
+  context.subscriptions.push(
+    projectFileWatcher,
+    projectFileWatcher.onDidCreate(refreshProjectsScheduled),
+    projectFileWatcher.onDidDelete(refreshProjectsScheduled),
+    new vscode.Disposable(() => {
+      if (refreshProjectsTimer) {
+        clearTimeout(refreshProjectsTimer);
+        refreshProjectsTimer = undefined;
+      }
     })
   );
 
@@ -824,6 +847,18 @@ export async function activate(
     ) {
       await maybeOfferMcpBootstrap(state.install);
     }
+  }
+
+  function refreshProjectsScheduled(): void {
+    if (refreshProjectsTimer) {
+      clearTimeout(refreshProjectsTimer);
+    }
+    refreshProjectsTimer = setTimeout(() => {
+      refreshProjectsTimer = undefined;
+      void refreshContexts();
+      treeProvider.refresh();
+      variantProvider.refresh();
+    }, REFRESH_PROJECTS_DEBOUNCE_MS);
   }
 
   async function setRestrictedMcpContexts(): Promise<void> {

@@ -11,7 +11,7 @@ const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
-const ALLOWED_SCOPES = ["kicad-studio", "kicad-mcp-pro", "repo", "deps"];
+const ALLOWED_SCOPES = ["kicad-studio", "kicad-mcp-pro", "repo", "deps", "docs", "superpowers", ".gitignore"];
 const PRODUCTS = {
   "kicad-studio": ["apps/vscode-extension"],
 };

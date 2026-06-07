@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import { COMMANDS, SETTINGS } from '../constants';
 import type { DetectedKiCadCli, DiagnosticSummary } from '../types';
 import type { KiCadCliCapabilitySnapshot } from '../cli/kicadCliDetector';
@@ -19,8 +20,6 @@ export interface StatusMenuItem {
   args?: unknown[];
   kind?: number;
 }
-
-const QUICK_PICK_SEPARATOR = -1;
 
 export function buildStatusMenuItems(options: {
   trusted: boolean;
@@ -143,7 +142,7 @@ function featureIcon(state: 'available' | 'unsupported' | 'unknown'): string {
 }
 
 function separator(label: string): StatusMenuItem {
-  return { label, kind: QUICK_PICK_SEPARATOR };
+  return { label, kind: vscode.QuickPickItemKind.Separator };
 }
 
 function diagnosticScope(

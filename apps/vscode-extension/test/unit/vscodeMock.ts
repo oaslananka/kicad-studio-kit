@@ -231,6 +231,10 @@ export const l10n = {
   )
 };
 
+export const QuickPickItemKind = {
+  Separator: -1
+};
+
 export const ProgressLocation = {
   Notification: 1
 };

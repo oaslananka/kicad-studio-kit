@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import * as path from 'node:path';
 import type { StudioContext } from '../types';
 import type { ContextMcpAdapter } from './mcpToolAdapter';
 
@@ -11,6 +12,60 @@ const PUSH_DELAYS: Record<ContextPushReason, number> = {
   cursor: 1000,
   default: 500
 };
+
+/** Glob patterns whose matching file- and directory-path fields are redacted. */
+const PRIVACY_SENSITIVE_FILE_PATTERNS: Readonly<RegExp[]> = [
+  /[\\/]\.env(?:\.[a-z0-9]+)?$/i,
+  /[\\/][^\\/]*\.pem$/i,
+  /[\\/][^\\/]*\.key$/i,
+  /[\\/]\.ssh[\\/]/i,
+  /[\\/]id_rsa/i,
+  /[\\/]credentials/i,
+  /[\\/]secrets\b/i,
+  /[\\/]\.aws[\\/]/i,
+  /[\\/]\.gcloud[\\/]/i
+];
+
+const REDACTED_PATH_MARKER = '<redacted>';
+
+/**
+ * Replace the segment of `filePath` that falls under one of the
+ * {@link PRIVACY_SENSITIVE_FILE_PATTERNS sensitive patterns} with a
+ * placeholder.  Returns the original string when no pattern matches.
+ */
+export function redactSensitivePath(filePath: string): string {
+  const normalised = filePath.replace(/\\/g, '/');
+  for (const pattern of PRIVACY_SENSITIVE_FILE_PATTERNS) {
+    if (pattern.test(normalised)) {
+      const dir = path.dirname(filePath);
+      const base = path.basename(filePath);
+      return path.join(dir, REDACTED_PATH_MARKER, base);
+    }
+  }
+  return filePath;
+}
+
+/**
+ * Recursively walk an object tree and redact every string value that
+ * looks like a sensitive file path.  Produces a shallow clone so the
+ * original context is not mutated.
+ */
+export function redactSensitiveFields<T>(obj: T): T {
+  if (typeof obj === 'string') {
+    return redactSensitivePath(obj) as unknown as T;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((item) => redactSensitiveFields(item)) as unknown as T;
+  }
+  if (obj && typeof obj === 'object') {
+    const copy: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      copy[key] = redactSensitiveFields(value);
+    }
+    return copy as unknown as T;
+  }
+  return obj;
+}
 
 export class ContextBridge {
   private lastContextHash: string | undefined;
@@ -42,7 +97,7 @@ export class ContextBridge {
     }
 
     this.pendingContext = {
-      context: cloneContext(context),
+      context: redactSensitiveFields(cloneContext(context)),
       hash
     };
     if (this.flushTimer) {

@@ -25,16 +25,35 @@ interface MessageFactory {
   User?(content: string): unknown;
 }
 
+/** Minimum VS Code engine version required for the Language Model API. */
+const LM_API_MIN_VSCODE_MAJOR = 1;
+const LM_API_MIN_VSCODE_MINOR = 100;
+
+function meetsMinVscodeVersion(): boolean {
+  const version = vscode.version;
+  if (!version) {
+    return false;
+  }
+  const parts = version.split('.').map(Number);
+  const major = parts[0] ?? 0;
+  const minor = parts[1] ?? 0;
+  if (major > LM_API_MIN_VSCODE_MAJOR) {
+    return true;
+  }
+  return major >= LM_API_MIN_VSCODE_MAJOR && minor >= LM_API_MIN_VSCODE_MINOR;
+}
+
 abstract class BaseLanguageModelProvider implements AIProvider {
   abstract readonly name: string;
   protected abstract readonly selectors: Array<Record<string, string>>;
   readonly capabilities = {
     requiresApiKey: false,
-    supportsStreaming: true
+    supportsStreaming: true,
+    languageModelApiVersion: `${LM_API_MIN_VSCODE_MAJOR}.${LM_API_MIN_VSCODE_MINOR}+`
   };
 
   isConfigured(): boolean {
-    return Boolean(this.getLmApi());
+    return Boolean(this.getLmApi()) && meetsMinVscodeVersion();
   }
 
   async analyze(
