@@ -82,10 +82,6 @@ and best-effort KiCad CLI support for root checks and MCP tests.
 
 - [Examples overview](examples/README.md)
 - [LED Basic KiCad example](examples/led-basic/README.md)
-- [USB-C Power Intake example](examples/usb-c-power/README.md)
-- [Buck Converter Review example](examples/buck-converter/README.md)
-- [Differential Pair Review example](examples/differential-pair-demo/README.md)
-- [Manufacturing Release example](examples/manufacturing-release-demo/README.md)
 - [MCP Workflow Demo](examples/mcp-demo/README.md)
 
 ## Publishing

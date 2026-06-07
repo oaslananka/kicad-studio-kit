@@ -18,10 +18,6 @@ const manifestPath = join(examplesRoot, "manifest.json");
 
 const requiredExampleIds = [
   "led-basic",
-  "usb-c-power",
-  "buck-converter",
-  "differential-pair-demo",
-  "manufacturing-release-demo",
   "mcp-demo",
 ];
 
@@ -29,7 +25,6 @@ const requiredWorkflowPhrases = [
   "Basic schematic and PCB viewer",
   "DRC and ERC workflow",
   "BOM and netlist workflow",
-  "Manufacturing export workflow",
   "MCP connected workflow",
   "MCP degraded workflow",
 ];

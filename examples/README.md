@@ -8,14 +8,10 @@ the fixture corpus.
 
 ## Project Examples
 
-| Example                                                            | Primary workflow focus                                 |
-| ------------------------------------------------------------------ | ------------------------------------------------------ |
-| [led-basic](led-basic/README.md)                                   | Basic schematic/PCB viewing, ERC/DRC, BOM, and netlist |
-| [usb-c-power](usb-c-power/README.md)                               | Power-intake review and degraded MCP handling          |
-| [buck-converter](buck-converter/README.md)                         | Power-stage review, BOM, netlist, ERC, and DRC         |
-| [differential-pair-demo](differential-pair-demo/README.md)         | High-speed review flow and connected MCP inspection    |
-| [manufacturing-release-demo](manufacturing-release-demo/README.md) | Manufacturing export release smoke workflow            |
-| [mcp-demo](mcp-demo/README.md)                                     | Connected and degraded MCP client workflows            |
+| Example                                | Primary workflow focus                                 |
+| -------------------------------------- | ------------------------------------------------------ |
+| [led-basic](led-basic/README.md)       | Basic schematic/PCB viewing, ERC/DRC, BOM, and netlist |
+| [mcp-demo](mcp-demo/README.md)         | Connected and degraded MCP client workflows            |
 
 ## Runtime Example
 
