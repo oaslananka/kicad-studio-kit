@@ -156,7 +156,7 @@ export function validateDevcontainerRepository(repoRoot = DEFAULT_REPO_ROOT) {
   requireExecutable(errors, repoRoot, ".devcontainer/postCreateCommand.sh");
 
   for (const phrase of [
-    "FROM mcr.microsoft.com/devcontainers/python:3.13-bookworm",
+    "FROM mcr.microsoft.com/devcontainers/python:3.13-bookworm@sha256:",
     "ARG ACTIONLINT_VERSION=1.7.12",
     "ARG UV_VERSION=0.11.16",
     "shellcheck",

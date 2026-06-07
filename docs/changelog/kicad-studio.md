@@ -12,6 +12,18 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.6.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.5.0...vscode-extension-v1.6.0) (2026-06-07)
+
+
+### Features
+
+* **kicad-studio:** complete prompt spec - Phase A-E, screenshots, manifest, CI gates, security hardening ([a43e305](https://github.com/oaslananka/kicad-studio-kit/commit/a43e30505ca8151c312cf4047396a0d1e796fe93))
+
+
+### Bug Fixes
+
+* **kicad-studio:** address 6 Gemini code review issues ([aed0572](https://github.com/oaslananka/kicad-studio-kit/commit/aed0572453c3cdcb9223742ebbb97cd8df6b6d47))
+
 ## [1.5.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.4.1...vscode-extension-v1.5.0) (2026-06-06)
 
 ### Features
