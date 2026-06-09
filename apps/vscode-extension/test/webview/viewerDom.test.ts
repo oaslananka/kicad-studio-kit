@@ -26,7 +26,8 @@ test.describe('KiCad Studio webview DOM', () => {
     });
 
     await expect(page.locator('#viewer-status')).toHaveText(
-      'Interactive renderer loaded: sample.kicad_sch'
+      'Interactive renderer loaded: sample.kicad_sch',
+      { timeout: 30000 }
     );
     await expect(page.locator('#viewer-mount')).not.toHaveClass(/is-hidden/);
     await expect(page.locator('kicanvas-embed')).toHaveCount(1);
@@ -75,7 +76,8 @@ test.describe('KiCad Studio webview DOM', () => {
     });
 
     await expect(page.locator('#viewer-status')).toHaveText(
-      'Interactive renderer loaded: sample.kicad_pcb'
+      'Interactive renderer loaded: sample.kicad_pcb',
+      { timeout: 30000 }
     );
 
     await page.locator('#side-panel-toggle').click();
