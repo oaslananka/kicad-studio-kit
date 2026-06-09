@@ -10,6 +10,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.6.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.6.1...vscode-extension-v1.6.2) (2026-06-09)
+
+
+### Bug Fixes
+
+* **kicad-studio:** declare mcpConfigurationProvider in enabledApiProposals ([#333](https://github.com/oaslananka/kicad-studio-kit/issues/333)) ([4f1018e](https://github.com/oaslananka/kicad-studio-kit/commit/4f1018ed3ac7592a0cc334b814c88b22ced42a1b))
+
 ## [1.6.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.6.0...vscode-extension-v1.6.1) (2026-06-07)
 
 
