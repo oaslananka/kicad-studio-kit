@@ -8,6 +8,9 @@
     "vscode": "^1.100.0",
     "node": "24.x"
   },
+  "enabledApiProposals": [
+    "mcpConfigurationProvider"
+  ],
   "packageManager": "pnpm@11.5.0",
   "devEngines": {
     "runtime": {
