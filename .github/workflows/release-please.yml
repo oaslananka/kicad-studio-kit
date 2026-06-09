@@ -20,6 +20,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      actions: write
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7
         id: release
@@ -51,3 +52,16 @@ jobs:
           git add -A
           git diff --cached --quiet || git commit -m "docs(repo): regenerate changelog and versions after release"
           git push
+
+      # Trigger extension publish to marketplaces after release
+      - if: ${{ steps.release.outputs.release_created }}
+        name: Publish extension to marketplaces
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ steps.release.outputs.tag_name }}"
+          echo "Triggering publish-extension workflow for tag ${tag}…"
+          gh workflow run publish-extension.yml \
+            --ref "${tag}" \
+            -f release_tag="${tag}"

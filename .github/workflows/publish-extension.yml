@@ -5,6 +5,12 @@ on:
     types: [published]
   workflow_dispatch:
     inputs:
+      release_tag:
+        description: >-
+          Git tag for the release to publish. When set, the workflow checks out
+          and publishes assets from that tag. Overrides the default ref.
+        type: string
+        required: false
       publish_vscode:
         description: Publish to Visual Studio Marketplace.
         type: boolean
@@ -52,12 +58,13 @@ jobs:
         shell: bash
         env:
           WORKFLOW_DISPATCH_PRERELEASE: ${{ inputs.publish_prerelease || false }}
+          WORKFLOW_DISPATCH_TAG: ${{ inputs.release_tag || '' }}
           RELEASE_IS_PRERELEASE: ${{ github.event.release.prerelease }}
           RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
 
-          release_tag="${RELEASE_TAG_NAME:-${GITHUB_REF_NAME:-}}"
+          release_tag="${WORKFLOW_DISPATCH_TAG:-${RELEASE_TAG_NAME:-${GITHUB_REF_NAME:-}}}"
           is_prerelease="false"
           if [[ "${RELEASE_IS_PRERELEASE:-false}" == "true" || "${WORKFLOW_DISPATCH_PRERELEASE:-false}" == "true" || "$release_tag" == *"-beta."* ]]; then
             is_prerelease="true"
