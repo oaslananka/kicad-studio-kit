@@ -500,7 +500,14 @@ function gitCommitExists(repoRoot, sha) {
 }
 
 function listLocalBranchCommits(repoRoot) {
-  const mergeBase = git(repoRoot, ["merge-base", "HEAD", "origin/main"]);
+  const mergeBase = git(
+    repoRoot,
+    ["merge-base", "HEAD", "origin/main"],
+    { allowFailure: true },
+  );
+  if (!mergeBase) {
+    return [];
+  }
   return listCommits(repoRoot, `${mergeBase.trim()}..HEAD`);
 }
 

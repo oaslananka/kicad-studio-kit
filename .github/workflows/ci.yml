@@ -280,3 +280,43 @@ jobs:
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm run check:forbidden-refs
+
+  required:
+    if: ${{ !cancelled() }}
+    needs:
+      - ci-lanes
+      - metadata
+      - forbidden-refs
+      - shared-packages
+      - vscode-extension
+      - performance-budgets
+      - real-pair-compatibility
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Job result summary
+        shell: bash
+        run: |
+          echo "| Job | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| ci-lanes | ${{ needs.ci-lanes.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| metadata | ${{ needs.metadata.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| forbidden-refs | ${{ needs.forbidden-refs.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| shared-packages | ${{ needs.shared-packages.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| vscode-extension | ${{ needs.vscode-extension.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| performance-budgets | ${{ needs.performance-budgets.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| real-pair-compatibility | ${{ needs.real-pair-compatibility.result }} |" >> $GITHUB_STEP_SUMMARY
+      - name: Fail on critical job failure
+        if: >
+          ${{
+               needs.ci-lanes.result == 'failure'
+            || needs.metadata.result == 'failure'
+            || needs.forbidden-refs.result == 'failure'
+            || needs.shared-packages.result == 'failure'
+            || needs.vscode-extension.result == 'failure'
+            || needs.performance-budgets.result == 'failure'
+            || needs.real-pair-compatibility.result == 'failure'
+          }}
+        shell: bash
+        run: |
+          echo "::error::One or more required CI jobs failed"
+          exit 1
