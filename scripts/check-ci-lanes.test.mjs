@@ -7,7 +7,7 @@ import {
   outputsForReport,
 } from "./check-ci-lanes.mjs";
 
-test("extension-only changes run extension and performance lanes, not MCP packaging", () => {
+test("extension-only changes run extension and performance lanes, not integration contracts", () => {
   const report = classifyChangedFiles([
     "apps/vscode-extension/src/extension.ts",
   ]);
@@ -15,9 +15,7 @@ test("extension-only changes run extension and performance lanes, not MCP packag
   assert.equal(report.lanes.metadata, true);
   assert.equal(report.lanes.vscodeExtension, true);
   assert.equal(report.lanes.performanceBudgets, true);
-  assert.equal(report.lanes.mcpServer, false);
   assert.equal(report.lanes.integrationContracts, false);
-  assert.equal(report.lanes.crossRepoCompatibility, false);
 });
 
 test("extension MCP adapter changes run integration compatibility", () => {
@@ -30,11 +28,10 @@ test("extension MCP adapter changes run integration compatibility", () => {
   assert.equal(report.lanes.realPairCompatibility, true);
 });
 
-test("kicad-mcp-pro changes run MCP, performance, and integration lanes", () => {
+test("external tool paths that no longer live in this repo do not trigger CI lanes", () => {
   const report = classifyChangedFiles(["apps/kicad-mcp-pro/src/server.ts"]);
 
-  assert.equal(report.lanes.mcpServer, true);
-  assert.equal(report.lanes.performanceBudgets, true);
+  assert.equal(report.lanes.performanceBudgets, false);
   assert.equal(report.lanes.vscodeExtension, false);
   assert.equal(report.lanes.integrationContracts, false);
   assert.equal(report.lanes.realPairCompatibility, false);
@@ -45,10 +42,8 @@ test("external consumer paths that don't exist locally no longer trigger CI lane
 
   assert.equal(report.lanes.sharedPackages, false);
   assert.equal(report.lanes.vscodeExtension, false);
-  assert.equal(report.lanes.mcpServer, false);
   assert.equal(report.lanes.integrationContracts, false);
   assert.equal(report.lanes.realPairCompatibility, false);
-  assert.equal(report.lanes.crossRepoCompatibility, false);
 });
 
 test("test harness changes run shared and cross-product compatibility gates", () => {
@@ -56,7 +51,6 @@ test("test harness changes run shared and cross-product compatibility gates", ()
 
   assert.equal(report.lanes.sharedPackages, true);
   assert.equal(report.lanes.vscodeExtension, true);
-  assert.equal(report.lanes.mcpServer, true);
   assert.equal(report.lanes.integrationContracts, true);
   assert.equal(report.lanes.realPairCompatibility, true);
   assert.equal(report.lanes.performanceBudgets, true);
@@ -86,7 +80,6 @@ test("docs-only changes keep product lanes skipped while metadata still runs", (
 
   assert.equal(report.lanes.metadata, true);
   assert.equal(report.lanes.vscodeExtension, false);
-  assert.equal(report.lanes.mcpServer, false);
   assert.equal(report.lanes.sharedPackages, false);
   assert.equal(report.lanes.integrationContracts, false);
 });
@@ -100,6 +93,13 @@ test("manual and scheduled contexts can force all lanes", () => {
   for (const value of Object.values(report.lanes)) {
     assert.equal(value, true);
   }
+  // Verify specific lanes that were kept
+  assert.equal(report.lanes.metadata, true);
+  assert.equal(report.lanes.vscodeExtension, true);
+  assert.equal(report.lanes.sharedPackages, true);
+  assert.equal(report.lanes.integrationContracts, true);
+  assert.equal(report.lanes.performanceBudgets, true);
+  assert.equal(report.lanes.realPairCompatibility, true);
 });
 
 test("markdown summary reports skipped lanes and reasons", () => {
@@ -108,5 +108,5 @@ test("markdown summary reports skipped lanes and reasons", () => {
 
   assert.match(summary, /CI Lane Selection/u);
   assert.match(summary, /VS Code extension \| skipped/u);
-  assert.match(summary, /No changed file matched this lane's trigger set/u);
+  assert.match(summary, /Metadata and policy \| run/u);
 });

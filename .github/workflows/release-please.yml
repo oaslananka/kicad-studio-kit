@@ -22,14 +22,32 @@ jobs:
       issues: write
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      # Regenerate changelog docs after a release PR is merged
+      - if: ${{ steps.release.outputs.release_created }}
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           fetch-depth: 0
           persist-credentials: true
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      - if: ${{ steps.release.outputs.release_created }}
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .node-version
           package-manager-cache: false
+      - if: ${{ steps.release.outputs.release_created }}
+        run: corepack enable
+      - if: ${{ steps.release.outputs.release_created }}
+        run: corepack pnpm install --frozen-lockfile
+      - if: ${{ steps.release.outputs.release_created }}
+        run: corepack pnpm run docs:generate
+      - if: ${{ steps.release.outputs.release_created }}
+        run: |
+          git config user.name "kicad-studio-bot"
+          git config user.email "kicad-studio-bot@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "docs(repo): regenerate changelog and versions after release"
+          git push

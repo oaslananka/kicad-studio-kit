@@ -20,11 +20,6 @@ const LANE_DEFINITIONS = [
     output: "vscode_extension",
   },
   {
-    key: "mcpServer",
-    label: "MCP server",
-    output: "mcp_server",
-  },
-  {
     key: "sharedPackages",
     label: "Shared packages",
     output: "shared_packages",
@@ -44,11 +39,6 @@ const LANE_DEFINITIONS = [
     label: "Real-pair compatibility",
     output: "real_pair_compatibility",
   },
-  {
-    key: "crossRepoCompatibility",
-    label: "Cross-repo compatibility canary",
-    output: "cross_repo_compatibility",
-  },
 ];
 
 const GLOBAL_ALL_FILES = new Set([
@@ -67,8 +57,8 @@ const RELEASE_AND_COMPATIBILITY_FILES = new Set([
   "release-please-config.json",
 ]);
 
-const EXTENSION_PREFIXES = ["apps/vscode-extension/", "apps/kicad-studio/"];
-const MCP_SERVER_PREFIXES = ["apps/kicad-mcp-pro/"];
+const EXTENSION_PREFIXES = ["apps/vscode-extension/"];
+const MCP_SERVER_PREFIXES = [];
 
 const SHARED_PREFIXES = ["packages/kicad-fixtures/", "packages/test-harness/"];
 const CI_POLICY_PREFIXES = ["scripts/", ".github/"];
@@ -90,7 +80,7 @@ const EXTENSION_INTEGRATION_PREFIXES = [
   "apps/vscode-extension/test/e2e/",
 ];
 
-const MCP_INTEGRATION_PREFIXES = [];
+// MCP integration contracts are now tracked in the kicad-mcp repository.
 
 function normalizeChangedFile(file) {
   return file.trim().replaceAll("\\", "/").replace(/^\.\//u, "");
@@ -115,12 +105,10 @@ function createInitialReasons() {
 function markAllProductLanes(reasons, reason) {
   for (const lane of [
     "vscodeExtension",
-    "mcpServer",
     "sharedPackages",
     "integrationContracts",
     "performanceBudgets",
     "realPairCompatibility",
-    "crossRepoCompatibility",
   ]) {
     addReason(reasons, lane, reason);
   }
@@ -162,11 +150,6 @@ function classifyChangedFiles(changedFiles, options = {}) {
     if (RELEASE_AND_COMPATIBILITY_FILES.has(file)) {
       addReason(
         reasons,
-        "mcpServer",
-        `${file} affects compatibility or release metadata.`,
-      );
-      addReason(
-        reasons,
         "sharedPackages",
         `${file} affects shared compatibility validation.`,
       );
@@ -179,11 +162,6 @@ function classifyChangedFiles(changedFiles, options = {}) {
         reasons,
         "realPairCompatibility",
         `${file} affects cross-product runtime compatibility.`,
-      );
-      addReason(
-        reasons,
-        "crossRepoCompatibility",
-        `${file} affects cross-product compatibility metadata.`,
       );
       continue;
     }
@@ -214,28 +192,6 @@ function classifyChangedFiles(changedFiles, options = {}) {
       continue;
     }
 
-    if (matchesPrefix(file, MCP_SERVER_PREFIXES)) {
-      addReason(reasons, "mcpServer", `${file} is owned by kicad-mcp-pro.`);
-      addReason(
-        reasons,
-        "performanceBudgets",
-        `${file} may affect MCP performance baselines.`,
-      );
-      if (matchesPrefix(file, MCP_INTEGRATION_PREFIXES)) {
-        addReason(
-          reasons,
-          "integrationContracts",
-          `${file} touches MCP protocol/runtime code.`,
-        );
-        addReason(
-          reasons,
-          "realPairCompatibility",
-          `${file} touches MCP protocol/runtime code.`,
-        );
-      }
-      continue;
-    }
-
     if (matchesPrefix(file, SHARED_PREFIXES)) {
       addReason(
         reasons,
@@ -246,11 +202,6 @@ function classifyChangedFiles(changedFiles, options = {}) {
         reasons,
         "vscodeExtension",
         `${file} must remain compatible with the extension.`,
-      );
-      addReason(
-        reasons,
-        "mcpServer",
-        `${file} must remain compatible with kicad-mcp-pro.`,
       );
       addReason(
         reasons,
@@ -283,16 +234,6 @@ function classifyChangedFiles(changedFiles, options = {}) {
         markAllProductLanes(
           reasons,
           `${file} is a workflow change and needs full CI validation.`,
-        );
-      }
-      if (
-        file === ".github/workflows/cross-repo-compatibility.yml" ||
-        file === "scripts/check-cross-repo-compatibility.mjs"
-      ) {
-        addReason(
-          reasons,
-          "crossRepoCompatibility",
-          `${file} is part of the cross-repo compatibility canary.`,
         );
       }
     }
