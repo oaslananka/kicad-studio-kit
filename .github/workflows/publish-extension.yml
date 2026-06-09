@@ -187,6 +187,11 @@ jobs:
             publish_args+=(--pre-release)
           fi
 
+          # --allow-all-proposed-apis: needed because enabledApiProposals
+          # includes mcpConfigurationProvider (proposed API).
+          # Remove once mcpConfigurationProvider graduates from proposed.
+          publish_args+=(--allow-all-proposed-apis)
+
           corepack pnpm --filter kicadstudiokit exec vsce "${publish_args[@]}"
       - name: Verify Visual Studio Marketplace publish status
         shell: bash
