@@ -38,4 +38,5 @@ task ci:act      # optional: run GitHub Actions in Docker locally
 - `task: command not found` → install Task: `brew install go-task` or download from https://taskfile.dev/installation/
 - `pnpm install --frozen-lockfile` rejects your runtime → switch to Node.js 24.x and pnpm 11.
 - pre-commit hook is too slow → run `pre-commit run --all-files` once to warm caches
-- `task ci` fails but CI passes (or vice versa) → likely Doppler secrets differ; run `task doppler:check`
+- `task ci` fails but CI passes (or vice versa) → compare local tool versions with
+  `.node-version`, `packageManager`, and the failing workflow log.

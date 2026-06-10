@@ -1,6 +1,4 @@
 .github/**
-.doppler/**
-doppler.yaml
 .husky/**
 .vscode/**
 .vscode-test/**
