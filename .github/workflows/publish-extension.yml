@@ -211,6 +211,21 @@ jobs:
             echo "VS Code Marketplace index not updated yet (attempt $attempt/10), waiting 30s…"
             sleep 30
           done
+      - name: Verify Visual Studio Marketplace published content
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./apps/vscode-extension/package.json').version")"
+          VSIX_DIR="$GITHUB_WORKSPACE/release-assets/vscode-extension"
+          VSIX_PATH="$(find "$VSIX_DIR" -type f -name '*.vsix' | sort | tail -n1)"
+          MARKETPLACE_VERIFY_DIR="$GITHUB_WORKSPACE/release-assets/marketplace-verify"
+          MARKETPLACE_VSIX="$MARKETPLACE_VERIFY_DIR/oaslananka.kicadstudiokit-$version.vsix"
+          mkdir -p "$MARKETPLACE_VERIFY_DIR"
+          curl --fail --location --retry 3 \
+            --output "$MARKETPLACE_VSIX" \
+            "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/oaslananka/vsextensions/kicadstudiokit/$version/vspackage"
+          corepack pnpm --filter kicadstudiokit exec node scripts/validate-vsix-metadata.js \
+            --compare-content "$VSIX_PATH" "$MARKETPLACE_VSIX"
 
   publish_openvsx:
     needs: [package, publish_vscode]
@@ -281,7 +296,7 @@ jobs:
           fi
 
           corepack pnpm --filter kicadstudiokit exec ovsx "${publish_args[@]}"
-      - name: Verify Open VSX published digest
+      - name: Verify Open VSX published content
         shell: bash
         run: |
           set -euo pipefail
@@ -307,10 +322,7 @@ jobs:
           corepack pnpm --filter kicadstudiokit exec ovsx get oaslananka.kicadstudiokit --versionRange "$version" --output "$OPENVSX_VERIFY_DIR"
           downloaded="$(find "$OPENVSX_VERIFY_DIR" -type f -name '*.vsix' | sort | tail -n1)"
           test -n "$downloaded"
-          expected="$(awk '{print $1}' release-assets/vscode-extension/SHA256SUMS.txt)"
-          actual="$(sha256sum "$downloaded" | awk '{print $1}')"
-          if [ "$expected" != "$actual" ]; then
-            echo "::error::Open VSX digest mismatch for version $version — expected $expected, got $actual"
-            exit 1
-          fi
-          echo "Open VSX digest verified: $actual"
+          VSIX_DIR="$GITHUB_WORKSPACE/release-assets/vscode-extension"
+          VSIX_PATH="$(find "$VSIX_DIR" -type f -name '*.vsix' | sort | tail -n1)"
+          corepack pnpm --filter kicadstudiokit exec node scripts/validate-vsix-metadata.js \
+            --compare-content "$VSIX_PATH" "$downloaded"

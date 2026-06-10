@@ -95,6 +95,29 @@ function checkWorkflowEvidence(failures) {
   );
   expectIncludes(
     extension,
+    'MARKETPLACE_VERIFY_DIR="$GITHUB_WORKSPACE/release-assets/marketplace-verify"',
+    "extension workflow",
+    failures,
+  );
+  expectIncludes(
+    extension,
+    '--compare-content "$VSIX_PATH" "$MARKETPLACE_VSIX"',
+    "extension workflow",
+    failures,
+  );
+  expectIncludes(
+    extension,
+    '--compare-content "$VSIX_PATH" "$downloaded"',
+    "extension workflow",
+    failures,
+  );
+  expect(
+    !extension.includes('sha256sum "$downloaded"'),
+    "registry verification must compare VSIX payload content instead of mutable ZIP container digests",
+    failures,
+  );
+  expectIncludes(
+    extension,
     "vsce show oaslananka.kicadstudiokit --json",
     "extension workflow",
     failures,

@@ -76,7 +76,8 @@ function isOfficialVscodeHostHit(line) {
     hosts.every(
       (host) =>
         host === "update.code.visualstudio.com" ||
-        host === "code.visualstudio.com",
+        host === "code.visualstudio.com" ||
+        host === "marketplace.visualstudio.com",
     )
   );
 }
