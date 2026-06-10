@@ -18,6 +18,18 @@ published.
 
 - Normalized the root and product changelog sources to Keep a Changelog 1.1.0
   structure so release evidence and generated docs can be audited consistently.
+- Replaced the legacy external secret-manager setup with repository-scoped
+  GitHub Actions secrets and local environment documentation.
+
+### Added
+
+- Added a root Taskfile and secrets-free `.env.example` for consistent local
+  validation.
+
+### Fixed
+
+- Updated the documented extension version and completed the README install,
+  usage, contributing, and license sections.
 
 ## [1.0.0] - 2026-05-20
 

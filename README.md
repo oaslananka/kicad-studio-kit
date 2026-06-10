@@ -19,7 +19,7 @@ Searchable documentation: https://oaslananka.github.io/kicad-studio-kit/
 
 This repository's local release surface is:
 
-- VS Code extension: `oaslananka.kicadstudiokit` (`1.5.0`)
+- VS Code extension: `oaslananka.kicadstudiokit` (`1.6.2`)
 
 The Python package `kicad-mcp-pro`, container image, and MCP Registry listing
 are released from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
@@ -64,6 +64,24 @@ the checked-in [devcontainer configuration](docs/devcontainer.md). The container
 sets up Node, pnpm, Python, uv, Playwright, shellcheck, actionlint, GitHub CLI,
 and best-effort KiCad CLI support for root checks and MCP tests.
 
+## Install
+
+Install the extension from the Visual Studio Marketplace or Open VSX, or build
+it locally:
+
+```powershell
+corepack enable
+corepack pnpm install --frozen-lockfile
+corepack pnpm run package:kicad-studio
+```
+
+## Usage
+
+Open a workspace containing a KiCad project and use the KiCad Studio activity
+bar views and commands. See [docs/getting-started.md](docs/getting-started.md)
+for the guided workflow and [docs/extension/commands.md](docs/extension/commands.md)
+for the command catalog.
+
 ## Architecture
 
 - [Searchable documentation site](https://oaslananka.github.io/kicad-studio-kit/)
@@ -95,3 +113,12 @@ Dependency update policy, dashboard triage, and security-update handling are doc
 Compatibility support states and release gates are documented in [docs/support-matrix.md](docs/support-matrix.md).
 Canonical repository and portfolio workflow status are recorded in [CANONICAL.md](CANONICAL.md), [.repo-health.yaml](.repo-health.yaml), and [docs/reusable-workflows.md](docs/reusable-workflows.md).
 Telemetry and error reporting are opt-in, disabled by default, and documented in [docs/telemetry.md](docs/telemetry.md).
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and run `corepack pnpm run check` before
+opening a pull request.
+
+## License
+
+KiCad Studio Kit is available under the [MIT License](LICENSE).
