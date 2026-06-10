@@ -151,6 +151,17 @@ function checkWorkflowEvidence(failures) {
     "cross-repo compatibility workflow",
     failures,
   );
+  expectIncludes(
+    crossRepoCompatibility,
+    "version('kicad-mcp-pro')",
+    "cross-repo compatibility workflow",
+    failures,
+  );
+  expect(
+    !crossRepoCompatibility.includes("import kicad_mcp_pro"),
+    "cross-repo compatibility workflow must validate the PyPI distribution instead of assuming an import package name",
+    failures,
+  );
   expect(
     !crossRepoCompatibility.includes("pypi_version=not-found"),
     "cross-repo compatibility workflow must fail when PyPI smoke validation fails",
