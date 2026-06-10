@@ -73,9 +73,11 @@ Open VSX:
 - the packaged README points Open VSX users to `apps/vscode-extension/CHANGELOG.md` for release notes.
 
 The Visual Studio Marketplace job is release-blocking and its post-publish
-visibility check fails closed. Open VSX remains a separate non-blocking job, but
-it runs only after Marketplace succeeds and records a failed job when indexing
-or digest verification does not complete successfully.
+visibility and normalized VSIX payload checks fail closed. Open VSX remains a
+separate non-blocking job, but it runs only after Marketplace succeeds and
+records a failed job when indexing or payload verification does not complete
+successfully. Registry-rewritten ZIP container metadata is ignored while every
+packaged file name and byte is compared.
 
 VS Code Marketplace:
 
@@ -149,7 +151,7 @@ records when a GitHub Release triggers the workflow.
 
 | Product                | Release assets                                                                    | Publish verification                                                                                 |
 | ---------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| VSIX                   | `kicadstudiokit-<version>.vsix`, `vscode-extension-SHA256SUMS.txt`, SBOM evidence | Verify checksum before Marketplace/Open VSX publish; verify Marketplace version and Open VSX digest. |
+| VSIX                   | `kicadstudiokit-<version>.vsix`, `vscode-extension-SHA256SUMS.txt`, SBOM evidence | Verify checksum before publish; verify Marketplace/Open VSX version and normalized VSIX payload.      |
 | Python wheel and sdist | wheel, sdist, `kicad-mcp-pro-python-SHA256SUMS.txt`, SBOM evidence                | Verify local checksums before publish; verify PyPI/TestPyPI SHA-256 digests after publish.           |
 
 Local release policy verification:

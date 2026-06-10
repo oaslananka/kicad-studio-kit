@@ -4,6 +4,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const zlib = require('node:zlib');
+const crypto = require('node:crypto');
 
 const EXPECTED_PUBLISHER = 'oaslananka';
 const EXPECTED_NAME = 'kicadstudiokit';
@@ -79,6 +80,10 @@ function readVsixPackageJson(vsixPath) {
 function readZipEntry(zipPath, entryName) {
   const buffer = fs.readFileSync(zipPath);
   const entry = findCentralDirectoryEntry(buffer, entryName);
+  return readCentralDirectoryEntry(buffer, entry, entryName);
+}
+
+function readCentralDirectoryEntry(buffer, entry, entryName) {
   const localOffset = entry.localHeaderOffset;
   if (buffer.readUInt32LE(localOffset) !== ZIP_LOCAL_FILE_HEADER_SIGNATURE) {
     throw new Error(`Invalid ZIP local header for ${entryName}`);
@@ -101,6 +106,91 @@ function readZipEntry(zipPath, entryName) {
   throw new Error(
     `Unsupported ZIP compression method ${entry.compressionMethod}`
   );
+}
+
+function readZipEntries(zipPath) {
+  const buffer = fs.readFileSync(zipPath);
+  const endOffset = findEndOfCentralDirectory(buffer);
+  const entryCount = buffer.readUInt16LE(
+    endOffset + ZIP_END_ENTRY_COUNT_OFFSET
+  );
+  let offset = buffer.readUInt32LE(endOffset + ZIP_END_CENTRAL_OFFSET_OFFSET);
+  const entries = new Map();
+
+  for (let index = 0; index < entryCount; index += 1) {
+    if (buffer.readUInt32LE(offset) !== ZIP_CENTRAL_DIRECTORY_SIGNATURE) {
+      throw new Error('Invalid ZIP central directory header');
+    }
+    const nameLength = buffer.readUInt16LE(
+      offset + ZIP_CENTRAL_NAME_LENGTH_OFFSET
+    );
+    const extraLength = buffer.readUInt16LE(
+      offset + ZIP_CENTRAL_EXTRA_LENGTH_OFFSET
+    );
+    const commentLength = buffer.readUInt16LE(
+      offset + ZIP_CENTRAL_COMMENT_LENGTH_OFFSET
+    );
+    const name = buffer
+      .subarray(
+        offset + ZIP_CENTRAL_HEADER_SIZE,
+        offset + ZIP_CENTRAL_HEADER_SIZE + nameLength
+      )
+      .toString();
+    if (!name.endsWith('/')) {
+      if (entries.has(name)) {
+        throw new Error(`Duplicate ZIP entry: ${name}`);
+      }
+      entries.set(
+        name,
+        readCentralDirectoryEntry(
+          buffer,
+          centralDirectoryEntry(buffer, offset),
+          name
+        )
+      );
+    }
+    offset +=
+      ZIP_CENTRAL_HEADER_SIZE + nameLength + extraLength + commentLength;
+  }
+  return entries;
+}
+
+function compareVsixContent(expectedPath, actualPath) {
+  const expected = readZipEntries(expectedPath);
+  const actual = readZipEntries(actualPath);
+  const missing = [...expected.keys()].filter((name) => !actual.has(name));
+  const unexpected = [...actual.keys()].filter((name) => !expected.has(name));
+  const changed = [...expected.keys()].filter(
+    (name) => actual.has(name) && !expected.get(name).equals(actual.get(name))
+  );
+  const failures = [];
+
+  if (missing.length > 0)
+    failures.push(`missing entries: ${missing.join(', ')}`);
+  if (unexpected.length > 0) {
+    failures.push(`unexpected entries: ${unexpected.join(', ')}`);
+  }
+  if (changed.length > 0)
+    failures.push(`changed entries: ${changed.join(', ')}`);
+  if (failures.length > 0) {
+    throw new Error(`VSIX content mismatch:\n- ${failures.join('\n- ')}`);
+  }
+
+  return {
+    contentDigest: computeContentDigest(expected),
+    entryCount: expected.size
+  };
+}
+
+function computeContentDigest(entries) {
+  const digest = crypto.createHash('sha256');
+  for (const name of [...entries.keys()].sort()) {
+    digest.update(name);
+    digest.update('\0');
+    digest.update(entries.get(name));
+    digest.update('\0');
+  }
+  return digest.digest('hex');
 }
 
 function findCentralDirectoryEntry(buffer, entryName) {
@@ -170,10 +260,17 @@ function readJson(filePath) {
 
 if (require.main === module) {
   try {
-    const result = validateVsixMetadata({ vsixPath: process.argv[2] });
-    console.log(
-      `VSIX metadata validation passed: ${result.extensionId}@${result.version}`
-    );
+    if (process.argv[2] === '--compare-content') {
+      const result = compareVsixContent(process.argv[3], process.argv[4]);
+      console.log(
+        `VSIX content validation passed: ${result.entryCount} entries, normalized SHA-256 ${result.contentDigest}`
+      );
+    } else {
+      const result = validateVsixMetadata({ vsixPath: process.argv[2] });
+      console.log(
+        `VSIX metadata validation passed: ${result.extensionId}@${result.version}`
+      );
+    }
   } catch (error) {
     console.error(error.message);
     process.exit(1);
@@ -181,6 +278,8 @@ if (require.main === module) {
 }
 
 module.exports = {
+  compareVsixContent,
   readZipEntry,
+  readZipEntries,
   validateVsixMetadata
 };

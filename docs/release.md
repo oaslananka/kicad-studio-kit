@@ -16,9 +16,10 @@ The publish workflows keep release evidence product-scoped:
 - `publish-extension.yml` validates the VSIX, emits `SHA256SUMS.txt` and a
   CycloneDX SBOM, creates GitHub artifact attestations for the checksummed
   extension package, publishes the shared VSIX to the Visual Studio Marketplace,
-  verifies the Marketplace version, and then publishes the same VSIX to Open VSX
-  in a separate non-blocking job that downloads the published VSIX and compares
-  its digest with the release checksum.
+  verifies the Marketplace version and normalized VSIX payload content, and then
+  publishes the same VSIX to Open VSX in a separate non-blocking job that
+  downloads the published VSIX and verifies the same payload content. The
+  normalized comparison ignores registry-rewritten ZIP container metadata.
 - Release Please explicitly dispatches `publish-extension.yml` after creating a
   release because GitHub does not recursively trigger release-event workflows
   from releases created with `GITHUB_TOKEN`. The dispatch checks out the release

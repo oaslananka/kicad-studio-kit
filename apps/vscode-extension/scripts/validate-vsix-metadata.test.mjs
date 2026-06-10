@@ -7,6 +7,7 @@ import test from 'node:test';
 
 const require = createRequire(import.meta.url);
 const {
+  compareVsixContent,
   readZipEntry,
   validateVsixMetadata
 } = require('./validate-vsix-metadata.js');
@@ -78,6 +79,58 @@ test('readZipEntry extracts a stored VSIX package manifest', () => {
 
       assert.equal(entry.publisher, 'oaslananka');
       assert.equal(entry.name, 'kicadstudiokit');
+    }
+  );
+});
+
+test('#344 compareVsixContent ignores mutable ZIP container metadata', () => {
+  withFixtureVsix(
+    {
+      publisher: 'oaslananka',
+      name: 'kicadstudiokit',
+      version: '1.0.0'
+    },
+    ({ root, vsixPath }) => {
+      const registryPath = path.join(root, 'registry.vsix');
+      const registryArchive = Buffer.from(fs.readFileSync(vsixPath));
+      registryArchive.writeUInt16LE(0x1234, 10);
+      fs.writeFileSync(registryPath, registryArchive);
+
+      assert.notDeepEqual(
+        fs.readFileSync(vsixPath),
+        fs.readFileSync(registryPath)
+      );
+      const result = compareVsixContent(vsixPath, registryPath);
+      assert.equal(result.entryCount, 1);
+      assert.match(result.contentDigest, /^[a-f0-9]{64}$/);
+    }
+  );
+});
+
+test('#344 compareVsixContent rejects registry payload changes', () => {
+  withFixtureVsix(
+    {
+      publisher: 'oaslananka',
+      name: 'kicadstudiokit',
+      version: '1.0.0'
+    },
+    ({ root, vsixPath }) => {
+      const registryPath = path.join(root, 'registry.vsix');
+      fs.writeFileSync(
+        registryPath,
+        createStoredZip({
+          'extension/package.json': JSON.stringify({
+            publisher: 'oaslananka',
+            name: 'kicadstudiokit',
+            version: '1.0.1'
+          })
+        })
+      );
+
+      assert.throws(
+        () => compareVsixContent(vsixPath, registryPath),
+        /changed entries: extension\/package\.json/
+      );
     }
   );
 });
