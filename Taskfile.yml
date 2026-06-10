@@ -1,0 +1,38 @@
+version: "3"
+
+tasks:
+  install:
+    desc: Install workspace dependencies
+    cmds:
+      - corepack pnpm install --frozen-lockfile
+
+  format:
+    desc: Format all workspace packages
+    cmds:
+      - corepack pnpm run format
+
+  lint:
+    desc: Run formatting and lint checks
+    cmds:
+      - corepack pnpm run format:check
+      - corepack pnpm run lint
+
+  test:
+    desc: Run all workspace tests
+    cmds:
+      - corepack pnpm run test
+
+  build:
+    desc: Build all workspace packages
+    cmds:
+      - corepack pnpm run build
+
+  release:
+    desc: Validate release artifacts without publishing
+    cmds:
+      - corepack pnpm run release:dry-run
+
+  ci:
+    desc: Run the complete repository quality gate
+    cmds:
+      - corepack pnpm run check
