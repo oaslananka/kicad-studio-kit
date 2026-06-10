@@ -62,6 +62,13 @@ test("OASLANA-52 protocol schemas are consumed from npm package", () => {
   assert.match(rootPackage.scripts.check, /pnpm run check:protocol-schemas/u);
 });
 
+test("#342 published protocol schema package exposes the validator API used by consumers", async () => {
+  const pkg = await import("@oaslananka/kicad-protocol-schemas");
+
+  assert.equal(typeof pkg.validateProtocolPayload, "function");
+  assert.equal(typeof pkg.protocolSchemaPath, "function");
+});
+
 test("OASLANA-52 npm-installed package owns every required compatibility schema", () => {
   const schemasDir = path.join(npmPackageRoot(), "schemas");
   const schemas = fs

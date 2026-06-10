@@ -72,6 +72,11 @@ Open VSX:
 - prerelease GitHub Releases skip Open VSX unless the release tag ends with `-openvsx`.
 - the packaged README points Open VSX users to `apps/vscode-extension/CHANGELOG.md` for release notes.
 
+The Visual Studio Marketplace job is release-blocking and its post-publish
+visibility check fails closed. Open VSX remains a separate non-blocking job, but
+it runs only after Marketplace succeeds and records a failed job when indexing
+or digest verification does not complete successfully.
+
 VS Code Marketplace:
 
 - publisher: `oaslananka`
@@ -121,6 +126,19 @@ corepack pnpm --filter kicadstudiokit run package
 ```
 
 The `ovsx publish --help` command is the safe Open VSX CLI smoke check for local preflight. Do not run `ovsx publish` with a token outside `.github/workflows/publish-extension.yml`.
+
+To restore missing GitHub Release evidence without republishing either
+marketplace, dispatch the protected workflow with the existing release tag:
+
+```bash
+gh workflow run publish-extension.yml --ref main \
+  -f release_tag=vscode-extension-vX.Y.Z \
+  -f publish_vscode=false \
+  -f publish_openvsx=false
+```
+
+The workflow checks out the requested tag, rebuilds and validates the VSIX, and
+attaches the VSIX, checksum, and SBOM to the existing GitHub Release.
 
 ## Release Evidence
 

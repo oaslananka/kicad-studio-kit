@@ -77,7 +77,7 @@ The cross-repo compatibility canary validates **published artifacts only**:
 
 | Check                                    | What it verifies                                                |
 | ---------------------------------------- | --------------------------------------------------------------- |
-| npm `@oaslananka/kicad-protocol-schemas` | Package resolves, imports correctly (`readSchema` present)      |
+| npm `@oaslananka/kicad-protocol-schemas` | Package resolves and exports `validateProtocolPayload`          |
 | PyPI `kicad-mcp-pro`                     | Published version resolves (smoke-test, not full integration)   |
 | `compatibility.yaml`                     | `kicad-mcp-pro` section and `compatibleExtension` range present |
 | Guard                                    | `packages/protocol-schemas` local directory must NOT exist      |
@@ -160,7 +160,7 @@ A new npm release of `@oaslananka/kicad-protocol-schemas` is required when:
 - Adding, removing, or renaming fields in an existing schema.
 - Bumping `schemaVersion` for breaking or additive changes.
 - Changing compatibility metadata that the Studio extension or MCP server reads
-  from the package exports (`readSchema`, `compatibility`).
+  from the package validators or schema registry exports.
 
 ### When a release is NOT required
 

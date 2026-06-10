@@ -1,18 +1,24 @@
 #!/usr/bin/env node
 import fs from "node:fs";
+import { parse as parseYaml } from "yaml";
 
 const checks = [];
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
 }
+function readYaml(file) {
+  return parseYaml(fs.readFileSync(file, "utf8"));
+}
 function add(file, field, value) {
   checks.push({ file, field, value });
 }
 
+const extensionVersion = readJson("apps/vscode-extension/package.json").version;
+add("apps/vscode-extension/package.json", "$.version", extensionVersion);
 add(
-  "apps/vscode-extension/package.json",
-  "$.version",
-  readJson("apps/vscode-extension/package.json").version,
+  "compatibility.yaml",
+  "$.products.kicad-studio.version",
+  readYaml("compatibility.yaml").products?.["kicad-studio"]?.version,
 );
 
 const manifest = readJson(".release-please-manifest.json");
@@ -26,6 +32,7 @@ const expectedByField = new Map([
     "apps/vscode-extension/package.json $.version",
     manifest["apps/vscode-extension"],
   ],
+  ["compatibility.yaml $.products.kicad-studio.version", extensionVersion],
 ]);
 
 function expectedFor(check) {

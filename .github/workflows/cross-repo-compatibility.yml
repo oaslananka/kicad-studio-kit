@@ -75,15 +75,16 @@ jobs:
       - name: Check resolved npm protocol-schemas version
         id: npm-check
         run: |
-          VERSION=$(npm view @oaslananka/kicad-protocol-schemas version)
+          VERSION=$(node -p "require('./node_modules/@oaslananka/kicad-protocol-schemas/package.json').version")
+          npm view "@oaslananka/kicad-protocol-schemas@$VERSION" version >/dev/null
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "✓ @oaslananka/kicad-protocol-schemas resolves from npm registry (v$VERSION)"
           node -e "
             const pkg = require('@oaslananka/kicad-protocol-schemas');
-            const ok = typeof pkg.readSchema === 'function';
-            console.log(ok
-              ? '✓ protocol-schemas import smoke: readSchema present'
-              : '⚠ readSchema not found — check package API');
+            if (typeof pkg.validateProtocolPayload !== 'function') {
+              throw new Error('validateProtocolPayload export missing');
+            }
+            console.log('✓ protocol-schemas import smoke: validateProtocolPayload present');
           "
 
       - name: Run check:protocol-schemas
@@ -102,13 +103,16 @@ jobs:
           UV_TOOL_DIR=$(uv tool dir)
           mkdir -p "$UV_TOOL_DIR"
           echo "Checking kicad-mcp-pro on PyPI…"
-          VERSION=$(uv run --with kicad-mcp-pro --no-project python -c "import kicad_mcp_pro; print(kicad_mcp_pro.__version__)" 2>&1 || true)
+          if ! VERSION=$(uv run --quiet --with kicad-mcp-pro --no-project python -c "import kicad_mcp_pro; print(kicad_mcp_pro.__version__)" 2>&1); then
+            echo "::error::kicad-mcp-pro could not be installed from PyPI: $VERSION"
+            exit 1
+          fi
           if echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
             echo "✓ kicad-mcp-pro resolves from PyPI (v$VERSION)"
             echo "pypi_version=$VERSION" >> "$GITHUB_OUTPUT"
           else
-            echo "⚠ kicad-mcp-pro not installed from PyPI: $VERSION"
-            echo "pypi_version=not-found" >> "$GITHUB_OUTPUT"
+            echo "::error::kicad-mcp-pro returned an invalid version from PyPI: $VERSION"
+            exit 1
           fi
 
       # ── C. Studio compatibility checks ──────────────────────────────────

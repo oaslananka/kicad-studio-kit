@@ -53,7 +53,9 @@ jobs:
           git diff --cached --quiet || git commit -m "docs(repo): regenerate changelog and versions after release"
           git push
 
-      # Trigger extension publish to marketplaces after release
+      # Release Please creates releases with GITHUB_TOKEN, which does not
+      # recursively trigger release-event workflows. Dispatch the publish
+      # workflow explicitly so packaging, evidence, and marketplaces run.
       - if: ${{ steps.release.outputs.release_created }}
         name: Publish extension to marketplaces
         env:

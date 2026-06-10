@@ -84,7 +84,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
             "check:kicad-fixtures":
               "pnpm --dir packages/kicad-fixtures run check",
             "check:protocol-schemas":
-              "node --test scripts/check-protocol-schemas-package.test.mjs && node --input-type=module -e \"import * as pkg from '@oaslananka/kicad-protocol-schemas'; console.log('protocol-schemas resolves OK:', typeof pkg.readSchema === 'function' ? 'readSchema present' : 'readSchema missing')\"",
+              "node --test scripts/check-protocol-schemas-package.test.mjs && node --input-type=module -e \"import * as pkg from '@oaslananka/kicad-protocol-schemas'; if (typeof pkg.validateProtocolPayload !== 'function') throw new Error('validateProtocolPayload export missing'); console.log('protocol-schemas resolves OK: validateProtocolPayload present')\"",
           },
         },
         null,
@@ -209,7 +209,10 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
     );
     assert.equal(byId.get("kicad-cli").required, false);
     assert.equal(byId.get("cloudflared").required, false);
-    assert.match(byId.get("protocol-schemas").detail, /schema file\(s\) parsed/);
+    assert.match(
+      byId.get("protocol-schemas").detail,
+      /schema file\(s\) parsed/,
+    );
     assert.equal(
       report.checks.every(
         (check) => typeof check.hint === "string" && check.hint.length > 0,

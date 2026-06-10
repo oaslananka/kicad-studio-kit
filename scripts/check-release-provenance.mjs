@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
 import { exit } from "node:process";
+import { parse as parseYaml } from "yaml";
 
 const files = {
   rootPackage: "package.json",
   releasePlease: "release-please-config.json",
+  releasePleaseWorkflow: ".github/workflows/release-please.yml",
   publishExtension: ".github/workflows/publish-extension.yml",
+  crossRepoCompatibility: ".github/workflows/cross-repo-compatibility.yml",
   docsRelease: "docs/release.md",
   docsPublishing: "docs/publishing.md",
 };
@@ -38,6 +41,15 @@ function checkPackageNames(failures) {
 
 function checkWorkflowEvidence(failures) {
   const extension = read(files.publishExtension);
+  const workflow = parseYaml(extension);
+  const releasePleaseWorkflow = read(files.releasePleaseWorkflow);
+  const crossRepoCompatibility = read(files.crossRepoCompatibility);
+  const publishVscode = workflow.jobs?.publish_vscode;
+  const publishOpenvsx = workflow.jobs?.publish_openvsx;
+  const openvsxNeeds = Array.isArray(publishOpenvsx?.needs)
+    ? publishOpenvsx.needs
+    : [publishOpenvsx?.needs].filter(Boolean);
+
   expectIncludes(
     extension,
     "sha256sum --check",
@@ -94,6 +106,61 @@ function checkWorkflowEvidence(failures) {
     failures,
   );
   expectIncludes(extension, "--packagePath", "extension workflow", failures);
+  expectIncludes(
+    extension,
+    "inputs.release_tag != ''",
+    "extension workflow",
+    failures,
+  );
+  expectIncludes(
+    extension,
+    "ref: ${{ inputs.release_tag || github.event.release.tag_name || github.ref }}",
+    "extension workflow",
+    failures,
+  );
+  expectIncludes(
+    extension,
+    "needs.publish_vscode.result == 'success'",
+    "extension workflow",
+    failures,
+  );
+  expect(
+    publishVscode?.["continue-on-error"] !== true,
+    "Visual Studio Marketplace publish must fail the workflow on errors",
+    failures,
+  );
+  expect(
+    openvsxNeeds.includes("publish_vscode"),
+    "Open VSX publish must wait for Visual Studio Marketplace",
+    failures,
+  );
+  expect(
+    !extension.includes("publish likely succeeded but indexing is delayed"),
+    "post-publish verification must fail closed instead of masking missing registry versions",
+    failures,
+  );
+  expectIncludes(
+    releasePleaseWorkflow,
+    "gh workflow run publish-extension.yml",
+    "release-please workflow",
+    failures,
+  );
+  expectIncludes(
+    crossRepoCompatibility,
+    "validateProtocolPayload",
+    "cross-repo compatibility workflow",
+    failures,
+  );
+  expect(
+    !crossRepoCompatibility.includes("pypi_version=not-found"),
+    "cross-repo compatibility workflow must fail when PyPI smoke validation fails",
+    failures,
+  );
+  expect(
+    !crossRepoCompatibility.includes("2>&1 || true"),
+    "cross-repo compatibility workflow must not mask published artifact failures",
+    failures,
+  );
 }
 
 function checkDocs(failures) {

@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse as parseYaml } from "yaml";
 
 const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
@@ -14,6 +15,7 @@ const DOCS_FILES = [
   "docs/EMERGENCY-RELEASE-FLOW.md",
   "docs/publishing.md",
   "docs/protocol-schemas.md",
+  "docs/support-matrix.md",
 ];
 
 const REQUIRED_FILES = [
@@ -94,6 +96,23 @@ function checkCompatibilityYamlReferences(errors) {
   }
 }
 
+function checkProductVersionAlignment(errors) {
+  if (!fileExists("compatibility.yaml")) return;
+
+  const compatibility = parseYaml(readFile("compatibility.yaml"));
+  const extensionPackage = JSON.parse(
+    readFile("apps/vscode-extension/package.json"),
+  );
+  const compatibilityVersion =
+    compatibility.products?.["kicad-studio"]?.version;
+
+  if (compatibilityVersion !== extensionPackage.version) {
+    errors.push(
+      `compatibility.yaml products.kicad-studio.version must match apps/vscode-extension/package.json (${extensionPackage.version}), found ${String(compatibilityVersion)}`,
+    );
+  }
+}
+
 function checkStudioConsumesPublishedPackage(errors) {
   const extensionPkgPath = "apps/vscode-extension/package.json";
   const extensionPkg = JSON.parse(
@@ -164,6 +183,7 @@ export function validateCompatibilityContract(options = {}) {
 
   checkContractExists(errors);
   checkCompatibilityYamlReferences(errors);
+  checkProductVersionAlignment(errors);
   checkStudioConsumesPublishedPackage(errors);
   checkLocalProtocolSchemasAbsent(errors);
   checkDocsChangedWithContract(errors, changedFiles);

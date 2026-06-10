@@ -46,6 +46,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           persist-credentials: false
+          ref: ${{ inputs.release_tag || github.event.release.tag_name || github.ref }}
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .node-version
@@ -115,7 +116,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Attach extension evidence to GitHub Release
-        if: github.event_name == 'release'
+        if: ${{ github.event_name == 'release' || inputs.release_tag != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.release-policy.outputs.release_tag }}
@@ -132,7 +133,6 @@ jobs:
     needs: package
     if: ${{ github.event_name == 'release' || inputs.publish_vscode }}
     runs-on: ubuntu-24.04
-    continue-on-error: true
     environment: extension-marketplaces
     permissions:
       actions: read
@@ -141,6 +141,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           persist-credentials: false
+          ref: ${{ needs.package.outputs.release_tag || github.ref }}
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .node-version
@@ -204,16 +205,16 @@ jobs:
               exit 0
             fi
             if [ "$attempt" -eq 10 ]; then
-              echo "::warning::VS Code Marketplace version $version not visible after 10 attempts — publish likely succeeded but indexing is delayed"
-              exit 0
+              echo "::error::VS Code Marketplace version $version not visible after 10 attempts"
+              exit 1
             fi
             echo "VS Code Marketplace index not updated yet (attempt $attempt/10), waiting 30s…"
             sleep 30
           done
 
   publish_openvsx:
-    needs: [package]
-    if: ${{ (github.event_name == 'release' || inputs.publish_openvsx) && needs.package.outputs.openvsx_prerelease_allowed == 'true' }}
+    needs: [package, publish_vscode]
+    if: ${{ always() && needs.package.result == 'success' && (needs.publish_vscode.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.publish_vscode == false)) && (github.event_name == 'release' || inputs.publish_openvsx) && needs.package.outputs.openvsx_prerelease_allowed == 'true' }}
     continue-on-error: true
     runs-on: ubuntu-24.04
     environment: extension-marketplaces
@@ -224,6 +225,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           persist-credentials: false
+          ref: ${{ needs.package.outputs.release_tag || github.ref }}
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .node-version
@@ -299,8 +301,8 @@ jobs:
             sleep 30
           done
           if [ "$indexed" = "false" ]; then
-            echo "::warning::Open VSX version $version not visible after 10 attempts — publish likely succeeded but indexing is delayed"
-            exit 0
+            echo "::error::Open VSX version $version not visible after 10 attempts"
+            exit 1
           fi
           corepack pnpm --filter kicadstudiokit exec ovsx get oaslananka.kicadstudiokit --versionRange "$version" --output "$OPENVSX_VERIFY_DIR"
           downloaded="$(find "$OPENVSX_VERIFY_DIR" -type f -name '*.vsix' | sort | tail -n1)"
@@ -308,7 +310,7 @@ jobs:
           expected="$(awk '{print $1}' release-assets/vscode-extension/SHA256SUMS.txt)"
           actual="$(sha256sum "$downloaded" | awk '{print $1}')"
           if [ "$expected" != "$actual" ]; then
-            echo "::warning::Open VSX digest mismatch for version $version — expected $expected, got $actual"
-            exit 0
+            echo "::error::Open VSX digest mismatch for version $version — expected $expected, got $actual"
+            exit 1
           fi
           echo "Open VSX digest verified: $actual"

@@ -34,7 +34,7 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 
 | Product | Version | Manifest | Compatibility range |
 | --- | --- | --- | --- |
-| kicad-studio | 1.5.0 | apps/vscode-extension/package.json | &gt;=3.5.2 &lt;4.0.0 |
+| kicad-studio | 1.6.2 | apps/vscode-extension/package.json | &gt;=3.5.2 &lt;4.0.0 |
 
 ### Release Gate Inputs
 
@@ -112,7 +112,7 @@ protecting users on the stable line while maintainers test the next major line.
 | Allowed `pcbnew` paths | Guarded by the kicad-mcp repository.                                                                                                       |
 | IPC parity matrix      | `compatibility.yaml` `kicadIpcReadiness.ipcApi.requiredFor`.                                                                               |
 | Current nightly smoke  | Run from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) with a configured nightly `kicad-cli`.                            |
-| KiCad 11 RC smoke      | Run from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) once the installed prerelease reports `11.0.x`.                    |
+| KiCad 11 RC smoke      | Run from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) once the installed prerelease reports `11.0.x`.                   |
 | Migration guide        | [`docs/compatibility/kicad-10-to-11-migration.md`](compatibility/kicad-10-to-11-migration.md).                                             |
 
 Status surfaces:

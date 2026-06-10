@@ -19,6 +19,10 @@ The publish workflows keep release evidence product-scoped:
   verifies the Marketplace version, and then publishes the same VSIX to Open VSX
   in a separate non-blocking job that downloads the published VSIX and compares
   its digest with the release checksum.
+- Release Please explicitly dispatches `publish-extension.yml` after creating a
+  release because GitHub does not recursively trigger release-event workflows
+  from releases created with `GITHUB_TOKEN`. The dispatch checks out the release
+  tag and attaches VSIX, checksum, and SBOM evidence to that GitHub Release.
 - `publish-python.yml` (now in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)) validates the wheel and source distribution, emits SHA256SUMS.txt, emits a CycloneDX SBOM,
   uploads that evidence as `python-release-evidence`, and creates GitHub
   artifact attestations for the Python wheel and source distribution before PyPI
