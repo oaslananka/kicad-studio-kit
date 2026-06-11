@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   extension-host:
+    if: github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops'
     runs-on: ubuntu-24.04
     continue-on-error: ${{ matrix.continue_on_error }}
     permissions:

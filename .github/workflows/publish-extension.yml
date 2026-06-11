@@ -32,6 +32,7 @@ env:
 
 jobs:
   package:
+    if: github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -131,7 +132,7 @@ jobs:
 
   publish_vscode:
     needs: package
-    if: ${{ github.event_name == 'release' || inputs.publish_vscode }}
+    if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && (github.event_name == 'release' || inputs.publish_vscode) }}
     runs-on: ubuntu-24.04
     environment: extension-marketplaces
     permissions:
@@ -229,7 +230,7 @@ jobs:
 
   publish_openvsx:
     needs: [package, publish_vscode]
-    if: ${{ always() && needs.package.result == 'success' && (needs.publish_vscode.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.publish_vscode == false)) && (github.event_name == 'release' || inputs.publish_openvsx) && needs.package.outputs.openvsx_prerelease_allowed == 'true' }}
+    if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && always() && needs.package.result == 'success' && (needs.publish_vscode.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.publish_vscode == false)) && (github.event_name == 'release' || inputs.publish_openvsx) && needs.package.outputs.openvsx_prerelease_allowed == 'true' }}
     continue-on-error: true
     runs-on: ubuntu-24.04
     environment: extension-marketplaces

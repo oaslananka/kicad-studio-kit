@@ -44,6 +44,7 @@ defaults:
 
 jobs:
   canary:
+    if: github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops'
     name: canary
     runs-on: ubuntu-24.04
     timeout-minutes: 15

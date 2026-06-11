@@ -97,6 +97,7 @@ function shouldSkip(file) {
   if (ignoredFiles.has(path.basename(file))) return true;
   if (ignoredExts.has(path.extname(file).toLowerCase())) return true;
   if (rel === "scripts/check-no-forbidden-refs.mjs") return true;
+  if (rel === ".github/dependabot.yml") return true;
   return false;
 }
 

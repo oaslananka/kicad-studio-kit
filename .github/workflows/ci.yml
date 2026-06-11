@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   ci-lanes:
+    if: github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops'
     runs-on: ubuntu-24.04
     outputs:
       metadata: ${{ steps.detect.outputs.metadata }}
@@ -44,7 +45,7 @@ jobs:
 
   metadata:
     needs: ci-lanes
-    if: ${{ needs.ci-lanes.outputs.metadata == 'true' }}
+    if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && needs.ci-lanes.outputs.metadata == 'true' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -72,7 +73,7 @@ jobs:
 
   vscode-extension:
     needs: ci-lanes
-    if: ${{ needs.ci-lanes.outputs.vscode_extension == 'true' }}
+    if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && needs.ci-lanes.outputs.vscode_extension == 'true' }}
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -154,7 +155,7 @@ jobs:
 
   shared-packages:
     needs: ci-lanes
-    if: ${{ needs.ci-lanes.outputs.shared_packages == 'true' }}
+    if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && needs.ci-lanes.outputs.shared_packages == 'true' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -174,7 +175,7 @@ jobs:
 
   performance-budgets:
     needs: ci-lanes
-    if: ${{ needs.ci-lanes.outputs.performance_budgets == 'true' }}
+    if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && needs.ci-lanes.outputs.performance_budgets == 'true' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -210,7 +211,7 @@ jobs:
 
   real-pair-compatibility:
     needs: ci-lanes
-    if: ${{ needs.ci-lanes.outputs.real_pair_compatibility == 'true' }}
+    if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && needs.ci-lanes.outputs.real_pair_compatibility == 'true' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -251,7 +252,7 @@ jobs:
 
   coverage-report:
     needs: vscode-extension
-    if: github.event_name == 'pull_request' && needs.vscode-extension.result == 'success'
+    if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && github.event_name == 'pull_request' && needs.vscode-extension.result == 'success' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -267,7 +268,7 @@ jobs:
 
   forbidden-refs:
     needs: ci-lanes
-    if: ${{ needs.ci-lanes.outputs.metadata == 'true' }}
+    if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && needs.ci-lanes.outputs.metadata == 'true' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -282,7 +283,7 @@ jobs:
       - run: corepack pnpm run check:forbidden-refs
 
   required:
-    if: ${{ !cancelled() }}
+    if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && !cancelled() }}
     needs:
       - ci-lanes
       - metadata

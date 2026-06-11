@@ -27,6 +27,19 @@ tasks:
     cmds:
       - corepack pnpm run build
 
+  typecheck:
+    desc: TypeScript type-check across all workspace packages
+    cmds:
+      - corepack pnpm run typecheck
+
+  verify:
+    desc: Run the full local quality gate (lint + typecheck + test + build)
+    cmds:
+      - task: lint
+      - task: typecheck
+      - task: test
+      - task: build
+
   release:
     desc: Validate release artifacts without publishing
     cmds:

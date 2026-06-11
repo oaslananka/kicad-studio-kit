@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   stale:
+    if: github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/stale@b5d41d4e1d5dceea10e7104786b73624c18a190f

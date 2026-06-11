@@ -1,0 +1,12 @@
+# Dependabot configuration
+#
+# Dependency version updates are handled by Renovate. Dependabot is kept only
+# for GitHub Actions security updates and automated Dependabot security alerts.
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
