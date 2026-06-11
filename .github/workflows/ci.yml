@@ -27,7 +27,7 @@ jobs:
       run_all: ${{ steps.detect.outputs.run_all }}
       changed_file_count: ${{ steps.detect.outputs.changed_file_count }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -48,7 +48,7 @@ jobs:
     if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && needs.ci-lanes.outputs.metadata == 'true' }}
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           persist-credentials: false
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
@@ -81,7 +81,7 @@ jobs:
         os: [ubuntu-24.04, windows-2025-vs2026, macos-15]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           persist-credentials: false
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
@@ -158,7 +158,7 @@ jobs:
     if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && needs.ci-lanes.outputs.shared_packages == 'true' }}
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           persist-credentials: false
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
@@ -178,7 +178,7 @@ jobs:
     if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && needs.ci-lanes.outputs.performance_budgets == 'true' }}
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           persist-credentials: false
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
@@ -214,7 +214,7 @@ jobs:
     if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && needs.ci-lanes.outputs.real_pair_compatibility == 'true' }}
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           persist-credentials: false
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
@@ -271,7 +271,7 @@ jobs:
     if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && needs.ci-lanes.outputs.metadata == 'true' }}
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           persist-credentials: false
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
