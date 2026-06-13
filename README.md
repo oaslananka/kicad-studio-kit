@@ -3,7 +3,10 @@
 [![CI](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml)
 [![Security](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/oaslananka/kicad-studio-kit/badge)](https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit)
 [![Open VSX](https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX)](https://open-vsx.org/extension/oaslananka/kicadstudiokit)
+[![VS Marketplace](https://img.shields.io/visual-studio-marketplace/v/oaslananka.kicadstudiokit)](https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit)
+[![VS Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/oaslananka.kicadstudiokit)](https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/oaslananka/kicad-studio-kit)
 
 Monorepo for:
