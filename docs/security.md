@@ -29,6 +29,45 @@ Pull requests and scheduled workflows keep the supply chain surface visible:
   evidence, and create GitHub artifact attestations where package registries do
   not already provide provenance.
 
+## Verifying Published Artifacts
+
+The publish workflow creates GitHub artifact attestations for every released
+VSIX. Each attestation binds the VSIX checksum and the CycloneDX SBOM to the
+workflow run that produced it. Downstream users can verify a downloaded VSIX
+against the published attestation before installing it.
+
+### Predicate types
+
+The publish workflow emits two attestation predicate types:
+
+- **SLSA Provenance** (`https://slsa.dev/provenance/v1`) — records the build
+  workflow, source repository, and build parameters.
+- **CycloneDX SBOM** (`https://cyclonedx.org/bom`) — records the software bill
+  of materials for the packaged extension.
+
+### Verification command
+
+Download the VSIX from the GitHub Release assets or the Visual Studio
+Marketplace, then verify it with the GitHub CLI:
+
+```bash
+gh attestation verify <path-to-vsix> \
+  --repo oaslananka/kicad-studio-kit
+```
+
+The command checks the attestation signature, confirms the artifact digest
+matches, and prints the provenance and SBOM predicate details. A successful
+verification confirms the VSIX was built by the repository's publish workflow
+and has not been modified since attestation.
+
+To restrict verification to a specific predicate type:
+
+```bash
+gh attestation verify <path-to-vsix> \
+  --repo oaslananka/kicad-studio-kit \
+  --predicate-type https://slsa.dev/provenance/v1
+```
+
 ## Alert Triage
 
 Treat a red PR security check and a GitHub dependency or code-scanning alert as
