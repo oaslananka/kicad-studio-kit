@@ -2504,6 +2504,7 @@
     "test:e2e": "playwright test test/e2e/",
     "test:webview": "playwright test --config playwright.webview.config.ts",
     "test:visual": "playwright test --config playwright.visual.config.ts",
+    "test:mutation": "stryker run",
     "test:e2e:real": "playwright test test/e2e/realPair.test.ts",
     "check:bundle-size": "node scripts/check-bundle-size.js",
     "bundle-kicanvas": "node scripts/bundle-kicanvas.js",
