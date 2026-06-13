@@ -49,19 +49,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-      # ── Node / pnpm setup (corepack — repo standard) ────────────────────
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
-        with:
-          node-version-file: .node-version
-          package-manager-cache: false
-
-      - name: Install dependencies
-        run: |
-          corepack enable
-          corepack pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup-workspace
 
       # ── Guard: no local packages/protocol-schemas ──────────────────────
       - name: Guard — packages/protocol-schemas must NOT exist

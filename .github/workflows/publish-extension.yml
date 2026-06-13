@@ -44,16 +44,9 @@ jobs:
       openvsx_prerelease_allowed: ${{ steps.release-policy.outputs.openvsx_prerelease_allowed }}
       release_tag: ${{ steps.release-policy.outputs.release_tag }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: ./.github/actions/setup-workspace
         with:
-          persist-credentials: false
           ref: ${{ inputs.release_tag || github.event.release.tag_name || github.ref }}
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
-        with:
-          node-version-file: .node-version
-          package-manager-cache: false
-      - run: corepack enable
-      - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm --filter kicadstudiokit run build
       - name: Evaluate extension pre-release policy
         id: release-policy
@@ -139,16 +132,9 @@ jobs:
       actions: read
       contents: read
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: ./.github/actions/setup-workspace
         with:
-          persist-credentials: false
           ref: ${{ needs.package.outputs.release_tag || github.ref }}
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
-        with:
-          node-version-file: .node-version
-          package-manager-cache: false
-      - run: corepack enable
-      - run: corepack pnpm install --frozen-lockfile
       - name: Download extension release evidence
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
@@ -238,16 +224,9 @@ jobs:
       actions: read
       contents: read
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: ./.github/actions/setup-workspace
         with:
-          persist-credentials: false
           ref: ${{ needs.package.outputs.release_tag || github.ref }}
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
-        with:
-          node-version-file: .node-version
-          package-manager-cache: false
-      - run: corepack enable
-      - run: corepack pnpm install --frozen-lockfile
       - name: Download extension release evidence
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:

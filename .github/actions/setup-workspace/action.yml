@@ -1,0 +1,53 @@
+name: Setup workspace
+description: Checkout-agnostic workspace setup for KiCad Studio Kit CI
+
+permissions:
+  contents: read
+
+inputs:
+  fetch-depth:
+    description: Optional fetch-depth for actions/checkout
+    required: false
+    default: ""
+  setup-uv:
+    description: Whether to install uv (Python package manager)
+    required: false
+    default: "false"
+  ref:
+    description: Optional ref to checkout
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      if: inputs.fetch-depth == ''
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      with:
+        persist-credentials: false
+        ref: ${{ inputs.ref }}
+
+    - name: Checkout (with fetch-depth)
+      if: inputs.fetch-depth != ''
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      with:
+        persist-credentials: false
+        fetch-depth: ${{ inputs.fetch-depth }}
+        ref: ${{ inputs.ref }}
+
+    - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      with:
+        node-version-file: .node-version
+        package-manager-cache: false
+
+    - if: inputs.setup-uv == 'true'
+      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+      with:
+        enable-cache: true
+
+    - run: corepack enable
+      shell: bash
+
+    - run: corepack pnpm install --frozen-lockfile
+      shell: bash

@@ -31,5 +31,5 @@ governance:
   canonical_policy:
     document: CANONICAL.md
   reusable_workflows:
-    status: gap-documented
+    status: adopted
     document: docs/reusable-workflows.md
