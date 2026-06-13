@@ -246,19 +246,319 @@ export const WEBVIEW_MESSAGES = [
 
 export type WebviewMessage = (typeof WEBVIEW_MESSAGES)[number];
 
-export function webviewLocale(): string {
+const TR_WEBVIEW_MESSAGES: Record<string, string> = {
+  'KiCad Studio Settings': 'KiCad Studio Ayarları',
+  'KiCad CLI': 'KiCad CLI',
+  'Detect kicad-cli': 'kicad-cli Bul',
+  'kicad-cli path': 'kicad-cli yolu',
+  'Auto-detect': 'Otomatik Bul',
+  'KiCad application path': 'KiCad uygulama yolu',
+  AI: 'AI',
+  'Test connection': 'Bağlantıyı Test Et',
+  'Set API key': 'API Anahtarı Ayarla',
+  'Clear API key': 'API Anahtarını Temizle',
+  Provider: 'Sağlayıcı',
+  Disabled: 'Devre Dışı',
+  'Local OpenAI-compatible': 'Yerel OpenAI Uyumlu',
+  Model: 'Model',
+  'Provider default': 'Sağlayıcı Varsayılanı',
+  'Local endpoint': 'Yerel uç nokta',
+  'OpenAI API mode': 'OpenAI API Modu',
+  Responses: 'Responses',
+  'Chat Completions': 'Chat Completions',
+  'Response language': 'Yanıt Dili',
+  English: 'English',
+  'Allow language model tools': 'Dil modeli araçlarına izin ver',
+  MCP: 'MCP',
+  'Open integration docs': 'Entegrasyon belgelerini aç',
+  Endpoint: 'Uç Nokta',
+  Profile: 'Profil',
+  'Timeout (seconds)': 'Zaman Aşımı (saniye)',
+  'Auto-detect kicad-mcp-pro': "kicad-mcp-pro'yu Otomatik Bul",
+  'Push active KiCad context': 'Aktif KiCad bağlamını gönder',
+  'Allow legacy SSE fallback': 'Eski SSE geri dönüşüne izin ver',
+  Viewer: 'Görüntüleyici',
+  'Viewer theme': 'Görüntüleyici teması',
+  Dark: 'Koyu',
+  Light: 'Açık',
+  'Large file threshold bytes': 'Büyük dosya eşik baytı',
+  'Auto-refresh viewers on save':
+    'Kaydedince görüntüleyicileri otomatik yenile',
+  'Sync viewer with VS Code theme':
+    'Görüntüleyiciyi VS Code temasıyla eşzamanla',
+  'Enable PCB layer panel': 'PCB katman panelini etkinleştir',
+  'Enable viewer snapshot export':
+    'Görüntüleyici anlık görüntü dışa aktarmayı etkinleştir',
+  Secrets: 'Sırlar',
+  'Clear all stored secrets': 'Tüm saklanan sırları temizle',
+  'Octopart/Nexar key': 'Octopart/Nexar anahtarı',
+  'Component Search': 'Bileşen Arama',
+  'KiCad Component Details': 'KiCad Bileşen Detayları',
+  'Inline part lookup': 'Satır içi parça arama',
+  'Search components': 'Bileşen ara',
+  Search: 'Ara',
+  'Part number, value, or footprint': 'Parça numarası, değer veya footprint',
+  'Provider status': 'Sağlayıcı durumu',
+  'Provider warnings': 'Sağlayıcı uyarıları',
+  'Missing API keys are non-blocking provider warnings.':
+    'Eksik API anahtarları engelleyici olmayan sağlayıcı uyarılarıdır.',
+  'Set Octopart/Nexar API Key': 'Octopart/Nexar API Anahtarı Ayarla',
+  'Set AI API Key': 'AI API Anahtarı Ayarla',
+  'Local KiCad libraries': 'Yerel KiCad kütüphaneleri',
+  'Octopart/Nexar': 'Octopart/Nexar',
+  'AI matching': 'AI eşleme',
+  Indexed: 'Dizinlenmiş',
+  'Indexes on first local fallback': 'İlk yerel geri dönüşte dizinler',
+  Unavailable: 'Kullanılamıyor',
+  Enabled: 'Etkin',
+  'API key stored': 'API anahtarı saklandı',
+  'API key needed': 'API anahtarı gerekli',
+  'Octopart/Nexar API key is missing; LCSC and local library searches still work.':
+    'Octopart/Nexar API anahtarı eksik; LCSC ve yerel kütüphane aramaları çalışmaya devam eder.',
+  'AI API key is missing; AI matching stays disabled without blocking search.':
+    'AI API anahtarı eksik; AI eşleme aramayı engellemeden devre dışı kalır.',
+  'LCSC search is disabled in settings; local and configured providers still work.':
+    'LCSC araması ayarlardan devre dışı bırakıldı; yerel ve yapılandırılmış sağlayıcılar çalışmaya devam eder.',
+  'Recommended parts': 'Önerilen parçalar',
+  'Recent searches': 'Son aramalar',
+  Results: 'Sonuçlar',
+  'No matching components yet.': 'Henüz eşleşen bileşen yok.',
+  'Searching providers...': 'Sağlayıcılar taranıyor...',
+  Availability: 'Stok Durumu',
+  'Footprint match': 'Footprint eşleşmesi',
+  Datasheet: 'Veri Sayfası',
+  Confidence: 'Güven',
+  Available: 'Mevcut',
+  'Not provided': 'Sağlanmamış',
+  'Stock not reported': 'Stok bildirilmemiş',
+  'No availability data': 'Stok verisi yok',
+  'Not reported': 'Bildirilmemiş',
+  High: 'Yüksek',
+  Medium: 'Orta',
+  Low: 'Düşük',
+  '{count} in stock': '{count} stokta',
+  'Install PCM Library': 'PCM Kütüphanesi Yükle',
+  'AI API key is stored in SecretStorage.':
+    "AI API anahtarı SecretStorage'da saklanıyor.",
+  'No AI API key is stored.': 'AI API anahtarı saklanmıyor.',
+  'Octopart/Nexar key is stored in SecretStorage.':
+    "Octopart/Nexar anahtarı SecretStorage'da saklanıyor.",
+  'No Octopart/Nexar key is stored.': 'Octopart/Nexar anahtarı saklanmıyor.',
+  'No kicad-cli detection result yet.': 'Henüz kicad-cli algılama sonucu yok.',
+  'AI key stored': 'AI anahtarı saklandı',
+  'AI key missing': 'AI anahtarı eksik',
+  'CLI not detected': 'CLI algılanamadı',
+  'KiCad Design Intent': 'KiCad Tasarım Niyeti',
+  'Design intent form': 'Tasarım niyeti formu',
+  'Power tree references': 'Güç ağı referansları',
+  'Comma-separated component references that form the power delivery network.':
+    'Güç dağıtım ağını oluşturan virgülle ayrılmış bileşen referansları.',
+  'Connector references': 'Konnektör referansları',
+  'External interface connectors on this board.':
+    'Bu karttaki harici arayüz konnektörleri.',
+  'Decoupling pairs': 'Dekuplaj çiftleri',
+  'Format: IC_ref:cap_ref,cap_ref — associates bypass caps with their ICs.':
+    "Format: IC_ref:cap_ref,cap_ref — bypass kapasitörlerini IC'leriyle ilişkilendirir.",
+  'Analog / digital partitioning': 'Analog / dijital bölümleme',
+  'Describe the ground plane split and analog/digital boundary rules.':
+    'Toprak düzlemi bölünmesini ve analog/dijital sınır kurallarını açıklayın.',
+  'Sensor cluster references': 'Sensör kümesi referansları',
+  'Components that must be placed close together as a functional cluster.':
+    'Fonksiyonel bir küme olarak birbirine yakın yerleştirilmesi gereken bileşenler.',
+  'RF keepouts': 'RF yasak bölgeler',
+  'Areas where copper pours and vias are restricted to avoid RF interference.':
+    "RF parazitini önlemek için bakır dökme ve via'ların kısıtlandığı alanlar.",
+  'Fabrication profile': 'Üretim profili',
+  Generic: 'Genel',
+  'Target fab house — affects layer naming and DRC rule defaults.':
+    'Hedef fabrika — katman adlandırmasını ve DRC kural varsayılanlarını etkiler.',
+  'Additional notes': 'Ek notlar',
+  'Save Design Intent': 'Tasarım Niyetini Kaydet',
+  'MCP request failed.': 'MCP isteği başarısız oldu.',
+  'KiCad DRC Rule Editor': 'KiCad DRC Kural Düzenleyicisi',
+  Name: 'İsim',
+  Condition: 'Koşul',
+  Constraint: 'Kısıtlama',
+  'Save Rule': 'Kuralı Kaydet',
+  'Delete Rule': 'Kuralı Sil',
+  'Library:': 'Kütüphane:',
+  'Description:': 'Açıklama:',
+  'No description': 'Açıklama yok',
+  'Keywords:': 'Anahtar Kelimeler:',
+  None: 'Hiçbiri',
+  'Value:': 'Değer:',
+  Unknown: 'Bilinmiyor',
+  'Footprint filters:': 'Footprint filtreleri:',
+  'Tags:': 'Etiketler:',
+  'Footprint preview': 'Footprint önizleme',
+  'SVG preview unavailable. Showing metadata-only fallback.':
+    'SVG önizleme kullanılamıyor. Yalnızca meta veri gösteriliyor.',
+  Part: 'Parça',
+  Details: 'Detaylar',
+  'Manufacturer:': 'Üretici:',
+  'Source:': 'Kaynak:',
+  'Open Datasheet': 'Veri Sayfasını Aç',
+  'Copy MPN': 'MPN Kopyala',
+  Offers: 'Teklifler',
+  'Interactive BOM': 'Etkileşimli BOM',
+  'KiCad Studio Interactive BOM': 'KiCad Studio Etkileşimli BOM',
+  'Filter BOM rows': 'BOM satırlarını filtrele',
+  'Filter by reference, value, footprint, or MPN':
+    "Referans, değer, footprint veya MPN'ye göre filtrele",
+  Reference: 'Referans',
+  Qty: 'Adet',
+  Value: 'Değer',
+  Footprint: 'Footprint',
+  MPN: 'MPN',
+  Manufacturer: 'Üretici',
+  LCSC: 'LCSC',
+  Description: 'Açıklama',
+  'BOM Diff': 'BOM Farkı',
+  'Variant BOM Diff': 'Varyant BOM Farkı',
+  'No component-level BOM differences were found.':
+    'Bileşen düzeyinde BOM farkı bulunamadı.',
+  'Reload viewer': 'Görüntüleyiciyi yeniden yükle',
+  'Reload Viewer': 'Görüntüleyiciyi Yeniden Yükle',
+  'Open in KiCad': "KiCad'te Aç",
+  'Export PNG': 'PNG Dışa Aktar',
+  'Export SVG': 'SVG Dışa Aktar',
+  'KiCad 10 hop-over overlay': 'KiCad 10 atlama katmanı',
+  'Loading file...': 'Dosya yükleniyor...',
+  'Loading KiCanvas renderer…': 'KiCanvas oluşturucu yükleniyor…',
+  'Preparing PCB viewer…': 'PCB görüntüleyici hazırlanıyor…',
+  'Preparing schematic viewer…': 'Şema görüntüleyici hazırlanıyor…',
+  'Viewer error': 'Görüntüleyici hatası',
+  'An unexpected error occurred.': 'Beklenmeyen bir hata oluştu.',
+  'Error detail': 'Hata detayı',
+  'No drawable objects yet': 'Henüz çizilebilir nesne yok',
+  'This PCB file does not contain any footprints, tracks, zones, or graphics that KiCanvas can render.':
+    "Bu PCB dosyası, KiCanvas'in oluşturabileceği herhangi bir footprint, iz, bölge veya grafik içermiyor.",
+  'This schematic file does not contain any symbols, wires, labels, or other drawable objects yet.':
+    'Bu şema dosyası henüz herhangi bir sembol, bağlantı, etiket veya çizilebilir nesne içermiyor.',
+  'Add components in KiCad, save the file, and the viewer will refresh automatically.':
+    "KiCad'te bileşen ekleyin, dosyayı kaydedin, görüntüleyici otomatik olarak yenilenecektir.",
+  'File source preview (first 3000 chars)':
+    'Dosya kaynak önizleme (ilk 3000 karakter)',
+  'Viewer side panel': 'Görüntüleyici yan paneli',
+  'Viewer tools': 'Görüntüleyici araçları',
+  'Viewer Tools': 'Görüntüleyici Araçları',
+  Fit: 'Sığdır',
+  'Zoom out viewer': 'Görüntüleyiciyi uzaklaştır',
+  'Current zoom': 'Geçerli yakınlaştırma',
+  'Zoom in viewer': 'Görüntüleyiciyi yakınlaştır',
+  Sheet: 'Sayfa',
+  'Sheet selector': 'Sayfa seçici',
+  Board: 'Kart',
+  'Root sheet': 'Kök sayfa',
+  Grid: 'Izgara',
+  'Find reference': 'Referans bul',
+  Find: 'Bul',
+  Export: 'Dışa Aktar',
+  PNG: 'PNG',
+  SVG: 'SVG',
+  Panel: 'Panel',
+  'Hide Panel': 'Paneli Gizle',
+  'Show viewer side panel': 'Görüntüleyici yan panelini göster',
+  'Hide viewer side panel': 'Görüntüleyici yan panelini gizle',
+  All: 'Tümü',
+  'Copper Only': 'Sadece Bakır',
+  'No lasso area selected.': 'Kement alanı seçilmedi.',
+  'Layer Visibility': 'Katman Görünürlüğü',
+  'Tuning Profiles': 'Düzenleme Profilleri',
+  'Viewer Notes': 'Görüntüleyici Notları',
+  'KiCad Studio could not open': 'KiCad Studio açılamadı',
+  'What happened:': 'Ne oldu:',
+  'the viewer failed while preparing the custom editor.':
+    'görüntüleyici özel düzenleyiciyi hazırlarken başarısız oldu.',
+  'How to fix:': 'Nasıl düzeltilir:',
+  'reload the window and reopen the file. If the error persists, this message will help diagnose the issue quickly.':
+    'pencereyi yeniden yükleyin ve dosyayı yeniden açın. Hata devam ederse bu mesaj sorunu hızlıca teşhis etmeye yardımcı olacaktır.',
+  Refresh: 'Yenile',
+  'Loading diff…': 'Fark yükleniyor…',
+  'KiCad AI Chat': 'KiCad AI Sohbet',
+  Ready: 'Hazır',
+  'Chat controls': 'Sohbet kontrolleri',
+  'AI provider': 'AI sağlayıcısı',
+  'Model override': 'Model geçersiz kılma',
+  'Open KiCad Studio settings': 'KiCad Studio ayarlarını aç',
+  'Open settings': 'Ayarları aç',
+  'Export chat transcript': 'Sohbet dökümünü dışa aktar',
+  'Export chat': 'Sohbeti dışa aktar',
+  'Clear chat': 'Sohbeti temizle',
+  Clear: 'Temizle',
+  Cancel: 'İptal',
+  'Ask about DRC/ERC issues, component choices, manufacturing risk, or the active KiCad file.':
+    'DRC/ERC sorunları, bileşen seçimleri, üretim riski veya aktif KiCad dosyası hakkında sorun.',
+  'Attach context': 'Bağlam ekle',
+  'Hide context': 'Bağlamı gizle',
+  'Extra context': 'Ek bağlam',
+  'Additional context for the next turn': 'Sonraki tur için ek bağlam',
+  Prompt: 'İstek',
+  'Ask about your KiCad design...': 'KiCad tasarımınız hakkında sorun...',
+  Send: 'Gönder',
+  'Copied message.': 'Mesaj kopyalandı.',
+  'Thinking…': 'Düşünülüyor…',
+  'Tool calls handled': 'Araç çağrıları işlendi',
+  'Suggested MCP tool calls': 'Önerilen MCP araç çağrıları',
+  tool: 'araç',
+  Apply: 'Uygula',
+  'Apply suggested MCP tool calls': 'Önerilen MCP araç çağrılarını uygula',
+  Ignore: 'Yoksay',
+  'Mark suggested MCP tool calls as handled':
+    'Önerilen MCP araç çağrılarını işlenmiş olarak işaretle',
+  Copy: 'Kopyala',
+  'Copy message': 'Mesajı kopyala',
+  Edit: 'Düzenle',
+  'Edit this prompt': 'Bu isteği düzenle',
+  'Mark helpful': 'Yardımcı olarak işaretle',
+  'Mark not helpful': 'Yardımcı değil olarak işaretle',
+  'Reaction saved.': 'Tepki kaydedildi.',
+  You: 'Siz',
+  User: 'Kullanıcı',
+  Assistant: 'Asistan',
+  'Transcript copied.': 'Döküm kopyalandı.'
+};
+
+/** Detect VS Code UI locale from the environment. Falls back to 'en'. */
+function detectLocale(): string {
+  try {
+    const nlsConfig = process.env['VSCODE_NLS_CONFIG'];
+    if (nlsConfig) {
+      const parsed = JSON.parse(nlsConfig);
+      if (parsed.locale) return parsed.locale;
+    }
+  } catch {
+    // ignore parse errors
+  }
   return 'en';
+}
+
+export function webviewLocale(): string {
+  return detectLocale();
 }
 
 export function buildWebviewMessageMap(
   _translate?: (message: string) => string
 ): Record<WebviewMessage, string> {
+  const locale = webviewLocale();
+  if (locale === 'tr') {
+    return Object.fromEntries(
+      WEBVIEW_MESSAGES.map((message) => [
+        message,
+        TR_WEBVIEW_MESSAGES[message] ?? message
+      ])
+    ) as Record<WebviewMessage, string>;
+  }
   return Object.fromEntries(
     WEBVIEW_MESSAGES.map((message) => [message, message])
   ) as Record<WebviewMessage, string>;
 }
 
 export function localizeWebviewMessage(message: WebviewMessage): string {
+  const locale = webviewLocale();
+  if (locale === 'tr') {
+    return TR_WEBVIEW_MESSAGES[message] ?? message;
+  }
   return message;
 }
 
@@ -277,7 +577,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 }, { once: true });
 </script>`;
-  const localizedHtml = html.replace(/<html lang="en"/iu, `<html lang="en"`);
+  const localizedHtml = html.replace(
+    /<html lang="en"/iu,
+    `<html lang="${webviewLocale()}"`
+  );
   return /<body\b[^>]*>/iu.test(localizedHtml)
     ? localizedHtml.replace(/(<body\b[^>]*>)/iu, `$1\n${script}`)
     : `${localizedHtml}${script}`;
