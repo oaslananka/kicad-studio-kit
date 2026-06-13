@@ -84,10 +84,5 @@
     "typescript": "6.0.3",
     "vitepress": "1.6.4",
     "yaml": "2.9.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "esbuild": ">=0.28.1"
-    }
   }
 }
