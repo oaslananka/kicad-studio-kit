@@ -41,7 +41,8 @@
     "assets/icon-light.png",
     "assets/icon-dark.png",
     "package.json",
-    "package.nls.json"
+    "package.nls.json",
+    "package.nls.tr.json"
   ],
   "allowedGlobs": [
     "assets/marketplace/**",

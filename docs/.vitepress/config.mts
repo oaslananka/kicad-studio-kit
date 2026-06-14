@@ -2,6 +2,11 @@ import { defineConfig } from "vitepress";
 import { docsSiteBase } from "../../scripts/lib/docs-site-config.mjs";
 
 export default defineConfig({
+  vite: {
+    build: {
+      target: "es2021",
+    },
+  },
   lang: "en-US",
   title: "KiCad Studio Kit",
   description:

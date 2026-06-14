@@ -94,13 +94,128 @@ export const SOURCE_MESSAGES = {
     'Could not open the BoardReadyOps documentation automatically.'
 } as const;
 
+const TR_MESSAGES: Partial<Record<keyof typeof SOURCE_MESSAGES, string>> = {
+  workspaceTrustRequired:
+    '{feature} güvenilir bir çalışma alanı gerektirir. KiCad CLI, harici KiCad, içe veya dışa aktarma araçlarını çalıştırmak için bu çalışma alanına güvenin.',
+  selectMcpProfile: 'kicad-mcp-pro profili seçin',
+  chooseMcpProfile: 'Bu çalışma alanı için kullanılacak MCP profilini seçin',
+  mcpProfileDetail: '{blurb} (MCP 1.0.0 itibarıyla)',
+  mcpProfileSetRestart:
+    'MCP profili {profile} olarak ayarlandı. MCP bağlantısı şimdi yeniden başlatılsın mı?',
+  restart: 'Yeniden Başlat',
+  later: 'Sonra',
+  diagnosticPendingNoCachedResult: 'BEKLEMEDE - önbellekte sonuç yok',
+  diagnosticPendingRunAction: 'Çalıştırılmadı - {label} çalıştır',
+  diagnosticSummary: '{status} - {errors} hata, {warnings} uyarı',
+  diagnosticNotRun: '{label} henüz çalıştırılmadı.',
+  diagnosticStatusTooltip: '{label}: {status}',
+  diagnosticErrors: '{count} hata',
+  diagnosticWarnings: '{count} uyarı',
+  diagnosticInfos: '{count} bilgi',
+  runValidation: '{label} çalıştır',
+  qualityGateRunThis: 'Bu Kalite Kapısını Çalıştır',
+  qualityGateReady: 'Hazır',
+  qualityGatePendingSchematic: 'Şema kontrollerini çalıştır',
+  qualityGatePendingConnectivity: 'Bağlantı kontrollerini çalıştır',
+  qualityGatePendingPlacement: 'Yerleşim kontrollerini çalıştır',
+  qualityGatePendingTransfer: 'PCB transfer kontrollerini çalıştır',
+  qualityGatePendingManufacturing: 'Üretim kontrollerini çalıştır',
+  qualityGatePendingDefault: 'Bu kalite kapısını çalıştır',
+  qualityGateClickRunWhenReady:
+    'Proje hazır olduğunda bu kapıyı çalıştırmak için tıklayın.',
+  qualityGateClickRerun: 'Bu kapıyı yeniden çalıştırmak için tıklayın.',
+  qualityGateRunningAll: 'Tüm kalite kapıları çalıştırılıyor...',
+  qualityGateRunning: '{gate} kalite kapısı çalıştırılıyor...',
+  qualityGateStdioWarning:
+    'Kalite Kapıları, kicad-mcp-pro VS Code stdio üzerinden bağlandığında kullanılamaz. ' +
+    "Bu özelliği etkinleştirmek için kicad-mcp-pro'yu HTTP taşıyıcısıyla (port 27185) başlatın.",
+  drcRulesNoFileLabel: 'DRC kural dosyası yok',
+  drcRulesNoFileDescription: 'Bir .kicad_dru dosyası oluşturun veya açın',
+  drcRulesNoFileDetail:
+    'Bu çalışma alanına bir KiCad tasarım kuralı dosyası ekleyin, ardından özel kural kısıtlamalarını incelemek için bu görünümü yenileyin.',
+  drcRulesCreateOrOpenCommand: 'DRC Kuralları Oluştur veya Aç',
+  drcRulesNoCustomRulesLabel: 'Özel kural bulunamadı',
+  drcRulesNoCustomRulesDescription: '.kicad_dru dosyasına kurallar ekleyin',
+  drcRulesNoCustomRulesDetail:
+    'Çalışma alanında bir .kicad_dru dosyası var ancak okunabilir KiCad kural bloğu bulunamadı.',
+  drcRulesLoadErrorLabel: 'DRC kuralları yüklenemedi',
+  drcRulesLoadErrorDescription: 'Kural sözdizimini düzeltin ve yenileyin',
+  fixQueueUnavailableLabel: 'Düzeltme Kuyruğu kullanılamıyor',
+  fixQueueUnavailableDescription: 'HTTP MCP taşıyıcısı kullanın',
+  fixQueueSetupMcpCommand: 'MCP Entegrasyonu Ayarla',
+  fixQueueEmptyLabel: 'Bekleyen AI düzeltmesi yok',
+  fixQueueEmptyDescription: "DRC/ERC çalıştırın veya MCP'yi yenileyin",
+  fixQueueEmptyDetail:
+    'Aktif proje için sıraya alınmış düzeltme bulunamadı. Önerilen onarımları doldurmak için doğrulama çalıştırın veya MCP yeteneklerini yenileyin.',
+  fixQueueRefreshCommand: 'MCP Düzeltme Kuyruğunu Yenile',
+  fixQueueRefreshErrorLabel: 'Düzeltme Kuyruğu yenilenemedi',
+  fixQueueRefreshErrorDescription: 'MCP bağlantısını yeniden dene',
+  fixQueueRetryCommand: 'MCP Bağlantısını Yeniden Dene',
+  fixQueueBlockStdio:
+    'Düzeltme Kuyruğu HTTP MCP taşıyıcısı gerektirir; VS Code stdio sıraya alınmış onarım eylemlerini sunamaz.',
+  fixQueueBlockIncompatible:
+    "AI onarım eylemlerini yüklemeden önce kicad-mcp-pro'yu yükseltin.",
+  fixQueueBlockDegraded:
+    'MCP bağlantısı kesildi veya bozulmuş durumda. {message} Bağlantıyı yeniden deneyin veya MCP sunucu durumunu kontrol edin.',
+  fixQueueBlockDefault:
+    "AI onarım eylemlerini yüklemeden önce kicad-mcp-pro'yu HTTP üzerinden bağlayın.",
+  pcmNoLibrariesLabel: 'Dizinlenmiş PCM kütüphanesi yok',
+  pcmNoLibrariesDescription: 'PCM depolarını yenile',
+  pcmNoLibrariesDetail:
+    'Henüz hiçbir KiCad Paket ve İçerik Yöneticisi paketi dizinlenmemiş. Depoları yenileyin veya PCM deposu ayarlarını kontrol edin.',
+  pcmRefreshRepositoriesCommand: 'PCM Depolarını Yenile',
+  variantNoProjectLabel: 'KiCad proje dosyası yok',
+  variantNoProjectDescription: 'Bir .kicad_pro projesi açın',
+  variantNoProjectDetail:
+    'Varyantlar KiCad proje dosyasında saklanır. Montaj varyantları oluşturmadan önce bir .kicad_pro dosyası açın veya ekleyin.',
+  variantNoVariantsLabel: 'Yapılandırılmış varyant yok',
+  variantNoVariantsDescription: 'Montaj varyantı oluştur',
+  variantNoVariantsDetail:
+    'Bu proje henüz montaj varyantı tanımlamıyor. BOM çıktılarını karşılaştırmadan önce adlandırılmış bir varyant oluşturun.',
+  variantCreateCommand: 'Montaj Varyantı Oluştur',
+  settingsMigrationFailed:
+    'KiCad Studio ayar geçişi başarısız oldu. Mevcut ayarlar son başarılı şema sürümünde bırakıldı; ayrıntılar için KiCad Studio çıktısını kontrol edin.',
+  settingsMigrationUpdatedDeprecatedSettings:
+    'KiCad Studio kullanımdan kaldırılan ayarları güncel şemaya güncelledi.',
+  feedbackOpenFailed:
+    'Geri bildirim formu otomatik olarak açılamadı. Şu adresten manuel olarak erişebilirsiniz: {url}',
+  boardReadyOpsNotConfigured:
+    'BoardReadyOps yapılandırılmamış. Kart hazır olma durumunu kontrol etmek için KiCad Studio ayarlarından etkinleştirin.',
+  boardReadyOpsOpenSettingsAction: 'Ayarları Aç',
+  boardReadyOpsRunning:
+    'BoardReadyOps kontrolü sıraya alındı. Servis yanıt verdiğinde sonuçlar görünecektir.',
+  boardReadyOpsReportNotAvailable:
+    'Henüz BoardReadyOps raporu mevcut değil. Önce bir hazır olma kontrolü yapılandırın ve çalıştırın.',
+  boardReadyOpsDocsOpenFailed:
+    'BoardReadyOps belgeleri otomatik olarak açılamadı.'
+};
+
 export type SourceMessageKey = keyof typeof SOURCE_MESSAGES;
+
+/** Detect VS Code UI locale from the environment. Falls back to 'en'. */
+function getLocale(): string {
+  try {
+    const nlsConfig = process.env['VSCODE_NLS_CONFIG'];
+    if (nlsConfig) {
+      const parsed = JSON.parse(nlsConfig);
+      if (parsed.locale) return parsed.locale;
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return 'en';
+}
+
+const currentLocale = getLocale();
 
 export function localize(
   key: SourceMessageKey,
   args?: Record<string, string | number | boolean>
 ): string {
-  let message = SOURCE_MESSAGES[key];
+  let message =
+    currentLocale === 'tr' && TR_MESSAGES[key]
+      ? TR_MESSAGES[key]!
+      : SOURCE_MESSAGES[key];
   if (args) {
     for (const [k, v] of Object.entries(args)) {
       message = message.replace(`{${k}}`, String(v)) as any;
