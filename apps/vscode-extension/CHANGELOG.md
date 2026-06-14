@@ -10,6 +10,18 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.7.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.6.2...vscode-extension-v1.7.0) (2026-06-14)
+
+
+### Features
+
+* **kicad-studio:** add Turkish (tr) localization ([6e6bc09](https://github.com/oaslananka/kicad-studio-kit/commit/6e6bc098ec24098597f2dbc6776e5e35111e850a))
+
+
+### Bug Fixes
+
+* **repo:** verify registry VSIX payload content ([#345](https://github.com/oaslananka/kicad-studio-kit/issues/345)) ([9307179](https://github.com/oaslananka/kicad-studio-kit/commit/930717970288c03dfc60bca1bddb51efd67a5b0d)), closes [#344](https://github.com/oaslananka/kicad-studio-kit/issues/344)
+
 ## [1.6.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.6.1...vscode-extension-v1.6.2) (2026-06-09)
 
 
