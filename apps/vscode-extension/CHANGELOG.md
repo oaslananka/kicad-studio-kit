@@ -10,31 +10,50 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
-## [1.6.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.6.1...vscode-extension-v1.6.2) (2026-06-09)
-
-
-### Bug Fixes
-
-* **kicad-studio:** declare mcpConfigurationProvider in enabledApiProposals ([#333](https://github.com/oaslananka/kicad-studio-kit/issues/333)) ([4f1018e](https://github.com/oaslananka/kicad-studio-kit/commit/4f1018ed3ac7592a0cc334b814c88b22ced42a1b))
-
-## [1.6.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.6.0...vscode-extension-v1.6.1) (2026-06-07)
-
-
-### Bug Fixes
-
-* **repo:** trigger fresh CI ([483ab04](https://github.com/oaslananka/kicad-studio-kit/commit/483ab043b6fed6314734c23d14a024249e116376))
-
-## [1.6.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.5.0...vscode-extension-v1.6.0) (2026-06-07)
-
+## [1.7.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.6.2...vscode-extension-v1.7.0) (2026-06-14)
 
 ### Features
 
-* **kicad-studio:** complete prompt spec - Phase A-E, screenshots, manifest, CI gates, security hardening ([a43e305](https://github.com/oaslananka/kicad-studio-kit/commit/a43e30505ca8151c312cf4047396a0d1e796fe93))
-
+- **kicad-studio:** add Turkish (tr) localization ([6e6bc09](https://github.com/oaslananka/kicad-studio-kit/commit/6e6bc09eb5301503fd6c4ad1de857a43a1c02967))
 
 ### Bug Fixes
 
-* **kicad-studio:** address 6 Gemini code review issues ([aed0572](https://github.com/oaslananka/kicad-studio-kit/commit/aed0572453c3cdcb9223742ebbb97cd8df6b6d47))
+- **kicad-studio:** add --allow-all-proposed-apis to vsce publish command ([d587d63](https://github.com/oaslananka/kicad-studio-kit/commit/d587d635f4f6e04405e2f988a2145e39e1e2c29e))
+- **kicad-studio:** trigger publish-extension after release ([ca6319d](https://github.com/oaslananka/kicad-studio-kit/commit/ca6319dec63aa2debc68dcdd91b275a7b5290bb0))
+- **kicad-studio:** clean up workflow and script dead references, auto-generate docs after release ([9005d14](https://github.com/oaslananka/kicad-studio-kit/commit/9005d1498e4e82f58e14e77d78f975b1371e52f6))
+- **repo:** verify registry VSIX payload content ([#345](https://github.com/oaslananka/kicad-studio-kit/issues/345)) ([9307179](https://github.com/oaslananka/kicad-studio-kit/commit/9307179bf4431f450a7a7f9a7d14b9e88d00a779))
+- **repo:** harden release publishing and evidence recovery ([#343](https://github.com/oaslananka/kicad-studio-kit/issues/343)) ([6fe3fd7](https://github.com/oaslananka/kicad-studio-kit/commit/6fe3fd71ad7b90cd5cf2572061eabfd60823ab52))
+
+### Miscellaneous Chores
+
+- **repo:** apply fleet standards ([be4eac3](https://github.com/oaslananka/kicad-studio-kit/commit/be4eac34e4a6e459fa6c0cc5f6f43521aed628a1))
+- **repo:** complete fleet audit remediation ([8f90735](https://github.com/oaslananka/kicad-studio-kit/commit/8f907351a74ce6df61755adb4a6255777a2311e9))
+
+### Tests
+
+- **kicad-studio:** raise coverage thresholds and add mcpClient per-file gate ([621a0cf](https://github.com/oaslananka/kicad-studio-kit/commit/621a0cf4ce448c10cb7009d3c23c57d8ceb1a1c6))
+
+## [1.6.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.6.1...vscode-extension-v1.6.2) (2026-06-09)
+
+### Bug Fixes
+
+- **kicad-studio:** declare mcpConfigurationProvider in enabledApiProposals ([#333](https://github.com/oaslananka/kicad-studio-kit/issues/333)) ([4f1018e](https://github.com/oaslananka/kicad-studio-kit/commit/4f1018ed3ac7592a0cc334b814c88b22ced42a1b))
+
+## [1.6.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.6.0...vscode-extension-v1.6.1) (2026-06-07)
+
+### Bug Fixes
+
+- **repo:** trigger fresh CI ([483ab04](https://github.com/oaslananka/kicad-studio-kit/commit/483ab043b6fed6314734c23d14a024249e116376))
+
+## [1.6.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.5.0...vscode-extension-v1.6.0) (2026-06-07)
+
+### Features
+
+- **kicad-studio:** complete prompt spec - Phase A-E, screenshots, manifest, CI gates, security hardening ([a43e305](https://github.com/oaslananka/kicad-studio-kit/commit/a43e30505ca8151c312cf4047396a0d1e796fe93))
+
+### Bug Fixes
+
+- **kicad-studio:** address 6 Gemini code review issues ([aed0572](https://github.com/oaslananka/kicad-studio-kit/commit/aed0572453c3cdcb9223742ebbb97cd8df6b6d47))
 
 ## [1.5.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.4.1...vscode-extension-v1.5.0) (2026-06-06)
 
