@@ -1,13 +1,24 @@
 # KiCad Studio Kit
 
-[![CI](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml)
-[![Security](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/oaslananka/kicad-studio-kit/badge)](https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit)
-[![Open VSX](https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX)](https://open-vsx.org/extension/oaslananka/kicadstudiokit)
-[![VS Marketplace](https://img.shields.io/visual-studio-marketplace/v/oaslananka.kicadstudiokit)](https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit)
-[![VS Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/oaslananka.kicadstudiokit)](https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/oaslananka/kicad-studio-kit)
+<p align="center">
+  <strong>Build &amp; Quality</strong><br>
+  <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
+  <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml/badge.svg" alt="Security"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit"><img src="https://api.scorecard.dev/projects/github.com/oaslananka/kicad-studio-kit/badge" alt="OpenSSF Scorecard"></a>
+</p>
+
+<p align="center">
+  <strong>Marketplace</strong><br>
+  <a href="https://open-vsx.org/extension/oaslananka/kicadstudiokit"><img src="https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX" alt="Open VSX"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/visual-studio-marketplace/v/oaslananka.kicadstudiokit" alt="VS Marketplace"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/visual-studio-marketplace/i/oaslananka.kicadstudiokit" alt="VS Marketplace Installs"></a>
+</p>
+
+<p align="center">
+  <strong>Community</strong><br>
+  <a href="https://deepwiki.com/oaslananka/kicad-studio-kit"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+</p>
 
 Monorepo for:
 
@@ -22,7 +33,7 @@ Searchable documentation: https://oaslananka.github.io/kicad-studio-kit/
 
 This repository's local release surface is:
 
-- VS Code extension: `oaslananka.kicadstudiokit` (`1.6.2`)
+- VS Code extension: `oaslananka.kicadstudiokit` (`1.8.0`)
 
 The Python package `kicad-mcp-pro`, container image, and MCP Registry listing
 are released from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
