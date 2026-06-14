@@ -11,10 +11,16 @@ module.exports = {
   coverageReporters: ['json-summary', 'text', 'lcov'],
   coverageThreshold: {
     global: {
+      branches: 69,
+      functions: 85,
+      lines: 80,
+      statements: 80
+    },
+    'src/mcp/mcpClient.ts': {
       branches: 70,
-      functions: 75,
-      lines: 75,
-      statements: 75
+      functions: 85,
+      lines: 82,
+      statements: 82
     }
   },
   collectCoverageFrom: [
