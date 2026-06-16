@@ -11,6 +11,9 @@ on:
 permissions:
   contents: read
 
+env:
+  npm_config_pnpm_on_fail: ignore
+
 jobs:
   dependency-review:
     if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && github.event_name == 'pull_request' }}
@@ -37,6 +40,7 @@ jobs:
           enable-cache: true
 
       - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm run check:forbidden-refs
       - run: corepack pnpm audit --audit-level high
@@ -53,5 +57,6 @@ jobs:
           node-version-file: .node-version
           package-manager-cache: false
       - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm --filter kicadstudiokit run test:security

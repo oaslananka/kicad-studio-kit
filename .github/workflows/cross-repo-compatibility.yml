@@ -38,6 +38,11 @@ on:
 permissions:
   contents: read
 
+env:
+  # pnpm 11+ enforces packageManager version match. Prevents nested pnpm calls in scripts
+  # from failing when runner pnpm differs from package.json constraint.
+  npm_config_pnpm_on_fail: ignore
+
 defaults:
   run:
     shell: bash
@@ -61,6 +66,7 @@ jobs:
       - name: Install dependencies
         run: |
           corepack enable
+          corepack prepare pnpm@11.6.0 --activate
           corepack pnpm install --frozen-lockfile
 
       # ── Guard: no local packages/protocol-schemas ──────────────────────

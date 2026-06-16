@@ -8,6 +8,9 @@ on:
 permissions:
   contents: read
 
+env:
+  npm_config_pnpm_on_fail: ignore
+
 concurrency:
   group: release-please-${{ github.ref }}
   cancel-in-progress: false
@@ -42,6 +45,8 @@ jobs:
           package-manager-cache: false
       - if: ${{ steps.release.outputs.release_created }}
         run: corepack enable
+      - if: ${{ steps.release.outputs.release_created }}
+        run: corepack prepare pnpm@11.6.0 --activate
       - if: ${{ steps.release.outputs.release_created }}
         run: corepack pnpm install --frozen-lockfile
       - if: ${{ steps.release.outputs.release_created }}
