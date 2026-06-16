@@ -9,6 +9,13 @@ on:
 permissions:
   contents: read
 
+env:
+  # pnpm 11+ enforces packageManager version match. CI has pnpm 11.5.0 pre-installed
+  # but our package.json specifies 11.6.0. corepack prepare activates 11.6.0 for
+  # outer commands, but nested pnpm calls in scripts (e.g. `pnpm run prepare:media`)
+  # resolve to the system pnpm. This tells pnpm to warn instead of fail.
+  npm_config_pnpm_on_fail: ignore
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
