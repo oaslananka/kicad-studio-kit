@@ -2576,7 +2576,7 @@
   "dependencies": {
     "@oaslananka/kicad-protocol-schemas": "1.1.1",
     "exceljs": "4.4.0",
-    "semver": "7.8.1"
+    "semver": "7.8.4"
   },
   "lint-staged": {
     "*.{js,cjs,mjs,ts}": [
