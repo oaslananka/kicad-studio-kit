@@ -79,7 +79,7 @@ The cross-repo compatibility canary validates **published artifacts only**:
 | ---------------------------------------- | --------------------------------------------------------------- |
 | npm `@oaslananka/kicad-protocol-schemas` | Package resolves and exports `validateProtocolPayload`          |
 | PyPI `kicad-mcp-pro`                     | Published version resolves (smoke-test, not full integration)   |
-| `compatibility.yaml`                     | `kicad-mcp-pro` section and `compatibleExtension` range present |
+| `compatibility.yaml`                     | Studio declares the external `compatibleMcpPro` range            |
 | Guard                                    | `packages/protocol-schemas` local directory must NOT exist      |
 | `check:protocol-schemas`                 | Existing npm-schema resolution check                            |
 | `check:compatibility-contract`           | Existing compatibility matrix validation                        |

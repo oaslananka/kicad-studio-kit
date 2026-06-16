@@ -10,12 +10,12 @@ describe('MCP compatibility helpers', () => {
     expect(MCP_COMPAT).toEqual({
       required: '>=3.5.2 <4.0.0',
       recommended: '>=3.5.2 <4.0.0',
-      testedAgainst: '3.5.2'
+      testedAgainst: '3.9.2'
     });
   });
 
   it('normalizes versions and classifies compatibility', () => {
-    expect(normalizeMcpVersion('kicad-mcp-pro 3.5.2')).toBe('3.5.2');
+    expect(normalizeMcpVersion('kicad-mcp-pro 3.9.2')).toBe('3.9.2');
     expect(normalizeMcpVersion('v3.1')).toBe('3.1.0');
     expect(normalizeMcpVersion('not-a-version')).toBe('0.0.0');
     expect(normalizeMcpVersion(undefined)).toBe('0.0.0');

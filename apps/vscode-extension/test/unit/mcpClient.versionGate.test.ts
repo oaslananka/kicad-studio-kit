@@ -53,11 +53,11 @@ function wellKnownServerInfoResult() {
         kicadStudio: {
           required: '>=3.5.2 <4.0.0',
           recommended: '>=3.5.2 <4.0.0',
-          testedAgainst: '3.5.2'
+          testedAgainst: '3.9.2'
         },
         kicadMcpPro: {
           required: '>=1.0.0 <2.0.0',
-          testedAgainst: '1.0.0'
+          testedAgainst: '1.8.0'
         }
       },
       transport: {

@@ -113,6 +113,142 @@ function checkProductVersionAlignment(errors) {
   }
 }
 
+function extractTsStringLiteral(source, pattern, label, errors) {
+  const match = source.match(pattern);
+  if (!match) {
+    errors.push(
+      `apps/vscode-extension/src/mcp/compatibilityMatrix.ts: missing ${label}`,
+    );
+    return undefined;
+  }
+  return match[1];
+}
+
+function expectEqual(errors, label, actual, expected) {
+  if (actual !== expected) {
+    errors.push(
+      `apps/vscode-extension/src/mcp/compatibilityMatrix.ts ${label} must match compatibility.yaml/package metadata: expected ${String(expected)}, found ${String(actual)}`,
+    );
+  }
+}
+
+export function validateEmbeddedExtensionCompatibilityMatrix({
+  compatibility,
+  extensionPackage,
+  matrixSource,
+} = {}) {
+  const errors = [];
+  if (!compatibility || !extensionPackage || !matrixSource) {
+    errors.push(
+      "apps/vscode-extension/src/mcp/compatibilityMatrix.ts: embedded matrix validation requires compatibility metadata, extension package metadata, and matrix source",
+    );
+    return errors;
+  }
+
+  const compatibleMcpPro =
+    compatibility.products?.["kicad-studio"]?.compatibleMcpPro ?? {};
+  const expectedValues = {
+    kicadPrimary: compatibility.kicad?.primary,
+    protocolVersion: compatibility.mcp?.protocolVersion,
+    toolSchema: compatibility.mcp?.toolSchema,
+    kicadStudioVersion: extensionPackage.version,
+    mcpRequired: compatibleMcpPro.required,
+    mcpRecommended: compatibleMcpPro.recommended,
+    mcpTestedAgainst: compatibleMcpPro.testedAgainst,
+    kicadMcpProVersion: compatibleMcpPro.testedAgainst,
+    compatibleExtensionTestedAgainst: extensionPackage.version,
+  };
+
+  const actualValues = {
+    kicadPrimary: extractTsStringLiteral(
+      matrixSource,
+      /kicad:\s*\{[\s\S]*?primary:\s*'([^']+)'/u,
+      "kicad.primary",
+      errors,
+    ),
+    protocolVersion: extractTsStringLiteral(
+      matrixSource,
+      /mcp:\s*\{[\s\S]*?protocolVersion:\s*'([^']+)'/u,
+      "mcp.protocolVersion",
+      errors,
+    ),
+    toolSchema: extractTsStringLiteral(
+      matrixSource,
+      /mcp:\s*\{[\s\S]*?toolSchema:\s*'([^']+)'/u,
+      "mcp.toolSchema",
+      errors,
+    ),
+    kicadStudioVersion: extractTsStringLiteral(
+      matrixSource,
+      /kicadStudio:\s*\{[\s\S]*?version:\s*'([^']+)'/u,
+      "products.kicadStudio.version",
+      errors,
+    ),
+    mcpRequired: extractTsStringLiteral(
+      matrixSource,
+      /compatibleMcpPro:\s*\{[\s\S]*?required:\s*'([^']+)'/u,
+      "products.kicadStudio.compatibleMcpPro.required",
+      errors,
+    ),
+    mcpRecommended: extractTsStringLiteral(
+      matrixSource,
+      /compatibleMcpPro:\s*\{[\s\S]*?recommended:\s*'([^']+)'/u,
+      "products.kicadStudio.compatibleMcpPro.recommended",
+      errors,
+    ),
+    mcpTestedAgainst: extractTsStringLiteral(
+      matrixSource,
+      /compatibleMcpPro:\s*\{[\s\S]*?testedAgainst:\s*'([^']+)'/u,
+      "products.kicadStudio.compatibleMcpPro.testedAgainst",
+      errors,
+    ),
+    kicadMcpProVersion: extractTsStringLiteral(
+      matrixSource,
+      /kicadMcpPro:\s*\{[\s\S]*?version:\s*'([^']+)'/u,
+      "products.kicadMcpPro.version",
+      errors,
+    ),
+    compatibleExtensionTestedAgainst: extractTsStringLiteral(
+      matrixSource,
+      /compatibleExtension:\s*\{[\s\S]*?testedAgainst:\s*'([^']+)'/u,
+      "products.kicadMcpPro.compatibleExtension.testedAgainst",
+      errors,
+    ),
+  };
+
+  for (const [key, expected] of Object.entries(expectedValues)) {
+    expectEqual(errors, key, actualValues[key], expected);
+  }
+
+  return errors;
+}
+
+function checkEmbeddedExtensionCompatibilityMatrix(errors) {
+  if (
+    !fileExists("compatibility.yaml") ||
+    !fileExists("apps/vscode-extension/package.json") ||
+    !fileExists("apps/vscode-extension/src/mcp/compatibilityMatrix.ts")
+  ) {
+    return;
+  }
+
+  const compatibility = parseYaml(readFile("compatibility.yaml"));
+  const extensionPackage = JSON.parse(
+    readFile("apps/vscode-extension/package.json"),
+  );
+  const matrixSource = readFile(
+    "apps/vscode-extension/src/mcp/compatibilityMatrix.ts",
+  );
+
+  errors.push(
+    ...validateEmbeddedExtensionCompatibilityMatrix({
+      compatibility,
+      extensionPackage,
+      matrixSource,
+    }),
+  );
+}
+
 function checkStudioConsumesPublishedPackage(errors) {
   const extensionPkgPath = "apps/vscode-extension/package.json";
   const extensionPkg = JSON.parse(
@@ -184,6 +320,7 @@ export function validateCompatibilityContract(options = {}) {
   checkContractExists(errors);
   checkCompatibilityYamlReferences(errors);
   checkProductVersionAlignment(errors);
+  checkEmbeddedExtensionCompatibilityMatrix(errors);
   checkStudioConsumesPublishedPackage(errors);
   checkLocalProtocolSchemasAbsent(errors);
   checkDocsChangedWithContract(errors, changedFiles);

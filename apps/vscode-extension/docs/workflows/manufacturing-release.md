@@ -1,6 +1,6 @@
 # Manufacturing Release Wizard
 
-KiCad Studio 1.0.0 includes `KiCad: Manufacturing Release Wizard` for projects connected to a compatible `kicad-mcp-pro` server. The wizard is optional; the existing KiCad-only manufacturing export remains available without MCP.
+KiCad Studio 1.8.0 includes `KiCad: Manufacturing Release Wizard` for projects connected to a compatible `kicad-mcp-pro` server. The wizard is optional; the existing KiCad-only manufacturing export remains available without MCP.
 
 ## Requirements
 
