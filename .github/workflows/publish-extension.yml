@@ -29,7 +29,7 @@ permissions:
 
 env:
   OPENVSX_PRERELEASE_TAG_SUFFIX: -openvsx
-  npm_config_pnpm_on_fail: ignore
+  pnpm_config_pm_on_fail: ignore
 
 jobs:
   package:

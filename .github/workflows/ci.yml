@@ -14,7 +14,7 @@ env:
   # but our package.json specifies 11.6.0. corepack prepare activates 11.6.0 for
   # outer commands, but nested pnpm calls in scripts (e.g. `pnpm run prepare:media`)
   # resolve to the system pnpm. This tells pnpm to warn instead of fail.
-  npm_config_pnpm_on_fail: ignore
+  pnpm_config_pm_on_fail: ignore
 
 concurrency:
   group: ci-${{ github.ref }}

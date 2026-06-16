@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  npm_config_pnpm_on_fail: ignore
+  pnpm_config_pm_on_fail: ignore
 
 concurrency:
   group: vscode-canary-${{ github.ref }}

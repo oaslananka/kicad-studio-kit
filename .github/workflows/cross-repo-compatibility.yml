@@ -41,7 +41,7 @@ permissions:
 env:
   # pnpm 11+ enforces packageManager version match. Prevents nested pnpm calls in scripts
   # from failing when runner pnpm differs from package.json constraint.
-  npm_config_pnpm_on_fail: ignore
+  pnpm_config_pm_on_fail: ignore
 
 defaults:
   run:
