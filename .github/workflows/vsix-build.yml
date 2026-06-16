@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  pnpm_config_pm_on_fail: ignore
+
 jobs:
   build:
     if: github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops'
@@ -24,6 +27,7 @@ jobs:
           node-version-file: .node-version
           package-manager-cache: false
       - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm --filter kicadstudiokit run build
       - run: corepack pnpm --filter kicadstudiokit run package

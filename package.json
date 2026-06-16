@@ -4,7 +4,7 @@
   "private": true,
   "description": "Monorepo for KiCad Studio VS Code extension and KiCad MCP Pro server.",
   "license": "MIT",
-  "packageManager": "pnpm@11.5.0+sha512.dbfcc4f81cf48597afd4bc391ffdf12c11f1a9fb83a395bfa6b0a2d9cc2fd8ffebafdb1ccbd529632153f793904c2615b7f09fe1a345473fd1c35845172a8eb1",
+  "packageManager": "pnpm@11.6.0",
   "engines": {
     "node": ">=24.11.0 <25",
     "pnpm": ">=11.0.0 <12"
@@ -76,11 +76,11 @@
     "check": "pnpm run check:forbidden-refs && pnpm run check:boundaries && pnpm run check:version && pnpm run check:compatibility-contract && pnpm run check:supply-chain && pnpm run check:governance && pnpm run check:fixtures && pnpm run check:protocol-schemas && pnpm run check:ci-lanes && pnpm run check:testing-strategy && pnpm run check:regression-policy && pnpm run check:protocol-pr-template && pnpm run check:dev-doctor && pnpm run check:devcontainer && pnpm run check:performance-budgets && pnpm run check:beta-program && pnpm run check:agent-configs && pnpm run check:examples && pnpm run check:docs-site && pnpm run release:verify && pnpm -r run check"
   },
   "devDependencies": {
-    "@commitlint/cli": "21.0.0",
-    "@commitlint/config-conventional": "21.0.0",
+    "@commitlint/cli": "21.0.2",
+    "@commitlint/config-conventional": "21.0.2",
     "@oaslananka/kicad-protocol-schemas": "1.1.1",
     "husky": "9.1.7",
-    "prettier": "3.8.3",
+    "prettier": "3.8.4",
     "typescript": "6.0.3",
     "vitepress": "1.6.4",
     "yaml": "2.9.0"

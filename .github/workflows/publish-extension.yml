@@ -29,6 +29,7 @@ permissions:
 
 env:
   OPENVSX_PRERELEASE_TAG_SUFFIX: -openvsx
+  pnpm_config_pm_on_fail: ignore
 
 jobs:
   package:
@@ -53,6 +54,7 @@ jobs:
           node-version-file: .node-version
           package-manager-cache: false
       - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm --filter kicadstudiokit run build
       - name: Evaluate extension pre-release policy
@@ -148,6 +150,7 @@ jobs:
           node-version-file: .node-version
           package-manager-cache: false
       - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
       - run: corepack pnpm install --frozen-lockfile
       - name: Download extension release evidence
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
@@ -247,6 +250,7 @@ jobs:
           node-version-file: .node-version
           package-manager-cache: false
       - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
       - run: corepack pnpm install --frozen-lockfile
       - name: Download extension release evidence
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c

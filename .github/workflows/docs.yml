@@ -11,6 +11,9 @@ permissions:
   pages: write
   id-token: write
 
+env:
+  pnpm_config_pm_on_fail: ignore
+
 concurrency:
   group: docs-${{ github.ref }}
   cancel-in-progress: true
@@ -31,6 +34,7 @@ jobs:
           enable-cache: true
 
       - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
       - run: corepack pnpm install --frozen-lockfile
 
       - run: corepack pnpm run check:docs-site

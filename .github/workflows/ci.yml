@@ -9,6 +9,13 @@ on:
 permissions:
   contents: read
 
+env:
+  # pnpm 11+ enforces packageManager version match. CI has pnpm 11.5.0 pre-installed
+  # but our package.json specifies 11.6.0. corepack prepare activates 11.6.0 for
+  # outer commands, but nested pnpm calls in scripts (e.g. `pnpm run prepare:media`)
+  # resolve to the system pnpm. This tells pnpm to warn instead of fail.
+  pnpm_config_pm_on_fail: ignore
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -60,6 +67,7 @@ jobs:
           enable-cache: true
 
       - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm run check:forbidden-refs
       - run: corepack pnpm run check:boundaries
@@ -89,6 +97,7 @@ jobs:
           node-version-file: .node-version
           package-manager-cache: false
       - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm --filter kicadstudiokit run format:check
       - run: corepack pnpm --filter kicadstudiokit run lint
@@ -170,6 +179,7 @@ jobs:
           enable-cache: true
 
       - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm run check:fixtures
 
@@ -190,6 +200,7 @@ jobs:
           enable-cache: true
 
       - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
       - run: corepack pnpm install --frozen-lockfile
       - name: Measure extension performance budgets
         env:
@@ -226,6 +237,7 @@ jobs:
           enable-cache: true
 
       - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
       - run: corepack pnpm install --frozen-lockfile
       - name: Run real-pair compatibility tests
         env:
@@ -279,6 +291,7 @@ jobs:
           node-version-file: .node-version
           package-manager-cache: false
       - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm run check:forbidden-refs
 
