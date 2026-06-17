@@ -17,7 +17,7 @@ function createFixture(overrides = {}) {
         "packages:",
         "minimumReleaseAge: 1440",
         "minimumReleaseAgeExclude:",
-        "  - tmp@0.2.6",
+        "  - tmp@0.2.7",
         "blockExoticSubdeps: true",
         "",
       ].join("\n"),
@@ -82,7 +82,7 @@ test("disabled pnpm supply-chain controls fail validation", () => {
       "pnpm-workspace.yaml must set minimumReleaseAge: 1440",
       "pnpm-workspace.yaml must set blockExoticSubdeps: true",
       "pnpm-workspace.yaml must not enable trustLockfile for public PR CI",
-      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.6",
+      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });

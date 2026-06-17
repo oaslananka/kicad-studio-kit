@@ -5,12 +5,12 @@ Publishing is GitHub-only and uses the canonical repository `oaslananka/kicad-st
 ## Version Availability
 
 ```bash
-npm view kicad-mcp-pro@3.5.2 version --json || true
+npm view kicad-mcp-pro@<version> version --json || true
 python -m pip index versions kicad-mcp-pro || true
 ```
 
 ```powershell
-npm view 'kicad-mcp-pro@3.5.2' version --json
+npm view 'kicad-mcp-pro@<version>' version --json
 python -m pip index versions kicad-mcp-pro
 ```
 

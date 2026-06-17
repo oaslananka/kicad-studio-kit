@@ -515,7 +515,7 @@ products:
     compatibleMcpPro:
       required: ">=3.5.2 <4.0.0"
       recommended: ">=3.5.2 <4.0.0"
-      testedAgainst: "3.5.2"
+      testedAgainst: "3.9.2"
 
 featureGates:
   projectDiscovery:

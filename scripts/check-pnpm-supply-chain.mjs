@@ -8,7 +8,7 @@ import { parse } from "yaml";
 const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
 const MINIMUM_RELEASE_AGE_MINUTES = 1440;
-const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = ["tmp@0.2.6"];
+const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = ["tmp@0.2.7"];
 const FORBIDDEN_PNPM_SETTINGS = [
   "minimumReleaseAge",
   "minimumReleaseAgeExclude",
@@ -77,7 +77,7 @@ function validateWorkspace(errors, workspace) {
       workspace?.minimumReleaseAgeExclude,
       ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES,
     ),
-    "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.6",
+    "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7",
   );
 }
 
