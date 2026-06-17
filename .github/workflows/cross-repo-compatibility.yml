@@ -102,7 +102,7 @@ jobs:
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
         with:
           enable-cache: true
-          version: 0.11.16
+          version: 0.11.21
 
       - name: Smoke-test published kicad-mcp-pro from PyPI
         id: pypi-check
