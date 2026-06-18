@@ -1,16 +1,19 @@
 # KiCad Studio Beta Program
 
-The beta program is the structured feedback loop for KiCad Studio before the
-`1.0.0` stable release. It is NDA-free, public by default, and designed to turn
-real project feedback into Linear issues without requiring maintainers to infer
-what happened from unstructured comments.
+KiCad Studio ships a stable `1.x` line on the VS Code Marketplace and Open VSX.
+The beta (preview) program is the structured feedback loop for **preview
+builds** of upcoming changes: an ongoing channel that validates work with real
+projects before it is promoted to the stable channel. It is NDA-free, public by
+default, and designed to turn real project feedback into Linear issues without
+requiring maintainers to infer what happened from unstructured comments.
 
 ## Goals
 
-- Recruit 10-20 beta testers before the first public beta cycle.
+- Recruit 10-20 beta testers before each preview cycle.
 - Cover Windows, macOS, and Linux with single-board, multi-board, classroom,
   embedded, and non-English KiCad workflows.
-- Complete at least two 2-week beta cycles before `1.0.0` stable.
+- Complete at least two 2-week preview cycles before promoting a preview build
+  to the stable channel.
 - Triage every actionable beta report into Linear with the `source:beta` label.
 - Keep telemetry and crash reporting opt-in, disabled by default, and bounded by
   the privacy model in [telemetry.md](telemetry.md).
@@ -18,7 +21,7 @@ what happened from unstructured comments.
 ## Beta Channel
 
 Beta builds use GitHub pre-release tags that end with `-beta.N`, for example
-`vscode-extension-v1.0.1-beta.1`.
+`vscode-extension-v1.9.0-beta.1` (a preview of the next `1.x` release).
 
 VS Code Marketplace and Open VSX publish these builds as pre-releases. The VSIX
 package version remains normal `major.minor.patch` because VS Code marketplace
@@ -33,7 +36,7 @@ pre-release. Stable release notes must use "KiCad Studio Stable" and must not
 refer to beta-only fixes as generally available until the stable release ships.
 
 Stable releases and beta releases must not share the same extension version. If
-`1.0.1` is used for a beta, the next stable release must be `1.0.2` or higher.
+`1.9.0` is used for a beta, the next stable release must be `1.9.1` or higher.
 Before publishing a stable release, publish the next beta version first so beta
 users are not silently moved to stable.
 
@@ -133,4 +136,5 @@ names, company names, or non-public design details.
 - Publish workflow packages beta tags with `--pre-release`.
 - Auto-update and release-note copy distinguishes beta from stable.
 - Weekly async email digest is sent during every active beta week.
-- At least two beta cycles are completed before `1.0.0` stable.
+- At least two preview cycles are completed before promoting a preview build to
+  the stable channel.

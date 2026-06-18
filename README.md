@@ -119,7 +119,7 @@ for the command catalog.
 ## Publishing
 
 Publishing is handled by GitHub Actions workflows under `.github/workflows`. External setup for environments, marketplace secrets, and trusted publishers is documented in [docs/publishing.md](docs/publishing.md).
-The structured pre-1.0 beta program and tester feedback loop are documented in [docs/beta-program.md](docs/beta-program.md).
+The structured preview (beta) program and tester feedback loop for the stable `1.x` line are documented in [docs/beta-program.md](docs/beta-program.md).
 
 ## Maintenance
 

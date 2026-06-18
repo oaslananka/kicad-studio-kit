@@ -5,12 +5,9 @@
   "version": "1.8.0",
   "publisher": "oaslananka",
   "engines": {
-    "vscode": "^1.100.0",
+    "vscode": "^1.101.0",
     "node": "24.x"
   },
-  "enabledApiProposals": [
-    "mcpConfigurationProvider"
-  ],
   "packageManager": "pnpm@11.6.0",
   "devEngines": {
     "runtime": {
@@ -2564,7 +2561,7 @@
     "@types/jest": "30.0.0",
     "@types/mocha": "10.0.10",
     "@types/node": "24.12.3",
-    "@types/vscode": "1.100.0",
+    "@types/vscode": "1.101.0",
     "@typescript-eslint/eslint-plugin": "8.61.0",
     "@typescript-eslint/parser": "8.61.0",
     "@vscode/test-electron": "2.5.2",

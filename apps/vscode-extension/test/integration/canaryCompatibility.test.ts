@@ -52,9 +52,9 @@ suite('VS Code Canary Compatibility', () => {
     }
 
     const sidebarViews =
-      (extension.packageJSON?.contributes?.views?.[
-        'kicadstudio-sidebar'
-      ] as ViewContribution[] | undefined) ?? [];
+      (extension.packageJSON?.contributes?.views?.['kicadstudio-sidebar'] as
+        | ViewContribution[]
+        | undefined) ?? [];
     assert.ok(
       sidebarViews.some((view) => view.id === 'kicadstudio.projectTree'),
       'Missing projectTree view contribution.'
@@ -78,8 +78,38 @@ suite('VS Code Canary Compatibility', () => {
     );
   });
 
+  test('activates without depending on proposed VS Code APIs', async () => {
+    // Regression for #378. A published extension cannot use proposed APIs, so
+    // any enabledApiProposals entry hard-fails activation on a host where the
+    // proposal is not finalized (mcpConfigurationProvider on VS Code 1.100.x).
+    // The MCP server-definition API finalized in 1.101, the current engine
+    // floor, so this list must stay empty and activation must succeed cleanly.
+    await extension.activate();
+    assert.ok(extension.isActive, 'Expected the extension to be active.');
+
+    const proposals = (
+      extension.packageJSON as { enabledApiProposals?: string[] }
+    ).enabledApiProposals;
+    assert.ok(
+      !proposals || proposals.length === 0,
+      `Extension must not declare proposed APIs; found ${JSON.stringify(
+        proposals
+      )}`
+    );
+
+    const mcpProviders =
+      (extension.packageJSON?.contributes?.mcpServerDefinitionProviders as
+        | unknown[]
+        | undefined) ?? [];
+    assert.ok(
+      mcpProviders.length > 0,
+      'Expected the finalized MCP server definition provider contribution.'
+    );
+  });
+
   test('registers custom editors and bootstraps the schematic webview host', async () => {
-    const customEditors = extension.packageJSON?.contributes?.customEditors ?? [];
+    const customEditors =
+      extension.packageJSON?.contributes?.customEditors ?? [];
     assert.ok(
       customEditors.some(
         (item: { viewType?: string }) =>
@@ -103,7 +133,10 @@ suite('VS Code Canary Compatibility', () => {
     );
 
     const tab = await waitForCustomTab(resource, 'kicadstudio.schematicViewer');
-    assert.ok(tab.isActive, 'Expected the canary custom editor tab to activate.');
+    assert.ok(
+      tab.isActive,
+      'Expected the canary custom editor tab to activate.'
+    );
   });
 
   test('opens a KiCad document through the diagnostics lifecycle smoke path', async () => {

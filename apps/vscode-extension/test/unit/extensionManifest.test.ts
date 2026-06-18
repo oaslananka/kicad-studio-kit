@@ -9,12 +9,14 @@ describe('extensionManifest', () => {
     publisher: string;
     version: string;
     engines: { vscode: string };
+    enabledApiProposals?: string[];
     contributes?: {
       commands?: Array<{ command: string; title: string }>;
       views?: Record<string, unknown[]>;
       viewsContainers?: Record<string, unknown[]>;
       customEditors?: Array<{ viewType: string }>;
       viewsWelcome?: unknown[];
+      mcpServerDefinitionProviders?: Array<{ id: string; label: string }>;
     };
     activationEvents?: string[];
   };
@@ -28,9 +30,24 @@ describe('extensionManifest', () => {
     expect(packageJson.version).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
-  it('targets VS Code >= 1.100.0', () => {
+  it('targets VS Code >= 1.101.0', () => {
     const vsCodeEngine = packageJson.engines.vscode;
-    expect(vsCodeEngine).toMatch(/^\^1\.100\.0$/);
+    expect(vsCodeEngine).toMatch(/^\^1\.101\.0$/);
+  });
+
+  it('declares no proposed API dependencies', () => {
+    // A published extension cannot use proposed APIs, so declaring any in
+    // enabledApiProposals hard-fails activation on hosts where the proposal is
+    // not finalized (regression #378: mcpConfigurationProvider on 1.100.x). The
+    // MCP server-definition API finalized in 1.101, which is now the engine
+    // floor, so no proposal declaration is needed.
+    expect(packageJson.enabledApiProposals ?? []).toEqual([]);
+  });
+
+  it('contributes the finalized MCP server definition provider', () => {
+    const providers =
+      packageJson.contributes?.mcpServerDefinitionProviders ?? [];
+    expect(providers.length).toBeGreaterThan(0);
   });
 
   it('contributes exported command IDs in package.json', () => {
