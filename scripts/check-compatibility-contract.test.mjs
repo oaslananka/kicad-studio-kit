@@ -30,7 +30,7 @@ test("embedded extension compatibility matrix matches compatibility metadata", (
 
 test("embedded extension compatibility matrix rejects product-version drift", () => {
   const driftedSource = matrixSource.replace(
-    "version: '1.8.0'",
+    "version: '1.8.1'",
     "version: '0.0.0'",
   );
 
