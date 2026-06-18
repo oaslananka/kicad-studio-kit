@@ -91,6 +91,11 @@ export async function launchVsCodeWithFixtures(
       context.pages()[0] ??
       (await context.waitForEvent('page', { timeout: 30000 }));
     await page.waitForLoadState('domcontentloaded');
+    // Wait for the workbench shell to mount before handing the page to a test.
+    // `domcontentloaded` fires while VS Code is still booting; gating on the
+    // workbench root gives every test a deterministic ready state instead of
+    // racing the editor's first paint (a known source of slow-runner flake).
+    await page.waitForSelector('.monaco-workbench', { timeout: 60000 });
 
     return {
       browser,

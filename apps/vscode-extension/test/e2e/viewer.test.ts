@@ -41,11 +41,23 @@ async function expectCommandPaletteEntry(
   page: import('@playwright/test').Page,
   query: string
 ) {
-  await page.keyboard.press('Control+Shift+P');
   const quickInput = page.locator('.quick-input-widget');
-  await expect(quickInput).toBeVisible();
-  await quickInput.locator('input').fill(`>${query}`);
-  await expect(quickInput).toContainText(query);
+  // The extension registers its commands during activation, which on slow CI
+  // runners can lag behind the first palette open. A single fill snapshots the
+  // command registry once; if the command is registered a moment later, the
+  // quick-open list never re-filters and the assertion times out (the Ubuntu
+  // viewer flake). Re-open and re-filter until the entry is present so we await
+  // a concrete readiness signal rather than a one-shot pre-activation snapshot.
+  await expect(async () => {
+    await page.keyboard.press('Control+Shift+P');
+    await expect(quickInput).toBeVisible({ timeout: 5000 });
+    const input = quickInput.locator('input');
+    // Clear before re-filling so VS Code recomputes the picks against the
+    // current registry even when the query text is unchanged between attempts.
+    await input.fill('');
+    await input.fill(`>${query}`);
+    await expect(quickInput).toContainText(query, { timeout: 2000 });
+  }).toPass({ timeout: 30000 });
   await page.keyboard.press('Escape');
   await expect(quickInput).toBeHidden();
 }
