@@ -155,6 +155,7 @@ export default defineConfig({
           { text: "Release Coordination", link: "/RELEASE-COORDINATION" },
           { text: "Release Runbook", link: "/release" },
           { text: "Beta Program", link: "/beta-program" },
+          { text: "GA Readiness", link: "/ga-readiness" },
           { text: "Dependency Lifecycle", link: "/dependency-lifecycle" },
           { text: "Security", link: "/security" },
           { text: "Changelog", link: "/changelog/" },
