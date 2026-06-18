@@ -1579,18 +1579,6 @@
           "when": "kicadstudio.aiEnabled"
         },
         {
-          "command": "kicadstudio.searchLibrarySymbol",
-          "when": "kicadstudio.library"
-        },
-        {
-          "command": "kicadstudio.searchLibraryFootprint",
-          "when": "kicadstudio.library"
-        },
-        {
-          "command": "kicadstudio.reindexLibraries",
-          "when": "kicadstudio.library"
-        },
-        {
           "command": "kicadstudio.pcm.refresh",
           "when": "false"
         },
