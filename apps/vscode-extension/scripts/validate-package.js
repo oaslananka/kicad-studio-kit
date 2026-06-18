@@ -83,7 +83,7 @@ function validateStaticMetadata({ root, repoRoot, pkg, fail }) {
     fail
   );
   check(
-    pkg.engines?.vscode === '^1.100.0',
+    pkg.engines?.vscode === '^1.101.0',
     'VS Code engine drifted unexpectedly',
     fail
   );

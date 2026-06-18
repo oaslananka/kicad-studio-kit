@@ -29,7 +29,7 @@ jobs:
         include:
           - id: minimum
             state: primary
-            version: 1.100.0
+            version: 1.101.0
             continue_on_error: false
           - id: stable
             state: primary
