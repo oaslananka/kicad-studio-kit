@@ -33,4 +33,28 @@ describe('KiCadCodeActionProvider', () => {
       })
     );
   });
+
+  it('falls back to the description and is not preferred for low-confidence fixes', () => {
+    const provider = new KiCadCodeActionProvider({
+      getFixesForUri: jest.fn().mockReturnValue([
+        {
+          id: 'fix-2',
+          description: 'Increase clearance on NET1',
+          severity: 'error'
+          // no title and no confidence
+        }
+      ])
+    } as never);
+
+    const actions = provider.provideCodeActions(
+      {
+        uri: vscode.Uri.file('/project/board.kicad_pcb')
+      } as never,
+      new vscode.Range(0, 0, 0, 1)
+    );
+
+    expect(actions).toHaveLength(1);
+    expect(actions[0]?.title).toBe('KiCad Fix: Increase clearance on NET1');
+    expect(actions[0]?.isPreferred).toBe(false);
+  });
 });
