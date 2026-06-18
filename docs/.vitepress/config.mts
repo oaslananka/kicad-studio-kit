@@ -72,6 +72,7 @@ export default defineConfig({
           { text: "BoardReadyOps", link: "/board-ready-ops" },
           { text: "Troubleshooting", link: "/extension/troubleshooting" },
           { text: "Accessibility", link: "/accessibility" },
+          { text: "UI/UX Review", link: "/ux-review-1.0" },
           { text: "Telemetry", link: "/telemetry" },
         ],
       },

@@ -127,6 +127,24 @@ Status key:
 | 4.1.2 Name, Role, Value                         | A     | Automated + Manual | Custom controls must expose accessible names, roles, values, and state. Prefer native controls.                                                                                                               |
 | 4.1.3 Status Messages                           | AA    | Automated + Manual | Async results, loading states, errors, and completion notices must use status/alert semantics or native VS Code status APIs.                                                                                  |
 
+## Conformance Evidence
+
+Automated baseline (updated 2026-06-18):
+
+- `test:a11y` runs **76 axe-core assertions** and passes with zero violations.
+- Coverage spans every extension-owned webview surface — Settings, AI Chat, BOM,
+  Netlist, Visual Diff, DRC Rule Editor, Quality Gate, Component Search details,
+  MCP Tools, the viewer fallback/error chrome, and the status bar — across the
+  dark, light, and high-contrast theme fixtures, with WCAG 2.0/2.1 A and AA rule
+  tags enabled.
+- The suite runs headless in Chromium and is wired into the extension `check`
+  and `check:ci` scripts and the `vscode-extension` CI job, so the baseline
+  cannot silently regress.
+
+Manual release evidence (keyboard-only navigation and the NVDA/VoiceOver pass
+described under the manual release gate) is recorded per release candidate and
+is not a CI gate.
+
 ## Tooling Policy
 
 - `axe-core` is the automated accessibility engine for extension-owned HTML UI.
