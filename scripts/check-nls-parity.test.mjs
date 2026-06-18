@@ -79,6 +79,56 @@ describe('check-nls-parity', () => {
     }
   });
 
+  it('detects a new user-facing string left untranslated', () => {
+    const basePath = path.join(EXTENSION_DIR, 'package.nls.json');
+    const trPath = path.join(EXTENSION_DIR, 'package.nls.tr.json');
+    const baseOriginal = fs.readFileSync(basePath, 'utf8');
+    const trOriginal = fs.readFileSync(trPath, 'utf8');
+    try {
+      // Add a matching key to both locales with an identical, non-allowlisted
+      // value (a real sentence, not a proper noun / category / alias).
+      const baseData = JSON.parse(baseOriginal);
+      const trData = JSON.parse(trOriginal);
+      baseData['__test_untranslated__'] = 'Run the design rule check now';
+      trData['__test_untranslated__'] = 'Run the design rule check now';
+      fs.writeFileSync(basePath, JSON.stringify(baseData, null, 2) + '\n', 'utf8');
+      fs.writeFileSync(trPath, JSON.stringify(trData, null, 2) + '\n', 'utf8');
+
+      const result = runScriptExpectFail();
+      assert.ok(result !== null, 'Script should have failed');
+      assert.ok(
+        result.stderr.includes('untranslated') ||
+          result.stdout.includes('untranslated')
+      );
+      assert.notEqual(result.status, 0);
+    } finally {
+      fs.writeFileSync(basePath, baseOriginal, 'utf8');
+      fs.writeFileSync(trPath, trOriginal, 'utf8');
+    }
+  });
+
+  it('allows identical values for brand names, categories, and aliases', () => {
+    const basePath = path.join(EXTENSION_DIR, 'package.nls.json');
+    const trPath = path.join(EXTENSION_DIR, 'package.nls.tr.json');
+    const baseOriginal = fs.readFileSync(basePath, 'utf8');
+    const trOriginal = fs.readFileSync(trPath, 'utf8');
+    try {
+      const baseData = JSON.parse(baseOriginal);
+      const trData = JSON.parse(trOriginal);
+      // A *.category key is an allowed identical value.
+      baseData['kicadstudio.contributes.commands.test.category'] = 'KiCad';
+      trData['kicadstudio.contributes.commands.test.category'] = 'KiCad';
+      fs.writeFileSync(basePath, JSON.stringify(baseData, null, 2) + '\n', 'utf8');
+      fs.writeFileSync(trPath, JSON.stringify(trData, null, 2) + '\n', 'utf8');
+
+      const result = runScript();
+      assert.ok(result.includes('✓'));
+    } finally {
+      fs.writeFileSync(basePath, baseOriginal, 'utf8');
+      fs.writeFileSync(trPath, trOriginal, 'utf8');
+    }
+  });
+
   it('fails when no locale files exist', () => {
     const trPath = path.join(EXTENSION_DIR, 'package.nls.tr.json');
     const original = fs.readFileSync(trPath, 'utf8');

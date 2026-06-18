@@ -9,6 +9,33 @@ const REPO_ROOT = path.resolve(SCRIPT_ROOT, '..');
 const EXTENSION_DIR = path.join(REPO_ROOT, 'apps', 'vscode-extension');
 const BASE_FILE = path.join(EXTENSION_DIR, 'package.nls.json');
 
+// Supported locales for GA are English (base) + Turkish. Beyond key parity, we
+// also guard against *new* user-facing strings that were copied into a locale
+// file but never translated (value identical to the base locale).
+//
+// A value that is legitimately identical across locales is allowed when it is a
+// proper noun, brand name, palette category label, or file-format alias. The
+// 57 currently-identical tr values were triaged and all fall into these
+// buckets, captured by the patterns below. Anything else identical to the base
+// is treated as a missed translation and fails the gate; if a new string is
+// genuinely meant to be identical, add it here with that justification.
+const IDENTICAL_ALLOWED_KEYS = new Set([
+  'kicadstudio.displayName', // "KiCad Studio Kit" (product name)
+  'kicadstudio.contributes.viewsContainers.activitybar.0.title', // "KiCad Studio"
+  'kicadstudio.contributes.views.kicadstudio-sidebar.4.name', // "Netlist" (accepted term)
+  'kicadstudio.contributes.configuration.title', // "KiCad Studio"
+  'kicadstudio.contributes.languageModelChatProviders.0.displayName' // "KiCad Studio"
+]);
+
+/** Whether a key may legitimately carry the same value in every locale. */
+function identicalValueAllowed(key) {
+  return (
+    key.endsWith('.category') || // command palette categories ("KiCad", "KiCad AI", …)
+    key.includes('.aliases.') || // language/file-format aliases ("kicad_sch", "Gerber RS-274X", …)
+    IDENTICAL_ALLOWED_KEYS.has(key)
+  );
+}
+
 let exitCode = 0;
 
 /** Parse a JSON file, returning the parsed object or null on failure. */
@@ -79,6 +106,27 @@ for (const file of localeFiles) {
 
   if (extra.length > 0) {
     console.error(`\x1b[31m✗ ${loc}\x1b[0m has ${extra.length} extra key(s): ${extra.join(', ')}`);
+    exitCode = 1;
+    fileOk = false;
+  }
+
+  // Flag user-facing strings that were copied verbatim from the base locale and
+  // never translated (excluding proper nouns / brand / category / aliases).
+  const untranslated = [];
+  for (const key of localeKeys) {
+    if (!baseKeys.has(key)) continue;
+    if (base[key] === localeData[key] && !identicalValueAllowed(key)) {
+      untranslated.push(key);
+    }
+  }
+
+  if (untranslated.length > 0) {
+    console.error(
+      `\x1b[31m✗ ${loc}\x1b[0m has ${untranslated.length} value(s) identical to the base locale (likely untranslated): ${untranslated.join(', ')}`
+    );
+    console.error(
+      '  If a value is intentionally identical (proper noun, brand, category, or alias), add the key to IDENTICAL_ALLOWED_KEYS in scripts/check-nls-parity.mjs.'
+    );
     exitCode = 1;
     fileOk = false;
   }
