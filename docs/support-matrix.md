@@ -15,7 +15,7 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 | --- | --- |
 | KiCad primary | `10.0.x` |
 | KiCad latest verified | `10.0.3` |
-| VS Code minimum | `1.100.0` |
+| VS Code minimum | `1.101.0` |
 | Node | `>=24.11.0 <25` |
 | pnpm | `>=11.0.0 <12` |
 | Python | `>=3.13` |
@@ -155,7 +155,7 @@ Freshness sources checked on 2026-05-27:
 | Surface      | Primary    | Supported              | Deprecated | Gate                                     |
 | ------------ | ---------- | ---------------------- | ---------- | ---------------------------------------- |
 | KiCad        | 10.0.x     | none                   | 9.x, 8.x   | `compatibility.yaml` + release preflight |
-| VS Code      | current    | `engines.vscode` 1.100 | none       | extension manifest + VS Code canary      |
+| VS Code      | current    | `engines.vscode` 1.101 | none       | extension manifest + VS Code canary      |
 | MCP protocol | 2025-11-25 | 2025-11-25             | older      | well-known server card + matrix          |
 | Node         | 24.x       | `>=24.11.0 <25`        | older      | root and extension package metadata      |
 | pnpm         | 11.x       | `>=11.0.0 <12`         | older      | root package metadata                    |
