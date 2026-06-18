@@ -25,6 +25,26 @@ notes can add detail, but they should not weaken these gates.
 | Cross-repo canary    | Push, pull request, and manual workflow                              | Verify this repo consumes published `kicad-mcp` protocol schema and server artifacts.                  | `.github/workflows/cross-repo-compatibility.yml`      |
 | Manual smoke         | Release candidate only                                               | Final human inspection where automation is not practical.                                              | PR notes must name the exact manual check             |
 
+## Coverage and Mutation Thresholds
+
+Extension unit coverage is enforced by Jest (`apps/vscode-extension/jest.config.js`)
+and must not regress. The global floor is **statements 83 / branches 70 /
+functions 88 / lines 83**, set just below the measured suite so new uncovered
+code fails the gate rather than silently lowering the bar. Raise these floors as
+coverage improves; do not lower them to make a change pass.
+
+Branch coverage is the laggard metric: the remaining gap is concentrated in
+mocking-heavy command handlers (`src/commands/*`) and the AI/LM providers
+(`src/ai/*`, `src/lm/*`). Close it by exercising their error, empty, and
+guard-clause paths — that is the highest-value place to add tests, not the
+already-strong pure helpers.
+
+Mutation testing is configured in `stryker.config.json` (Jest runner, `perTest`
+analysis, thresholds high 80 / low 60). It currently runs with `break: 0` so it
+never fails the build. The next step is to run `pnpm exec stryker run` against
+the core modules, record the baseline mutation score here, and raise `break` to
+that baseline so mutation coverage cannot regress.
+
 ## Test Layers
 
 | Layer                                 | Scope                                                                                                                                                                                                      | Owner path                                                         | Runner or API                                                  | Gate                                              |
