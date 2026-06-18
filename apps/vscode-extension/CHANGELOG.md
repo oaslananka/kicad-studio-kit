@@ -10,6 +10,14 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.8.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.8.0...vscode-extension-v1.8.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* **kicad-studio:** drop proposed MCP API and raise engine floor to 1.101 ([#385](https://github.com/oaslananka/kicad-studio-kit/issues/385)) ([e08dd3a](https://github.com/oaslananka/kicad-studio-kit/commit/e08dd3aca373866cc84db19a6c1e46789f34a7a9))
+* **kicad-studio:** tidy command palette gating and add editor context menu ([#383](https://github.com/oaslananka/kicad-studio-kit/issues/383)) ([76e94d7](https://github.com/oaslananka/kicad-studio-kit/commit/76e94d7d8a4d8726a2d269e0a6f3d05d04b96c2b))
+
 ## [1.8.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.7.0...vscode-extension-v1.8.0) (2026-06-14)
 
 

@@ -2,7 +2,7 @@
   "name": "kicadstudiokit",
   "displayName": "%kicadstudio.displayName%",
   "description": "%kicadstudio.description%",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "publisher": "oaslananka",
   "engines": {
     "vscode": "^1.101.0",
@@ -883,7 +883,6 @@
       },
       {
         "command": "kicadstudio.fixQueue.applyAll",
-        "icon": "$(check-all)",
         "title": "%kicadstudio.contributes.commands.63.title%",
         "category": "%kicadstudio.contributes.commands.63.category%"
       },
@@ -1007,13 +1006,11 @@
       },
       {
         "command": "kicadstudio.pcm.refresh",
-        "icon": "$(refresh)",
         "title": "%kicadstudio.contributes.commands.86.title%",
         "category": "%kicadstudio.contributes.commands.86.category%"
       },
       {
         "command": "kicadstudio.pcm.filter",
-        "icon": "$(filter)",
         "title": "%kicadstudio.contributes.commands.87.title%",
         "category": "%kicadstudio.contributes.commands.87.category%"
       },
@@ -1029,7 +1026,6 @@
       },
       {
         "command": "kicadstudio.pcm.updateAll",
-        "icon": "$(sync)",
         "title": "%kicadstudio.contributes.commands.90.title%",
         "category": "%kicadstudio.contributes.commands.90.category%"
       },
@@ -1142,23 +1138,6 @@
           "when": "activeCustomEditorId == kicadstudio.schematicViewer || activeCustomEditorId == kicadstudio.pcbViewer",
           "command": "kicadstudio.openInKiCad",
           "group": "navigation"
-        }
-      ],
-      "editor/context": [
-        {
-          "when": "resourceExtname == .kicad_sch",
-          "command": "kicadstudio.openSchematic",
-          "group": "kicadstudio@1"
-        },
-        {
-          "when": "resourceExtname == .kicad_pcb",
-          "command": "kicadstudio.openPCB",
-          "group": "kicadstudio@1"
-        },
-        {
-          "when": "resourceExtname =~ /\\.kicad_(sch|pcb|sym|mod|pro)/",
-          "command": "kicadstudio.openInKiCad",
-          "group": "kicadstudio@2"
         }
       ],
       "view/title": [
@@ -1434,16 +1413,14 @@
           "when": "kicadstudio.aiEnabled"
         },
         {
-          "command": "kicadstudio.searchComponent",
-          "when": "kicadstudio.hasProject"
+          "command": "kicadstudio.searchComponent"
         },
         {
           "command": "kicadstudio.showDiff",
           "when": "kicadstudio.hasProject"
         },
         {
-          "command": "kicadstudio.refreshProjectTree",
-          "when": "kicadstudio.hasProject"
+          "command": "kicadstudio.refreshProjectTree"
         },
         {
           "command": "kicadstudio.openSettings"
@@ -1463,8 +1440,7 @@
           "when": "kicadstudio.workspaceTrusted"
         },
         {
-          "command": "kicadstudio.mcp.retry",
-          "when": "false"
+          "command": "kicadstudio.mcp.retry"
         },
         {
           "command": "kicadstudio.mcp.openUpgradeGuide"
@@ -1576,12 +1552,19 @@
           "when": "kicadstudio.aiEnabled"
         },
         {
-          "command": "kicadstudio.pcm.refresh",
-          "when": "false"
+          "command": "kicadstudio.searchLibrarySymbol"
         },
         {
-          "command": "kicadstudio.pcm.filter",
-          "when": "false"
+          "command": "kicadstudio.searchLibraryFootprint"
+        },
+        {
+          "command": "kicadstudio.reindexLibraries"
+        },
+        {
+          "command": "kicadstudio.pcm.refresh"
+        },
+        {
+          "command": "kicadstudio.pcm.filter"
         },
         {
           "command": "kicadstudio.pcm.install",
