@@ -27,6 +27,10 @@ import type { ActivationState } from './activationState';
 import type { PushStudioContextReason } from './studioContextController';
 
 const REFRESH_PROJECTS_DEBOUNCE_MS = 500;
+// Editor focus, tab, and config changes can fire in quick bursts. Coalescing the
+// (relatively expensive) context refresh keeps the extension host responsive on
+// large workspaces.
+const CONTEXT_REFRESH_DEBOUNCE_MS = 150;
 
 export interface WorkspaceContextControllerDeps {
   context: vscode.ExtensionContext;
@@ -46,15 +50,58 @@ export interface WorkspaceContextControllerDeps {
 /**
  * Owns workspace/project discovery, the `setContext` keys that gate the UI, and
  * the active-project selection. Also coalesces rapid `.kicad_pro` filesystem
- * events into a single debounced refresh. Extracted unchanged from `activate()`
- * as part of the #397 composition-root split.
+ * events into a single debounced refresh. Extracted from `activate()` as part of
+ * the #397 composition-root split; #398 adds context-refresh debouncing, an
+ * overlap guard, and a cached capability probe.
  */
 export class WorkspaceContextController implements vscode.Disposable {
   private refreshProjectsTimer: NodeJS.Timeout | undefined;
+  private contextRefreshTimer: NodeJS.Timeout | undefined;
+  private refreshInFlight = false;
+  private refreshQueued = false;
+  private allegroSupported: boolean | undefined;
 
   constructor(private readonly deps: WorkspaceContextControllerDeps) {}
 
+  /**
+   * Refresh all context keys and the status bar. Overlapping calls are coalesced
+   * into a single trailing run so bursts of events do not stampede the
+   * (async) discovery + capability probes.
+   */
   async refreshContexts(): Promise<void> {
+    if (this.refreshInFlight) {
+      this.refreshQueued = true;
+      return;
+    }
+    this.refreshInFlight = true;
+    try {
+      await this.doRefreshContexts();
+    } finally {
+      this.refreshInFlight = false;
+      if (this.refreshQueued) {
+        this.refreshQueued = false;
+        await this.refreshContexts();
+      }
+    }
+  }
+
+  /** Debounced entry point for high-frequency UI events. */
+  scheduleContextRefresh(): void {
+    if (this.contextRefreshTimer) {
+      clearTimeout(this.contextRefreshTimer);
+    }
+    this.contextRefreshTimer = setTimeout(() => {
+      this.contextRefreshTimer = undefined;
+      void this.refreshContexts();
+    }, CONTEXT_REFRESH_DEBOUNCE_MS);
+  }
+
+  /** Drop cached capability probes (e.g. after a CLI-path/config change). */
+  invalidateProbeCache(): void {
+    this.allegroSupported = undefined;
+  }
+
+  private async doRefreshContexts(): Promise<void> {
     const {
       context,
       projectState,
@@ -178,9 +225,14 @@ export class WorkspaceContextController implements vscode.Disposable {
     if (!trusted || !cliDetected) {
       return false;
     }
+    if (this.allegroSupported !== undefined) {
+      return this.allegroSupported;
+    }
 
     try {
-      return await this.deps.importService.isImportFormatSupported('allegro');
+      this.allegroSupported =
+        await this.deps.importService.isImportFormatSupported('allegro');
+      return this.allegroSupported;
     } catch (error) {
       this.deps.logger.error('Allegro import capability probe failed', error);
       return false;
@@ -229,6 +281,10 @@ export class WorkspaceContextController implements vscode.Disposable {
     if (this.refreshProjectsTimer) {
       clearTimeout(this.refreshProjectsTimer);
       this.refreshProjectsTimer = undefined;
+    }
+    if (this.contextRefreshTimer) {
+      clearTimeout(this.contextRefreshTimer);
+      this.contextRefreshTimer = undefined;
     }
   }
 }

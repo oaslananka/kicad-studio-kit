@@ -35,12 +35,23 @@ export type PushStudioContextReason =
   | 'drc'
   | 'default';
 
+// Cursor moves fire continuously while typing/navigating. Coalesce them so the
+// (relatively expensive) studio-context build runs at most once per idle window
+// instead of once per cursor event. The ContextBridge applies a further
+// reason-based send delay on top of this.
+const CURSOR_PUSH_DEBOUNCE_MS = 250;
+
 /**
  * Builds and pushes the live "studio context" snapshot consumed by MCP, the
- * language-model tools, and the chat provider. Extracted from `activate()`
- * unchanged as part of the #397 composition-root split.
+ * language-model tools, and the chat provider. Extracted from `activate()` as
+ * part of the #397 composition-root split; #398 adds an mtime-keyed design-block
+ * cache and cursor-push debouncing so the build avoids redundant synchronous
+ * file reads on hot paths.
  */
-export class StudioContextController {
+export class StudioContextController implements vscode.Disposable {
+  private readonly designBlockCache = new DesignBlockCache();
+  private cursorPushTimer: NodeJS.Timeout | undefined;
+
   constructor(private readonly deps: StudioContextControllerDeps) {}
 
   async buildStudioContext(): Promise<StudioContext> {
@@ -111,7 +122,9 @@ export class StudioContextController {
       activeVariant: await variantProvider.getActiveVariantName(),
       mcpConnected: mcpState?.connected ?? false,
       kicadVersion: cli?.version,
-      designBlocks: activeUri ? readDesignBlockNames(activeUri.fsPath) : []
+      designBlocks: activeUri
+        ? this.designBlockCache.read(activeUri.fsPath)
+        : []
     };
   }
 
@@ -125,6 +138,64 @@ export class StudioContextController {
       await this.buildStudioContext(),
       reason
     );
+  }
+
+  /**
+   * Debounce high-frequency cursor pushes; route all other reasons straight
+   * through so saves/focus/DRC stay responsive.
+   */
+  schedulePushStudioContext(reason: PushStudioContextReason = 'default'): void {
+    if (reason !== 'cursor') {
+      void this.pushStudioContext(reason);
+      return;
+    }
+    if (this.cursorPushTimer) {
+      clearTimeout(this.cursorPushTimer);
+    }
+    this.cursorPushTimer = setTimeout(() => {
+      this.cursorPushTimer = undefined;
+      void this.pushStudioContext('cursor');
+    }, CURSOR_PUSH_DEBOUNCE_MS);
+  }
+
+  dispose(): void {
+    if (this.cursorPushTimer) {
+      clearTimeout(this.cursorPushTimer);
+      this.cursorPushTimer = undefined;
+    }
+  }
+}
+
+/**
+ * Caches design-block name parsing keyed by file path and modification time, so
+ * a large board file is only re-read and re-parsed when it actually changes
+ * rather than on every cursor move.
+ */
+export class DesignBlockCache {
+  private readonly entries = new Map<
+    string,
+    { mtimeMs: number; names: string[] }
+  >();
+
+  constructor(
+    private readonly reader: (file: string) => string[] = readDesignBlockNames
+  ) {}
+
+  read(file: string): string[] {
+    let mtimeMs: number;
+    try {
+      mtimeMs = fs.statSync(file).mtimeMs;
+    } catch {
+      this.entries.delete(file);
+      return [];
+    }
+    const cached = this.entries.get(file);
+    if (cached && cached.mtimeMs === mtimeMs) {
+      return cached.names;
+    }
+    const names = this.reader(file);
+    this.entries.set(file, { mtimeMs, names });
+    return names;
   }
 }
 
