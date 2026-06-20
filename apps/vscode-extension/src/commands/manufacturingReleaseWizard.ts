@@ -9,6 +9,10 @@ import {
   troubleshootingUri
 } from '../utils/notifications';
 import { telemetry } from '../utils/telemetry';
+import {
+  assertWorkspaceTrusted,
+  resolveGuardedPath
+} from '../security/guardedOperations';
 import type { CommandServices } from './types';
 
 export async function runManufacturingReleaseWizard(
@@ -21,6 +25,9 @@ export async function runManufacturingReleaseWizard(
   }
 
   try {
+    // A manufacturing release writes a bundle to disk; gate it on workspace
+    // trust through the centralized guard rather than menu visibility alone.
+    assertWorkspaceTrusted('Manufacturing release');
     const gates = await services.mcpAdapter.runProjectQualityGate();
     const blocking = gates.filter((gate) =>
       ['FAIL', 'BLOCKED'].includes(gate.status)
@@ -49,11 +56,14 @@ export async function runManufacturingReleaseWizard(
     if (!outputDirInput) {
       return;
     }
-    const outputDir = path.isAbsolute(outputDirInput)
-      ? outputDirInput
-      : root
-        ? path.resolve(root, outputDirInput)
-        : path.resolve(outputDirInput);
+    // Resolve + canonicalize the user-supplied output folder and confine it to
+    // the workspace (defeats `..` traversal and symlink escape). Throws a safe
+    // GuardedOperationError on escape, handled by the catch below.
+    const outputDir = resolveGuardedPath({
+      requestedPath: outputDirInput,
+      workspaceRoot: root,
+      label: 'Manufacturing release output folder'
+    });
 
     let mcpResult: Record<string, unknown> | undefined;
     const filesGenerated: string[] = [];
