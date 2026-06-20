@@ -86,7 +86,9 @@ function extractChangelogTopVersion(content) {
 function extractSupportMatrixProductVersion(content) {
   // Generated "Product Versions" table row, e.g.
   // | kicad-studio | 1.8.1 | apps/vscode-extension/package.json | ... |
-  const match = content.match(/\|\s*kicad-studio\s*\|\s*([^|]+?)\s*\|/u);
+  // Version tokens contain no spaces or pipes, so match a run of non-space,
+  // non-pipe characters; this is unambiguous and avoids regex backtracking.
+  const match = content.match(/\|\s*kicad-studio\s*\|\s*([^\s|]+)\s*\|/u);
   return match ? match[1] : undefined;
 }
 
@@ -141,6 +143,12 @@ export function collectDrift(root = repoRoot, version = undefined) {
     let actual;
     try {
       actual = surface.extract(readText(surface.file, root));
+      // Treat a missing/empty extraction (e.g. a surface whose format changed so
+      // the version no longer parses) as unreadable, so it is reported with a
+      // clear message rather than surfacing a bare `undefined` in the diff.
+      if (typeof actual !== "string" || actual.trim().length === 0) {
+        throw new Error("extracted version is empty or could not be parsed");
+      }
     } catch (error) {
       drift.push({
         ...surface,
