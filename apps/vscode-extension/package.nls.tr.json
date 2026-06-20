@@ -395,5 +395,7 @@
   "kicadstudio.contributes.commands.105.category": "KiCad Dışa Aktarma",
   "kicadstudio.contributes.commands.106.title": "KiCad: Kart İstatistiklerini Dışa Aktar",
   "kicadstudio.contributes.commands.106.category": "KiCad Dışa Aktarma",
+  "kicadstudio.contributes.commands.107.title": "KiCad: Etkin Projeyi Seç",
+  "kicadstudio.contributes.commands.107.category": "KiCad",
   "kicadstudio.contributes.languageModelChatProviders.0.displayName": "KiCad Studio"
 }

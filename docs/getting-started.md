@@ -39,6 +39,23 @@ If auto-detection fails, set the path in VS Code Settings → `kicadstudio.kicad
 
 > **No project yet?** Download the [LED Basic example](https://github.com/oaslananka/kicad-studio-kit/tree/main/examples/led-basic) from the repository.
 
+### Multi-root and multi-project workspaces
+
+KiCad Studio discovers every `.kicad_pro` file across all folders of a
+multi-root workspace, so a single window can contain several KiCad projects.
+Commands, views, diagnostics, and the MCP context all operate on one **active
+project** at a time:
+
+- The active project name is shown in the status bar. Click it to switch.
+- Run **KiCad: Select Active Project** from the Command Palette, or use the
+  selector button in the **KiCad Project** view title bar.
+- With one project the active project is chosen automatically; with several it
+  is chosen from your last selection (persisted per workspace), then the project
+  owning the active file, then the first project alphabetically.
+- Switching the active project refreshes the project tree, variants,
+  diagnostics, and the live MCP context. If the selected project is removed, the
+  extension falls back to another available project automatically.
+
 ---
 
 ## 4. View a Schematic

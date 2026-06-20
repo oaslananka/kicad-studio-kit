@@ -1108,6 +1108,12 @@
         "command": "kicadstudio.exportStats",
         "title": "%kicadstudio.contributes.commands.106.title%",
         "category": "%kicadstudio.contributes.commands.106.category%"
+      },
+      {
+        "command": "kicadstudio.selectActiveProject",
+        "title": "%kicadstudio.contributes.commands.107.title%",
+        "category": "%kicadstudio.contributes.commands.107.category%",
+        "icon": "$(list-selection)"
       }
     ],
     "menus": {
@@ -1149,6 +1155,11 @@
         {
           "when": "view == kicadstudio.projectTree",
           "command": "kicadstudio.refreshProjectTree",
+          "group": "navigation"
+        },
+        {
+          "when": "view == kicadstudio.projectTree && kicadstudio.hasProject",
+          "command": "kicadstudio.selectActiveProject",
           "group": "navigation"
         },
         {
@@ -1331,6 +1342,10 @@
         {
           "command": "kicadstudio.exportStats",
           "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
+        },
+        {
+          "command": "kicadstudio.selectActiveProject",
+          "when": "kicadstudio.hasProject"
         },
         {
           "command": "kicadstudio.exportGenCAD",
