@@ -19,5 +19,6 @@ the Python MCP server, the npm launcher, shared protocol schemas, examples, and 
 
 - [KiCad Studio and MCP integration](../integration/kicad-studio-mcp.md)
 - [Support matrix](../support-matrix.md)
+- [Threat model](../security/threat-model.md)
 - [Reusable workflows](../reusable-workflows.md)
 - [Dependency lifecycle](../dependency-lifecycle.md)
