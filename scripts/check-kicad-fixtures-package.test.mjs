@@ -23,6 +23,7 @@ const requiredFixtureIds = [
   "malformed-pcb",
   "paths-with-spaces",
   "unicode-path-çöğü",
+  "multi-root-workspace",
 ];
 
 const expectedFileNames = [

@@ -80,10 +80,16 @@ The corpus includes these required semantic fixtures:
 - `malformed-pcb`
 - `paths-with-spaces`
 - `unicode-path-çöğü`
+- `multi-root-workspace`
 
 `paths-with-spaces` uses file names containing spaces. `unicode-path-çöğü`
 uses a non-ASCII directory and file name so Windows path handling and URI
 conversion tests can cover both edge cases.
+
+`multi-root-workspace` bundles two KiCad projects (`controller` at the root and
+`power-supply` in a nested folder) alongside a `controller.code-workspace` file,
+so multi-root and multi-project workspace discovery can be exercised against a
+representative fixture rather than only single-project mocks.
 
 `kicad-10-0-3-regressions` is the patch-specific fixture group for KiCad
 10.0.3. It records DRC status/elapsed report parsing, ERC sheet-level report

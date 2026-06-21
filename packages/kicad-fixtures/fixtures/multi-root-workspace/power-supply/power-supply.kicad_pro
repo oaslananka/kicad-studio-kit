@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "filename": "power-supply",
+    "version": 1,
+    "fixtureId": "multi-root-workspace-power",
+    "generatedBy": "scripts/generate-kicad-fixture-corpus.mjs"
+  },
+  "fixture": {
+    "id": "multi-root-workspace-power",
+    "expectedOutcome": "pass",
+    "tags": [
+      "multi-root",
+      "schematic",
+      "pcb"
+    ]
+  },
+  "schematic": {
+    "file": "power-supply.kicad_sch"
+  },
+  "board": {
+    "file": "power-supply.kicad_pcb"
+  }
+}

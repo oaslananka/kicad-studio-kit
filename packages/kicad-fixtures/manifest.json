@@ -5,7 +5,7 @@
   "githubIssue": 54,
   "root": "packages/kicad-fixtures/fixtures",
   "expectedRoot": "packages/kicad-fixtures/expected",
-  "fixtureCount": 16,
+  "fixtureCount": 17,
   "expectedFiles": [
     "project-tree.snapshot.json",
     "diagnostics.snapshot.json",
@@ -393,6 +393,28 @@
       ],
       "expectedOutcome": "pass",
       "tags": ["unicode-path", "windows-paths"]
+    },
+    {
+      "id": "multi-root-workspace",
+      "semanticName": "multi-root-workspace",
+      "path": "packages/kicad-fixtures/fixtures/multi-root-workspace",
+      "projectFile": "controller.kicad_pro",
+      "schematicFiles": ["controller.kicad_sch"],
+      "boardFile": "controller.kicad_pcb",
+      "designRulesFile": "controller.kicad_dru",
+      "expectedPath": "packages/kicad-fixtures/expected/multi-root-workspace",
+      "expectedFiles": [
+        "project-tree.snapshot.json",
+        "diagnostics.snapshot.json",
+        "status.snapshot.json",
+        "erc-report.json",
+        "drc-report.json",
+        "bom.csv",
+        "netlist.net",
+        "board-stats.txt"
+      ],
+      "expectedOutcome": "pass",
+      "tags": ["multi-root", "workspace", "schematic", "pcb", "bom"]
     }
   ]
 }

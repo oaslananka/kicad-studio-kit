@@ -47,7 +47,7 @@ const fixturesBySemanticName = new Map(
 
 describe('KiCad fixture corpus manifest', () => {
   it('exposes the required fixtures by semantic name', () => {
-    expect(manifest.fixtureCount).toBe(16);
+    expect(manifest.fixtureCount).toBe(17);
     expect(manifest.root).toBe('packages/kicad-fixtures/fixtures');
     expect(manifest.expectedRoot).toBe('packages/kicad-fixtures/expected');
     expect([...fixturesBySemanticName.keys()]).toEqual([
@@ -66,7 +66,8 @@ describe('KiCad fixture corpus manifest', () => {
       'malformed-sch',
       'malformed-pcb',
       'paths-with-spaces',
-      'unicode-path-çöğü'
+      'unicode-path-çöğü',
+      'multi-root-workspace'
     ]);
   });
 
@@ -96,6 +97,27 @@ describe('KiCad fixture corpus manifest', () => {
       }
       expect(fixture.expectedFiles).toEqual(manifest.expectedFiles);
     }
+  });
+
+  it('provides a multi-root workspace fixture with more than one project', () => {
+    const workspace = fixturesBySemanticName.get('multi-root-workspace');
+
+    expect(workspace?.tags).toEqual(
+      expect.arrayContaining(['multi-root', 'workspace'])
+    );
+
+    const workspaceDir = path.join(repoRoot, workspace!.path);
+    expect(
+      fs.existsSync(path.join(workspaceDir, 'controller.code-workspace'))
+    ).toBe(true);
+    expect(fs.existsSync(path.join(workspaceDir, workspace!.projectFile))).toBe(
+      true
+    );
+    expect(
+      fs.existsSync(
+        path.join(workspaceDir, 'power-supply', 'power-supply.kicad_pro')
+      )
+    ).toBe(true);
   });
 
   it('covers Windows path edge cases for spaces and non-ASCII paths', () => {

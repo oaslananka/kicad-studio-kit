@@ -1,0 +1,28 @@
+{
+  "fixture": "multi-root-workspace",
+  "semanticName": "multi-root-workspace",
+  "root": "packages/kicad-fixtures/fixtures/multi-root-workspace",
+  "generatedBy": "scripts/generate-kicad-fixture-corpus.mjs",
+  "files": [
+    {
+      "role": "project",
+      "path": "controller.kicad_pro",
+      "exists": true
+    },
+    {
+      "role": "schematic",
+      "path": "controller.kicad_sch",
+      "exists": true
+    },
+    {
+      "role": "board",
+      "path": "controller.kicad_pcb",
+      "exists": true
+    },
+    {
+      "role": "dru",
+      "path": "controller.kicad_dru",
+      "exists": true
+    }
+  ]
+}

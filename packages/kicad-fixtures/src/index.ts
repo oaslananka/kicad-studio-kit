@@ -18,6 +18,7 @@ export const KICAD_FIXTURE_IDS = [
   "malformed-pcb",
   "paths-with-spaces",
   "unicode-path-çöğü",
+  "multi-root-workspace",
 ] as const;
 
 export const KICAD_EXPECTED_FILES = [

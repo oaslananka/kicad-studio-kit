@@ -1,0 +1,5 @@
+{
+  "fixture": "multi-root-workspace",
+  "generatedBy": "scripts/generate-kicad-fixture-corpus.mjs",
+  "diagnostics": []
+}

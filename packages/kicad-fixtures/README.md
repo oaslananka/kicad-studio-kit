@@ -27,6 +27,7 @@ packages/kicad-fixtures/
     malformed-pcb/
     paths-with-spaces/
     unicode-path-çöğü/
+    multi-root-workspace/
   expected/
     <fixture-id>/
       project-tree.snapshot.json
