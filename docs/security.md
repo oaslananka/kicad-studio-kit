@@ -4,6 +4,56 @@ The repository uses GitHub Actions, protected environments, trusted publishing
 for package registries, and preflight checks for version consistency and
 forbidden repository references.
 
+## Continuous Security Scanning Posture
+
+Security scanning is continuous, visible on every pull request, and wired into
+the merge and release decision. The table below is the standing posture; the
+sections that follow give the detail for each lane.
+
+| Control | Where it runs | Gate |
+| --- | --- | --- |
+| Code scanning (CodeQL, JS/TS + Python) | `CodeQL` workflow on pull requests, pushes, and weekly | High-severity code-scanning alerts block merge |
+| Secret scanning | `Gitleaks` workflow on every pull request plus the local security gate; GitHub secret scanning with push protection stays enabled | A new secret-scanning alert blocks release until triaged |
+| Dependency review | `Security` workflow `dependency-review` job on pull requests | New `high`+ dependency additions block the pull request |
+| Dependency audit | `Security` workflow `pnpm audit --audit-level high` | High-severity advisories fail the check |
+| Supply-chain policy | `check:supply-chain` (`minimumReleaseAge`, `blockExoticSubdeps`) | Untrusted or too-new transitive dependencies fail CI |
+| Repository health | `Scorecard` workflow (OSSF) publishing to code scanning | Findings are tracked, not auto-blocking |
+| Dependency updates | Renovate for version bumps; repository-level GitHub security alerts and automated GitHub Actions security updates | Reviewed through the dependency lanes |
+
+### Decisions and expectations
+
+- **Code scanning** is enabled (CodeQL) for TypeScript/JavaScript and Python.
+- **Secret scanning**: GitHub secret scanning with push protection is expected
+  to remain enabled on the canonical repository. `Gitleaks` enforces the same
+  gate in CI and the `apps/vscode-extension/scripts/local-security` scripts
+  enforce it locally before pushing.
+- **Dependency review** runs on every pull request and blocks high-severity
+  dependency additions.
+- **Automated security updates**: repository-level GitHub security alerts and
+  automated GitHub Actions security updates are enabled; routine dependency
+  version bumps are delegated to Renovate.
+- **Workflow permissions** are least-privilege: every workflow declares a
+  top-level `permissions:` block that defaults to `contents: read`. Jobs
+  escalate only the scopes they need, for example `security-events: write` for
+  code-scanning uploads and `id-token: write` for OIDC publishing.
+- **Third-party GitHub Actions** are pinned to a full commit SHA, and
+  `actionlint` plus `zizmor` lint the workflows in the local security gate.
+
+### Release blocking policy
+
+A release is not ready while any of the following is true:
+
+- an unresolved critical or high code-scanning or dependency alert exists
+  without a recorded waiver,
+- an open secret-scanning alert is untriaged,
+- `dependency-review` is blocking an in-flight pull request,
+- a release workflow requests broader permissions than it needs, or
+- package provenance or artifact validation fails.
+
+Waivers follow the Alert Triage steps below: record the exact advisory, the
+reasoning, the owner, and the recheck condition before dismissing or deferring
+a finding.
+
 ## Supply Chain Checks
 
 Pull requests and scheduled workflows keep the supply chain surface visible:
