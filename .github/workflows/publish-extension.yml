@@ -89,7 +89,10 @@ jobs:
           KICAD_STUDIO_EXTENSION_PRE_RELEASE: ${{ steps.release-policy.outputs.is_prerelease }}
         run: corepack pnpm --filter kicadstudiokit run package
       - run: corepack pnpm --filter kicadstudiokit run package:validate
-      - run: corepack pnpm --filter kicadstudiokit run release:assets
+      - name: Generate release assets and provenance
+        env:
+          RELEASE_TAG: ${{ steps.release-policy.outputs.release_tag }}
+        run: corepack pnpm --filter kicadstudiokit run release:assets
       - name: Stage extension release evidence
         id: stage-evidence
         shell: bash
@@ -103,6 +106,8 @@ jobs:
           cp "$VSIX_PATH" "$evidence_dir/"
           cp apps/vscode-extension/SHA256SUMS.txt "$evidence_dir/"
           cp apps/vscode-extension/sbom.cdx.json "$evidence_dir/"
+          cp apps/vscode-extension/provenance.json "$evidence_dir/"
+          cp apps/vscode-extension/release-summary.md "$evidence_dir/"
           (cd "$evidence_dir" && sha256sum --check SHA256SUMS.txt)
           echo "vsix_name=$(basename "$VSIX_PATH")" >> "$GITHUB_OUTPUT"
       - name: Attest extension assets
@@ -130,6 +135,8 @@ jobs:
           cp release-assets/vscode-extension/*.vsix "$upload_dir/"
           cp release-assets/vscode-extension/SHA256SUMS.txt "$upload_dir/vscode-extension-SHA256SUMS.txt"
           cp release-assets/vscode-extension/sbom.cdx.json "$upload_dir/vscode-extension-sbom.cdx.json"
+          cp release-assets/vscode-extension/provenance.json "$upload_dir/vscode-extension-provenance.json"
+          cp release-assets/vscode-extension/release-summary.md "$upload_dir/vscode-extension-release-summary.md"
           gh release upload "$RELEASE_TAG" "$upload_dir"/* --clobber
 
   publish_vscode:

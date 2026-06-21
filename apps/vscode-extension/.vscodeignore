@@ -19,6 +19,8 @@ playwright-report/**
 SHA256SUMS.txt
 sbom.cdx.json
 sbom.spdx
+provenance.json
+release-summary.md
 review-thread-summary*.json
 **/*.ts
 **/*.map

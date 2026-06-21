@@ -55,17 +55,24 @@ Release PRs are created by `.github/workflows/release-please.yml` with separate 
 
 The publish workflows keep release evidence product-scoped:
 
-- `publish-extension.yml` validates the VSIX, emits `SHA256SUMS.txt` and a
-  CycloneDX SBOM, creates GitHub artifact attestations for the checksummed
+- `publish-extension.yml` validates the VSIX, emits `SHA256SUMS.txt`, a
+  CycloneDX SBOM, a `provenance.json` record, and a human-readable
+  `release-summary.md`, creates GitHub artifact attestations for the checksummed
   extension package, publishes the shared VSIX to the Visual Studio Marketplace,
   verifies the Marketplace version and normalized VSIX payload content, and then
   publishes the same VSIX to Open VSX in a separate non-blocking job that
   downloads the published VSIX and verifies the same payload content. The
   normalized comparison ignores registry-rewritten ZIP container metadata.
+- `provenance.json` records the source commit, release tag, package version,
+  build environment, and CI run identifiers so a downloaded VSIX can be traced
+  back to the exact commit and workflow run that produced it. `release-summary.md`
+  restates the same evidence and links the Visual Studio Marketplace, Open VSX,
+  and GitHub Release locations for the published version.
 - Release Please explicitly dispatches `publish-extension.yml` after creating a
   release because GitHub does not recursively trigger release-event workflows
   from releases created with `GITHUB_TOKEN`. The dispatch checks out the release
-  tag and attaches VSIX, checksum, and SBOM evidence to that GitHub Release.
+  tag and attaches VSIX, checksum, SBOM, and provenance evidence to that GitHub
+  Release.
 - `publish-python.yml` (now in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)) validates the wheel and source distribution, emits SHA256SUMS.txt, emits a CycloneDX SBOM,
   uploads that evidence as `python-release-evidence`, and creates GitHub
   artifact attestations for the Python wheel and source distribution before PyPI

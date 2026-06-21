@@ -11,6 +11,7 @@ const files = {
   crossRepoCompatibility: ".github/workflows/cross-repo-compatibility.yml",
   docsRelease: "docs/release.md",
   docsPublishing: "docs/publishing.md",
+  releaseAssetsScript: "apps/vscode-extension/scripts/create-release-assets.js",
 };
 
 function read(path) {
@@ -37,6 +38,21 @@ function checkPackageNames(failures) {
     "root package must remain private",
     failures,
   );
+}
+
+function checkReleaseAssets(failures) {
+  const script = read(files.releaseAssetsScript);
+  for (const artifact of ["provenance.json", "release-summary.md"]) {
+    expectIncludes(script, artifact, "release assets script", failures);
+  }
+  for (const field of [
+    "sourceCommit",
+    "releaseTag",
+    "buildEnvironment",
+    "GITHUB_RUN_ID",
+  ]) {
+    expectIncludes(script, field, "release assets script", failures);
+  }
 }
 
 function checkWorkflowEvidence(failures) {
@@ -69,6 +85,13 @@ function checkWorkflowEvidence(failures) {
     failures,
   );
   expectIncludes(extension, "actions/attest@", "extension workflow", failures);
+  expectIncludes(extension, "provenance.json", "extension workflow", failures);
+  expectIncludes(
+    extension,
+    "release-summary.md",
+    "extension workflow",
+    failures,
+  );
   expectIncludes(
     extension,
     "release-assets/vscode-extension",
@@ -200,7 +223,7 @@ function checkWorkflowEvidence(failures) {
 function checkDocs(failures) {
   const release = read(files.docsRelease);
   const publishing = read(files.docsPublishing);
-  for (const surface of ["VSIX"]) {
+  for (const surface of ["VSIX", "provenance.json"]) {
     expectIncludes(release, surface, "release docs", failures);
   }
   for (const registry of ["Visual Studio Marketplace", "Open VSX"]) {
@@ -216,6 +239,7 @@ function checkDocs(failures) {
 
 const failures = [];
 checkPackageNames(failures);
+checkReleaseAssets(failures);
 checkWorkflowEvidence(failures);
 checkDocs(failures);
 

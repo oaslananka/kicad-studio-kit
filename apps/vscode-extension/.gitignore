@@ -36,6 +36,8 @@ TEMP_FOLDER/
 sbom.cdx.json
 sbom.spdx
 SHA256SUMS.txt
+provenance.json
+release-summary.md
 requirements-audit.txt
 requirements-build.txt
 .scan-results/
