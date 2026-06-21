@@ -133,6 +133,7 @@ export function renderReleaseSummary(manifest: ReleaseManifest): string {
 
 function escapeCell(value: string): string {
   return String(value ?? '')
+    .replace(/\\/g, '\\\\')
     .replace(/\|/g, '\\|')
     .replace(/\r?\n/g, ' ');
 }
