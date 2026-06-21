@@ -93,13 +93,18 @@ export function assertPathInside(
   }
 }
 
-export function resolveWorkspaceOutputDir(
-  filePath: string,
-  configuredOutputDir: string
+/**
+ * Resolve a user-supplied path against a workspace root, then assert — through
+ * symlink-resolved canonical paths — that it stays inside that root. Throws when
+ * the path escapes. Shared primitive behind {@link resolveWorkspaceOutputDir}
+ * and the centralized guarded-operation layer (src/security).
+ */
+export function resolveSafeWorkspacePath(
+  workspaceRoot: string,
+  requestedPath: string,
+  message?: string
 ): string {
-  const workspaceRoot =
-    getWorkspaceRoot(vscode.Uri.file(filePath)) ?? path.dirname(filePath);
-  const configured = normalizeUserPath(configuredOutputDir) || 'fab';
+  const configured = normalizeUserPath(requestedPath);
   const candidate = path.isAbsolute(configured)
     ? path.normalize(configured)
     : path.resolve(workspaceRoot, configured);
@@ -110,10 +115,24 @@ export function resolveWorkspaceOutputDir(
   assertPathInside(
     workspaceRealPath,
     candidateRealPath,
-    `Output directory must stay inside the workspace: ${configuredOutputDir}`
+    message ?? `Path must stay inside the workspace: ${requestedPath}`
   );
 
   return candidate;
+}
+
+export function resolveWorkspaceOutputDir(
+  filePath: string,
+  configuredOutputDir: string
+): string {
+  const workspaceRoot =
+    getWorkspaceRoot(vscode.Uri.file(filePath)) ?? path.dirname(filePath);
+  const configured = normalizeUserPath(configuredOutputDir) || 'fab';
+  return resolveSafeWorkspacePath(
+    workspaceRoot,
+    configured,
+    `Output directory must stay inside the workspace: ${configuredOutputDir}`
+  );
 }
 
 export function findSiblingProjectFile(filePath: string): string | undefined {
