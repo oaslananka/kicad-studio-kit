@@ -360,6 +360,54 @@ servers implicitly:
 corepack pnpm run test:fixtures
 ```
 
+## VS Code Integration and E2E Test Matrix
+
+This matrix records how the extension is validated inside the VS Code Extension
+Host across operating systems, VS Code versions, KiCad lines, Workspace Trust
+states, workspace shapes, and representative workflows. The reduced matrix runs
+on every pull request; the full matrix adds scheduled and canary lanes. A
+reduced PR matrix plus a full scheduled matrix is an intentional cost/coverage
+trade-off, not missing coverage.
+
+### Matrix dimensions
+
+| Dimension | Reduced matrix (every PR) | Full matrix (scheduled / canary) | Source of truth |
+| --- | --- | --- | --- |
+| Operating system | `ubuntu-24.04`, `windows-2025`, `macos-15` | Same three runners | `.github/workflows/ci.yml` `vscode-extension` job matrix |
+| VS Code version | Pinned `DEFAULT_VSCODE_TEST_VERSION` | `engines.vscode` floor and Insiders canary | `apps/vscode-extension/test/vscodeTestRuntime.ts`, `.github/workflows/vscode-canary.yml` |
+| KiCad line | Deterministic fixtures and mocked CLI probes (no `kicad-cli` required) | Real `kicad-cli` line from the canary host | `compatibility.yaml`, `.github/workflows/cross-repo-compatibility.yml`, `oaslananka/kicad-mcp` |
+| Workspace Trust | Restricted and trusted contracts | Same | `apps/vscode-extension/test/integration/extension.test.ts` |
+| Workspace shape | Single-root and multi-root | Same | `extension.test.ts` (single-root), `apps/vscode-extension/test/unit/multiProjectWorkspace.test.ts` (multi-root) |
+
+### Workflow coverage
+
+| Workflow | Covering test | Layer |
+| --- | --- | --- |
+| Activation when a `.kicad_pro` workspace opens | `extension.test.ts` — _activates when .kicad_pro workspace opened_ | Extension Host integration |
+| Core command registration smoke after activation | `extension.test.ts` — _registers every package.json command at runtime_ | Extension Host integration |
+| Command enablement and context keys | `extension.test.ts` — _gates command palette commands by file state and Workspace Trust_ | Extension Host integration |
+| Workspace Trust restricted and trusted behavior | `extension.test.ts` — _declares activation, empty-workspace welcome, and Workspace Trust contracts_ | Extension Host integration |
+| KiCad CLI discovery with valid, missing, and invalid paths | `apps/vscode-extension/test/unit/kicadCliDetector.test.ts` | Unit |
+| Project discovery — single-root | `extension.test.ts` — _renders project tree fixture files_ | Extension Host integration |
+| Project discovery — multi-root | `multiProjectWorkspace.test.ts` — _aggregates KiCad projects discovered across multiple workspace roots_ | Unit |
+| Viewer / webview activation smoke | `apps/vscode-extension/test/e2e/viewer.test.ts`; `extension.test.ts` registers custom editors | E2E / integration |
+| Diagnostics update and stale-clear behavior | `extension.test.ts` — _scopes Problems diagnostics to exact URIs and clears stale diagnostics after a clean save_ | Extension Host integration |
+| Real MCP pair quickstart, quality gate, and context-bridge flows | `apps/vscode-extension/test/integration/realServer/*.flow.test.ts` | Integration |
+
+### Reduced versus full matrix
+
+- **Reduced (every PR):** all three operating systems, the pinned VS Code
+  version, and deterministic KiCad fixtures with mocked CLI probes. This is the
+  release-blocking lane.
+- **Full (scheduled / nightly / canary):** adds the VS Code Insiders lane
+  (`vscode-canary.yml`), the real `kicad-cli` cross-repo compatibility canary,
+  and the real-pair host run. Multi-KiCad-line installation is not required on
+  every PR job; the reduced matrix uses fixtures and probes instead.
+
+Multi-root coverage exercises the shipped
+[`multi-root-workspace`](kicad-fixture-corpus.md#fixture-coverage) corpus shape:
+two KiCad projects and a `.code-workspace` file across separate folders.
+
 ## CI Ownership
 
 CI ownership follows product boundaries:
