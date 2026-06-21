@@ -4,6 +4,12 @@ Before tagging or publishing a release candidate, a maintainer runs the
 [release candidate smoke-test checklist](release-candidate-checklist.md) against
 the packaged VSIX and records the results in the release PR or issue.
 
+Extension Host release confidence is tracked by the
+[VS Code integration and E2E test matrix](testing-strategy.md#vs-code-integration-and-e2e-test-matrix),
+which maps operating systems, VS Code versions, KiCad lines, Workspace Trust
+states, and single-root/multi-root workspace shapes to their covering tests and
+CI lanes.
+
 Current product versions are represented in:
 
 - `.release-please-manifest.json`

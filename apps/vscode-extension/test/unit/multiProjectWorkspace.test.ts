@@ -60,7 +60,10 @@ function createDiagnostic(message: string): vscode.Diagnostic {
   return diagnostic;
 }
 
-function byName(projects: readonly ProjectContext[], name: string): ProjectContext {
+function byName(
+  projects: readonly ProjectContext[],
+  name: string
+): ProjectContext {
   const project = projects.find((entry) => entry.name === name);
   if (!project) {
     throw new Error(`Missing project ${name}`);
@@ -107,27 +110,66 @@ describe('multi-project workspace state', () => {
     );
   });
 
+  it('aggregates KiCad projects discovered across multiple workspace roots', async () => {
+    // Mirrors the shipped `multi-root-workspace` fixture (controller + power-supply):
+    // a multi-root workspace hands discoverKiCadProjects more than one workspace
+    // folder, and discovery must aggregate projects from every distinct root.
+    const controllerRoot = writeProject(tempDir, 'controller');
+    const powerRoot = writeProject(tempDir, 'power-supply');
+
+    const projects = await discoverKiCadProjects([
+      { uri: Uri.file(controllerRoot) },
+      { uri: Uri.file(powerRoot) }
+    ] as never);
+
+    expect(projects.map((project) => project.name)).toEqual([
+      'controller',
+      'power-supply'
+    ]);
+    expect(
+      new Set(projects.map((project) => project.workspaceFolder)).size
+    ).toBe(2);
+    expect(
+      findProjectForResource(
+        projects,
+        path.join(powerRoot, 'power-supply.kicad_pcb')
+      )
+    ).toEqual(expect.objectContaining({ name: 'power-supply' }));
+  });
+
   it('resolves nested projects and firmware hardware folders to the nearest project', async () => {
     writeProject(tempDir, 'alpha');
     const nestedRoot = writeProject(tempDir, 'alpha/submodule/nested');
     const hardwareRoot = writeProject(tempDir, 'firmware/hardware');
     fs.mkdirSync(path.join(tempDir, 'firmware/src'), { recursive: true });
-    fs.writeFileSync(path.join(tempDir, 'firmware/src/main.c'), 'int main(){}', 'utf8');
+    fs.writeFileSync(
+      path.join(tempDir, 'firmware/src/main.c'),
+      'int main(){}',
+      'utf8'
+    );
 
     const projects = await discoverKiCadProjects([
       { uri: Uri.file(tempDir) }
     ] as never);
 
-    expect(findProjectForResource(projects, path.join(nestedRoot, 'nested.kicad_pcb'))).toEqual(
-      expect.objectContaining({ name: 'nested' })
-    );
+    expect(
+      findProjectForResource(
+        projects,
+        path.join(nestedRoot, 'nested.kicad_pcb')
+      )
+    ).toEqual(expect.objectContaining({ name: 'nested' }));
     expect(
       findProjectForResource(
         projects,
         path.join(hardwareRoot, 'hardware.kicad_sch')
       )
     ).toEqual(expect.objectContaining({ name: 'hardware' }));
-    expect(findProjectForResource(projects, path.join(tempDir, 'firmware/src/main.c'))).toBeUndefined();
+    expect(
+      findProjectForResource(
+        projects,
+        path.join(tempDir, 'firmware/src/main.c')
+      )
+    ).toBeUndefined();
   });
 
   it('targets the active project when live validation starts from another open project', async () => {
@@ -227,7 +269,9 @@ describe('multi-project workspace state', () => {
     ]);
 
     expect(diagnostics.getSnapshot().drc?.errors).toBe(2);
-    expect(diagnostics.getSnapshot({ projectId: alpha.id }).drc?.errors).toBe(2);
+    expect(diagnostics.getSnapshot({ projectId: alpha.id }).drc?.errors).toBe(
+      2
+    );
     expect(diagnostics.getSnapshot({ projectId: beta.id }).drc?.errors).toBe(7);
 
     diagnostics.setActiveProject(beta.id);
