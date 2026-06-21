@@ -290,6 +290,7 @@ export async function activate(
     netlistViewProvider,
     validationViewProvider,
     workspaceContext,
+    studioContext,
     diagnosticState.onDidChange((state) => {
       statusBar.update({ drc: state.drc, erc: state.erc });
     }),
@@ -398,7 +399,7 @@ export async function activate(
       treeProvider.refresh();
       variantProvider.refresh();
       drcRulesProvider.refresh();
-      void workspaceContext.refreshContexts();
+      workspaceContext.scheduleContextRefresh();
       void saveCheck.runConfiguredSaveChecks(document);
       void studioContext.pushStudioContext('save');
     }),
@@ -407,16 +408,16 @@ export async function activate(
       languageServer.invalidate(document.uri);
     }),
     vscode.window.onDidChangeActiveTextEditor(() => {
-      void workspaceContext.refreshContexts();
+      workspaceContext.scheduleContextRefresh();
       variantProvider.refresh();
       drcRulesProvider.refresh();
       void studioContext.pushStudioContext('focus');
     }),
     vscode.window.onDidChangeTextEditorSelection(() => {
-      void studioContext.pushStudioContext('cursor');
+      studioContext.schedulePushStudioContext('cursor');
     }),
     vscode.window.tabGroups.onDidChangeTabs(() => {
-      void workspaceContext.refreshContexts();
+      workspaceContext.scheduleContextRefresh();
     }),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (
@@ -432,8 +433,9 @@ export async function activate(
         event.affectsConfiguration(SETTINGS.pcmThirdPartyDir)
       ) {
         cliDetector.clearCache();
+        workspaceContext.invalidateProbeCache();
         activationState.aiHealthy = undefined;
-        void workspaceContext.refreshContexts();
+        workspaceContext.scheduleContextRefresh();
         void mcpActivation.refreshMcpState();
       }
       if (
