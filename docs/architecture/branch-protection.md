@@ -29,6 +29,36 @@ this document plus `.github/rulesets/main.json` together.
 
 Scorecard should stay enabled as a repository health signal. It can be required once the repository has stable branch protection and token permissions.
 
+The documented list above and `.github/rulesets/main.json` are kept in sync by
+`corepack pnpm run check:branch-protection`, which fails if they diverge.
+
+## Quality gate coverage
+
+Each required pull-request quality gate maps to one of the required checks above:
+
+| Quality gate | Enforced by |
+| --- | --- |
+| Lint, typecheck, unit tests, accessibility, package build + validate | `vscode-extension (*)` |
+| Version + release-surface drift, compatibility, governance, extension manifest | `metadata` |
+| Forbidden references / stale monorepo language | `forbidden-refs` |
+| Static analysis (CodeQL) | `analyze (javascript-typescript)`, `analyze (python)` |
+| Dependency audit + supply-chain controls | `security` |
+| Secret scanning | `scan` |
+| Cross-product and shared-package build | `build`, `real-pair-compatibility` |
+
+Generated documentation drift is validated by the `docs` workflow on every
+documentation change. Promote it to a required context here and in the ruleset
+once it reports on every pull request (today it is path-scoped to docs changes).
+
+## Check tiers
+
+- **Pull-request required checks (blocking):** the required contexts listed
+  above. These cover lint, typecheck, unit tests, integration smoke,
+  package build + validation, and version/generated-surface drift.
+- **Scheduled / nightly checks (health gates, non-blocking on a PR):** the full
+  KiCad compatibility matrix, large-project benchmarks, the regression corpus,
+  and the dependency dashboard audit.
+
 ## Review ownership
 
 Enable CODEOWNERS review. Path ownership is declared in `.github/CODEOWNERS`:
