@@ -66,13 +66,76 @@ and build all pass on `7.8.1`.
 
 ## Postponed Major Updates
 
-| Dependency                                | Reason                                                                                                                                                                                                                                                                                                                                 |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TypeScript 6                              | Postponed to avoid compiler and lint churn in the same release-hardening branch. `typescript-eslint` 8.59.x supports TS 6, but the repo remains on a conservative TS 5.9.x baseline for this pass.                                                                                                                                     |
-| Jest 30, `@types/jest` 30, `jest-util` 30 | Postponed until unit, integration, mocks, and extension host tests are migrated together.                                                                                                                                                                                                                                              |
-| Vite 8 (pnpm override)                    | Blocked by `vitepress` 1.6.4 (the newest stable VitePress; only `2.0.0-alpha` supports Vite 8). The `vite` override drives the VitePress docs build, and Vite 8 (Rolldown bundler, removed `transformWithEsbuild`) fails `vitepress build docs` against VitePress 1.6.4. Revisit once a stable VitePress releases with Vite 8 support. |
-| `@types/node` 25                          | Rejected for now because the runtime target is Node 24.x.                                                                                                                                                                                                                                                                              |
-| `@types/vscode` 1.121                     | Rejected for now because the package was not published at the time; `1.120.0` was the newest registry version aligned with the previous `engines.vscode: ^1.120.0`.                                                                                                                                                                    |
+| Dependency                                | Reason                                                                                                                                                                                                                                                                                                                                                                                               |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TypeScript 6                              | Postponed to avoid compiler and lint churn in the same release-hardening branch. `typescript-eslint` 8.59.x supports TS 6, but the repo remains on a conservative TS 5.9.x baseline for this pass.                                                                                                                                                                                                   |
+| Jest 30, `@types/jest` 30, `jest-util` 30 | Postponed until unit, integration, mocks, and extension host tests are migrated together.                                                                                                                                                                                                                                                                                                            |
+| Vite 8 (pnpm override)                    | Blocked by `vitepress` 1.6.4 (the newest stable VitePress; only `2.0.0-alpha` supports Vite 8). The `vite` override drives the VitePress docs build, and Vite 8 (Rolldown bundler, removed `transformWithEsbuild`) fails `vitepress build docs` against VitePress 1.6.4. Revisit once a stable VitePress releases with Vite 8 support. See [Planned Major Upgrades](#planned-major-upgrades) (#381). |
+| `@vscode/test-electron` next major        | Dev-only extension integration test harness. Gated behind dashboard approval as a `risk:high` toolchain change. See [Planned Major Upgrades](#planned-major-upgrades) (#382).                                                                                                                                                                                                                        |
+| `ovsx` next major                         | Dev-only Open VSX publishing CLI. Gated behind dashboard approval as a `risk:high` publish-surface change. See [Planned Major Upgrades](#planned-major-upgrades) (#382).                                                                                                                                                                                                                             |
+| `@types/node` 25                          | Rejected for now because the runtime target is Node 24.x.                                                                                                                                                                                                                                                                                                                                            |
+| `@types/vscode` 1.121                     | Rejected for now because the package was not published at the time; `1.120.0` was the newest registry version aligned with the previous `engines.vscode: ^1.120.0`.                                                                                                                                                                                                                                  |
+
+## Planned Major Upgrades
+
+These majors are held behind dashboard approval (`risk:high` lane in
+[dependency-lifecycle.md](../../../docs/dependency-lifecycle.md)). Each entry records the
+migration notes, the minimal code changes identified, the validation gate, and the
+rollback path so the upgrade can be executed in a single focused PR once it is unblocked.
+None of these packages ship in the VSIX, so there is no runtime impact.
+
+### Vite 8 (#381)
+
+- **Where it lives:** a single `vite: 6.4.3` entry in the `pnpm-workspace.yaml`
+  `overrides` block. It is a transitive dependency of `vitepress` 1.6.4 and only affects
+  the documentation site build. No application or runtime source imports `vite`.
+- **Migration notes:** Vite 8 switches the default bundler to Rolldown and removes
+  `transformWithEsbuild`. `vitepress build docs` fails on Vite 8 while VitePress is pinned
+  to 1.6.4; only `vitepress@2.0.0-alpha` declares Vite 8 support. The upgrade is therefore
+  coupled to a stable VitePress 2.x release.
+- **Minimal code changes identified:** raise the `vite` override to `8.x` and bump
+  `vitepress` to the first stable 2.x. No changes are expected in `docs/.vitepress/config.mts`
+  beyond any VitePress 2.x config-shape adjustments surfaced by its own migration guide.
+- **Validation gate:** `pnpm install --frozen-lockfile`, `pnpm run docs:build`,
+  `pnpm run docs:lint`, `pnpm run docs:links`, `pnpm run typecheck`, `pnpm run lint`,
+  `pnpm run test`, `pnpm run build`, `pnpm run check`, and the full CI matrix.
+- **Rollback path:** revert the `vite` override to `6.4.3` and `vitepress` to `1.6.4` in a
+  single revert commit; the docs build is the only consumer, so no lockfile surgery beyond
+  `pnpm install` is required.
+- **Status:** blocked on a stable VitePress release with Vite 8 support. Hold the
+  `renovate/vite-8.x` branch unapproved on the dashboard until then.
+
+### @vscode/test-electron and ovsx majors (#382)
+
+- **Where they live:** both are dev-only `devDependencies` of `apps/vscode-extension`
+  (`@vscode/test-electron` 2.5.2, `ovsx` 0.10.12). `@vscode/test-electron` downloads a VS
+  Code build for the integration/e2e host; `ovsx` publishes the VSIX to Open VSX. Neither
+  is bundled in the extension.
+- **`@vscode/test-electron` migration notes:** the repo uses only `downloadAndUnzipVSCode(version)`
+  and `runTests({...})` in `test/runTest.ts`, `test/e2e/vscodeHarness.ts`, and
+  `test/runRealPairHostTest.ts`, with `test/unit/vscodeTestRuntime.test.ts` exercising the
+  runtime wiring. A major can change the VS Code download/cache path resolution and the
+  pinned VS Code version handling (currently `1.122.0`), so re-run the real integration
+  host on every platform after bumping.
+- **`ovsx` migration notes:** invoked only as a CLI in `.github/workflows/publish-extension.yml`
+  and `apps/vscode-extension/scripts/publish.sh` via `ovsx publish --packagePath`,
+  `ovsx get … --metadata --versionRange`, `ovsx get … --versionRange --output`, and
+  `--pat`. A major could rename or remove those flags, so the verification steps that read
+  back the published version must be re-checked against the new CLI surface.
+- **Minimal code changes identified:** bump both `devDependencies`; adjust the `ovsx`
+  publish/verify flags in `publish-extension.yml` and `publish.sh` only if the new CLI
+  renames them; adjust `downloadAndUnzipVSCode`/`runTests` call sites only if their
+  signatures change. No production source changes are expected.
+- **Validation gate:** `pnpm install --frozen-lockfile`, `pnpm run typecheck`,
+  `pnpm run lint`, `pnpm run test:unit`, `pnpm run test:integration`, `pnpm run build`,
+  `pnpm run package`, `pnpm run check`, and the full CI matrix (the publish path is
+  exercised by `release:dry-run`, not a live publish).
+- **Rollback path:** revert the `devDependencies` bumps and any flag edits in a single
+  revert commit. Because both are dev/CI-only, a rollback never affects a shipped artifact;
+  an already-published Open VSX version is unaffected by reverting the CLI version.
+- **Status:** hold `renovate/major-node-build-and-test-dependencies` unapproved on the
+  dashboard until a maintainer runs the validation gate above. These can land as one PR or
+  split per package.
 
 ## Security Review
 
