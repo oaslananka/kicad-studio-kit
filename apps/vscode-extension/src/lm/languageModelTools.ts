@@ -29,7 +29,7 @@ import {
   type LanguageModelTool
 } from './api';
 
-const TOOL_NAMES = {
+export const TOOL_NAMES = {
   runDrc: 'kicadstudio_runDrc',
   runErc: 'kicadstudio_runErc',
   exportGerbers: 'kicadstudio_exportGerbers',
