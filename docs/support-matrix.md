@@ -47,6 +47,30 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 
 <!-- docs-site:compatibility:end -->
 
+## MCP Compatibility Contract
+
+The product version and runtime ranges above describe the **VS Code extension**,
+which is the only product released from this repository. The MCP server is
+released separately from
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) (see
+[ADR 0009](adr/0009-split-kicad-mcp-pro-into-separate-repository.md)), so this
+matrix does not track MCP server source compatibility.
+
+What this repository owns is the **client-side integration contract**: the range
+of `kicad-mcp-pro` server versions the extension is built and tested against.
+
+| Surface | Owner | Source of truth |
+| --- | --- | --- |
+| KiCad Studio extension version and runtime ranges | this repository | `apps/vscode-extension/package.json`, `compatibility.yaml` |
+| Required compatible `kicad-mcp-pro` range (client contract) | this repository | `compatibility.yaml` `products.kicad-studio.compatibleMcpPro` |
+| MCP protocol / tool schema revisions | shared contract | `compatibility.yaml` `mcp`, `@oaslananka/kicad-protocol-schemas` |
+| MCP server implementation compatibility | [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) | that repository's `compatibility.yaml` |
+
+The compatible-server range is validated against the extension's embedded
+metadata and the last published server version by
+`corepack pnpm run check:compatibility-contract` and the cross-repo
+compatibility canary.
+
 ## Tested KiCad CLI Feature Matrix
 
 This matrix records the user-facing support boundary for `kicad-cli` driven

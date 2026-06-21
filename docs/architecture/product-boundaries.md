@@ -1,6 +1,12 @@
 # Product Boundaries
 
-The monorepo has three product workspaces, but the products must stay decoupled at source level.
+This repository releases one product — the KiCad Studio VS Code extension
+(`apps/vscode-extension`) — alongside private shared packages. The KiCad MCP Pro
+server is released separately from
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) (see
+[ADR 0009](../adr/0009-split-kicad-mcp-pro-into-separate-repository.md)). The two
+products stay decoupled at source level and integrate only through the MCP
+protocol contract.
 
 ## Allowed dependencies
 

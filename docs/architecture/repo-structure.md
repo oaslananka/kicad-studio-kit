@@ -34,7 +34,10 @@ The root package is `private: true` and is never published.
 
 Extension-only changes belong under `apps/vscode-extension` unless they update root CI, docs, or release metadata.
 
-MCP server changes now live in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+MCP server changes now live in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp);
+this repository owns only the extension-side MCP integration contract. See
+[ADR 0009](../adr/0009-split-kicad-mcp-pro-into-separate-repository.md) for the
+split rationale.
 
 ## Shared work
 

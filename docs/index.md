@@ -21,13 +21,13 @@ hero:
 
 features:
   - title: Quick install paths
-    details: Use the VS Code extension, the Python MCP server, the npm launcher, or the Docker image depending on your workflow.
+    details: Install the KiCad Studio VS Code extension from the Marketplace or Open VSX. The KiCad MCP Pro server, npm launcher, and Docker image are released from oaslananka/kicad-mcp.
     link: /install
   - title: Generated extension reference
     details: Commands, views, and settings are generated directly from the VS Code extension manifest.
     link: /extension/commands
   - title: Generated MCP reference
-    details: The tool catalog and server-info contract are generated from kicad-mcp-pro source and protocol schemas.
+    details: The tool catalog and server-info contract are generated from the published protocol schemas and compatibility metadata.
     link: /mcp/tools
   - title: Compatibility matrix
     details: KiCad, VS Code, Node, pnpm, Python, MCP protocol, and release gates are summarized from compatibility.yaml.

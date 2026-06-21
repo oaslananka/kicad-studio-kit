@@ -24,8 +24,7 @@ Every update PR should keep the base labels `dependencies` and `dependency-lifec
 Product impact labels:
 
 - `product:vscode-extension` for `apps/vscode-extension`.
-- `product:mcp-server` for `oaslananka/kicad-mcp` (source in separate repository).
-- `product:mcp-npm` for `packages/mcp-npm`.
+- `product:mcp-server` for `oaslananka/kicad-mcp` (MCP server source in a separate repository).
 - `product:repo` for root workspace tooling, CI, release, docs, and governance.
 
 Risk labels:
