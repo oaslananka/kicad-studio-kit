@@ -31,12 +31,16 @@ Searchable documentation: https://oaslananka.github.io/kicad-studio-kit/
 
 ## Version Baseline
 
+<!-- release-surface:start -->
+<!-- Generated from apps/vscode-extension/package.json. Run `corepack pnpm run release:surface` to refresh. -->
+
 This repository's local release surface is:
 
-- VS Code extension: `oaslananka.kicadstudiokit` (`1.8.0`)
+- VS Code extension: `oaslananka.kicadstudiokit` (`1.8.1`)
 
 The Python package `kicad-mcp-pro`, container image, and MCP Registry listing
 are released from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+<!-- release-surface:end -->
 
 ## KiCad Compatibility
 

@@ -27,6 +27,7 @@ module.exports = {
     'src/**/*.ts',
     '!src/**/*.d.ts',
     '!src/extension.ts',
+    '!src/activation/**/*.ts',
     '!src/cli/exportCommands.ts',
     '!src/providers/baseKiCanvasEditorProvider.ts',
     '!src/providers/bomViewProvider.ts',

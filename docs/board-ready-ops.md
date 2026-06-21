@@ -50,3 +50,42 @@ Each finding has a severity level:
 | `info`     | Information    | Informational observation.               |
 
 Findings are scoped to the file and line number of the violating design element when available.
+
+## Release Readiness Scorecard
+
+BoardReadyOps findings roll up into a release **readiness scorecard** that
+answers "is this board ready to ship?" across multiple dimensions rather than a
+single check. The scorecard engine (`src/scorecard/readinessScorecard.ts`) is
+editor-free, so the same result can be produced in VS Code and in CI.
+
+Each **dimension** carries a `pass` / `warn` / `fail` / `not-applicable` status:
+
+- design checks (DRC/ERC, BoardReadyOps findings)
+- manufacturing readiness
+- assembly readiness
+- documentation readiness
+- release-artifact readiness
+- policy compliance (see `docs/policies.md`)
+- procurement / BOM readiness (see `docs/bom-risk.md`)
+
+The result model is stable and machine-readable:
+
+```json
+{
+  "project": "example.kicad_pro",
+  "status": "fail",
+  "score": 72,
+  "dimensions": [],
+  "blockingFindings": [],
+  "warnings": [],
+  "artifacts": [],
+  "toolVersions": {}
+}
+```
+
+The score never hides a hard failure: any failed dimension or any
+`critical`/`high` blocking finding forces an overall `fail`, even when the
+numeric score is high. Each dimension and finding carries a remediation hint, and
+reports export to both Markdown and HTML so CI can publish the scorecard as an
+artifact. Any AI-generated remediation plan must be grounded in these findings.
+

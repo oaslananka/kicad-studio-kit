@@ -7,6 +7,38 @@ Current product versions are represented in:
 
 The MCP server (`kicad-mcp-pro`) source and version files now live in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
 
+## Release Surface Source of Truth
+
+`apps/vscode-extension/package.json` `version` is the single authoritative
+extension version. It is pinned to `.release-please-manifest.json` by
+`scripts/check-version-consistency.mjs`, and every other user-facing surface that
+repeats the version is derived from it:
+
+- the root `README.md` "Version Baseline" block (generated between
+  `<!-- release-surface:start -->` / `<!-- release-surface:end -->` markers);
+- `apps/vscode-extension/CHANGELOG.md` (owned by Release Please);
+- `compatibility.yaml` `products.kicad-studio.version`;
+- the generated `docs/support-matrix.md` and `docs/versions.md` tables (owned by
+  `corepack pnpm run docs:generate`).
+
+Verify every surface in one command before tagging or publishing:
+
+```bash
+corepack pnpm run check:release-surface
+```
+
+It fails with a per-file diff when any surface is stale. The README block is the
+only hand-editable surface; regenerate it with:
+
+```bash
+corepack pnpm run release:surface
+```
+
+`check:release-surface` also runs inside `corepack pnpm run check:version`, so CI
+fails on README or release-surface drift on every pull request. Marketplace and
+Open VSX indexing remain advisory and never block a successful package upload
+(see `publish-extension.yml`).
+
 `.release-please-manifest.json` tracks product package paths only. The private repository root is not released.
 
 Release PRs are created by `.github/workflows/release-please.yml` with separate Release Please pull requests per product package path. The VS Code extension can release independently from the MCP server. Release publication workflows run from GitHub Releases and protected environments.

@@ -1114,6 +1114,12 @@
         "title": "%kicadstudio.contributes.commands.107.title%",
         "category": "%kicadstudio.contributes.commands.107.category%",
         "icon": "$(list-selection)"
+      },
+      {
+        "command": "kicadstudio.generateKicadDiffReport",
+        "title": "%kicadstudio.contributes.commands.diffReport.title%",
+        "category": "%kicadstudio.contributes.commands.diffReport.category%",
+        "icon": "$(diff)"
       }
     ],
     "menus": {
@@ -1346,6 +1352,10 @@
         {
           "command": "kicadstudio.selectActiveProject",
           "when": "kicadstudio.hasProject"
+        },
+        {
+          "command": "kicadstudio.generateKicadDiffReport",
+          "when": "kicadstudio.workspaceTrusted && (kicadstudio.schematicOpen || kicadstudio.pcbOpen)"
         },
         {
           "command": "kicadstudio.exportGenCAD",

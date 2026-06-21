@@ -397,5 +397,7 @@
   "kicadstudio.contributes.commands.106.category": "KiCad Dışa Aktarma",
   "kicadstudio.contributes.commands.107.title": "KiCad: Etkin Projeyi Seç",
   "kicadstudio.contributes.commands.107.category": "KiCad",
+  "kicadstudio.contributes.commands.diffReport.title": "KiCad: Fark Raporu Oluştur",
+  "kicadstudio.contributes.commands.diffReport.category": "KiCad",
   "kicadstudio.contributes.languageModelChatProviders.0.displayName": "KiCad Studio"
 }
