@@ -395,5 +395,7 @@
   "kicadstudio.contributes.commands.105.category": "KiCad Dışa Aktarma",
   "kicadstudio.contributes.commands.106.title": "KiCad: Kart İstatistiklerini Dışa Aktar",
   "kicadstudio.contributes.commands.106.category": "KiCad Dışa Aktarma",
+  "kicadstudio.contributes.commands.diffReport.title": "KiCad: Fark Raporu Oluştur",
+  "kicadstudio.contributes.commands.diffReport.category": "KiCad",
   "kicadstudio.contributes.languageModelChatProviders.0.displayName": "KiCad Studio"
 }
