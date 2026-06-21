@@ -1,6 +1,6 @@
 # Definition of Done
 
-This document defines the minimum completion bar for issues and pull requests in the KiCad Studio Kit monorepo.
+This document defines the minimum completion bar for issues and pull requests in the KiCad Studio Kit monorepo. It is tracked under the Quality Hardening & Release Confidence milestone ([#409](https://github.com/oaslananka/kicad-studio-kit/issues/409)).
 
 ## Universal completion criteria
 
@@ -15,6 +15,27 @@ Every PR should satisfy the following before merge:
 - Compatibility metadata is updated when supported versions, MCP schema, or feature gates change.
 - Release notes are updated or explicitly marked not required.
 - Sensitive data is not logged, committed, or added to artifacts.
+
+## Applicability by change type
+
+Apply only the criteria relevant to the change. The table shows which areas each
+change type must address. A maintainer may waive any item, but a waived or
+not-applicable item must carry an explicit one-line justification in the PR (see
+[Not-applicable items](#not-applicable-items)).
+
+| Change type | Tests | Docs | Compatibility | Release notes | Security/trust |
+| --- | --- | --- | --- | --- | --- |
+| Feature | unit + integration/e2e for user-visible flows | yes | if it changes a supported surface | if user-visible | review trust/guard impact |
+| Refactor | preserve coverage; add tests for new seams | only if behavior/structure docs change | no behavior change expected | usually not required | review if security-relevant code moved |
+| Bug fix | regression test (fails before, passes after) | if the fix changes documented behavior | if a compatibility boundary changed | if user-visible | review if the bug was a security/trust gap |
+| Docs-only | not applicable | the change itself | no | no | not applicable |
+| Release engineering | gate/script tests | release/runbook docs | release gate result | release note | review workflow permissions and secrets |
+
+## Not-applicable items
+
+When a Definition-of-Done item does not apply to a change, mark it **not
+applicable with a one-line reason** in the PR rather than silently omitting it.
+Maintainers may require that justification before merge.
 
 ## Bug fixes
 
