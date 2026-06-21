@@ -85,7 +85,6 @@ const requiredRootExamples = [
 
 const requiredReferences = {
   "AGENTS.md": [
-    "Codex, Claude Code, Claude Desktop, GitHub Copilot, Gemini CLI, and Cursor",
     "apps/vscode-extension",
 
     "docs/support-matrix.md",
@@ -102,7 +101,6 @@ const requiredReferences = {
     "experimental",
     "remote MCP endpoints by default",
     "unsafe webview",
-    "PR #16",
   ],
   ".github/copilot-instructions.md": [
     "AGENTS.md",

@@ -1,22 +1,20 @@
 # KiCad Studio Kit Agent Instructions
 
 This file is the repository-local contract for coding agents. Follow higher-priority
-system and operator instructions first, then these repo rules.
+system and operator instructions first, then these repo rules. Any MCP-capable client or
+coding agent that consumes this repository should treat `AGENTS.md` as the canonical
+repository instructions.
 
 ## Repository Boundaries
 
 - Canonical repo: `oaslananka/kicad-studio-kit`.
 - Product surfaces:
   - `apps/vscode-extension`: KiCad Studio VS Code extension.
-  - `packages/mcp-server` (removed — see `oaslananka/kicad-mcp`): `kicad-mcp-pro` Python MCP server.
-
   - `packages/test-harness`: private shared test utilities.
-
+- The MCP server lives in a separate repository — see
+  [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
 - Do not introduce another canonical repository or release root.
-- Keep issue scope narrow. Do not mix unrelated Linear/GitHub issues in one branch or PR.
-- Treat Codex, Claude Code, Claude Desktop, GitHub Copilot, Gemini CLI, and Cursor as
-  external coding agents or MCP-capable clients that consume this repository's docs and
-  MCP context. They are not all direct KiCad Studio extension AI providers.
+- Keep issue scope narrow. Do not mix unrelated issues in one branch or PR.
 
 ## Required First Reads
 
@@ -29,10 +27,9 @@ files. For repo-wide orientation, start with:
 - `docs/testing-strategy.md`
 - `docs/support-matrix.md`
 - `docs/release.md`
-- MCP server docs (see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp))
 - `docs/agents/client-configs.md`
-- `docs/agents/codex-support.md`
 - `docs/architecture/protocol-change-checklist.md`
+- MCP server docs (see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp))
 
 ## Local Commands
 
@@ -60,7 +57,8 @@ corepack pnpm run build
 corepack pnpm run verify:dist
 ```
 
-Python/MCP server tests now run from the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
+Python/MCP server tests run from the
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
 
 Repo-policy checks that are often relevant:
 
@@ -78,7 +76,7 @@ corepack pnpm run docs:links
 - Prefer focused profiles such as `analysis`, `pcb_only`, `schematic_only`, or
   `manufacturing` instead of `full`.
 - Use `KICAD_MCP_OPERATING_MODE=write`, `manufacturing`, or `experimental` only when the
-  Linear issue explicitly requires source modification, manufacturing/export handoff, or
+  issue explicitly requires source modification, manufacturing/export handoff, or
   experimental tools, and document the reason in the PR.
 - Do not commit machine-specific production paths, fixture paths as defaults, tokens, API
   keys, cookies, or private credentials.
@@ -90,10 +88,10 @@ corepack pnpm run docs:links
 
 ## GitHub And PR Rules
 
-- Branch format for Linear work: `codex/OASLANA-<id>-<slug>`.
-- Link PRs to the corresponding Linear issue and GitHub issue when one exists.
-- PR #16 is the release bot PR; do not modify or merge it unless the explicit task is a
-  release-bot maintenance task.
+- Use one branch per issue with a short, descriptive slug.
+- Link each PR to the corresponding GitHub issue when one exists.
+- The release bot PR is maintained automatically; do not modify or merge it unless the
+  explicit task is a release-bot maintenance task.
 - Protocol-impacting PRs must complete `.github/PULL_REQUEST_TEMPLATE.md` and the checklist
   in `docs/architecture/protocol-change-checklist.md`.
 - Do not tag, publish, or run release workflows unless the task is explicitly a release.
@@ -111,39 +109,33 @@ corepack pnpm run docs:links
 Never read, print, summarize, commit, or paste secret-bearing files such as `.env`,
 credential JSON, private keys, token stores, cookies, or local auth state.
 
-## Claude Code / Claude Desktop Setup
+## MCP Client Setup
 
-Claude Code and Claude Desktop users should treat `AGENTS.md` as the canonical
-repository instructions, then apply the Claude-specific notes below.
+Checked-in client configuration examples live under `examples/mcp-clients/`. Copy the
+example that matches your client, then replace `/absolute/path/to/your/kicad-project` with
+the target KiCad project path before placing the config in a real client location. Review
+any shared project-scoped MCP config (for example a project `.mcp.json`) before trusting
+servers from another branch or contributor.
 
-Use the checked-in examples under `examples/mcp-clients/`:
+The recommended local server runs over stdio via `uvx kicad-mcp-pro` with a read-only,
+focused profile. See `examples/mcp-clients/generic-stdio.mcp.example.json` for a minimal
+configuration:
 
-- `claude-code.mcp.example.json` for project-scoped Claude Code setup.
-- `claude-desktop.config.example.json` for Claude Desktop.
-
-Replace `/absolute/path/to/your/kicad-project` with the target KiCad project path before
-copying a config into a real client location.
-Claude Code project scope writes shared server configuration to the project `.mcp.json`;
-review that file before trusting servers from another branch or contributor.
-
-Recommended local server on Linux/macOS:
-
-```bash
-claude mcp add --transport stdio --scope project \
-  --env KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
-  --env KICAD_MCP_PROFILE=pcb_only \
-  --env KICAD_MCP_OPERATING_MODE=readonly \
-  kicad -- uvx kicad-mcp-pro
-```
-
-Recommended local server on Windows PowerShell:
-
-```powershell
-claude mcp add --transport stdio --scope project `
-  --env 'KICAD_MCP_PROJECT_DIR=C:\absolute\path\to\your\kicad-project' `
-  --env 'KICAD_MCP_PROFILE=pcb_only' `
-  --env 'KICAD_MCP_OPERATING_MODE=readonly' `
-  kicad -- uvx kicad-mcp-pro
+```json
+{
+  "mcpServers": {
+    "kicad": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["kicad-mcp-pro"],
+      "env": {
+        "KICAD_MCP_PROJECT_DIR": "/absolute/path/to/your/kicad-project",
+        "KICAD_MCP_PROFILE": "pcb_only",
+        "KICAD_MCP_OPERATING_MODE": "readonly"
+      }
+    }
+  }
+}
 ```
 
 Use broader MCP operating modes only for tasks that explicitly require write,
