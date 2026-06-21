@@ -332,7 +332,7 @@ export function renderPolicyReport(evaluation: PolicyEvaluation): string {
   );
   for (const result of evaluation.results) {
     lines.push(
-      `| ${result.id} | ${result.severity} | ${icon(result.status)} ${result.status} | ${result.detail.replace(/\|/g, '\\|')} |`
+      `| ${result.id} | ${result.severity} | ${icon(result.status)} ${result.status} | ${result.detail.replace(/\\/g, '\\\\').replace(/\|/g, '\\|')} |`
     );
   }
   lines.push('');
