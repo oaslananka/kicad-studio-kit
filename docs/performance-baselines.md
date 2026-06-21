@@ -82,8 +82,15 @@ each measured metric.
 ## CI Evidence
 
 `.github/workflows/ci.yml` runs the `performance-budgets` job on every pull
-request and on pushes to `main`. Its reference environment is the GitHub-hosted
-`ubuntu-24.04` runner listed in the catalog.
+request and on pushes to `main` when the performance lane is in scope. Its
+reference environment is the GitHub-hosted `ubuntu-24.04` runner listed in the
+catalog.
+
+`.github/workflows/performance-nightly.yml` runs the same benchmark producer and
+budget check on a nightly schedule (and on demand via `workflow_dispatch`) so a
+major regression is detected even when no pull request touches the performance
+lane. The nightly run uploads `performance-nightly-artifacts` for 14 days and
+fails when a measured metric crosses the 20 percent failure budget.
 
 The job uploads `performance-budget-artifacts` for 14 days:
 
