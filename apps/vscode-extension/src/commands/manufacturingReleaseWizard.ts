@@ -13,10 +13,22 @@ import {
   assertWorkspaceTrusted,
   resolveGuardedPath
 } from '../security/guardedOperations';
+import {
+  buildReleaseManifest,
+  collectGitMetadata,
+  renderReleaseSummary,
+  type GitMetadata,
+  type KiCadSnapshot,
+  type ReleaseGateSummary,
+  type ReleaseManifestFileEntry
+} from './releaseManifest';
 import type { CommandServices } from './types';
 
 export async function runManufacturingReleaseWizard(
-  services: Pick<CommandServices, 'variantProvider' | 'mcpAdapter' | 'context'>
+  services: Pick<
+    CommandServices,
+    'variantProvider' | 'mcpAdapter' | 'context' | 'cliDetector'
+  >
 ): Promise<void> {
   telemetry.trackEvent('wizard.start');
   const variant = await chooseVariant(services);
@@ -24,6 +36,7 @@ export async function runManufacturingReleaseWizard(
     return;
   }
 
+  let outputDir: string | undefined;
   try {
     // A manufacturing release writes a bundle to disk; gate it on workspace
     // trust through the centralized guard rather than menu visibility alone.
@@ -35,6 +48,32 @@ export async function runManufacturingReleaseWizard(
     if (blocking.length) {
       telemetry.trackEvent('wizard.blocked');
       void vscode.window.showWarningMessage(formatBlockedMessage(blocking));
+      return;
+    }
+
+    const gateSummaries: ReleaseGateSummary[] = gates.map((gate) => ({
+      label: gate.label,
+      status: gate.status,
+      summary: gate.summary
+    }));
+
+    const mode = await vscode.window.showQuickPick(
+      [
+        {
+          label: '$(rocket) Create release bundle',
+          detail:
+            'Export artifacts and write the release manifest and summary.',
+          dryRun: false
+        },
+        {
+          label: '$(eye) Preview (dry run)',
+          detail: 'Show the release plan without exporting or writing files.',
+          dryRun: true
+        }
+      ],
+      { title: 'Manufacturing release mode' }
+    );
+    if (!mode) {
       return;
     }
 
@@ -59,11 +98,51 @@ export async function runManufacturingReleaseWizard(
     // Resolve + canonicalize the user-supplied output folder and confine it to
     // the workspace (defeats `..` traversal and symlink escape). Throws a safe
     // GuardedOperationError on escape, handled by the catch below.
-    const outputDir = resolveGuardedPath({
+    outputDir = resolveGuardedPath({
       requestedPath: outputDirInput,
       workspaceRoot: root,
       label: 'Manufacturing release output folder'
     });
+
+    // Capability/version snapshot and source-control metadata for the manifest.
+    const capabilitySnapshot =
+      await services.cliDetector.getCapabilitySnapshot();
+    const kicadSnapshot: KiCadSnapshot | undefined = capabilitySnapshot
+      ? {
+          version:
+            typeof capabilitySnapshot.version === 'string'
+              ? capabilitySnapshot.version
+              : undefined,
+          capabilities: Object.entries(capabilitySnapshot)
+            .filter(([, value]) => value === true)
+            .map(([key]) => key)
+            .sort()
+        }
+      : undefined;
+    const git = root ? collectGitMetadata(root) : undefined;
+
+    if (mode.dryRun) {
+      telemetry.trackEvent('wizard.dryRun');
+      await showDryRunPreview({
+        outputDir,
+        variant,
+        gateSummaries,
+        kicadSnapshot,
+        git
+      });
+      return;
+    }
+
+    if (!kicadSnapshot) {
+      const proceed = await vscode.window.showWarningMessage(
+        'No kicad-cli was detected locally. The release will rely on the MCP server for exports. Continue?',
+        { modal: true },
+        'Continue'
+      );
+      if (proceed !== 'Continue') {
+        return;
+      }
+    }
 
     let mcpResult: Record<string, unknown> | undefined;
     const filesGenerated: string[] = [];
@@ -116,11 +195,14 @@ export async function runManufacturingReleaseWizard(
       }
     }
 
-    // Generate manifest.json
-    await generateManifest(outputDir, {
+    // Write release-manifest.json and a human-readable summary report.
+    await writeReleaseEvidence(outputDir, {
       ...(variant ? { variant } : {}),
       files: filesGenerated,
-      mcpResult
+      mcpResult,
+      gateSummaries,
+      ...(kicadSnapshot ? { kicadSnapshot } : {}),
+      ...(git ? { git } : {})
     });
 
     telemetry.trackEvent('wizard.success');
@@ -131,6 +213,9 @@ export async function runManufacturingReleaseWizard(
       );
     }
   } catch (error) {
+    if (outputDir) {
+      await markReleaseIncomplete(outputDir, error);
+    }
     const structured = structuredErrorFromUnknown(error);
     const message = error instanceof Error ? error.message : String(error);
     telemetry.trackEvent('wizard.failure', {
@@ -154,30 +239,15 @@ export async function runManufacturingReleaseWizard(
   }
 }
 
-interface ManifestEntry {
-  extensionVersion: string;
-  timestamp: string;
-  variant?: string;
-  projectFile?: string;
-  boardFile?: string;
-  schematicFile?: string;
-  files: ManifestFileEntry[];
-  qualityGates: boolean;
-  mcpServerVersion?: string;
-}
-
-interface ManifestFileEntry {
-  path: string;
-  size: number;
-  sha256: string;
-}
-
-async function generateManifest(
+async function writeReleaseEvidence(
   outputDir: string,
   options: {
     variant?: string;
     files: string[];
     mcpResult?: Record<string, unknown> | undefined;
+    gateSummaries: ReleaseGateSummary[];
+    kicadSnapshot?: KiCadSnapshot;
+    git?: GitMetadata;
   }
 ): Promise<void> {
   if (!fs.existsSync(outputDir)) {
@@ -213,7 +283,7 @@ async function generateManifest(
   }
 
   // Compute checksums for generated files
-  const fileEntries: ManifestFileEntry[] = [];
+  const fileEntries: ReleaseManifestFileEntry[] = [];
   const seenPaths = new Set<string>();
   for (const filePath of options.files) {
     try {
@@ -245,12 +315,17 @@ async function generateManifest(
     }
   }
 
-  const manifest: ManifestEntry = {
+  const mcpServerVersion = options.mcpResult?.['serverVersion'] as
+    | string
+    | undefined;
+
+  const manifest = buildReleaseManifest({
     extensionVersion,
     timestamp: new Date().toISOString(),
-    ...(options.variant !== undefined && options.variant !== ''
-      ? { variant: options.variant }
-      : {}),
+    ...(options.variant ? { variant: options.variant } : {}),
+    ...(options.git ? { git: options.git } : {}),
+    ...(options.kicadSnapshot ? { kicad: options.kicadSnapshot } : {}),
+    ...(mcpServerVersion ? { mcpServerVersion } : {}),
     ...(projectFile
       ? { projectFile: path.relative(outputDir, projectFile) }
       : {}),
@@ -258,23 +333,86 @@ async function generateManifest(
     ...(schematicFile
       ? { schematicFile: path.relative(outputDir, schematicFile) }
       : {}),
-    files: fileEntries,
-    qualityGates: true,
-    ...((options.mcpResult?.['serverVersion'] as string | undefined)
-      ? {
-          mcpServerVersion: options.mcpResult?.['serverVersion'] as string
-        }
-      : {})
-  };
+    qualityGates: options.gateSummaries,
+    files: fileEntries
+  });
 
-  const manifestPath = path.join(outputDir, 'manifest.json');
-  const manifestBytes = new TextEncoder().encode(
-    JSON.stringify(manifest, null, 2)
+  await writeOutputFile(
+    outputDir,
+    'release-manifest.json',
+    `${JSON.stringify(manifest, null, 2)}\n`
   );
+  await writeOutputFile(
+    outputDir,
+    'RELEASE-SUMMARY.md',
+    renderReleaseSummary(manifest)
+  );
+}
+
+async function writeOutputFile(
+  outputDir: string,
+  name: string,
+  content: string
+): Promise<void> {
   await vscode.workspace.fs.writeFile(
-    vscode.Uri.file(manifestPath),
-    manifestBytes
+    vscode.Uri.file(path.join(outputDir, name)),
+    new TextEncoder().encode(content)
   );
+}
+
+async function showDryRunPreview(plan: {
+  outputDir: string;
+  variant?: string;
+  gateSummaries: ReleaseGateSummary[];
+  kicadSnapshot?: KiCadSnapshot | undefined;
+  git?: GitMetadata | undefined;
+}): Promise<void> {
+  const detail = [
+    `Output folder: ${plan.outputDir}`,
+    `Variant: ${plan.variant || 'default'}`,
+    `KiCad CLI: ${plan.kicadSnapshot?.version ?? 'not detected'}`,
+    plan.git?.shortCommit
+      ? `Source: ${plan.git.shortCommit}${plan.git.dirty ? ' (uncommitted changes)' : ''}`
+      : 'Source: not a git repository',
+    `Quality gates: ${
+      plan.gateSummaries
+        .map((gate) => `${gate.label}=${gate.status}`)
+        .join(', ') || 'none'
+    }`,
+    '',
+    'No files were written (dry run).'
+  ].join('\n');
+  await vscode.window.showInformationMessage(
+    'Manufacturing release preview',
+    { modal: true, detail },
+    'OK'
+  );
+}
+
+async function markReleaseIncomplete(
+  outputDir: string,
+  error: unknown
+): Promise<void> {
+  try {
+    if (!fs.existsSync(outputDir)) {
+      return;
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    await writeOutputFile(
+      outputDir,
+      'RELEASE-INCOMPLETE.txt',
+      [
+        'This manufacturing release did not complete successfully.',
+        'Artifacts in this folder may be partial and must not be used for fabrication.',
+        '',
+        `Failure: ${message}`,
+        `Time: ${new Date().toISOString()}`,
+        ''
+      ].join('\n')
+    );
+  } catch {
+    // Best-effort marker; never mask the original failure.
+  }
 }
 
 async function chooseVariant(
