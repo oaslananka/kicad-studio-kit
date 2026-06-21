@@ -65,6 +65,7 @@ export const KICAD_FILE_EXTENSIONS = [
 export const COMMANDS = {
   showStatusMenu: 'kicadstudio.showStatusMenu',
   selectActiveProject: 'kicadstudio.selectActiveProject',
+  generateDiffReport: 'kicadstudio.generateKicadDiffReport',
   openSchematic: 'kicadstudio.openSchematic',
   openPCB: 'kicadstudio.openPCB',
   openInKiCad: 'kicadstudio.openInKiCad',

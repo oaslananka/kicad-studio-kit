@@ -1,6 +1,13 @@
 # KiCad Studio and KiCad MCP Pro Integration
 
-KiCad Studio and KiCad MCP Pro are independent products in one repository. They integrate through MCP protocol surfaces rather than direct source imports.
+KiCad Studio and KiCad MCP Pro are independent products released from separate
+repositories. KiCad Studio is the VS Code extension owned by this repository; the
+KiCad MCP Pro server source lives in
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) (see
+[ADR 0009](../adr/0009-split-kicad-mcp-pro-into-separate-repository.md)). They
+integrate through MCP protocol surfaces rather than direct source imports. This
+repository owns only the extension-side MCP discovery, configuration, and
+compatibility metadata.
 
 ## Runtime model
 

@@ -12,7 +12,7 @@ The container follows the repository support matrix:
 | Node 24           | official `ghcr.io/devcontainers/features/node:1` feature with `version: "24"`                   |
 | pnpm 11           | root `packageManager` through Corepack, with the Node feature not installing a global pnpm      |
 | Python 3.13       | official `mcr.microsoft.com/devcontainers/python:3.13-bookworm@sha256:bf253e8b9200ad2c159015e87b63dc68a7d185e89cd5a9a1fa9d0d4f4ba6ad76` base image |
-| uv 0.11.16        | pinned Python package install, matching the MCP container policy                                |
+| uv 0.11.16        | pinned Python package install for the `pre-commit` framework and cross-repo `kicad-mcp-pro` compatibility checks |
 | actionlint 1.7.12 | pinned upstream release archive with SHA-256 verification                                       |
 | shellcheck        | Debian package                                                                                  |
 | GitHub CLI        | official `ghcr.io/devcontainers/features/github-cli:1` feature                                  |
