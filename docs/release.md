@@ -1,5 +1,9 @@
 # Release
 
+Before tagging or publishing a release candidate, a maintainer runs the
+[release candidate smoke-test checklist](release-candidate-checklist.md) against
+the packaged VSIX and records the results in the release PR or issue.
+
 Current product versions are represented in:
 
 - `.release-please-manifest.json`
