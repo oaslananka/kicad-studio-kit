@@ -23,5 +23,6 @@ server is developed and released separately in
 
 - [KiCad Studio and MCP integration](../integration/kicad-studio-mcp.md)
 - [Support matrix](../support-matrix.md)
+- [Threat model](../security/threat-model.md)
 - [Reusable workflows](../reusable-workflows.md)
 - [Dependency lifecycle](../dependency-lifecycle.md)
