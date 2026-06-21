@@ -1,5 +1,3 @@
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { ErrorAnalyzer } from './ai/errorAnalyzer';
 import { AIProviderRegistry } from './ai/aiProvider';
@@ -18,9 +16,7 @@ import { LcscClient } from './components/lcscClient';
 import { OctopartClient } from './components/octopartClient';
 import {
   BOM_VIEW_ID,
-  COMMANDS,
   COMPONENT_SEARCH_VIEW_ID,
-  CONTEXT_KEYS,
   DIAGNOSTIC_COLLECTION_NAME,
   KICAD_S_EXPRESSION_LANGUAGES,
   DRC_RULES_VIEW_ID,
@@ -89,32 +85,17 @@ import {
   isAiSecretProvider,
   migratePlaintextSettingToSecret
 } from './utils/secrets';
-import {
-  getActiveResourceUri,
-  workspaceHasVariants
-} from './utils/workspaceUtils';
 import { isWorkspaceTrusted } from './utils/workspaceTrust';
-import type {
-  DiagnosticSummary,
-  McpInstallStatus,
-  ProjectContext,
-  StudioContext
-} from './types';
-import {
-  ACTIVE_PROJECT_STORAGE_KEY,
-  discoverKiCadProjects,
-  pickActiveProject
-} from './workspace/projectContext';
+import type { ProjectContext } from './types';
+import { ActivationState } from './activation/activationState';
+import { McpActivationController } from './activation/mcpActivationController';
+import { SaveCheckController } from './activation/saveCheckController';
+import { StudioContextController } from './activation/studioContextController';
+import { WorkspaceContextController } from './activation/workspaceContextController';
 
 let extensionLogger: Logger | undefined;
 let extensionMcpClient: McpClient | undefined;
 const S_EXPRESSION_LANGUAGE_IDS = new Set<string>(KICAD_S_EXPRESSION_LANGUAGES);
-
-// Debounced project re-scan — coalesces rapid file-system events into a single
-// refresh so that externally-created or deleted .kicad_pro files are picked up
-// without overwhelming the extension host.
-let refreshProjectsTimer: NodeJS.Timeout | undefined;
-const REFRESH_PROJECTS_DEBOUNCE_MS = 500;
 
 export async function activate(
   context: vscode.ExtensionContext
@@ -125,14 +106,10 @@ export async function activate(
   logger.info('Activating KiCad Studio...');
   await runSettingsMigrations(context, logger);
   await migrateDeprecatedSecretSettings(context, logger);
-  let latestDrcRun:
-    | {
-        file: string;
-        diagnostics: vscode.Diagnostic[];
-        summary: DiagnosticSummary;
-      }
-    | undefined;
-  let aiHealthy: boolean | undefined;
+
+  // Activation-scoped shared state (previously closure variables in this
+  // function). The focused controllers below read and write it.
+  const activationState = new ActivationState();
 
   const parser = new SExpressionParser();
   const languageServer = new KiCadDocumentStore(parser);
@@ -240,6 +217,50 @@ export async function activate(
     logger
   );
   const pcmLibraryProvider = new PcmLibraryProvider(pcmService);
+
+  // Focused activation controllers (#397). They own the activation logic that
+  // previously lived as nested closures in this function.
+  const studioContext = new StudioContextController({
+    projectState,
+    diagnosticState,
+    pcbEditorProvider,
+    schematicEditorProvider,
+    variantProvider,
+    cliDetector,
+    mcpClient,
+    contextBridge,
+    activationState
+  });
+  const mcpActivation = new McpActivationController({
+    mcpClient,
+    mcpState,
+    mcpDetector
+  });
+  const workspaceContext = new WorkspaceContextController({
+    context,
+    logger,
+    projectState,
+    diagnosticState,
+    statusBar,
+    aiProviders,
+    cliDetector,
+    importService,
+    treeProvider,
+    variantProvider,
+    activationState,
+    pushStudioContext: (reason) => studioContext.pushStudioContext(reason)
+  });
+  const saveCheck = new SaveCheckController({
+    checkService,
+    diagnosticState,
+    projectState,
+    qualityGateProvider,
+    aiProviders,
+    activationState,
+    logger,
+    pushStudioContext: (reason) => studioContext.pushStudioContext(reason)
+  });
+
   const componentSearch = new ComponentSearchService(
     new OctopartClient(context.secrets),
     new LcscClient(),
@@ -247,7 +268,7 @@ export async function activate(
     libraryIndexer,
     pcmService,
     context,
-    () => buildStudioContext()
+    () => studioContext.buildStudioContext()
   );
 
   context.subscriptions.push(
@@ -268,6 +289,7 @@ export async function activate(
     bomViewProvider,
     netlistViewProvider,
     validationViewProvider,
+    workspaceContext,
     diagnosticState.onDidChange((state) => {
       statusBar.update({ drc: state.drc, erc: state.erc });
     }),
@@ -376,25 +398,25 @@ export async function activate(
       treeProvider.refresh();
       variantProvider.refresh();
       drcRulesProvider.refresh();
-      void refreshContexts();
-      void runConfiguredSaveChecks(document);
-      void pushStudioContext('save');
+      void workspaceContext.refreshContexts();
+      void saveCheck.runConfiguredSaveChecks(document);
+      void studioContext.pushStudioContext('save');
     }),
     vscode.workspace.onDidCloseTextDocument((document) => {
       diagnosticsCollection.delete(document.uri);
       languageServer.invalidate(document.uri);
     }),
     vscode.window.onDidChangeActiveTextEditor(() => {
-      void refreshContexts();
+      void workspaceContext.refreshContexts();
       variantProvider.refresh();
       drcRulesProvider.refresh();
-      void pushStudioContext('focus');
+      void studioContext.pushStudioContext('focus');
     }),
     vscode.window.onDidChangeTextEditorSelection(() => {
-      void pushStudioContext('cursor');
+      void studioContext.pushStudioContext('cursor');
     }),
     vscode.window.tabGroups.onDidChangeTabs(() => {
-      void refreshContexts();
+      void workspaceContext.refreshContexts();
     }),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (
@@ -410,9 +432,9 @@ export async function activate(
         event.affectsConfiguration(SETTINGS.pcmThirdPartyDir)
       ) {
         cliDetector.clearCache();
-        aiHealthy = undefined;
-        void refreshContexts();
-        void refreshMcpState();
+        activationState.aiHealthy = undefined;
+        void workspaceContext.refreshContexts();
+        void mcpActivation.refreshMcpState();
       }
       if (
         event.affectsConfiguration(SETTINGS.pcmRepositoryUrls) ||
@@ -447,19 +469,17 @@ export async function activate(
 
   // Watch for externally-created/deleted .kicad_pro files so that the project
   // tree, status bar, and context keys stay current without requiring a tab
-  // switch or editor focus change.
+  // switch or editor focus change. The controller debounces the refresh.
   const projectFileWatcher =
     vscode.workspace.createFileSystemWatcher('**/*.kicad_pro');
   context.subscriptions.push(
     projectFileWatcher,
-    projectFileWatcher.onDidCreate(refreshProjectsScheduled),
-    projectFileWatcher.onDidDelete(refreshProjectsScheduled),
-    new vscode.Disposable(() => {
-      if (refreshProjectsTimer) {
-        clearTimeout(refreshProjectsTimer);
-        refreshProjectsTimer = undefined;
-      }
-    })
+    projectFileWatcher.onDidCreate(() =>
+      workspaceContext.scheduleProjectRefresh()
+    ),
+    projectFileWatcher.onDidDelete(() =>
+      workspaceContext.scheduleProjectRefresh()
+    )
   );
 
   registerAllCommands(context, {
@@ -492,17 +512,18 @@ export async function activate(
     logger,
     getLatestDrcRun: () =>
       diagnosticState.getLatestDrcRun(projectState.getActiveProject()?.id) ??
-      latestDrcRun,
+      activationState.latestDrcRun,
     setLatestDrcRun: (value) => {
-      latestDrcRun = value;
+      activationState.latestDrcRun = value;
     },
     setAiHealthy: (value) => {
-      aiHealthy = value;
+      activationState.aiHealthy = value;
     },
-    pushStudioContext: () => pushStudioContext('default'),
-    selectActiveProject,
-    refreshContexts,
-    refreshMcpState
+    pushStudioContext: () => studioContext.pushStudioContext('default'),
+    selectActiveProject: (projectOrId) =>
+      workspaceContext.selectActiveProject(projectOrId),
+    refreshContexts: () => workspaceContext.refreshContexts(),
+    refreshMcpState: () => mcpActivation.refreshMcpState()
   });
 
   context.subscriptions.push(
@@ -517,14 +538,16 @@ export async function activate(
       diagnosticsCollection,
       diagnosticState,
       projectState,
-      getStudioContext: buildStudioContext,
+      getStudioContext: () => studioContext.buildStudioContext(),
       setLatestDrcRun: (value) => {
-        latestDrcRun = value;
+        activationState.latestDrcRun = value;
       }
     })
   );
   registerMcpServerDefinitionProvider(context, mcpDetector, logger);
-  registerLanguageModelChatProvider(context, logger, buildStudioContext);
+  registerLanguageModelChatProvider(context, logger, () =>
+    studioContext.buildStudioContext()
+  );
 
   if (isWorkspaceTrusted()) {
     void cliDetector.detect().then((cli) => {
@@ -537,16 +560,16 @@ export async function activate(
         void cliDetector.detect().then((cli) => {
           statusBar.update({ cli });
         });
-        void refreshContexts();
-        void refreshMcpState();
+        void workspaceContext.refreshContexts();
+        void mcpActivation.refreshMcpState();
       })
     );
   }
-  void refreshMcpState();
+  void mcpActivation.refreshMcpState();
   variantProvider.refresh();
   drcRulesProvider.refresh();
 
-  await refreshContexts();
+  await workspaceContext.refreshContexts();
 
   const isFirstInstall = !context.globalState.get<boolean>(
     'kicadstudio.installed'
@@ -564,472 +587,6 @@ export async function activate(
   logger.info(`KiCad Studio activated in ${activationDurationMs}ms`);
   if (activationDurationMs > 500) {
     logger.warn(`Activation exceeded 500ms (${activationDurationMs}ms).`);
-  }
-
-  async function refreshContexts(): Promise<void> {
-    const activeUri = getActiveResourceUri();
-    const projects = await discoverKiCadProjects(
-      vscode.workspace.workspaceFolders
-    );
-    const hasProject =
-      projects.length > 0 ||
-      (
-        await vscode.workspace.findFiles(
-          '**/*.kicad_sch',
-          '**/node_modules/**',
-          1
-        )
-      ).length > 0 ||
-      (
-        await vscode.workspace.findFiles(
-          '**/*.kicad_pcb',
-          '**/node_modules/**',
-          1
-        )
-      ).length > 0;
-    const trusted = isWorkspaceTrusted();
-    const provider = await aiProviders.getProvider();
-    const cli = trusted ? await cliDetector.detect() : undefined;
-    const kicadVersionMajor = Number(cli?.version.split('.')[0] ?? '0');
-    const allegroImportSupported = await detectAllegroImportSupport(
-      trusted,
-      Boolean(cli)
-    );
-    const hasVariants = await workspaceHasVariants();
-    const mcpProfile = readConfiguredMcpProfile();
-    const persistedProjectId = context.workspaceState.get<string>(
-      ACTIVE_PROJECT_STORAGE_KEY
-    );
-    const activeProject = pickActiveProject(projects, {
-      previousActiveProjectId: projectState.getActiveProject()?.id,
-      persistedActiveProjectId: persistedProjectId,
-      activeResourcePath: activeUri?.fsPath
-    });
-    const projectSnapshot = projectState.update({
-      activeResource: activeUri,
-      projects,
-      activeProject,
-      hasProject,
-      hasVariants,
-      workspaceTrusted: trusted
-    });
-    diagnosticState.setActiveProject(projectSnapshot.activeProject?.id);
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.hasProject,
-      projectSnapshot.hasProject
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.schematicOpen,
-      activeUri?.fsPath.endsWith('.kicad_sch') ?? false
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.pcbOpen,
-      activeUri?.fsPath.endsWith('.kicad_pcb') ?? false
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.aiEnabled,
-      Boolean(provider?.isConfigured())
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.aiHealthy,
-      Boolean(provider?.isConfigured() && aiHealthy !== false)
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.kicad10Plus,
-      kicadVersionMajor >= 10
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.hasVariants,
-      projectSnapshot.hasVariants
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.allegroImportSupported,
-      allegroImportSupported
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.workspaceTrusted,
-      isWorkspaceTrusted()
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpProfile,
-      mcpProfile ?? 'full'
-    );
-    statusBar.update({
-      aiConfigured: Boolean(provider?.isConfigured()),
-      aiHealthy,
-      mcpProfile,
-      activeProjectName: projectSnapshot.activeProject?.name,
-      drc: diagnosticState.getSnapshot().drc,
-      erc: diagnosticState.getSnapshot().erc
-    });
-  }
-
-  async function detectAllegroImportSupport(
-    trusted: boolean,
-    cliDetected: boolean
-  ): Promise<boolean> {
-    if (!trusted || !cliDetected) {
-      return false;
-    }
-
-    try {
-      return await importService.isImportFormatSupported('allegro');
-    } catch (error) {
-      logger.error('Allegro import capability probe failed', error);
-      return false;
-    }
-  }
-
-  async function selectActiveProject(
-    projectOrId: ProjectContext | string
-  ): Promise<void> {
-    const project =
-      typeof projectOrId === 'string'
-        ? projectState.findProjectById(projectOrId)
-        : projectOrId;
-    if (!project) {
-      return;
-    }
-    await context.workspaceState.update(ACTIVE_PROJECT_STORAGE_KEY, project.id);
-    const snapshot = projectState.update({ activeProject: project });
-    diagnosticState.setActiveProject(project.id);
-    const diagnostics = diagnosticState.getSnapshot();
-    statusBar.update({
-      activeProjectName: snapshot.activeProject?.name,
-      drc: diagnostics.drc,
-      erc: diagnostics.erc
-    });
-    treeProvider.refresh();
-    await pushStudioContext('focus');
-  }
-
-  async function runConfiguredSaveChecks(
-    document: vscode.TextDocument
-  ): Promise<void> {
-    const config = vscode.workspace.getConfiguration();
-    const shouldRunDrc =
-      document.fileName.endsWith('.kicad_pcb') &&
-      config.get<boolean>(SETTINGS.autoRunDRC, false);
-    const shouldRunErc =
-      document.fileName.endsWith('.kicad_sch') &&
-      config.get<boolean>(SETTINGS.autoRunERC, false);
-
-    if ((!shouldRunDrc && !shouldRunErc) || !isWorkspaceTrusted()) {
-      return;
-    }
-
-    try {
-      const result = shouldRunDrc
-        ? await checkService.runDRC(document.fileName)
-        : await checkService.runERC(document.fileName);
-      diagnosticState.applyValidationResult(
-        vscode.Uri.file(document.fileName),
-        result.diagnostics,
-        result.summary,
-        {
-          project: projectState.findProjectForResource(document.fileName)
-        }
-      );
-      if (shouldRunDrc) {
-        latestDrcRun = {
-          file: document.fileName,
-          diagnostics: result.diagnostics,
-          summary: result.summary
-        };
-        qualityGateProvider.scheduleDrcRefresh();
-        await maybeOfferProactiveDrc(result.summary, result.diagnostics.length);
-        await pushStudioContext('drc');
-      }
-      if (result.diagnostics.length > 0) {
-        await vscode.commands.executeCommand('workbench.actions.view.problems');
-      }
-    } catch (error) {
-      diagnosticState.recordValidationFailure(
-        shouldRunDrc ? 'drc' : 'erc',
-        vscode.Uri.file(document.fileName),
-        error,
-        {
-          project: projectState.findProjectForResource(document.fileName)
-        }
-      );
-      logger.error('Auto DRC/ERC on save failed', error);
-      void vscode.window.showErrorMessage(
-        error instanceof Error
-          ? `KiCad Studio auto-check failed: ${error.message}`
-          : 'KiCad Studio auto-check failed. Confirm kicad-cli is configured and the file is valid.'
-      );
-    }
-  }
-
-  async function maybeOfferProactiveDrc(
-    summary: DiagnosticSummary,
-    diagnosticCount: number
-  ): Promise<void> {
-    const provider = await aiProviders.getProvider();
-    if (!provider?.isConfigured() || diagnosticCount <= 0) {
-      return;
-    }
-    const choice = await vscode.window.showInformationMessage(
-      `DRC: ${summary.errors} errors found. Start AI analysis?`,
-      'Yes, analyze',
-      'No'
-    );
-    if (choice === 'Yes, analyze') {
-      await vscode.commands.executeCommand(COMMANDS.aiProactiveDRC);
-    }
-  }
-
-  async function refreshMcpState(): Promise<void> {
-    if (!isWorkspaceTrusted()) {
-      await setRestrictedMcpContexts();
-      mcpState.update({
-        kind: 'Disconnected',
-        available: false,
-        connected: false,
-        message: 'MCP integration is disabled in Restricted Mode.'
-      });
-      return;
-    }
-
-    const state = await mcpClient.testConnection();
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpAvailable,
-      state.available
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpConnected,
-      state.connected
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpCompatible,
-      state.server?.compat === 'ok' || state.server?.compat === 'warn'
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpIncompatible,
-      state.kind === 'Incompatible'
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpDisconnected,
-      state.kind === 'Disconnected'
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpVsCodeStdio,
-      state.kind === 'VsCodeStdio'
-    );
-    const activeMode =
-      state.server?.capabilities.serverInfo?.operatingMode.active ?? 'unknown';
-    await setMcpOperatingModeContexts(activeMode);
-    mcpState.update(state);
-
-    if (
-      state.available &&
-      !state.connected &&
-      state.kind !== 'Incompatible' &&
-      vscode.workspace
-        .getConfiguration()
-        .get<boolean>(SETTINGS.mcpAutoDetect, true)
-    ) {
-      await maybeOfferMcpBootstrap(state.install);
-    }
-  }
-
-  function refreshProjectsScheduled(): void {
-    if (refreshProjectsTimer) {
-      clearTimeout(refreshProjectsTimer);
-    }
-    refreshProjectsTimer = setTimeout(() => {
-      refreshProjectsTimer = undefined;
-      void refreshContexts();
-      treeProvider.refresh();
-      variantProvider.refresh();
-    }, REFRESH_PROJECTS_DEBOUNCE_MS);
-  }
-
-  async function setRestrictedMcpContexts(): Promise<void> {
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpAvailable,
-      false
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpConnected,
-      false
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpCompatible,
-      false
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpIncompatible,
-      false
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpDisconnected,
-      true
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpVsCodeStdio,
-      false
-    );
-    await setMcpOperatingModeContexts('unknown');
-  }
-
-  async function setMcpOperatingModeContexts(mode: string): Promise<void> {
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpOperatingMode,
-      mode
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpWriteMode,
-      mode === 'write' || mode === 'experimental'
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpManufacturingMode,
-      mode === 'manufacturing' || mode === 'experimental'
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.mcpExperimentalMode,
-      mode === 'experimental'
-    );
-  }
-
-  async function maybeOfferMcpBootstrap(
-    installStatus: McpInstallStatus | undefined
-  ): Promise<void> {
-    if (!installStatus?.found) {
-      return;
-    }
-
-    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (!root) {
-      return;
-    }
-
-    const mcpJsonPath = path.join(root, '.vscode', 'mcp.json');
-    if (fs.existsSync(mcpJsonPath)) {
-      return;
-    }
-
-    const choice = await vscode.window.showInformationMessage(
-      'kicad-mcp-pro was detected. Create .vscode/mcp.json for this project?',
-      'Setup MCP',
-      'Later'
-    );
-    if (choice === 'Setup MCP') {
-      await mcpDetector.generateMcpJson(root, installStatus);
-      await refreshMcpState();
-    }
-  }
-
-  async function buildStudioContext(): Promise<StudioContext> {
-    const activeUri = getActiveResourceUri();
-    const activeEditor = vscode.window.activeTextEditor;
-    const selectedProject = projectState.getActiveProject();
-    const resourceProject = activeUri
-      ? projectState.findProjectForResource(activeUri)
-      : undefined;
-    const activeProject = selectedProject ?? resourceProject;
-    const fileType = activeUri?.fsPath.endsWith('.kicad_sch')
-      ? 'schematic'
-      : activeUri?.fsPath.endsWith('.kicad_pcb')
-        ? 'pcb'
-        : 'other';
-    const viewerState =
-      fileType === 'pcb' && activeUri
-        ? pcbEditorProvider.getViewerState(activeUri)
-        : fileType === 'schematic' && activeUri
-          ? schematicEditorProvider.getViewerState(activeUri)
-          : undefined;
-    const mcpState = isWorkspaceTrusted() ? mcpClient.getState() : undefined;
-    const cli = isWorkspaceTrusted() ? await cliDetector.detect() : undefined;
-    const latestProjectDrcRun =
-      diagnosticState.getLatestDrcRun(activeProject?.id) ?? latestDrcRun;
-    return {
-      activeFile: activeUri?.fsPath,
-      fileType,
-      project: activeProject,
-      projectId: activeProject?.id,
-      projectName: activeProject?.name,
-      projectRoot: activeProject?.rootPath,
-      projectFile: activeProject?.projectFile,
-      drcErrors:
-        latestProjectDrcRun?.diagnostics
-          .map((diagnostic) => diagnostic.message)
-          .slice(0, 20) ?? [],
-      selectedReference: viewerState?.selectedReference,
-      selectedArea: viewerState?.selectedArea,
-      cursorPosition: activeEditor
-        ? {
-            line: activeEditor.selection.active.line,
-            character: activeEditor.selection.active.character
-          }
-        : undefined,
-      activeSheetPath:
-        fileType === 'schematic' && activeUri
-          ? path.relative(
-              activeProject?.rootPath ??
-                vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ??
-                '',
-              activeUri.fsPath
-            )
-          : undefined,
-      visibleLayers: viewerState?.activeLayers,
-      viewerEngine: viewerState?.engine,
-      activeVariant: await variantProvider.getActiveVariantName(),
-      mcpConnected: mcpState?.connected ?? false,
-      kicadVersion: cli?.version,
-      designBlocks: activeUri ? readDesignBlockNames(activeUri.fsPath) : []
-    };
-  }
-
-  async function pushStudioContext(
-    reason: 'save' | 'focus' | 'cursor' | 'drc' | 'default' = 'default'
-  ): Promise<void> {
-    if (!isWorkspaceTrusted()) {
-      return;
-    }
-    await contextBridge.pushContext(await buildStudioContext(), reason);
-  }
-}
-
-function readDesignBlockNames(file: string): string[] {
-  try {
-    const text = fs.readFileSync(file, 'utf8');
-    return [
-      ...new Set(
-        Array.from(
-          text.matchAll(/\(\s*design_block\b[\s\S]*?\(\s*name\s+"([^"]+)"/g),
-          (match) => match[1]
-        ).filter((entry): entry is string => Boolean(entry))
-      )
-    ];
-  } catch {
-    return [];
   }
 }
 

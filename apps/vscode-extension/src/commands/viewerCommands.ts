@@ -15,7 +15,18 @@ import {
 import { resolveKiCadExecutable, launchDetached } from './kicadLauncher';
 import { buildStatusMenuItems } from './viewerStatusMenu';
 import type { CommandServices } from './types';
-import { findFirstWorkspaceFile, getWorkspaceRoot } from '../utils/pathUtils';
+import { GitDiffDetector } from '../git/gitDiffDetector';
+import { SExpressionParser } from '../language/sExpressionParser';
+import {
+  buildKicadDiffSummary,
+  classifyKicadFile,
+  renderDiffReport
+} from '../diff/kicadDiffSummary';
+import {
+  findFirstWorkspaceFile,
+  getWorkspaceRoot,
+  relativeToWorkspace
+} from '../utils/pathUtils';
 import type { KiCadVariant, ProjectContext, ProjectTreeNode } from '../types';
 import { unwrapPcmPackage } from '../library/pcmLibraryProvider';
 import type { PcmPackage } from '../library/pcmService';
@@ -135,6 +146,49 @@ export function registerViewerCommands(
     vscode.commands.registerCommand(
       COMMANDS.showDiff,
       (resource?: vscode.Uri) => services.diffEditorProvider.show(resource)
+    ),
+
+    registerTrustedCommand(
+      COMMANDS.generateDiffReport,
+      async (resource?: vscode.Uri) => {
+        const uri = resource ?? getActiveResourceUri();
+        const kind = uri ? classifyKicadFile(uri.fsPath) : 'unknown';
+        if (!uri || kind === 'unknown') {
+          void vscode.window.showWarningMessage(
+            'Open a .kicad_sch or .kicad_pcb file to generate a KiCad diff report.'
+          );
+          return;
+        }
+        try {
+          const detector = new GitDiffDetector(new SExpressionParser());
+          const file = relativeToWorkspace(uri.fsPath);
+          const summary =
+            kind === 'schematic'
+              ? buildKicadDiffSummary({
+                  kind,
+                  file,
+                  components: await detector.getChangedComponents(uri.fsPath)
+                })
+              : buildKicadDiffSummary({
+                  kind,
+                  file,
+                  ...detector.readFileVersions(uri.fsPath)
+                });
+          const document = await vscode.workspace.openTextDocument({
+            language: 'markdown',
+            content: renderDiffReport(summary)
+          });
+          await vscode.window.showTextDocument(document, { preview: true });
+        } catch (error) {
+          services.logger.error('KiCad diff report failed', error);
+          void vscode.window.showWarningMessage(
+            error instanceof Error
+              ? `Unable to generate the KiCad diff report: ${error.message}`
+              : 'Unable to generate the KiCad diff report. Confirm the file is committed and the workspace is a git repository.'
+          );
+        }
+      },
+      'Generate KiCad Diff Report'
     ),
 
     vscode.commands.registerCommand(COMMANDS.refreshProjectTree, () =>
@@ -309,7 +363,7 @@ export function registerViewerCommands(
   ];
 }
 
-function resolveCommandProject(
+export function resolveCommandProject(
   services: CommandServices,
   target: vscode.Uri | ProjectContext | ProjectTreeNode | string | undefined
 ): ProjectContext | undefined {
@@ -331,7 +385,7 @@ function resolveCommandProject(
   return undefined;
 }
 
-async function pickProjectFromQuickPick(
+export async function pickProjectFromQuickPick(
   services: CommandServices
 ): Promise<ProjectContext | undefined> {
   const projects = services.projectState.getProjects();

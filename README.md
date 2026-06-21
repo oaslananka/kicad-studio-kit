@@ -20,23 +20,37 @@
   <a href="https://deepwiki.com/oaslananka/kicad-studio-kit"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
-Monorepo for:
+KiCad Studio Kit is the VS Code extension repository. The MCP server is
+developed and released separately. This repository owns only the extension-side
+MCP discovery, configuration, compatibility metadata, and user experience — see
+[ADR 0009](docs/adr/0009-split-kicad-mcp-pro-into-separate-repository.md) and
+[repository structure](docs/architecture/repo-structure.md).
 
-- KiCad Studio VS Code extension (`apps/vscode-extension`)
-- KiCad MCP Pro server (source removed — see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp))
-- shared test harness (`packages/test-harness`)
+This repository contains:
+
+- the KiCad Studio VS Code extension (`apps/vscode-extension`) — the only released product here;
+- private shared test infrastructure (`packages/test-harness`, `packages/kicad-fixtures`);
+- the extension-side MCP integration contract and compatibility metadata.
+
+The KiCad MCP Pro server (`kicad-mcp-pro`) — its Python source, npm launcher,
+container image, and MCP Registry listing — lives in
+[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
 
 Canonical repository: https://github.com/oaslananka/kicad-studio-kit
 Searchable documentation: https://oaslananka.github.io/kicad-studio-kit/
 
 ## Version Baseline
 
+<!-- release-surface:start -->
+<!-- Generated from apps/vscode-extension/package.json. Run `corepack pnpm run release:surface` to refresh. -->
+
 This repository's local release surface is:
 
-- VS Code extension: `oaslananka.kicadstudiokit` (`1.8.0`)
+- VS Code extension: `oaslananka.kicadstudiokit` (`1.8.1`)
 
 The Python package `kicad-mcp-pro`, container image, and MCP Registry listing
 are released from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+<!-- release-surface:end -->
 
 ## KiCad Compatibility
 
