@@ -51,6 +51,7 @@ const fixtureIds = [
   "malformed-pcb",
   "paths-with-spaces",
   "unicode-path-çöğü",
+  "multi-root-workspace",
 ];
 
 function component(reference, value, footprint, net = "GND") {
@@ -472,6 +473,33 @@ const fixtures = [
     hasPcb: true,
     hasDru: true,
     components: defaultComponents,
+  },
+  {
+    id: "multi-root-workspace",
+    fileBase: "controller",
+    expectedOutcome: "pass",
+    tags: ["multi-root", "workspace", "schematic", "pcb", "bom"],
+    hasSchematic: true,
+    hasPcb: true,
+    hasDru: true,
+    components: defaultComponents,
+    workspaceFile: true,
+    workspaceMembers: [
+      {
+        id: "multi-root-workspace-power",
+        fileBase: "power-supply",
+        subdir: "power-supply",
+        expectedOutcome: "pass",
+        tags: ["multi-root", "schematic", "pcb"],
+        hasSchematic: true,
+        hasPcb: true,
+        hasDru: false,
+        components: [
+          component("U2", "LDO", "Package_TO_SOT_SMD:SOT-23", "VCC"),
+          component("C2", "10u", "Capacitor_SMD:C_0805_2012Metric", "VCC"),
+        ],
+      },
+    ],
   },
 ];
 
@@ -943,6 +971,17 @@ function boardStats(fixture) {
   ].join("\n");
 }
 
+function workspaceFileContent(fixture) {
+  const folders = [
+    { name: fixture.fileBase, path: "." },
+    ...(fixture.workspaceMembers ?? []).map((member) => ({
+      name: member.fileBase,
+      path: member.subdir,
+    })),
+  ];
+  return stableJson({ folders, settings: {} });
+}
+
 function filesForFixture(fixture) {
   const files = new Map();
 
@@ -972,6 +1011,38 @@ function filesForFixture(fixture) {
 
   for (const file of fixture.extraFiles ?? []) {
     files.set(fixturePath(fixture, file.path), file.content);
+  }
+
+  for (const member of fixture.workspaceMembers ?? []) {
+    files.set(
+      fixturePath(fixture, member.subdir, projectFileName(member)),
+      projectContent(member),
+    );
+    if (member.hasSchematic) {
+      files.set(
+        fixturePath(fixture, member.subdir, schematicFileName(member)),
+        schematicContent(member),
+      );
+    }
+    if (member.hasPcb) {
+      files.set(
+        fixturePath(fixture, member.subdir, pcbFileName(member)),
+        pcbContent(member),
+      );
+    }
+    if (member.hasDru) {
+      files.set(
+        fixturePath(fixture, member.subdir, druFileName(member)),
+        druContent(member),
+      );
+    }
+  }
+
+  if (fixture.workspaceFile) {
+    files.set(
+      fixturePath(fixture, `${fixture.fileBase}.code-workspace`),
+      workspaceFileContent(fixture),
+    );
   }
 
   const expectedDir = expectedPath(fixture);

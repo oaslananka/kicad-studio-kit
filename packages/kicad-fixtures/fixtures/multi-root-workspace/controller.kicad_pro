@@ -1,0 +1,28 @@
+{
+  "meta": {
+    "filename": "controller",
+    "version": 1,
+    "fixtureId": "multi-root-workspace",
+    "generatedBy": "scripts/generate-kicad-fixture-corpus.mjs"
+  },
+  "fixture": {
+    "id": "multi-root-workspace",
+    "expectedOutcome": "pass",
+    "tags": [
+      "multi-root",
+      "workspace",
+      "schematic",
+      "pcb",
+      "bom"
+    ]
+  },
+  "schematic": {
+    "file": "controller.kicad_sch"
+  },
+  "board": {
+    "file": "controller.kicad_pcb"
+  },
+  "designRules": {
+    "file": "controller.kicad_dru"
+  }
+}

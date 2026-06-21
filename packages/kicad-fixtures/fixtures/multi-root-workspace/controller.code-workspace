@@ -1,0 +1,13 @@
+{
+  "folders": [
+    {
+      "name": "controller",
+      "path": "."
+    },
+    {
+      "name": "power-supply",
+      "path": "power-supply"
+    }
+  ],
+  "settings": {}
+}
