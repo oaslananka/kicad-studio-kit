@@ -363,7 +363,7 @@ export function registerViewerCommands(
   ];
 }
 
-function resolveCommandProject(
+export function resolveCommandProject(
   services: CommandServices,
   target: vscode.Uri | ProjectContext | ProjectTreeNode | string | undefined
 ): ProjectContext | undefined {
@@ -385,7 +385,7 @@ function resolveCommandProject(
   return undefined;
 }
 
-async function pickProjectFromQuickPick(
+export async function pickProjectFromQuickPick(
   services: CommandServices
 ): Promise<ProjectContext | undefined> {
   const projects = services.projectState.getProjects();

@@ -1110,6 +1110,12 @@
         "category": "%kicadstudio.contributes.commands.106.category%"
       },
       {
+        "command": "kicadstudio.selectActiveProject",
+        "title": "%kicadstudio.contributes.commands.107.title%",
+        "category": "%kicadstudio.contributes.commands.107.category%",
+        "icon": "$(list-selection)"
+      },
+      {
         "command": "kicadstudio.generateKicadDiffReport",
         "title": "%kicadstudio.contributes.commands.diffReport.title%",
         "category": "%kicadstudio.contributes.commands.diffReport.category%",
@@ -1155,6 +1161,11 @@
         {
           "when": "view == kicadstudio.projectTree",
           "command": "kicadstudio.refreshProjectTree",
+          "group": "navigation"
+        },
+        {
+          "when": "view == kicadstudio.projectTree && kicadstudio.hasProject",
+          "command": "kicadstudio.selectActiveProject",
           "group": "navigation"
         },
         {
@@ -1337,6 +1348,10 @@
         {
           "command": "kicadstudio.exportStats",
           "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
+        },
+        {
+          "command": "kicadstudio.selectActiveProject",
+          "when": "kicadstudio.hasProject"
         },
         {
           "command": "kicadstudio.generateKicadDiffReport",
