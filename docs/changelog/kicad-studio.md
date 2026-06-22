@@ -12,6 +12,31 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.9.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.8.1...vscode-extension-v1.9.0) (2026-06-22)
+
+
+### Features
+
+* **kicad-studio:** add a Fabrication Release Wizard with validated manufacturing bundles ([#433](https://github.com/oaslananka/kicad-studio-kit/issues/433)) ([c3d366c](https://github.com/oaslananka/kicad-studio-kit/commit/c3d366c0b305364ddc4e3897c70a69c459011600))
+* **kicad-studio:** add component intelligence and BOM risk scoring ([#429](https://github.com/oaslananka/kicad-studio-kit/issues/429)) ([a5cfcff](https://github.com/oaslananka/kicad-studio-kit/commit/a5cfcff425cb5df194e5cab4ce6b90fe97ae4761)), closes [#403](https://github.com/oaslananka/kicad-studio-kit/issues/403)
+* **kicad-studio:** add explicit active project selection for multi-root workspaces ([#425](https://github.com/oaslananka/kicad-studio-kit/issues/425)) ([2547fc8](https://github.com/oaslananka/kicad-studio-kit/commit/2547fc8e26a28468b6594ede7905b5a3e0c23e27)), closes [#407](https://github.com/oaslananka/kicad-studio-kit/issues/407)
+* **kicad-studio:** add rules-as-code policy packs for KiCad projects ([#428](https://github.com/oaslananka/kicad-studio-kit/issues/428)) ([b62f4e7](https://github.com/oaslananka/kicad-studio-kit/commit/b62f4e79014895787476d97f3631fc80ebf7eb86))
+* **kicad-studio:** add structural KiCad diff report for local and PR review ([#427](https://github.com/oaslananka/kicad-studio-kit/issues/427)) ([0ce4c29](https://github.com/oaslananka/kicad-studio-kit/commit/0ce4c295b7de1a7b4f02489af43a7e926d0d3943)), closes [#401](https://github.com/oaslananka/kicad-studio-kit/issues/401)
+* **kicad-studio:** document clear capability modes for assistant tools ([#436](https://github.com/oaslananka/kicad-studio-kit/issues/436)) ([4604371](https://github.com/oaslananka/kicad-studio-kit/commit/4604371913485ae2ab7909cbd940d060ea4c95b7)), closes [#406](https://github.com/oaslananka/kicad-studio-kit/issues/406)
+* **kicad-studio:** premium sidebar density, status colors, and onboarding ([#447](https://github.com/oaslananka/kicad-studio-kit/issues/447)) ([e9332bf](https://github.com/oaslananka/kicad-studio-kit/commit/e9332bf8b1f23acbd5d7bc3c23b04c69fe3c9f77))
+* **kicad-studio:** promote BoardReadyOps into a release readiness scorecard ([#430](https://github.com/oaslananka/kicad-studio-kit/issues/430)) ([a85896e](https://github.com/oaslananka/kicad-studio-kit/commit/a85896e3facd7b236d858fe6989a63803de7117e))
+
+
+### Bug Fixes
+
+* **kicad-studio:** default generated MCP config to least privilege ([#446](https://github.com/oaslananka/kicad-studio-kit/issues/446)) ([7647ed8](https://github.com/oaslananka/kicad-studio-kit/commit/7647ed82e15544af846f41f1efc8041b8fbafec1))
+* **kicad-studio:** make sidebar MCP UX project-aware and actionable ([#445](https://github.com/oaslananka/kicad-studio-kit/issues/445)) ([46c044c](https://github.com/oaslananka/kicad-studio-kit/commit/46c044c706cb4e9e9dc5f41ef06f4edb226ea55d))
+
+
+### Performance Improvements
+
+* **kicad-studio:** debounce and cache workspace context refreshes ([#432](https://github.com/oaslananka/kicad-studio-kit/issues/432)) ([575c08f](https://github.com/oaslananka/kicad-studio-kit/commit/575c08f2b9805829232f356353639d78bb20a3bc))
+
 ## [1.8.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.8.0...vscode-extension-v1.8.1) (2026-06-18)
 
 
