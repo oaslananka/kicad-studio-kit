@@ -459,7 +459,8 @@
         {
           "id": "kicadstudio.mcpTools",
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.10.name%",
-          "icon": "assets/views/mcp-tools.svg"
+          "icon": "assets/views/mcp-tools.svg",
+          "when": "kicadstudio.hasProject"
         }
       ]
     },

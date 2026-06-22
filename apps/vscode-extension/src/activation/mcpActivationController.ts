@@ -6,6 +6,7 @@ import type { McpClient } from '../mcp/mcpClient';
 import type { McpDetector } from '../mcp/mcpDetector';
 import type { McpStateStore } from '../state/stateStores';
 import { isWorkspaceTrusted } from '../utils/workspaceTrust';
+import { discoverKiCadProjects } from '../workspace/projectContext';
 import type { McpInstallStatus } from '../types';
 
 export interface McpActivationControllerDeps {
@@ -148,6 +149,16 @@ export class McpActivationController {
 
     const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!root) {
+      return;
+    }
+
+    // Only offer MCP setup when the workspace actually contains a KiCad project.
+    // kicad-mcp-pro is project-scoped, so prompting in a folder that merely
+    // happens to hold a stray KiCad file (and activated the extension) is noise.
+    const projects = await discoverKiCadProjects(
+      vscode.workspace.workspaceFolders
+    );
+    if (projects.length === 0) {
       return;
     }
 

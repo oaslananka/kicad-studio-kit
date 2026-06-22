@@ -17,7 +17,7 @@ Refresh with `corepack pnpm run docs:generate`.
 | `kicadstudio.drcRules` | DRC Rules | `kicadstudio-sidebar` | tree | `kicadstudio.hasProject` |
 | `kicadstudio.fixQueue` | AI Fix Queue | `kicadstudio-sidebar` | tree | `kicadstudio.mcpConnected` |
 | `kicadstudio.componentSearch` | Component Search | `kicadstudio-sidebar` | tree |  |
-| `kicadstudio.mcpTools` | MCP &amp; Tools | `kicadstudio-sidebar` | tree |  |
+| `kicadstudio.mcpTools` | MCP &amp; Tools | `kicadstudio-sidebar` | tree | `kicadstudio.hasProject` |
 
 ## Custom Editors
 

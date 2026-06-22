@@ -97,11 +97,14 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
   getChildren(element?: QualityGateElement): QualityGateElement[] {
     if (!element) {
       const state = this.mcpState?.getState();
-      const gates =
-        state && !supportsHttpQualityGates(state)
-          ? blockedGates(this.gates, state)
-          : this.gates;
-      return orderGates(gates).map((gate) => ({ kind: 'gate', gate }));
+      // When MCP cannot serve HTTP quality gates, return no children so the
+      // view's welcome content (Connect / Setup MCP / Switch to HTTP) is shown
+      // instead of a wall of identical "BLOCKED — connect kicad-mcp-pro" rows.
+      // The welcome CTAs are the single, discoverable way to fix the blocker.
+      if (state && !supportsHttpQualityGates(state)) {
+        return [];
+      }
+      return orderGates(this.gates).map((gate) => ({ kind: 'gate', gate }));
     }
     if (element.kind === 'gate') {
       return element.gate.violations.map((violation) => ({
@@ -290,19 +293,6 @@ function pendingGateSummary(id: string): string {
     default:
       return localize('qualityGatePendingDefault');
   }
-}
-
-function blockedGates(
-  gates: QualityGateResult[],
-  state: McpConnectionState
-): QualityGateResult[] {
-  const summary = qualityGateBlockMessage(state);
-  return gates.map((gate) => ({
-    ...gate,
-    status: 'BLOCKED',
-    summary: state.message ? `${summary} ${state.message}` : summary,
-    violations: []
-  }));
 }
 
 function qualityGateBlockMessage(state: McpConnectionState): string {

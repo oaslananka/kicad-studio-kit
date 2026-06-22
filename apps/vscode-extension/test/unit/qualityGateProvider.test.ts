@@ -26,7 +26,7 @@ describe('QualityGateProvider', () => {
     );
   });
 
-  it('blocks cached gates while MCP is outside the HTTP connected state', () => {
+  it('renders no gate rows while MCP is outside the HTTP connected state so the welcome CTA is shown', () => {
     const mcpState = new McpStateStore();
     mcpState.update({
       kind: 'VsCodeStdio',
@@ -40,17 +40,25 @@ describe('QualityGateProvider', () => {
       mcpState
     );
 
-    const children = provider.getChildren();
+    // Empty children → VS Code shows the view's welcome content (Connect /
+    // Setup MCP / Switch to HTTP) instead of a wall of BLOCKED rows.
+    expect(provider.getChildren()).toHaveLength(0);
+  });
 
-    expect(children).toHaveLength(5);
-    expect(
-      children.every(
-        (item) => item.kind === 'gate' && item.gate.status === 'BLOCKED'
-      )
-    ).toBe(true);
-    expect(provider.getTreeItem(children[0] as never).description).toContain(
-      'BLOCKED'
+  it('still renders gate rows when MCP serves HTTP quality gates', () => {
+    const mcpState = new McpStateStore();
+    mcpState.update({
+      kind: 'Connected',
+      available: true,
+      connected: true
+    });
+    const provider = new QualityGateProvider(
+      createExtensionContextMock() as never,
+      {} as never,
+      mcpState
     );
+
+    expect(provider.getChildren()).toHaveLength(5);
   });
 
   it('blocks run actions while HTTP quality gates are unavailable', async () => {
