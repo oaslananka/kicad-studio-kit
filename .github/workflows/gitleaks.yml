@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: gitleaks-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   scan:
     if: github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops'

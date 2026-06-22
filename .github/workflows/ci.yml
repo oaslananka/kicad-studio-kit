@@ -153,6 +153,14 @@ jobs:
         if: runner.os == 'Windows'
         timeout-minutes: 15
         run: corepack pnpm --filter kicadstudiokit run test:visual
+      - name: Upload visual regression diffs on failure
+        if: ${{ failure() && runner.os == 'Windows' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: visual-regression-results
+          path: apps/vscode-extension/test-results
+          if-no-files-found: ignore
+          retention-days: 14
       - run: corepack pnpm --filter kicadstudiokit run test:a11y
       - run: corepack pnpm --filter kicadstudiokit run build
       - if: runner.os == 'Linux'
@@ -321,15 +329,17 @@ jobs:
           echo "| performance-budgets | ${{ needs.performance-budgets.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| real-pair-compatibility | ${{ needs.real-pair-compatibility.result }} |" >> $GITHUB_STEP_SUMMARY
       - name: Fail on critical job failure
+        # Fail closed on both failure and cancellation of a required job: a
+        # cancelled (e.g. timed-out) required lane must block merge, not pass.
         if: >
           ${{
-               needs.ci-lanes.result == 'failure'
-            || needs.metadata.result == 'failure'
-            || needs.forbidden-refs.result == 'failure'
-            || needs.shared-packages.result == 'failure'
-            || needs.vscode-extension.result == 'failure'
-            || needs.performance-budgets.result == 'failure'
-            || needs.real-pair-compatibility.result == 'failure'
+               needs.ci-lanes.result == 'failure' || needs.ci-lanes.result == 'cancelled'
+            || needs.metadata.result == 'failure' || needs.metadata.result == 'cancelled'
+            || needs.forbidden-refs.result == 'failure' || needs.forbidden-refs.result == 'cancelled'
+            || needs.shared-packages.result == 'failure' || needs.shared-packages.result == 'cancelled'
+            || needs.vscode-extension.result == 'failure' || needs.vscode-extension.result == 'cancelled'
+            || needs.performance-budgets.result == 'failure' || needs.performance-budgets.result == 'cancelled'
+            || needs.real-pair-compatibility.result == 'failure' || needs.real-pair-compatibility.result == 'cancelled'
           }}
         shell: bash
         run: |
