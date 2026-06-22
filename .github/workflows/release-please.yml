@@ -72,25 +72,25 @@ jobs:
           git push --no-verify
 
       # Regenerate changelog docs after a release PR is merged
-      - if: ${{ steps.release.outputs.release_created }}
+      - if: ${{ steps.release.outputs.releases_created == 'true' }}
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           fetch-depth: 0
           persist-credentials: true
-      - if: ${{ steps.release.outputs.release_created }}
+      - if: ${{ steps.release.outputs.releases_created == 'true' }}
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .node-version
           package-manager-cache: false
-      - if: ${{ steps.release.outputs.release_created }}
+      - if: ${{ steps.release.outputs.releases_created == 'true' }}
         run: corepack enable
-      - if: ${{ steps.release.outputs.release_created }}
+      - if: ${{ steps.release.outputs.releases_created == 'true' }}
         run: corepack prepare pnpm@11.6.0 --activate
-      - if: ${{ steps.release.outputs.release_created }}
+      - if: ${{ steps.release.outputs.releases_created == 'true' }}
         run: corepack pnpm install --frozen-lockfile
-      - if: ${{ steps.release.outputs.release_created }}
+      - if: ${{ steps.release.outputs.releases_created == 'true' }}
         run: corepack pnpm run docs:generate
-      - if: ${{ steps.release.outputs.release_created }}
+      - if: ${{ steps.release.outputs.releases_created == 'true' }}
         run: |
           git config user.name "kicad-studio-bot"
           git config user.email "kicad-studio-bot@users.noreply.github.com"
@@ -103,13 +103,21 @@ jobs:
       # Release Please creates releases with GITHUB_TOKEN, which does not
       # recursively trigger release-event workflows. Dispatch the publish
       # workflow explicitly so packaging, evidence, and marketplaces run.
-      - if: ${{ steps.release.outputs.release_created }}
+      - if: ${{ steps.release.outputs.releases_created == 'true' }}
         name: Publish extension to marketplaces
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          tag="${{ steps.release.outputs.tag_name }}"
+          # Derive the tag from the released version rather than a Release Please
+          # output: in manifest mode the per-package outputs are path-prefixed
+          # (e.g. apps/vscode-extension--tag_name) and the bare tag_name output is
+          # unset, which previously left this dispatch with an empty ref. The
+          # component tag is component-name + "-v" + version, and this step runs
+          # on the checked-out main where package.json already holds the new
+          # version.
+          version="$(node -p "require('./apps/vscode-extension/package.json').version")"
+          tag="vscode-extension-v${version}"
           echo "Triggering publish-extension workflow for tag ${tag}…"
           gh workflow run publish-extension.yml \
             --ref "${tag}" \
