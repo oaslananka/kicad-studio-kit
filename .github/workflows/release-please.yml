@@ -32,6 +32,41 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+      # When Release Please has an OPEN release PR, sync the version surfaces it
+      # does not bump itself (compatibility metadata + the generated docs tables)
+      # onto its branch. Release Please only updates package.json, the manifest,
+      # and the changelog, so without this the release PR's own CI fails on
+      # compatibility.yaml / compatibilityMatrix.ts / generated-docs version
+      # drift and the release can never be merged.
+      - if: ${{ steps.release.outputs.pr }}
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          fetch-depth: 0
+          persist-credentials: true
+      - if: ${{ steps.release.outputs.pr }}
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - if: ${{ steps.release.outputs.pr }}
+        run: corepack enable
+      - if: ${{ steps.release.outputs.pr }}
+        run: corepack prepare pnpm@11.6.0 --activate
+      - if: ${{ steps.release.outputs.pr }}
+        run: corepack pnpm install --frozen-lockfile
+      - if: ${{ steps.release.outputs.pr }}
+        run: corepack pnpm run release:surface
+      - if: ${{ steps.release.outputs.pr }}
+        run: corepack pnpm run docs:generate
+      - if: ${{ steps.release.outputs.pr }}
+        run: |
+          git config user.name "kicad-studio-bot"
+          git config user.email "kicad-studio-bot@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "chore(repo): sync release surfaces for the pending release"
+          git push
+
       # Regenerate changelog docs after a release PR is merged
       - if: ${{ steps.release.outputs.release_created }}
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10

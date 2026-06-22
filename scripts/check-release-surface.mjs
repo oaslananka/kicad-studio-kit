@@ -6,7 +6,8 @@
 // a stale version.
 //
 //   node scripts/check-release-surface.mjs           # check, exit 1 on drift
-//   node scripts/check-release-surface.mjs --write    # regenerate the README block
+//   node scripts/check-release-surface.mjs --write    # rewrite the surfaces this
+//                                                      # module owns directly
 //
 // The authoritative version is apps/vscode-extension/package.json, which is
 // itself pinned to .release-please-manifest.json by check-version-consistency.
@@ -16,7 +17,7 @@ import {
   REFRESH_COMMAND,
   collectDrift,
   readAuthoritativeVersion,
-  writeReadmeBaseline,
+  writeOwnedReleaseSurfaces,
 } from "./lib/release-surface.mjs";
 
 function main() {
@@ -25,11 +26,18 @@ function main() {
   const version = readAuthoritativeVersion();
 
   if (write) {
-    const changed = writeReadmeBaseline(undefined, version);
+    const changed = writeOwnedReleaseSurfaces(undefined, version);
+    if (changed.length > 0) {
+      console.log(
+        `Regenerated release surfaces for version ${version}: ${changed.join(", ")}.`,
+      );
+    } else {
+      console.log(
+        `Owned release surfaces already match version ${version}.`,
+      );
+    }
     console.log(
-      changed
-        ? `Regenerated README release surface for version ${version}.`
-        : `README release surface already matches version ${version}.`,
+      "Run `corepack pnpm run docs:generate` to refresh the generated docs tables.",
     );
     return;
   }
