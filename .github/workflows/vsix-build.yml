@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: vsix-build-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   pnpm_config_pm_on_fail: ignore
 
