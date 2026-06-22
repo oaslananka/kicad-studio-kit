@@ -84,7 +84,7 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
     item.description = descriptionForGate(gate);
     item.tooltip = tooltipForGate(gate);
     item.contextValue = `qualityGate-${gate.status.toLowerCase()}`;
-    item.iconPath = new vscode.ThemeIcon(iconForStatus(gate.status));
+    item.iconPath = iconForStatus(gate.status);
 
     // Intentionally removed item.command here to separate click action
     // from standard treeview expansion. We rely on package.json inline commands
@@ -344,19 +344,28 @@ function qualityGateDocsUrl(gate: QualityGateResult | undefined): string {
   return `${base}/extension/`;
 }
 
-function iconForStatus(status: QualityGateStatus): string {
+function iconForStatus(status: QualityGateStatus): vscode.ThemeIcon {
   switch (status) {
     case 'PASS':
-      return 'pass';
+      return new vscode.ThemeIcon(
+        'pass',
+        new vscode.ThemeColor('testing.iconPassed')
+      );
     case 'WARN':
-      return 'warning';
+      return new vscode.ThemeIcon(
+        'warning',
+        new vscode.ThemeColor('editorWarning.foreground')
+      );
     case 'FAIL':
     case 'BLOCKED':
-      return 'error';
+      return new vscode.ThemeIcon(
+        'error',
+        new vscode.ThemeColor('editorError.foreground')
+      );
     case 'EMPTY':
-      return 'info';
+      return new vscode.ThemeIcon('info');
     case 'PENDING':
-      return 'play-circle';
+      return new vscode.ThemeIcon('play-circle');
   }
 }
 

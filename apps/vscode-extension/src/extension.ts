@@ -577,11 +577,23 @@ export async function activate(
     'kicadstudio.installed'
   );
   if (isFirstInstall) {
+    // One-time, dismissible welcome. Offer the guided tour instead of forcibly
+    // opening a tab, so the user stays in control on first activation.
     await context.globalState.update('kicadstudio.installed', true);
-    await vscode.commands.executeCommand(
-      'workbench.action.openWalkthrough',
-      `${EXTENSION_ID}#kicadstudio.gettingStarted`
-    );
+    void vscode.window
+      .showInformationMessage(
+        'Welcome to KiCad Studio. Take a short guided tour to set up KiCad CLI, the MCP server, and AI?',
+        'Open Walkthrough',
+        'Maybe Later'
+      )
+      .then((choice) => {
+        if (choice === 'Open Walkthrough') {
+          void vscode.commands.executeCommand(
+            'workbench.action.openWalkthrough',
+            `${EXTENSION_ID}#kicadstudio.gettingStarted`
+          );
+        }
+      });
   }
 
   logger.info('KiCad Studio activated successfully.');

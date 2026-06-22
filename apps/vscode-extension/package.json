@@ -419,42 +419,49 @@
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.3.name%",
           "type": "webview",
           "when": "kicadstudio.hasProject",
-          "icon": "assets/views/bom.svg"
+          "icon": "assets/views/bom.svg",
+          "visibility": "collapsed"
         },
         {
           "id": "kicadstudio.netlistView",
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.4.name%",
           "type": "webview",
           "when": "kicadstudio.hasProject",
-          "icon": "assets/views/netlist.svg"
+          "icon": "assets/views/netlist.svg",
+          "visibility": "collapsed"
         },
         {
           "id": "kicadstudio.variants",
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.5.name%",
           "when": "kicadstudio.hasProject && kicadstudio.kicad10Plus",
-          "icon": "assets/views/variants.svg"
+          "icon": "assets/views/variants.svg",
+          "visibility": "collapsed"
         },
         {
           "id": "kicadstudio.library",
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.6.name%",
-          "icon": "assets/views/library.svg"
+          "icon": "assets/views/library.svg",
+          "visibility": "collapsed"
         },
         {
           "id": "kicadstudio.drcRules",
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.7.name%",
           "when": "kicadstudio.hasProject",
-          "icon": "assets/views/drc-rules.svg"
+          "icon": "assets/views/drc-rules.svg",
+          "visibility": "collapsed"
         },
         {
           "id": "kicadstudio.fixQueue",
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.8.name%",
           "when": "kicadstudio.mcpConnected",
-          "icon": "assets/views/fix-queue.svg"
+          "icon": "assets/views/fix-queue.svg",
+          "visibility": "collapsed"
         },
         {
           "id": "kicadstudio.componentSearch",
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.9.name%",
-          "icon": "assets/views/component-search.svg"
+          "icon": "assets/views/component-search.svg",
+          "visibility": "collapsed"
         },
         {
           "id": "kicadstudio.mcpTools",

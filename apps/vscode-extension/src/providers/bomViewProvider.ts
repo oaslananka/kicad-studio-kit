@@ -30,7 +30,9 @@ export class BomViewProvider
   ) {
     this.bomParser = new BomParser(parser);
     this.disposables.push(
-      vscode.window.onDidChangeActiveTextEditor(() => this.scheduleRefresh(200)),
+      vscode.window.onDidChangeActiveTextEditor(() =>
+        this.scheduleRefresh(200)
+      ),
       vscode.workspace.onDidSaveTextDocument((doc) => {
         if (doc.fileName.endsWith('.kicad_sch')) {
           this.scheduleRefresh(0);
@@ -100,7 +102,9 @@ export class BomViewProvider
     const file = await this.findSchematicFile();
     if (!file) {
       this.exportState?.complete('bom', undefined, 'No schematic opened.');
-      this.manager.setStatus('Open a .kicad_sch schematic file to load the Bill of Materials.');
+      this.manager.setStatus(
+        'Open a .kicad_sch schematic file to load the Bill of Materials.'
+      );
       return;
     }
     const uri = vscode.Uri.file(file);
