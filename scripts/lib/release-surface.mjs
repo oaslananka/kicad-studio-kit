@@ -199,3 +199,116 @@ export function writeReadmeBaseline(root = repoRoot, version = undefined) {
   }
   return false;
 }
+
+// Surgical text rewriters for the two version fields that mirror the extension
+// version but have no generator of their own. We intentionally do not parse and
+// re-serialize compatibility.yaml / compatibilityMatrix.ts: a targeted,
+// anchored replacement preserves comments, ordering, and formatting, and only
+// touches the kicad-studio extension version — never the kicad-mcp-pro
+// "3.9.2"-style fields that live in the same blocks.
+
+function replaceAnchored(content, regex, version, file, label) {
+  const matches = content.match(new RegExp(regex.source, regex.flags + "g"));
+  if (!matches || matches.length === 0) {
+    throw new Error(`${file}: could not locate ${label} to rewrite`);
+  }
+  if (matches.length > 1) {
+    throw new Error(
+      `${file}: ${label} matched ${matches.length} times; refusing to rewrite ambiguously`,
+    );
+  }
+  return content.replace(regex, (_full, prefix, _old, suffix) => {
+    return `${prefix}${version}${suffix}`;
+  });
+}
+
+// compatibility.yaml products.kicad-studio.version — anchored on the
+// packagePath line that uniquely precedes it inside the kicad-studio block.
+export function applyCompatibilityProductVersion(content, version) {
+  return replaceAnchored(
+    content,
+    /(packagePath: "apps\/vscode-extension\/package\.json"\n\s*version: ")([^"]+)(")/u,
+    version,
+    "compatibility.yaml",
+    "products.kicad-studio.version",
+  );
+}
+
+// compatibilityMatrix.ts products.kicadStudio.version — anchored on the
+// kicadStudio object opener so it never matches kicadMcpPro.version.
+export function applyCompatibilityMatrixStudioVersion(content, version) {
+  return replaceAnchored(
+    content,
+    /(kicadStudio: \{\s*\n\s*version: ')([^']+)(')/u,
+    version,
+    "compatibilityMatrix.ts",
+    "products.kicadStudio.version",
+  );
+}
+
+// compatibilityMatrix.ts products.kicadMcpPro.compatibleExtension.testedAgainst
+// records the extension version the MCP server is tested against — anchored on
+// the compatibleExtension block.
+export function applyCompatibilityMatrixTestedAgainst(content, version) {
+  return replaceAnchored(
+    content,
+    /(compatibleExtension: \{[\s\S]*?testedAgainst: ')([^']+)(')/u,
+    version,
+    "compatibilityMatrix.ts",
+    "products.kicadMcpPro.compatibleExtension.testedAgainst",
+  );
+}
+
+function writeFileIfChanged(filePath, current, next) {
+  if (next !== current) {
+    fs.writeFileSync(filePath, next, "utf8");
+    return true;
+  }
+  return false;
+}
+
+export function writeCompatibilityVersion(root = repoRoot, version = undefined) {
+  const expected = version ?? readAuthoritativeVersion(root);
+  const filePath = path.join(root, "compatibility.yaml");
+  const current = fs.readFileSync(filePath, "utf8");
+  return writeFileIfChanged(
+    filePath,
+    current,
+    applyCompatibilityProductVersion(current, expected),
+  );
+}
+
+export function writeCompatibilityMatrixVersion(
+  root = repoRoot,
+  version = undefined,
+) {
+  const expected = version ?? readAuthoritativeVersion(root);
+  const filePath = path.join(
+    root,
+    "apps/vscode-extension/src/mcp/compatibilityMatrix.ts",
+  );
+  const current = fs.readFileSync(filePath, "utf8");
+  let next = applyCompatibilityMatrixStudioVersion(current, expected);
+  next = applyCompatibilityMatrixTestedAgainst(next, expected);
+  return writeFileIfChanged(filePath, current, next);
+}
+
+// Rewrites every version surface this module owns directly (README +
+// compatibility.yaml + compatibilityMatrix.ts). The generated docs
+// (docs/support-matrix.md, docs/versions.md) and the changelog remain owned by
+// `docs:generate` and Release Please respectively, so callers should run those
+// alongside this for a complete release-surface sync.
+export function writeOwnedReleaseSurfaces(root = repoRoot, version = undefined) {
+  const expected = version ?? readAuthoritativeVersion(root);
+  const changed = [];
+  if (writeReadmeBaseline(root, expected)) {
+    changed.push("README.md");
+  }
+  if (writeCompatibilityVersion(root, expected)) {
+    changed.push("compatibility.yaml");
+  }
+  if (writeCompatibilityMatrixVersion(root, expected)) {
+    changed.push("apps/vscode-extension/src/mcp/compatibilityMatrix.ts");
+  }
+  return changed;
+}

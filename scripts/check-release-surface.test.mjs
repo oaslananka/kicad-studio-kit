@@ -6,11 +6,36 @@ import {
   RELEASE_SURFACES,
   README_MARKER_END,
   README_MARKER_START,
+  applyCompatibilityMatrixStudioVersion,
+  applyCompatibilityMatrixTestedAgainst,
+  applyCompatibilityProductVersion,
   applyReadmeBaseline,
   collectDrift,
   readAuthoritativeVersion,
   renderReadmeBaseline,
 } from "./lib/release-surface.mjs";
+
+const COMPATIBILITY_YAML = fs.readFileSync("compatibility.yaml", "utf8");
+const COMPATIBILITY_MATRIX_TS = fs.readFileSync(
+  "apps/vscode-extension/src/mcp/compatibilityMatrix.ts",
+  "utf8",
+);
+
+function compatibilityProductVersion(content) {
+  return content.match(
+    /packagePath: "apps\/vscode-extension\/package\.json"\n\s*version: "([^"]+)"/u,
+  )?.[1];
+}
+
+function matrixStudioVersion(content) {
+  return content.match(/kicadStudio: \{\s*\n\s*version: '([^']+)'/u)?.[1];
+}
+
+function matrixTestedAgainst(content) {
+  return content.match(
+    /compatibleExtension: \{[\s\S]*?testedAgainst: '([^']+)'/u,
+  )?.[1];
+}
 
 test("#395 every known release surface matches the authoritative version", () => {
   const version = readAuthoritativeVersion();
@@ -60,6 +85,49 @@ test("#395 drift is detected when a surface goes stale", () => {
   // Sanity: re-rendering with the bogus version changes the file, proving the
   // README block is genuinely generated rather than incidentally matching.
   assert.notEqual(applyReadmeBaseline(readme, bogus), readme);
+});
+
+test("#431 compatibility.yaml writer bumps only the kicad-studio version", () => {
+  const next = applyCompatibilityProductVersion(COMPATIBILITY_YAML, "9.9.9");
+  assert.equal(compatibilityProductVersion(next), "9.9.9");
+  // The kicad-mcp-pro testedAgainst field shares the block but must be left alone.
+  assert.ok(
+    next.includes('testedAgainst: "3.9.2"'),
+    "compatibility writer must not touch the kicad-mcp-pro testedAgainst version",
+  );
+});
+
+test("#431 compatibilityMatrix.ts writer bumps both extension version fields only", () => {
+  let next = applyCompatibilityMatrixStudioVersion(
+    COMPATIBILITY_MATRIX_TS,
+    "9.9.9",
+  );
+  next = applyCompatibilityMatrixTestedAgainst(next, "9.9.9");
+  assert.equal(matrixStudioVersion(next), "9.9.9");
+  assert.equal(matrixTestedAgainst(next), "9.9.9");
+  // kicadMcpPro.version must remain the MCP server version, not the extension's.
+  assert.match(next, /kicadMcpPro: \{\s*\n\s*version: '3\.9\.2'/u);
+});
+
+test("#431 version writers are idempotent at the authoritative version", () => {
+  const version = readAuthoritativeVersion();
+  assert.equal(
+    applyCompatibilityProductVersion(COMPATIBILITY_YAML, version),
+    COMPATIBILITY_YAML,
+  );
+  let matrix = applyCompatibilityMatrixStudioVersion(
+    COMPATIBILITY_MATRIX_TS,
+    version,
+  );
+  matrix = applyCompatibilityMatrixTestedAgainst(matrix, version);
+  assert.equal(matrix, COMPATIBILITY_MATRIX_TS);
+});
+
+test("#431 version writers refuse to rewrite when the anchor is missing", () => {
+  assert.throws(
+    () => applyCompatibilityProductVersion("nothing to anchor on", "9.9.9"),
+    /could not locate/u,
+  );
 });
 
 test("#395 release surface list is non-empty and well-formed", () => {

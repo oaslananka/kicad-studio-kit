@@ -28,6 +28,8 @@ repeats the version is derived from it:
   `<!-- release-surface:start -->` / `<!-- release-surface:end -->` markers);
 - `apps/vscode-extension/CHANGELOG.md` (owned by Release Please);
 - `compatibility.yaml` `products.kicad-studio.version`;
+- `apps/vscode-extension/src/mcp/compatibilityMatrix.ts` `products.kicadStudio.version`
+  and `products.kicadMcpPro.compatibleExtension.testedAgainst`;
 - the generated `docs/support-matrix.md` and `docs/versions.md` tables (owned by
   `corepack pnpm run docs:generate`).
 
@@ -37,12 +39,24 @@ Verify every surface in one command before tagging or publishing:
 corepack pnpm run check:release-surface
 ```
 
-It fails with a per-file diff when any surface is stale. The README block is the
-only hand-editable surface; regenerate it with:
+It fails with a per-file diff when any surface is stale. Regenerate the surfaces
+this repo owns directly (README block, `compatibility.yaml` version, and the
+`compatibilityMatrix.ts` version fields) with:
 
 ```bash
 corepack pnpm run release:surface
+corepack pnpm run docs:generate
 ```
+
+`release:surface` rewrites the README/compatibility/matrix versions from
+`apps/vscode-extension/package.json`; `docs:generate` refreshes the generated
+docs tables. Release Please owns the changelog and manifest.
+
+Because Release Please only bumps `package.json`, the manifest, and the
+changelog, `.github/workflows/release-please.yml` runs `release:surface` +
+`docs:generate` on the open release pull request and commits the result to its
+branch, so the release PR's own CI stays green and the release is mergeable
+without a manual surface bump.
 
 `check:release-surface` also runs inside `corepack pnpm run check:version`, so CI
 fails on README or release-surface drift on every pull request. Marketplace and
