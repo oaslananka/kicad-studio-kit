@@ -34,6 +34,8 @@ This monorepo uses Renovate as the dependency maintenance bot. Repository-local 
 | `diff` (pnpm override)             | `9.0.0`   |
 | `eslint`                           | `10.4.1`  |
 | `@eslint/js`                       | `10.0.1`  |
+| `@vscode/test-electron`            | `3.0.0`   |
+| `ovsx`                             | `1.0.1`   |
 
 `diff` is a transitive dev/build-tooling dependency (consumed by `mocha`,
 `release-please`, and `code-suggester`); the repo pins a single resolved version through
@@ -64,6 +66,18 @@ trimming; handle prerelease bounds in `subset`); neither touches the plain range
 used here. The dedicated `mcpCompat` unit test plus the full unit suite, lint, typecheck,
 and build all pass on `7.8.1`.
 
+`@vscode/test-electron` was raised from `2.5.2` to the `3.0.0` major and `ovsx` from
+`0.10.12` to the `1.0.1` major (#382). Both are dev/CI-only and ship in no artifact. The
+public surface the repo uses is unchanged: `test-electron` 3.0.0 still exports the
+`downloadAndUnzipVSCode(version)` overload and `runTests(options)` used in `test/runTest.ts`,
+`test/e2e/vscodeHarness.ts`, and `test/runRealPairHostTest.ts` (its engine floor moved to
+Node `>=22`, satisfied by the Node 24 runtime), and `ovsx` 1.0.1 keeps every flag the
+publish path relies on (`publish -i/--packagePath`, `-p/--pat`, `get -v/--versionRange`,
+`-o/--output`, `--metadata`), so no `publish-extension.yml` or `scripts/publish.sh` edits
+were required. Typecheck, `compile-tests`, lint, the unit suite, the production build, and
+VSIX packaging all pass; the real integration host is re-run by the CI matrix on every
+platform.
+
 ## Postponed Major Updates
 
 | Dependency                                | Reason                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -71,8 +85,6 @@ and build all pass on `7.8.1`.
 | TypeScript 6                              | Postponed to avoid compiler and lint churn in the same release-hardening branch. `typescript-eslint` 8.59.x supports TS 6, but the repo remains on a conservative TS 5.9.x baseline for this pass.                                                                                                                                                                                                   |
 | Jest 30, `@types/jest` 30, `jest-util` 30 | Postponed until unit, integration, mocks, and extension host tests are migrated together.                                                                                                                                                                                                                                                                                                            |
 | Vite 8 (pnpm override)                    | Blocked by `vitepress` 1.6.4 (the newest stable VitePress; only `2.0.0-alpha` supports Vite 8). The `vite` override drives the VitePress docs build, and Vite 8 (Rolldown bundler, removed `transformWithEsbuild`) fails `vitepress build docs` against VitePress 1.6.4. Revisit once a stable VitePress releases with Vite 8 support. See [Planned Major Upgrades](#planned-major-upgrades) (#381). |
-| `@vscode/test-electron` next major        | Dev-only extension integration test harness. Gated behind dashboard approval as a `risk:high` toolchain change. See [Planned Major Upgrades](#planned-major-upgrades) (#382).                                                                                                                                                                                                                        |
-| `ovsx` next major                         | Dev-only Open VSX publishing CLI. Gated behind dashboard approval as a `risk:high` publish-surface change. See [Planned Major Upgrades](#planned-major-upgrades) (#382).                                                                                                                                                                                                                             |
 | `@types/node` 25                          | Rejected for now because the runtime target is Node 24.x.                                                                                                                                                                                                                                                                                                                                            |
 | `@types/vscode` 1.121                     | Rejected for now because the package was not published at the time; `1.120.0` was the newest registry version aligned with the previous `engines.vscode: ^1.120.0`.                                                                                                                                                                                                                                  |
 
@@ -105,37 +117,8 @@ None of these packages ship in the VSIX, so there is no runtime impact.
 - **Status:** blocked on a stable VitePress release with Vite 8 support. Hold the
   `renovate/vite-8.x` branch unapproved on the dashboard until then.
 
-### @vscode/test-electron and ovsx majors (#382)
-
-- **Where they live:** both are dev-only `devDependencies` of `apps/vscode-extension`
-  (`@vscode/test-electron` 2.5.2, `ovsx` 0.10.12). `@vscode/test-electron` downloads a VS
-  Code build for the integration/e2e host; `ovsx` publishes the VSIX to Open VSX. Neither
-  is bundled in the extension.
-- **`@vscode/test-electron` migration notes:** the repo uses only `downloadAndUnzipVSCode(version)`
-  and `runTests({...})` in `test/runTest.ts`, `test/e2e/vscodeHarness.ts`, and
-  `test/runRealPairHostTest.ts`, with `test/unit/vscodeTestRuntime.test.ts` exercising the
-  runtime wiring. A major can change the VS Code download/cache path resolution and the
-  pinned VS Code version handling (currently `1.122.0`), so re-run the real integration
-  host on every platform after bumping.
-- **`ovsx` migration notes:** invoked only as a CLI in `.github/workflows/publish-extension.yml`
-  and `apps/vscode-extension/scripts/publish.sh` via `ovsx publish --packagePath`,
-  `ovsx get … --metadata --versionRange`, `ovsx get … --versionRange --output`, and
-  `--pat`. A major could rename or remove those flags, so the verification steps that read
-  back the published version must be re-checked against the new CLI surface.
-- **Minimal code changes identified:** bump both `devDependencies`; adjust the `ovsx`
-  publish/verify flags in `publish-extension.yml` and `publish.sh` only if the new CLI
-  renames them; adjust `downloadAndUnzipVSCode`/`runTests` call sites only if their
-  signatures change. No production source changes are expected.
-- **Validation gate:** `pnpm install --frozen-lockfile`, `pnpm run typecheck`,
-  `pnpm run lint`, `pnpm run test:unit`, `pnpm run test:integration`, `pnpm run build`,
-  `pnpm run package`, `pnpm run check`, and the full CI matrix (the publish path is
-  exercised by `release:dry-run`, not a live publish).
-- **Rollback path:** revert the `devDependencies` bumps and any flag edits in a single
-  revert commit. Because both are dev/CI-only, a rollback never affects a shipped artifact;
-  an already-published Open VSX version is unaffected by reverting the CLI version.
-- **Status:** hold `renovate/major-node-build-and-test-dependencies` unapproved on the
-  dashboard until a maintainer runs the validation gate above. These can land as one PR or
-  split per package.
+The `@vscode/test-electron` and `ovsx` majors (#382) have been applied; see the Applied
+Updates note above for the verified-unchanged API/CLI surface and the validation gate.
 
 ## Security Review
 
