@@ -237,18 +237,38 @@ jobs:
         if: steps.marketplace_index.outputs.indexed == 'true'
         shell: bash
         run: |
-          set -euo pipefail
+          # Not `set -e`: the vspackage *binary* is served behind the gallery
+          # metadata index, so right after publish the download can still 404
+          # even though `vsce show` already lists the version. That serving lag
+          # is not a publish failure (the publish step is the source of truth)
+          # and must not fail the job, which would also skip the Open VSX publish.
+          set -uo pipefail
           version="$(node -p "require('./apps/vscode-extension/package.json').version")"
           VSIX_DIR="$GITHUB_WORKSPACE/release-assets/vscode-extension"
           VSIX_PATH="$(find "$VSIX_DIR" -type f -name '*.vsix' | sort | tail -n1)"
           MARKETPLACE_VERIFY_DIR="$GITHUB_WORKSPACE/release-assets/marketplace-verify"
           MARKETPLACE_VSIX="$MARKETPLACE_VERIFY_DIR/oaslananka.kicadstudiokit-$version.vsix"
           mkdir -p "$MARKETPLACE_VERIFY_DIR"
-          curl --fail --location --retry 3 \
-            --output "$MARKETPLACE_VSIX" \
-            "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/oaslananka/vsextensions/kicadstudiokit/$version/vspackage"
-          corepack pnpm --filter kicadstudiokit exec node scripts/validate-vsix-metadata.js \
-            --compare-content "$VSIX_PATH" "$MARKETPLACE_VSIX"
+          url="https://marketplace.visualstudio.com/_apis/public/gallery/publishers/oaslananka/vsextensions/kicadstudiokit/$version/vspackage"
+          downloaded=false
+          for attempt in $(seq 1 10); do
+            if curl --fail --location --retry 3 --retry-all-errors \
+              --output "$MARKETPLACE_VSIX" "$url"; then
+              downloaded=true
+              break
+            fi
+            echo "Marketplace vspackage for $version not downloadable yet (attempt $attempt/10), waiting 30s…"
+            [ "$attempt" -lt 10 ] && sleep 30
+          done
+          if [ "$downloaded" != "true" ]; then
+            echo "::warning::Marketplace did not serve the $version vspackage within the verification window. The publish step reported success, so this is serving lag rather than a publish failure; skipping content comparison."
+            exit 0
+          fi
+          if ! corepack pnpm --filter kicadstudiokit exec node scripts/validate-vsix-metadata.js \
+            --compare-content "$VSIX_PATH" "$MARKETPLACE_VSIX"; then
+            echo "::error::Published Marketplace content does not match the release VSIX for $version."
+            exit 1
+          fi
 
   publish_openvsx:
     needs: [package, publish_vscode]
