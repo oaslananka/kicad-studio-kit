@@ -29,9 +29,17 @@ test("embedded extension compatibility matrix matches compatibility metadata", (
 });
 
 test("embedded extension compatibility matrix rejects product-version drift", () => {
+  // Inject drift relative to the current authoritative version so this test
+  // never needs a manual bump on release (the kicadStudio version equals
+  // extensionPackage.version and is the first `version: '...'` in the matrix).
   const driftedSource = matrixSource.replace(
-    "version: '1.8.1'",
+    `version: '${extensionPackage.version}'`,
     "version: '0.0.0'",
+  );
+  assert.notEqual(
+    driftedSource,
+    matrixSource,
+    "drift fixture must actually mutate the matrix source",
   );
 
   assert.match(
