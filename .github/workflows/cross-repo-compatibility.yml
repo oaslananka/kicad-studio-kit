@@ -38,6 +38,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: cross-repo-compatibility-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   # pnpm 11+ enforces packageManager version match. Prevents nested pnpm calls in scripts
   # from failing when runner pnpm differs from package.json constraint.

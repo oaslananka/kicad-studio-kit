@@ -27,6 +27,12 @@ on:
 permissions:
   contents: read
 
+# Serialize publishes per release tag and never cancel an in-flight publish:
+# interrupting mid-upload could leave a registry partially updated.
+concurrency:
+  group: publish-extension-${{ github.event.release.tag_name || inputs.release_tag || github.ref }}
+  cancel-in-progress: false
+
 env:
   OPENVSX_PRERELEASE_TAG_SUFFIX: -openvsx
   pnpm_config_pm_on_fail: ignore
