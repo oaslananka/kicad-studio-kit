@@ -64,8 +64,12 @@ jobs:
           git config user.name "kicad-studio-bot"
           git config user.email "kicad-studio-bot@users.noreply.github.com"
           git add -A
-          git diff --cached --quiet || git commit -m "chore(repo): sync release surfaces for the pending release"
-          git push
+          # --no-verify: this is an automated bot commit of deterministically
+          # generated surfaces. Skipping husky avoids running lint-staged on
+          # commit and the full `pnpm run check` pre-push hook inside this job;
+          # the release PR's own CI re-validates every surface.
+          git diff --cached --quiet || git commit --no-verify -m "chore(repo): sync release surfaces for the pending release"
+          git push --no-verify
 
       # Regenerate changelog docs after a release PR is merged
       - if: ${{ steps.release.outputs.release_created }}
@@ -91,8 +95,10 @@ jobs:
           git config user.name "kicad-studio-bot"
           git config user.email "kicad-studio-bot@users.noreply.github.com"
           git add -A
-          git diff --cached --quiet || git commit -m "docs(repo): regenerate changelog and versions after release"
-          git push
+          # --no-verify: automated bot commit of generated docs; skip husky so
+          # this job does not run lint-staged / the full pre-push check.
+          git diff --cached --quiet || git commit --no-verify -m "docs(repo): regenerate changelog and versions after release"
+          git push --no-verify
 
       # Release Please creates releases with GITHUB_TOKEN, which does not
       # recursively trigger release-event workflows. Dispatch the publish
