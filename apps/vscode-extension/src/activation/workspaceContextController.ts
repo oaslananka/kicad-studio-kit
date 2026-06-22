@@ -206,7 +206,7 @@ export class WorkspaceContextController implements vscode.Disposable {
     await vscode.commands.executeCommand(
       'setContext',
       CONTEXT_KEYS.mcpProfile,
-      mcpProfile ?? 'full'
+      mcpProfile ?? 'analysis'
     );
     statusBar.update({
       aiConfigured: Boolean(provider?.isConfigured()),

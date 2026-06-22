@@ -78,15 +78,15 @@ export function registerMcpCommands(
         const detector = new McpDetector();
         const profile = await vscode.window.showQuickPick(
           [
-            'full',
-            'minimal',
+            'analysis',
             'pcb_only',
             'schematic_only',
+            'minimal',
             'manufacturing',
             'high_speed',
             'power',
             'simulation',
-            'analysis',
+            'full',
             'agent_full'
           ],
           {
@@ -128,15 +128,15 @@ export function registerMcpCommands(
         const detector = new McpDetector();
         const profile = await vscode.window.showQuickPick(
           [
-            'full',
-            'minimal',
+            'analysis',
             'pcb_only',
             'schematic_only',
+            'minimal',
             'manufacturing',
             'high_speed',
             'power',
             'simulation',
-            'analysis',
+            'full',
             'agent_full'
           ],
           {

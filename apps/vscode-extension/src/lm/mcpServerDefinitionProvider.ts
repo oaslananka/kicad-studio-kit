@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { readConfiguredMcpProfile } from '../commands/mcpProfilePicker';
 import { McpDetector } from '../mcp/mcpDetector';
 import type { McpInstallStatus } from '../types';
 import { Logger } from '../utils/logger';
@@ -60,7 +61,11 @@ export async function createKicadMcpServerDefinition(
     cwd: vscode.Uri.file(workspaceRoot),
     env: {
       KICAD_MCP_PROJECT_DIR: workspaceRoot,
-      KICAD_MCP_PROFILE: 'full'
+      // Default to a focused, read-only posture (least privilege). The profile
+      // honours the user's "Pick MCP Profile" choice; write/manufacturing tools
+      // require an explicit opt-in via KICAD_MCP_OPERATING_MODE.
+      KICAD_MCP_PROFILE: readConfiguredMcpProfile() ?? 'analysis',
+      KICAD_MCP_OPERATING_MODE: 'readonly'
     },
     ...(install.version ? { version: install.version } : {})
   });

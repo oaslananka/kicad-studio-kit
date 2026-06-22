@@ -46,7 +46,7 @@ Total settings: 47.
 | `kicadstudio.mcp.allowLegacySse` | boolean | `false` |  | Allow a best-effort fallback to the legacy /sse MCP transport when Streamable HTTP is unavailable. |
 | `kicadstudio.mcp.timeout` | number | `15` |  | MCP HTTP request timeout in seconds. |
 | `kicadstudio.mcp.pushContext` | boolean | `true` |  | Push active file, DRC summary, and lasso selection context to kicad-mcp-pro. |
-| `kicadstudio.mcp.profile` | string | `full` | `full`, `minimal`, `schematic_only`, `pcb_only`, `manufacturing`, `high_speed`, `power`, `simulation`, `analysis`, `agent_full` | Preferred kicad-mcp-pro profile when no workspace .vscode/mcp.json overrides it. |
+| `kicadstudio.mcp.profile` | string | `analysis` | `full`, `minimal`, `schematic_only`, `pcb_only`, `manufacturing`, `high_speed`, `power`, `simulation`, `analysis`, `agent_full` | Preferred kicad-mcp-pro profile when no workspace .vscode/mcp.json overrides it. |
 | `kicadstudio.mcp.logSize` | number | `200` |  | Number of recent MCP request/response log entries retained in memory. |
 | `kicadstudio.exportPresets` | array | `[]` |  | Saved export presets managed by the extension. |
 | `kicadstudio.telemetry.enabled` | boolean | `false` |  | Enable opt-in KiCad Studio usage and error telemetry. Disabled by default and capped by VS Code's telemetry.telemetryLevel setting. |

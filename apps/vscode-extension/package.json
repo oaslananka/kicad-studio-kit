@@ -1978,7 +1978,7 @@
         },
         "kicadstudio.mcp.profile": {
           "type": "string",
-          "default": "full",
+          "default": "analysis",
           "enum": [
             "full",
             "minimal",

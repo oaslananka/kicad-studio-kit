@@ -127,7 +127,7 @@ export class McpDetector {
   async generateMcpJson(
     projectDir: string,
     status: McpInstallStatus,
-    profile = 'full'
+    profile = 'analysis'
   ): Promise<void> {
     const root =
       vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? projectDir;
@@ -164,7 +164,10 @@ export class McpDetector {
           args,
           env: {
             KICAD_MCP_PROJECT_DIR: projectDir,
-            KICAD_MCP_PROFILE: profile
+            KICAD_MCP_PROFILE: profile,
+            // Least-privilege default: read-only until the user opts into
+            // write/manufacturing tools.
+            KICAD_MCP_OPERATING_MODE: 'readonly'
           }
         }
       }

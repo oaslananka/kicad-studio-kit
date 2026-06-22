@@ -131,11 +131,11 @@ describe('mcpProfilePicker', () => {
       expect(readConfiguredMcpProfile()).toBe('manufacturing');
     });
 
-    it('returns the full default when nothing is configured', () => {
+    it('returns the analysis (least-privilege) default when nothing is configured', () => {
       existsSync.mockReturnValue(false);
       __setConfiguration({});
 
-      expect(readConfiguredMcpProfile()).toBe('full');
+      expect(readConfiguredMcpProfile()).toBe('analysis');
     });
 
     it('ignores an unparseable mcp.json and falls back to configuration', () => {

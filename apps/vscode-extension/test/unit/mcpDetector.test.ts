@@ -64,6 +64,9 @@ describe('McpDetector.generateMcpJson', () => {
     expect(saved.servers.kicad.args).toEqual(['kicad-mcp-pro']);
     expect(saved.servers.kicad.env['KICAD_MCP_PROJECT_DIR']).toBe(tempDir);
     expect(saved.servers.kicad.env['KICAD_MCP_PROFILE']).toBe('analysis');
+    expect(saved.servers.kicad.env['KICAD_MCP_OPERATING_MODE']).toBe(
+      'readonly'
+    );
     expect(window.showInformationMessage).toHaveBeenCalled();
   });
 

@@ -48,7 +48,7 @@ export function readConfiguredMcpProfile(): string | undefined {
   }
   return vscode.workspace
     .getConfiguration()
-    .get<string>(SETTINGS.mcpProfile, 'full');
+    .get<string>(SETTINGS.mcpProfile, 'analysis');
 }
 
 async function writeProfile(profile: KicadMcpProfileId): Promise<void> {
