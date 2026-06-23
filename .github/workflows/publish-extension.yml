@@ -51,7 +51,7 @@ jobs:
       openvsx_prerelease_allowed: ${{ steps.release-policy.outputs.openvsx_prerelease_allowed }}
       release_tag: ${{ steps.release-policy.outputs.release_tag }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           persist-credentials: false
           ref: ${{ inputs.release_tag || github.event.release.tag_name || github.ref }}
@@ -154,7 +154,7 @@ jobs:
       actions: read
       contents: read
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           persist-credentials: false
           ref: ${{ needs.package.outputs.release_tag || github.ref }}
@@ -280,7 +280,7 @@ jobs:
       actions: read
       contents: read
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           persist-credentials: false
           ref: ${{ needs.package.outputs.release_tag || github.ref }}
