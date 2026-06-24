@@ -1,7 +1,12 @@
+<p align="center">
+  <a href="https://www.buymeacoffee.com/oaslananka">
+    <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=oaslananka&button_colour=FFDD00&font_colour=000000&font_family=Arial&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" />
+  </a>
+</p>
+
 # KiCad Studio Kit
 
 <p align="center">
-  <strong>Build &amp; Quality</strong><br>
   <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
   <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml/badge.svg" alt="Security"></a>
@@ -9,14 +14,12 @@
 </p>
 
 <p align="center">
-  <strong>Marketplace</strong><br>
   <a href="https://open-vsx.org/extension/oaslananka/kicadstudiokit"><img src="https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX" alt="Open VSX"></a>
   <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/visual-studio-marketplace/v/oaslananka.kicadstudiokit" alt="VS Marketplace"></a>
   <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/visual-studio-marketplace/i/oaslananka.kicadstudiokit" alt="VS Marketplace Installs"></a>
 </p>
 
 <p align="center">
-  <strong>Community</strong><br>
   <a href="https://deepwiki.com/oaslananka/kicad-studio-kit"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
