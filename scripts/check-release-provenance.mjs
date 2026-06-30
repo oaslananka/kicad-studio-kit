@@ -124,7 +124,13 @@ function checkWorkflowEvidence(failures) {
   );
   expectIncludes(
     extension,
-    '--compare-content "$VSIX_PATH" "$MARKETPLACE_VSIX"',
+    '--compare-content "$VSIX_PATH" "$COMPARE_VSIX"',
+    "extension workflow",
+    failures,
+  );
+  expectIncludes(
+    extension,
+    "gzip.decompress(data)",
     "extension workflow",
     failures,
   );
