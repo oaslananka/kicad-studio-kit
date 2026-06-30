@@ -9,6 +9,7 @@ import {
   applyCompatibilityMatrixStudioVersion,
   applyCompatibilityMatrixTestedAgainst,
   applyCompatibilityProductVersion,
+  applyMarketplaceReadmeVersion,
   applyReadmeBaseline,
   collectDrift,
   readAuthoritativeVersion,
@@ -18,6 +19,10 @@ import {
 const COMPATIBILITY_YAML = fs.readFileSync("compatibility.yaml", "utf8");
 const COMPATIBILITY_MATRIX_TS = fs.readFileSync(
   "apps/vscode-extension/src/mcp/compatibilityMatrix.ts",
+  "utf8",
+);
+const MARKETPLACE_README = fs.readFileSync(
+  "apps/vscode-extension/README.md",
   "utf8",
 );
 
@@ -34,6 +39,16 @@ function matrixStudioVersion(content) {
 function matrixTestedAgainst(content) {
   return content.match(
     /compatibleExtension: \{[\s\S]*?testedAgainst: '([^']+)'/u,
+  )?.[1];
+}
+
+function marketplaceReadmeVersion(content) {
+  return content.match(/^- Version:\s*`([^`]+)`$/mu)?.[1];
+}
+
+function marketplaceReadmeCompatVersion(content) {
+  return content.match(
+    /^KiCad Studio ([^\s]+) supports `kicad-mcp-pro /mu,
   )?.[1];
 }
 
@@ -97,6 +112,12 @@ test("#431 compatibility.yaml writer bumps only the kicad-studio version", () =>
   );
 });
 
+test("#431 marketplace README writer bumps both visible version fields", () => {
+  const next = applyMarketplaceReadmeVersion(MARKETPLACE_README, "9.9.9");
+  assert.equal(marketplaceReadmeVersion(next), "9.9.9");
+  assert.equal(marketplaceReadmeCompatVersion(next), "9.9.9");
+});
+
 test("#431 compatibilityMatrix.ts writer bumps both extension version fields only", () => {
   let next = applyCompatibilityMatrixStudioVersion(
     COMPATIBILITY_MATRIX_TS,
@@ -111,6 +132,10 @@ test("#431 compatibilityMatrix.ts writer bumps both extension version fields onl
 
 test("#431 version writers are idempotent at the authoritative version", () => {
   const version = readAuthoritativeVersion();
+  assert.equal(
+    applyMarketplaceReadmeVersion(MARKETPLACE_README, version),
+    MARKETPLACE_README,
+  );
   assert.equal(
     applyCompatibilityProductVersion(COMPATIBILITY_YAML, version),
     COMPATIBILITY_YAML,

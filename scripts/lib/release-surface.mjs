@@ -78,6 +78,11 @@ function extractReadmeVersion(content) {
   return match ? match[1] : undefined;
 }
 
+function extractMarketplaceReadmeVersion(content) {
+  const match = content.match(/^- Version:\s*`([^`]+)`$/mu);
+  return match ? match[1] : undefined;
+}
+
 function extractChangelogTopVersion(content) {
   const match = content.match(/^##\s*\[([^\]]+)\]/mu);
   return match ? match[1] : undefined;
@@ -107,6 +112,11 @@ export const RELEASE_SURFACES = [
     file: "README.md",
     label: "README version baseline",
     extract: extractReadmeVersion,
+  },
+  {
+    file: "apps/vscode-extension/README.md",
+    label: "Marketplace README version",
+    extract: extractMarketplaceReadmeVersion,
   },
   {
     file: "apps/vscode-extension/CHANGELOG.md",
@@ -259,6 +269,24 @@ export function applyCompatibilityMatrixTestedAgainst(content, version) {
   );
 }
 
+export function applyMarketplaceReadmeVersion(content, version) {
+  let next = replaceAnchored(
+    content,
+    /(^- Version:\s*`)([^`]+)(`$)/mu,
+    version,
+    "apps/vscode-extension/README.md",
+    "marketplace README Version field",
+  );
+  next = replaceAnchored(
+    next,
+    /(^KiCad Studio )([^\s]+)( supports `kicad-mcp-pro )/mu,
+    version,
+    "apps/vscode-extension/README.md",
+    "marketplace README MCP Compatibility version",
+  );
+  return next;
+}
+
 function writeFileIfChanged(filePath, current, next) {
   if (next !== current) {
     fs.writeFileSync(filePath, next, "utf8");
@@ -267,7 +295,10 @@ function writeFileIfChanged(filePath, current, next) {
   return false;
 }
 
-export function writeCompatibilityVersion(root = repoRoot, version = undefined) {
+export function writeCompatibilityVersion(
+  root = repoRoot,
+  version = undefined,
+) {
   const expected = version ?? readAuthoritativeVersion(root);
   const filePath = path.join(root, "compatibility.yaml");
   const current = fs.readFileSync(filePath, "utf8");
@@ -293,16 +324,36 @@ export function writeCompatibilityMatrixVersion(
   return writeFileIfChanged(filePath, current, next);
 }
 
-// Rewrites every version surface this module owns directly (README +
-// compatibility.yaml + compatibilityMatrix.ts). The generated docs
+export function writeMarketplaceReadmeVersion(
+  root = repoRoot,
+  version = undefined,
+) {
+  const expected = version ?? readAuthoritativeVersion(root);
+  const filePath = path.join(root, "apps/vscode-extension/README.md");
+  const current = fs.readFileSync(filePath, "utf8");
+  return writeFileIfChanged(
+    filePath,
+    current,
+    applyMarketplaceReadmeVersion(current, expected),
+  );
+}
+
+// Rewrites every version surface this module owns directly (root README,
+// marketplace README, compatibility.yaml, and compatibilityMatrix.ts). The generated docs
 // (docs/support-matrix.md, docs/versions.md) and the changelog remain owned by
 // `docs:generate` and Release Please respectively, so callers should run those
 // alongside this for a complete release-surface sync.
-export function writeOwnedReleaseSurfaces(root = repoRoot, version = undefined) {
+export function writeOwnedReleaseSurfaces(
+  root = repoRoot,
+  version = undefined,
+) {
   const expected = version ?? readAuthoritativeVersion(root);
   const changed = [];
   if (writeReadmeBaseline(root, expected)) {
     changed.push("README.md");
+  }
+  if (writeMarketplaceReadmeVersion(root, expected)) {
+    changed.push("apps/vscode-extension/README.md");
   }
   if (writeCompatibilityVersion(root, expected)) {
     changed.push("compatibility.yaml");
