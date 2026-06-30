@@ -282,7 +282,7 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: coverage-summary
-      - uses: MishaKav/jest-coverage-comment@fb83bcbaeb5ca467936175796f862a2992938833
+      - uses: MishaKav/jest-coverage-comment@25f2818fee93043532f640ad32a7565b4bd4ea9a
         with:
           coverage-summary-path: coverage-summary.json
           title: Coverage Report
