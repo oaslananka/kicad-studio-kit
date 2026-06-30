@@ -1,8 +1,14 @@
 ![KiCad Studio marketplace hero](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/marketplace/hero.png)
 
-# KiCad Studio
+# KiCad Studio Kit
 
 **A focused VS Code workspace for professional KiCad review, validation, manufacturing handoff, and AI-assisted MCP workflows.**
+
+[![CI](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml)
+[![Security](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/oaslananka/kicad-studio-kit/badge)](https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13405/badge)](https://www.bestpractices.dev/projects/13405)
 
 [![Open VSX](https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX)](https://open-vsx.org/extension/oaslananka/kicadstudiokit)
 [![VS Marketplace](https://img.shields.io/badge/VS%20Marketplace-install-blue)](https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit)

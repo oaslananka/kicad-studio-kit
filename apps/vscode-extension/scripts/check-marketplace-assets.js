@@ -9,6 +9,12 @@ const maxScreenshotBytes = 2 * 1024 * 1024;
 const maxGifBytes = 5 * 1024 * 1024;
 const maxGifSeconds = 30;
 const marketplaceImageHost = 'https://raw.githubusercontent.com/';
+const trustedBadgePrefixes = [
+  'https://img.shields.io/',
+  'https://github.com/oaslananka/kicad-studio-kit/actions/workflows/',
+  'https://api.scorecard.dev/projects/github.com/oaslananka/kicad-studio-kit/badge',
+  'https://www.bestpractices.dev/projects/13405/badge'
+];
 
 const requiredSvgAssets = [
   'assets/marketplace/gallery-banner-background.svg',
@@ -139,7 +145,7 @@ function assertReadmeImageReferences(readme, packageJson) {
     if (!target) {
       fail('README.md contains an empty image target');
     }
-    if (target.startsWith('https://img.shields.io/')) {
+    if (trustedBadgePrefixes.some((prefix) => target.startsWith(prefix))) {
       continue;
     }
     if (!target.startsWith(`${baseImagesUrl}/`)) {
