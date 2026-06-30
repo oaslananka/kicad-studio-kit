@@ -264,8 +264,25 @@ jobs:
             echo "::warning::Marketplace did not serve the $version vspackage within the verification window. The publish step reported success, so this is serving lag rather than a publish failure; skipping content comparison."
             exit 0
           fi
+          COMPARE_VSIX="$(python3 - "$MARKETPLACE_VSIX" <<'PY'
+          import gzip
+          import sys
+          from pathlib import Path
+          source = Path(sys.argv[1])
+          data = source.read_bytes()
+          if data.startswith(b"\x1f\x8b"):
+              target = source.with_suffix(source.suffix + ".unzipped")
+              target.write_bytes(gzip.decompress(data))
+              print(target)
+          elif data.startswith(b"PK"):
+              print(source)
+          else:
+              print(f"Marketplace vspackage is neither ZIP nor gzip-compressed ZIP: {source}", file=sys.stderr)
+              sys.exit(1)
+          PY
+          )"
           if ! corepack pnpm --filter kicadstudiokit exec node scripts/validate-vsix-metadata.js \
-            --compare-content "$VSIX_PATH" "$MARKETPLACE_VSIX"; then
+            --compare-content "$VSIX_PATH" "$COMPARE_VSIX"; then
             echo "::error::Published Marketplace content does not match the release VSIX for $version."
             exit 1
           fi
