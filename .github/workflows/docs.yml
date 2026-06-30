@@ -56,15 +56,37 @@ jobs:
             "${ACTIONS_ID_TOKEN_REQUEST_URL}")"
           oidc_token="$(jq -r '.value' <<< "${oidc_response}")"
 
-          deployment_response="$(gh api \
-            --method POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2026-03-10" \
-            "/repos/${GITHUB_REPOSITORY}/pages/deployments" \
-            -F artifact_id="${ARTIFACT_ID}" \
-            -F environment="github-pages" \
-            -F pages_build_version="${GITHUB_SHA}" \
-            -F oidc_token="${oidc_token}")"
+          deployment_response=""
+          deadline=$((SECONDS + 600))
+          while (( SECONDS < deadline )); do
+            set +e
+            deployment_response="$(gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2026-03-10" \
+              "/repos/${GITHUB_REPOSITORY}/pages/deployments" \
+              -F artifact_id="${ARTIFACT_ID}" \
+              -F environment="github-pages" \
+              -F pages_build_version="${GITHUB_SHA}" \
+              -F oidc_token="${oidc_token}" 2>&1)"
+            deployment_exit=$?
+            set -e
+            if [[ "${deployment_exit}" -eq 0 ]]; then
+              break
+            fi
+            if grep -qi "in progress deployment" <<< "${deployment_response}"; then
+              echo "GitHub Pages already has an in-progress deployment; waiting before retrying."
+              sleep 15
+              continue
+            fi
+            echo "${deployment_response}" >&2
+            exit "${deployment_exit}"
+          done
+
+          if [[ -z "${deployment_response}" ]] || ! jq -e '.id' <<< "${deployment_response}" >/dev/null; then
+            echo "Timed out waiting to create a Pages deployment." >&2
+            exit 1
+          fi
 
           deployment_id="$(jq -r '.id' <<< "${deployment_response}")"
           status_url="$(jq -r '.status_url' <<< "${deployment_response}")"

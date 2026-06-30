@@ -11,8 +11,12 @@
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13405/badge)](https://www.bestpractices.dev/projects/13405)
 
 [![Open VSX](https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX)](https://open-vsx.org/extension/oaslananka/kicadstudiokit)
+[![Open VSX Downloads](https://img.shields.io/open-vsx/dt/oaslananka/kicadstudiokit?label=Open%20VSX%20downloads)](https://open-vsx.org/extension/oaslananka/kicadstudiokit)
 [![VS Marketplace](https://img.shields.io/badge/VS%20Marketplace-install-blue)](https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit)
+[![VS Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/oaslananka.kicadstudiokit?label=VS%20installs)](https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit)
+[![VS Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/oaslananka.kicadstudiokit?label=VS%20rating)](https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit&ssr=false#review-details)
 [![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE)
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=000000&labelColor=FFDD00&color=111111)](https://www.buymeacoffee.com/oaslananka)
 
 KiCad Studio turns VS Code into a KiCad-aware engineering cockpit: project navigation, schematic and PCB inspection, DRC/ERC review, repeatable release outputs, and MCP readiness for AI-assisted workflows.
 
