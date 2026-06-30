@@ -1,4 +1,4 @@
-![KiCad Studio marketplace hero](assets/marketplace/hero.png)
+![KiCad Studio marketplace hero](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/marketplace/hero.png)
 
 # KiCad Studio
 
@@ -9,7 +9,7 @@ KiCad Studio turns VS Code into a focused KiCad workspace for project navigation
 Canonical repository: https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension
 
 - Extension ID: `oaslananka.kicadstudiokit`
-- Version: `1.8.0`
+- Version: `1.9.0`
 - Supported MCP: `kicad-mcp-pro >=3.5.2 <4.0.0`
 - Supported KiCad projects: KiCad 8.x, 9.x, and 10.x project, schematic, PCB, DRC, and jobset files
 
@@ -43,19 +43,19 @@ corepack pnpm --filter kicadstudiokit run package
 
 ## Screenshots
 
-![KiCad Studio project tree](assets/screenshots/project-tree.png)
+![KiCad Studio project tree](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/screenshots/project-tree.png)
 
-![KiCad Studio schematic viewer](assets/screenshots/schematic-viewer.png)
+![KiCad Studio schematic viewer](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/screenshots/schematic-viewer.png)
 
-![KiCad Studio PCB viewer](assets/screenshots/pcb-viewer.png)
+![KiCad Studio PCB viewer](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/screenshots/pcb-viewer.png)
 
-![KiCad Studio DRC results](assets/screenshots/drc-results.png)
+![KiCad Studio DRC results](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/screenshots/drc-results.png)
 
-![KiCad Studio MCP tools dashboard](assets/screenshots/mcp-tools-dashboard.png)
+![KiCad Studio MCP tools dashboard](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/screenshots/mcp-tools-dashboard.png)
 
 ## Core Workflow
 
-![Open a project, inspect the PCB, and run DRC](assets/marketplace/core-workflow.gif)
+![Open a project, inspect the PCB, and run DRC](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/marketplace/core-workflow.gif)
 
 ## KiCad CLI-Only Comparison
 
@@ -68,7 +68,7 @@ corepack pnpm --filter kicadstudiokit run package
 
 ## MCP Compatibility
 
-KiCad Studio 1.8.0 supports `kicad-mcp-pro >=3.5.2 <4.0.0` and was tested against `3.9.2`. If a connected server reports a version outside the required range, MCP-dependent commands are disabled while KiCad-only features continue to work.
+KiCad Studio 1.9.0 supports `kicad-mcp-pro >=3.5.2 <4.0.0` and was tested against `3.9.2`. If a connected server reports a version outside the required range, MCP-dependent commands are disabled while KiCad-only features continue to work.
 
 ## Marketplace Listing Copy
 
