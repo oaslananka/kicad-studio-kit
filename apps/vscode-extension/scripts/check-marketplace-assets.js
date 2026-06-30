@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, '..');
 const maxScreenshotBytes = 2 * 1024 * 1024;
 const maxGifBytes = 5 * 1024 * 1024;
 const maxGifSeconds = 30;
+const marketplaceImageHost = 'https://raw.githubusercontent.com/';
 
 const requiredSvgAssets = [
   'assets/marketplace/gallery-banner-background.svg',
@@ -129,20 +130,34 @@ function assertPng(relativePath, expectedWidth, expectedHeight, maxBytes) {
   }
 }
 
-function assertReadmeImageReferences(readme) {
+function assertReadmeImageReferences(readme, packageJson) {
   const imagePattern = /!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/gu;
+  const baseImagesUrl = packageJson.baseImagesUrl.replace(/\/$/u, '');
+  let marketplaceAssetCount = 0;
   for (const match of readme.matchAll(imagePattern)) {
     const target = match[1];
-    if (
-      !target ||
-      target.startsWith('http://') ||
-      target.startsWith('https://') ||
-      target.startsWith('data:') ||
-      target.startsWith('#')
-    ) {
+    if (!target) {
+      fail('README.md contains an empty image target');
+    }
+    if (target.startsWith('https://img.shields.io/')) {
       continue;
     }
-    assertFile(target);
+    if (!target.startsWith(`${baseImagesUrl}/`)) {
+      fail(
+        `README.md marketplace asset images must use absolute baseImagesUrl links; found ${target}`
+      );
+    }
+    if (!target.startsWith(marketplaceImageHost)) {
+      fail(`README.md image must use raw.githubusercontent.com: ${target}`);
+    }
+    const relativeAsset = target.slice(`${baseImagesUrl}/`.length);
+    assertFile(relativeAsset);
+    marketplaceAssetCount += 1;
+  }
+  if (marketplaceAssetCount < requiredScreenshots.length + 2) {
+    fail(
+      `README.md must include hero, workflow GIF, and ${requiredScreenshots.length} screenshot images`
+    );
   }
 }
 
@@ -207,8 +222,12 @@ function assertMarketplaceMarkdown() {
   const firstLines = readme.split('\n').slice(0, 5).join('\n');
   const expectedVersion = packageJson.version;
 
-  if (!firstLines.includes('assets/marketplace/hero.png')) {
-    fail('README.md must place the hero image at the top');
+  if (
+    !firstLines.includes(
+      `${packageJson.baseImagesUrl}/assets/marketplace/hero.png`
+    )
+  ) {
+    fail('README.md must place the absolute hero image at the top');
   }
 
   // Version text in README must match package.json
@@ -247,7 +266,7 @@ function assertMarketplaceMarkdown() {
       'README.md uses Markdown/HTML that Marketplace renderers commonly strip'
     );
   }
-  assertReadmeImageReferences(readme);
+  assertReadmeImageReferences(readme, packageJson);
 }
 
 assertPackageMetadata();
