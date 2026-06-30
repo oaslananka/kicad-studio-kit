@@ -13,6 +13,10 @@ corepack pnpm run best-practices:status:write
 
 The first command prints a dry-run report. The second writes `docs/best-practices-status.md` for maintainer review.
 
+## Badge milestone
+
+Passing and Silver were achieved on 2026-06-30. Future edits should focus on preserving evidence URLs for achieved criteria and preparing Gold only when the repository has real supporting evidence.
+
 ## High-impact Passing fields
 
 | Field                                    | Suggested value                                  | Evidence                                                                                                 |
@@ -57,34 +61,34 @@ The first command prints a dry-run report. The second writes `docs/best-practice
 
 ## Security and Silver-level fields
 
-| Field                            | Suggested value                                     | Evidence / note                                                                                                                                                                |
-| -------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `governance`                     | Met                                                 | `GOVERNANCE.md`, governance board model                                                                                                                                        |
-| `code_of_conduct`                | Met                                                 | `CODE_OF_CONDUCT.md`                                                                                                                                                           |
-| `roles_responsibilities`         | Met                                                 | `GOVERNANCE.md` roles table                                                                                                                                                    |
-| `access_continuity`              | Met                                                 | `GOVERNANCE.md` access continuity section                                                                                                                                      |
-| `bus_factor`                     | Met                                                 | `GOVERNANCE.md`, release/security runbooks                                                                                                                                     |
-| `documentation_roadmap`          | Met                                                 | `ROADMAP.md`, governance board, GA readiness docs                                                                                                                              |
-| `documentation_architecture`     | Met                                                 | `docs/architecture/`, ADRs                                                                                                                                                     |
-| `documentation_security`         | Met                                                 | `SECURITY.md`, `docs/security.md`, threat model                                                                                                                                |
-| `documentation_quick_start`      | Met                                                 | README local validation, getting-started/install docs                                                                                                                          |
-| `documentation_current`          | Met                                                 | docs-site generated/links checks                                                                                                                                               |
-| `accessibility_best_practices`   | Met                                                 | a11y tests and accessibility docs                                                                                                                                              |
-| `internationalization`           | Met                                                 | NLS files and NLS parity check                                                                                                                                                 |
-| `maintenance_or_update`          | Met                                                 | Renovate config, dependency lifecycle docs, security workflow                                                                                                                  |
-| `vulnerability_report_credit`    | Met                                                 | `SECURITY.md` coordinated disclosure and credit wording                                                                                                                        |
-| `vulnerability_response_process` | Met                                                 | `SECURITY.md`, release/security docs                                                                                                                                           |
-| `coding_standards`               | Met                                                 | ESLint, Prettier, TypeScript, contribution docs                                                                                                                                |
-| `coding_standards_enforced`      | Met                                                 | CI and local `check` scripts                                                                                                                                                   |
-| `build_reproducible`             | Partial / explain                                   | Lockfile installs, pinned devcontainer base and uv image digest; VSIX metadata comparison exists, but fully reproducible byte-for-byte release should be verified per release. |
-| `dependency_monitoring`          | Met                                                 | Renovate config, security workflow, lockfile supply-chain checks                                                                                                               |
-| `automated_integration_testing`  | Met                                                 | extension integration and real-pair tests where available                                                                                                                      |
-| `test_statement_coverage80`      | Review coverage report before marking               | Current aggregate statement coverage is above 80% in the extension check output.                                                                                               |
-| `signed_releases`                | Met after release verification                      | publish workflow uses GitHub artifact attestations, SBOM, checksums, and provenance; re-check after next release.                                                              |
-| `require_2FA`                    | Met only if organization/account policy enforces it | Confirm GitHub organization/user security settings before marking.                                                                                                             |
-| `secure_2FA`                     | Met only after confirming account policy            | Do not mark without checking GitHub settings.                                                                                                                                  |
-| `code_review_standards`          | Met after ruleset active                            | branch ruleset + CODEOWNERS + PR template                                                                                                                                      |
-| `two_person_review`              | Partial unless a second reviewer is required        | Current versioned ruleset requires one approval; do not overclaim.                                                                                                             |
+| Field                            | Suggested value                                     | Evidence / note                                                                                                                     |
+| -------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `governance`                     | Met                                                 | `GOVERNANCE.md`, governance board model                                                                                             |
+| `code_of_conduct`                | Met                                                 | `CODE_OF_CONDUCT.md`                                                                                                                |
+| `roles_responsibilities`         | Met                                                 | `GOVERNANCE.md` roles table                                                                                                         |
+| `access_continuity`              | Met                                                 | `GOVERNANCE.md` access continuity section                                                                                           |
+| `bus_factor`                     | Met                                                 | `GOVERNANCE.md`, release/security runbooks                                                                                          |
+| `documentation_roadmap`          | Met                                                 | `ROADMAP.md`, governance board, GA readiness docs                                                                                   |
+| `documentation_architecture`     | Met                                                 | `docs/architecture/`, ADRs                                                                                                          |
+| `documentation_security`         | Met                                                 | `SECURITY.md`, `docs/security.md`, threat model                                                                                     |
+| `documentation_quick_start`      | Met                                                 | README local validation, getting-started/install docs                                                                               |
+| `documentation_current`          | Met                                                 | docs-site generated/links checks                                                                                                    |
+| `accessibility_best_practices`   | Met                                                 | a11y tests and accessibility docs                                                                                                   |
+| `internationalization`           | Met                                                 | NLS files and NLS parity check                                                                                                      |
+| `maintenance_or_update`          | Met                                                 | Renovate config, dependency lifecycle docs, security workflow                                                                       |
+| `vulnerability_report_credit`    | Met                                                 | `SECURITY.md` coordinated disclosure and credit wording                                                                             |
+| `vulnerability_response_process` | Met                                                 | `SECURITY.md`, release/security docs                                                                                                |
+| `coding_standards`               | Met                                                 | ESLint, Prettier, TypeScript, contribution docs                                                                                     |
+| `coding_standards_enforced`      | Met                                                 | CI and local `check` scripts                                                                                                        |
+| `build_repeatable`               | Met                                                 | `corepack pnpm run check:repeatable-vsix` packages the VSIX twice and compares normalized payload content.                          |
+| `dependency_monitoring`          | Met                                                 | Renovate config, security workflow, lockfile supply-chain checks                                                                    |
+| `automated_integration_testing`  | Met                                                 | extension integration and real-pair tests where available                                                                           |
+| `test_statement_coverage80`      | Met                                                 | `apps/vscode-extension/jest.config.js` enforces global statement coverage above 80%, and CI coverage is above the Silver threshold. |
+| `signed_releases`                | Met after release verification                      | publish workflow uses GitHub artifact attestations, SBOM, checksums, and provenance; re-check after next release.                   |
+| `require_2FA`                    | Met only if organization/account policy enforces it | Confirm GitHub organization/user security settings before marking.                                                                  |
+| `secure_2FA`                     | Met only after confirming account policy            | Do not mark without checking GitHub settings.                                                                                       |
+| `code_review_standards`          | Met after ruleset active                            | branch ruleset + CODEOWNERS + PR template                                                                                           |
+| `two_person_review`              | Partial unless a second reviewer is required        | Current versioned ruleset requires one approval; do not overclaim.                                                                  |
 
 ## Crypto fields
 
@@ -98,4 +102,5 @@ KiCad Studio Kit should not claim custom cryptography. For fields about cryptogr
 | `test_statement_coverage90` / `test_branch_coverage80` | Check the latest coverage report before claiming Gold-level coverage.                                                                       |
 | `contributors_unassociated`                            | Current public history may not show enough independent contributors.                                                                        |
 | `copyright_per_file` / `license_per_file`              | Do not mark unless every required source file carries the expected notice or the project policy explicitly allows repository-level notices. |
-| `security_review` / `assurance_case`                   | Mark only after a documented review or assurance case exists.                                                                               |
+| `security_review`                                      | Mark only after a documented independent or structured review exists.                                                                       |
+| `assurance_case`                                       | Silver evidence exists in `SECURITY.md`, `docs/security.md`, threat-model docs, and `docs/best-practices-evidence.md`; keep URLs explicit.  |

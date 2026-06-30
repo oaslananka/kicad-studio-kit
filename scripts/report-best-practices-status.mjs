@@ -169,8 +169,8 @@ export function renderMarkdown(project, now = new Date()) {
 
   return `# Best Practices Status Report
 
-Project: [${escapeMarkdownText(project.name ?? "kicad-studio-kit")}](${BEST_PRACTICES_PROJECT_URL})  
-Generated: ${escapeMarkdownText(now.toISOString())}  
+Project: [${escapeMarkdownText(project.name ?? "kicad-studio-kit")}](${BEST_PRACTICES_PROJECT_URL})
+Generated: ${escapeMarkdownText(now.toISOString())}
 Remote updated: ${escapeMarkdownText(updated)}
 
 ## Percentages

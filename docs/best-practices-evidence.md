@@ -7,13 +7,15 @@ Last reviewed: 2026-06-30.
 
 ## Current badge status
 
-| Field                    | Value                                                                  |
-| ------------------------ | ---------------------------------------------------------------------- |
-| Best Practices project   | `13405`                                                                |
-| Repository URL           | `https://github.com/oaslananka/kicad-studio-kit`                       |
-| Product represented here | VS Code extension: `oaslananka.kicadstudiokit`                         |
-| Current priority         | Reach Passing, then Silver                                             |
-| Main blockers            | Unanswered project fields, GitHub ruleset not active, Scorecard alerts |
+Silver badge achieved on 2026-06-30. The live badge is embedded in the README and resolves through the OpenSSF Best Practices project page.
+
+| Field                    | Value                                            |
+| ------------------------ | ------------------------------------------------ |
+| Best Practices project   | `13405`                                          |
+| Repository URL           | `https://github.com/oaslananka/kicad-studio-kit` |
+| Product represented here | VS Code extension: `oaslananka.kicadstudiokit`   |
+| Current badge status     | Passing and Silver achieved                      |
+| Next priority            | Gold gap analysis without overclaiming           |
 
 ## Evidence matrix
 
@@ -30,13 +32,13 @@ Last reviewed: 2026-06-30.
 | Dynamic analysis      | Runtime security, webview, and accessibility suites exercise the extension before release. | `apps/vscode-extension/package.json` `test:dynamic-analysis`, `apps/vscode-extension/test/security/`, `apps/vscode-extension/test/webview/`, `apps/vscode-extension/test/a11y/` | Keep runtime assertion suites in the dynamic-analysis gate.                  |
 | Coverage policy       | Extension unit coverage enforces at least 80% global statements, lines, and functions.     | `apps/vscode-extension/jest.config.js` `coverageThreshold.global.statements >= 80`, checked by `corepack pnpm run check:best-practices`                                         | Keep thresholds above the Best Practices 80% statement coverage claim.       |
 | Repeatable VSIX       | Two independent VSIX package runs must produce identical normalized payload content.       | `scripts/check-repeatable-vsix.mjs`, `apps/vscode-extension/scripts/validate-vsix-metadata.js`, `corepack pnpm run check:repeatable-vsix`                                       | Keep normalized content digest stable across packaging runs.                 |
-| CI                    | Pull requests and default-branch changes are validated by GitHub Actions.                  | `.github/workflows/ci.yml`, `.github/workflows/codeql.yml`, `.github/workflows/security.yml`, `.github/workflows/vsix-build.yml`, `.github/workflows/docs.yml`                  | Activate the repository ruleset so CI gates are enforced.                    |
+| CI                    | Pull requests and default-branch changes are validated by GitHub Actions.                  | `.github/workflows/ci.yml`, `.github/workflows/codeql.yml`, `.github/workflows/security.yml`, `.github/workflows/vsix-build.yml`, `.github/workflows/docs.yml`                  | Keep active repository ruleset and CI gates enforced.                        |
 | Static analysis       | CodeQL, ESLint, TypeScript, actionlint, and package validation are part of the gates.      | `.github/workflows/codeql.yml`, `.github/workflows/security.yml`, `eslint.config.cjs`, `scripts/check-ci-lanes.mjs`, `apps/vscode-extension/scripts/validate-package.js`        | Resolve the Scorecard SAST alert by confirming all sampled commits run SAST. |
 | Dependency management | Dependency updates and supply-chain checks are automated.                                  | `renovate.json`, `scripts/check-pnpm-supply-chain.mjs`, `pnpm-lock.yaml`                                                                                                        | Keep lockfile-only installs enforced.                                        |
 | Local secret hygiene  | Repository scanning and tests cover secret leakage risks.                                  | `.github/workflows/gitleaks.yml`, `apps/vscode-extension/test/security/`, `scripts/check-pnpm-supply-chain.mjs`                                                                 | Keep GitHub alert count at zero.                                             |
 | Release notes         | Releases are generated and documented.                                                     | `.github/workflows/release-please.yml`, `docs/changelog/`, `docs/release.md`, `apps/vscode-extension/CHANGELOG.md`                                                              | Call out security fixes explicitly.                                          |
 | Provenance            | Release evidence includes checksums, SBOM, and attestation steps.                          | `.github/workflows/publish-extension.yml`, `apps/vscode-extension/scripts/create-release-assets.js`, `scripts/check-release-provenance.mjs`, `docs/release.md`                  | Re-check Scorecard Signed-Releases after the next attested release.          |
-| Branch protection     | A strict main-branch ruleset with stable required checks is versioned in the repo.         | `.github/rulesets/main.json`, `docs/architecture/branch-protection.md`, `scripts/check-branch-protection-gates.mjs`                                                             | Apply the ruleset through GitHub settings/API.                               |
+| Branch protection     | A strict main-branch ruleset with stable required checks is versioned in the repo.         | `.github/rulesets/main.json`, `docs/architecture/branch-protection.md`, `scripts/check-branch-protection-gates.mjs`                                                             | Ruleset is active; keep required contexts stable.                            |
 | Review process        | CODEOWNERS and PR templates exist, but recent history lacks approved reviews.              | `.github/CODEOWNERS`, `.github/pull_request_template.md`, `docs/architecture/branch-protection.md`                                                                              | Require PR review for all future human changes.                              |
 | Documentation         | User, extension, integration, release, security, and architecture docs are maintained.     | `docs/`, `docs/.vitepress/config.mts`, `scripts/check-docs-site.mjs`                                                                                                            | Keep links validated by `corepack pnpm run check:docs-site`.                 |
 | Accessibility         | Webview accessibility tests are present and run under the extension check.                 | `apps/vscode-extension/test/a11y/`, `docs/accessibility.md`, `scripts/dev-doctor.mjs`                                                                                           | Keep Playwright browser cache covered by `dev-doctor`.                       |
@@ -65,7 +67,7 @@ ruleset contexts from drifting.
 | ------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | Branch-Protection   | `.github/rulesets/main.json`, `docs/architecture/branch-protection.md`                        | Apply the ruleset in GitHub and re-run Scorecard.                                                 |
 | Code-Review         | `.github/CODEOWNERS`, PR template, branch policy doc                                          | Use reviewed PRs for all future human changes.                                                    |
-| CII-Best-Practices  | This page plus existing policy docs                                                           | Fill the Best Practices project fields and keep the badge in README.                              |
+| CII-Best-Practices  | This page plus existing policy docs                                                           | Silver achieved on 2026-06-30; keep the badge in README and maintain evidence URLs.               |
 | Signed-Releases     | `publish-extension.yml`, `create-release-assets.js`, release docs                             | Confirm that the next release exposes attestations in a detectable way.                           |
 | SAST                | CodeQL workflow and security workflow                                                         | Confirm CodeQL runs on every default-branch/PR path Scorecard samples.                            |
 | Pinned-Dependencies | Devcontainer pins the base image, the official uv image digest, and downloaded tool checksums | Re-run Scorecard/code scanning after the next default-branch scan to clear stale line references. |
