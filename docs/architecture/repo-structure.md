@@ -3,9 +3,9 @@
 KiCad Studio Kit is one GitHub repository with one local release surface and
 cross-repo compatibility coverage for the external MCP server:
 
-| Workspace                                                                       | Product role                                        | Public surface                                         |
-| ------------------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------ |
-| `apps/vscode-extension`                                                         | KiCad Studio VS Code and Open VSX extension         | `oaslananka.kicadstudiokit`                            |
+| Workspace                                                                        | Product role                                        | Public surface                                         |
+| -------------------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------ |
+| `apps/vscode-extension`                                                          | KiCad Studio VS Code and Open VSX extension         | `oaslananka.kicadstudiokit`                            |
 | (external — see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)) | KiCad MCP Pro Python server and MCP Registry source | `kicad-mcp-pro` / `io.github.oaslananka/kicad-mcp-pro` |
 
 | `packages/test-harness` | Private shared test utilities | Not published |
@@ -18,6 +18,21 @@ The folder names intentionally preserve the package roots used by the current pu
   tests and CI gates. It is never a production dependency or release surface.
 
 Do not introduce additional canonical repositories, mirrors, or alternate release roots. Cross-product work should flow through compatibility metadata, MCP manifests, shared fixtures, and contract tests rather than direct source imports.
+
+## README ownership
+
+This repository intentionally keeps two top-level user-facing README surfaces:
+
+| File                              | Audience                                                            | Why it exists                                                                                                                      |
+| --------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `README.md`                       | GitHub repository visitors, contributors, auditors, and maintainers | Explains repository scope after the MCP split, validation commands, governance, architecture, security, and contribution flow.     |
+| `apps/vscode-extension/README.md` | Visual Studio Marketplace, Open VSX, and extension users            | Ships inside the VSIX and must stay product-focused: screenshots, install flow, feature summary, compatibility, and release notes. |
+
+Do not collapse these files into one document. The Marketplace renderer reads the
+extension README from the packaged VSIX, while GitHub renders the root README as
+the repository landing page. Shared facts such as the extension version and
+Marketplace image paths are guarded by `release:surface` and `marketplace:check`
+so the two surfaces can stay intentionally different without drifting.
 
 ## Root ownership
 
