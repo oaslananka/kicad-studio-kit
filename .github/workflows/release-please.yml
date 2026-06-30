@@ -61,8 +61,8 @@ jobs:
         run: corepack pnpm run docs:generate
       - if: ${{ steps.release.outputs.pr }}
         run: |
-          git config user.name "kicad-studio-bot"
-          git config user.email "kicad-studio-bot@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           # --no-verify: this is an automated bot commit of deterministically
           # generated surfaces. Skipping husky avoids running lint-staged on
@@ -92,8 +92,8 @@ jobs:
         run: corepack pnpm run docs:generate
       - if: ${{ steps.release.outputs.releases_created == 'true' }}
         run: |
-          git config user.name "kicad-studio-bot"
-          git config user.email "kicad-studio-bot@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           # --no-verify: automated bot commit of generated docs; skip husky so
           # this job does not run lint-staged / the full pre-push check.
