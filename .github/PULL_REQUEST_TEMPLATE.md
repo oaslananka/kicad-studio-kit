@@ -58,4 +58,5 @@ Checklist reference: `docs/architecture/protocol-change-checklist.md`
 - [ ] CHANGELOG entry (if user-visible)
 - [ ] Docs updated (if user-visible)
 - [ ] No new committed secrets or build artifacts
+- [ ] Developer Certificate of Origin sign-off is present on non-trivial commits (`git commit -s`) or not applicable with rationale
 - [ ] Meets the [Definition of Done](../docs/architecture/definition-of-done.md) for this change type; not-applicable items are justified

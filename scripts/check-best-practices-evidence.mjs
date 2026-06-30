@@ -78,6 +78,12 @@ export function validateBestPracticesEvidence(root = repoRoot) {
   const evidence = readFromRoot("docs/best-practices-evidence.md");
   const docsConfig = readFromRoot("docs/.vitepress/config.mts");
   const questionnaire = readFromRoot("docs/best-practices-questionnaire.md");
+  const contributing = readFromRoot("CONTRIBUTING.md");
+  const prTemplate = readFromRoot(".github/PULL_REQUEST_TEMPLATE.md");
+  const extensionPackage = JSON.parse(
+    readFromRoot("apps/vscode-extension/package.json"),
+  );
+  const repeatableVsix = readFromRoot("scripts/check-repeatable-vsix.mjs");
   const governance = readFromRoot("GOVERNANCE.md");
   const roadmap = readFromRoot("ROADMAP.md");
   const support = readFromRoot("SUPPORT.md");
@@ -96,7 +102,7 @@ export function validateBestPracticesEvidence(root = repoRoot) {
     "https://www.bestpractices.dev/projects/13405/badge",
   );
   requireIncludes("README.md", readme, "docs/best-practices-evidence.md");
-  requireIncludes("README.md", readme, "Governance: [GOVERNANCE.md]");
+  requireIncludes("README.md", readme, "GOVERNANCE.md");
   requireIncludes(
     "docs/.vitepress/config.mts",
     docsConfig,
@@ -119,6 +125,35 @@ export function validateBestPracticesEvidence(root = repoRoot) {
     "A strict main-branch ruleset with stable required checks is versioned in the repo.",
   ]) {
     requireIncludes("docs/best-practices-evidence.md", evidence, phrase);
+  }
+
+  for (const phrase of [
+    "Developer Certificate of Origin",
+    "developercertificate.org",
+    "git commit -s",
+    "test:dynamic-analysis",
+  ]) {
+    requireIncludes("CONTRIBUTING.md", contributing, phrase);
+  }
+  requireIncludes(
+    ".github/PULL_REQUEST_TEMPLATE.md",
+    prTemplate,
+    "Developer Certificate of Origin sign-off",
+  );
+  assert.equal(
+    extensionPackage.scripts?.["test:dynamic-analysis"],
+    "pnpm run test:security && pnpm run test:webview && pnpm run test:a11y",
+  );
+  for (const phrase of [
+    "compareVsixContent",
+    "SOURCE_DATE_EPOCH",
+    "VSIX repeatable content check passed",
+  ]) {
+    requireIncludes(
+      "scripts/check-repeatable-vsix.mjs",
+      repeatableVsix,
+      phrase,
+    );
   }
 
   for (const phrase of [

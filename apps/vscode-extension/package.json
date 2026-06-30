@@ -2548,7 +2548,8 @@
     "workflows:lint": "node scripts/lint-workflows.js",
     "publish": "node scripts/refuse-direct-publish.mjs",
     "pretest": "pnpm run build && pnpm run compile-tests",
-    "release:dry-run": "node scripts/validate-release-please.mjs"
+    "release:dry-run": "node scripts/validate-release-please.mjs",
+    "test:dynamic-analysis": "pnpm run test:security && pnpm run test:webview && pnpm run test:a11y"
   },
   "c8": {
     "reporter": [

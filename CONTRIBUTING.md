@@ -61,6 +61,21 @@ Changing `engines.vscode`, Python `requires-python`, or the primary KiCad suppor
 the matching `compatibility.yaml` update, this support matrix update, and product changelog context
 when a lower runtime boundary is introduced.
 
+## Developer Certificate of Origin
+
+By contributing a non-trivial change, you certify the [Developer Certificate of
+Origin 1.1](https://developercertificate.org/). Add a `Signed-off-by` trailer
+to every commit:
+
+```bash
+git commit -s
+```
+
+The sign-off means that you wrote the contribution or otherwise have the right
+to submit it under this project's license. Pull requests with non-trivial code,
+test, documentation, CI, or release-process changes must include signed-off
+commits or document why the DCO requirement is not applicable.
+
 ## Architecture Decision Records
 
 Architecture, product, protocol, release, and security decisions that affect
@@ -117,6 +132,19 @@ CODEOWNERS review should match the changed paths:
 Branch protection policy is documented in
 [docs/architecture/branch-protection.md](docs/architecture/branch-protection.md)
 and encoded for import in [`.github/rulesets/main.json`](.github/rulesets/main.json).
+
+## Dynamic analysis
+
+Before a proposed production release, run the dynamic analysis gate for runtime
+and UI-facing behavior:
+
+```bash
+corepack pnpm --filter kicadstudiokit run test:dynamic-analysis
+```
+
+This gate exercises runtime assertions through the extension security suite,
+webview DOM tests, and accessibility checks. The CI extension matrix also runs
+integration and package validation flows before release.
 
 ## Regression coverage
 
