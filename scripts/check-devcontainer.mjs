@@ -156,9 +156,11 @@ export function validateDevcontainerRepository(repoRoot = DEFAULT_REPO_ROOT) {
   requireExecutable(errors, repoRoot, ".devcontainer/postCreateCommand.sh");
 
   for (const phrase of [
+    "FROM ghcr.io/astral-sh/uv@sha256:ff07b86af50d4d9391d9daf4ff89ce427bc544f9aae87057e69a1cc0aa369946 AS uv-bin",
     "FROM mcr.microsoft.com/devcontainers/python:3.13-bookworm@sha256:",
     "ARG ACTIONLINT_VERSION=1.7.12",
     "ARG UV_VERSION=0.11.21",
+    "COPY --from=uv-bin /uv /uvx /usr/local/bin/",
     "shellcheck",
     "apt-cache show kicad",
     "actionlint_${ACTIONLINT_VERSION}_${actionlint_arch}.tar.gz",

@@ -6,28 +6,26 @@ checks are available. The importable ruleset lives in
 
 ## Required status checks
 
-The ruleset uses the check-run contexts reported by the current monorepo
-workflows:
+The ruleset uses stable check-run contexts reported by always-on repository
+workflows. The CI workflow exposes one aggregate `required` check so optional or
+path-scoped matrix lanes can be skipped without leaving branch protection waiting
+for a context that was never created.
 
-- `metadata`
-- `forbidden-refs`
-- `vscode-extension (ubuntu-24.04)`
-- `vscode-extension (windows-2025-vs2026)`
-- `vscode-extension (macos-15)`
-- `real-pair-compatibility`
+- `required`
 - `analyze (javascript-typescript)`
 - `analyze (python)`
 - `security`
 - `scan`
-- `build`
 
 Every required check above must keep reporting on every pull request. Do not add
 path filters, branch filters, or commit-message skip behavior to a workflow that
-owns one of these required contexts. If product CI later becomes path-filtered,
-keep an always-on required gate that reports for every pull request and update
-this document plus `.github/rulesets/main.json` together.
+owns one of these required contexts. If product CI later changes its internal
+matrix, keep the aggregate `required` job always-on and update this document plus
+`.github/rulesets/main.json` together.
 
-Scorecard should stay enabled as a repository health signal. It can be required once the repository has stable branch protection and token permissions.
+Scorecard should stay enabled as a repository health signal. It can be required
+once the repository has stable branch protection, token permissions, and no
+new-repository grace-period alerts.
 
 The documented list above and `.github/rulesets/main.json` are kept in sync by
 `corepack pnpm run check:branch-protection`, which fails if they diverge.
@@ -36,15 +34,15 @@ The documented list above and `.github/rulesets/main.json` are kept in sync by
 
 Each required pull-request quality gate maps to one of the required checks above:
 
-| Quality gate | Enforced by |
-| --- | --- |
-| Lint, typecheck, unit tests, accessibility, package build + validate | `vscode-extension (*)` |
-| Version + release-surface drift, compatibility, governance, extension manifest | `metadata` |
-| Forbidden references / stale monorepo language | `forbidden-refs` |
-| Static analysis (CodeQL) | `analyze (javascript-typescript)`, `analyze (python)` |
-| Dependency audit + supply-chain controls | `security` |
-| Secret scanning | `scan` |
-| Cross-product and shared-package build | `build`, `real-pair-compatibility` |
+| Quality gate                                                                   | Enforced by                                           |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| Lint, typecheck, unit tests, accessibility, package build + validate           | `required` aggregate CI gate                          |
+| Version + release-surface drift, compatibility, governance, extension manifest | `required` aggregate CI gate                          |
+| Forbidden references / stale repository language                               | `required` aggregate CI gate                          |
+| Static analysis (CodeQL)                                                       | `analyze (javascript-typescript)`, `analyze (python)` |
+| Dependency audit + supply-chain controls                                       | `security`                                            |
+| Secret scanning                                                                | `scan`                                                |
+| Cross-product and shared-package build                                         | `required` aggregate CI gate                          |
 
 Generated documentation drift is validated by the `docs` workflow on every
 documentation change. Promote it to a required context here and in the ruleset
@@ -53,8 +51,8 @@ once it reports on every pull request (today it is path-scoped to docs changes).
 ## Check tiers
 
 - **Pull-request required checks (blocking):** the required contexts listed
-  above. These cover lint, typecheck, unit tests, integration smoke,
-  package build + validation, and version/generated-surface drift.
+  above. The `required` aggregate covers CI lane success/failure while CodeQL,
+  security, and secret scanning remain independently visible.
 - **Scheduled / nightly checks (health gates, non-blocking on a PR):** the full
   KiCad compatibility matrix, large-project benchmarks, the regression corpus,
   and the dependency dashboard audit.

@@ -14,3 +14,17 @@ evidence, and accepted residual risks are documented in
 operation layer (`apps/vscode-extension/src/security/guardedOperations.ts`)
 centralizes workspace-trust, path-canonicalization, and boundary enforcement for
 write, export, import, and MCP operations.
+
+## Private vulnerability handling
+
+Use the GitHub Security Advisory flow for private reports. The project aims to acknowledge active vulnerability reports within 7 calendar days and provide a coordinated fix plan, mitigation, or status update within 14 calendar days when the report is reproducible and in scope.
+
+Security reports should include:
+
+- affected version or commit;
+- operating system and VS Code/KiCad versions when relevant;
+- reproduction steps or proof of concept;
+- expected impact and exploitability constraints;
+- whether public credit is requested after disclosure.
+
+The project will coordinate public disclosure after a fix, mitigation, or maintainer-approved advisory is ready. Reporter credit is supported when requested and when disclosure is coordinated responsibly.

@@ -13,13 +13,13 @@ test("#414 the ruleset declares required status checks", () => {
     checks.length > 0,
     "ruleset must require at least one status check",
   );
-  // Core quality gates must be present.
-  assert.ok(checks.includes("metadata"));
+  // Core quality gates must be present. The CI workflow exposes one stable
+  // aggregate `required` check because path-scoped matrix jobs may be skipped.
+  assert.ok(checks.includes("required"));
   assert.ok(checks.includes("security"));
-  assert.ok(
-    checks.some((context) => context.startsWith("vscode-extension")),
-    "the extension build/test gate must be required",
-  );
+  assert.ok(checks.includes("scan"));
+  assert.ok(checks.includes("analyze (javascript-typescript)"));
+  assert.ok(checks.includes("analyze (python)"));
 });
 
 test("#414 the policy doc lists required status checks", () => {

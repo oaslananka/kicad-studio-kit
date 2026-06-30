@@ -11,6 +11,7 @@
   <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
   <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml/badge.svg" alt="Security"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit"><img src="https://api.scorecard.dev/projects/github.com/oaslananka/kicad-studio-kit/badge" alt="OpenSSF Scorecard"></a>
+  <a href="https://www.bestpractices.dev/projects/13405"><img src="https://www.bestpractices.dev/projects/13405/badge" alt="OpenSSF Best Practices"></a>
 </p>
 
 <p align="center">
@@ -41,6 +42,8 @@ container image, and MCP Registry listing — lives in
 
 Canonical repository: https://github.com/oaslananka/kicad-studio-kit
 Searchable documentation: https://oaslananka.github.io/kicad-studio-kit/
+OpenSSF Best Practices evidence: [docs/best-practices-evidence.md](docs/best-practices-evidence.md)
+Governance: [GOVERNANCE.md](GOVERNANCE.md) · Roadmap: [ROADMAP.md](ROADMAP.md) · Support: [SUPPORT.md](SUPPORT.md)
 
 ## Version Baseline
 
@@ -69,6 +72,7 @@ coverage level, and feature gates are maintained in
 corepack enable
 corepack pnpm run dev:doctor
 corepack pnpm install --frozen-lockfile
+corepack pnpm --dir apps/vscode-extension exec playwright install chromium
 corepack pnpm run check:forbidden-refs
 corepack pnpm run check:version
 corepack pnpm --filter kicadstudiokit run check

@@ -41,22 +41,7 @@
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
           {
-            "context": "metadata"
-          },
-          {
-            "context": "forbidden-refs"
-          },
-          {
-            "context": "vscode-extension (ubuntu-24.04)"
-          },
-          {
-            "context": "vscode-extension (windows-2025-vs2026)"
-          },
-          {
-            "context": "vscode-extension (macos-15)"
-          },
-          {
-            "context": "real-pair-compatibility"
+            "context": "required"
           },
           {
             "context": "analyze (javascript-typescript)"
@@ -69,9 +54,6 @@
           },
           {
             "context": "scan"
-          },
-          {
-            "context": "build"
           }
         ]
       }

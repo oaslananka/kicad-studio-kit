@@ -385,14 +385,56 @@ function extensionDependenciesCheck(repoRoot) {
   });
 }
 
-function mcpVersionDetail(result) {
+function pathHasFiles(directory) {
   try {
-    const payload = JSON.parse(result.stdout);
-    const version = payload.package?.version;
-    return version ? `kicad-mcp-pro ${version}` : firstLine(result.stdout);
+    return existsSync(directory) && readdirSync(directory).length > 0;
   } catch {
-    return firstLine(result.stdout || result.stderr || result.error || "");
+    return false;
   }
+}
+
+function playwrightChromiumCheck(commandOptions) {
+  const result = run(
+    "corepack",
+    [
+      "pnpm",
+      "--dir",
+      "apps/vscode-extension",
+      "exec",
+      "playwright",
+      "install",
+      "--dry-run",
+      "chromium",
+    ],
+    commandOptions,
+  );
+
+  const installLocations = String(result.stdout ?? "")
+    .split(/\r?\n/u)
+    .map((line) => line.match(/Install location:\s+(.+)$/u)?.[1]?.trim())
+    .filter(Boolean);
+  const chromiumLocations = installLocations.filter((location) =>
+    /chromium/i.test(path.basename(location)),
+  );
+  const installed = chromiumLocations.some(pathHasFiles);
+
+  return makeCheck({
+    id: "playwright-chromium",
+    label: "Playwright Chromium browser cache",
+    category: "workspace",
+    required: true,
+    ok: result.ok && installed,
+    detail:
+      result.ok && chromiumLocations.length > 0
+        ? chromiumLocations
+            .map(
+              (location) =>
+                `${location}: ${pathHasFiles(location) ? "present" : "missing"}`,
+            )
+            .join("; ")
+        : firstLine(result.stdout || result.stderr || result.error || ""),
+    hint: "Run `corepack pnpm --dir apps/vscode-extension exec playwright install chromium` before a11y/webview tests.",
+  });
 }
 
 function mcpDoctorDetail(result) {
@@ -621,6 +663,7 @@ export async function createDoctorReport(
   );
 
   checks.push(extensionDependenciesCheck(repoRoot));
+  checks.push(playwrightChromiumCheck(commandOptions));
 
   checks.push(
     commandCheck(

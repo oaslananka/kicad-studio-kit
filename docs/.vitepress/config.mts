@@ -129,23 +129,56 @@ export default defineConfig({
           { text: "Testing Strategy", link: "/testing-strategy" },
           { text: "Governance Board", link: "/architecture/governance-board" },
           { text: "Migration Phases", link: "/architecture/migration-phases" },
-          { text: "M0 Completion Audit", link: "/architecture/m0-completion-audit" },
-          { text: "Protocol Change Checklist", link: "/architecture/protocol-change-checklist" },
+          {
+            text: "M0 Completion Audit",
+            link: "/architecture/m0-completion-audit",
+          },
+          {
+            text: "Protocol Change Checklist",
+            link: "/architecture/protocol-change-checklist",
+          },
         ],
       },
       {
         text: "Decision Records",
         items: [
           { text: "Overview", link: "/adr/" },
-          { text: "ADR 01: Monorepo Two Products", link: "/adr/0001-monorepo-two-products" },
-          { text: "ADR 02: MCP Contract-First", link: "/adr/0002-mcp-contract-first-integration" },
-          { text: "ADR 03: Independent Release Model", link: "/adr/0003-independent-release-model" },
-          { text: "ADR 04: No Direct Cross-Product Imports", link: "/adr/0004-no-direct-cross-product-imports" },
-          { text: "ADR 05: KiCad Version Support Policy", link: "/adr/0005-kicad-version-support-policy" },
-          { text: "ADR 06: VS Code Web Compatibility", link: "/adr/0006-vscode-web-compatibility" },
-          { text: "ADR 07: Agent Onboarding Config Pack", link: "/adr/0007-agent-onboarding-config-pack" },
-          { text: "ADR 08: MCP 2026-07-28 Protocol Upgrade", link: "/adr/0008-mcp-2026-07-28-protocol-upgrade" },
-          { text: "ADR 09: Split kicad-mcp-pro into Separate Repo", link: "/adr/0009-split-kicad-mcp-pro-into-separate-repository" },
+          {
+            text: "ADR 01: Monorepo Two Products",
+            link: "/adr/0001-monorepo-two-products",
+          },
+          {
+            text: "ADR 02: MCP Contract-First",
+            link: "/adr/0002-mcp-contract-first-integration",
+          },
+          {
+            text: "ADR 03: Independent Release Model",
+            link: "/adr/0003-independent-release-model",
+          },
+          {
+            text: "ADR 04: No Direct Cross-Product Imports",
+            link: "/adr/0004-no-direct-cross-product-imports",
+          },
+          {
+            text: "ADR 05: KiCad Version Support Policy",
+            link: "/adr/0005-kicad-version-support-policy",
+          },
+          {
+            text: "ADR 06: VS Code Web Compatibility",
+            link: "/adr/0006-vscode-web-compatibility",
+          },
+          {
+            text: "ADR 07: Agent Onboarding Config Pack",
+            link: "/adr/0007-agent-onboarding-config-pack",
+          },
+          {
+            text: "ADR 08: MCP 2026-07-28 Protocol Upgrade",
+            link: "/adr/0008-mcp-2026-07-28-protocol-upgrade",
+          },
+          {
+            text: "ADR 09: Split kicad-mcp-pro into Separate Repo",
+            link: "/adr/0009-split-kicad-mcp-pro-into-separate-repository",
+          },
         ],
       },
       {
@@ -170,6 +203,11 @@ export default defineConfig({
           { text: "Contributors", link: "/contributors" },
           { text: "Fixture Corpus", link: "/kicad-fixture-corpus" },
           { text: "Performance Baselines", link: "/performance-baselines" },
+          { text: "Best Practices Evidence", link: "/best-practices-evidence" },
+          {
+            text: "Best Practices Questionnaire",
+            link: "/best-practices-questionnaire",
+          },
           { text: "Protocol Schemas", link: "/protocol-schemas" },
           { text: "Reusable Workflows", link: "/reusable-workflows" },
         ],

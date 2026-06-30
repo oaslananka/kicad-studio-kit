@@ -64,6 +64,16 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
     mkdirSync(path.join(repoRoot, "apps/vscode-extension/node_modules/.bin"), {
       recursive: true,
     });
+    mkdirSync(path.join(repoRoot, "playwright-cache/chromium-1228"), {
+      recursive: true,
+    });
+    writeFileSync(
+      path.join(
+        repoRoot,
+        "playwright-cache/chromium-1228/INSTALLATION_COMPLETE",
+      ),
+      "ok\n",
+    );
     mkdirSync(path.join(repoRoot, "packages/kicad-fixtures"), {
       recursive: true,
     });
@@ -121,6 +131,19 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
         const joined = [command, ...args].join(" ");
         if (joined === "corepack pnpm --version") {
           return { ok: true, status: 0, stdout: "11.3.0", stderr: "" };
+        }
+        if (
+          joined ===
+          "corepack pnpm --dir apps/vscode-extension exec playwright install --dry-run chromium"
+        ) {
+          return {
+            ok: true,
+            status: 0,
+            stdout: `Chrome for Testing 149.0.7827.55 (playwright chromium v1228)
+  Install location:    ${path.join(repoRoot, "playwright-cache/chromium-1228")}
+`,
+            stderr: "",
+          };
         }
         if (joined === "python3 --version") {
           return { ok: true, status: 0, stdout: "Python 3.13.8", stderr: "" };
@@ -199,6 +222,7 @@ test("dev-doctor reports the full CI-safe monorepo environment contract", async 
         "uv",
         "kicad-cli",
         "vscode-extension-deps",
+        "playwright-chromium",
         "cloudflared",
         "ports",
         "workspace-scripts",
