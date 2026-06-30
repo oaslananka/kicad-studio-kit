@@ -12,6 +12,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.9.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.9.1...vscode-extension-v1.9.2) (2026-06-30)
+
+
+### Bug Fixes
+
+* **kicad-studio:** polish marketplace readme layout ([#462](https://github.com/oaslananka/kicad-studio-kit/issues/462)) ([9e78721](https://github.com/oaslananka/kicad-studio-kit/commit/9e78721b7e0c8a3fcb707429fce3e7b2cdc66ae4))
+
 ## [1.9.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.9.0...vscode-extension-v1.9.1) (2026-06-30)
 
 
