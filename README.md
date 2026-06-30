@@ -57,7 +57,7 @@ container image, and MCP Registry listing — lives in
 
 This repository's local release surface is:
 
-- VS Code extension: `oaslananka.kicadstudiokit` (`1.9.1`)
+- VS Code extension: `oaslananka.kicadstudiokit` (`1.9.2`)
 
 The Python package `kicad-mcp-pro`, container image, and MCP Registry listing
 are released from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
