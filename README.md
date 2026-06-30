@@ -1,28 +1,38 @@
-<p align="center">
-  <a href="https://www.buymeacoffee.com/oaslananka">
-    <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=oaslananka&button_colour=FFDD00&font_colour=000000&font_family=Arial&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" />
-  </a>
-</p>
+<div align="center">
 
 # KiCad Studio Kit
 
-<p align="center">
-  <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
-  <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml/badge.svg" alt="Security"></a>
+**VS Code extension repository for KiCad Studio workflows.**  
+Extension-side MCP discovery, configuration, compatibility metadata, and user experience.
+
+<p>
+  <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml/badge.svg" alt="CodeQL status"></a>
+  <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml/badge.svg" alt="Security status"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit"><img src="https://api.scorecard.dev/projects/github.com/oaslananka/kicad-studio-kit/badge" alt="OpenSSF Scorecard"></a>
   <a href="https://www.bestpractices.dev/projects/13405"><img src="https://www.bestpractices.dev/projects/13405/badge" alt="OpenSSF Best Practices"></a>
 </p>
 
-<p align="center">
-  <a href="https://open-vsx.org/extension/oaslananka/kicadstudiokit"><img src="https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX" alt="Open VSX"></a>
-  <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/visual-studio-marketplace/v/oaslananka.kicadstudiokit" alt="VS Marketplace"></a>
-  <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/visual-studio-marketplace/i/oaslananka.kicadstudiokit" alt="VS Marketplace Installs"></a>
+<p>
+  <a href="https://open-vsx.org/extension/oaslananka/kicadstudiokit"><img src="https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX" alt="Open VSX version"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/badge/VS%20Marketplace-install-blue" alt="Install from Visual Studio Marketplace"></a>
+  <a href="https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+  <a href="https://oaslananka.github.io/kicad-studio-kit/"><img src="https://img.shields.io/badge/docs-site-blue" alt="Documentation site"></a>
 </p>
 
-<p align="center">
-  <a href="https://deepwiki.com/oaslananka/kicad-studio-kit"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+<p>
+  <a href="docs/best-practices-evidence.md">Best Practices evidence</a> ·
+  <a href="GOVERNANCE.md">Governance</a> ·
+  <a href="ROADMAP.md">Roadmap</a> ·
+  <a href="SUPPORT.md">Support</a> ·
+  <a href="https://deepwiki.com/oaslananka/kicad-studio-kit">Ask DeepWiki</a>
 </p>
+
+<p>
+  <a href="https://www.buymeacoffee.com/oaslananka"><img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=000000&labelColor=FFDD00&color=111111" alt="Buy me a coffee"></a>
+</p>
+
+</div>
 
 KiCad Studio Kit is the VS Code extension repository. The MCP server is
 developed and released separately. This repository owns only the extension-side
@@ -39,11 +49,6 @@ This repository contains:
 The KiCad MCP Pro server (`kicad-mcp-pro`) — its Python source, npm launcher,
 container image, and MCP Registry listing — lives in
 [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
-
-Canonical repository: https://github.com/oaslananka/kicad-studio-kit
-Searchable documentation: https://oaslananka.github.io/kicad-studio-kit/
-OpenSSF Best Practices evidence: [docs/best-practices-evidence.md](docs/best-practices-evidence.md)
-Governance: [GOVERNANCE.md](GOVERNANCE.md) · Roadmap: [ROADMAP.md](ROADMAP.md) · Support: [SUPPORT.md](SUPPORT.md)
 
 ## Version Baseline
 
