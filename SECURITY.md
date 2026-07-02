@@ -15,6 +15,13 @@ operation layer (`apps/vscode-extension/src/security/guardedOperations.ts`)
 centralizes workspace-trust, path-canonicalization, and boundary enforcement for
 write, export, import, and MCP operations.
 
+## Security assurance documents
+
+- [Threat model](docs/security/threat-model.md)
+- [Release integrity](docs/security/release-integrity.md)
+- [Input validation](docs/security/input-validation.md)
+- [Assurance case](docs/security/assurance-case.md)
+
 ## Private vulnerability handling
 
 Use the GitHub Security Advisory flow for private reports. The project aims to acknowledge active vulnerability reports within 7 calendar days and provide a coordinated fix plan, mitigation, or status update within 14 calendar days when the report is reproducible and in scope.

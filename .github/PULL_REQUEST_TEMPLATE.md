@@ -42,6 +42,14 @@ Checklist reference: `docs/architecture/protocol-change-checklist.md`
 - [ ] Release notes considered for both products
 - [ ] Backward compatibility impact documented
 
+## Repository maturity impact
+
+- [ ] No repository maturity impact
+- [ ] Documentation/community health updated
+- [ ] CI/quality/release process updated
+- [ ] Governance/security/supply-chain process updated
+- [ ] Manual GitHub setting or maintainer action required and documented
+
 ## Automation evidence
 
 - [ ] Review-thread gate checked or not applicable

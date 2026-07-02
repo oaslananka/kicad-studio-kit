@@ -61,6 +61,12 @@ Changing `engines.vscode`, Python `requires-python`, or the primary KiCad suppor
 the matching `compatibility.yaml` update, this support matrix update, and product changelog context
 when a lower runtime boundary is introduced.
 
+## Commit, review, and quality standards
+
+Contributions should follow [Conventional Commits](docs/development/commit-conventions.md), the [coding standards](docs/development/coding-standards.md), and the [testing policy](docs/development/testing-policy.md). Release-impacting changes should also follow the [release process](docs/development/release-process.md), and dependency changes should follow [dependency management](docs/development/dependency-management.md).
+
+For most pull requests, start with focused checks and paste the exact command output into the PR template. Do not claim a skipped check passed; mark it not applicable with a reason.
+
 ## Developer Certificate of Origin
 
 By contributing a non-trivial change, you certify the [Developer Certificate of

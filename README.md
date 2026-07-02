@@ -50,6 +50,10 @@ The KiCad MCP Pro server (`kicad-mcp-pro`) — its Python source, npm launcher,
 container image, and MCP Registry listing — lives in
 [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
 
+## Repository maturity and standards
+
+This repository tracks Professional OSS / Mature OSS readiness through [the repository maturity report](docs/repo-maturity-report.md), [OpenSSF evidence](docs/openssf-evidence.md), and [OpenSSF gap analysis](docs/openssf-gap-analysis.md). Gold/foundation-grade maturity is not claimed until the documented branch protection, independent maintainer, human review, governance, coverage, and release reproducibility gaps are closed.
+
 ## Version Baseline
 
 <!-- release-surface:start -->

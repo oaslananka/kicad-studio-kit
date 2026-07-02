@@ -1,38 +1,81 @@
 name: Bug Report
-description: Report a bug to help us improve KiCad Studio
-labels: ['type:bug']
+description: Report a reproducible bug in KiCad Studio Kit
+labels: ["type:bug", "needs-triage"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
+        Thanks for helping improve KiCad Studio Kit. Do not report active security vulnerabilities here; use GitHub Security Advisories instead.
   - type: textarea
     id: description
     attributes:
-      label: Bug Description
-      description: A clear and concise description of what the bug is.
+      label: Bug description
+      description: A clear and concise description of the bug.
     validations:
       required: true
   - type: textarea
     id: reproduction
     attributes:
-      label: Steps to Reproduce
-      description: How do we trigger the bug?
+      label: Steps to reproduce
+      description: Provide the smallest reproduction you can.
       placeholder: |
-        1. Open file '...'
-        2. Click on '...'
-        3. See error '...'
+        1. Open workspace/project ...
+        2. Run command ...
+        3. Observe ...
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
-      label: Expected Behavior
-      description: What did you expect to happen?
+      label: Expected behavior
+      description: What should have happened?
     validations:
       required: true
   - type: textarea
-    id: context
+    id: actual
     attributes:
-      label: Environment & Context
-      description: KiCad version, OS, KiCad Studio version, etc.
+      label: Actual behavior
+      description: What happened instead? Include errors, logs, or screenshots when available.
+    validations:
+      required: true
+  - type: input
+    id: extension-version
+    attributes:
+      label: KiCad Studio Kit version
+      placeholder: e.g. 1.9.4
+    validations:
+      required: true
+  - type: input
+    id: vscode-version
+    attributes:
+      label: VS Code version
+      placeholder: e.g. 1.127.0
+  - type: input
+    id: kicad-version
+    attributes:
+      label: KiCad version
+      placeholder: e.g. 10.0.4
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or diagnostic output
+      description: Paste relevant logs. Redact secrets and private project data.
+      render: shell
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I checked existing issues and did not find a duplicate.
+          required: true
+        - label: This is not an active security vulnerability report.
+          required: true

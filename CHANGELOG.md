@@ -12,6 +12,10 @@ changelogs remain the release-owned sources for package-specific changes.
 Comparison links will be added after the first public release tags are
 published.
 
+## Repository maturity notes
+
+This repository tracks Professional OSS / Mature OSS hardening through `docs/repo-maturity-report.md`, `docs/openssf-evidence.md`, and `.bestpractices.json`. Gold/foundation-grade maturity remains gap-tracked only until branch protection, independent review, and multi-maintainer evidence are active.
+
 ## [Unreleased]
 
 ### Changed

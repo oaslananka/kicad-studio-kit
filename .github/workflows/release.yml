@@ -1,0 +1,47 @@
+name: Release Readiness
+
+on:
+  pull_request:
+    paths:
+      - "apps/vscode-extension/package.json"
+      - "apps/vscode-extension/CHANGELOG.md"
+      - "CHANGELOG.md"
+      - "release-please-config.json"
+      - ".release-please-manifest.json"
+      - ".github/workflows/release.yml"
+      - ".github/workflows/release-please.yml"
+      - ".github/workflows/publish-extension.yml"
+      - "scripts/check-release-*.mjs"
+      - "scripts/check-repeatable-vsix.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-readiness-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  pnpm_config_pm_on_fail: ignore
+
+jobs:
+  release-readiness:
+    if: github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm run check:release-please
+      - run: corepack pnpm run check:release-surface
+      - run: corepack pnpm run release:verify
+      - run: corepack pnpm run check:repeatable-vsix

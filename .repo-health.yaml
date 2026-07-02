@@ -20,6 +20,8 @@ required_workflows:
   - docs.yml
   - release-please.yml
   - publish-extension.yml
+  - release.yml
+  - dependency-review.yml
 governance:
   renovate:
     config: renovate.json

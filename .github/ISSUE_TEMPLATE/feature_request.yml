@@ -1,23 +1,56 @@
 name: Feature Request
-description: Suggest an idea for KiCad Studio
-labels: ['type:feature']
+description: Suggest a product, documentation, workflow, or repository maturity improvement
+labels: ["type:feature", "needs-triage"]
 body:
   - type: textarea
     id: problem
     attributes:
-      label: Is your feature request related to a problem?
-      description: A concise description of what the problem is.
+      label: Problem or opportunity
+      description: What user, maintainer, release, quality, or governance problem does this solve?
     validations:
       required: true
   - type: textarea
-    id: solution
+    id: proposal
     attributes:
-      label: Describe the solution you'd like
-      description: A concise description of what you want to happen.
+      label: Proposed solution
+      description: Describe the change you would like to see.
     validations:
       required: true
   - type: textarea
     id: alternatives
     attributes:
-      label: Describe alternatives you've considered
-      description: A concise description of any alternative solutions or features you've considered.
+      label: Alternatives considered
+      description: Describe alternatives, workarounds, or why this should not be solved elsewhere.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - VS Code extension
+        - MCP integration
+        - Documentation
+        - Tests / quality
+        - CI / release
+        - Security / supply chain
+        - Governance / community
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What evidence would show this is complete?
+      placeholder: |
+        - Documentation updated
+        - Tests added or reason documented
+        - Release note considered
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I checked existing issues and did not find a duplicate.
+          required: true
+        - label: I understand this may need maintainer triage before implementation.
+          required: true
