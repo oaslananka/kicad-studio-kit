@@ -52,7 +52,7 @@ container image, and MCP Registry listing — lives in
 
 ## Repository maturity and standards
 
-This repository tracks Professional OSS / Mature OSS readiness through [the repository maturity report](docs/repo-maturity-report.md), [OpenSSF evidence](docs/openssf-evidence.md), and [OpenSSF gap analysis](docs/openssf-gap-analysis.md). Gold/foundation-grade maturity is not claimed until the documented branch protection, independent maintainer, human review, governance, coverage, and release reproducibility gaps are closed.
+This repository tracks Solo-maintainer Professional OSS / Mature OSS readiness through [the repository maturity report](docs/repo-maturity-report.md), [OpenSSF evidence](docs/openssf-evidence.md), and [OpenSSF gap analysis](docs/openssf-gap-analysis.md). Gold/foundation-grade maturity is intentionally not claimed for the current solo-maintainer model; branch protection and release evidence remain the practical Professional OSS focus.
 
 ## Version Baseline
 

@@ -3,13 +3,13 @@
 Repository: `oaslananka/kicad-studio-kit`
 Audit date: 2026-07-02
 Mode: Audit + implementation PR
-Target: Professional OSS / Mature OSS
+Target: Solo-maintainer Professional OSS / Mature OSS
 
 ## Executive summary
 
 KiCad Studio Kit already has a strong professional open-source foundation: an MIT license, README, contribution guide, Code of Conduct, security policy, support policy, release automation, pinned GitHub Actions, CodeQL, Scorecard, Gitleaks, Renovate, release evidence, and a documented support matrix.
 
-The repository is best classified as **Professional OSS / Mature OSS in progress**. It is not yet Gold/foundation-grade because the GitHub API reported `main` as **not branch protected** during this audit, and there is no repository evidence of multiple independent active maintainers, sustained independent human PR review, or enforceable CODEOWNERS review.
+The repository is best classified as **Solo-maintainer Professional OSS / Mature OSS in progress**. It is intentionally not assessed as Gold/foundation-grade because the project is solo-maintained. The GitHub API also reported `main` as **not branch protected** during this audit, so branch protection remains the main Professional OSS enforcement gap.
 
 ## Current maturity level
 
@@ -21,13 +21,13 @@ Rationale:
 - release automation and release evidence exist;
 - quality gates and security workflows are present;
 - governance and support documents exist;
-- missing enforcement and community-scale evidence prevent a Gold/foundation-grade claim.
+- missing branch-protection enforcement prevents a stronger maturity claim; community-scale evidence is optional for the current solo-maintainer model.
 
 ## Target maturity level
 
-**Professional OSS / Mature OSS.**
+**Solo-maintainer Professional OSS / Mature OSS.**
 
-Gold/foundation-grade is tracked as a gap list only. It must not be claimed until branch protection, multiple maintainers, independent review, repeatable release evidence, high coverage, and sustainable governance are all demonstrably active.
+Gold/foundation-grade is intentionally out of scope for the current solo-maintainer operating model. It remains a future gap list only, not a near-term target.
 
 ## GitHub Community Standards status
 
@@ -45,14 +45,14 @@ Gold/foundation-grade is tracked as a gap list only. It must not be claimed unti
 
 ## OpenSSF Best Practices status
 
-| Area                    | Status  | Evidence / action                                                                                                                   |
-| ----------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Passing readiness       | Passed  | Evidence register and current docs indicate passing readiness.                                                                      |
-| Silver readiness        | Partial | Existing evidence says Silver achieved; human confirmation should keep BadgeApp current.                                            |
-| Gold feasibility        | Missing | Gold blockers remain: branch protection, multiple maintainers, independent review, two-person review, and higher coverage evidence. |
-| `.bestpractices.json`   | Passed  | Added in this PR as a local evidence index.                                                                                         |
-| BadgeApp proposal links | Passed  | `docs/openssf-proposal-links.md` added.                                                                                             |
-| Evidence file           | Passed  | `docs/openssf-evidence.md` and existing `docs/best-practices-evidence.md`.                                                          |
+| Area                    | Status         | Evidence / action                                                                                                                   |
+| ----------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Passing readiness       | Passed         | Evidence register and current docs indicate passing readiness.                                                                      |
+| Silver readiness        | Partial        | Existing evidence says Silver achieved; human confirmation should keep BadgeApp current.                                            |
+| Gold feasibility        | Not applicable | Gold/foundation-grade is intentionally not a target for the current solo-maintainer model; future-only gaps are tracked separately. |
+| `.bestpractices.json`   | Passed         | Added in this PR as a local evidence index.                                                                                         |
+| BadgeApp proposal links | Passed         | `docs/openssf-proposal-links.md` added.                                                                                             |
+| Evidence file           | Passed         | `docs/openssf-evidence.md` and existing `docs/best-practices-evidence.md`.                                                          |
 
 ## Scorecard readiness
 
@@ -126,16 +126,16 @@ The repository already has extensive architecture, release, testing, compatibili
 
 ## Community maturity
 
-| Criterion                     | Status  | Evidence / gap                                                                                  |
-| ----------------------------- | ------- | ----------------------------------------------------------------------------------------------- |
-| Time to first response        | Partial | `SUPPORT.md` defines goals; actual issue response metrics require human/automation measurement. |
-| Issue resolution process      | Partial | Templates and support goals exist; dashboards/labels should be monitored.                       |
-| PR review process             | Partial | PR template and CODEOWNERS exist; enforced human review missing.                                |
-| Contributor activity          | Partial | Public repo has recent activity; independent contributor activity needs human confirmation.     |
-| Release frequency             | Partial | Recent release exists; sustainable cadence needs more history.                                  |
-| Bus factor                    | Missing | Current evidence points to a single primary maintainer.                                         |
-| Documentation discoverability | Passed  | Docs site and Diátaxis seed pages exist.                                                        |
-| Change acceptance process     | Passed  | CONTRIBUTING, PR template, ADR policy, DCO.                                                     |
+| Criterion                     | Status         | Evidence / gap                                                                                                                                                         |
+| ----------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Time to first response        | Partial        | `SUPPORT.md` defines goals; actual issue response metrics require human/automation measurement.                                                                        |
+| Issue resolution process      | Partial        | Templates and support goals exist; dashboards/labels should be monitored.                                                                                              |
+| PR review process             | Partial        | PR template and CODEOWNERS exist; enforced human review missing.                                                                                                       |
+| Contributor activity          | Not applicable | Independent contributor activity is not required for the current solo-maintainer target.                                                                               |
+| Release frequency             | Partial        | Recent release exists; sustainable cadence needs more history.                                                                                                         |
+| Bus factor                    | Missing        | Current evidence points to a single primary maintainer; this is acceptable for Solo-maintainer Professional OSS when governance and release procedures are documented. |
+| Documentation discoverability | Passed         | Docs site and Diátaxis seed pages exist.                                                                                                                               |
+| Change acceptance process     | Passed         | CONTRIBUTING, PR template, ADR policy, DCO.                                                                                                                            |
 
 ## License/legal maturity
 
@@ -197,20 +197,19 @@ The following were intentionally not applied:
 
 ## Recommended issues
 
-1. Enable `main` branch protection/ruleset with required status checks and CODEOWNERS review.
-2. Recruit and document at least one additional maintainer or independent reviewer.
-3. Establish sustained human PR review before claiming Gold/foundation-grade maturity.
-4. Add REUSE/SPDX per-file license policy and decide whether `NOTICE` is required.
-5. Add historical CHAOSS metrics collection for issue response, PR review latency, and release cadence.
-6. Verify private vulnerability reporting, GitHub-native dependency alerts, secret scanning, and push protection settings.
-7. Evaluate standalone OSV scanner and Docker image scanning after baseline tuning.
-8. Raise or ratchet coverage only after flaky/low-coverage areas are stabilized.
+1. Enable solo-safe `main` branch protection/ruleset with force-push/deletion protection and required status checks; do not require another human reviewer unless the maintainer wants that workflow.
+2. Keep solo-maintainer continuity documented; recruit another maintainer only if Gold/foundation-grade becomes a real goal.
+3. Add REUSE/SPDX per-file license policy and decide whether `NOTICE` is required.
+4. Add historical CHAOSS metrics collection for issue response, PR review latency, and release cadence.
+5. Verify private vulnerability reporting, GitHub-native dependency alerts, secret scanning, and push protection settings.
+6. Evaluate standalone OSV scanner and Docker image scanning after baseline tuning.
+7. Raise or ratchet coverage only after flaky/low-coverage areas are stabilized.
 
 ## Created tracking issues
 
 - #471 Enable enforced main branch protection for OSS maturity.
-- #472 Establish sustained human PR review evidence.
-- #473 Reduce maintainer bus-factor risk for Gold readiness.
+- #472 Human PR review evidence is optional/future-only for Gold; closed as not required for solo-maintainer Professional OSS.
+- #473 Additional maintainer capacity is optional/future-only for Gold; closed as not required for solo-maintainer Professional OSS.
 - #474 Assess REUSE, SPDX, and NOTICE readiness.
 - #475 Confirm GitHub security settings for OpenSSF readiness.
 
@@ -220,4 +219,4 @@ The following were intentionally not applied:
 2. Enable branch protection/rulesets in GitHub.
 3. Re-run OpenSSF Scorecard after protection is active.
 4. Update the Best Practices BadgeApp with the evidence links in `docs/openssf-proposal-links.md`.
-5. Create or update GitHub issues for the Gold/foundation-grade gap list.
+5. Keep Gold/foundation-grade issues closed or optional unless the project intentionally changes from solo-maintainer mode.

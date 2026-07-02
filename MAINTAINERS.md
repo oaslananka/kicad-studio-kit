@@ -13,7 +13,7 @@ This file documents the current repository maintainership model for KiCad Studio
 Maintainers are expected to:
 
 - use pull requests for non-emergency changes;
-- require human review for code, release, security, CI, and governance changes once branch protection is active;
+- use PR-based self-review for normal changes and request external human review for high-risk code, release, security, CI, and governance changes when practical;
 - keep release credentials and GitHub Actions secrets restricted to the minimum required access;
 - triage active vulnerability reports privately through GitHub Security Advisories;
 - document major architecture, release, compatibility, or security decisions as ADRs;
@@ -21,13 +21,13 @@ Maintainers are expected to:
 
 ## Succession and continuity
 
-The repository is currently not foundation-grade because it does not have verified independent maintainers, independent reviewers, and enforced branch protection. The project should recruit at least one additional trusted maintainer before claiming Gold/foundation-grade maturity.
+The repository is intentionally operated as a solo-maintainer project. This is compatible with the current Professional OSS target when governance, release, security, and support procedures are documented. Recruiting another maintainer is optional and only required for a future Gold/foundation-grade claim.
 
-Recommended continuity target:
+Future-only continuity target:
 
 - at least two maintainers with administrative recovery knowledge;
-- at least one non-owner reviewer for routine PRs;
-- branch protection/rulesets requiring CODEOWNERS review and passing status checks;
+- optional external reviewer for high-risk PRs;
+- branch protection/rulesets requiring passing status checks and preventing force-push/deletion;
 - documented release credential rotation after maintainer changes.
 
 ## Becoming a maintainer

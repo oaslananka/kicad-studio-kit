@@ -11,13 +11,13 @@
     "openssf_gap_analysis": "docs/openssf-gap-analysis.md",
     "proposal_links": "docs/openssf-proposal-links.md"
   },
-  "declared_target": "Professional OSS / Mature OSS",
+  "declared_target": "Solo-maintainer Professional OSS / Mature OSS",
   "gold_claim": "not_claimed",
   "gold_blockers": [
     "Branch protection is not active on main according to the GitHub API at the time of this audit.",
-    "Multiple independent active maintainers and human reviewers are not yet evidenced.",
-    "Sustained human PR review and two-person review are not yet evidenced.",
-    "Gold-level coverage and governance claims require further human confirmation."
+    "Gold/foundation-grade is not the current target for the solo-maintainer operating model.",
+    "Multiple independent maintainers, independent reviewers, and two-person review are future-only Gold requirements.",
+    "Gold-level coverage and governance claims require a separate future assessment."
   ],
   "last_reviewed": "2026-07-02"
 }
