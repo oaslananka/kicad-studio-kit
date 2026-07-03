@@ -139,13 +139,13 @@ The repository already has extensive architecture, release, testing, compatibili
 
 ## License/legal maturity
 
-| Criterion                                | Status                   | Evidence / action                                                                                      |
-| ---------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------ |
-| LICENSE                                  | Passed                   | MIT.                                                                                                   |
-| SPDX identifiers                         | Partial                  | License is clear, but per-file SPDX headers are not consistently evidenced.                            |
-| REUSE readiness                          | Missing                  | REUSE metadata is not yet implemented.                                                                 |
-| Third-party dependency license awareness | Partial                  | SBOM/release evidence exists; dependency license review should be automated or documented per release. |
-| NOTICE                                   | Needs human confirmation | MIT does not require a NOTICE by default, but bundled third-party notices may require review.          |
+| Criterion                                | Status  | Evidence / action                                                                                                  |
+| ---------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
+| LICENSE                                  | Passed  | MIT.                                                                                                               |
+| SPDX identifiers                         | Partial | Policy documented in `docs/legal/reuse-spdx-notice-assessment.md`; per-file headers are future optional work.      |
+| REUSE readiness                          | Partial | Assessment documented; full REUSE compliance is not claimed.                                                       |
+| Third-party dependency license awareness | Partial | SBOM/release evidence exists; dependency license review should be automated or documented per release.             |
+| NOTICE                                   | Passed  | No NOTICE file added because no current obligation was identified; add one only if a concrete requirement appears. |
 
 ## Security/supply-chain maturity
 
@@ -199,7 +199,7 @@ The following were intentionally not applied:
 
 1. Enable solo-safe `main` branch protection/ruleset with force-push/deletion protection and required status checks; do not require another human reviewer unless the maintainer wants that workflow.
 2. Keep solo-maintainer continuity documented; recruit another maintainer only if Gold/foundation-grade becomes a real goal.
-3. Add REUSE/SPDX per-file license policy and decide whether `NOTICE` is required.
+3. Optional future: implement full REUSE/SPDX automation if desired; current legal assessment is documented.
 4. Add historical CHAOSS metrics collection for issue response, PR review latency, and release cadence.
 5. Verify private vulnerability reporting, GitHub-native dependency alerts, secret scanning, and push protection settings.
 6. Evaluate standalone OSV scanner and Docker image scanning after baseline tuning.
@@ -210,8 +210,8 @@ The following were intentionally not applied:
 - #471 Enable enforced main branch protection for OSS maturity.
 - #472 Human PR review evidence is optional/future-only for Gold; closed as not required for solo-maintainer Professional OSS.
 - #473 Additional maintainer capacity is optional/future-only for Gold; closed as not required for solo-maintainer Professional OSS.
-- #474 Assess REUSE, SPDX, and NOTICE readiness.
-- #475 Confirm GitHub security settings for OpenSSF readiness.
+- #474 REUSE/SPDX/NOTICE assessment completed in `docs/legal/reuse-spdx-notice-assessment.md`.
+- #475 GitHub security settings confirmed in `docs/security/github-security-settings.md`.
 
 ## Next actions
 
