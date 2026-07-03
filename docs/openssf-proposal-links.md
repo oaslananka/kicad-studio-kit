@@ -28,6 +28,6 @@ Create or keep GitHub issues for:
 1. Branch protection/ruleset activation.
 2. Human PR review and CODEOWNERS enforcement.
 3. Additional maintainer recruitment.
-4. REUSE/SPDX readiness.
-5. Security settings confirmation.
+4. REUSE/SPDX readiness: `docs/legal/reuse-spdx-notice-assessment.md`.
+5. Security settings confirmation: `docs/security/github-security-settings.md`.
 6. Gold/foundation-grade gap tracking.

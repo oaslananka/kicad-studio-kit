@@ -15,14 +15,14 @@ The repository combines policy, automation, and evidence:
 
 ## Evidence
 
-| Claim                            | Evidence                                                                                 |
-| -------------------------------- | ---------------------------------------------------------------------------------------- |
-| Security reporting is documented | `SECURITY.md`.                                                                           |
-| Threat model exists              | `docs/security/threat-model.md`.                                                         |
-| Release integrity has controls   | `docs/security/release-integrity.md`, `publish-extension.yml`.                           |
-| Quality gates exist              | `package.json`, `.github/workflows/ci.yml`.                                              |
-| Supply-chain controls exist      | `renovate.json` and GitHub-native dependency alert/update configuration, `security.yml`. |
-| Governance exists                | `GOVERNANCE.md`, `MAINTAINERS.md`, `ROADMAP.md`.                                         |
+| Claim                            | Evidence                                                                                                                            |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Security reporting is documented | `SECURITY.md`.                                                                                                                      |
+| Threat model exists              | `docs/security/threat-model.md`.                                                                                                    |
+| Release integrity has controls   | `docs/security/release-integrity.md`, `publish-extension.yml`.                                                                      |
+| Quality gates exist              | `package.json`, `.github/workflows/ci.yml`.                                                                                         |
+| Supply-chain controls exist      | `renovate.json`, GitHub-native dependency alerts/security updates, `security.yml`, and `docs/security/github-security-settings.md`. |
+| Governance exists                | `GOVERNANCE.md`, `MAINTAINERS.md`, `ROADMAP.md`.                                                                                    |
 
 ## Residual risk
 
