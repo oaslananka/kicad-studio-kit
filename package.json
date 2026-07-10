@@ -2,7 +2,7 @@
   "name": "kicad-studio-kit",
   "version": "1.0.0",
   "private": true,
-  "description": "VS Code extension repository for KiCad Studio. The KiCad MCP Pro server is developed and released separately at oaslananka/kicad-mcp.",
+  "description": "VS Code extension repository for KiCad Studio. The KiCad MCP Pro server is developed and released separately at oaslananka/kicad-mcp-pro.",
   "license": "MIT",
   "packageManager": "pnpm@11.6.0",
   "engines": {

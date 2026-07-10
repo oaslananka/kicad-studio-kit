@@ -1,6 +1,6 @@
 # MCP Tool Catalog
 
-Machine-maintained from `kicad-mcp-pro` source in the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
+Machine-maintained from `kicad-mcp-pro` source in the [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) repository.
 
 Machine-maintained catalog. Refresh with `pnpm run docs:tools`.
 

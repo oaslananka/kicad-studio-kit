@@ -350,14 +350,14 @@ kicad10FeatureParity:
         status: "external"
         nativeSurface: "Python wheel and source distribution"
         productSurface: "PyPI trusted publishing, checksums, SBOM, and attestations"
-        externalRepo: "oaslananka/kicad-mcp"
-        notes: "MCP Python package publishing is owned by oaslananka/kicad-mcp."
+        externalRepo: "oaslananka/kicad-mcp-pro"
+        notes: "MCP Python package publishing is owned by oaslananka/kicad-mcp-pro."
       npm_tarball_provenance:
         status: "external"
         nativeSurface: "npm launcher tarball"
         productSurface: "npm provenance, checksum verification, and SBOM workflow"
-        externalRepo: "oaslananka/kicad-mcp"
-        notes: "MCP npm launcher publishing is owned by oaslananka/kicad-mcp."
+        externalRepo: "oaslananka/kicad-mcp-pro"
+        notes: "MCP npm launcher publishing is owned by oaslananka/kicad-mcp-pro."
   kicad11Readiness:
     protocol_upgrade:
       status: "future"

@@ -29,7 +29,7 @@ corepack pnpm run release:dry-run
 
 `release:dry-run:kicad-studio` validates the extension release-please package path, product changelog path, component tag naming, and that the extension is not linked to the MCP product version.
 
-MCP server release dry-runs are now owned by [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+MCP server release dry-runs are now owned by [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro).
 
 Protocol or tool-schema changes must update compatibility metadata and release notes for both products before publishing.
 
@@ -55,9 +55,9 @@ Do not configure package registry tokens for PyPI, TestPyPI, or npm. Those publi
 
 ## Trusted Publisher Setup
 
-PyPI and TestPyPI are now configured and published from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+PyPI and TestPyPI are now configured and published from [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro).
 
-Npm publishes for `kicad-mcp-pro` are now managed from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+Npm publishes for `kicad-mcp-pro` are now managed from [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro).
 
 Open VSX:
 
@@ -91,14 +91,14 @@ VS Code Marketplace:
 MCP Registry:
 
 - server name: `io.github.oaslananka/kicad-mcp-pro`
-- repo: `oaslananka/kicad-mcp`
+- repo: `oaslananka/kicad-mcp-pro`
 - workflow: `publish-mcp-registry.yml` (in kicad-mcp repo)
 - auth: GitHub OIDC
 
 GHCR:
 
 - image: `ghcr.io/oaslananka/kicad-mcp-pro`
-- repo: `oaslananka/kicad-mcp`
+- repo: `oaslananka/kicad-mcp-pro`
 - workflow: `publish-mcp-container.yml` (in kicad-mcp repo)
 - environment: `ghcr`
 - auth: built-in `GITHUB_TOKEN` with `packages: write`

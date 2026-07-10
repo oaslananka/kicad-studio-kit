@@ -2,7 +2,7 @@
 
 > **Purpose**: Single-source-of-truth for sequencing, verifying, and recovering
 > multi-product releases across the KiCad Studio Kit monorepo (`oaslananka/kicad-studio-kit`)
-> and its sibling dependency (`oaslananka/kicad-mcp`).
+> and its sibling dependency (`oaslananka/kicad-mcp-pro`).
 >
 > **Audience**: Maintainers performing or reviewing a release of any product surface.
 >
@@ -29,10 +29,10 @@ kicad-mcp (external repo)
 
 | Release surface      | Repository                    | Artifact(s)                          | Published from |
 | -------------------- | ----------------------------- | ------------------------------------ | -------------- |
-| Protocol schemas     | `oaslananka/kicad-mcp`        | `@oaslananka/kicad-protocol-schemas` | npm            |
-| MCP server (Python)  | `oaslananka/kicad-mcp`        | `kicad-mcp-pro` (PyPI)               | GitHub Actions |
-| MCP container        | `oaslananka/kicad-mcp`        | `ghcr.io/oaslananka/kicad-mcp-pro`   | GitHub Actions |
-| MCP Registry listing | `oaslananka/kicad-mcp`        | registry metadata                    | GitHub Actions |
+| Protocol schemas     | `oaslananka/kicad-mcp-pro`        | `@oaslananka/kicad-protocol-schemas` | npm            |
+| MCP server (Python)  | `oaslananka/kicad-mcp-pro`        | `kicad-mcp-pro` (PyPI)               | GitHub Actions |
+| MCP container        | `oaslananka/kicad-mcp-pro`        | `ghcr.io/oaslananka/kicad-mcp-pro`   | GitHub Actions |
+| MCP Registry listing | `oaslananka/kicad-mcp-pro`        | registry metadata                    | GitHub Actions |
 | VS Code extension    | `oaslananka/kicad-studio-kit` | VSIX (Marketplace + Open VSX)        | GitHub Actions |
 
 ### A.2 Sequencing rules
@@ -60,7 +60,7 @@ incompatible):
 
 ### A.3 Version-linked MCP product
 
-The Python MCP server source has moved to [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp). It was formerly version-linked with the npm launcher through Release Please `linked-versions`, which is no longer in use.
+The Python MCP server source has moved to [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro). It was formerly version-linked with the npm launcher through Release Please `linked-versions`, which is no longer in use.
 
 The VS Code extension is **not** version-linked to the MCP product. It
 releases independently from its own Release Please PR.
@@ -71,17 +71,17 @@ releases independently from its own Release Please PR.
 
 | Artifact                                          | Owned by                            | Release trigger                                         |
 | ------------------------------------------------- | ----------------------------------- | ------------------------------------------------------- |
-| `@oaslananka/kicad-protocol-schemas`              | `oaslananka/kicad-mcp`              | Release published (tag-based) + `workflow_dispatch`     |
-| PyPI `kicad-mcp-pro`                              | `oaslananka/kicad-mcp`              | Release Please + `publish-python.yml`                   |
-| `ghcr.io/oaslananka/kicad-mcp-pro`                | `oaslananka/kicad-mcp`              | MCP server GitHub Release + `publish-mcp-container.yml` |
-| MCP Registry `io.github.oaslananka/kicad-mcp-pro` | `oaslananka/kicad-mcp`              | MCP server GitHub Release + `publish-mcp-registry.yml`  |
+| `@oaslananka/kicad-protocol-schemas`              | `oaslananka/kicad-mcp-pro`              | Release published (tag-based) + `workflow_dispatch`     |
+| PyPI `kicad-mcp-pro`                              | `oaslananka/kicad-mcp-pro`              | Release Please + `publish-python.yml`                   |
+| `ghcr.io/oaslananka/kicad-mcp-pro`                | `oaslananka/kicad-mcp-pro`              | MCP server GitHub Release + `publish-mcp-container.yml` |
+| MCP Registry `io.github.oaslananka/kicad-mcp-pro` | `oaslananka/kicad-mcp-pro`              | MCP server GitHub Release + `publish-mcp-registry.yml`  |
 | VS Code Marketplace `oaslananka.kicadstudiokit`   | This repo (`apps/vscode-extension`) | Release Please + `publish-extension.yml`                |
 | Open VSX `oaslananka.kicadstudiokit`              | This repo (same VSIX)               | Same workflow, non-blocking after Marketplace           |
 
 ### B.2 No cross-repo publish
 
 This repo never publishes to another repo's registry. There is no publish
-workflow in `oaslananka/kicad-studio-kit` that pushes to an `oaslananka/kicad-mcp`
+workflow in `oaslananka/kicad-studio-kit` that pushes to an `oaslananka/kicad-mcp-pro`
 tag or release. Cross-repo coordination is limited to:
 
 - `compatibility.yaml` range declarations.
@@ -139,13 +139,13 @@ corepack pnpm run check:release-please
 ```
 
 Run `kicad-mcp-pro` dry-runs from the
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
+[oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) repository.
 
 See [Product Dry Runs](publishing.md#product-dry-runs) for what each validates.
 
 ### C.3 Pre-publish checks (per release PR)
 
-**For a kicad-mcp-pro release PR (in `oaslananka/kicad-mcp`):**
+**For a kicad-mcp-pro release PR (in `oaslananka/kicad-mcp-pro`):**
 
 - [ ] `pyproject.toml` version bumped (Release Please handles this).
 - [ ] `CHANGELOG.md` written (Release Please handles this).

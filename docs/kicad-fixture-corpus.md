@@ -58,7 +58,7 @@ corepack pnpm run check
 ```
 
 Real KiCad CLI contract lanes consume the same corpus from the
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository,
+[oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) repository,
 where the CLI harness now lives.
 
 ## Fixture Coverage

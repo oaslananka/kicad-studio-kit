@@ -2,7 +2,7 @@
 
 This threat model covers the KiCad Studio VS Code extension (this repository).
 The MCP server is threat-modeled separately in
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp); here we model
+[oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro); here we model
 only the extension-side surface and the client-side MCP integration.
 
 Each mitigation links to the code and tests that enforce it. The

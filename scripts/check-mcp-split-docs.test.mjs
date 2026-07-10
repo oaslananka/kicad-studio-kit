@@ -41,7 +41,7 @@ test("#396 corrected wording is not flagged", () => {
     "VS Code extension repository for KiCad Studio. The KiCad MCP Pro server is developed and released separately.",
     "KiCad Studio and KiCad MCP Pro are independent products released from separate repositories.",
     "This repository releases one product — the KiCad Studio VS Code extension.",
-    "The MCP server and npm launcher live in oaslananka/kicad-mcp.",
+    "The MCP server and npm launcher live in oaslananka/kicad-mcp-pro.",
   ];
   for (const line of cleanLines) {
     assert.equal(scanLine(line).length, 0, `unexpected flag for: ${line}`);

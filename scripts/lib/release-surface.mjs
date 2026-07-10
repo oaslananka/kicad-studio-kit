@@ -56,7 +56,7 @@ This repository's local release surface is:
 - VS Code extension: \`oaslananka.kicadstudiokit\` (\`${version}\`)
 
 The Python package \`kicad-mcp-pro\`, container image, and MCP Registry listing
-are released from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+are released from [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro).
 ${README_MARKER_END}`;
 }
 

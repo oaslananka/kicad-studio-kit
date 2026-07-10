@@ -83,7 +83,7 @@ The regression tests cover both sides:
 
 ```bash
 corepack pnpm --filter kicadstudiokit exec jest test/unit/telemetry.test.ts --runInBand --coverage=false
-See the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository for MCP server telemetry tests.
+See the [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) repository for MCP server telemetry tests.
 ```
 
 These tests prove telemetry disabled means no outbound extension send and no MCP

@@ -48,7 +48,7 @@ This repository contains:
 
 The KiCad MCP Pro server (`kicad-mcp-pro`) — its Python source, npm launcher,
 container image, and MCP Registry listing — lives in
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+[oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro).
 
 ## Repository maturity and standards
 
@@ -64,7 +64,7 @@ This repository's local release surface is:
 - VS Code extension: `oaslananka.kicadstudiokit` (`1.9.4`)
 
 The Python package `kicad-mcp-pro`, container image, and MCP Registry listing
-are released from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+are released from [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro).
 <!-- release-surface:end -->
 
 ## KiCad Compatibility
@@ -101,7 +101,7 @@ corepack pnpm run check:dev-doctor
 ```
 
 Python/MCP server checks run from the
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
+[oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) repository.
 
 For a reproducible VS Code Dev Containers or GitHub Codespaces environment, use
 the checked-in [devcontainer configuration](docs/devcontainer.md). The container

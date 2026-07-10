@@ -46,7 +46,7 @@ const requiredPhrases = [
   "corepack pnpm run package:kicad-studio",
   "corepack pnpm run check:protocol-schemas",
   "corepack pnpm run check:compatibility-contract",
-  "Run from the `oaslananka/kicad-mcp` repository",
+  "Run from the `oaslananka/kicad-mcp-pro` repository",
   "corepack pnpm run check:performance-budgets",
   "corepack pnpm run check:ci-lanes",
   "corepack pnpm run check:kicad-gui-smoke",

@@ -43,7 +43,7 @@ pnpm run test:unit:coverage
 
 - All 3 OS (ubuntu, windows, macos) run the full unit/build/package suite.
 - Real-pair compatibility runs on ubuntu-24.04 against the local
-  MCP server checkout (from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)).
+  MCP server checkout (from [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro)).
 - Real-pair CI launches a VS Code Extension Development Host under `xvfb-run`
   and runs KiCad Studio commands against the local MCP endpoint.
 - Playwright real-pair smoke captures VS Code host screenshots/logs for failure

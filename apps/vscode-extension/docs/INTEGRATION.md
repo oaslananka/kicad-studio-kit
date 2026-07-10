@@ -17,5 +17,5 @@ The extension checks:
 ## Canonical Links
 
 - Repository: https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension
-- MCP server: https://github.com/oaslananka/kicad-mcp
+- MCP server: https://github.com/oaslananka/kicad-mcp-pro
 - Manufacturing export docs: https://oaslananka.github.io/kicad-studio-kit/workflows/manufacturing-export/

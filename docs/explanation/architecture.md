@@ -11,7 +11,7 @@ This repository owns:
 - shared test fixtures and contract metadata;
 - release evidence for the VS Code extension.
 
-The MCP server implementation is released separately from `oaslananka/kicad-mcp`.
+The MCP server implementation is released separately from `oaslananka/kicad-mcp-pro`.
 
 ## Architectural controls
 

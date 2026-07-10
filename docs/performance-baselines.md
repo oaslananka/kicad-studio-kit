@@ -24,7 +24,7 @@ value. CI-required metrics fail closed when a producer does not emit them.
 PR enforcement uses the GitHub-hosted `ubuntu-24.04` x64 runner from
 `.github/workflows/ci.yml` as the reference machine. That lane reads the
 repository-pinned Node version from `.node-version` and the MCP Python toolchain
-selection from the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
+selection from the [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) repository.
 
 The catalog still records platform-specific activation budgets for Windows and
 macOS/Linux because those budgets are product requirements. Cross-platform

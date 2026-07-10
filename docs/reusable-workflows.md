@@ -3,7 +3,7 @@
 This repository keeps local workflow files for CI, release, security, and
 extension publishing until a portfolio reusable-workflow source is available to
 this repo. PyPI, npm, container, and MCP Registry publishing for `kicad-mcp-pro`
-live in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+live in [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro).
 
 ## Portfolio Source Check
 
@@ -37,7 +37,7 @@ Do not move PyPI publishing into a reusable workflow in the repository that owns
 the PyPI package. PyPI Trusted Publishing currently requires the trusted
 publishing step to live in the non-reusable workflow file that is registered on
 PyPI, so `publish-python.yml` must keep the final `pypa/gh-action-pypi-publish`
-jobs local to [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+jobs local to [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro).
 
 When reusable workflow entrypoints become available, migrate one concern per PR
 and keep each caller workflow pinned to an immutable ref or a maintained release

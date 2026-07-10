@@ -22,10 +22,10 @@ Adopt a contract-first integration model:
 1. **Compatibility metadata** — All integration surfaces are declared in
    `compatibility.yaml` at the repository root, with matching assertions in
    the extension (`apps/vscode-extension/src/mcp/compatibilityMatrix.ts`) and
-   the MCP server (`oaslananka/kicad-mcp/src/kicad_mcp/compatibility.py`).
+   the MCP server (`oaslananka/kicad-mcp-pro/src/kicad_mcp/compatibility.py`).
 
 2. **MCP manifests** — The MCP server declares its capabilities through
-   `mcp.json` and `server.json` under the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository. The extension
+   `mcp.json` and `server.json` under the [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) repository. The extension
    reads these manifests at runtime to determine which tools and features
    are available.
 
@@ -37,7 +37,7 @@ Adopt a contract-first integration model:
 4. **Contract checks** — `corepack pnpm run check:protocol-schemas` and
    `corepack pnpm run check:compatibility-contract` validate the extension-side
    protocol schema and compatibility metadata. MCP server contract checks run in
-   [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+   [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro).
 
 5. **Protocol change checklist** — The PR template requires a protocol impact
    section. The full checklist is documented in

@@ -4,7 +4,7 @@ KiCad Studio Kit is the VS Code extension repository for KiCad Studio. It owns t
 extension (`apps/vscode-extension`), private shared test infrastructure, examples,
 governance docs, and the extension-side MCP integration contract. The KiCad MCP Pro
 server is developed and released separately in
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) — see
+[oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) — see
 [ADR 0009](../adr/0009-split-kicad-mcp-pro-into-separate-repository.md).
 
 ## Core Architecture Docs

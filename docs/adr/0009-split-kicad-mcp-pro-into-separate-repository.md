@@ -8,7 +8,7 @@ Date: 2026-06-01 (updated 2026-06-02 — Phase 2 completed)
 
 Phase 2 of this ADR is complete. All local MCP source (`packages/mcp-server`,
 `packages/mcp-npm`) has been removed from this monorepo. Protocol schemas are
-published from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+published from [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro).
 Cross-repo compatibility is enforced by the compatibility canary and contract
 automation. See companion issues #286, #287, #288, #295, #290 for execution details.
 
@@ -50,7 +50,7 @@ decoupling, sharing a single repository creates friction:
    ADR supersedes that restriction for the MCP product.
 
 The MCP ecosystem is growing independently of VS Code extensions. A dedicated
-`oaslananka/kicad-mcp` repository will give the MCP product its own identity,
+`oaslananka/kicad-mcp-pro` repository will give the MCP product its own identity,
 CI/CD, issue tracker, and release cadence — matching how its consumers
 (Claude Code, Cursor, etc.) discover and reference it.
 
@@ -69,7 +69,7 @@ CI/CD, issue tracker, and release cadence — matching how its consumers
 
 ## Decision
 
-Split kicad-mcp-pro into `oaslananka/kicad-mcp` using
+Split kicad-mcp-pro into `oaslananka/kicad-mcp-pro` using
 a two-phase approach.
 
 ### Phase 1: Planning (this ADR + companion issues)
@@ -86,7 +86,7 @@ Artifacts:
 
 All Phase 2 items are complete:
 
-1. **`oaslananka/kicad-mcp`** — created with branch protection, CODEOWNERS,
+1. **`oaslananka/kicad-mcp-pro`** — created with branch protection, CODEOWNERS,
    and repository settings.
 2. **Product code forked** — `packages/mcp-server/` and `packages/mcp-npm/`
    copied (with history) into the new repo, then removed from this monorepo.
@@ -111,7 +111,7 @@ All Phase 2 items are complete:
 
 - **Independent CI/CD** — MCP PRs run only MCP checks; extension PRs run only
   extension checks. Faster feedback loops for both teams.
-- **Clear identity** — `oaslananka/kicad-mcp` is discoverable by MCP
+- **Clear identity** — `oaslananka/kicad-mcp-pro` is discoverable by MCP
   ecosystem users who have no interest in VS Code extensions.
 - **Simplified release-please** — each repo has a single product (extension
   or mcp-server), eliminating scope-enforcement complexity.
@@ -238,7 +238,7 @@ of the other product:
 
 1. **Before kicad-mcp-pro release**: CI installs latest published
    `kicadstudiokit` VSIX and runs the compatibility contract checks from
-   [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+   [oaslananka/kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro).
 2. **Before kicad-studio release**: CI installs latest published
    `kicad-mcp-pro` from PyPI/npm and runs compatibility checks.
 3. **Breaking protocol changes**: Must release kicad-mcp-pro first (with

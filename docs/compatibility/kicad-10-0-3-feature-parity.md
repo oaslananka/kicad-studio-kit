@@ -24,8 +24,8 @@ Status vocabulary:
 | `cadstar`     | `supported` | Extension command is probe-gated by CLI help.                                                                   | `apps/vscode-extension/test/unit/importCommands.test.ts`                                      |
 | `eagle`       | `supported` | Extension command is probe-gated by CLI help.                                                                   | `apps/vscode-extension/test/unit/importCommands.test.ts`                                      |
 | `fabmaster`   | `supported` | Extension command is probe-gated by CLI help.                                                                   | `apps/vscode-extension/test/unit/importCommands.test.ts`                                      |
-| `geda_lepton` | `supported` | Extension and MCP support require the installed CLI to advertise `geda`.                                        | `oaslananka/kicad-mcp` — `tests/integration/test_manufacturing_tools.py`                      |
-| `pads`        | `supported` | Extension, MCP, fixture, and canary coverage exercise the PADS import boundary.                                 | `oaslananka/kicad-mcp` — `tests/unit/test_kicad_canary.py`                                    |
+| `geda_lepton` | `supported` | Extension and MCP support require the installed CLI to advertise `geda`.                                        | `oaslananka/kicad-mcp-pro` — `tests/integration/test_manufacturing_tools.py`                      |
+| `pads`        | `supported` | Extension, MCP, fixture, and canary coverage exercise the PADS import boundary.                                 | `oaslananka/kicad-mcp-pro` — `tests/unit/test_kicad_canary.py`                                    |
 | `pcad`        | `supported` | Extension command is probe-gated by CLI help.                                                                   | `apps/vscode-extension/test/unit/importCommands.test.ts`                                      |
 | `solidworks`  | `supported` | Extension command is probe-gated by CLI help.                                                                   | `apps/vscode-extension/test/unit/importCommands.test.ts`                                      |
 
@@ -33,21 +33,21 @@ Status vocabulary:
 
 | Feature id | State       | Product boundary                                                                        | Evidence or issue                                  |
 | ---------- | ----------- | --------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `gerber`   | `supported` | MCP manufacturing and extension export workflows depend on the KiCad CLI Gerber export. | `oaslananka/kicad-mcp` — `scripts/kicad_canary.py` |
+| `gerber`   | `supported` | MCP manufacturing and extension export workflows depend on the KiCad CLI Gerber export. | `oaslananka/kicad-mcp-pro` — `scripts/kicad_canary.py` |
 
-| `drill` | `supported` | MCP manufacturing and extension export workflows depend on the KiCad CLI drill export. | `oaslananka/kicad-mcp` — `scripts/kicad_canary.py` |
+| `drill` | `supported` | MCP manufacturing and extension export workflows depend on the KiCad CLI drill export. | `oaslananka/kicad-mcp-pro` — `scripts/kicad_canary.py` |
 
-| `pdf` | `supported` | Schematic and PCB PDF exports are part of the primary KiCad canary plan. | `oaslananka/kicad-mcp` — `tests/unit/test_kicad_canary.py` |
+| `pdf` | `supported` | Schematic and PCB PDF exports are part of the primary KiCad canary plan. | `oaslananka/kicad-mcp-pro` — `tests/unit/test_kicad_canary.py` |
 
-| `ipc2581` | `supported` | Extension command and MCP `export_ipc2581` tool both expose the export. | `oaslananka/kicad-mcp` — `tests/integration/test_pcb_export_validation_surface.py` |
+| `ipc2581` | `supported` | Extension command and MCP `export_ipc2581` tool both expose the export. | `oaslananka/kicad-mcp-pro` — `tests/integration/test_pcb_export_validation_surface.py` |
 
-| `odbpp` | `supported` | Extension command and MCP `export_odb` tool expose ODB++ behind capability checks. | `oaslananka/kicad-mcp` — `tests/integration/test_export_tools.py` |
+| `odbpp` | `supported` | Extension command and MCP `export_odb` tool expose ODB++ behind capability checks. | `oaslananka/kicad-mcp-pro` — `tests/integration/test_export_tools.py` |
 
-| `step` | `supported` | MCP `export_step` and `export_3d_step` tools cover the KiCad CLI STEP export. | `oaslananka/kicad-mcp` — `tests/integration/test_export_tools.py` |
+| `step` | `supported` | MCP `export_step` and `export_3d_step` tools cover the KiCad CLI STEP export. | `oaslananka/kicad-mcp-pro` — `tests/integration/test_export_tools.py` |
 
-| `stepz` | `supported` | MCP `export_stepz` exposes KiCad's `stpz` CLI export for headless STEPZ/GZIP-compressed STEP output. | `oaslananka/kicad-mcp` — `tests/integration/test_export_tools.py` |
+| `stepz` | `supported` | MCP `export_stepz` exposes KiCad's `stpz` CLI export for headless STEPZ/GZIP-compressed STEP output. | `oaslananka/kicad-mcp-pro` — `tests/integration/test_export_tools.py` |
 
-| `xao` | `supported` | MCP `export_xao` exposes the KiCad CLI XAO export for headless interchange workflows. | `oaslananka/kicad-mcp` — `tests/integration/test_export_tools.py` |
+| `xao` | `supported` | MCP `export_xao` exposes the KiCad CLI XAO export for headless interchange workflows. | `oaslananka/kicad-mcp-pro` — `tests/integration/test_export_tools.py` |
 
 ## GUI Editor
 
@@ -56,15 +56,15 @@ Status vocabulary:
 | `design_blocks`             | `supported`      | Product support is headless through parser coverage and MCP `pcb_block_*` tools.                                       | `apps/vscode-extension/test/unit/sExpressionParser.test.ts`        |
 | `graphical_drc_rule_editor` | `not-applicable` | The native GUI editor remains a KiCad-owned surface; product support is textual `.kicad_dru` guidance and diagnostics. | `apps/vscode-extension/test/unit/drcRulesProvider.test.ts`         |
 | `variants`                  | `supported`      | Extension variants view and MCP `variant_*` tools cover list, activation, diff, and export integration.                | `apps/vscode-extension/test/unit/variantProvider.test.ts`          |
-| `barcode_support`           | `supported`      | MCP `pcb_add_barcode` supports headless barcode insertion; visual editing stays in KiCad.                              | `oaslananka/kicad-mcp` — `tests/unit/test_kicad10_parity_tools.py` |
+| `barcode_support`           | `supported`      | MCP `pcb_add_barcode` supports headless barcode insertion; visual editing stays in KiCad.                              | `oaslananka/kicad-mcp-pro` — `tests/unit/test_kicad10_parity_tools.py` |
 
-| `time_domain_tuning` | `supported` | MCP tuning helpers model and validate routing intent; the native interactive routing UX remains KiCad-owned. | `oaslananka/kicad-mcp` — `tests/integration/test_routing_tools.py` |
+| `time_domain_tuning` | `supported` | MCP tuning helpers model and validate routing intent; the native interactive routing UX remains KiCad-owned. | `oaslananka/kicad-mcp-pro` — `tests/integration/test_routing_tools.py` |
 
 ## IPC
 
 | Feature id                      | State       | Product boundary                                                                       | Evidence or issue                                                   |
 | ------------------------------- | ----------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `kicad_python_ipc`              | `supported` | KiCad IPC is the supported live-editor direction for current and future KiCad lines.   | `oaslananka/kicad-mcp` — `tests/gui/test_kicad_gui_live_context.py` |
+| `kicad_python_ipc`              | `supported` | KiCad IPC is the supported live-editor direction for current and future KiCad lines.   | `oaslananka/kicad-mcp-pro` — `tests/gui/test_kicad_gui_live_context.py` |
 | `swig_pcbnew_direct_dependency` | `blocked`   | Production direct `pcbnew` imports are forbidden because SWIG bindings are deprecated. | [#197](https://github.com/oaslananka/kicad-studio-kit/issues/197)   |
 
 ## Product Surfaces
@@ -73,7 +73,7 @@ Status vocabulary:
 | --------------------------------- | ----------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | `status_surface`                  | `supported` | The extension status bar and command menu expose detected KiCad line and feature gates. | `apps/vscode-extension/test/unit/kicadCliSupport.test.ts`          |
 | `importer_command_gating`         | `supported` | Import commands are unavailable until the matching CLI capability probe passes.         | `apps/vscode-extension/test/unit/importCommands.test.ts`           |
-| `server_info_capability_contract` | `supported` | MCP server-info compatibility and capability payloads are schema and docs gated.        | `oaslananka/kicad-mcp` — `tests/unit/test_server_info_contract.py` |
+| `server_info_capability_contract` | `supported` | MCP server-info compatibility and capability payloads are schema and docs gated.        | `oaslananka/kicad-mcp-pro` — `tests/unit/test_server_info_contract.py` |
 | `empty_project_read_tools`        | `partial`   | File-backed empty-project behavior is tracked outside this matrix.                      | [#228](https://github.com/oaslananka/kicad-studio-kit/issues/228)  |
 | `ipc_state_consistency`           | `partial`   | IPC lifecycle consistency is tracked in the MCP compatibility milestone.                | [#223](https://github.com/oaslananka/kicad-studio-kit/issues/223)  |
 
@@ -82,8 +82,8 @@ Status vocabulary:
 | Feature id               | State       | Product boundary                                                                        | Evidence or issue                         |
 | ------------------------ | ----------- | --------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `vsix_provenance`        | `supported` | VSIX release evidence includes checksums, SBOM, and artifact attestations.              | `.github/workflows/publish-extension.yml` |
-| `wheel_provenance`       | `supported` | Python release evidence includes checksums, SBOM, trusted publishing, and attestations. | `oaslananka/kicad-mcp/.github/workflows/publish-python.yml` |
-| `npm_tarball_provenance` | `supported` | npm launcher release evidence includes checksums, SBOM, and provenance.                 | `oaslananka/kicad-mcp` release workflows  |
+| `wheel_provenance`       | `supported` | Python release evidence includes checksums, SBOM, trusted publishing, and attestations. | `oaslananka/kicad-mcp-pro/.github/workflows/publish-python.yml` |
+| `npm_tarball_provenance` | `supported` | npm launcher release evidence includes checksums, SBOM, and provenance.                 | `oaslananka/kicad-mcp-pro` release workflows  |
 
 ## KiCad 11 Readiness
 
@@ -92,8 +92,8 @@ KiCad 11 readiness is represented separately from KiCad 10.0.3 parity:
 | Feature id           | State       | Product boundary                                                                                   | Evidence or issue                                                 |
 | -------------------- | ----------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | `protocol_upgrade`   | `future`    | MCP protocol and KiCad 11 support planning remain separate from the stable KiCad 10 gate.          | [#197](https://github.com/oaslananka/kicad-studio-kit/issues/197) |
-| `nightly_canary`     | `supported` | Manual nightly canary commands track prerelease behavior without changing the stable support line. | `oaslananka/kicad-mcp` KiCad canary suite                         |
-| `swig_removal_guard` | `supported` | The direct-`pcbnew` guard keeps production code away from APIs planned for removal.                | `oaslananka/kicad-mcp` — `scripts/check_no_pcbnew.py`             |
+| `nightly_canary`     | `supported` | Manual nightly canary commands track prerelease behavior without changing the stable support line. | `oaslananka/kicad-mcp-pro` KiCad canary suite                         |
+| `swig_removal_guard` | `supported` | The direct-`pcbnew` guard keeps production code away from APIs planned for removal.                | `oaslananka/kicad-mcp-pro` — `scripts/check_no_pcbnew.py`             |
 
 ## Validation
 
