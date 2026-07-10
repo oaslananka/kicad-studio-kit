@@ -89,7 +89,7 @@ function checkCompatibilityYamlReferences(errors) {
   if (!content.includes("protocolVersion:")) {
     errors.push("compatibility.yaml: missing mcp.protocolVersion");
   }
-  // kicad-mcp-pro is now owned by oaslananka/kicad-mcp repo; no longer
+  // kicad-mcp-pro is now owned by KiCad MCP Pro repo; no longer
   // expected in compatibility.yaml in this monorepo.
   if (!content.includes("products:")) {
     errors.push("compatibility.yaml: missing products: section");

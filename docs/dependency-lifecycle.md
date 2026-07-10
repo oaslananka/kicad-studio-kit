@@ -24,7 +24,7 @@ Every update PR should keep the base labels `dependencies` and `dependency-lifec
 Product impact labels:
 
 - `product:vscode-extension` for `apps/vscode-extension`.
-- `product:mcp-server` for `oaslananka/kicad-mcp` (MCP server source in a separate repository).
+- `product:mcp-server` for KiCad MCP Pro (MCP server source in a separate repository).
 - `product:repo` for root workspace tooling, CI, release, docs, and governance.
 
 Risk labels:
@@ -61,7 +61,7 @@ corepack pnpm run check:version
 Product-specific checks:
 
 - Extension updates: `corepack pnpm --filter kicadstudiokit run check`.
-- MCP server updates: see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+- MCP server updates: see [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/).
 - Root, CI, or release updates: root checks plus affected workflow commands.
 
 Compatibility-sensitive updates must also run the relevant contract or fixture tests before merge. If support boundaries change, update `compatibility.yaml`, [support-matrix.md](support-matrix.md), and the nearest release note in the same PR.

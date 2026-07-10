@@ -5,8 +5,8 @@
 - Canonical repository: `https://github.com/oaslananka/kicad-studio-kit`
 - CI, tests, docs, security scans, labels, release drafting, and publishing workflows run from this repository only.
 - The VS Code extension root is `apps/vscode-extension`.
-- The Python MCP server source lives at [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) (removed from this monorepo).
-- The npm launcher root was `packages/mcp-npm` (now migrated to `oaslananka/kicad-mcp`).
+- The Python MCP server source lives at [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) (removed from this monorepo).
+- The npm launcher root was `packages/mcp-npm` (now migrated to KiCad MCP Pro).
 
 Release and publish jobs should rely on GitHub environments and least-privilege workflow permissions. Do not add secondary repository guards, repository sync jobs, or alternate publish remotes.
 

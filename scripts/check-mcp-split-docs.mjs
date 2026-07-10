@@ -2,7 +2,7 @@
 
 // Guards against reintroducing pre-split "MCP monorepo" language that presents
 // this repository as the home of the KiCad MCP Pro server. The server source
-// moved to oaslananka/kicad-mcp (ADR 0009); this repository owns only the VS
+// moved to KiCad MCP Pro (ADR 0009); this repository owns only the VS
 // Code extension and the extension-side MCP integration contract.
 //
 // Historical records that legitimately describe the old monorepo state — ADRs,
@@ -68,7 +68,7 @@ export function isHistorical(relativePath) {
 export const FORBIDDEN_PHRASES = [
   {
     pattern: /Monorepo for KiCad Studio VS Code extension and KiCad MCP Pro/iu,
-    hint: "Describe this repository as the VS Code extension repo; the MCP server is released from oaslananka/kicad-mcp.",
+    hint: "Describe this repository as the VS Code extension repo; the MCP server is released from KiCad MCP Pro.",
   },
   {
     pattern: /independent products in one repository/iu,
@@ -80,7 +80,7 @@ export const FORBIDDEN_PHRASES = [
   },
   {
     pattern: /the Python MCP server, the npm launcher/iu,
-    hint: "The MCP server and npm launcher live in oaslananka/kicad-mcp, not this repository.",
+    hint: "The MCP server and npm launcher live in KiCad MCP Pro, not this repository.",
   },
 ];
 
@@ -133,7 +133,7 @@ function main() {
   const hits = findMonorepoLanguage();
   if (hits.length > 0) {
     console.error(
-      "Stale MCP-monorepo language found (the MCP server lives in oaslananka/kicad-mcp; see ADR 0009):",
+      "Stale MCP-monorepo language found (the MCP server lives in KiCad MCP Pro; see ADR 0009):",
     );
     for (const hit of hits) {
       console.error(`- ${hit.file}:${hit.line}: ${hit.snippet}`);

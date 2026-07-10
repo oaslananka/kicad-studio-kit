@@ -58,6 +58,7 @@ const rawPatterns = [
   "github\\.com/oaslananka/kicad-" + "mcp-pro",
   "oaslananka/kicad-" + "studio(?!-kit)",
   "(?<![@.])oaslananka/kicad-" + "mcp-pro",
+  "oaslananka/kicad-" + "mcp(?![-\\w])",
   "depend" + "abot",
 ];
 const patterns = rawPatterns.map((pattern) => [

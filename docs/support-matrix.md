@@ -52,7 +52,7 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 The product version and runtime ranges above describe the **VS Code extension**,
 which is the only product released from this repository. The MCP server is
 released separately from
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) (see
+[KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) (see
 [ADR 0009](adr/0009-split-kicad-mcp-pro-into-separate-repository.md)), so this
 matrix does not track MCP server source compatibility.
 
@@ -64,7 +64,7 @@ of `kicad-mcp-pro` server versions the extension is built and tested against.
 | KiCad Studio extension version and runtime ranges | this repository | `apps/vscode-extension/package.json`, `compatibility.yaml` |
 | Required compatible `kicad-mcp-pro` range (client contract) | this repository | `compatibility.yaml` `products.kicad-studio.compatibleMcpPro` |
 | MCP protocol / tool schema revisions | shared contract | `compatibility.yaml` `mcp`, `@oaslananka/kicad-protocol-schemas` |
-| MCP server implementation compatibility | [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) | that repository's `compatibility.yaml` |
+| MCP server implementation compatibility | [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) | that repository's `compatibility.yaml` |
 
 The compatible-server range is validated against the extension's embedded
 metadata and the last published server version by
@@ -132,11 +132,11 @@ protecting users on the stable line while maintainers test the next major line.
 | Readiness item         | Current contract                                                                                                                           |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | Stable baseline        | KiCad 10.0.x remains primary and release-blocking.                                                                                         |
-| Direct SWIG imports    | Production `pcbnew` imports are forbidden by a guard script in the [`oaslananka/kicad-mcp`](https://github.com/oaslananka/kicad-mcp) repo. |
+| Direct SWIG imports    | Production `pcbnew` imports are forbidden by a guard script in the [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repo. |
 | Allowed `pcbnew` paths | Guarded by the kicad-mcp repository.                                                                                                       |
 | IPC parity matrix      | `compatibility.yaml` `kicadIpcReadiness.ipcApi.requiredFor`.                                                                               |
-| Current nightly smoke  | Run from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) with a configured nightly `kicad-cli`.                            |
-| KiCad 11 RC smoke      | Run from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) once the installed prerelease reports `11.0.x`.                   |
+| Current nightly smoke  | Run from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) with a configured nightly `kicad-cli`.                            |
+| KiCad 11 RC smoke      | Run from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) once the installed prerelease reports `11.0.x`.                   |
 | Migration guide        | [`docs/compatibility/kicad-10-to-11-migration.md`](compatibility/kicad-10-to-11-migration.md).                                             |
 
 Status surfaces:
@@ -208,7 +208,7 @@ VS Code:
 
 Python:
 
-- `requires-python` in the kicad-mcp-pro source (see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)) is the MCP server install-time floor.
+- `requires-python` in the kicad-mcp-pro source (see [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)) is the MCP server install-time floor.
 - The supported Python window is two minor versions wide for the current stable product line.
 - The current product line tracks the official two-minor bugfix window: Python 3.13 and 3.14.
   The drift workflow opens a tracking issue when the official bugfix window moves again.
@@ -231,7 +231,7 @@ Authoritative drift sources are declared in `compatibility.yaml` under `runtimeP
 
 ## Automated Drift Detection
 
-Runtime drift is enforced by scripts in the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
+Runtime drift is enforced by scripts in the [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository.
 
 Pull requests run local policy checks that:
 

@@ -2,7 +2,7 @@
 
 `@oaslananka/kicad-fixtures` owns the deterministic KiCad fixture corpus for
 OASLANA-53 / GitHub issue #54. The package is private to this monorepo and is
-intended for tests in `apps/vscode-extension`, the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) MCP server, shared
+intended for tests in `apps/vscode-extension`, the [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) MCP server, shared
 test harnesses, and future contract/visual test packages.
 
 ## Layout

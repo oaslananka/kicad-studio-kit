@@ -53,7 +53,7 @@ tests are supported where the host container runtime permits nested Electron and
 browser processes. The image includes `xvfb`, Playwright Linux dependencies, and
 the VS Code extension test dependencies installed from the root lockfile.
 
-MCP server tests are now run from the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.`
+MCP server tests are now run from the [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository.`
 
 ## KiCad Limitations
 

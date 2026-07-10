@@ -6,7 +6,7 @@ cross-repo compatibility coverage for the external MCP server:
 | Workspace                                                                        | Product role                                        | Public surface                                         |
 | -------------------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------ |
 | `apps/vscode-extension`                                                          | KiCad Studio VS Code and Open VSX extension         | `oaslananka.kicadstudiokit`                            |
-| (external — see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)) | KiCad MCP Pro Python server and MCP Registry source | `kicad-mcp-pro` / `io.github.oaslananka/kicad-mcp-pro` |
+| (external — see [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)) | KiCad MCP Pro Python server and MCP Registry source | `kicad-mcp-pro` / `io.github.oaslananka/kicad-mcp-pro` |
 
 | `packages/test-harness` | Private shared test utilities | Not published |
 
@@ -49,7 +49,7 @@ The root package is `private: true` and is never published.
 
 Extension-only changes belong under `apps/vscode-extension` unless they update root CI, docs, or release metadata.
 
-MCP server changes now live in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp);
+MCP server changes now live in [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/);
 this repository owns only the extension-side MCP integration contract. See
 [ADR 0009](../adr/0009-split-kicad-mcp-pro-into-separate-repository.md) for the
 split rationale.
@@ -58,7 +58,7 @@ split rationale.
 
 Shared contracts are consumed from
 [`@oaslananka/kicad-protocol-schemas`](https://www.npmjs.com/package/@oaslananka/kicad-protocol-schemas)
-(published from [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)).
+(published from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)).
 See the [schema release lifecycle](../protocol-schemas.md#release-lifecycle) for
 the cross-repo release process and CI validation gates.
 Shared test utilities live under

@@ -80,7 +80,7 @@ function checkCompatibilityYaml() {
   try {
     const raw = readFileSync(yamlPath, "utf8");
 
-    // kicad-mcp-pro is external (oaslananka/kicad-mcp); no local product section.
+    // kicad-mcp-pro is external (KiCad MCP Pro); no local product section.
     // The extension declares compatibleMcpPro range in kicad-studio section.
     if (raw.includes("compatibleMcpPro:")) {
       ok(

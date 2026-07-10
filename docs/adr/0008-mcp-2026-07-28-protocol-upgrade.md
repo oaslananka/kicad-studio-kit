@@ -164,7 +164,7 @@ Target: All groundwork done so upgrade is a SDK-bump + validation.
 7. **Update `check_compatibility_matrix.py`**: add 2026-07-28 protocol matrix
    entry.
 8. **Add CI protocol contract checks** to the extension canary and the
-   [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) server
+   [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) server
    canary.
 
 ### Phase 2: Feature Adoption (Post SDK upgrade)
@@ -203,38 +203,38 @@ Target: All groundwork done so upgrade is a SDK-bump + validation.
 
 | File                                         | Change                          |
 | -------------------------------------------- | ------------------------------- |
-| (in `oaslananka/kicad-mcp`) `pyproject.toml` | Bump MCP SDK dependency version |
+| (in KiCad MCP Pro) `pyproject.toml` | Bump MCP SDK dependency version |
 
-| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/compatibility.py` | Change `MCP_PROTOCOL_VERSION` to `"2026-07-28"` |
+| (in KiCad MCP Pro) `src/kicad_mcp/compatibility.py` | Change `MCP_PROTOCOL_VERSION` to `"2026-07-28"` |
 
-| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/server_info.py` | Update `SERVER_INFO_SCHEMA_VERSION`; review `get_server_info_contract()` |
+| (in KiCad MCP Pro) `src/kicad_mcp/server_info.py` | Update `SERVER_INFO_SCHEMA_VERSION`; review `get_server_info_contract()` |
 
-| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/wellknown.py` | Update protocol version in well-known card |
+| (in KiCad MCP Pro) `src/kicad_mcp/wellknown.py` | Update protocol version in well-known card |
 
-| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/config.py` | Update transport config if SDK changes transport model |
+| (in KiCad MCP Pro) `src/kicad_mcp/config.py` | Update transport config if SDK changes transport model |
 | `packages/protocol-schemas/schemas/kicad-mcp-server-info.schema.json` | Update for new server-info fields |
 | `packages/protocol-schemas/schemas/compatibility-manifest.schema.json` | Update for new MCP fields |
-| (in `oaslananka/kicad-mcp`) `scripts/validate_mcp_manifest.py` | Update validation logic for 2026-07-28 |
-| (in `oaslananka/kicad-mcp`) `scripts/check_compatibility_matrix.py` | Add 2026-07-28 matrix entry |
-| `.github/workflows/vscode-canary.yml` and `oaslananka/kicad-mcp` canary workflows | Add protocol contract check with new SDK |
+| (in KiCad MCP Pro) `scripts/validate_mcp_manifest.py` | Update validation logic for 2026-07-28 |
+| (in KiCad MCP Pro) `scripts/check_compatibility_matrix.py` | Add 2026-07-28 matrix entry |
+| `.github/workflows/vscode-canary.yml` and KiCad MCP Pro canary workflows | Add protocol contract check with new SDK |
 
 ### Phase 2 (Feature Adoption)
 
 | File                                                   | Change                                 |
 | ------------------------------------------------------ | -------------------------------------- |
-| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/tools/*.py` | Tasks extension for long-running tools |
+| (in KiCad MCP Pro) `src/kicad_mcp/tools/*.py` | Tasks extension for long-running tools |
 
-| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/tools/metadata.py` | Update annotations for new SEPs |
+| (in KiCad MCP Pro) `src/kicad_mcp/tools/metadata.py` | Update annotations for new SEPs |
 
-| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/tools/export.py` | Tasks: `export_manufacturing_package` |
+| (in KiCad MCP Pro) `src/kicad_mcp/tools/export.py` | Tasks: `export_manufacturing_package` |
 
-| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/tools/validation.py` | Tasks: `run_drc`, `run_erc` |
+| (in KiCad MCP Pro) `src/kicad_mcp/tools/validation.py` | Tasks: `run_drc`, `run_erc` |
 
-| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/tools/simulation.py` | Tasks: simulation progress |
+| (in KiCad MCP Pro) `src/kicad_mcp/tools/simulation.py` | Tasks: simulation progress |
 
-| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/tools/routing.py` | Tasks: routing progress |
+| (in KiCad MCP Pro) `src/kicad_mcp/tools/routing.py` | Tasks: routing progress |
 
-| (in `oaslananka/kicad-mcp`) `src/kicad_mcp/*.py` | JSON Schema 2020-12, caching, trace context |
+| (in KiCad MCP Pro) `src/kicad_mcp/*.py` | JSON Schema 2020-12, caching, trace context |
 
 ## Consequences
 

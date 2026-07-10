@@ -403,7 +403,7 @@ corepack pnpm run check:compatibility-contract
 \`\`\`
 
 MCP server product checks run from the
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
+[KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository.
 
 ## Protocol Changes
 

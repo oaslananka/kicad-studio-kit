@@ -3,7 +3,7 @@
 This repository releases one product — the KiCad Studio VS Code extension
 (`apps/vscode-extension`) — alongside private shared packages. The KiCad MCP Pro
 server is released separately from
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) (see
+[KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) (see
 [ADR 0009](../adr/0009-split-kicad-mcp-pro-into-separate-repository.md)). The two
 products stay decoupled at source level and integrate only through the MCP
 protocol contract.
@@ -13,7 +13,7 @@ protocol contract.
 | From                                                                            | May depend on                                                                                          |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `apps/vscode-extension`                                                         | npm dependencies, VS Code APIs, KiCad CLI process calls, MCP protocol data, test harness in tests only |
-| (removed — see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)) | Python dependencies, KiCad Python/CLI integrations, MCP protocol data                                  |
+| (removed — see [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)) | Python dependencies, KiCad Python/CLI integrations, MCP protocol data                                  |
 
 | `packages/test-harness` | Node standard library and shared packages only |
 | future shared packages | external dependencies and other shared packages only |
@@ -33,7 +33,7 @@ The products integrate through MCP protocol and metadata:
 
 - `compatibility.yaml`
 - `apps/vscode-extension/src/mcp/compatibilityMatrix.ts`
-- `oaslananka/kicad-mcp` (source lives in the [kicad-mcp repo](https://github.com/oaslananka/kicad-mcp))
+- KiCad MCP Pro (source lives in the [kicad-mcp repo](https://oaslananka.github.io/kicad-mcp-pro/))
 - contract and compatibility checks
 
 Protocol changes must update both product surfaces and the compatibility validation scripts.

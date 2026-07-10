@@ -3,7 +3,7 @@
 KiCad Studio Kit consumes `@oaslananka/kicad-protocol-schemas` from npm as the
 compatibility contract source of truth between the VS Code extension and
 `kicad-mcp-pro`. The canonical source repository is
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+[KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/).
 
 The schemas are product-neutral JSON Schema Draft 2020-12 documents. They do
 not import VS Code APIs, Python server modules, or product runtime code. The
@@ -135,7 +135,7 @@ Work items for further cross-repo compatibility hardening are tracked in
 ### Source of truth
 
 The canonical schema source lives in
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp). Publishing a
+[KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/). Publishing a
 new version of `@oaslananka/kicad-protocol-schemas` is owned by the
 **kicad-mcp** repository. The kicad-studio-kit repository then consumes the
 published version as a dependency.
@@ -176,7 +176,7 @@ In those cases, consume the existing npm version without bumping the dependency.
 
 ### Cross-repo release process
 
-1. Schema change committed and tagged in `oaslananka/kicad-mcp`.
+1. Schema change committed and tagged in KiCad MCP Pro.
 2. Release Please creates a GitHub Release, which triggers the kicad-mcp
    publish workflow (`publish-protocol-schemas.yml`): `npm publish` + GitHub
    Release assets.

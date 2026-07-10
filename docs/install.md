@@ -5,7 +5,7 @@ KiCad Studio Kit has two install surfaces:
 | Surface                        | Use when                                                                                                               | Install path                                                                                                     |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | KiCad Studio VS Code extension | You want KiCad project navigation, viewers, validation, exports, component search, and MCP integration inside VS Code. | Install `oaslananka.kicadstudiokit` from the VS Code Marketplace or Open VSX once release publishing is enabled. |
-| kicad-mcp-pro Python server    | You want an MCP server that exposes KiCad workflows to MCP clients.                                                    | Install from PyPI or see [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).                        |
+| kicad-mcp-pro Python server    | You want an MCP server that exposes KiCad workflows to MCP clients.                                                    | Install from PyPI or see [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/).                        |
 
 ## Local Repository Setup
 
@@ -21,7 +21,7 @@ corepack pnpm run check:kicad-studio
 ```
 
 Run MCP server checks from the
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
+[KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository.
 
 ## Extension Development Build
 
@@ -34,7 +34,7 @@ The generated VSIX is validated by `corepack pnpm run verify:dist`.
 
 ## MCP Server
 
-The `kicad-mcp-pro` Python MCP server source has moved to [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp). Install and run instructions are available there.
+The `kicad-mcp-pro` Python MCP server source has moved to [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/). Install and run instructions are available there.
 
 For a quick install from PyPI:
 

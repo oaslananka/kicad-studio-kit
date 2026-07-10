@@ -1,6 +1,6 @@
 # kicad-mcp-pro Changelog
 
-The changelog now lives in the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
+The changelog now lives in the [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository.
 The entries below are historical — this file is preserved for reference only.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),

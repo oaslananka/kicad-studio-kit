@@ -66,7 +66,7 @@ export function realServerSkipReason(): string | undefined {
     return 'Vendored benchmark fixture is missing.';
   }
   if (!fs.existsSync(localMcpServerProject())) {
-    return 'Local MCP server checkout is missing. Use a checkout from oaslananka/kicad-mcp.';
+    return 'Local MCP server checkout is missing. Use a checkout from KiCad MCP Pro.';
   }
   return undefined;
 }

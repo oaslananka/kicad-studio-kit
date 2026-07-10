@@ -5,15 +5,15 @@ KiCad Studio Kit uses one repository and separate product release surfaces.
 | Product              | Version file                                          | Artifact          | Publish workflow                         |
 | -------------------- | ----------------------------------------------------- | ----------------- | ---------------------------------------- |
 | VS Code extension    | `apps/vscode-extension/package.json`                  | VSIX              | `publish-extension.yml` in this repo     |
-| Python MCP server    | `oaslananka/kicad-mcp` (source removed from monorepo) | sdist / wheel     | `publish-python.yml` in `oaslananka/kicad-mcp` |
-| MCP Registry listing | `oaslananka/kicad-mcp` (source removed from monorepo) | registry metadata | `publish-mcp-registry.yml` in `oaslananka/kicad-mcp` |
+| Python MCP server    | KiCad MCP Pro (source removed from monorepo) | sdist / wheel     | `publish-python.yml` in KiCad MCP Pro |
+| MCP Registry listing | KiCad MCP Pro (source removed from monorepo) | registry metadata | `publish-mcp-registry.yml` in KiCad MCP Pro |
 
 Release Please owns version proposals through `.release-please-manifest.json` and `release-please-config.json`. The manifest tracks product package paths only; the private repository root is not a release surface.
 
 Release PRs are product-scoped:
 
 - `apps/vscode-extension` releases as the VS Code extension product.
-- `kicad-mcp-pro` source has moved to [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+- `kicad-mcp-pro` source has moved to [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/).
 
 The extension is intentionally not version-linked to the MCP product. It releases independently from its own Release Please PR.
 

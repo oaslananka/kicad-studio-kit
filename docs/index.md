@@ -21,7 +21,7 @@ hero:
 
 features:
   - title: Quick install paths
-    details: Install the KiCad Studio VS Code extension from the Marketplace or Open VSX. The KiCad MCP Pro server, npm launcher, and Docker image are released from oaslananka/kicad-mcp.
+    details: Install the KiCad Studio VS Code extension from the Marketplace or Open VSX. The KiCad MCP Pro server, npm launcher, and Docker image are released from KiCad MCP Pro.
     link: /install
   - title: Generated extension reference
     details: Commands, views, and settings are generated directly from the VS Code extension manifest.

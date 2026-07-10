@@ -71,7 +71,7 @@ Architecture changes must include:
 - Updated architecture documentation.
 - Boundary impact analysis.
 - Validation that product workspaces remain independently buildable.
-- No direct source imports between `apps/vscode-extension` and `oaslananka/kicad-mcp`.
+- No direct source imports between `apps/vscode-extension` and KiCad MCP Pro.
 - No production source imports from `@oaslananka/kicad-test-harness`.
 - Migration notes for renamed or moved paths.
 

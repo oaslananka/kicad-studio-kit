@@ -344,7 +344,7 @@ function protocolSchemasCheck(repoRoot) {
         invalid.length === 0
           ? `${schemaFiles.length} schema file(s) parsed from @oaslananka/kicad-protocol-schemas`
           : `invalid schema metadata: ${invalid.join(", ")}`,
-      hint: "Source of truth is oaslananka/kicad-mcp. Studio consumes from npm.",
+      hint: "Source of truth is KiCad MCP Pro. Studio consumes from npm.",
     });
   } catch (error) {
     return makeCheck({

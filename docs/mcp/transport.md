@@ -13,7 +13,7 @@ pip install kicad-mcp-pro
 kicad-mcp-pro --transport streamable-http --host 127.0.0.1 --port 3334
 ```
 
-The source lives in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp).
+The source lives in [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/).
 
 The default MCP path is `/mcp`. Set `KICAD_MCP_MOUNT_PATH` when a client or
 reverse proxy requires a different endpoint such as `/custom-mcp`.
@@ -41,7 +41,7 @@ the compatibility routes are exposed alongside `/mcp` as `/sse` and
 `/messages`.
 
 Transport conformance coverage lives in the
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
+[KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository.
 
 ## stdio
 

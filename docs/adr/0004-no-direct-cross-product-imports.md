@@ -22,7 +22,7 @@ Adopt strict product dependency boundaries as binding policy:
 | From                                   | May depend on                                                                                  |
 | -------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `apps/vscode-extension`                | npm deps, VS Code APIs, KiCad CLI process calls, MCP protocol data, test harness in tests only |
-| (removed — see `oaslananka/kicad-mcp`) | Python deps, KiCad Python/CLI integrations, MCP protocol data                                  |
+| (removed — see KiCad MCP Pro) | Python deps, KiCad Python/CLI integrations, MCP protocol data                                  |
 | `packages/test-harness`                | Node stdlib and shared packages only                                                           |
 | Future shared packages                 | External deps and other shared packages only                                                   |
 

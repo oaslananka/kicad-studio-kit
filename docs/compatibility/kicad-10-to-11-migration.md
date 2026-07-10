@@ -26,9 +26,9 @@ matrix that maps user-facing MCP tools to tests and canary probes.
 Production code must not import or call the legacy SWIG Python `pcbnew` module.
 The only repository allowlist entries are:
 
-- The `check_no_pcbnew.py` guard in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp), because it names the
+- The `check_no_pcbnew.py` guard in [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/), because it names the
   forbidden API while enforcing the guard.
-- The test suite in [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp), because tests may construct examples that
+- The test suite in [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/), because tests may construct examples that
   prove the guard fails.
 
 Run the guard locally:
@@ -49,13 +49,13 @@ candidate and switch to the next major version during the RC window. As of
 has two manual paths:
 
 Run the nightly KiCad CLI contract suite from
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) with
+[KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) with
 `KICAD_CANARY_KICAD_CLI` pointing at the nightly `kicad-cli`.
 
 Use the RC command once the installed prerelease reports `11.0.x`:
 
 Run the future-line KiCad CLI contract suite from
-[oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) once the
+[KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) once the
 installed prerelease reports `11.0.x`.
 
 The canary writes logs, reports, manufacturing outputs, `summary.json`, and

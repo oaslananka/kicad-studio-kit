@@ -28,7 +28,7 @@ Adopt the following monorepo topology as binding policy:
 | Path                            | Role                                                                                         | Published                 |
 | ------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------- |
 | `apps/vscode-extension`         | VS Code / Open VSX extension                                                                 | VSIX                      |
-| `packages/mcp-server` (removed) | Python MCP server (moved to [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp)) | sdist/wheel, MCP Registry |
+| `packages/mcp-server` (removed) | Python MCP server (moved to [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)) | sdist/wheel, MCP Registry |
 | `packages/test-harness`         | Private shared test utilities                                                                | Never                     |
 
 Additional rules:

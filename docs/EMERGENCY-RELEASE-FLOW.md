@@ -3,7 +3,7 @@
 > **Purpose**: Operational playbook for responding to bad registry publishes,
 > partial publish failures, cross-repo compatibility breaks, and other release
 > incidents across the KiCad Studio Kit monorepo (`oaslananka/kicad-studio-kit`)
-> and its sibling dependency (`oaslananka/kicad-mcp`).
+> and its sibling dependency (KiCad MCP Pro).
 >
 > **Audience**: Maintainers responding to a release incident.
 >
@@ -21,7 +21,7 @@ taking action.
 
 ### A.1 Bad npm protocol-schema package (`@oaslananka/kicad-protocol-schemas`)
 
-A broken schema published from `oaslananka/kicad-mcp`. Consumers detect the
+A broken schema published from KiCad MCP Pro. Consumers detect the
 break when:
 
 - `check:protocol-schemas` fails after a dependency bump in this repo.
@@ -40,12 +40,12 @@ A broken Python MCP server published to PyPI. Detection:
 - A deployed kicad-studio instance fails to connect to the MCP server.
 - Extension webview or panel reports "MCP connection error".
 
-**Root cause**: `oaslananka/kicad-mcp` shipped with a logic regression,
+**Root cause**: KiCad MCP Pro shipped with a logic regression,
 incompatible `compatibility.yaml` range, or protocol schema drift.
 
 ### A.3 Bad npm kicad-mcp-pro launcher
 
-A broken npm launcher published from `oaslananka/kicad-mcp`. Detection:
+A broken npm launcher published from KiCad MCP Pro. Detection:
 
 - `npm view kicad-mcp-pro` and `npm install kicad-mcp-pro` fail.
 - The cross-repo canary finds the launcher version but cannot invoke it.
@@ -183,7 +183,7 @@ echo "protocol-schemas:      <known-good>"  >> incident-evidence.md
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Deprecate** (warn consumers) | `npm deprecate @oaslananka/kicad-protocol-schemas@<version> "Broken schema — use <known-good> instead"`                                       |
 | **Pin in consuming repo**      | Update `package.json`—`"@oaslananka/kicad-protocol-schemas": "<known-good>"`, then `corepack pnpm install --frozen-lockfile`                  |
-| **Publish fix**                | Push a patch version from `oaslananka/kicad-mcp`, let the publish workflow run                                                                |
+| **Publish fix**                | Push a patch version from KiCad MCP Pro, let the publish workflow run                                                                |
 | **Verify fix**                 | Run `corepack pnpm run check:protocol-schemas` and the cross-repo canary                                                                      |
 | **Remove deprecation**         | `npm deprecate @oaslananka/kicad-protocol-schemas@<version> ""` (empty string removes the deprecation message; the version remains available) |
 
@@ -200,7 +200,7 @@ echo "protocol-schemas:      <known-good>"  >> incident-evidence.md
 | ----------------------------- | ------------------------------------------------------------------------------------------- |
 | **Yank** (block new installs) | PyPI admin console → Release → Options → "Yank release". Existing installs continue.        |
 | **Pin in consuming repo**     | Tighten `compatibility.yaml`—`compatibleMcpPro` upper bound to `"<known-good"`              |
-| **Publish fix**               | Bump version in `oaslananka/kicad-mcp`, let Release Please + `publish-python.yml` handle it |
+| **Publish fix**               | Bump version in KiCad MCP Pro, let Release Please + `publish-python.yml` handle it |
 | **Verify fix**                | Run cross-repo canary on the release PR branch                                              |
 | **Un-yank**                   | PyPI admin console → Release → Options → "Un-yank release"                                  |
 
@@ -377,7 +377,7 @@ emergency flow being in place. The following dependencies apply:
 | -------------------------------------- | -------------------------------------------------- |
 | Remove deprecated compatibility fields | Emergency flow and runbook being operational       |
 | Consolidate version sources            | Emergency flow and runbook being operational       |
-| Delete packages/mcp-server             | Completed — source moved to `oaslananka/kicad-mcp` |
+| Delete packages/mcp-server             | Completed — source moved to KiCad MCP Pro |
 | Merge cross-repo cleanup PRs           | Release path verified green after this flow        |
 
 Approach for #286:
@@ -387,4 +387,4 @@ Approach for #286:
    runbook (pre-flight → publish → post-publish verification).
 3. Only then begin #286 cleanup, starting with small, reversible PRs
    (remove deprecated fields, consolidate sources).
-4. `packages/mcp-server` has been removed — the source now lives in `oaslananka/kicad-mcp`.
+4. `packages/mcp-server` has been removed — the source now lives in KiCad MCP Pro.

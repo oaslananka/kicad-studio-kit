@@ -103,7 +103,7 @@ The dependency update lanes and label rules live in
 Pre-commit rejects obvious private keys. Before pushing security-sensitive
 changes, run the local scanner gate as well:
 
-The MCP server security checks now run in the [oaslananka/kicad-mcp](https://github.com/oaslananka/kicad-mcp) repository.
+The MCP server security checks now run in the [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository.
 
 That gate requires `gitleaks`, workflow linting, and `zizmor`; scanner findings
 must be fixed or triaged before release work proceeds.
