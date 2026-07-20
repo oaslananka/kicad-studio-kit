@@ -95,6 +95,28 @@ Pin or hold a dependency only when the support boundary is explicit. Examples:
 - Node typings stay inside the Node 24 runtime declared by the workspace.
 - Protocol/runtime packages require dashboard approval because they can affect both the extension and MCP server.
 
+### VS Code typings minimum policy
+
+The lower bound of `apps/vscode-extension/package.json` `engines.vscode` is the
+source of truth for the VS Code API surface used at compile time. Keep these
+surfaces equal:
+
+- `apps/vscode-extension/package.json` `engines.vscode`: `^<minimum>`;
+- `apps/vscode-extension/package.json` `@types/vscode`: `<minimum>`;
+- `compatibility.yaml` `vscode.minimum`: `<minimum>`;
+- `compatibility.yaml` `vscode.enginesRange`: `^<minimum>`;
+- the dedicated Renovate `@types/vscode` cap: `<=<minimum>`.
+
+The cap prevents Renovate from moving the typings ahead of the oldest supported
+VS Code release and allowing source code to compile against APIs unavailable to
+users on that release. An intentional engine raise must update all five values,
+the support matrix, and the release note in one reviewed compatibility change.
+Validate the contract with:
+
+```powershell
+corepack pnpm run check:vscode-typings-policy
+```
+
 ## Abandoned dependencies
 
 Renovate flags a dependency as abandoned when it exceeds the inherited
