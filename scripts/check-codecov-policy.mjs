@@ -1,0 +1,257 @@
+#!/usr/bin/env node
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+import process from "node:process";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { parse } from "yaml";
+
+const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
+const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
+
+const COVERAGE_ACTION =
+  "codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f";
+const TEST_RESULTS_ACTION =
+  "codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3";
+const CODECOV_CLI_VERSION = "v11.3.1";
+
+function readText(repoRoot, relativePath, errors) {
+  const filePath = path.join(repoRoot, relativePath);
+  if (!existsSync(filePath)) {
+    errors.push(`Missing ${relativePath}`);
+    return "";
+  }
+  return readFileSync(filePath, "utf8");
+}
+
+function readJson(repoRoot, relativePath, errors) {
+  const source = readText(repoRoot, relativePath, errors);
+  if (!source) return null;
+  try {
+    return JSON.parse(source);
+  } catch (error) {
+    errors.push(`${relativePath} must be strict JSON: ${error.message}`);
+    return null;
+  }
+}
+
+function readYaml(repoRoot, relativePath, errors) {
+  const source = readText(repoRoot, relativePath, errors);
+  if (!source) return null;
+  try {
+    return parse(source);
+  } catch (error) {
+    errors.push(`${relativePath} must be valid YAML: ${error.message}`);
+    return null;
+  }
+}
+
+function requireCondition(errors, condition, message) {
+  if (!condition) errors.push(message);
+}
+
+function validateWorkflow(errors, workflow) {
+  requireCondition(
+    errors,
+    workflow.includes(COVERAGE_ACTION),
+    "ci.yml must pin codecov/codecov-action v7.0.0 to fb8b3582c8e4def4969c97caa2f19720cb33a72f",
+  );
+  requireCondition(
+    errors,
+    workflow.includes(TEST_RESULTS_ACTION),
+    "ci.yml must pin codecov/test-results-action v1.2.1 to 0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3",
+  );
+  requireCondition(
+    errors,
+    workflow.match(/version:\s*v11\.3\.1/gu)?.length === 2,
+    `ci.yml must pin both Codecov uploads to CLI ${CODECOV_CLI_VERSION}`,
+  );
+  requireCondition(
+    errors,
+    workflow.includes("apps/vscode-extension/coverage/lcov.info") &&
+      workflow.includes("apps/vscode-extension/test-results/junit.xml") &&
+      workflow.includes("disable_search: true"),
+    "ci.yml must upload explicit LCOV and JUnit report paths with discovery disabled",
+  );
+  requireCondition(
+    errors,
+    workflow.includes(
+      "github.event.pull_request.head.repo.full_name == github.repository",
+    ),
+    "ci.yml must skip token-backed Codecov work for fork pull requests",
+  );
+  requireCondition(
+    errors,
+    workflow.includes("!cancelled() && matrix.os == 'ubuntu-24.04'"),
+    "ci.yml must retain Ubuntu reports with !cancelled() failed-test semantics",
+  );
+  requireCondition(
+    errors,
+    workflow.includes("hashFiles('codecov-reports/test-results/junit.xml')") &&
+      workflow.includes("codecov/test-results-action@"),
+    "ci.yml must upload JUnit results when a failed test report is available",
+  );
+  requireCondition(
+    errors,
+    workflow.includes('CODECOV_BUNDLE_ANALYSIS: "true"') &&
+      workflow.includes("CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}"),
+    "ci.yml must enable bundle analysis only in the dedicated token-backed job",
+  );
+
+  const requiredJob = workflow.match(/\n  required:\n[\s\S]*$/u)?.[0] ?? "";
+  requireCondition(
+    errors,
+    !/needs:\s*[\s\S]*?\n\s+- codecov(?:\n|$)/u.test(requiredJob),
+    "Codecov must not be part of the aggregate required job during baseline establishment",
+  );
+}
+
+function validateCodecovYaml(errors, config) {
+  const project = config?.coverage?.status?.project?.default;
+  const patch = config?.coverage?.status?.patch?.default;
+  requireCondition(
+    errors,
+    project?.informational === true,
+    "Codecov project coverage status must be informational during baseline establishment",
+  );
+  requireCondition(
+    errors,
+    patch?.informational === true,
+    "Codecov patch coverage status must be informational during baseline establishment",
+  );
+  requireCondition(
+    errors,
+    project?.target === "auto" && patch?.target === "auto",
+    "Codecov project and patch targets must use the existing coverage baseline (auto)",
+  );
+  requireCondition(
+    errors,
+    project?.threshold === "1%" && patch?.threshold === "1%",
+    "Codecov project and patch thresholds must allow at most 1% baseline drift",
+  );
+  requireCondition(
+    errors,
+    config?.flags?.["vscode-extension-unit"]?.paths?.includes(
+      "apps/vscode-extension/src/",
+    ) && config?.flags?.["vscode-extension-unit"]?.carryforward === false,
+    "codecov.yml must scope the vscode-extension-unit flag to extension source without carry-forward",
+  );
+  requireCondition(
+    errors,
+    config?.bundle_analysis?.status === "informational" &&
+      config?.bundle_analysis?.warning_threshold === "5%",
+    "Codecov bundle analysis must remain informational with a 5% warning threshold",
+  );
+}
+
+function validateJest(errors, jestConfig) {
+  requireCondition(
+    errors,
+    jestConfig.includes("if (process.env.CI)") &&
+      jestConfig.includes("'jest-junit'") &&
+      jestConfig.includes("outputDirectory: 'test-results'") &&
+      jestConfig.includes("outputName: 'junit.xml'") &&
+      jestConfig.includes("reportTestSuiteErrors: 'true'"),
+    "Jest must emit deterministic JUnit XML in CI and report suite-load errors",
+  );
+  requireCondition(
+    errors,
+    jestConfig.includes("coverageReporters: ['json-summary', 'text', 'lcov']"),
+    "Jest must keep LCOV and JSON coverage reports",
+  );
+}
+
+function validateWebpack(errors, webpackConfig) {
+  requireCondition(
+    errors,
+    webpackConfig.includes("environment.CODECOV_BUNDLE_ANALYSIS === 'true'"),
+    "webpack bundle analysis must require CODECOV_BUNDLE_ANALYSIS=true",
+  );
+  requireCondition(
+    errors,
+    webpackConfig.includes("typeof environment.CODECOV_TOKEN === 'string'") &&
+      webpackConfig.includes("environment.CODECOV_TOKEN.length > 0"),
+    "webpack bundle analysis must require a non-empty Codecov token",
+  );
+  requireCondition(
+    errors,
+    webpackConfig.includes("bundleName: 'kicad-studio-vscode-extension'"),
+    "Codecov bundle analysis must use the stable extension bundle name",
+  );
+  requireCondition(
+    errors,
+    webpackConfig.includes("telemetry: false"),
+    "Codecov bundle plugin telemetry must stay disabled",
+  );
+}
+
+export function validateCodecovPolicy(repoRoot = DEFAULT_REPO_ROOT) {
+  const errors = [];
+  const workflow = readText(repoRoot, ".github/workflows/ci.yml", errors);
+  const rootPackage = readJson(repoRoot, "package.json", errors);
+  const extensionPackage = readJson(
+    repoRoot,
+    "apps/vscode-extension/package.json",
+    errors,
+  );
+  const codecovConfig = readYaml(repoRoot, "codecov.yml", errors);
+  const jestConfig = readText(
+    repoRoot,
+    "apps/vscode-extension/jest.config.js",
+    errors,
+  );
+  const webpackConfig = readText(
+    repoRoot,
+    "apps/vscode-extension/webpack.config.js",
+    errors,
+  );
+  const extensionIgnore = readText(
+    repoRoot,
+    "apps/vscode-extension/.gitignore",
+    errors,
+  );
+  const testingDocs = readText(repoRoot, "docs/testing-strategy.md", errors);
+
+  requireCondition(
+    errors,
+    rootPackage?.scripts?.["check:codecov"] ===
+      "node scripts/check-codecov-policy.mjs && node --test scripts/check-codecov-policy.test.mjs apps/vscode-extension/scripts/webpack-config-codecov.test.mjs" &&
+      rootPackage?.scripts?.check?.includes("pnpm run check:codecov"),
+    "package.json must expose check:codecov and compose it into the root check",
+  );
+  requireCondition(
+    errors,
+    extensionPackage?.devDependencies?.["jest-junit"] === "17.0.0" &&
+      extensionPackage?.devDependencies?.["@codecov/webpack-plugin"] ===
+        "2.0.1",
+    "extension devDependencies must pin jest-junit 17.0.0 and @codecov/webpack-plugin 2.0.1",
+  );
+  requireCondition(
+    errors,
+    extensionIgnore.split(/\r?\n/u).includes("test-results/"),
+    "extension .gitignore must exclude generated test-results/",
+  );
+  requireCondition(
+    errors,
+    testingDocs.includes("### Codecov observability") &&
+      testingDocs.includes("Jest remains the blocking coverage authority"),
+    "testing strategy must document Codecov ownership and non-blocking semantics",
+  );
+
+  validateWorkflow(errors, workflow);
+  validateCodecovYaml(errors, codecovConfig);
+  validateJest(errors, jestConfig);
+  validateWebpack(errors, webpackConfig);
+
+  return [...new Set(errors)];
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const errors = validateCodecovPolicy();
+  if (errors.length > 0) {
+    console.error("Codecov policy check failed:");
+    for (const error of errors) console.error(`- ${error}`);
+    process.exitCode = 1;
+  } else {
+    console.log("Codecov observability policy is valid.");
+  }
+}

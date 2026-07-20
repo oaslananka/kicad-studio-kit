@@ -18,6 +18,7 @@ coverage.xml
 coverage/
 junit.xml
 test-results.xml
+test-results/
 *.tsbuildinfo
 .vscode-test/
 fab/

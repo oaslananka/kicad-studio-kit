@@ -111,6 +111,17 @@ jobs:
           name: coverage-summary
           path: apps/vscode-extension/coverage/coverage-summary.json
           if-no-files-found: ignore
+      - name: Upload Codecov reports
+        if: ${{ !cancelled() && matrix.os == 'ubuntu-24.04' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: codecov-reports
+          path: |
+            apps/vscode-extension/coverage/lcov.info
+            apps/vscode-extension/coverage/coverage-summary.json
+            apps/vscode-extension/test-results/junit.xml
+          if-no-files-found: warn
+          retention-days: 7
       - name: Use runner Chrome with Playwright Linux dependencies
         if: runner.os == 'Linux'
         timeout-minutes: 6
@@ -286,6 +297,67 @@ jobs:
         with:
           coverage-summary-path: coverage-summary.json
           title: Coverage Report
+
+  codecov:
+    needs:
+      - ci-lanes
+      - vscode-extension
+    if: >-
+      ${{
+        always() &&
+        (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') &&
+        needs.ci-lanes.outputs.vscode_extension == 'true' &&
+        needs.vscode-extension.result != 'cancelled' &&
+        (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+      }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Download Codecov reports
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: codecov-reports
+          path: codecov-reports
+      - name: Upload LCOV coverage to Codecov
+        if: ${{ !cancelled() && hashFiles('codecov-reports/coverage/lcov.info') != '' }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: codecov-reports/coverage/lcov.info
+          disable_search: true
+          fail_ci_if_error: true
+          flags: vscode-extension-unit
+          name: vscode-extension-unit
+          version: v11.3.1
+      - name: Upload Jest results to Codecov Test Analytics
+        if: ${{ !cancelled() && hashFiles('codecov-reports/test-results/junit.xml') != '' }}
+        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1.2.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: codecov-reports/test-results/junit.xml
+          disable_search: true
+          fail_ci_if_error: true
+          flags: vscode-extension-unit
+          name: vscode-extension-jest
+          version: v11.3.1
+      - name: Build production bundle with Codecov analysis
+        if: ${{ !cancelled() }}
+        env:
+          CODECOV_BUNDLE_ANALYSIS: "true"
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: corepack pnpm --filter kicadstudiokit run build
 
   forbidden-refs:
     needs: ci-lanes

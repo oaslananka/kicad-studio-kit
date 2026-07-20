@@ -45,6 +45,36 @@ never fails the build. The next step is to run `pnpm exec stryker run` against
 the core modules, record the baseline mutation score here, and raise `break` to
 that baseline so mutation coverage cannot regress.
 
+### Codecov observability
+
+Jest remains the blocking coverage authority. The Ubuntu extension lane also
+publishes LCOV, the JSON summary, and JUnit XML for the non-required `codecov`
+job. Codecov project and patch statuses are informational while the default
+branch baseline stabilizes; they do not replace the thresholds above or the
+aggregate `required` check.
+
+The report ownership is explicit:
+
+- coverage: `apps/vscode-extension/coverage/lcov.info` with flag
+  `vscode-extension-unit`;
+- failed and flaky test analytics:
+  `apps/vscode-extension/test-results/junit.xml`;
+- production bundle: `kicad-studio-vscode-extension` from the dedicated Codecov
+  job only.
+
+The Ubuntu artifact step uses `!cancelled()` so Jest can still publish a JUnit
+report after test failures. Fork pull requests skip the token-backed Codecov job.
+Normal local, matrix, packaging, release, and repeatability builds do not enable
+the bundle plugin. Existing product CI remains authoritative if Codecov is
+unavailable.
+
+Validate the repository policy and Codecov YAML with:
+
+```bash
+corepack pnpm run check:codecov
+curl --fail-with-body --data-binary @codecov.yml https://codecov.io/validate
+```
+
 ## Test Layers
 
 | Layer                                 | Scope                                                                                                                                                                                                      | Owner path                                                        | Runner or API                                                  | Gate                                              |

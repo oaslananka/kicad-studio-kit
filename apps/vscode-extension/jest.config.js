@@ -1,6 +1,21 @@
+const reporters = ['default'];
+
+if (process.env.CI) {
+  reporters.push([
+    'jest-junit',
+    {
+      outputDirectory: 'test-results',
+      outputName: 'junit.xml',
+      addFileAttribute: 'true',
+      reportTestSuiteErrors: 'true'
+    }
+  ]);
+}
+
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
+  reporters,
   roots: ['<rootDir>/test'],
   moduleNameMapper: {
     '^vscode$': '<rootDir>/test/unit/vscodeMock.ts'
