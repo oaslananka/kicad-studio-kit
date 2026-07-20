@@ -18,9 +18,11 @@ ignoredOptionalDependencies:
   - keytar
 
 overrides:
+  "brace-expansion@2.1.1": 2.1.2
+  "brace-expansion@5.0.6": 5.0.7
   "@vscode/vsce>keytar": "-"
   encoding-sniffer: 1.0.2
-  js-yaml: 4.2.0
+  js-yaml: 4.3.0
   exceljs>archiver: 8.0.0
   exceljs>fast-csv: 5.0.7
   exceljs>unzipper: 0.12.3

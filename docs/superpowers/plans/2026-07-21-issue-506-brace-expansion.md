@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Patch both active `brace-expansion` advisory ranges and prevent regression.
+**Goal:** Patch the active `brace-expansion` and `js-yaml` advisory ranges and prevent regression.
 
 **Architecture:** Exact pnpm overrides at the root package redirect only the two vulnerable transitive versions. The existing supply-chain checker enforces the override map and CI audit verifies the resolved graph.
 
@@ -19,9 +19,10 @@
 ### Task 1: Enforce patched transitive versions
 
 **Files:**
+
 - Modify: `scripts/check-pnpm-supply-chain.mjs`
 - Modify: `scripts/check-pnpm-supply-chain.test.mjs`
-- Modify: `package.json`
+- Modify: `pnpm-workspace.yaml`
 - Modify: `pnpm-lock.yaml`
 
 - [ ] Add a failing test requiring exact overrides for `brace-expansion@2.1.1` and `brace-expansion@5.0.6`.

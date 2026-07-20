@@ -9,6 +9,11 @@ const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
 const MINIMUM_RELEASE_AGE_MINUTES = 1440;
 const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = ["tmp@0.2.7"];
+const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
+  "brace-expansion@2.1.1": "2.1.2",
+  "brace-expansion@5.0.6": "5.0.7",
+  "js-yaml": "4.3.0",
+});
 const FORBIDDEN_PNPM_SETTINGS = [
   "minimumReleaseAge",
   "minimumReleaseAgeExclude",
@@ -79,6 +84,15 @@ function validateWorkspace(errors, workspace) {
     ),
     "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7",
   );
+  for (const [selector, version] of Object.entries(
+    REQUIRED_SECURITY_OVERRIDES,
+  )) {
+    assertCondition(
+      errors,
+      workspace?.overrides?.[selector] === version,
+      `pnpm-workspace.yaml overrides must pin ${selector} to ${version}`,
+    );
+  }
 }
 
 function validatePackageJson(errors, packageJson) {
