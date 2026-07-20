@@ -1,15 +1,17 @@
 # Repository Maturity Report
 
 Repository: `oaslananka/kicad-studio-kit`
-Audit date: 2026-07-02
-Mode: Audit + implementation PR
+Audit date: 2026-07-20
+Mode: Live GitHub evidence reconciliation + implementation PR
 Target: Solo-maintainer Professional OSS / Mature OSS
 
 ## Executive summary
 
 KiCad Studio Kit already has a strong professional open-source foundation: an MIT license, README, contribution guide, Code of Conduct, security policy, support policy, release automation, pinned GitHub Actions, CodeQL, Scorecard, Gitleaks, Renovate, release evidence, and a documented support matrix.
 
-The repository is best classified as **Solo-maintainer Professional OSS / Mature OSS in progress**. It is intentionally not assessed as Gold/foundation-grade because the project is solo-maintained. The GitHub API also reported `main` as **not branch protected** during this audit, so branch protection remains the main Professional OSS enforcement gap.
+The repository is best classified as **Solo-maintainer Professional OSS / Mature OSS in progress**. It is intentionally not assessed as Gold/foundation-grade because the project is solo-maintained. The 2026-07-20 live audit confirmed that `main` is protected by the active `main-protection` repository ruleset with signed commits, reviewed pull requests, strict required checks, deletion protection, and non-fast-forward protection.
+
+The legacy branch-protection endpoint still returns `404 Branch not protected` because enforcement is ruleset-based. The active ruleset and `branches/main.protected: true` are the authoritative evidence for this repository.
 
 ## Current maturity level
 
@@ -21,7 +23,7 @@ Rationale:
 - release automation and release evidence exist;
 - quality gates and security workflows are present;
 - governance and support documents exist;
-- missing branch-protection enforcement prevents a stronger maturity claim; community-scale evidence is optional for the current solo-maintainer model.
+- active branch-protection and security settings satisfy the current enforcement target; community-scale evidence remains optional for the solo-maintainer model.
 
 ## Target maturity level
 
@@ -56,20 +58,20 @@ Gold/foundation-grade is intentionally out of scope for the current solo-maintai
 
 ## Scorecard readiness
 
-| Check                  | Status  | Evidence / gap                                                                                                         |
-| ---------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Branch-Protection      | Missing | GitHub API returned `Branch not protected` for `main` during audit. Ruleset file exists but must be applied in GitHub. |
-| Code-Review            | Partial | CODEOWNERS and PR template exist; sustained human approval evidence and enforcement are not yet present.               |
-| Maintained             | Passed  | Recent release and push activity exist.                                                                                |
-| Security-Policy        | Passed  | `SECURITY.md`.                                                                                                         |
-| License                | Passed  | MIT license.                                                                                                           |
-| CI-Tests               | Passed  | `ci.yml`, product checks, docs, package, integration, a11y, visual, and release checks exist.                          |
-| Dependency-Update-Tool | Passed  | Renovate and GitHub-native dependency alert/update configuration exist.                                                |
-| Pinned-Dependencies    | Passed  | GitHub Actions are digest-pinned; lockfile is committed.                                                               |
-| Token-Permissions      | Passed  | Workflows generally use minimum permissions; publish/release jobs elevate only where needed.                           |
-| Dangerous-Workflow     | Partial | No risky change applied here; workflow review should remain active because release jobs can push generated surfaces.   |
-| SAST                   | Passed  | CodeQL workflow exists.                                                                                                |
-| Fuzzing                | Partial | Security fuzz/unit tests exist; dedicated fuzzing service or OSS-Fuzz integration is not evidenced.                    |
+| Check                  | Status  | Evidence / gap                                                                                                                        |
+| ---------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Branch-Protection      | Passed  | Active `main-protection` ruleset matches the checked-in policy and protects the default branch.                                       |
+| Code-Review            | Partial | The active ruleset enforces review controls; sustained independent human-review history remains limited by the solo-maintainer model. |
+| Maintained             | Passed  | Recent release and push activity exist.                                                                                               |
+| Security-Policy        | Passed  | `SECURITY.md`.                                                                                                                        |
+| License                | Passed  | MIT license.                                                                                                                          |
+| CI-Tests               | Passed  | `ci.yml`, product checks, docs, package, integration, a11y, visual, and release checks exist.                                         |
+| Dependency-Update-Tool | Passed  | Renovate and GitHub-native dependency alert/update configuration exist.                                                               |
+| Pinned-Dependencies    | Passed  | GitHub Actions are digest-pinned; lockfile is committed.                                                                              |
+| Token-Permissions      | Passed  | Workflows generally use minimum permissions; publish/release jobs elevate only where needed.                                          |
+| Dangerous-Workflow     | Partial | No risky change applied here; workflow review should remain active because release jobs can push generated surfaces.                  |
+| SAST                   | Passed  | CodeQL workflow exists.                                                                                                               |
+| Fuzzing                | Partial | Security fuzz/unit tests exist; dedicated fuzzing service or OSS-Fuzz integration is not evidenced.                                   |
 
 ## Documentation maturity
 
@@ -122,7 +124,7 @@ The repository already has extensive architecture, release, testing, compatibili
 | Support policy                | Passed  | `SUPPORT.md`.                                                                                                      |
 | Deprecation policy            | Partial | Compatibility and support matrix exist; explicit deprecation policy should be expanded when support scope changes. |
 | Backward compatibility policy | Passed  | `docs/support-matrix.md`, `compatibility.yaml`.                                                                    |
-| Branch protection             | Missing | Must be enabled in GitHub settings/rulesets.                                                                       |
+| Branch protection             | Passed  | Active GitHub ruleset matches `.github/rulesets/main.json` and the branch-protection policy.                       |
 
 ## Community maturity
 
@@ -130,7 +132,7 @@ The repository already has extensive architecture, release, testing, compatibili
 | ----------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Time to first response        | Partial        | `SUPPORT.md` defines goals; actual issue response metrics require human/automation measurement.                                                                        |
 | Issue resolution process      | Partial        | Templates and support goals exist; dashboards/labels should be monitored.                                                                                              |
-| PR review process             | Partial        | PR template and CODEOWNERS exist; enforced human review missing.                                                                                                       |
+| PR review process             | Partial        | Review is enforced by ruleset; independent reviewer capacity remains limited by the solo-maintainer model.                                                             |
 | Contributor activity          | Not applicable | Independent contributor activity is not required for the current solo-maintainer target.                                                                               |
 | Release frequency             | Partial        | Recent release exists; sustainable cadence needs more history.                                                                                                         |
 | Bus factor                    | Missing        | Current evidence points to a single primary maintainer; this is acceptable for Solo-maintainer Professional OSS when governance and release procedures are documented. |
@@ -149,18 +151,18 @@ The repository already has extensive architecture, release, testing, compatibili
 
 ## Security/supply-chain maturity
 
-| Criterion                                  | Status                   | Evidence / action                                                                         |
-| ------------------------------------------ | ------------------------ | ----------------------------------------------------------------------------------------- |
-| SECURITY.md                                | Passed                   | Private advisory link and handling goals.                                                 |
-| Private vulnerability reporting            | Needs human confirmation | SECURITY.md points to advisories; repository setting must be enabled in GitHub.           |
-| CodeQL                                     | Passed                   | `codeql.yml`.                                                                             |
-| Gitleaks                                   | Passed                   | `gitleaks.yml`.                                                                           |
-| Dependency review                          | Passed                   | Existing security workflow and dedicated dependency-review workflow.                      |
-| Renovate / GitHub-native dependency alerts | Passed                   | `renovate.json` and GitHub-native dependency alert/update configuration.                  |
-| OSV scanning                               | Partial                  | Renovate OSV alerts exist; standalone OSV scanner workflow is not applied in this PR.     |
-| SBOM                                       | Passed                   | Publish workflow stages SBOM.                                                             |
-| SLSA/provenance                            | Partial                  | GitHub artifact attestation exists; full SLSA level claim requires external verification. |
-| Minimal workflow permissions               | Passed                   | Workflows generally default to `contents: read` and elevate per job.                      |
+| Criterion                                  | Status  | Evidence / action                                                                         |
+| ------------------------------------------ | ------- | ----------------------------------------------------------------------------------------- |
+| SECURITY.md                                | Passed  | Private advisory link and handling goals.                                                 |
+| Private vulnerability reporting            | Passed  | GitHub endpoint reports `enabled: true`.                                                  |
+| CodeQL                                     | Passed  | `codeql.yml`.                                                                             |
+| Gitleaks                                   | Passed  | `gitleaks.yml`.                                                                           |
+| Dependency review                          | Passed  | Existing security workflow and dedicated dependency-review workflow.                      |
+| Renovate / GitHub-native dependency alerts | Passed  | `renovate.json` and GitHub-native dependency alert/update configuration.                  |
+| OSV scanning                               | Partial | Renovate OSV alerts exist; standalone OSV scanner workflow is not applied in this PR.     |
+| SBOM                                       | Passed  | Publish workflow stages SBOM.                                                             |
+| SLSA/provenance                            | Partial | GitHub artifact attestation exists; full SLSA level claim requires external verification. |
+| Minimal workflow permissions               | Passed  | Workflows generally default to `contents: read` and elevate per job.                      |
 
 ## Missing files
 
@@ -176,32 +178,38 @@ Before this PR, the main missing maturity files were:
 - development policy pages under `docs/development/`
 - security assurance pages under `docs/security/`
 
-## Missing workflows
+## Workflow evidence
 
-The repository already had CI, CodeQL, Scorecard, Gitleaks, security, publish, and release-please workflows. This PR adds low-risk dedicated workflow entrypoints for:
+The repository has CI, CodeQL, Scorecard, Gitleaks, security, dependency review,
+docs, release-readiness, publish, and release-please workflows. This reconciliation
+adds `governance-evidence.yml`, a read-only scheduled/manual workflow that compares
+live GitHub governance state with the checked-in ruleset and uploads a sanitized
+JSON report.
 
-- `dependency-review.yml`
-- `release.yml` release-readiness checks that do not publish or require secrets
+## Verified live settings and scoped changes
 
-## Risky changes not applied
+The 2026-07-20 audit confirmed:
 
-The following were intentionally not applied:
+- active default-branch ruleset enforcement with six required checks;
+- private vulnerability reporting enabled;
+- GitHub-native dependency security updates enabled;
+- secret scanning and push protection enabled;
+- optional non-provider patterns and validity checks disabled;
+- alert, code-scanning, and secret-scanning endpoints accessible.
 
-- enabling branch protection or rulesets directly;
-- requiring PR review in GitHub settings;
-- enabling private vulnerability reporting, secret scanning, or push protection;
-- adding publishing secrets or changing marketplace publishing behavior;
-- changing coverage thresholds aggressively;
-- adding standalone OSV/Trivy/SBOM enforcement that could fail CI without baseline tuning;
-- modifying extension runtime behavior.
+This issue does not weaken the ruleset, add publishing secrets, change marketplace
+publishing behavior, alter coverage thresholds, or modify extension runtime
+behavior. The orphaned `automation/auto-assign-incoming` branch was deleted after
+its only PR was confirmed closed as stale and explicitly not being carried
+forward.
 
 ## Recommended issues
 
-1. Enable solo-safe `main` branch protection/ruleset with force-push/deletion protection and required status checks; do not require another human reviewer unless the maintainer wants that workflow.
+1. Keep the live governance evidence workflow green and investigate any ruleset drift.
 2. Keep solo-maintainer continuity documented; recruit another maintainer only if Gold/foundation-grade becomes a real goal.
 3. Optional future: implement full REUSE/SPDX automation if desired; current legal assessment is documented.
 4. Add historical CHAOSS metrics collection for issue response, PR review latency, and release cadence.
-5. Verify private vulnerability reporting, GitHub-native dependency alerts, secret scanning, and push protection settings.
+5. Evaluate optional secret-scanning non-provider patterns and validity checks before enabling them.
 6. Evaluate standalone OSV scanner and Docker image scanning after baseline tuning.
 7. Raise or ratchet coverage only after flaky/low-coverage areas are stabilized.
 
@@ -216,7 +224,7 @@ The following were intentionally not applied:
 ## Next actions
 
 1. Merge this PR after human review.
-2. Enable branch protection/rulesets in GitHub.
-3. Re-run OpenSSF Scorecard after protection is active.
-4. Update the Best Practices BadgeApp with the evidence links in `docs/openssf-proposal-links.md`.
+2. Let the weekly governance evidence workflow verify live ruleset and security-setting drift.
+3. Re-run OpenSSF Scorecard after the updated evidence reaches `main`.
+4. Update the Best Practices BadgeApp with the refreshed evidence links in `docs/openssf-proposal-links.md`.
 5. Keep Gold/foundation-grade issues closed or optional unless the project intentionally changes from solo-maintainer mode.

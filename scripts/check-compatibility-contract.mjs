@@ -6,6 +6,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 
+import { validateRuntimePolicyMetadata } from "./lib/runtime-policy.mjs";
+
 const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
 
@@ -16,6 +18,7 @@ const DOCS_FILES = [
   "docs/publishing.md",
   "docs/protocol-schemas.md",
   "docs/support-matrix.md",
+  "docs/compatibility/runtime-policy.md",
 ];
 
 const REQUIRED_FILES = [
@@ -29,6 +32,14 @@ const REQUIRED_FILES = [
     label: "Release coordination runbook",
   },
   { path: "docs/EMERGENCY-RELEASE-FLOW.md", label: "Emergency release flow" },
+  {
+    path: ".github/workflows/runtime-policy-drift.yml",
+    label: "Runtime policy drift workflow",
+  },
+  {
+    path: "docs/compatibility/runtime-policy.md",
+    label: "Runtime policy documentation",
+  },
 ];
 
 function readFile(filePath) {
@@ -293,6 +304,24 @@ function checkLocalProtocolSchemasAbsent(errors) {
   }
 }
 
+function checkRuntimePolicyMetadata(errors, options = {}) {
+  if (
+    !fileExists("compatibility.yaml") ||
+    !fileExists("apps/vscode-extension/package.json")
+  ) {
+    return;
+  }
+  const compatibility =
+    options.runtimePolicyCompatibility ??
+    parseYaml(readFile("compatibility.yaml"));
+  const extensionPackage =
+    options.runtimePolicyExtensionPackage ??
+    JSON.parse(readFile("apps/vscode-extension/package.json"));
+  errors.push(
+    ...validateRuntimePolicyMetadata({ compatibility, extensionPackage }),
+  );
+}
+
 function checkDocsChangedWithContract(errors, changedFiles) {
   const contractChanged = changedFiles.some((file) =>
     COMPATIBILITY_CONTRACT_FILES.some(
@@ -323,6 +352,7 @@ export function validateCompatibilityContract(options = {}) {
   checkEmbeddedExtensionCompatibilityMatrix(errors);
   checkStudioConsumesPublishedPackage(errors);
   checkLocalProtocolSchemasAbsent(errors);
+  checkRuntimePolicyMetadata(errors, options);
   checkDocsChangedWithContract(errors, changedFiles);
 
   return errors;

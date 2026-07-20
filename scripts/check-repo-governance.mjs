@@ -150,6 +150,7 @@ function validateRepoHealth() {
     "docs.yml",
     "release-please.yml",
     "publish-extension.yml",
+    "governance-evidence.yml",
   ];
 
   requireCondition(

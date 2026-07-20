@@ -12,6 +12,7 @@ test("Best Practices evidence has the repository-controlled scorecard hardening 
     "analyze (python)",
     "security",
     "scan",
+    "dependency-review",
   ]);
   assert.ok(result.coverageThreshold.statements >= 80);
   assert.ok(result.coverageThreshold.lines >= 80);

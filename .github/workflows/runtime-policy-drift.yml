@@ -1,0 +1,46 @@
+name: Runtime Policy Drift
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-policy-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    if: github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - run: corepack enable
+      - run: corepack prepare pnpm@11.6.0 --activate
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Validate deterministic runtime policy metadata
+        run: node scripts/check-runtime-policy.mjs
+      - name: Evaluate authoritative runtime sources
+        run: >-
+          node scripts/check-runtime-policy.mjs
+          --fetch
+          --json runtime-policy-report.json
+          --summary "$GITHUB_STEP_SUMMARY"
+      - name: Upload runtime policy report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: runtime-policy-report
+          path: runtime-policy-report.json
+          if-no-files-found: warn
+          retention-days: 30
