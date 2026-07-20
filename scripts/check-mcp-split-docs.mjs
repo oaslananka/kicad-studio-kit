@@ -129,7 +129,7 @@ export const FORBIDDEN_PHRASES = [
 export const ACTIVE_OWNERSHIP_RULES = [
   {
     pattern:
-      /packages\/(?:protocol-schemas|mcp-server|mcp-npm)(?:\/[A-Za-z0-9_.-]+)*/iu,
+      /packages\/(?:protocol-schemas|mcp-server|mcp-npm)(?:\/[a-z0-9_.-]+)*/iu,
     hint: "Do not direct active work to a removed local MCP path. Assign server/schema source work to KiCad MCP Pro and consume schemas through @oaslananka/kicad-protocol-schemas.",
   },
   {
