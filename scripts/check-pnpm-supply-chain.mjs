@@ -13,6 +13,8 @@ const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   "brace-expansion@2.1.1": "2.1.2",
   "brace-expansion@5.0.6": "5.0.7",
   "js-yaml": "4.3.0",
+  tar: "7.5.19",
+  tar: "7.5.19",
 });
 const FORBIDDEN_PNPM_SETTINGS = [
   "minimumReleaseAge",
