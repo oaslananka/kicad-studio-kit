@@ -55,3 +55,16 @@ test("embedded extension compatibility matrix rejects product-version drift", ()
 test("repository compatibility contract validates current state", () => {
   assert.deepEqual(validateCompatibilityContract(), []);
 });
+
+test("#494 compatibility contract rejects malformed runtime policy metadata", () => {
+  const malformed = structuredClone(compatibility);
+  malformed.runtimePolicy.enforcement.vscode = "ignore";
+
+  assert.match(
+    validateCompatibilityContract({
+      runtimePolicyCompatibility: malformed,
+      runtimePolicyExtensionPackage: extensionPackage,
+    }).join("\n"),
+    /runtimePolicy\.enforcement\.vscode/u,
+  );
+});
