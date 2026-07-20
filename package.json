@@ -41,7 +41,7 @@
     "release:verify": "node scripts/check-release-provenance.mjs && pnpm run test:release-provenance",
     "release:surface": "node scripts/check-release-surface.mjs --write",
     "check:release-surface": "node scripts/check-release-surface.mjs && node --test scripts/check-release-surface.test.mjs",
-    "check:forbidden-refs": "node scripts/check-no-forbidden-refs.mjs && node scripts/check-mcp-split-docs.mjs && node --test scripts/check-mcp-split-docs.test.mjs",
+    "check:forbidden-refs": "node scripts/check-no-forbidden-refs.mjs && pnpm run check:mcp-split-docs",
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "test:release-please": "node --test scripts/check-release-please-monorepo.test.mjs",
     "test:release-provenance": "node --test scripts/check-release-provenance.test.mjs scripts/verify-npm-release.test.mjs",
@@ -81,7 +81,8 @@
     "check:best-practices": "node scripts/check-best-practices-evidence.mjs && pnpm run check:repeatable-vsix && node --test scripts/check-best-practices-evidence.test.mjs scripts/report-best-practices-status.test.mjs",
     "best-practices:status": "node scripts/report-best-practices-status.mjs",
     "best-practices:status:write": "node scripts/report-best-practices-status.mjs --write",
-    "check:repeatable-vsix": "node scripts/check-repeatable-vsix.mjs"
+    "check:repeatable-vsix": "node scripts/check-repeatable-vsix.mjs",
+    "check:mcp-split-docs": "node scripts/check-mcp-split-docs.mjs && node --test scripts/check-mcp-split-docs.test.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "21.0.2",

@@ -1,8 +1,8 @@
 # Release Coordination Runbook
 
-> **Purpose**: Single-source-of-truth for sequencing, verifying, and recovering
-> multi-product releases across the KiCad Studio Kit monorepo (`oaslananka/kicad-studio-kit`)
-> and its sibling dependency (KiCad MCP Pro).
+> **Purpose**: Single source of truth for sequencing, verifying, and recovering
+> cross-product releases between the KiCad Studio extension repository
+> (`oaslananka/kicad-studio-kit`) and the separate KiCad MCP Pro repository.
 >
 > **Audience**: Maintainers performing or reviewing a release of any product surface.
 >
@@ -14,25 +14,29 @@
 
 ## A — Release order
 
-There are three independently releasable surfaces in the monorepo and one
-external dependency that must sometimes ship first.
+Two repositories publish independently versioned artifacts. Breaking contract
+changes require an explicit schema → server → extension sequence.
 
 ### A.1 Artifact dependency chain
 
 ```
-kicad-mcp (external repo)
-  └── @oaslananka/kicad-protocol-schemas (npm)
-        ├── kicad-mcp-pro (PyPI + npm + Docker + MCP Registry)
-        │     └── kicadstudiokit (VS Code Marketplace + Open VSX)
-        └── itself consumed directly by kicadstudiokit for contract tests
+KiCad MCP Pro repository
+  ├── @oaslananka/kicad-protocol-schemas (npm contract artifact)
+  └── kicad-mcp-pro (PyPI + container + MCP Registry)
+        └── validated as a published server by KiCad Studio canaries
+
+KiCad Studio repository
+  └── kicadstudiokit (VS Code Marketplace + Open VSX)
+        ├── consumes @oaslananka/kicad-protocol-schemas
+        └── declares the required published kicad-mcp-pro range
 ```
 
 | Release surface      | Repository                    | Artifact(s)                          | Published from |
 | -------------------- | ----------------------------- | ------------------------------------ | -------------- |
-| Protocol schemas     | KiCad MCP Pro        | `@oaslananka/kicad-protocol-schemas` | npm            |
-| MCP server (Python)  | KiCad MCP Pro        | `kicad-mcp-pro` (PyPI)               | GitHub Actions |
-| MCP container        | KiCad MCP Pro        | `ghcr.io/oaslananka/kicad-mcp-pro`   | GitHub Actions |
-| MCP Registry listing | KiCad MCP Pro        | registry metadata                    | GitHub Actions |
+| Protocol schemas     | KiCad MCP Pro                 | `@oaslananka/kicad-protocol-schemas` | npm            |
+| MCP server (Python)  | KiCad MCP Pro                 | `kicad-mcp-pro` (PyPI)               | GitHub Actions |
+| MCP container        | KiCad MCP Pro                 | `ghcr.io/oaslananka/kicad-mcp-pro`   | GitHub Actions |
+| MCP Registry listing | KiCad MCP Pro                 | registry metadata                    | GitHub Actions |
 | VS Code extension    | `oaslananka/kicad-studio-kit` | VSIX (Marketplace + Open VSX)        | GitHub Actions |
 
 ### A.2 Sequencing rules
@@ -40,12 +44,14 @@ kicad-mcp (external repo)
 **Breaking protocol change** (schema fields removed, renamed, or made
 incompatible):
 
-1. **kicad-mcp ships first** — publish new `@oaslananka/kicad-protocol-schemas`
-   with backward-compatible schema (additive fields, widened ranges).
-2. **kicad-mcp-pro ships second** — update `compatibility.yaml` to widen
-   `compatibleExtension` range; publish Python + npm + Docker.
-3. **kicadstudiokit ships third** — tighten `compatibleMcpPro` to require the
-   new MCP server version; publish VSIX.
+1. **KiCad MCP Pro publishes the schema artifact first** — release the
+   required `@oaslananka/kicad-protocol-schemas` version with the documented
+   compatibility strategy.
+2. **KiCad MCP Pro publishes the server artifacts second** — update its
+   compatibility metadata and publish the Python package, signed container, and
+   MCP Registry evidence.
+3. **KiCad Studio publishes third** — consume the published schema, validate the
+   published server pair, then tighten `compatibleMcpPro` and publish the VSIX.
 
 **Non-breaking change** (additive only, no range tightening):
 
@@ -71,18 +77,18 @@ releases independently from its own Release Please PR.
 
 | Artifact                                          | Owned by                            | Release trigger                                         |
 | ------------------------------------------------- | ----------------------------------- | ------------------------------------------------------- |
-| `@oaslananka/kicad-protocol-schemas`              | KiCad MCP Pro              | Release published (tag-based) + `workflow_dispatch`     |
-| PyPI `kicad-mcp-pro`                              | KiCad MCP Pro              | Release Please + `publish-python.yml`                   |
-| `ghcr.io/oaslananka/kicad-mcp-pro`                | KiCad MCP Pro              | MCP server GitHub Release + `publish-mcp-container.yml` |
-| MCP Registry `io.github.oaslananka/kicad-mcp-pro` | KiCad MCP Pro              | MCP server GitHub Release + `publish-mcp-registry.yml`  |
+| `@oaslananka/kicad-protocol-schemas`              | KiCad MCP Pro                       | Release published (tag-based) + `workflow_dispatch`     |
+| PyPI `kicad-mcp-pro`                              | KiCad MCP Pro                       | Release Please + `publish-python.yml`                   |
+| `ghcr.io/oaslananka/kicad-mcp-pro`                | KiCad MCP Pro                       | MCP server GitHub Release + `publish-mcp-container.yml` |
+| MCP Registry `io.github.oaslananka/kicad-mcp-pro` | KiCad MCP Pro                       | MCP server GitHub Release + `publish-mcp-registry.yml`  |
 | VS Code Marketplace `oaslananka.kicadstudiokit`   | This repo (`apps/vscode-extension`) | Release Please + `publish-extension.yml`                |
 | Open VSX `oaslananka.kicadstudiokit`              | This repo (same VSIX)               | Same workflow, non-blocking after Marketplace           |
 
 ### B.2 No cross-repo publish
 
-This repo never publishes to another repo's registry. There is no publish
-workflow in `oaslananka/kicad-studio-kit` that pushes to an KiCad MCP Pro
-tag or release. Cross-repo coordination is limited to:
+This repository never publishes another repository's artifact. There is no
+workflow in `oaslananka/kicad-studio-kit` that creates a KiCad MCP Pro tag,
+package, container, registry entry, or release. Cross-repo coordination is limited to:
 
 - `compatibility.yaml` range declarations.
 - The cross-repo compatibility canary (`.github/workflows/cross-repo-compatibility.yml`)
@@ -91,15 +97,15 @@ tag or release. Cross-repo coordination is limited to:
 
 ### B.3 Package ownership on registries
 
-| Registry            | Package / namespace                  | Publish auth              | Owner / Org                        |
-| ------------------- | ------------------------------------ | ------------------------- | ---------------------------------- |
-| npm                 | `kicad-mcp-pro`                      | Trusted publishing (OIDC) | `oaslananka`                       |
-| npm                 | `@oaslananka/kicad-protocol-schemas` | Secret-based              | `oaslananka` (from kicad-mcp repo) |
-| PyPI / TestPyPI     | `kicad-mcp-pro`                      | Trusted publishing (OIDC) | `oaslananka`                       |
-| VS Code Marketplace | `oaslananka.kicadstudiokit`          | `VSCE_PAT`                | `oaslananka`                       |
-| Open VSX            | `oaslananka.kicadstudiokit`          | `OVSX_PAT`                | `oaslananka` (Eclipse Foundation)  |
-| GHCR                | `ghcr.io/oaslananka/kicad-mcp-pro`   | `GITHUB_TOKEN`            | `oaslananka`                       |
-| MCP Registry        | `io.github.oaslananka/kicad-mcp-pro` | GitHub OIDC               | `oaslananka`                       |
+| Registry            | Package / namespace                  | Publish auth                 | Owner / Org                               |
+| ------------------- | ------------------------------------ | ---------------------------- | ----------------------------------------- |
+| npm                 | `kicad-mcp-pro`                      | Trusted publishing (OIDC)    | `oaslananka`                              |
+| npm                 | `@oaslananka/kicad-protocol-schemas` | KiCad MCP Pro publish policy | `oaslananka` (published by KiCad MCP Pro) |
+| PyPI / TestPyPI     | `kicad-mcp-pro`                      | Trusted publishing (OIDC)    | `oaslananka`                              |
+| VS Code Marketplace | `oaslananka.kicadstudiokit`          | `VSCE_PAT`                   | `oaslananka`                              |
+| Open VSX            | `oaslananka.kicadstudiokit`          | `OVSX_PAT`                   | `oaslananka` (Eclipse Foundation)         |
+| GHCR                | `ghcr.io/oaslananka/kicad-mcp-pro`   | `GITHUB_TOKEN`               | `oaslananka`                              |
+| MCP Registry        | `io.github.oaslananka/kicad-mcp-pro` | GitHub OIDC                  | `oaslananka`                              |
 
 ## C — Required checks before release
 
@@ -157,8 +163,8 @@ See [Product Dry Runs](publishing.md#product-dry-runs) for what each validates.
 - [ ] `compatibility.yaml` `compatibleExtension` range widened if the
       new MCP server introduces protocol changes that the old extension
       must still tolerate.
-- [ ] On the kicad-mcp side: protocol schemas already published if this
-      release depends on new or changed schemas.
+- [ ] KiCad MCP Pro has already published the required protocol-schema
+      artifact if this release depends on new or changed schemas.
 
 **For a kicadstudiokit release PR:**
 
@@ -172,10 +178,10 @@ See [Product Dry Runs](publishing.md#product-dry-runs) for what each validates.
 - [ ] If this release tightens `compatibleMcpPro` (breaking protocol change):
       the new kicad-mcp-pro must already be published on PyPI/npm.
 
-**For a protocol schemas release (kicad-mcp repo):**
+**For a protocol-schema release in KiCad MCP Pro:**
 
 - [ ] GitHub Release published or `workflow_dispatch` triggers the publish workflow.
-- [ ] After publish, this repo (kicad-studio-kit) must:
+- [ ] After publication, this KiCad Studio repository must:
   1. Bump `@oaslananka/kicad-protocol-schemas` in `package.json`.
   2. Run `corepack pnpm install --frozen-lockfile` to update lockfile.
   3. Run `check:protocol-schemas` and `check:compatibility-contract`.
@@ -189,18 +195,18 @@ See [Product Dry Runs](publishing.md#product-dry-runs) for what each validates.
 
 All PRs — release or not — must pass these CI gates before merging:
 
-| Check                        | What it guards                                           |
-| ---------------------------- | -------------------------------------------------------- |
-| `lint`                       | Code style                                               |
-| `typecheck`                  | Type safety                                              |
-| `test`                       | Unit and integration tests                               |
-| `build` / `verify:dist`      | Compilation and packaging                                |
-| `check:version`              | Release-please scope policy (conventional commit scopes) |
-| `check:compatibility-contract` | Compatibility matrix consistency                       |
-| `check:protocol-schemas`     | Published schema contract compliance                     |
-| `check:protocol-pr-template` | Protocol-impact PRs fill the template                    |
-| `cross-repo-compatibility`   | Published artifact compatibility (canary)                |
-| `docs:lint` / `docs:links`   | Documentation integrity                                  |
+| Check                          | What it guards                                           |
+| ------------------------------ | -------------------------------------------------------- |
+| `lint`                         | Code style                                               |
+| `typecheck`                    | Type safety                                              |
+| `test`                         | Unit and integration tests                               |
+| `build` / `verify:dist`        | Compilation and packaging                                |
+| `check:version`                | Release-please scope policy (conventional commit scopes) |
+| `check:compatibility-contract` | Compatibility matrix consistency                         |
+| `check:protocol-schemas`       | Published schema contract compliance                     |
+| `check:protocol-pr-template`   | Protocol-impact PRs fill the template                    |
+| `cross-repo-compatibility`     | Published artifact compatibility (canary)                |
+| `docs:lint` / `docs:links`     | Documentation integrity                                  |
 
 The `vscode-extension (windows-2025-vs2026)` job is slow and occasionally
 flakey. It is not a required check on the main branch. Inspect the failure

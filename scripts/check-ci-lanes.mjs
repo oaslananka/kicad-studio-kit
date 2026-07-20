@@ -80,7 +80,7 @@ const EXTENSION_INTEGRATION_PREFIXES = [
   "apps/vscode-extension/test/e2e/",
 ];
 
-// MCP integration contracts are now tracked in the kicad-mcp repository.
+// MCP server implementation is owned by KiCad MCP Pro; this repository tracks published-artifact integration contracts.
 
 function normalizeChangedFile(file) {
   return file.trim().replaceAll("\\", "/").replace(/^\.\//u, "");

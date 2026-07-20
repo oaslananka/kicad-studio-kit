@@ -1,6 +1,6 @@
 # Publishing
 
-Publishing is GitHub-only and uses the canonical repository `oaslananka/kicad-studio-kit`.
+KiCad Studio publishing is GitHub-only from the canonical repository `oaslananka/kicad-studio-kit`. KiCad MCP Pro server, schema, container, and registry publishing is owned by the separate [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository.
 
 ## Version Availability
 
@@ -33,31 +33,39 @@ MCP server release dry-runs are now owned by [KiCad MCP Pro](https://oaslananka.
 
 Protocol or tool-schema changes must update compatibility metadata and release notes for both products before publishing.
 
-## Required GitHub Environments
+## Required GitHub environments by owner
 
-- `extension-marketplaces`
-- `pypi`
-- `testpypi`
-- `npm`
-- `mcp-registry`
-- `ghcr`
-- `release`
+This KiCad Studio repository owns:
 
-## Required Secrets
+- `extension-marketplaces` for Marketplace/Open VSX credentials;
+- `release` for extension release evidence.
 
-- `VSCE_PAT`: environment `extension-marketplaces`
-- `OVSX_PAT`: environment `extension-marketplaces`
-- `GITHUB_TOKEN`: built in
+The KiCad MCP Pro repository owns its own `pypi`, `testpypi`, `npm`,
+`mcp-registry`, `ghcr`, and `release` environments. Do not copy those publisher
+settings or credentials into this repository.
 
-Do not configure package registry tokens for PyPI, TestPyPI, or npm. Those publish paths use trusted publishing through OIDC.
+## Required secrets in this repository
 
-`VSCE_PAT` and `OVSX_PAT` must be scoped to the `extension-marketplaces` environment only. Rotate both tokens at least every 180 days, immediately after any maintainer access change, and immediately after any failed or suspicious publish attempt. Token rotation must update the environment secret before the old token is revoked so the next guarded workflow run can validate the replacement.
+- `VSCE_PAT`: environment `extension-marketplaces`;
+- `OVSX_PAT`: environment `extension-marketplaces`;
+- `GITHUB_TOKEN`: built in.
 
-## Trusted Publisher Setup
+KiCad MCP Pro package publication uses the authentication policy configured in
+that repository. PyPI, TestPyPI, npm schema, MCP Registry, and container
+publishing must not depend on secrets stored in this repository.
 
-PyPI and TestPyPI are now configured and published from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/).
+`VSCE_PAT` and `OVSX_PAT` must be scoped to the `extension-marketplaces`
+environment only. Rotate both tokens at least every 180 days, immediately after
+any maintainer access change, and immediately after any failed or suspicious
+publish attempt. Update the environment secret before revoking the old token so
+the next guarded workflow can validate the replacement.
 
-Npm publishes for `kicad-mcp-pro` are now managed from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/).
+## Trusted publisher ownership
+
+PyPI, TestPyPI, npm schema, container, and MCP Registry publishing are configured
+and executed by [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/).
+The extension workflows consume those published artifacts but never publish
+them.
 
 Open VSX:
 
@@ -92,14 +100,14 @@ MCP Registry:
 
 - server name: `io.github.oaslananka/kicad-mcp-pro`
 - repo: KiCad MCP Pro
-- workflow: `publish-mcp-registry.yml` (in kicad-mcp repo)
+- workflow: `publish-mcp-registry.yml` in the KiCad MCP Pro repository
 - auth: GitHub OIDC
 
 GHCR:
 
 - image: `ghcr.io/oaslananka/kicad-mcp-pro`
 - repo: KiCad MCP Pro
-- workflow: `publish-mcp-container.yml` (in kicad-mcp repo)
+- workflow: `publish-mcp-container.yml` in the KiCad MCP Pro repository
 - environment: `ghcr`
 - auth: built-in `GITHUB_TOKEN` with `packages: write`
 - signing: keyless Sigstore `cosign` with GitHub OIDC
@@ -149,10 +157,10 @@ workflow uploads product-scoped build artifacts, `SHA256SUMS.txt`,
 `sbom.cdx.json`, GitHub artifact attestations, and post-publish verification
 records when a GitHub Release triggers the workflow.
 
-| Product                | Release assets                                                                    | Publish verification                                                                                 |
-| ---------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| VSIX                   | `kicadstudiokit-<version>.vsix`, `vscode-extension-SHA256SUMS.txt`, SBOM evidence | Verify checksum before publish; verify Marketplace/Open VSX version and normalized VSIX payload.      |
-| Python wheel and sdist | wheel, sdist, `kicad-mcp-pro-python-SHA256SUMS.txt`, SBOM evidence                | Verify local checksums before publish; verify PyPI/TestPyPI SHA-256 digests after publish.           |
+| Product                | Release assets                                                                    | Publish verification                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| VSIX                   | `kicadstudiokit-<version>.vsix`, `vscode-extension-SHA256SUMS.txt`, SBOM evidence | Verify checksum before publish; verify Marketplace/Open VSX version and normalized VSIX payload. |
+| Python wheel and sdist | wheel, sdist, `kicad-mcp-pro-python-SHA256SUMS.txt`, SBOM evidence                | Verify local checksums before publish; verify PyPI/TestPyPI SHA-256 digests after publish.       |
 
 Local release policy verification:
 

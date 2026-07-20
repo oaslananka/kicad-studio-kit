@@ -24,6 +24,7 @@ The checker will classify files into four roles.
 
 Current instructions that maintainers act on. These files must not use retired repository names or instruct changes to removed local MCP paths. The initial explicit set includes:
 
+- top-level `README.md`, `AGENTS.md`, and `CONTRIBUTING.md`;
 - `docs/adr/0008-mcp-2026-07-28-protocol-upgrade.md`;
 - `docs/mcp/index.md`;
 - `docs/publishing.md`;

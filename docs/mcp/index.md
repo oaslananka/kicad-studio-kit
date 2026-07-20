@@ -21,4 +21,4 @@ release-quality checks to MCP clients. The source lives exclusively at KiCad MCP
 - Development source: [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) (removed from this monorepo)
 - Server-info schema: `@oaslananka/kicad-protocol-schemas/schemas/kicad-mcp-server-info.schema.json`
 
-The MCP tool catalog is generated from the registered server tools in the kicad-mcp repository.
+The MCP tool catalog is generated from the registered server tools published and maintained by the KiCad MCP Pro repository.

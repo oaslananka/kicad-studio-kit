@@ -30,19 +30,18 @@ corepack pnpm run build:kicad-studio
 corepack pnpm run package:kicad-studio
 ```
 
-For MCP server work (source at [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)):
+For MCP server, schema-source, container, or registry work, switch to the
+[KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository and use
+its checked-in contributor instructions. This repository intentionally exposes
+no local server check, test, build, or publish aliases.
+
+For extension-side protocol or cross-product integration work in this
+repository:
 
 ```bash
-corepack pnpm run check:kicad-mcp-pro
-corepack pnpm run test:kicad-mcp-pro
-corepack pnpm run build:kicad-mcp-pro
-corepack pnpm run package:kicad-mcp-pro
-```
-
-For protocol or integration work:
-
-```bash
-corepack pnpm run test:contract
+corepack pnpm run check:protocol-schemas
+corepack pnpm run check:compatibility-contract
+corepack pnpm run check:protocol-pr-template
 corepack pnpm run test:fixtures
 ```
 
@@ -130,7 +129,10 @@ CODEOWNERS review should match the changed paths:
 - `.github/` for CI, release, labels, and governance.
 - `docs/architecture/` for architecture and release model.
 - `apps/vscode-extension/` for KiCad Studio extension work.
-- `packages/mcp-server/` (removed — see [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)) for KiCad MCP Pro server and MCP Registry metadata (canonical source at [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)).
+- The separate [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)
+  repository owns server source, protocol-schema source, container/registry
+  metadata, and its own CODEOWNERS policy; those paths have no local ownership
+  entry here.
 - `packages/test-harness/` for shared test-only fixtures, mocks, golden
   assertions, temporary workspaces, and MCP/webview helpers.
 - `examples/` for user-facing KiCad examples.
