@@ -8,6 +8,7 @@ import {
   CLI_CAPABILITY_METADATA,
   SETTINGS
 } from '../constants';
+import { DOCUMENTATION_URLS } from '../documentation/documentationUrls';
 import { parseKiCadMajor } from './kicadCliSupport';
 import type { DetectedKiCadCli } from '../types';
 import { normalizeUserPath } from '../utils/pathUtils';
@@ -216,9 +217,7 @@ export class KiCadCliDetector {
         );
       } else if (selected === 'Help') {
         await vscode.env.openExternal(
-          vscode.Uri.parse(
-            'https://github.com/oaslananka/kicad-studio-kit/blob/main/docs/installation.md'
-          )
+          vscode.Uri.parse(DOCUMENTATION_URLS.kicadCliInstallation)
         );
       }
     }

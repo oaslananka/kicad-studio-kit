@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { DOCUMENTATION_URLS } from '../documentation/documentationUrls';
 import { createNonce } from '../utils/nonce';
 import { injectWebviewLocalization } from '../webviewI18n';
 
@@ -21,6 +22,9 @@ export interface SettingsHtmlOptions {
 export function buildSettingsHtml(options: SettingsHtmlOptions): string {
   const nonce = createNonce();
   const stateJson = JSON.stringify(options.state).replace(/</g, '\\u003c');
+  const mcpIntegrationDocsUrlJson = JSON.stringify(
+    DOCUMENTATION_URLS.mcpIntegration
+  );
 
   return injectWebviewLocalization(
     `<!DOCTYPE html>
@@ -409,7 +413,7 @@ export function buildSettingsHtml(options: SettingsHtmlOptions): string {
     byId('test-ai-key').addEventListener('click', () => vscode.postMessage({ type: 'testAiKey' }));
     byId('detect-cli').addEventListener('click', () => vscode.postMessage({ type: 'detectCli' }));
     byId('clear-all-secrets').addEventListener('click', () => vscode.postMessage({ type: 'clearAllSecrets' }));
-    byId('open-mcp-docs').addEventListener('click', () => vscode.postMessage({ type: 'openExternalLink', href: 'https://github.com/oaslananka/kicad-studio-kit/blob/main/docs/INTEGRATION.md' }));
+    byId('open-mcp-docs').addEventListener('click', () => vscode.postMessage({ type: 'openExternalLink', href: ${mcpIntegrationDocsUrlJson} }));
 
     window.addEventListener('message', (event) => {
       const message = event.data || {};
