@@ -57,10 +57,10 @@ const expectedRulesetFixture = {
       type: "pull_request",
       parameters: {
         allowed_merge_methods: ["merge", "squash", "rebase"],
-        dismiss_stale_reviews_on_push: true,
-        require_code_owner_review: true,
-        require_last_push_approval: true,
-        required_approving_review_count: 1,
+        dismiss_stale_reviews_on_push: false,
+        require_code_owner_review: false,
+        require_last_push_approval: false,
+        required_approving_review_count: 0,
         required_review_thread_resolution: true,
       },
     },
@@ -203,4 +203,17 @@ test("#495 checked-in ruleset preserves all live merge methods", () => {
     "rebase",
     "squash",
   ]);
+});
+
+test("#507 solo-maintainer ruleset avoids review deadlock", () => {
+  const ruleset = JSON.parse(
+    fs.readFileSync(".github/rulesets/main.json", "utf8"),
+  );
+  const pullRequest = normalizeRuleset(ruleset).pullRequest;
+
+  assert.equal(pullRequest.requiredApprovingReviewCount, 0);
+  assert.equal(pullRequest.requireCodeOwnerReview, false);
+  assert.equal(pullRequest.requireLastPushApproval, false);
+  assert.equal(pullRequest.requiredReviewThreadResolution, true);
+  assert.equal(pullRequest.dismissStaleReviewsOnPush, false);
 });
