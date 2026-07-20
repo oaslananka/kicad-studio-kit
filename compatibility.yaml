@@ -492,6 +492,11 @@ runtimePolicy:
     vscodeInsiders: "https://update.code.visualstudio.com/api/update/linux-x64/insider/latest"
     pythonReleases: "https://peps.python.org/api/python-releases.json"
     kicadDownloads: "https://www.kicad.org/download/linux/"
+  enforcement:
+    vscode: "report"
+    python: "report"
+    kicad: "report"
+    sourceUnavailable: "report"
   vscode:
     maxMinimumMinorLag: 1
     loweringRequiresChangelog: "apps/vscode-extension/CHANGELOG.md"
