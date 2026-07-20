@@ -21,11 +21,11 @@
 
 - Create: `scripts/check-vscode-typings-policy.test.mjs`
 
-- [ ] Add fixture helpers for package, compatibility, and Renovate metadata.
-- [ ] Assert a fully aligned fixture passes.
-- [ ] Assert stale Renovate cap, compatibility drift, and typings drift fail with actionable messages.
-- [ ] Assert root package script wiring exists.
-- [ ] Run `node --test scripts/check-vscode-typings-policy.test.mjs` and verify RED because the checker/wiring do not exist.
+- [x] Add fixture helpers for package, compatibility, and Renovate metadata.
+- [x] Assert a fully aligned fixture passes.
+- [x] Assert stale Renovate cap, compatibility drift, and typings drift fail with actionable messages.
+- [x] Assert root package script wiring exists.
+- [x] Run `node --test scripts/check-vscode-typings-policy.test.mjs` and verify RED because the checker/wiring do not exist.
 
 ### Task 2: Implement the validator
 
@@ -33,12 +33,12 @@
 
 - Create: `scripts/check-vscode-typings-policy.mjs`
 
-- [ ] Export `validateVscodeTypingsPolicy({ compatibility, extensionPackage, renovateConfig })`.
-- [ ] Parse explicit caret engine and exact/capped semantic versions.
-- [ ] Validate the package and compatibility surfaces.
-- [ ] Locate exactly one dedicated Renovate cap rule and validate `<=<minimum>`.
-- [ ] Add a CLI that reads repository files, reports all errors, and exits non-zero on drift.
-- [ ] Run tests and verify that only current repository wiring/stale cap assertions remain RED.
+- [x] Export `validateVscodeTypingsPolicy({ compatibility, extensionPackage, renovateConfig })`.
+- [x] Parse explicit caret engine and exact/capped semantic versions.
+- [x] Validate the package and compatibility surfaces.
+- [x] Locate exactly one dedicated Renovate cap rule and validate `<=<minimum>`.
+- [x] Add a CLI that reads repository files, reports all errors, and exits non-zero on drift.
+- [x] Run tests and verify that only current repository wiring/stale cap assertions remain RED.
 
 ### Task 3: Correct policy and document ownership
 
@@ -48,16 +48,16 @@
 - Modify: `docs/dependency-lifecycle.md`
 - Modify: `package.json`
 
-- [ ] Change the dedicated `@types/vscode` cap from `<=1.99.0` to `<=1.101.0`.
-- [ ] Document minimum-engine ownership and coordinated update steps.
-- [ ] Add `check:vscode-typings-policy` and insert it after `check:compatibility-contract` in root `check`.
-- [ ] Run the checker suite and verify GREEN.
+- [x] Change the dedicated `@types/vscode` cap from `<=1.99.0` to `<=1.101.0`.
+- [x] Document minimum-engine ownership and coordinated update steps.
+- [x] Add `check:vscode-typings-policy` and insert it after `check:compatibility-contract` in root `check`.
+- [x] Run the checker suite and verify GREEN.
 
 ### Task 4: Verify and deliver
 
 **Files:** No additional files.
 
-- [ ] Run Prettier on changed repository files.
-- [ ] Run the policy checker, compatibility contract, docs lint, and `git diff --check`.
+- [x] Run Prettier on changed repository files.
+- [x] Run the policy checker, compatibility contract, docs lint, and `git diff --check`.
 - [ ] Run the full root check in CI-capable environment; document VPS-2-only blockers under #490.
 - [ ] Commit with DCO sign-off, push, open a PR that closes #489, and watch required checks to terminal state.
