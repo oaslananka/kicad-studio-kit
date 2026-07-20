@@ -41,7 +41,7 @@ The live ruleset already requires `dependency-review`; the checked-in ruleset an
 The report observes without changing:
 
 - private vulnerability reporting;
-- Dependabot security updates and alert endpoint availability;
+- GitHub-native dependency security updates and alert endpoint availability;
 - secret scanning and push protection;
 - optional non-provider patterns and validity checks;
 - code-scanning and secret-scanning alert endpoint availability.

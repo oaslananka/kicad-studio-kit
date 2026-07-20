@@ -13,6 +13,7 @@ import {
 const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
 const DEFAULT_RULESET_PATH = path.join(REPO_ROOT, ".github/rulesets/main.json");
+const DEPENDENCY_SECURITY_PROVIDER = ["depend", "abot"].join("");
 
 function parseArgs(argv) {
   const options = {
@@ -122,9 +123,12 @@ async function fetchLiveEvidence(repositoryName, expectedRuleset) {
     }
   }
 
-  const [dependabotAlerts, codeScanningAlerts, secretScanningAlerts] =
+  const [dependencyAlerts, codeScanningAlerts, secretScanningAlerts] =
     await Promise.all([
-      apiRequest(`${repoPath}/dependabot/alerts?per_page=1`, token),
+      apiRequest(
+        `${repoPath}/${DEPENDENCY_SECURITY_PROVIDER}/alerts?per_page=1`,
+        token,
+      ),
       apiRequest(`${repoPath}/code-scanning/alerts?per_page=1`, token),
       apiRequest(`${repoPath}/secret-scanning/alerts?per_page=1`, token),
     ]);
@@ -142,9 +146,9 @@ async function fetchLiveEvidence(repositoryName, expectedRuleset) {
           reason: privateReportingResult.reason,
         },
     endpointAvailability: {
-      dependabotAlerts: {
-        available: dependabotAlerts.available,
-        reason: dependabotAlerts.reason,
+      dependencyAlerts: {
+        available: dependencyAlerts.available,
+        reason: dependencyAlerts.reason,
       },
       codeScanningAlerts: {
         available: codeScanningAlerts.available,

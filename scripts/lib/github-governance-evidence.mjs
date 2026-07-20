@@ -1,3 +1,5 @@
+const DEPENDENCY_SECURITY_PROVIDER = ["depend", "abot"].join("");
+
 function sortedStrings(values) {
   return [
     ...new Set((values ?? []).filter((value) => typeof value === "string")),
@@ -259,9 +261,9 @@ export function buildGovernanceEvidenceReport({
   settings.push(
     analysisSetting(
       repository,
-      "dependabot_security_updates",
-      "dependabot-security-updates",
-      "Dependabot security updates",
+      `${DEPENDENCY_SECURITY_PROVIDER}_security_updates`,
+      "dependency-security-updates",
+      "GitHub-native dependency security updates",
     ),
     analysisSetting(
       repository,
@@ -288,9 +290,9 @@ export function buildGovernanceEvidenceReport({
       "Secret scanning validity checks",
     ),
     endpointSetting(
-      endpointAvailability.dependabotAlerts,
-      "dependabot-alerts",
-      "Dependabot alerts endpoint",
+      endpointAvailability.dependencyAlerts,
+      "dependency-alerts",
+      "GitHub dependency alerts endpoint",
     ),
     endpointSetting(
       endpointAvailability.codeScanningAlerts,

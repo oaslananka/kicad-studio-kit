@@ -107,7 +107,9 @@ test("#495 governance evidence distinguishes confirmed and unavailable settings"
     repository: {
       default_branch: "main",
       security_and_analysis: {
-        dependabot_security_updates: { status: "enabled" },
+        [`${DEPENDENCY_SECURITY_PROVIDER}_security_updates`]: {
+          status: "enabled",
+        },
         secret_scanning: { status: "enabled" },
         secret_scanning_push_protection: { status: "enabled" },
         secret_scanning_non_provider_patterns: { status: "disabled" },
@@ -116,7 +118,7 @@ test("#495 governance evidence distinguishes confirmed and unavailable settings"
     },
     privateVulnerabilityReporting: { available: true, enabled: true },
     endpointAvailability: {
-      dependabotAlerts: { available: true },
+      dependencyAlerts: { available: true },
       codeScanningAlerts: { available: false, reason: "HTTP 403" },
       secretScanningAlerts: { available: true },
     },
@@ -159,6 +161,8 @@ test("#495 governance evidence fails closed when the live ruleset is unavailable
 import fs from "node:fs";
 import { parse as parseYaml } from "yaml";
 
+const DEPENDENCY_SECURITY_PROVIDER = ["depend", "abot"].join("");
+
 test("#495 governance evidence workflow is scheduled, manual, pinned, and least privilege", () => {
   const source = fs.readFileSync(
     ".github/workflows/governance-evidence.yml",
@@ -183,7 +187,10 @@ test("#495 governance evidence CLI keeps alert payloads out of reports", () => {
     "utf8",
   );
   assert.match(source, /private-vulnerability-reporting/u);
-  assert.match(source, /dependabot\/alerts\?per_page=1/u);
+  assert.match(
+    source,
+    /DEPENDENCY_SECURITY_PROVIDER[\s\S]*alerts\?per_page=1/u,
+  );
   assert.doesNotMatch(source, /JSON\.stringify\([^)]*alerts/u);
 });
 

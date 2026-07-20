@@ -192,7 +192,7 @@ The 2026-07-20 audit confirmed:
 
 - active default-branch ruleset enforcement with six required checks;
 - private vulnerability reporting enabled;
-- Dependabot security updates enabled;
+- GitHub-native dependency security updates enabled;
 - secret scanning and push protection enabled;
 - optional non-provider patterns and validity checks disabled;
 - alert, code-scanning, and secret-scanning endpoints accessible.
