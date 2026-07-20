@@ -20,19 +20,15 @@ import { MCP_COMPAT, getMcpCompatStatus, normalizeMcpVersion } from './compat';
 import { MCP_PROTOCOL_VERSION } from './compatibilityMatrix';
 import { McpDetector } from './mcpDetector';
 import type { McpLogger } from './mcpLogger';
-
-interface JsonRpcResponse<T> {
-  result?: T;
-  error?: {
-    message?: string;
-    data?: unknown;
-  };
-}
-
-interface RpcTransportResult<T> {
-  json: JsonRpcResponse<T>;
-  sessionId?: string | undefined;
-}
+import type {
+  McpDiscoveryResult,
+  McpProtocolAdapter
+} from './protocol/protocolAdapter';
+import { resolveMcpProtocolAdapter } from './protocol/protocolAdapterRegistry';
+import {
+  HttpJsonRpcTransport,
+  type McpRpcTransport
+} from './transport/httpJsonRpcTransport';
 
 export interface McpClientOptions {
   maxRetries?: number | undefined;
@@ -50,29 +46,15 @@ const DEFAULT_RECONNECT_DELAYS_MS = [
   1000, 2000, 4000, 8000, 16000, 30000
 ] as const;
 
-class McpHttpError extends Error {
-  constructor(readonly status: number) {
-    super(`HTTP ${status}`);
-  }
-}
-
-class McpRequestTimeoutError extends Error {
-  constructor(timeoutMs: number) {
-    super(`MCP request timed out after ${timeoutMs}ms.`);
-    this.name = 'McpRequestTimeoutError';
-  }
-}
-
 export class McpClient {
   private lastInstall: McpInstallStatus = { found: false, source: 'none' };
   private sessionId: string | undefined;
-  private initializePromise: Promise<void> | undefined;
+  private protocolReadyPromise: Promise<void> | undefined;
   private connectionTestPromise: Promise<McpConnectionState> | undefined;
   private nextRpcId = 1;
-  private readonly maxRetries: number;
-  private readonly retryBaseDelayMs: number;
+  private readonly protocolAdapter: McpProtocolAdapter;
+  private readonly transport: McpRpcTransport;
   private readonly reconnectDelaysMs: readonly number[];
-  private readonly trafficLogger: McpLogger | undefined;
   private state: McpConnectionState;
   private incompatibleWarningLogged = false;
   private reconnectTimers: NodeJS.Timeout[] = [];
@@ -84,11 +66,15 @@ export class McpClient {
     options: McpClientOptions = {}
   ) {
     this.sessionId = context.globalState.get<string>(MCP_SESSION_ID_KEY);
-    this.maxRetries = Math.max(1, options.maxRetries ?? 3);
-    this.retryBaseDelayMs = Math.max(1, options.retryBaseDelayMs ?? 200);
+    this.protocolAdapter = resolveMcpProtocolAdapter(MCP_PROTOCOL_VERSION);
+    this.transport = new HttpJsonRpcTransport({
+      logger,
+      trafficLogger: options.logger,
+      maxRetries: options.maxRetries,
+      retryBaseDelayMs: options.retryBaseDelayMs
+    });
     this.reconnectDelaysMs =
       options.reconnectDelaysMs ?? DEFAULT_RECONNECT_DELAYS_MS;
-    this.trafficLogger = options.logger;
     const cachedServer = context.globalState.get<McpServerCard>(
       MCP_LAST_SERVER_CARD_KEY
     );
@@ -169,7 +155,7 @@ export class McpClient {
     }
 
     try {
-      await this.ensureInitialized({ force: true });
+      await this.ensureProtocolReady({ force: true });
       if (this.state.kind === 'Incompatible') {
         return this.setState({
           ...this.state,
@@ -440,163 +426,101 @@ export class McpClient {
     method: string,
     params: Record<string, unknown>
   ): Promise<T | undefined> {
-    if (method !== 'initialize') {
-      // kicad-mcp-pro is connected via VS Code stdio (.vscode/mcp.json).
-      // The extension's HTTP client cannot reach it — tool calls are routed
-      // through VS Code's native MCP infrastructure, not our HTTP layer.
-      if (this.state.kind === 'VsCodeStdio') {
-        throw new Error(
-          'kicad-mcp-pro is connected via VS Code stdio. ' +
-            'Use the AI chat with MCP tools enabled, or Claude Code / Cursor instead.'
-        );
-      }
-      await this.ensureInitialized();
-      if (this.state.kind === 'Incompatible') {
-        throw new Error(
-          `MCP server is incompatible. Server ${this.state.server?.version ?? '0.0.0'} does not satisfy ${MCP_COMPAT.required}.`
-        );
-      }
+    // kicad-mcp-pro is connected via VS Code stdio (.vscode/mcp.json).
+    // The extension's HTTP client cannot reach it — tool calls are routed
+    // through VS Code's native MCP infrastructure, not our HTTP layer.
+    if (this.state.kind === 'VsCodeStdio') {
+      throw new Error(
+        'kicad-mcp-pro is connected via VS Code stdio. ' +
+          'Use the AI chat with MCP tools enabled, or Claude Code / Cursor instead.'
+      );
     }
 
-    const { json, sessionId } = await this.postJsonRpcWithRetry<T>(
-      method,
-      params
-    );
-    if (sessionId) {
-      await this.persistSessionId(sessionId);
+    await this.ensureProtocolReady();
+    if (this.state.kind === 'Incompatible') {
+      throw new Error(
+        `MCP server is incompatible. Server ${this.state.server?.version ?? '0.0.0'} does not satisfy ${MCP_COMPAT.required}.`
+      );
     }
-    if (json.error) {
-      throw createErrorFromRpc(json.error);
+
+    const result = await this.executeProtocolRequest<T>(method, params);
+    await this.applyResponseMetadata(result.headers);
+    if (result.json.error) {
+      throw createErrorFromRpc(result.json.error);
     }
-    return json.result;
+    return result.json.result;
   }
 
-  private async ensureInitialized(
+  private async ensureProtocolReady(
     options: { force?: boolean } = {}
   ): Promise<void> {
-    if (!options.force && this.sessionId && this.state.server) {
+    if (
+      this.protocolAdapter.canReuseDiscovery({
+        force: options.force ?? false,
+        sessionId: this.sessionId,
+        hasServerCard: Boolean(this.state.server)
+      })
+    ) {
       return;
     }
-    if (this.initializePromise) {
-      return this.initializePromise;
+    if (this.protocolReadyPromise) {
+      return this.protocolReadyPromise;
     }
 
-    this.initializePromise = (async () => {
+    this.protocolReadyPromise = (async () => {
       this.setState({
         ...this.state,
         kind: 'Connecting',
         connected: false
       });
-      const { json, sessionId } =
-        await this.postJsonRpcWithRetry<InitializeResult>('initialize', {
-          protocolVersion: MCP_PROTOCOL_VERSION,
-          clientInfo: {
-            name: 'kicad-studio',
-            version: getExtensionVersion(this.context)
-          },
-          capabilities: {}
-        });
-      if (sessionId) {
-        await this.persistSessionId(sessionId);
+      const discovery = this.protocolAdapter.createDiscoveryRequest({
+        name: 'kicad-studio',
+        version: getExtensionVersion(this.context)
+      });
+      const result = await this.executeProtocolRequest<McpDiscoveryResult>(
+        discovery.method,
+        discovery.params
+      );
+      if (result.json.error) {
+        throw createErrorFromRpc(result.json.error);
       }
-      if (json.error) {
-        throw createErrorFromRpc(json.error);
-      }
-      await this.captureServerCard(json.result);
+      this.protocolAdapter.validateDiscoveryResult(result.json.result);
+      await this.applyResponseMetadata(result.headers);
+      await this.captureServerCard(result.json.result);
     })();
 
     try {
-      await this.initializePromise;
+      await this.protocolReadyPromise;
     } finally {
-      this.initializePromise = undefined;
+      this.protocolReadyPromise = undefined;
     }
   }
 
-  private async postJsonRpc<T>(
+  private executeProtocolRequest<T>(
     method: string,
     params: Record<string, unknown>
-  ): Promise<RpcTransportResult<T>> {
-    const baseEndpoint = this.getEndpoint();
-    const primaryEndpoint = `${baseEndpoint}/mcp`;
-    const requestBody = JSON.stringify({
-      jsonrpc: '2.0',
+  ) {
+    return this.transport.execute<T>({
+      baseEndpoint: this.getEndpoint(),
       id: this.nextRpcId++,
       method,
-      params
-    });
-    this.trafficLogger?.recordRequest(method, requestBody, this.buildHeaders());
-
-    const timeoutMs = getMcpRequestTimeoutMs();
-    const primaryResponse = await fetchWithTimeout(
-      primaryEndpoint,
-      {
-        method: 'POST',
-        headers: this.buildHeaders(),
-        body: requestBody
-      },
-      timeoutMs
-    );
-
-    if (primaryResponse.status === 404 || primaryResponse.status === 405) {
-      const allowLegacySse = vscode.workspace
+      params,
+      headers: this.protocolAdapter.createRequestHeaders({
+        method,
+        sessionId: this.sessionId
+      }),
+      allowLegacySse: vscode.workspace
         .getConfiguration()
-        .get<boolean>(SETTINGS.mcpAllowLegacySse, false);
-      if (!allowLegacySse) {
-        throw new Error(
-          `The configured MCP server at ${primaryEndpoint} does not expose Streamable HTTP. Upgrade kicad-mcp-pro or enable ${SETTINGS.mcpAllowLegacySse} to try the legacy /sse fallback.`
-        );
-      }
-
-      this.logger.warn(
-        'Falling back to legacy MCP /sse transport because allowLegacySse is enabled.'
-      );
-      const fallback = await this.readRpcResponse<T>(
-        await fetchWithTimeout(
-          `${baseEndpoint}/sse`,
-          {
-            method: 'POST',
-            headers: this.buildHeaders(),
-            body: requestBody
-          },
-          timeoutMs
-        )
-      );
-      this.trafficLogger?.recordResponse(method, fallback.json);
-      return fallback;
-    }
-
-    const result = await this.readRpcResponse<T>(primaryResponse);
-    this.trafficLogger?.recordResponse(method, result.json);
-    return result;
+        .get<boolean>(SETTINGS.mcpAllowLegacySse, false),
+      timeoutMs: getMcpRequestTimeoutMs()
+    });
   }
 
-  private async postJsonRpcWithRetry<T>(
-    method: string,
-    params: Record<string, unknown>
-  ): Promise<RpcTransportResult<T>> {
-    let lastError: unknown;
-    for (let attempt = 0; attempt < this.maxRetries; attempt += 1) {
-      try {
-        return await this.postJsonRpc<T>(method, params);
-      } catch (error) {
-        lastError = error;
-        this.trafficLogger?.recordError(
-          method,
-          error instanceof Error ? error.message : String(error)
-        );
-        if (attempt === this.maxRetries - 1 || !isTransientMcpError(error)) {
-          throw error;
-        }
-        this.logger.debug(
-          `MCP ${method} failed transiently; retrying in ${
-            this.retryBaseDelayMs * 2 ** attempt
-          }ms.`
-        );
-        await sleep(this.retryBaseDelayMs * 2 ** attempt);
-      }
+  private async applyResponseMetadata(headers: Headers): Promise<void> {
+    const metadata = this.protocolAdapter.readResponseMetadata(headers);
+    if (metadata.sessionId) {
+      await this.persistSessionId(metadata.sessionId);
     }
-
-    throw lastError instanceof Error ? lastError : new Error(String(lastError));
   }
 
   private async persistSessionId(sessionId: string): Promise<void> {
@@ -605,7 +529,7 @@ export class McpClient {
   }
 
   private async captureServerCard(
-    initializeResult: InitializeResult | undefined
+    initializeResult: McpDiscoveryResult | undefined
   ): Promise<void> {
     const initializeServerInfo = initializeResult?.serverInfo;
     const initializeVersion = normalizeMcpVersion(
@@ -704,37 +628,6 @@ export class McpClient {
     }
     this.reconnectTimers = [];
   }
-
-  private buildHeaders(): Record<string, string> {
-    return {
-      'Content-Type': 'application/json',
-      Accept: 'application/json, text/event-stream',
-      'MCP-Protocol-Version': MCP_PROTOCOL_VERSION,
-      ...(this.sessionId ? { 'MCP-Session-Id': this.sessionId } : {})
-    };
-  }
-
-  private async readRpcResponse<T>(
-    response: Response
-  ): Promise<RpcTransportResult<T>> {
-    if (!response.ok) {
-      throw new McpHttpError(response.status);
-    }
-
-    const sessionId = response.headers.get('MCP-Session-Id') ?? undefined;
-    const contentType = response.headers.get('content-type') ?? '';
-    if (contentType.includes('text/event-stream')) {
-      return {
-        json: parseSseJsonRpc<T>(await response.text()),
-        sessionId
-      };
-    }
-
-    return {
-      json: (await response.json()) as JsonRpcResponse<T>,
-      sessionId
-    };
-  }
 }
 
 function validateEndpoint(endpoint: string): void {
@@ -786,48 +679,8 @@ function getMcpRequestTimeoutMs(): number {
   return Math.max(1, Math.min(seconds, 120)) * 1000;
 }
 
-async function fetchWithTimeout(
-  input: RequestInfo | URL,
-  init: RequestInit,
-  timeoutMs: number
-): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => {
-    controller.abort(new McpRequestTimeoutError(timeoutMs));
-  }, timeoutMs);
-
-  try {
-    return await fetch(input, {
-      ...init,
-      signal: init.signal
-        ? AbortSignal.any([init.signal, controller.signal])
-        : controller.signal
-    });
-  } catch (error) {
-    if (controller.signal.aborted) {
-      throw controller.signal.reason instanceof Error
-        ? controller.signal.reason
-        : new McpRequestTimeoutError(timeoutMs);
-    }
-    throw error;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-interface InitializeResult {
-  serverInfo?:
-    | {
-        name?: string | undefined;
-        title?: string | undefined;
-        version?: string | undefined;
-      }
-    | undefined;
-  capabilities?: unknown;
-}
-
 function shouldReadWellKnownServerVersion(
-  serverInfo: InitializeResult['serverInfo'],
+  serverInfo: McpDiscoveryResult['serverInfo'],
   version: string
 ): boolean {
   if (getMcpCompatStatus(version) === 'incompatible') {
@@ -843,7 +696,7 @@ function shouldReadWellKnownServerVersion(
 }
 
 function shouldReadWellKnownServerMetadata(
-  serverInfo: InitializeResult['serverInfo'],
+  serverInfo: McpDiscoveryResult['serverInfo'],
   version: string
 ): boolean {
   const name = `${serverInfo?.name ?? ''} ${serverInfo?.title ?? ''}`;
@@ -863,23 +716,6 @@ class McpStructuredError extends Error {
     this.code = error.code;
     this.hint = error.hint;
   }
-}
-
-function isTransientMcpError(error: unknown): boolean {
-  if (error instanceof McpRequestTimeoutError) {
-    return true;
-  }
-  if (error instanceof McpHttpError) {
-    return error.status === 408 || error.status === 429 || error.status >= 500;
-  }
-  return (
-    error instanceof TypeError ||
-    /(?:ECONNRESET|ETIMEDOUT|EAI_AGAIN|network|fetch)/i.test(String(error))
-  );
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function toStudioContextToolArgs(
@@ -1034,26 +870,6 @@ function severityFromText(value: string): FixItem['severity'] {
     return 'warning';
   }
   return 'info';
-}
-
-function parseSseJsonRpc<T>(payload: string): JsonRpcResponse<T> {
-  const events = payload
-    .split(/\r?\n\r?\n/)
-    .map((chunk) =>
-      chunk
-        .split(/\r?\n/)
-        .filter((line) => line.startsWith('data:'))
-        .map((line) => line.slice('data:'.length).trim())
-        .join('')
-    )
-    .filter(Boolean);
-
-  const lastEvent = events.at(-1);
-  if (!lastEvent) {
-    throw new Error('The MCP server returned an empty SSE payload.');
-  }
-
-  return JSON.parse(lastEvent) as JsonRpcResponse<T>;
 }
 
 function normalizeCapabilities(

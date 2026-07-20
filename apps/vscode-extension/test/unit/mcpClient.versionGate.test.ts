@@ -1,4 +1,5 @@
 import { McpClient } from '../../src/mcp/mcpClient';
+import { McpProtocolVersionMismatchError } from '../../src/mcp/protocol/protocolAdapter';
 import { __setConfiguration, createExtensionContextMock } from './vscodeMock';
 
 function createJsonResponse(body: unknown) {
@@ -239,6 +240,38 @@ describe('McpClient version gate', () => {
       ]);
     }
   );
+
+  it('rejects an explicit negotiated protocol mismatch before tool execution (#492)', async () => {
+    const currentResult = initializeResult('3.5.2').result;
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          result: {
+            ...currentResult,
+            protocolVersion: '2026-07-28'
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          result: { structuredContent: { shouldNotRun: true } }
+        })
+      );
+    global.fetch = fetchMock as typeof fetch;
+
+    const execution = createClient().callTool('project_ping', {});
+
+    await expect(execution).rejects.toBeInstanceOf(
+      McpProtocolVersionMismatchError
+    );
+    await expect(execution).rejects.toMatchObject({
+      code: 'MCP_PROTOCOL_VERSION_MISMATCH',
+      expectedVersion: '2025-11-25',
+      receivedVersion: '2026-07-28'
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 
   it.each(['3.5.1', '4.0.0', undefined])(
     'marks unsupported or missing version %s as incompatible',
