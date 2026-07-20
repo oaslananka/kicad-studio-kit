@@ -62,7 +62,9 @@ once it reports on every pull request (today it is path-scoped to docs changes).
 
 ## Review ownership
 
-CODEOWNERS review is required by the active ruleset. Path ownership is declared in `.github/CODEOWNERS`:
+The repository is solo-maintained. Pull requests are mandatory, but the active ruleset requires zero approving reviews so the repository owner is not deadlocked waiting for an unavailable second maintainer. CODEOWNERS remains an ownership map and notification aid; it is not a blocking approval requirement.
+
+Path ownership is declared in `.github/CODEOWNERS`:
 
 - `.github/`: CI, release, labels, and governance.
 - `docs/architecture/`: architecture and release model.
@@ -74,6 +76,7 @@ CODEOWNERS review is required by the active ruleset. Path ownership is declared 
 ## Protection settings
 
 - Require a pull request before merging.
+- Require zero approving reviews; do not require CODEOWNERS or last-push approval.
 - Require conversation resolution.
 - Require branches to be up to date before merge when required checks are enabled.
 - Require signed commits if the account policy supports it.

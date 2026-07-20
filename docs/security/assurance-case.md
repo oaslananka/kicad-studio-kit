@@ -26,7 +26,7 @@ The repository combines policy, automation, and evidence:
 
 ## Residual risk
 
-- Branch protection is not active according to the GitHub API result during this audit.
-- Independent human review is not yet evidenced.
+- Default-branch protection is ruleset-based and must remain synchronized with `.github/rulesets/main.json`.
+- Independent human review is not yet evidenced; the solo-maintainer ruleset therefore relies on mandatory PRs, CI, static analysis, dependency review, and resolved conversations rather than an unavailable approval.
 - Single-maintainer continuity remains a bus-factor risk.
 - Full REUSE/SLSA/Gold claims require separate assessments.

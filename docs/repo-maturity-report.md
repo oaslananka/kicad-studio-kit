@@ -9,7 +9,7 @@ Target: Solo-maintainer Professional OSS / Mature OSS
 
 KiCad Studio Kit already has a strong professional open-source foundation: an MIT license, README, contribution guide, Code of Conduct, security policy, support policy, release automation, pinned GitHub Actions, CodeQL, Scorecard, Gitleaks, Renovate, release evidence, and a documented support matrix.
 
-The repository is best classified as **Solo-maintainer Professional OSS / Mature OSS in progress**. It is intentionally not assessed as Gold/foundation-grade because the project is solo-maintained. The 2026-07-20 live audit confirmed that `main` is protected by the active `main-protection` repository ruleset with signed commits, reviewed pull requests, strict required checks, deletion protection, and non-fast-forward protection.
+The repository is best classified as **Solo-maintainer Professional OSS / Mature OSS in progress**. It is intentionally not assessed as Gold/foundation-grade because the project is solo-maintained. The 2026-07-20 live audit confirmed that `main` is protected by the active `main-protection` repository ruleset with signed commits, pull-request-only changes, strict required checks, deletion protection, and non-fast-forward protection.
 
 The legacy branch-protection endpoint still returns `404 Branch not protected` because enforcement is ruleset-based. The active ruleset and `branches/main.protected: true` are the authoritative evidence for this repository.
 
@@ -58,20 +58,20 @@ Gold/foundation-grade is intentionally out of scope for the current solo-maintai
 
 ## Scorecard readiness
 
-| Check                  | Status  | Evidence / gap                                                                                                                        |
-| ---------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Branch-Protection      | Passed  | Active `main-protection` ruleset matches the checked-in policy and protects the default branch.                                       |
-| Code-Review            | Partial | The active ruleset enforces review controls; sustained independent human-review history remains limited by the solo-maintainer model. |
-| Maintained             | Passed  | Recent release and push activity exist.                                                                                               |
-| Security-Policy        | Passed  | `SECURITY.md`.                                                                                                                        |
-| License                | Passed  | MIT license.                                                                                                                          |
-| CI-Tests               | Passed  | `ci.yml`, product checks, docs, package, integration, a11y, visual, and release checks exist.                                         |
-| Dependency-Update-Tool | Passed  | Renovate and GitHub-native dependency alert/update configuration exist.                                                               |
-| Pinned-Dependencies    | Passed  | GitHub Actions are digest-pinned; lockfile is committed.                                                                              |
-| Token-Permissions      | Passed  | Workflows generally use minimum permissions; publish/release jobs elevate only where needed.                                          |
-| Dangerous-Workflow     | Partial | No risky change applied here; workflow review should remain active because release jobs can push generated surfaces.                  |
-| SAST                   | Passed  | CodeQL workflow exists.                                                                                                               |
-| Fuzzing                | Partial | Security fuzz/unit tests exist; dedicated fuzzing service or OSS-Fuzz integration is not evidenced.                                   |
+| Check                  | Status  | Evidence / gap                                                                                                                                                             |
+| ---------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Branch-Protection      | Passed  | Active `main-protection` ruleset matches the checked-in policy and protects the default branch.                                                                            |
+| Code-Review            | Partial | The active ruleset enforces pull requests and CI but intentionally requires zero approvals; independent human-review history remains limited by the solo-maintainer model. |
+| Maintained             | Passed  | Recent release and push activity exist.                                                                                                                                    |
+| Security-Policy        | Passed  | `SECURITY.md`.                                                                                                                                                             |
+| License                | Passed  | MIT license.                                                                                                                                                               |
+| CI-Tests               | Passed  | `ci.yml`, product checks, docs, package, integration, a11y, visual, and release checks exist.                                                                              |
+| Dependency-Update-Tool | Passed  | Renovate and GitHub-native dependency alert/update configuration exist.                                                                                                    |
+| Pinned-Dependencies    | Passed  | GitHub Actions are digest-pinned; lockfile is committed.                                                                                                                   |
+| Token-Permissions      | Passed  | Workflows generally use minimum permissions; publish/release jobs elevate only where needed.                                                                               |
+| Dangerous-Workflow     | Partial | No risky change applied here; workflow review should remain active because release jobs can push generated surfaces.                                                       |
+| SAST                   | Passed  | CodeQL workflow exists.                                                                                                                                                    |
+| Fuzzing                | Partial | Security fuzz/unit tests exist; dedicated fuzzing service or OSS-Fuzz integration is not evidenced.                                                                        |
 
 ## Documentation maturity
 
@@ -132,7 +132,7 @@ The repository already has extensive architecture, release, testing, compatibili
 | ----------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Time to first response        | Partial        | `SUPPORT.md` defines goals; actual issue response metrics require human/automation measurement.                                                                        |
 | Issue resolution process      | Partial        | Templates and support goals exist; dashboards/labels should be monitored.                                                                                              |
-| PR review process             | Partial        | Review is enforced by ruleset; independent reviewer capacity remains limited by the solo-maintainer model.                                                             |
+| PR review process             | Partial        | Pull requests and CI are enforced by ruleset without a mandatory approval; independent reviewer capacity remains limited by the solo-maintainer model.                 |
 | Contributor activity          | Not applicable | Independent contributor activity is not required for the current solo-maintainer target.                                                                               |
 | Release frequency             | Partial        | Recent release exists; sustainable cadence needs more history.                                                                                                         |
 | Bus factor                    | Missing        | Current evidence points to a single primary maintainer; this is acceptable for Solo-maintainer Professional OSS when governance and release procedures are documented. |
@@ -223,7 +223,7 @@ forward.
 
 ## Next actions
 
-1. Merge this PR after human review.
+1. Merge policy changes only after required checks, bot findings, and review threads are resolved.
 2. Let the weekly governance evidence workflow verify live ruleset and security-setting drift.
 3. Re-run OpenSSF Scorecard after the updated evidence reaches `main`.
 4. Update the Best Practices BadgeApp with the refreshed evidence links in `docs/openssf-proposal-links.md`.
