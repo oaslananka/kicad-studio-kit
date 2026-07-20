@@ -101,6 +101,24 @@ describe('settings webview', () => {
     expect(html).toContain("type: 'requestApiKeyStatus'");
   });
 
+  it('embeds the canonical MCP integration documentation URL (#488)', () => {
+    const html = buildSettingsHtml({
+      webview: { cspSource: 'vscode-resource:' } as vscode.Webview,
+      state: {
+        settings: {},
+        aiKeyStored: false,
+        octopartKeyStored: false
+      }
+    });
+
+    expect(html).toContain(
+      'https://github.com/oaslananka/kicad-studio-kit/blob/main/apps/vscode-extension/docs/INTEGRATION.md'
+    );
+    expect(html).not.toContain(
+      'https://github.com/oaslananka/kicad-studio-kit/blob/main/docs/INTEGRATION.md'
+    );
+  });
+
   it('handles setting updates, API key actions, CLI detection, and allowed external links', async () => {
     const context = createExtensionContextMock();
     const panelMock = createPanelMock();
@@ -130,7 +148,7 @@ describe('settings webview', () => {
     await panelMock.send({ type: 'detectCli' });
     await panelMock.send({
       type: 'openExternalLink',
-      href: 'https://github.com/oaslananka/kicad-studio-kit/blob/main/docs/INTEGRATION.md'
+      href: 'https://github.com/oaslananka/kicad-studio-kit/blob/main/apps/vscode-extension/docs/INTEGRATION.md'
     });
     await panelMock.send({ type: 'clearAllSecrets' });
 
@@ -150,7 +168,12 @@ describe('settings webview', () => {
     expect(services.statusBar.update).toHaveBeenCalledWith({
       cli: expect.objectContaining({ versionLabel: 'KiCad 10.0.0' })
     });
-    expect(vscode.env.openExternal).toHaveBeenCalled();
+    const openedDocumentationUrl = (
+      vscode.env.openExternal as jest.Mock
+    ).mock.calls.at(-1)?.[0] as vscode.Uri | undefined;
+    expect(openedDocumentationUrl?.toString()).toBe(
+      'https://github.com/oaslananka/kicad-studio-kit/blob/main/apps/vscode-extension/docs/INTEGRATION.md'
+    );
     expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
       COMMANDS.clearSecrets
     );

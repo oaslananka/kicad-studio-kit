@@ -1,6 +1,6 @@
 # Issue 488 Documentation Link Integrity Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
 **Goal:** Correct the two shipped documentation links and add a deterministic repository gate that prevents missing own-repository documentation targets.
 
@@ -21,22 +21,24 @@
 ### Task 1: Capture the two user-flow regressions
 
 **Files:**
+
 - Modify: `apps/vscode-extension/test/unit/settingsPanel.test.ts`
 - Modify: `apps/vscode-extension/test/unit/kicadCliDetector.test.ts`
 
 **Interfaces:**
+
 - Consumes: existing `buildSettingsHtml`, `KiCadSettingsPanel`, and `KiCadCliDetector.detect(notifyOnMissing)` behavior.
 - Produces: regression expectations for the canonical MCP and KiCad CLI documentation URLs.
 
-- [ ] **Step 1: Update the Settings panel regression expectation**
+- [x] **Step 1: Update the Settings panel regression expectation**
 
 Send `openExternalLink` with `https://github.com/oaslananka/kicad-studio-kit/blob/main/apps/vscode-extension/docs/INTEGRATION.md`, then assert `vscode.env.openExternal` receives a URI whose string is that exact URL. Rename the test so its name includes `#488`.
 
-- [ ] **Step 2: Add the missing-CLI Help regression test**
+- [x] **Step 2: Add the missing-CLI Help regression test**
 
 Configure candidate validation to return `undefined`, make `vscode.window.showErrorMessage` resolve to `Help`, call `detector.detect(true)`, and assert `vscode.env.openExternal` receives `https://github.com/oaslananka/kicad-studio-kit/blob/main/docs/install.md`. Include `#488` in the test name.
 
-- [ ] **Step 3: Run both tests and verify RED**
+- [x] **Step 3: Run both tests and verify RED**
 
 Run:
 
@@ -49,55 +51,59 @@ Expected: FAIL because production still emits `docs/INTEGRATION.md` and `docs/in
 ### Task 2: Centralize and repair documentation URLs
 
 **Files:**
+
 - Create: `apps/vscode-extension/src/documentation/documentationUrls.ts`
 - Modify: `apps/vscode-extension/src/settings/settingsHtml.ts`
 - Modify: `apps/vscode-extension/src/cli/kicadCliDetector.ts`
 
 **Interfaces:**
+
 - Produces: `DOCUMENTATION_URLS.mcpIntegration` and `DOCUMENTATION_URLS.kicadCliInstallation`, both readonly string literals.
 - Consumers: Settings HTML event payload and KiCad CLI Help action.
 
-- [ ] **Step 1: Add the typed URL source**
+- [x] **Step 1: Add the typed URL source**
 
 Create:
 
 ```ts
 export const DOCUMENTATION_URLS = {
   mcpIntegration:
-    'https://github.com/oaslananka/kicad-studio-kit/blob/main/apps/vscode-extension/docs/INTEGRATION.md',
+    "https://github.com/oaslananka/kicad-studio-kit/blob/main/apps/vscode-extension/docs/INTEGRATION.md",
   kicadCliInstallation:
-    'https://github.com/oaslananka/kicad-studio-kit/blob/main/docs/install.md'
+    "https://github.com/oaslananka/kicad-studio-kit/blob/main/docs/install.md",
 } as const;
 ```
 
-- [ ] **Step 2: Use the MCP constant in Settings HTML**
+- [x] **Step 2: Use the MCP constant in Settings HTML**
 
 Import `DOCUMENTATION_URLS`, serialize `DOCUMENTATION_URLS.mcpIntegration` with `JSON.stringify`, and use the serialized literal in the `open-mcp-docs` message payload.
 
-- [ ] **Step 3: Use the install constant in CLI detection**
+- [x] **Step 3: Use the install constant in CLI detection**
 
 Import `DOCUMENTATION_URLS` and pass `DOCUMENTATION_URLS.kicadCliInstallation` to `vscode.Uri.parse` in the Help branch.
 
-- [ ] **Step 4: Run both tests and verify GREEN**
+- [x] **Step 4: Run both tests and verify GREEN**
 
 Run the Task 1 Jest command. Expected: both suites pass.
 
 ### Task 3: Add the offline repository-link integrity gate
 
 **Files:**
+
 - Create: `scripts/check-extension-documentation-links.mjs`
 - Create: `scripts/check-extension-documentation-links.test.mjs`
 - Modify: `package.json`
 
 **Interfaces:**
+
 - Produces: `collectExtensionDocumentationLinkErrors({ repoRoot }) => string[]`.
 - Consumes: TypeScript files under `<repoRoot>/apps/vscode-extension/src` and local target files under `<repoRoot>`.
 
-- [ ] **Step 1: Write checker tests first**
+- [x] **Step 1: Write checker tests first**
 
 Cover three behaviors: valid own-repository targets return no errors; a missing target returns a message containing source file, line, and target; root `package.json` defines `check:extension-doc-links` and includes it in `check`.
 
-- [ ] **Step 2: Run the checker tests and verify RED**
+- [x] **Step 2: Run the checker tests and verify RED**
 
 Run:
 
@@ -107,11 +113,11 @@ node --test scripts/check-extension-documentation-links.test.mjs
 
 Expected: FAIL because the checker module and package wiring do not exist.
 
-- [ ] **Step 3: Implement the checker**
+- [x] **Step 3: Implement the checker**
 
 Recursively read `.ts` files, match this repository's `blob/main` URL prefix, decode the captured path, reject absolute or parent-traversal targets, check `statSync(...).isFile()`, and return all formatted errors. When invoked directly, print errors and set exit code 1; otherwise print a success summary.
 
-- [ ] **Step 4: Wire the root scripts**
+- [x] **Step 4: Wire the root scripts**
 
 Add:
 
@@ -121,7 +127,7 @@ Add:
 
 Insert `pnpm run check:extension-doc-links` before `pnpm run check:docs-site` in the root `check` chain.
 
-- [ ] **Step 5: Run checker tests and verify GREEN**
+- [x] **Step 5: Run checker tests and verify GREEN**
 
 Run:
 
@@ -134,13 +140,15 @@ Expected: checker success plus all Node tests passing.
 ### Task 4: Verify issue acceptance criteria
 
 **Files:**
+
 - No new files.
 
 **Interfaces:**
+
 - Consumes: all Task 1–3 outputs.
 - Produces: fresh verification evidence for the commit and PR.
 
-- [ ] **Step 1: Run focused quality gates**
+- [x] **Step 1: Run focused quality gates**
 
 ```bash
 corepack pnpm --filter kicadstudiokit run format:check
@@ -161,7 +169,7 @@ corepack pnpm run package:kicad-studio
 
 Expected: both commands exit 0 and VSIX validation succeeds.
 
-- [ ] **Step 3: Review the diff**
+- [x] **Step 3: Review the diff**
 
 ```bash
 git diff --check
@@ -172,7 +180,7 @@ git diff origin/main...HEAD
 
 Expected: only issue `#488` source, tests, checker wiring, and approved spec/plan files are present.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/superpowers apps/vscode-extension/src apps/vscode-extension/test scripts package.json

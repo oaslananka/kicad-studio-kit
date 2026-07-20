@@ -10,7 +10,7 @@ The extension will keep using canonical GitHub `blob/main` URLs for these two ac
 
 A new typed `DOCUMENTATION_URLS` constant module will own both URLs. `settingsHtml.ts` and `kicadCliDetector.ts` will consume that module rather than embedding repository paths independently.
 
-A deterministic Node repository check will scan TypeScript source under `apps/vscode-extension/src` for URLs matching this repository's `https://github.com/oaslananka/kicad-studio-kit/blob/main/<path>` form. It will decode and normalize each target, reject paths that escape the repository, and fail when the referenced path is not a tracked file. The check will not make network requests.
+A deterministic Node repository check will scan TypeScript source under `apps/vscode-extension/src` for URLs matching this repository's `https://github.com/oaslananka/kicad-studio-kit/blob/main/<path>` form. It will decode and normalize each target, reject paths that escape the repository, and fail when the referenced path is not an existing file. The check will not make network requests.
 
 ## Error reporting
 

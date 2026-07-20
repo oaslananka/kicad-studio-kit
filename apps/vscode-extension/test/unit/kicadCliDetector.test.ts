@@ -105,6 +105,22 @@ describe('KiCadCliDetector', () => {
     expect(result).toBeUndefined();
   });
 
+  it('opens the canonical installation help when kicad-cli is missing (#488)', async () => {
+    const detector = new KiCadCliDetector() as any;
+    detector.validateCandidate = jest.fn().mockResolvedValue(undefined);
+    detector.findOnPath = jest.fn().mockReturnValue(undefined);
+    (vscode.window.showErrorMessage as jest.Mock).mockResolvedValue('Help');
+
+    await expect(detector.detect(true)).resolves.toBeUndefined();
+
+    expect(vscode.env.openExternal).toHaveBeenCalledTimes(1);
+    const openedDocumentationUrl = (vscode.env.openExternal as jest.Mock).mock
+      .calls[0]?.[0] as vscode.Uri | undefined;
+    expect(openedDocumentationUrl?.toString()).toBe(
+      'https://github.com/oaslananka/kicad-studio-kit/blob/main/docs/install.md'
+    );
+  });
+
   it('builds candidate paths by platform', () => {
     const candidates = getCliCandidates('win32', 'C:\\Custom\\kicad-cli.exe');
     expect(candidates[0]).toBe('C:\\Custom\\kicad-cli.exe');
