@@ -41,3 +41,28 @@ Extension-only UI or command changes do not require MCP server changes unless th
 MCP server tool changes must update server metadata, tests, and any extension adapter assumptions.
 
 Protocol changes must update both product tests, compatibility metadata, release notes, and the integration documentation.
+
+## Extension protocol adapter boundary
+
+The extension keeps protocol-version behavior separate from HTTP execution:
+
+- `apps/vscode-extension/src/mcp/protocol/` owns discovery lifecycle,
+  protocol-specific request headers, response metadata such as the current
+  session identifier, negotiated-version validation, and the strict registry of
+  production-supported protocol adapters.
+- `apps/vscode-extension/src/mcp/transport/` owns JSON-RPC serialization,
+  Streamable HTTP execution, timeout and retry policy, JSON/SSE response
+  parsing, the opt-in legacy `/sse` fallback, and traffic-log evidence. The
+  transport returns raw response headers and must not interpret protocol
+  sessions.
+- `apps/vscode-extension/src/mcp/mcpClient.ts` owns VS Code state, persisted
+  extension state, server compatibility cards, diagnostics, and domain result
+  normalization. It selects the adapter named by `MCP_PROTOCOL_VERSION` and
+  does not embed version-specific lifecycle behavior.
+
+Only `2025-11-25` is production-selectable. The
+`test/fixtures/mcp-protocol/2026-07-28-draft.json` envelope is an RC planning
+fixture: it is explicitly non-selectable and cannot be treated as compatibility
+metadata or a release claim. A final `2026-07-28` adapter must be implemented
+from the published specification, validated against published KiCad MCP Pro
+artifacts, and activated through a coordinated compatibility change.

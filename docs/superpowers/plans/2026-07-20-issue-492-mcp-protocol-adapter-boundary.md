@@ -25,14 +25,14 @@
 - Create: `apps/vscode-extension/test/unit/mcpProtocolAdapter.test.ts`
 - Create: `apps/vscode-extension/test/fixtures/mcp-protocol/2026-07-28-draft.json`
 
-- [ ] Test production registry selection for `2025-11-25`.
-- [ ] Test structured rejection of unsupported/draft versions.
-- [ ] Test 2025 initialize request construction and client metadata.
-- [ ] Test protocol/session headers with and without a session ID.
-- [ ] Test response session extraction and discovery reuse rules.
-- [ ] Test explicit negotiated-version mismatch diagnostics.
-- [ ] Test that the 2026 fixture is marked draft, stateless, and non-selectable.
-- [ ] Run the focused Jest command and verify RED because protocol modules do not exist.
+- [x] Test production registry selection for `2025-11-25`.
+- [x] Test structured rejection of unsupported/draft versions.
+- [x] Test 2025 initialize request construction and client metadata.
+- [x] Test protocol/session headers with and without a session ID.
+- [x] Test response session extraction and discovery reuse rules.
+- [x] Test explicit negotiated-version mismatch diagnostics.
+- [x] Test that the 2026 fixture is marked draft, stateless, and non-selectable.
+- [x] Run the focused Jest command and verify RED because protocol modules do not exist.
 
 ### Task 2: Implement the production 2025 protocol adapter and registry
 
@@ -42,12 +42,12 @@
 - Create: `apps/vscode-extension/src/mcp/protocol/mcp2025ProtocolAdapter.ts`
 - Create: `apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts`
 
-- [ ] Define versioned request, discovery, response metadata, and readiness interfaces.
-- [ ] Add structured unsupported-version and mismatch error classes.
-- [ ] Implement the exact current 2025 initialize/session behavior.
-- [ ] Keep absent response `protocolVersion` backward compatible.
-- [ ] Resolve only `2025-11-25` from the production registry.
-- [ ] Run adapter tests and verify GREEN.
+- [x] Define versioned request, discovery, response metadata, and readiness interfaces.
+- [x] Add structured unsupported-version and mismatch error classes.
+- [x] Implement the exact current 2025 initialize/session behavior.
+- [x] Keep absent response `protocolVersion` backward compatible.
+- [x] Resolve only `2025-11-25` from the production registry.
+- [x] Run adapter tests and verify GREEN.
 
 ### Task 3: Lock the HTTP transport contract with failing tests
 
@@ -55,14 +55,14 @@
 
 - Create: `apps/vscode-extension/test/unit/mcpHttpJsonRpcTransport.test.ts`
 
-- [ ] Test primary `/mcp` JSON execution and serialized JSON-RPC envelope.
-- [ ] Test `text/event-stream` parsing.
-- [ ] Test legacy `/sse` fallback is opt-in and limited to 404/405.
-- [ ] Test timeout signals and actionable timeout errors.
-- [ ] Test exponential retry for transient responses/network errors.
-- [ ] Test deterministic failures are not retried.
-- [ ] Test traffic logger request/response/error calls.
-- [ ] Run the focused Jest command and verify RED because the transport module does not exist.
+- [x] Test primary `/mcp` JSON execution and serialized JSON-RPC envelope.
+- [x] Test `text/event-stream` parsing.
+- [x] Test legacy `/sse` fallback is opt-in and limited to 404/405.
+- [x] Test timeout signals and actionable timeout errors.
+- [x] Test exponential retry for transient responses/network errors.
+- [x] Test deterministic failures are not retried.
+- [x] Test traffic logger request/response/error calls.
+- [x] Run the focused Jest command and verify RED because the transport module does not exist.
 
 ### Task 4: Implement the independent HTTP JSON-RPC transport
 
@@ -70,12 +70,12 @@
 
 - Create: `apps/vscode-extension/src/mcp/transport/httpJsonRpcTransport.ts`
 
-- [ ] Define a transport interface independent of VS Code state and protocol sessions.
-- [ ] Move timeout, response parsing, SSE parsing, retry classification, and backoff into the transport.
-- [ ] Return raw response headers to the protocol adapter.
-- [ ] Preserve the exact Streamable HTTP and opt-in legacy SSE behavior.
-- [ ] Keep injected fetch/sleep seams for deterministic tests.
-- [ ] Run transport tests and verify GREEN.
+- [x] Define a transport interface independent of VS Code state and protocol sessions.
+- [x] Move timeout, response parsing, SSE parsing, retry classification, and backoff into the transport.
+- [x] Return raw response headers to the protocol adapter.
+- [x] Preserve the exact Streamable HTTP and opt-in legacy SSE behavior.
+- [x] Keep injected fetch/sleep seams for deterministic tests.
+- [x] Run transport tests and verify GREEN.
 
 ### Task 5: Integrate the boundary into McpClient with TDD
 
@@ -85,14 +85,14 @@
 - Modify: `apps/vscode-extension/test/unit/mcpClient.test.ts`
 - Modify: `apps/vscode-extension/test/unit/mcpClient.versionGate.test.ts`
 
-- [ ] Add a failing regression for an explicit negotiated protocol mismatch.
-- [ ] Replace `initializePromise` with protocol-ready lifecycle terminology.
-- [ ] Select the active adapter from `MCP_PROTOCOL_VERSION`.
-- [ ] Delegate discovery/header/response metadata behavior to the adapter.
-- [ ] Delegate HTTP execution/retry/parsing to the transport.
-- [ ] Remove migrated transport and session-specific helpers from `mcpClient.ts`.
-- [ ] Keep state/card/domain normalization in `McpClient`.
-- [ ] Run all MCP client/adapter/transport unit tests and verify GREEN.
+- [x] Add a failing regression for an explicit negotiated protocol mismatch.
+- [x] Replace `initializePromise` with protocol-ready lifecycle terminology.
+- [x] Select the active adapter from `MCP_PROTOCOL_VERSION`.
+- [x] Delegate discovery/header/response metadata behavior to the adapter.
+- [x] Delegate HTTP execution/retry/parsing to the transport.
+- [x] Remove migrated transport and session-specific helpers from `mcpClient.ts`.
+- [x] Keep state/card/domain normalization in `McpClient`.
+- [x] Run all MCP client/adapter/transport unit tests and verify GREEN.
 
 ### Task 6: Verify protocol and product acceptance criteria
 
@@ -100,14 +100,14 @@
 
 - Update the plan checkboxes and protocol-impact PR evidence only.
 
-- [ ] Run extension format, lint, and typecheck.
-- [ ] Run focused MCP unit tests with coverage disabled for iteration.
-- [ ] Run the complete extension unit coverage gate.
-- [ ] Run extension security tests.
-- [ ] Run `check:protocol-schemas` and `check:compatibility-contract`.
-- [ ] Run real-server compatibility flow where the published artifact is available.
-- [ ] Run extension build, package, and package validation.
-- [ ] Run `git diff --check` and review the complete diff.
-- [ ] Commit with DCO sign-off.
+- [x] Run extension format, lint, and typecheck.
+- [x] Run focused MCP unit tests with coverage disabled for iteration.
+- [x] Run the complete extension unit coverage gate.
+- [x] Run extension security tests.
+- [x] Run `check:protocol-schemas` and `check:compatibility-contract`.
+- [x] Run real-server compatibility flow where the published artifact is available. The VPS-2 command was executed; all four flows reported `real-server skipped` because `uv` is unavailable, which is tracked by #490. GitHub real-pair CI remains required before the PR is marked ready.
+- [x] Run extension build, package, and package validation.
+- [x] Run `git diff --check` and review the complete diff.
+- [x] Commit with DCO sign-off.
 - [ ] Push and open a draft PR linked to `#492`.
 - [ ] Watch required GitHub checks to terminal state, address review findings, then mark ready.

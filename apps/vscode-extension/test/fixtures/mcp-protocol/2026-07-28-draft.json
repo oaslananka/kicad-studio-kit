@@ -1,0 +1,14 @@
+{
+  "issue": 492,
+  "status": "draft",
+  "selectable": false,
+  "protocolVersion": "2026-07-28",
+  "lifecycle": {
+    "discoveryMethod": "server/discover",
+    "stateless": true,
+    "sessionHeader": null,
+    "requestMetadataLocation": "params._meta",
+    "routingHeaders": ["Mcp-Method", "Mcp-Name"]
+  },
+  "note": "RC planning fixture only. Do not select this protocol in production before the final specification and compatible published server artifacts exist."
+}
