@@ -18,6 +18,7 @@ const DOCS_FILES = [
   "docs/publishing.md",
   "docs/protocol-schemas.md",
   "docs/support-matrix.md",
+  "docs/compatibility/runtime-policy.md",
 ];
 
 const REQUIRED_FILES = [
@@ -31,6 +32,14 @@ const REQUIRED_FILES = [
     label: "Release coordination runbook",
   },
   { path: "docs/EMERGENCY-RELEASE-FLOW.md", label: "Emergency release flow" },
+  {
+    path: ".github/workflows/runtime-policy-drift.yml",
+    label: "Runtime policy drift workflow",
+  },
+  {
+    path: "docs/compatibility/runtime-policy.md",
+    label: "Runtime policy documentation",
+  },
 ];
 
 function readFile(filePath) {

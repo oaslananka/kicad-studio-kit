@@ -37,7 +37,13 @@ function validDate(value) {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/u.test(value)) {
     return false;
   }
-  return !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
 }
 
 function validateHttpsSource(errors, sources, key) {
@@ -197,9 +203,11 @@ export function parseVsCodeStableRelease(payload) {
   if (!Array.isArray(payload)) {
     throw new Error("VS Code stable release source must be an array");
   }
-  const versions = payload.map((value) =>
-    parseNumericVersion(value, "VS Code stable release", 3),
-  );
+  const versions = payload
+    .filter(
+      (value) => typeof value === "string" && /^\d+\.\d+\.\d+$/u.test(value),
+    )
+    .map((value) => parseNumericVersion(value, "VS Code stable release", 3));
   if (versions.length === 0) {
     throw new Error("VS Code stable release source returned no versions");
   }
@@ -259,21 +267,29 @@ function evaluateVsCode(compatibility, upstream) {
     3,
   );
   const stable = parseNumericVersion(upstream.version, "VS Code stable", 3);
-  const lag =
-    stable.major === minimum.major
-      ? stable.minor - minimum.minor
-      : Number.POSITIVE_INFINITY;
+  const majorLineChanged = stable.major !== minimum.major;
+  const lag = majorLineChanged ? null : stable.minor - minimum.minor;
   const allowed = policy.vscode.maxMinimumMinorLag;
-  const status = lag > allowed ? "drift" : "current";
+  const status = majorLineChanged || lag > allowed ? "drift" : "current";
+  let message;
+  if (status === "current") {
+    message = `VS Code minimum ${minimum.value} is within ${allowed} minor(s) of stable ${stable.value}.`;
+  } else if (majorLineChanged) {
+    message = `VS Code stable ${stable.value} is on a different major line than minimum ${minimum.value}.`;
+  } else {
+    message = `VS Code minimum ${minimum.value} lag ${lag} exceeds ${allowed} against stable ${stable.value}.`;
+  }
   return {
     runtime: "vscode",
     status,
     enforcement: policy.enforcement.vscode,
-    message:
-      status === "current"
-        ? `VS Code minimum ${minimum.value} is within ${allowed} minor(s) of stable ${stable.value}.`
-        : `VS Code minimum ${minimum.value} lag ${String(lag)} exceeds ${allowed} against stable ${stable.value}.`,
-    details: { minimum: minimum.value, stable: stable.value, minorLag: lag },
+    message,
+    details: {
+      minimum: minimum.value,
+      stable: stable.value,
+      minorLag: lag,
+      majorLineChanged,
+    },
   };
 }
 
@@ -334,7 +350,7 @@ function evaluateKiCad(compatibility, upstream) {
     enforcement: policy.enforcement.kicad,
     message:
       status === "current"
-        ? `KiCad primary ${compatibility.kicad.primary} matches stable major ${stable.major}; KiCad stable patch ${stable.value} is ${patchFreshness} versus verified ${verified.value}.`
+        ? `KiCad primary ${compatibility.kicad.primary} matches stable major ${stable.major}; verified baseline ${verified.value} is ${patchFreshness} versus KiCad stable patch ${stable.value}.`
         : `KiCad primary ${compatibility.kicad.primary} major lag ${majorLag} exceeds ${allowed} against stable ${stable.value}; verified patch is ${verified.value}.`,
     details: {
       primary: compatibility.kicad.primary,

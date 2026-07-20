@@ -62,7 +62,7 @@ test("#494 validates deterministic runtime policy metadata", () => {
 
 test("#494 rejects malformed and internally inconsistent runtime policy metadata", () => {
   const compatibility = makeCompatibility();
-  compatibility.runtimePolicy.reviewed = "not-a-date";
+  compatibility.runtimePolicy.reviewed = "2026-02-31";
   compatibility.runtimePolicy.enforcement.python = "ignore";
   compatibility.runtimePolicy.vscode.maxMinimumMinorLag = -1;
   compatibility.runtimePolicy.python.supportedMinorWindow = 3;
@@ -84,6 +84,10 @@ test("#494 rejects malformed and internally inconsistent runtime policy metadata
 
 test("#494 parses authoritative VS Code, Python, and KiCad source shapes", () => {
   assert.equal(parseVsCodeStableRelease(["1.129.1", "1.129.0"]), "1.129.1");
+  assert.equal(
+    parseVsCodeStableRelease(["1.129.1", "1.20.0-insider", "legacy"]),
+    "1.129.1",
+  );
   assert.deepEqual(
     parsePythonBugfixWindow({
       metadata: {
@@ -150,6 +154,22 @@ test("#494 reports VS Code, Python, and KiCad drift with patch freshness evidenc
   assert.match(report.runtimes[2].message, /major lag 1 exceeds 0/u);
   assert.equal(report.runtimes[2].details.patchFreshness, "behind");
   assert.equal(report.exitCode, 0, "report enforcement is non-blocking");
+});
+
+test("#494 reports a VS Code major-line change without non-finite JSON values", () => {
+  const report = evaluateRuntimePolicy({
+    compatibility: makeCompatibility(),
+    upstream: {
+      vscode: { status: "available", version: "2.0.0" },
+      python: { status: "available", versions: ["3.13", "3.14"] },
+      kicad: { status: "available", version: "10.0.3" },
+    },
+  });
+
+  assert.equal(report.runtimes[0].status, "drift");
+  assert.equal(report.runtimes[0].details.minorLag, null);
+  assert.match(report.runtimes[0].message, /major line/u);
+  assert.doesNotMatch(JSON.stringify(report), /null.*Infinity|Infinity/u);
 });
 
 test("#494 promotes explicitly configured upstream drift to a failure", () => {

@@ -486,7 +486,7 @@ python:
     - "3.14"
 
 runtimePolicy:
-  reviewed: "2026-05-26"
+  reviewed: "2026-07-20"
   sources:
     vscodeStable: "https://update.code.visualstudio.com/api/releases/stable"
     vscodeInsiders: "https://update.code.visualstudio.com/api/update/linux-x64/insider/latest"
