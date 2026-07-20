@@ -3,7 +3,7 @@
 This page is the evidence register for the OpenSSF Best Practices project at
 <https://www.bestpractices.dev/projects/13405>.
 
-Last reviewed: 2026-06-30.
+Last reviewed: 2026-07-20.
 
 ## Current badge status
 
@@ -63,19 +63,21 @@ ruleset contexts from drifting.
 
 ## Scorecard remediation mapping
 
-| Low score / alert   | Evidence already present                                                                      | Required action                                                                                   |
-| ------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Branch-Protection   | `.github/rulesets/main.json`, `docs/architecture/branch-protection.md`                        | Apply the ruleset in GitHub and re-run Scorecard.                                                 |
-| Code-Review         | `.github/CODEOWNERS`, PR template, branch policy doc                                          | Use reviewed PRs for all future human changes.                                                    |
-| CII-Best-Practices  | This page plus existing policy docs                                                           | Silver achieved on 2026-06-30; keep the badge in README and maintain evidence URLs.               |
-| Signed-Releases     | `publish-extension.yml`, `create-release-assets.js`, release docs                             | Confirm that the next release exposes attestations in a detectable way.                           |
-| SAST                | CodeQL workflow and security workflow                                                         | Confirm CodeQL runs on every default-branch/PR path Scorecard samples.                            |
-| Pinned-Dependencies | Devcontainer pins the base image, the official uv image digest, and downloaded tool checksums | Re-run Scorecard/code scanning after the next default-branch scan to clear stale line references. |
-| Maintained          | Active commits and releases                                                                   | This improves automatically as the repository ages.                                               |
-| Packaging           | `publish-extension.yml`, Marketplace/Open VSX publication                                     | Keep publish workflow names and release assets obvious to automated detectors.                    |
+| Low score / alert   | Evidence already present                                                                       | Required action                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Branch-Protection   | `.github/rulesets/main.json`, `docs/architecture/branch-protection.md`, live evidence workflow | Active ruleset confirmed; investigate any scheduled evidence drift and re-run Scorecard.          |
+| Code-Review         | `.github/CODEOWNERS`, PR template, branch policy doc                                           | Use reviewed PRs for all future human changes.                                                    |
+| CII-Best-Practices  | This page plus existing policy docs                                                            | Silver achieved on 2026-06-30; keep the badge in README and maintain evidence URLs.               |
+| Signed-Releases     | `publish-extension.yml`, `create-release-assets.js`, release docs                              | Confirm that the next release exposes attestations in a detectable way.                           |
+| SAST                | CodeQL workflow and security workflow                                                          | Confirm CodeQL runs on every default-branch/PR path Scorecard samples.                            |
+| Pinned-Dependencies | Devcontainer pins the base image, the official uv image digest, and downloaded tool checksums  | Re-run Scorecard/code scanning after the next default-branch scan to clear stale line references. |
+| Maintained          | Active commits and releases                                                                    | This improves automatically as the repository ages.                                               |
+| Packaging           | `publish-extension.yml`, Marketplace/Open VSX publication                                      | Keep publish workflow names and release assets obvious to automated detectors.                    |
 
 ## Ruleset verification
 
-The versioned ruleset is `.github/rulesets/main.json`. After applying it in GitHub,
-verify that it is active and that the Branch-Protection Scorecard alert has
-cleared in the repository security tab.
+The versioned ruleset is `.github/rulesets/main.json`. The 2026-07-20 audit
+confirmed that the active `main-protection` ruleset matches it, including six
+required checks. `.github/workflows/governance-evidence.yml` repeats this
+comparison weekly and on demand; investigate any drift before changing maturity
+claims.

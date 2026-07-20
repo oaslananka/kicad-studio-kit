@@ -1,8 +1,9 @@
 # Branch Protection Policy
 
-Apply this policy to `main` after the repository environments and required
-checks are available. The importable ruleset lives in
-`.github/rulesets/main.json`.
+This policy is active on `main`. The importable source of truth lives in
+`.github/rulesets/main.json`; the live GitHub ruleset is named `main-protection`.
+The 2026-07-20 audit confirmed that the active ruleset matches the checked-in
+policy.
 
 ## Required status checks
 
@@ -16,6 +17,7 @@ for a context that was never created.
 - `analyze (python)`
 - `security`
 - `scan`
+- `dependency-review`
 
 Every required check above must keep reporting on every pull request. Do not add
 path filters, branch filters, or commit-message skip behavior to a workflow that
@@ -41,6 +43,7 @@ Each required pull-request quality gate maps to one of the required checks above
 | Forbidden references / stale repository language                               | `required` aggregate CI gate                          |
 | Static analysis (CodeQL)                                                       | `analyze (javascript-typescript)`, `analyze (python)` |
 | Dependency audit + supply-chain controls                                       | `security`                                            |
+| Dependency change review                                                       | `dependency-review`                                   |
 | Secret scanning                                                                | `scan`                                                |
 | Cross-product and shared-package build                                         | `required` aggregate CI gate                          |
 
@@ -59,7 +62,7 @@ once it reports on every pull request (today it is path-scoped to docs changes).
 
 ## Review ownership
 
-Enable CODEOWNERS review. Path ownership is declared in `.github/CODEOWNERS`:
+CODEOWNERS review is required by the active ruleset. Path ownership is declared in `.github/CODEOWNERS`:
 
 - `.github/`: CI, release, labels, and governance.
 - `docs/architecture/`: architecture and release model.
@@ -82,4 +85,15 @@ The strict up-to-date rule currently favors a current green `main` integration
 point over merge throughput. Re-evaluate it with the required-check set if the
 repository adopts a merge queue or concurrent merge volume grows.
 
-Release PR #16 remains user-owned. Do not merge release automation while product/release policy work is still being reviewed.
+## Live evidence
+
+`.github/workflows/governance-evidence.yml` runs weekly and on demand. It compares
+the active default-branch ruleset with `.github/rulesets/main.json`, reports
+repository security settings as confirmed, unconfirmed, or unavailable, and
+uploads a machine-readable JSON artifact. Live ruleset drift fails that workflow;
+API unavailability is never treated as confirmation.
+
+The legacy branch-protection REST endpoint can return `404 Branch not protected`
+when protection is implemented entirely through repository rulesets. Treat the
+active ruleset and `branches/main.protected` metadata as the authoritative live
+evidence for this repository.
