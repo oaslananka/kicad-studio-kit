@@ -19,6 +19,11 @@ function createFixture(overrides = {}) {
         "minimumReleaseAgeExclude:",
         "  - tmp@0.2.7",
         "blockExoticSubdeps: true",
+        "overrides:",
+        '  "brace-expansion@2.1.1": "2.1.2"',
+        '  "brace-expansion@5.0.6": "5.0.7"',
+        "  js-yaml: 4.3.0",
+        "  tar: 7.5.19",
         "",
       ].join("\n"),
   );
@@ -74,6 +79,11 @@ test("disabled pnpm supply-chain controls fail validation", () => {
       "  - tmp",
       "blockExoticSubdeps: false",
       "trustLockfile: true",
+      "overrides:",
+      '  "brace-expansion@2.1.1": "2.1.2"',
+      '  "brace-expansion@5.0.6": "5.0.7"',
+      "  js-yaml: 4.3.0",
+      "  tar: 7.5.19",
       "",
     ].join("\n"),
   });
@@ -102,6 +112,80 @@ test(".npmrc and package.json cannot carry ignored pnpm supply-chain settings", 
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
       "package.json must not define pnpm.blockExoticSubdeps; use pnpm-workspace.yaml",
       ".npmrc must not define minimumReleaseAge; pnpm 11 reads it from pnpm-workspace.yaml",
+    ]);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("#506 missing brace-expansion security overrides fail validation", () => {
+  const repoRoot = createFixture({
+    workspace: [
+      "packages:",
+      "minimumReleaseAge: 1440",
+      "minimumReleaseAgeExclude:",
+      "  - tmp@0.2.7",
+      "blockExoticSubdeps: true",
+      "overrides:",
+      "  js-yaml: 4.3.0",
+      "  tar: 7.5.19",
+      "",
+    ].join("\n"),
+  });
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      "pnpm-workspace.yaml overrides must pin brace-expansion@2.1.1 to 2.1.2",
+      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.7",
+    ]);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("#506 stale js-yaml security override fails validation", () => {
+  const repoRoot = createFixture({
+    workspace: [
+      "packages:",
+      "minimumReleaseAge: 1440",
+      "minimumReleaseAgeExclude:",
+      "  - tmp@0.2.7",
+      "blockExoticSubdeps: true",
+      "overrides:",
+      '  "brace-expansion@2.1.1": "2.1.2"',
+      '  "brace-expansion@5.0.6": "5.0.7"',
+      "  js-yaml: 4.2.0",
+      "  tar: 7.5.19",
+      "",
+    ].join("\n"),
+  });
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      "pnpm-workspace.yaml overrides must pin js-yaml to 4.3.0",
+    ]);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("#506 stale tar security override fails validation", () => {
+  const repoRoot = createFixture({
+    workspace: [
+      "packages:",
+      "minimumReleaseAge: 1440",
+      "minimumReleaseAgeExclude:",
+      "  - tmp@0.2.7",
+      "blockExoticSubdeps: true",
+      "overrides:",
+      '  "brace-expansion@2.1.1": "2.1.2"',
+      '  "brace-expansion@5.0.6": "5.0.7"',
+      "  js-yaml: 4.3.0",
+      "  tar: 7.5.18",
+      "",
+    ].join("\n"),
+  });
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      "pnpm-workspace.yaml overrides must pin tar to 7.5.19",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
