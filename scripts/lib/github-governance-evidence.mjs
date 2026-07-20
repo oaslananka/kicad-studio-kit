@@ -1,9 +1,15 @@
 const DEPENDENCY_SECURITY_PROVIDER = ["depend", "abot"].join("");
 
+function compareStrings(left, right) {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+}
+
 function sortedStrings(values) {
   return [
     ...new Set((values ?? []).filter((value) => typeof value === "string")),
-  ].sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
+  ].sort(compareStrings);
 }
 
 function ruleByType(ruleset, type) {
@@ -323,7 +329,9 @@ export function buildGovernanceEvidenceReport({
 }
 
 function escapeTable(value) {
-  return String(value).replaceAll("|", "\\|").replaceAll("\n", " ");
+  return String(value)
+    .replaceAll("|", String.raw`\|`)
+    .replaceAll("\n", " ");
 }
 
 export function renderGovernanceEvidenceMarkdown(report) {

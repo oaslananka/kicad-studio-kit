@@ -47,7 +47,8 @@ function readExpectedRuleset() {
 }
 
 function safeReason(status, statusText) {
-  return `HTTP ${status}${statusText ? ` ${statusText}` : ""}`;
+  const suffix = statusText ? ` ${statusText}` : "";
+  return `HTTP ${status}${suffix}`;
 }
 
 async function apiRequest(relativePath, token) {
