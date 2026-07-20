@@ -245,6 +245,7 @@ export function validateBestPracticesEvidence(root = repoRoot) {
     "analyze (python)",
     "security",
     "scan",
+    "dependency-review",
   ]);
 
   return {

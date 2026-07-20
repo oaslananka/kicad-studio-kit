@@ -13,7 +13,7 @@ Use these links when updating OpenSSF Best Practices BadgeApp evidence or filing
 ## Scorecard
 
 - Scorecard viewer: <https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit>
-- Branch protection evidence: `.github/rulesets/main.json`, `docs/architecture/branch-protection.md`
+- Branch protection evidence: `.github/rulesets/main.json`, `docs/architecture/branch-protection.md`, `.github/workflows/governance-evidence.yml`
 - Code review evidence: `.github/CODEOWNERS`, `.github/PULL_REQUEST_TEMPLATE.md`, `GOVERNANCE.md`
 - Security policy evidence: `SECURITY.md`, `docs/security/threat-model.md`
 - CI evidence: `.github/workflows/ci.yml`
@@ -25,9 +25,8 @@ Use these links when updating OpenSSF Best Practices BadgeApp evidence or filing
 
 Create or keep GitHub issues for:
 
-1. Branch protection/ruleset activation.
-2. Human PR review and CODEOWNERS enforcement.
-3. Additional maintainer recruitment.
-4. REUSE/SPDX readiness: `docs/legal/reuse-spdx-notice-assessment.md`.
-5. Security settings confirmation: `docs/security/github-security-settings.md`.
-6. Gold/foundation-grade gap tracking.
+1. Live ruleset or governance-evidence drift.
+2. Additional maintainer recruitment only if the target changes beyond solo-maintainer Professional OSS.
+3. REUSE/SPDX readiness: `docs/legal/reuse-spdx-notice-assessment.md`.
+4. Optional GitHub security-setting hardening: `docs/security/github-security-settings.md`.
+5. Gold/foundation-grade gap tracking only when that maturity target is adopted.
