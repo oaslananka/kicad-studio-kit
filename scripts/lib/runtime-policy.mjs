@@ -40,8 +40,8 @@ function compareVersions(left, right) {
   return 0;
 }
 
-function compareVersionsDescending(left, right) {
-  return compareVersions(right, left);
+function compareVersionsDescending(first, second) {
+  return compareVersions(second, first);
 }
 
 function isNonNegativeInteger(value) {
