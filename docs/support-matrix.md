@@ -59,12 +59,12 @@ matrix does not track MCP server source compatibility.
 What this repository owns is the **client-side integration contract**: the range
 of `kicad-mcp-pro` server versions the extension is built and tested against.
 
-| Surface | Owner | Source of truth |
-| --- | --- | --- |
-| KiCad Studio extension version and runtime ranges | this repository | `apps/vscode-extension/package.json`, `compatibility.yaml` |
-| Required compatible `kicad-mcp-pro` range (client contract) | this repository | `compatibility.yaml` `products.kicad-studio.compatibleMcpPro` |
-| MCP protocol / tool schema revisions | shared contract | `compatibility.yaml` `mcp`, `@oaslananka/kicad-protocol-schemas` |
-| MCP server implementation compatibility | [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) | that repository's `compatibility.yaml` |
+| Surface                                                     | Owner                                                        | Source of truth                                                  |
+| ----------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------- |
+| KiCad Studio extension version and runtime ranges           | this repository                                              | `apps/vscode-extension/package.json`, `compatibility.yaml`       |
+| Required compatible `kicad-mcp-pro` range (client contract) | this repository                                              | `compatibility.yaml` `products.kicad-studio.compatibleMcpPro`    |
+| MCP protocol / tool schema revisions                        | shared contract                                              | `compatibility.yaml` `mcp`, `@oaslananka/kicad-protocol-schemas` |
+| MCP server implementation compatibility                     | [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) | that repository's `compatibility.yaml`                           |
 
 The compatible-server range is validated against the extension's embedded
 metadata and the last published server version by
@@ -129,15 +129,15 @@ KiCad 11 is not a primary support target yet. The readiness contract is tracked
 separately from the current KiCad 10.0.x support boundary so release gates keep
 protecting users on the stable line while maintainers test the next major line.
 
-| Readiness item         | Current contract                                                                                                                           |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Stable baseline        | KiCad 10.0.x remains primary and release-blocking.                                                                                         |
-| Direct SWIG imports    | Production `pcbnew` imports are forbidden by a guard script in the [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repo. |
-| Allowed `pcbnew` paths | Guarded by the kicad-mcp repository.                                                                                                       |
-| IPC parity matrix      | `compatibility.yaml` `kicadIpcReadiness.ipcApi.requiredFor`.                                                                               |
-| Current nightly smoke  | Run from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) with a configured nightly `kicad-cli`.                            |
-| KiCad 11 RC smoke      | Run from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) once the installed prerelease reports `11.0.x`.                   |
-| Migration guide        | [`docs/compatibility/kicad-10-to-11-migration.md`](compatibility/kicad-10-to-11-migration.md).                                             |
+| Readiness item         | Current contract                                                                                                                    |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Stable baseline        | KiCad 10.0.x remains primary and release-blocking.                                                                                  |
+| Direct SWIG imports    | Production `pcbnew` imports are forbidden by policy in the [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository. |
+| Allowed `pcbnew` paths | Defined and guarded by KiCad MCP Pro repository policy.                                                                             |
+| IPC parity matrix      | `compatibility.yaml` `kicadIpcReadiness.ipcApi.requiredFor`.                                                                        |
+| Current nightly smoke  | Run from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) with a configured nightly `kicad-cli`.                        |
+| KiCad 11 RC smoke      | Run from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) once the installed prerelease reports `11.0.x`.               |
+| Migration guide        | [`docs/compatibility/kicad-10-to-11-migration.md`](compatibility/kicad-10-to-11-migration.md).                                      |
 
 Status surfaces:
 
@@ -180,17 +180,18 @@ Freshness sources checked on 2026-05-27:
 | ------------ | ---------- | ---------------------- | ---------- | ---------------------------------------- |
 | KiCad        | 10.0.x     | none                   | 9.x, 8.x   | `compatibility.yaml` + release preflight |
 | VS Code      | current    | `engines.vscode` 1.101 | none       | extension manifest + VS Code canary      |
-| MCP protocol | 2025-11-25 | 2025-11-25             | older      | well-known server card + matrix          |
+| MCP protocol | 2025-11-25 | 2025-11-25             | older      | published server card + client matrix    |
 | Node         | 24.x       | `>=24.11.0 <25`        | older      | root and extension package metadata      |
 | pnpm         | 11.x       | `>=11.0.0 <12`         | older      | root package metadata                    |
-| Python       | 3.13       | 3.13, 3.14             | older      | `pyproject.toml` and CI                  |
+| Python       | 3.13       | 3.13, 3.14             | older      | KiCad MCP Pro project metadata and CI    |
 
 The MCP protocol revision `2026-07-28` is the tracked next protocol target. It is
 recorded as `nextProtocolVersion` in `compatibility.yaml` and surfaced in the
-generated runtime baseline above, but it is not yet adopted: the active protocol
-stays `2025-11-25` until the Python MCP SDK ships 2026-07-28 support. The phased
-upgrade plan and per-file change list are maintained in
-[ADR 0008](adr/0008-mcp-2026-07-28-protocol-upgrade.md).
+generated runtime baseline above, but it is not yet adopted. The active protocol
+stays `2025-11-25` until the final specification, a supported KiCad MCP Pro SDK
+and server release, the matching extension adapter, and published-artifact
+canaries are all available. The cross-repository execution and release order is
+maintained in [ADR 0008](adr/0008-mcp-2026-07-28-protocol-upgrade.md).
 
 ## Minimum-Bump Policy
 
@@ -208,7 +209,7 @@ VS Code:
 
 Python:
 
-- `requires-python` in the kicad-mcp-pro source (see [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)) is the MCP server install-time floor.
+- `requires-python` in the [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) project metadata is the MCP server install-time floor.
 - The supported Python window is two minor versions wide for the current stable product line.
 - The current product line tracks the official two-minor bugfix window: Python 3.13 and 3.14.
   The drift workflow opens a tracking issue when the official bugfix window moves again.
@@ -229,40 +230,49 @@ Authoritative drift sources are declared in `compatibility.yaml` under `runtimeP
 - Python release lifecycle metadata from `peps.python.org/api/python-releases.json`.
 - KiCad current release text from `kicad.org/download/linux`.
 
-## Automated Drift Detection
+## Automated drift detection by owner
 
-Runtime drift is enforced by scripts in the [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository.
+This repository enforces extension-owned runtime and compatibility surfaces:
 
-Pull requests run local policy checks that:
+- `engines.vscode`, `@types/vscode`, Node, and pnpm metadata;
+- this `compatibility.yaml` client contract and embedded extension constants;
+- the required/recommended published `kicad-mcp-pro` range;
+- resolution of the published protocol-schema package;
+- published schema/server real-pair and cross-repository canaries.
 
-- verify `engines.vscode` is parseable and matches `compatibility.yaml`;
-- verify `requires-python` is parseable and matches `compatibility.yaml`;
-- verify the Python support window starts at the package lower bound;
-- block lowered VS Code, Python, or KiCad support boundaries without product changelog evidence;
-- require this document to change whenever runtime support metadata changes.
+KiCad MCP Pro enforces server-owned surfaces in its repository:
 
-The scheduled drift workflow fetches the authoritative sources above. When current stable versions
-move beyond policy, it opens or updates a GitHub compatibility issue named
-`Runtime support policy drift`. The issue is the tracking surface for raising `engines.vscode`,
-Python support, or KiCad primary support after canary validation passes.
+- Python `requires-python` and supported minor window;
+- KiCad server/CLI compatibility and server warning behavior;
+- MCP SDK, server protocol, server-info, well-known, manifest, and tool-catalog
+  metadata;
+- server package, container, and registry release evidence.
 
-## Release Gate
+Scheduled drift workflows open or update compatibility issues in the owning
+repository. Cross-product drift is reported where the published-artifact canary
+fails; it is not repaired by editing another repository's source.
 
-Run the compatibility gate before any release PR is merged:
+## Release gate
+
+Run the local compatibility gates before a KiCad Studio release PR is merged:
 
 ```powershell
 corepack pnpm run check:compatibility-contract
+corepack pnpm run check:protocol-schemas
 ```
 
-The gate fails when:
+The local gates fail when:
 
-- `compatibility.yaml` is missing or malformed.
-- package versions drift from the matrix.
-- `engines.vscode`, Node, pnpm, or Python ranges drift from the matrix.
-- the extension MCP compatibility constants drift from the matrix.
-- the MCP server well-known metadata drifts from the matrix.
-- a required MCP tool listed in the matrix is missing from the generated tool catalog.
-- runtime minimums are malformed, out of sync, or lowered without changelog evidence.
+- `compatibility.yaml` is missing or malformed;
+- extension/package versions drift from the matrix;
+- `engines.vscode`, Node, or pnpm ranges drift from local metadata;
+- the extension MCP compatibility constants drift from the matrix;
+- the published schema package cannot satisfy the declared contract.
+
+The cross-repository canary fails when published KiCad MCP Pro server metadata,
+tool availability, schema compatibility, or real-pair behavior does not satisfy
+the KiCad Studio client contract. Server-owned Python, KiCad, well-known, and
+manifest policy remains enforced by KiCad MCP Pro CI.
 
 ## Support Drop Process
 

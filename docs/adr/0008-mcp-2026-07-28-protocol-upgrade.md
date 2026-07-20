@@ -4,279 +4,285 @@ Status: Draft
 
 Date: 2026-05-30
 
+Last reviewed: 2026-07-20
+
 ## Context
 
-The repo is currently pinned to MCP protocol version `2025-11-25`. On May 21,
-2026 the MCP maintainers published the release candidate for the **2026-07-28**
-specification — the largest revision since the protocol launched. The final
-specification ships on July 28, 2026.
+The active MCP protocol for KiCad Studio and KiCad MCP Pro is
+`2025-11-25`. The MCP maintainers published a release candidate for the
+breaking `2026-07-28` specification and scheduled the final specification for
+July 28, 2026.
 
-Reference: https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate/
+Reference: <https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate/>
 
-The 2026-07-28 spec is a **breaking change** from 2025-11-25. Upgrade cannot
-happen until the Python MCP SDK ships a version supporting 2026-07-28 (expected
-within the 10-week RC window per the SDK tier system).
+Since [ADR 0009](0009-split-kicad-mcp-pro-into-separate-repository.md), the
+upgrade spans two repositories and published artifacts:
 
-## Current State Audit (as of 2026-05-30)
+- this repository owns the KiCad Studio extension, its client-side protocol
+  adapter, its compatibility declaration, and published-artifact canaries;
+- [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) owns the Python
+  server, MCP SDK dependency, server transport, server manifests, protocol
+  schema source, and MCP product publishing workflows;
+- `@oaslananka/kicad-protocol-schemas` is the npm contract artifact consumed by
+  both repositories;
+- `kicad-mcp-pro` on PyPI and the signed container/registry artifacts are the
+  server evidence consumed by the cross-repository compatibility gate.
 
-| Dimension                   | Current Value                                | Source                                                   |
-| --------------------------- | -------------------------------------------- | -------------------------------------------------------- |
-| MCP protocol version        | `"2025-11-25"`                               | `compatibility.yaml`, `compatibility.py`                 |
-| MCP tool schema             | `"1.0"`                                      | `compatibility.yaml`                                     |
-| MCP registry schema         | `"2025-12-11"`                               | `compatibility.yaml`                                     |
-| Server info schema          | `"1.2.0"`                                    | `server_info.py`                                         |
-| Python MCP SDK              | `1.27.1`                                     | `pip show mcp`                                           |
-| Transport config            | `stdio`, `http`, `sse`, `streamable-http`    | `config.py`                                              |
-| Primary transport           | `streamable-http` (stateless by default)     | `server_info.py`                                         |
-| SSE support                 | Legacy fallback, `legacy_sse` flag           | `config.py`                                              |
-| Stateful HTTP               | Optional, `stateful_http` flag               | `config.py`                                              |
-| Session management          | Yes — `Mcp-Session-Id` for stateful sessions | Streamable HTTP protocol                                 |
-| SDK Tasks extension         | Not present (`no tasks module`)              | SDK probe                                                |
-| SDK StreamableHTTPServer    | Not present (uses `SseServerTransport`)      | SDK probe                                                |
-| SDK LATEST_PROTOCOL_VERSION | `"2025-11-25"`                               | SDK probe                                                |
-| Long-running tools          | Use `ctx.report_progress()` (non-standard)   | `simulation.py`, `export.py`, `project.py`, `routing.py` |
-| Tool annotations            | Read-only/destructive via `is_destructive`   | `metadata.py`                                            |
-| JSON Schema for tools       | Draft (not 2020-12)                          | Tool definitions                                         |
+No local MCP server or protocol-schema source package exists in this
+repository. Upgrade instructions must therefore assign work to the owning
+repository or published artifact rather than to removed local paths.
 
-## Key 2026-07-28 Changes Affecting This Repo
+## Current ownership audit
 
-### 1. Stateless HTTP Core (BREAKING)
+| Surface                                    | Current value                            | Owner / source of truth                                              |
+| ------------------------------------------ | ---------------------------------------- | -------------------------------------------------------------------- |
+| Active MCP protocol                        | `2025-11-25`                             | Both repositories' compatibility metadata                            |
+| Tracked next protocol                      | `2026-07-28`                             | This repository's `compatibility.yaml` and the KiCad MCP Pro roadmap |
+| Extension protocol adapter                 | `2025-11-25` initialize/session behavior | This repository, `apps/vscode-extension/src/mcp/`                    |
+| Server protocol implementation             | `2025-11-25`                             | KiCad MCP Pro                                                        |
+| Protocol schemas consumed by the extension | `@oaslananka/kicad-protocol-schemas`     | Published npm artifact                                               |
+| Protocol schema source and publishing      | Current published schema package         | KiCad MCP Pro                                                        |
+| Extension compatibility range              | `products.kicad-studio.compatibleMcpPro` | This repository's `compatibility.yaml`                               |
+| Server compatibility range                 | `compatibleExtension`                    | KiCad MCP Pro compatibility metadata                                 |
+| Cross-product proof                        | Published schema and server artifacts    | `.github/workflows/cross-repo-compatibility.yml`                     |
 
-- `initialize`/`initialized` handshake removed ([SEP-2575])
-- `Mcp-Session-Id` header and protocol-level session removed ([SEP-2567])
-- Protocol version, client info, capabilities travel in `_meta` on every request
-- New `server/discover` method replaces `initialize` for capability discovery
-- `Mcp-Method` and `Mcp-Name` headers required on Streamable HTTP ([SEP-2243])
-- Load balancers can route on method headers — no sticky sessions needed
+The versioned extension adapter/transport boundary is tracked by issue #492.
+Its preparation phase must preserve `2025-11-25` and keep any `2026-07-28`
+envelope fixture non-selectable until the final specification and compatible
+published server artifacts exist.
 
-### 2. Tasks Extension (NEW)
+## Key 2026-07-28 changes
 
-- Tasks graduated from experimental core feature to official extension
-- Server answers `tools/call` with a task handle; client drives with
-  `tasks/get`, `tasks/update`, `tasks/cancel`
-- Task creation is server-directed: client advertises extension, server decides
-  when a call should run as a task
-- `tasks/list` removed (cannot be scoped safely without sessions)
-- **Migration needed** if any tool used experimental Tasks API
+### 1. Stateless HTTP core (breaking)
 
-### 3. MCP Apps Extension (NEW)
+- `initialize`/`initialized` handshake removed ([SEP-2575]).
+- `Mcp-Session-Id` and protocol-level sessions removed ([SEP-2567]).
+- Protocol version, client information, and capabilities travel in request
+  `_meta`.
+- `server/discover` replaces `initialize` for capability discovery.
+- `Mcp-Method` and `Mcp-Name` headers support Streamable HTTP routing
+  ([SEP-2243]).
 
-- Servers can ship interactive HTML UIs rendered in sandboxed iframes
-- Tools declare UI templates ahead of time for prefetch/cache/security-review
-- UI-initiated actions go through same JSON-RPC base protocol — audit path
-- **Low urgency** for kicad-mcp-pro — headless-first product
+### 2. Tasks extension
 
-### 4. Authorization Hardening (ENHANCED)
+- Tasks move from experimental core behavior to an official extension.
+- A server can answer `tools/call` with a task handle; clients use task methods
+  for progress and cancellation.
+- Long-running KiCad operations require server-side adoption and matching
+  extension behavior; they are not part of protocol activation by default.
 
-- OAuth 2.1/OIDC alignment — `iss` parameter validation ([SEP-2468])
-- `application_type` in Dynamic Client Registration ([SEP-837])
-- Credential binding to authorization server issuer ([SEP-2352])
-- Refresh token request documentation ([SEP-2207])
-- Scope accumulation during step-up ([SEP-2350])
+### 3. MCP Apps extension
 
-### 5. Deprecations (TRACKING)
+- Servers may publish interactive UI resources rendered by supporting clients.
+- KiCad MCP Pro remains headless-first, so Apps adoption is optional and must be
+  evaluated separately from the core protocol migration.
 
-| Feature  | Replacement                                      |
-| -------- | ------------------------------------------------ |
-| Roots    | Tool parameters, resource URIs, or server config |
-| Sampling | Direct LLM provider API integration              |
-| Logging  | `stderr` for stdio; OpenTelemetry for structured |
+### 4. Authorization hardening
 
-### 6. JSON Schema 2020-12 for Tools (ENHANCED)
+- OAuth 2.1/OIDC issuer validation, credential binding, dynamic client
+  registration metadata, refresh-token guidance, and step-up scope behavior are
+  strengthened.
+- Remote deployment authorization remains owned by KiCad MCP Pro and its
+  deployment documentation.
 
-- Tool `inputSchema`/`outputSchema` lifted to full JSON Schema 2020-12 ([SEP-2106])
-- Composition (`oneOf`, `anyOf`, `allOf`), conditionals, `$ref`/`$defs` supported
-- Output schemas unrestricted
-- Error code for missing resource changes from `-32002` to `-32602` ([SEP-2164])
+### 5. JSON Schema 2020-12
 
-### 7. List/Read Caching (NEW)
+- Tool input/output schemas support the full JSON Schema 2020-12 vocabulary.
+- Schema source changes are made and published by KiCad MCP Pro; this repository
+  consumes the resulting npm artifact and validates extension compatibility.
 
-- `ttlMs` and `cacheScope` on list and resource read results ([SEP-2549])
-- Clients know how long `tools/list` is fresh and whether cache is shareable
-- Replaces SSE-based change notification pattern
+### 6. Caching, tracing, and multi-round-trip requests
 
-### 8. W3C Trace Context (ENHANCED)
+- List/read results can advertise TTL and cache scope.
+- W3C Trace Context keys are standardized.
+- `InputRequiredResult` enables multi-round-trip tools without holding a stream
+  open.
 
-- `traceparent`, `tracestate`, `baggage` key names locked in spec ([SEP-414])
-- Distributed traces correlate across SDKs and gateways
-
-### 9. Multi Round-Trip Requests (ENHANCED)
-
-- Server returns `InputRequiredResult` instead of holding SSE stream open ([SEP-2322])
-- Client gathers answers and re-issues original call with `inputResponses`
+These features may be adopted incrementally after core protocol compatibility
+is proven.
 
 ## Decision
 
-Proceed with a phased upgrade plan that tracks the Python MCP SDK release
-timeline. Do not implement before SDK support ships — the SDK is the dependency
-that gates all changes.
+Use a gated, cross-repository migration. Do not activate `2026-07-28` until all
+of the following are true:
 
-### Phase 0: Preparation (Now — SDK RC available)
+1. the final MCP specification is published;
+2. the Python MCP SDK version used by KiCad MCP Pro supports the final protocol;
+3. KiCad MCP Pro publishes compatible protocol schemas and a compatible server
+   artifact;
+4. this repository implements and selects the matching extension adapter;
+5. published-artifact real-pair and cross-repository canaries are green;
+6. both repositories update compatibility metadata and release notes in the
+   required order.
 
-Target: All groundwork done so upgrade is a SDK-bump + validation.
+A draft fixture, planning document, or unmerged adapter boundary is not a
+compatibility claim.
 
-1. **Add `nextProtocolVersion` tracking field** to `compatibility.yaml`:
+## Phase 0: Preparation while 2025-11-25 remains active
 
-   ```yaml
-   mcp:
-     protocolVersion: "2025-11-25"
-     nextProtocolVersion: "2026-07-28" # NEW — tracks RC readiness
-     toolSchema: "1.0"
-     registrySchema: "2025-12-11"
-   ```
+### This repository: KiCad Studio client
 
-2. **Audit transport layer** — confirm `StreamableHTTP` is primary; gate SSE
-   paths behind `legacy_sse` flag (already done — verify in tests).
+1. Keep `compatibility.yaml` `mcp.protocolVersion` on `2025-11-25` and track
+   `nextProtocolVersion: "2026-07-28"`.
+2. Maintain a versioned extension protocol-adapter and transport boundary under
+   issue #492.
+3. Preserve exact current initialize, session-header, Streamable HTTP, and
+   opt-in legacy SSE behavior in regression tests.
+4. Keep the `2026-07-28` planning envelope as a draft, non-selectable test
+   fixture.
+5. Define structured diagnostics for unsupported or explicitly mismatched
+   protocol versions.
+6. Keep extension compatibility ranges and published-artifact canaries green.
 
-3. **Evaluate long-running tools** against Tasks extension:
-   - `run_drc`, `run_erc`, `export_manufacturing_package`, simulation, routing
-   - Current pattern: `ctx.report_progress()` — non-standard, not cancellable
-   - Tasks extension: server-directed task creation, client-driven
-     progress/cancellation
-   - **Recommendation**: Adopt Tasks extension for genuinely long operations
-     (>30s). Keep progress reporting for short operations.
+### KiCad MCP Pro: server and schema source
 
-4. **Review tool annotations against new SEPs** — ensure read-only/destructive
-   classification reflects 2026-07-28 annotation expansion.
+1. Track the Python MCP SDK release that implements the final specification.
+2. Audit server transport, discovery, manifest, well-known metadata, and
+   compatibility surfaces against the final specification.
+3. Review long-running tools for optional Tasks adoption without coupling that
+   work to core activation.
+4. Review tool annotations and JSON Schema 2020-12 requirements.
+5. Prepare the protocol-schema source and publishing process for a versioned npm
+   release.
 
-5. **Review registry schema** — `"2025-12-11"` may need a version bump to
-   align with new 2026-07-28 schema fields.
+### Cross-repository evidence
 
-6. **Update `server_info.py`** — `SERVER_INFO_SCHEMA_VERSION` may need bump;
-   review `get_server_info_contract()` for new fields.
+1. Validate the current published schema package from this repository.
+2. Validate the current published `kicad-mcp-pro` artifact with real-pair flows.
+3. Record final conformance fixtures only after the specification is final.
+4. Keep each repository's CI independent; exchange only published artifacts and
+   explicit compatibility metadata.
 
-### Phase 1: SDK Upgrade (SDK RC available — July 28, 2026)
+## Phase 1: Final protocol and server/schema publication
 
-1. **Update Python MCP SDK** to version supporting 2026-07-28.
-2. **Update `compatibility.py`**: change `MCP_PROTOCOL_VERSION` to
-   `"2026-07-28"`.
-3. **Update `compatibility.yaml`**: change `protocolVersion` and update
-   `nextProtocolVersion` to next draft or remove.
-4. **Update protocol schemas** in `packages/protocol-schemas/` for any new
-   fields in the server-info contract.
-5. **Update transport layer**:
-   - Add `Mcp-Method` and `Mcp-Name` headers (required by SEP-2243)
-   - Remove `initialize`/`initialized` handshake (removed by SEP-2575)
-   - Remove `Mcp-Session-Id` support (removed by SEP-2567)
-   - Add `server/discover` response for capability discovery
-   - Add `_meta` propagation for protocol version and client info
-6. **Update `validate_mcp_manifest.py`** for 2026-07-28 schema validation.
-7. **Update `check_compatibility_matrix.py`**: add 2026-07-28 protocol matrix
-   entry.
-8. **Add CI protocol contract checks** to the extension canary and the
-   [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) server
-   canary.
+This phase starts only after the final specification and supported Python SDK
+are available.
 
-### Phase 2: Feature Adoption (Post SDK upgrade)
+### KiCad MCP Pro publishes first
 
-1. **Tasks extension**: Adopt for `run_drc`, `run_erc`,
-   `export_manufacturing_package`, simulation, and routing.
-   - Server-directed task creation for operations >30s
-   - Client-driven progress polling and cancellation
-2. **Caching headers**: Add `ttlMs` and `cacheScope` to list/resource responses.
-3. **W3C Trace Context**: Align existing OpenTelemetry with spec key names.
-4. **JSON Schema 2020-12**: Review tool input/output schemas for composition
-   patterns (`oneOf`, `anyOf`) where applicable.
-5. **Multi Round-Trip**: Evaluate for tools that need user confirmation
-   (e.g., `mfg_check_import_support`, destructive operations).
-6. **Error code update**: Change `-32002` to `-32602` for missing resource
-   errors (SEP-2164).
+1. Update the Python MCP SDK dependency.
+2. Implement the final stateless lifecycle, discovery method, routing headers,
+   request metadata, and removal of protocol sessions.
+3. Update server-info, compatibility, registry, and manifest validation.
+4. Update protocol-schema source for final server-info or compatibility fields.
+5. Publish a versioned `@oaslananka/kicad-protocol-schemas` npm artifact.
+6. Publish a compatible `kicad-mcp-pro` server release and associated container
+   and MCP Registry evidence.
+7. Widen or document `compatibleExtension` so the server's compatibility window
+   is explicit.
 
-### Phase 3: Post-Final (After July 28, 2026)
+### This repository consumes and activates second
 
-1. **Remove `nextProtocolVersion`** tracking from `compatibility.yaml`.
-2. **Update documentation** — `docs/mcp/`, README, client config examples.
-3. **SSE deprecation**: Phase out `legacy_sse` support.
-4. **Auth hardening**: Evaluate OAuth 2.1/OIDC alignment for remote deployments.
+1. Bump `@oaslananka/kicad-protocol-schemas` in the root and extension package
+   metadata and update the lockfile.
+2. Implement the final `2026-07-28` extension protocol adapter from the published
+   specification, not from the RC fixture.
+3. Add final request-envelope, discovery, statelessness, routing-header,
+   timeout, retry, and mismatch contract tests.
+4. Update `compatibility.yaml` only after the adapter is implemented and the
+   required published server version is known.
+5. Run protocol-schema, compatibility, real-pair, security, package, and all
+   cross-platform extension gates.
+6. Tighten `compatibleMcpPro` only after the published server pair passes.
 
-## Files Requiring Changes
+### Release order for a breaking transition
 
-### Phase 0 (Now)
+1. KiCad MCP Pro publishes the schema artifact.
+2. KiCad MCP Pro publishes the compatible server/runtime artifacts.
+3. KiCad Studio consumes the published schema, activates the adapter, and
+   validates the published server pair.
+4. KiCad Studio publishes a release with the new required server range.
 
-| File                                    | Change                                               |
-| --------------------------------------- | ---------------------------------------------------- |
-| `compatibility.yaml`                    | Add `nextProtocolVersion: "2026-07-28"` under `mcp:` |
-| `docs/architecture/migration-phases.md` | Track this upgrade in migration roadmap              |
-| `docs/support-matrix.md`                | Add 2026-07-28 protocol line                         |
+No repository publishes another repository's artifacts.
 
-### Phase 1 (SDK Upgrade)
+## Phase 2: Optional feature adoption
 
-| File                                         | Change                          |
-| -------------------------------------------- | ------------------------------- |
-| (in KiCad MCP Pro) `pyproject.toml` | Bump MCP SDK dependency version |
+After core compatibility is stable:
 
-| (in KiCad MCP Pro) `src/kicad_mcp/compatibility.py` | Change `MCP_PROTOCOL_VERSION` to `"2026-07-28"` |
+1. Adopt Tasks for selected long-running operations with server and client
+   evidence.
+2. Add caching metadata where it provides measurable value.
+3. Align OpenTelemetry propagation with final W3C Trace Context requirements.
+4. Use JSON Schema 2020-12 composition only where it improves tool contracts.
+5. Evaluate multi-round-trip requests for explicit user confirmation flows.
+6. Evaluate MCP Apps only when a supported client experience justifies it.
 
-| (in KiCad MCP Pro) `src/kicad_mcp/server_info.py` | Update `SERVER_INFO_SCHEMA_VERSION`; review `get_server_info_contract()` |
+Each feature can ship independently and must complete the protocol-impact PR
+checklist in both owning repositories.
 
-| (in KiCad MCP Pro) `src/kicad_mcp/wellknown.py` | Update protocol version in well-known card |
+## Phase 3: Post-activation cleanup
 
-| (in KiCad MCP Pro) `src/kicad_mcp/config.py` | Update transport config if SDK changes transport model |
-| `packages/protocol-schemas/schemas/kicad-mcp-server-info.schema.json` | Update for new server-info fields |
-| `packages/protocol-schemas/schemas/compatibility-manifest.schema.json` | Update for new MCP fields |
-| (in KiCad MCP Pro) `scripts/validate_mcp_manifest.py` | Update validation logic for 2026-07-28 |
-| (in KiCad MCP Pro) `scripts/check_compatibility_matrix.py` | Add 2026-07-28 matrix entry |
-| `.github/workflows/vscode-canary.yml` and KiCad MCP Pro canary workflows | Add protocol contract check with new SDK |
+1. Remove `nextProtocolVersion` after `2026-07-28` is active and released.
+2. Replace or remove obsolete 2025 lifecycle fixtures only after the supported
+   compatibility window closes.
+3. Phase out legacy SSE according to the documented support policy.
+4. Update user setup, support matrix, release coordination, and troubleshooting
+   documentation in both repositories.
 
-### Phase 2 (Feature Adoption)
+## File and artifact ownership
 
-| File                                                   | Change                                 |
-| ------------------------------------------------------ | -------------------------------------- |
-| (in KiCad MCP Pro) `src/kicad_mcp/tools/*.py` | Tasks extension for long-running tools |
+### This repository
 
-| (in KiCad MCP Pro) `src/kicad_mcp/tools/metadata.py` | Update annotations for new SEPs |
+| Surface                                          | Required change                                                                   |
+| ------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `compatibility.yaml`                             | Track next protocol, then activate final protocol and server range after evidence |
+| `package.json` / extension package metadata      | Consume the published schema version                                              |
+| `apps/vscode-extension/src/mcp/protocol/`        | Implement/select the final extension adapter                                      |
+| `apps/vscode-extension/src/mcp/transport/`       | Preserve protocol-neutral execution and final routing behavior                    |
+| Extension MCP unit/integration tests             | Prove lifecycle, envelope, diagnostics, and backward compatibility                |
+| `.github/workflows/cross-repo-compatibility.yml` | Validate published schemas and server artifacts                                   |
+| `docs/support-matrix.md` and release notes       | Publish the client-side compatibility claim                                       |
 
-| (in KiCad MCP Pro) `src/kicad_mcp/tools/export.py` | Tasks: `export_manufacturing_package` |
+### KiCad MCP Pro
 
-| (in KiCad MCP Pro) `src/kicad_mcp/tools/validation.py` | Tasks: `run_drc`, `run_erc` |
+| Surface                                               | Required change                                                |
+| ----------------------------------------------------- | -------------------------------------------------------------- |
+| Python project metadata                               | Adopt a Python MCP SDK supporting the final protocol           |
+| Server compatibility and well-known metadata          | Advertise the final protocol and extension compatibility range |
+| Server transport/discovery implementation             | Implement the final stateless lifecycle and routing behavior   |
+| Protocol-schema source                                | Update final server-info/compatibility schemas                 |
+| Server manifest/registry validation                   | Validate final protocol and registry fields                    |
+| Server conformance, transport, and tool tests         | Prove server behavior before publication                       |
+| Schema, Python, container, and MCP Registry workflows | Publish owned artifacts and evidence                           |
 
-| (in KiCad MCP Pro) `src/kicad_mcp/tools/simulation.py` | Tasks: simulation progress |
+### Published artifacts
 
-| (in KiCad MCP Pro) `src/kicad_mcp/tools/routing.py` | Tasks: routing progress |
-
-| (in KiCad MCP Pro) `src/kicad_mcp/*.py` | JSON Schema 2020-12, caching, trace context |
+| Artifact                             | Consumer evidence                                                      |
+| ------------------------------------ | ---------------------------------------------------------------------- |
+| `@oaslananka/kicad-protocol-schemas` | Package resolution and schema contract validation in both repositories |
+| PyPI `kicad-mcp-pro`                 | Install/smoke and real-pair validation                                 |
+| Signed KiCad MCP Pro container       | Container metadata, provenance, and deployment verification            |
+| MCP Registry listing                 | Registry validation and server metadata consistency                    |
 
 ## Consequences
 
-- The repo maintains dual compatibility during Phase 0 — `2025-11-25` continues
-  to work until SDK support ships.
-- Phase 1 is gated on Python MCP SDK release — no work before then.
-- Phase 2 is optional — Tasks adoption can be incremental, tool by tool.
-- The repo's stateless HTTP foundation (already in place) reduces Phase 1
-  transport rework vs. a pure-SSE codebase.
-- `ctx.report_progress()` current usage is non-standard — it will need
-  migration to Tasks extension or removal.
-- Breaking change in tool schema (JSON Schema 2020-12) may affect tool
-  definitions — review needed but non-urgent since current schemas are valid
-  2020-12 subsets.
+- The repositories remain independently releasable and source-decoupled.
+- Final protocol activation requires published artifacts rather than source-path
+  assumptions.
+- The extension can preserve `2025-11-25` while the final server and SDK mature.
+- Schema publication and server publication become explicit prerequisites for a
+  breaking extension compatibility bump.
+- Optional Tasks, Apps, caching, tracing, and multi-round-trip work cannot delay
+  the minimum core compatibility migration unless required by the final spec.
+- Historical monorepo paths remain in historical ADRs and migration evidence but
+  are forbidden in active execution guidance.
 
-## Future Revisit
+## Future revisit
 
-Revisit Phase 2 Tasks adoption after Phase 1 is complete and the SDK has
-stabilized. MCP Apps (server-rendered UI) is low priority for a headless-first
-product — only revisit if a client explicitly requires interactive tool
-templates.
+Revisit this ADR when the final specification and supported Python SDK are
+published. At that point, replace RC assumptions with final normative behavior,
+record the selected package/server versions, and move the ADR from Draft to
+Accepted only after the cross-repository release sequence is proven.
 
 ## References
 
 - [SEP-2575]: Remove initialize/initialized handshake
 - [SEP-2567]: Remove Mcp-Session-Id
 - [SEP-2243]: Mcp-Method and Mcp-Name headers
-- [SEP-2260]: Server-initiated requests during active processing only
-- [SEP-2322]: Multi Round-Trip Requests (InputRequiredResult)
-- [SEP-2549]: TTL and cache scope on list/resource results
-- [SEP-414]: W3C Trace Context propagation in `_meta`
+- [SEP-2322]: Multi Round-Trip Requests
+- [SEP-2549]: TTL and cache scope
+- [SEP-414]: W3C Trace Context
 - [SEP-2133]: Extensions framework
 - [SEP-1865]: MCP Apps
-- MCP Tasks extension: https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2663
 - [SEP-2106]: JSON Schema 2020-12 for tools
-- [SEP-2164]: Error code -32002 → -32602
-- [SEP-2468]: OAuth iss parameter validation
-- [SEP-837]: OpenID Connect application_type
-- [SEP-2352]: Credential binding to authorization server
-- [SEP-2207]: Refresh token requests
-- [SEP-2350]: Scope accumulation
-- [SEP-2351]: .well-known discovery
-- [SEP-2577]: Feature lifecycle policy
 - [SEP-2484]: Conformance suite requirement for Final status
-- MCP SDK tier system: https://github.com/modelcontextprotocol/modelcontextprotocol/pull/1777
