@@ -155,3 +155,45 @@ test("#495 governance evidence fails closed when the live ruleset is unavailable
   assert.equal(report.exitCode, 1);
   assert.match(renderGovernanceEvidenceMarkdown(report), /unavailable/u);
 });
+
+import fs from "node:fs";
+import { parse as parseYaml } from "yaml";
+
+test("#495 governance evidence workflow is scheduled, manual, pinned, and least privilege", () => {
+  const source = fs.readFileSync(
+    ".github/workflows/governance-evidence.yml",
+    "utf8",
+  );
+  const workflow = parseYaml(source);
+  assert.ok(Object.hasOwn(workflow.on, "workflow_dispatch"));
+  assert.ok(Array.isArray(workflow.on.schedule));
+  assert.deepEqual(workflow.permissions, { contents: "read" });
+  assert.match(
+    source,
+    /node scripts\/check-github-governance-evidence\.mjs[\s\S]*--fetch/u,
+  );
+  for (const action of source.matchAll(/uses:\s*([^\s]+)/gu)) {
+    assert.match(action[1], /@[0-9a-f]{40}$/u);
+  }
+});
+
+test("#495 governance evidence CLI keeps alert payloads out of reports", () => {
+  const source = fs.readFileSync(
+    "scripts/check-github-governance-evidence.mjs",
+    "utf8",
+  );
+  assert.match(source, /private-vulnerability-reporting/u);
+  assert.match(source, /dependabot\/alerts\?per_page=1/u);
+  assert.doesNotMatch(source, /JSON\.stringify\([^)]*alerts/u);
+});
+
+test("#495 checked-in ruleset preserves all live merge methods", () => {
+  const ruleset = JSON.parse(
+    fs.readFileSync(".github/rulesets/main.json", "utf8"),
+  );
+  assert.deepEqual(normalizeRuleset(ruleset).pullRequest.allowedMergeMethods, [
+    "merge",
+    "rebase",
+    "squash",
+  ]);
+});
