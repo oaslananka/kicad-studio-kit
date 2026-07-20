@@ -18,6 +18,7 @@ test("#414 the ruleset declares required status checks", () => {
   assert.ok(checks.includes("required"));
   assert.ok(checks.includes("security"));
   assert.ok(checks.includes("scan"));
+  assert.ok(checks.includes("dependency-review"));
   assert.ok(checks.includes("analyze (javascript-typescript)"));
   assert.ok(checks.includes("analyze (python)"));
 });

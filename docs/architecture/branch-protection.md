@@ -16,6 +16,7 @@ for a context that was never created.
 - `analyze (python)`
 - `security`
 - `scan`
+- `dependency-review`
 
 Every required check above must keep reporting on every pull request. Do not add
 path filters, branch filters, or commit-message skip behavior to a workflow that
