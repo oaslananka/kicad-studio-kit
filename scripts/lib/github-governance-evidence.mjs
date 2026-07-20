@@ -3,7 +3,7 @@ const DEPENDENCY_SECURITY_PROVIDER = ["depend", "abot"].join("");
 function sortedStrings(values) {
   return [
     ...new Set((values ?? []).filter((value) => typeof value === "string")),
-  ].sort();
+  ].sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
 }
 
 function ruleByType(ruleset, type) {
