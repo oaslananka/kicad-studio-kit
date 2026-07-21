@@ -10,6 +10,9 @@ const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
 const CODECOV_ACTION =
   "codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f";
 const CODECOV_CLI_VERSION = "v11.3.1";
+const CODECOV_BUNDLE_NAME = "kicad-studio-vscode-extension";
+const CODECOV_UPLOADED_BUNDLE_NAME = `${CODECOV_BUNDLE_NAME}-cjs`;
+const CODECOV_WEBPACK_PLUGIN_VERSION = "2.0.1";
 
 function readText(repoRoot, relativePath, errors) {
   const filePath = path.join(repoRoot, relativePath);
@@ -46,6 +49,15 @@ function requireCondition(errors, condition, message) {
   if (!condition) errors.push(message);
 }
 
+function extractJob(workflow, jobName, nextJobName) {
+  const start = workflow.indexOf(`\n  ${jobName}:\n`);
+  if (start < 0) return "";
+  const end = nextJobName
+    ? workflow.indexOf(`\n  ${nextJobName}:\n`, start)
+    : -1;
+  return end > start ? workflow.slice(start, end) : workflow.slice(start);
+}
+
 function validateWorkflow(errors, workflow) {
   requireCondition(
     errors,
@@ -74,7 +86,7 @@ function validateWorkflow(errors, workflow) {
     workflow.includes(
       "github.event.pull_request.head.repo.full_name == github.repository",
     ),
-    "ci.yml must skip token-backed Codecov work for fork pull requests",
+    "ci.yml must skip the Codecov report job for fork pull requests",
   );
   requireCondition(
     errors,
@@ -88,16 +100,42 @@ function validateWorkflow(errors, workflow) {
       workflow.includes("files: codecov-reports/test-results/junit.xml"),
     "ci.yml must upload JUnit results through codecov-action when a failed test report is available",
   );
+
+  const codecovJob = extractJob(workflow, "codecov", "forbidden-refs");
   requireCondition(
     errors,
-    !workflow.includes("CODECOV_BUNDLE_ANALYSIS") &&
-      !workflow.includes("Build production bundle with Codecov analysis"),
-    "Bundle Analysis must remain deferred to #514 until the default-branch baseline is processed",
+    codecovJob.includes("fetch-depth: 0"),
+    "Codecov job checkout must use fetch-depth: 0 for bundle commit detection",
+  );
+  requireCondition(
+    errors,
+    codecovJob.includes('CODECOV_BUNDLE_ANALYSIS: "true"') &&
+      codecovJob.includes(
+        "CODECOV_BUNDLE_BRANCH: ${{ github.head_ref || github.ref_name }}",
+      ) &&
+      codecovJob.includes(
+        "CODECOV_BUNDLE_PR: ${{ github.event.pull_request.number }}",
+      ) &&
+      codecovJob.includes(
+        "CODECOV_BUNDLE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}",
+      ) &&
+      codecovJob.includes("CODECOV_BUNDLE_SLUG: ${{ github.repository }}"),
+    "ci.yml must pass explicit branch, PR, SHA, and slug context to Bundle Analysis",
+  );
+  requireCondition(
+    errors,
+    codecovJob.includes(
+      "Failed to get pre-signed URL|Failed to upload stats",
+    ) &&
+      codecovJob.includes(
+        `grep -Fxq '[codecov] Successfully uploaded stats for bundle: ${CODECOV_UPLOADED_BUNDLE_NAME}'`,
+      ) &&
+      codecovJob.includes("set -o pipefail") &&
+      codecovJob.includes("tee codecov-bundle.log"),
+    "ci.yml must fail unless the stable Codecov bundle upload is positively confirmed",
   );
 
-  const requiredJobStart = workflow.indexOf("\n  required:\n");
-  const requiredJob =
-    requiredJobStart >= 0 ? workflow.slice(requiredJobStart) : "";
+  const requiredJob = extractJob(workflow, "required");
   const requiredNeedsStart = requiredJob.indexOf("\n    needs:\n");
   const requiredNeedsEnd =
     requiredNeedsStart >= 0
@@ -120,12 +158,12 @@ function validateCodecovYaml(errors, config) {
   requireCondition(
     errors,
     project?.informational === true,
-    "Codecov project coverage status must be informational during baseline establishment",
+    "Codecov project coverage status must remain informational",
   );
   requireCondition(
     errors,
     patch?.informational === true,
-    "Codecov patch coverage status must be informational during baseline establishment",
+    "Codecov patch coverage status must remain informational",
   );
   requireCondition(
     errors,
@@ -146,8 +184,9 @@ function validateCodecovYaml(errors, config) {
   );
   requireCondition(
     errors,
-    config?.bundle_analysis === undefined,
-    "codecov.yml must defer Bundle Analysis configuration to #514",
+    config?.bundle_analysis?.status === "informational" &&
+      config?.bundle_analysis?.warning_threshold === "5%",
+    "Codecov bundle analysis must remain informational with a 5% warning threshold",
   );
 }
 
@@ -168,6 +207,41 @@ function validateJest(errors, jestConfig) {
   );
 }
 
+function validateWebpack(errors, webpackConfig) {
+  requireCondition(
+    errors,
+    webpackConfig.includes("environment.CODECOV_BUNDLE_ANALYSIS === 'true'"),
+    "webpack bundle analysis must require CODECOV_BUNDLE_ANALYSIS=true",
+  );
+  requireCondition(
+    errors,
+    webpackConfig.includes("enableBundleAnalysis: true") &&
+      webpackConfig.includes(`bundleName: '${CODECOV_BUNDLE_NAME}'`) &&
+      webpackConfig.includes("gitService: 'github'"),
+    "webpack must configure the stable Codecov bundle name and GitHub service",
+  );
+  requireCondition(
+    errors,
+    !webpackConfig.includes("uploadToken:"),
+    "Codecov bundle plugin must use tokenless GitHub authentication",
+  );
+  requireCondition(
+    errors,
+    webpackConfig.includes("branch: environment.CODECOV_BUNDLE_BRANCH") &&
+      webpackConfig.includes(
+        "pr: environment.CODECOV_BUNDLE_PR || undefined",
+      ) &&
+      webpackConfig.includes("sha: environment.CODECOV_BUNDLE_SHA") &&
+      webpackConfig.includes("slug: environment.CODECOV_BUNDLE_SLUG"),
+    "webpack bundle analysis must pass explicit branch, PR, SHA, and slug overrides",
+  );
+  requireCondition(
+    errors,
+    webpackConfig.includes("telemetry: false"),
+    "Codecov bundle plugin telemetry must stay disabled",
+  );
+}
+
 export function validateCodecovPolicy(repoRoot = DEFAULT_REPO_ROOT) {
   const errors = [];
   const workflow = readText(repoRoot, ".github/workflows/ci.yml", errors);
@@ -183,6 +257,11 @@ export function validateCodecovPolicy(repoRoot = DEFAULT_REPO_ROOT) {
     "apps/vscode-extension/jest.config.js",
     errors,
   );
+  const webpackConfig = readText(
+    repoRoot,
+    "apps/vscode-extension/webpack.config.js",
+    errors,
+  );
   const extensionIgnore = readText(
     repoRoot,
     "apps/vscode-extension/.gitignore",
@@ -193,16 +272,16 @@ export function validateCodecovPolicy(repoRoot = DEFAULT_REPO_ROOT) {
   requireCondition(
     errors,
     rootPackage?.scripts?.["check:codecov"] ===
-      "node scripts/check-codecov-policy.mjs && node --test scripts/check-codecov-policy.test.mjs" &&
+      "node scripts/check-codecov-policy.mjs && node --test scripts/check-codecov-policy.test.mjs apps/vscode-extension/scripts/webpack-config-codecov.test.mjs" &&
       rootPackage?.scripts?.check?.includes("pnpm run check:codecov"),
-    "package.json must expose check:codecov and compose it into the root check",
+    "package.json must expose check:codecov, include the Webpack contract test, and compose it into the root check",
   );
   requireCondition(
     errors,
     extensionPackage?.devDependencies?.["jest-junit"] === "17.0.0" &&
       extensionPackage?.devDependencies?.["@codecov/webpack-plugin"] ===
-        undefined,
-    "extension devDependencies must pin jest-junit 17.0.0 and defer @codecov/webpack-plugin to #514",
+        CODECOV_WEBPACK_PLUGIN_VERSION,
+    `extension devDependencies must pin @codecov/webpack-plugin ${CODECOV_WEBPACK_PLUGIN_VERSION}`,
   );
   requireCondition(
     errors,
@@ -213,13 +292,15 @@ export function validateCodecovPolicy(repoRoot = DEFAULT_REPO_ROOT) {
     errors,
     testingDocs.includes("### Codecov observability") &&
       testingDocs.includes("Jest remains the blocking coverage authority") &&
-      testingDocs.includes("GitHub issue #514"),
-    "testing strategy must document Codecov ownership, non-blocking semantics, and Bundle Analysis deferral",
+      testingDocs.includes(CODECOV_BUNDLE_NAME) &&
+      testingDocs.includes("fails closed"),
+    "testing strategy must document the stable bundle name and fail-closed upload ownership",
   );
 
   validateWorkflow(errors, workflow);
   validateCodecovYaml(errors, codecovConfig);
   validateJest(errors, jestConfig);
+  validateWebpack(errors, webpackConfig);
   return [...new Set(errors)];
 }
 
@@ -230,6 +311,8 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     for (const error of errors) console.error(`- ${error}`);
     process.exitCode = 1;
   } else {
-    console.log("Codecov coverage and test analytics policy is valid.");
+    console.log(
+      "Codecov coverage, test analytics, and bundle analysis policy is valid.",
+    );
   }
 }

@@ -53,8 +53,8 @@ export default defineConfig({
           { text: "Versions", link: "/versions" },
           { text: "Support Matrix", link: "/support-matrix" },
           {
-            text: "KiCad 10.0.3 Feature Parity",
-            link: "/compatibility/kicad-10-0-3-feature-parity",
+            text: "KiCad 10.0.4 Feature Parity",
+            link: "/compatibility/kicad-10-0-4-feature-parity",
           },
           {
             text: "KiCad 10 → 11 Migration Guide",

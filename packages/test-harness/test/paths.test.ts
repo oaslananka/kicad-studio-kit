@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
@@ -14,7 +15,7 @@ import {
 
 test("resolves repository and KiCad fixture paths", () => {
   const repoRoot = findRepoRoot();
-  assert.equal(path.basename(repoRoot), "kicad-studio-kit");
+  assert.equal(fs.existsSync(path.join(repoRoot, "pnpm-workspace.yaml")), true);
   assert.equal(
     normalizePathForSnapshot(kicadFixtureRoot(repoRoot), repoRoot),
     "packages/kicad-fixtures/fixtures",

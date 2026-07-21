@@ -61,16 +61,24 @@ The report ownership is explicit:
   `apps/vscode-extension/test-results/junit.xml`.
 
 The Ubuntu artifact step uses `!cancelled()` so Jest can still publish a JUnit
-report after test failures. Fork pull requests skip the token-backed Codecov job.
+report after test failures. Fork pull requests skip the Codecov job that contains token-backed LCOV and JUnit uploads.
 Existing product CI remains authoritative if Codecov is unavailable.
 
-JavaScript Bundle Analysis is tracked separately in GitHub issue #514. The
-Webpack plugin reached Codecov twice during the initial pull-request onboarding,
-including with explicit slug, SHA, branch, and PR context, but the bundle
-pre-signed URL endpoint returned `404` before a processed `main` baseline
-existed. The repository intentionally does not ship an always-on or silently
-failing bundle uploader; #514 requires a positive upload confirmation after the
-default-branch baseline is established.
+JavaScript Bundle Analysis runs only in the dedicated `codecov` job and
+configures the stable bundle base `kicad-studio-vscode-extension`. Webpack appends its CommonJS format suffix, so Codecov records and confirms `kicad-studio-vscode-extension-cjs`. LCOV and JUnit
+uploads continue to use the repository token, while the public-repository bundle
+upload uses Codecov's tokenless GitHub Actions authentication. The Webpack
+plugin is opt-in: normal local, matrix, package, release, and repeatability
+builds leave `CODECOV_BUNDLE_ANALYSIS` unset and never upload bundle data. The
+dedicated job supplies explicit repository slug, head SHA, branch, and
+pull-request context and disables plugin telemetry.
+
+Bundle upload verification fails closed. The job rejects Codecov pre-signed URL
+or stats-upload failures and also rejects a successful Webpack compilation when
+the log does not contain the positive
+`Successfully uploaded stats for bundle: kicad-studio-vscode-extension`
+confirmation. Bundle status remains informational with a 5% warning threshold;
+Jest and the aggregate `required` check remain the blocking authorities.
 
 Validate the repository policy and Codecov YAML with:
 
@@ -409,7 +417,7 @@ trade-off, not missing coverage.
 | ---------------- | ---------------------------------------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
 | Operating system | `ubuntu-24.04`, `windows-2025`, `macos-15`                             | Same three runners                         | `.github/workflows/ci.yml` `vscode-extension` job matrix                                                        |
 | VS Code version  | Pinned `DEFAULT_VSCODE_TEST_VERSION`                                   | `engines.vscode` floor and Insiders canary | `apps/vscode-extension/test/vscodeTestRuntime.ts`, `.github/workflows/vscode-canary.yml`                        |
-| KiCad line       | Deterministic fixtures and mocked CLI probes (no `kicad-cli` required) | Real `kicad-cli` line from the canary host | `compatibility.yaml`, `.github/workflows/cross-repo-compatibility.yml`, KiCad MCP Pro                           |
+| KiCad line       | Deterministic fixtures and mocked CLI probes (no `kicad-cli` required) | Real `kicad-cli` line from the canary host | `compatibility.yaml`, deterministic fixture probes, KiCad MCP Pro live E2E                                      |
 | Workspace Trust  | Restricted and trusted contracts                                       | Same                                       | `apps/vscode-extension/test/integration/extension.test.ts`                                                      |
 | Workspace shape  | Single-root and multi-root                                             | Same                                       | `extension.test.ts` (single-root), `apps/vscode-extension/test/unit/multiProjectWorkspace.test.ts` (multi-root) |
 
@@ -456,7 +464,8 @@ CI ownership follows product boundaries:
 - `.github/workflows/cross-repo-compatibility.yml` owns published
   `kicad-mcp-pro` and `@oaslananka/kicad-protocol-schemas` artifact compatibility checks for this repository.
 - KiCad MCP Pro owns real KiCad CLI, GUI IPC, and MCP transport
-  canaries.
+  canaries. KiCad 10.0.4 is the current stable canary baseline; patch release
+  candidates remain non-blocking until a final release passes that owning lane.
 - Product-specific validation remains inside each product package so the root
   workflow can compose it without direct source imports between products.
 
@@ -478,8 +487,8 @@ This strategy was checked against current primary sources:
   and version checks.
 - KiCad PCB Editor documentation for action-plugin/GUI scripting boundaries and
   KiCad IPC API developer documentation for live-editor automation scope.
-- KiCad Windows Downloads for supported Windows versions and current stable
-  10.0.3 installer availability.
+- KiCad 10.0.4 release notes and the 10.0.5 RC1 announcement for the
+  current stable and preview patch states.
 - Chocolatey KiCad package metadata for the pinned Windows CI install command
   and checksum-backed official KiCad installer URL.
 - GitHub Actions artifact documentation and `actions/upload-artifact` metadata
