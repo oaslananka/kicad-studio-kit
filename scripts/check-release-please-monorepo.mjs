@@ -11,7 +11,15 @@ const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
-const ALLOWED_SCOPES = ["kicad-studio", "kicad-mcp-pro", "repo", "deps", "docs", "superpowers", ".gitignore"];
+const ALLOWED_SCOPES = [
+  "kicad-studio",
+  "kicad-mcp-pro",
+  "repo",
+  "deps",
+  "docs",
+  "superpowers",
+  ".gitignore",
+];
 const PRODUCTS = {
   "kicad-studio": ["apps/vscode-extension"],
 };
@@ -32,6 +40,24 @@ const EXPECTED_PACKAGES = {
   },
 };
 const SNAPSHOT_UPDATE_PATHS = [".release-please-manifest.json"];
+const BOOTSTRAP_GIT_LOCAL_ENV_VARS = new Set([
+  "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+  "GIT_COMMON_DIR",
+  "GIT_CONFIG",
+  "GIT_CONFIG_COUNT",
+  "GIT_CONFIG_PARAMETERS",
+  "GIT_DIR",
+  "GIT_GRAFT_FILE",
+  "GIT_IMPLICIT_WORK_TREE",
+  "GIT_INDEX_FILE",
+  "GIT_NO_REPLACE_OBJECTS",
+  "GIT_OBJECT_DIRECTORY",
+  "GIT_PREFIX",
+  "GIT_REPLACE_REF_BASE",
+  "GIT_SHALLOW_FILE",
+  "GIT_WORK_TREE",
+]);
+let gitLocalEnvVarNames;
 
 export function validateRepositoryPolicy(repoRoot = REPO_ROOT) {
   const errors = [];
@@ -302,7 +328,7 @@ export async function runSyntheticReleasePleaseDryRun(
       {
         cwd: repoRoot,
         env: {
-          ...process.env,
+          ...createGitSubprocessEnv(),
           GITHUB_TOKEN: token,
           GH_TOKEN: token,
         },
@@ -500,11 +526,9 @@ function gitCommitExists(repoRoot, sha) {
 }
 
 function listLocalBranchCommits(repoRoot) {
-  const mergeBase = git(
-    repoRoot,
-    ["merge-base", "HEAD", "origin/main"],
-    { allowFailure: true },
-  );
+  const mergeBase = git(repoRoot, ["merge-base", "HEAD", "origin/main"], {
+    allowFailure: true,
+  });
   if (!mergeBase) {
     return [];
   }
@@ -596,9 +620,50 @@ function git(cwd, args, options = {}) {
   return result.stdout.trim();
 }
 
+export function createGitSubprocessEnv(baseEnv = process.env) {
+  const env = { ...baseEnv };
+  for (const name of getGitLocalEnvVarNames()) {
+    delete env[name];
+  }
+  return env;
+}
+
+function getGitLocalEnvVarNames() {
+  if (gitLocalEnvVarNames) {
+    return gitLocalEnvVarNames;
+  }
+
+  const discoveryEnv = { ...process.env };
+  for (const name of BOOTSTRAP_GIT_LOCAL_ENV_VARS) {
+    delete discoveryEnv[name];
+  }
+  const result = spawnSync(
+    resolveExecutable("git"),
+    ["rev-parse", "--local-env-vars"],
+    {
+      env: discoveryEnv,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+  const discovered =
+    result.status === 0
+      ? result.stdout
+          .split("\n")
+          .map((name) => name.trim())
+          .filter(Boolean)
+      : [];
+  gitLocalEnvVarNames = new Set([
+    ...BOOTSTRAP_GIT_LOCAL_ENV_VARS,
+    ...discovered,
+  ]);
+  return gitLocalEnvVarNames;
+}
+
 function runGit(cwd, args) {
   return spawnSync(resolveExecutable("git"), args, {
     cwd,
+    env: createGitSubprocessEnv(),
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   });

@@ -5,6 +5,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  createGitSubprocessEnv,
   listCommits,
   listCommitsForPullRequest,
   parseConventionalSubject,
@@ -196,6 +197,22 @@ test("PR commit discovery fails closed when PR SHAs cannot be fetched", () => {
   );
 });
 
+test("#519 Git subprocess environment removes local variables only", () => {
+  const env = createGitSubprocessEnv({
+    PATH: "/test/bin",
+    KICAD_TEST_SENTINEL: "preserved",
+    GIT_DIR: "/caller/.git",
+    GIT_WORK_TREE: "/caller",
+    GIT_INDEX_FILE: "/caller/.git/index",
+  });
+
+  assert.equal(env.PATH, "/test/bin");
+  assert.equal(env.KICAD_TEST_SENTINEL, "preserved");
+  assert.equal(env.GIT_DIR, undefined);
+  assert.equal(env.GIT_WORK_TREE, undefined);
+  assert.equal(env.GIT_INDEX_FILE, undefined);
+});
+
 test("Windows command resolution only appends .cmd for package manager shims", () => {
   assert.equal(resolveExecutable("pnpm", "win32"), "pnpm.cmd");
   assert.equal(resolveExecutable("npm", "win32"), "npm.cmd");
@@ -262,11 +279,15 @@ test("#519 synthetic repositories ignore hook-local Git environment", async () =
   try {
     const snapshot = await runSyntheticReleasePleaseDryRun(REPO_ROOT, {
       token: "test-token",
-      spawnReleasePlease: () => ({
-        status: 0,
-        stdout: ROOT_ONLY_RELEASE_PLEASE_FIXTURE,
-        stderr: "",
-      }),
+      spawnReleasePlease: (_command, _args, options) => {
+        assert.equal(options.env.GIT_DIR, undefined);
+        assert.equal(options.env.GIT_WORK_TREE, undefined);
+        return {
+          status: 0,
+          stdout: ROOT_ONLY_RELEASE_PLEASE_FIXTURE,
+          stderr: "",
+        };
+      },
     });
     assert.equal(snapshot.pullRequestCount, 0);
   } finally {

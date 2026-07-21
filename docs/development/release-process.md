@@ -10,6 +10,8 @@ KiCad Studio Kit releases the VS Code extension from this repository. The MCP se
 - `publish-extension.yml` packages the VSIX, validates metadata, stages checksums, SBOM, provenance, and attestations, then publishes to marketplaces when explicitly triggered by release flow.
 - `release.yml` is a low-risk release-readiness workflow that validates release evidence without publishing.
 
+Release Please's temporary repositories run with Git repository-local environment variables removed. The helper derives those names from `git rev-parse --local-env-vars`, so direct validation and Husky `pre-push` validation exercise the same isolated synthetic repository instead of inheriting the caller's `GIT_DIR`, `GIT_WORK_TREE`, or index/object paths.
+
 ## Release evidence
 
 Each release should provide:
