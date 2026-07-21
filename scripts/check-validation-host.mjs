@@ -152,8 +152,8 @@ export function validateValidationHostRepository(repoRoot = defaultRepoRoot) {
   });
   errors.push(
     ...executableErrors(repoRoot, "scripts/bootstrap-validation-host.sh"),
+    ...executableErrors(repoRoot, "scripts/run-validation-host.sh"),
   );
-  errors.push(...executableErrors(repoRoot, "scripts/run-validation-host.sh"));
   return errors;
 }
 

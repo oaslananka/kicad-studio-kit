@@ -2,14 +2,17 @@
 
 validation_host_os_codename() {
   awk -F= '$1 == "VERSION_CODENAME" { gsub(/"/, "", $2); print $2; exit }' /etc/os-release
+  return "$?"
 }
 
 validation_host_architecture() {
   dpkg --print-architecture
+  return "$?"
 }
 
 validation_host_multiarch() {
   dpkg-architecture -qDEB_HOST_MULTIARCH
+  return "$?"
 }
 
 validation_host_configure_base() {
@@ -35,6 +38,7 @@ validation_host_configure_base() {
 
   export KICAD_STUDIO_VALIDATION_APT_ROOT="${KICAD_STUDIO_VALIDATION_CACHE_ROOT}/apt-root/${codename}-${architecture}"
   export KICAD_STUDIO_VALIDATION_DEB_ROOT="${KICAD_STUDIO_VALIDATION_CACHE_ROOT}/debs/${codename}-${architecture}"
+  return 0
 }
 
 validation_host_activate_rootless_runtime() {
@@ -46,6 +50,7 @@ validation_host_activate_rootless_runtime() {
   export FONTCONFIG_PATH="${KICAD_STUDIO_VALIDATION_APT_ROOT}/.fontconfig"
   export FONTCONFIG_FILE="${KICAD_STUDIO_VALIDATION_APT_ROOT}/.fontconfig/fonts.conf"
   export XKB_CONFIG_ROOT="${KICAD_STUDIO_VALIDATION_APT_ROOT}/usr/share/X11/xkb"
+  return 0
 }
 
 validation_host_print_environment() {
@@ -58,4 +63,5 @@ validation_host_print_environment() {
   printf 'KICAD_STUDIO_VALIDATION_APT_ROOT=%s\n' "${KICAD_STUDIO_VALIDATION_APT_ROOT}"
   printf 'KICAD_STUDIO_VALIDATION_DEB_ROOT=%s\n' "${KICAD_STUDIO_VALIDATION_DEB_ROOT}"
   printf 'PLAYWRIGHT_BROWSERS_PATH=%s\n' "${PLAYWRIGHT_BROWSERS_PATH}"
+  return 0
 }
