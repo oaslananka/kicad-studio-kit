@@ -73,7 +73,7 @@ tasks:
       - task: security
 
   security:local:
-    desc: Heavy local security checks (requires gitleaks, osv-scanner, trivy, actionlint, zizmor)
+    desc: Heavy local security checks (requires uv, gitleaks, and actionlint)
     cmds:
       - cmd: bash scripts/local-security.sh
         platforms: [linux, darwin]

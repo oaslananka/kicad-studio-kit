@@ -24,6 +24,8 @@ function createFixture(overrides = {}) {
         '  "brace-expansion@5.0.6": "5.0.7"',
         "  js-yaml: 4.3.0",
         "  tar: 7.5.19",
+        "  fast-uri: 3.1.4",
+        "  linkify-it: 5.0.2",
         "",
       ].join("\n"),
   );
@@ -84,6 +86,8 @@ test("disabled pnpm supply-chain controls fail validation", () => {
       '  "brace-expansion@5.0.6": "5.0.7"',
       "  js-yaml: 4.3.0",
       "  tar: 7.5.19",
+      "  fast-uri: 3.1.4",
+      "  linkify-it: 5.0.2",
       "",
     ].join("\n"),
   });
@@ -129,6 +133,8 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
       "overrides:",
       "  js-yaml: 4.3.0",
       "  tar: 7.5.19",
+      "  fast-uri: 3.1.4",
+      "  linkify-it: 5.0.2",
       "",
     ].join("\n"),
   });
@@ -155,6 +161,8 @@ test("#506 stale js-yaml security override fails validation", () => {
       '  "brace-expansion@5.0.6": "5.0.7"',
       "  js-yaml: 4.2.0",
       "  tar: 7.5.19",
+      "  fast-uri: 3.1.4",
+      "  linkify-it: 5.0.2",
       "",
     ].join("\n"),
   });
@@ -180,12 +188,42 @@ test("#506 stale tar security override fails validation", () => {
       '  "brace-expansion@5.0.6": "5.0.7"',
       "  js-yaml: 4.3.0",
       "  tar: 7.5.18",
+      "  fast-uri: 3.1.4",
+      "  linkify-it: 5.0.2",
       "",
     ].join("\n"),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
       "pnpm-workspace.yaml overrides must pin tar to 7.5.19",
+    ]);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("#508 newly disclosed transitive security fixes stay pinned", () => {
+  const repoRoot = createFixture({
+    workspace: [
+      "packages:",
+      "minimumReleaseAge: 1440",
+      "minimumReleaseAgeExclude:",
+      "  - tmp@0.2.7",
+      "blockExoticSubdeps: true",
+      "overrides:",
+      '  "brace-expansion@2.1.1": "2.1.2"',
+      '  "brace-expansion@5.0.6": "5.0.7"',
+      "  js-yaml: 4.3.0",
+      "  tar: 7.5.19",
+      "  fast-uri: 3.1.2",
+      "  linkify-it: 5.0.1",
+      "",
+    ].join("\n"),
+  });
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      "pnpm-workspace.yaml overrides must pin fast-uri to 3.1.4",
+      "pnpm-workspace.yaml overrides must pin linkify-it to 5.0.2",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });

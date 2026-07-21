@@ -1,0 +1,3 @@
+# Gate only reviewed, high-confidence findings. Lower-confidence informational
+# findings remain visible during manual auditor runs without blocking pull requests.
+rules: {}

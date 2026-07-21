@@ -407,28 +407,28 @@ jobs:
       - name: Job result summary
         shell: bash
         run: |
-          echo "| Job | Result |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| ci-lanes | ${{ needs.ci-lanes.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| metadata | ${{ needs.metadata.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| forbidden-refs | ${{ needs.forbidden-refs.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| shared-packages | ${{ needs.shared-packages.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| vscode-extension | ${{ needs.vscode-extension.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| performance-budgets | ${{ needs.performance-budgets.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| real-pair-compatibility | ${{ needs.real-pair-compatibility.result }} |" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "| Job | Result |"
+            echo "|---|---|"
+            echo "| ci-lanes | ${{ needs.ci-lanes.result }} |"
+            echo "| metadata | ${{ needs.metadata.result }} |"
+            echo "| forbidden-refs | ${{ needs.forbidden-refs.result }} |"
+            echo "| shared-packages | ${{ needs.shared-packages.result }} |"
+            echo "| vscode-extension | ${{ needs.vscode-extension.result }} |"
+            echo "| performance-budgets | ${{ needs.performance-budgets.result }} |"
+            echo "| real-pair-compatibility | ${{ needs.real-pair-compatibility.result }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Fail on critical job failure
         # Fail closed on both failure and cancellation of a required job: a
         # cancelled (e.g. timed-out) required lane must block merge, not pass.
-        if: >
-          ${{
-               needs.ci-lanes.result == 'failure' || needs.ci-lanes.result == 'cancelled'
-            || needs.metadata.result == 'failure' || needs.metadata.result == 'cancelled'
-            || needs.forbidden-refs.result == 'failure' || needs.forbidden-refs.result == 'cancelled'
-            || needs.shared-packages.result == 'failure' || needs.shared-packages.result == 'cancelled'
-            || needs.vscode-extension.result == 'failure' || needs.vscode-extension.result == 'cancelled'
-            || needs.performance-budgets.result == 'failure' || needs.performance-budgets.result == 'cancelled'
-            || needs.real-pair-compatibility.result == 'failure' || needs.real-pair-compatibility.result == 'cancelled'
-          }}
+        if: >-
+          needs.ci-lanes.result == 'failure' || needs.ci-lanes.result == 'cancelled' ||
+          needs.metadata.result == 'failure' || needs.metadata.result == 'cancelled' ||
+          needs.forbidden-refs.result == 'failure' || needs.forbidden-refs.result == 'cancelled' ||
+          needs.shared-packages.result == 'failure' || needs.shared-packages.result == 'cancelled' ||
+          needs.vscode-extension.result == 'failure' || needs.vscode-extension.result == 'cancelled' ||
+          needs.performance-budgets.result == 'failure' || needs.performance-budgets.result == 'cancelled' ||
+          needs.real-pair-compatibility.result == 'failure' || needs.real-pair-compatibility.result == 'cancelled'
         shell: bash
         run: |
           echo "::error::One or more required CI jobs failed"
