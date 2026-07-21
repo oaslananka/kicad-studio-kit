@@ -457,8 +457,11 @@ CI ownership follows product boundaries:
 - `.github/workflows/ci.yml` owns path-filtered fast PR lanes for metadata,
   extension, shared packages, integration contracts, extension performance
   budgets, and forbidden reference checks.
-- `.github/workflows/security.yml`, `.github/workflows/gitleaks.yml`, and
-  `.github/workflows/codeql.yml` own security and static analysis lanes.
+- `.github/workflows/security.yml` owns dependency audit, native actionlint,
+  high-confidence zizmor, and repository-specific Semgrep rules;
+  `.github/workflows/gitleaks.yml` owns committed-secret detection; and
+  `.github/workflows/codeql.yml` remains the broad JavaScript/TypeScript and
+  Python SAST authority.
 - `.github/workflows/vscode-canary.yml` owns scheduled/manual VS Code
   compatibility lanes sourced from `compatibility.yaml`.
 - `.github/workflows/cross-repo-compatibility.yml` owns published

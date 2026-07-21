@@ -1,0 +1,16 @@
+.git/
+node_modules/
+**/node_modules/
+**/dist/
+**/out/
+**/coverage/
+**/test-results/
+**/*.test.js
+**/*.test.mjs
+**/*.test.cjs
+**/*.test.ts
+**/*.test.tsx
+**/test/**
+**/tests/**
+apps/vscode-extension/media/kicanvas/
+packages/kicad-fixtures/fixtures/

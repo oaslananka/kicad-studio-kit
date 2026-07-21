@@ -88,4 +88,3 @@ The score never hides a hard failure: any failed dimension or any
 numeric score is high. Each dimension and finding carries a remediation hint, and
 reports export to both Markdown and HTML so CI can publish the scorecard as an
 artifact. Any AI-generated remediation plan must be grounded in these findings.
-

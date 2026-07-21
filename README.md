@@ -2,7 +2,7 @@
 
 # KiCad Studio Kit
 
-**VS Code extension repository for KiCad Studio workflows.**  
+**VS Code extension repository for KiCad Studio workflows.**
 Extension-side MCP discovery, configuration, compatibility metadata, and user experience.
 
 <p>

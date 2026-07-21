@@ -10,19 +10,26 @@ Security scanning is continuous, visible on every pull request, and wired into
 the merge and release decision. The table below is the standing posture; the
 sections that follow give the detail for each lane.
 
-| Control | Where it runs | Gate |
-| --- | --- | --- |
-| Code scanning (CodeQL, JS/TS + Python) | `CodeQL` workflow on pull requests, pushes, and weekly | High-severity code-scanning alerts block merge |
-| Secret scanning | `Gitleaks` workflow on every pull request plus the local security gate; GitHub secret scanning with push protection stays enabled | A new secret-scanning alert blocks release until triaged |
-| Dependency review | `Security` workflow `dependency-review` job on pull requests | New `high`+ dependency additions block the pull request |
-| Dependency audit | `Security` workflow `pnpm audit --audit-level high` | High-severity advisories fail the check |
-| Supply-chain policy | `check:supply-chain` (`minimumReleaseAge`, `blockExoticSubdeps`) | Untrusted or too-new transitive dependencies fail CI |
-| Repository health | `Scorecard` workflow (OSSF) publishing to code scanning | Findings are tracked, not auto-blocking |
-| Dependency updates | Renovate for version bumps; repository-level GitHub security alerts and automated GitHub Actions security updates | Reviewed through the dependency lanes |
+| Control                                | Where it runs                                                                                                                     | Gate                                                                                             |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Code scanning (CodeQL, JS/TS + Python) | `CodeQL` workflow on pull requests, pushes, and weekly                                                                            | High-severity code-scanning alerts block merge                                                   |
+| Repository-specific SAST               | Semgrep 1.170.0 custom rules in the required `Security` workflow                                                                  | Shell-string execution, dynamic evaluation, and sensitive-value logging findings fail `security` |
+| Workflow security                      | actionlint 1.7.12 and zizmor 1.27.0 in the required `Security` workflow                                                           | Syntax/shell errors and high-confidence medium-or-higher Actions findings fail `security`        |
+| Secret scanning                        | `Gitleaks` workflow on every pull request plus the local security gate; GitHub secret scanning with push protection stays enabled | A new secret-scanning alert blocks release until triaged                                         |
+| Dependency review                      | `Security` workflow `dependency-review` job on pull requests                                                                      | New `high`+ dependency additions block the pull request                                          |
+| Dependency audit                       | `Security` workflow `pnpm audit --audit-level high`                                                                               | High-severity advisories fail the check                                                          |
+| Supply-chain policy                    | `check:supply-chain` (`minimumReleaseAge`, `blockExoticSubdeps`)                                                                  | Untrusted or too-new transitive dependencies fail CI                                             |
+| Repository health                      | `Scorecard` workflow (OSSF) publishing to code scanning                                                                           | Findings are tracked, not auto-blocking                                                          |
+| Dependency updates                     | Renovate for version bumps; repository-level GitHub security alerts and automated GitHub Actions security updates                 | Reviewed through the dependency lanes                                                            |
 
 ### Decisions and expectations
 
 - **Code scanning** is enabled (CodeQL) for TypeScript/JavaScript and Python.
+- **Custom Semgrep rules** are repository-owned and intentionally narrow. They
+  protect local invariants around shell-string execution, dynamic evaluation,
+  and sensitive-value logging; broad generic SAST remains CodeQL's job.
+- **Workflow validation** uses native actionlint plus offline zizmor with
+  high-confidence, medium-or-higher findings as the blocking threshold.
 - **Secret scanning**: GitHub secret scanning with push protection is expected
   to remain enabled on the canonical repository. `Gitleaks` enforces the same
   gate in CI and the `apps/vscode-extension/scripts/local-security` scripts
@@ -58,7 +65,7 @@ a finding.
 
 Pull requests and scheduled workflows keep the supply chain surface visible:
 
-- `Security` runs Node and Python dependency audits and blocks high-severity
+- `Security` runs the Node dependency audit and blocks high-severity
   dependency additions through Dependency Review.
 - `CodeQL` analyzes TypeScript/JavaScript and Python.
 - `Gitleaks` fails on committed secret material with redacted output.
@@ -105,8 +112,13 @@ changes, run the local scanner gate as well:
 
 The MCP server security checks now run in the [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository.
 
-That gate requires `gitleaks`, workflow linting, and `zizmor`; scanner findings
-must be fixed or triaged before release work proceeds.
+That gate requires `pre-commit` 4.6.0, `gitleaks`, native actionlint 1.7.12,
+zizmor 1.27.0, and Semgrep 1.170.0. Run it with
+`task security:local` from `apps/vscode-extension`, or run the focused root
+commands `pnpm run security:workflows`, `pnpm run test:semgrep-rules`, and
+`pnpm run security:semgrep`. Scanner findings must be fixed or explicitly
+triaged before release work proceeds. CodeQL remains the broad SAST authority,
+and push protection plus Gitleaks remain the secret-scanning authorities.
 
 ## pnpm Lockfile Trust
 

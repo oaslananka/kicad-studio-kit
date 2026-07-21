@@ -1,0 +1,63 @@
+rules:
+  - id: kicad.no-node-shell-exec
+    message: Use spawn, spawnSync, execFile, or execFileSync with an argument array instead of a shell command string.
+    severity: ERROR
+    languages: [javascript, typescript]
+    pattern-either:
+      - pattern: exec(...)
+      - pattern: execSync(...)
+      - patterns:
+          - pattern-either:
+              - pattern-inside: |
+                  import { ..., exec as $EXEC, ... } from 'node:child_process';
+                  ...
+              - pattern-inside: |
+                  import { ..., exec as $EXEC, ... } from 'child_process';
+                  ...
+          - pattern: $EXEC(...)
+      - patterns:
+          - pattern-either:
+              - pattern-inside: |
+                  import * as $CP from 'node:child_process';
+                  ...
+              - pattern-inside: |
+                  import * as $CP from 'child_process';
+                  ...
+          - pattern-either:
+              - pattern: $CP.exec(...)
+              - pattern: $CP.execSync(...)
+      - patterns:
+          - pattern-either:
+              - pattern-inside: |
+                  const $CP = require('node:child_process');
+                  ...
+              - pattern-inside: |
+                  const $CP = require('child_process');
+                  ...
+          - pattern-either:
+              - pattern: $CP.exec(...)
+              - pattern: $CP.execSync(...)
+
+  - id: kicad.no-dynamic-code-evaluation
+    message: Dynamic code evaluation is forbidden in repository-owned JavaScript and TypeScript.
+    severity: ERROR
+    languages: [javascript, typescript]
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: new Function(...)
+      - pattern: Function(...)
+
+  - id: kicad.no-sensitive-console-logging
+    message: Do not write token, secret, password, authorization, cookie, or credential values to console output.
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: console.log(..., $VALUE, ...)
+          - pattern: console.info(..., $VALUE, ...)
+          - pattern: console.warn(..., $VALUE, ...)
+          - pattern: console.error(..., $VALUE, ...)
+          - pattern: console.debug(..., $VALUE, ...)
+      - metavariable-regex:
+          metavariable: $VALUE
+          regex: (?i)^(?:[A-Za-z_$][A-Za-z0-9_$]*\.)*[A-Za-z0-9_$]*(?:token|secret|password|authorization|cookie|credential)[A-Za-z0-9_$]*$

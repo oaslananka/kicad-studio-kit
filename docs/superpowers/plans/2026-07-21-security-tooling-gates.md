@@ -23,11 +23,13 @@
 ### Task 1: Security Tooling Policy Contract
 
 **Files:**
+
 - Create: `scripts/check-security-tooling.mjs`
 - Create: `scripts/check-security-tooling.test.mjs`
 - Modify: `package.json`
 
 **Interfaces:**
+
 - Produces: `validateSecurityTooling(root): string[]`, returning deterministic policy errors.
 - Produces: root commands `check:security-tooling`, `security:workflows`, `security:semgrep`, and `test:semgrep-rules`.
 
@@ -48,9 +50,9 @@ Pin these command forms exactly:
 ```json
 {
   "check:security-tooling": "node scripts/check-security-tooling.mjs && node --test scripts/check-security-tooling.test.mjs",
-  "security:workflows": "actionlint -config-file .github/actionlint.yaml && uvx --from zizmor==1.27.0 zizmor --config .github/zizmor.yml --format plain --min-severity medium --min-confidence high .",
-  "security:semgrep": "uvx --from semgrep==1.170.0 semgrep scan --config .semgrep/semgrep.yml --error --metrics=off .",
-  "test:semgrep-rules": "uvx --from semgrep==1.170.0 semgrep --test .semgrep"
+  "security:workflows": "actionlint -config-file .github/actionlint.yaml && uvx --from zizmor==1.27.0 zizmor --config .github/zizmor.yml --offline --strict-collection --format plain --min-severity medium --min-confidence high .",
+  "security:semgrep": "uvx --from semgrep==1.170.0 semgrep scan --config .semgrep/semgrep.yml --error --metrics=off apps/vscode-extension/src apps/vscode-extension/scripts packages scripts",
+  "test:semgrep-rules": "uvx --from semgrep==1.170.0 semgrep --metrics=off --test --config .semgrep/semgrep.yml .semgrep/semgrep.ts"
 }
 ```
 
@@ -72,12 +74,14 @@ git commit -m "test(repo): define security tooling contract (#508)"
 ### Task 2: Deterministic Workflow Security Gate
 
 **Files:**
+
 - Create: `.github/zizmor.yml`
 - Modify: `.github/workflows/security.yml`
 - Modify: `.github/workflows/ci.yml`
 - Modify: `.github/workflows/cross-repo-compatibility.yml`
 
 **Interfaces:**
+
 - Consumes: root commands from Task 1.
 - Produces: native actionlint and high-confidence zizmor execution in the existing `security` job.
 
@@ -105,7 +109,7 @@ Run:
 
 ```bash
 actionlint -config-file .github/actionlint.yaml
-uvx --from zizmor==1.27.0 zizmor --config .github/zizmor.yml --format plain --min-severity medium --min-confidence high .
+uvx --from zizmor==1.27.0 zizmor --config .github/zizmor.yml --offline --strict-collection --format plain --min-severity medium --min-confidence high .
 ```
 
 Expected: both commands exit 0.
@@ -120,12 +124,14 @@ git commit -m "ci(repo): add workflow security scanners (#508)"
 ### Task 3: Repository-Owned Semgrep Rules
 
 **Files:**
+
 - Create: `.semgrep/semgrep.yml`
-- Create: `.semgrep/.semgrepignore`
-- Create: `.semgrep/tests/javascript-security.ts`
+- Create: `.semgrepignore`
+- Create: `.semgrep/semgrep.ts`
 - Modify: `scripts/check-security-tooling.test.mjs`
 
 **Interfaces:**
+
 - Produces rule IDs `kicad.no-node-shell-exec`, `kicad.no-dynamic-code-evaluation`, and `kicad.no-sensitive-console-logging`.
 
 - [ ] **Step 1: Write positive and negative Semgrep fixtures**
@@ -134,7 +140,7 @@ Mark unsafe `child_process.exec`/`execSync`, `eval`/`new Function`, and logging 
 
 - [ ] **Step 2: Verify rule tests fail before rules exist**
 
-Run: `uvx --from semgrep==1.170.0 semgrep --test .semgrep`
+Run: `uvx --from semgrep==1.170.0 semgrep --metrics=off --test --config .semgrep/semgrep.yml .semgrep/semgrep.ts`
 
 Expected: FAIL because expected rule IDs do not exist.
 
@@ -147,8 +153,8 @@ Target JavaScript/TypeScript only. Exclude generated assets, `dist`, `out`, cove
 Run:
 
 ```bash
-uvx --from semgrep==1.170.0 semgrep --test .semgrep
-uvx --from semgrep==1.170.0 semgrep scan --config .semgrep/semgrep.yml --error --metrics=off .
+uvx --from semgrep==1.170.0 semgrep --metrics=off --test --config .semgrep/semgrep.yml .semgrep/semgrep.ts
+uvx --from semgrep==1.170.0 semgrep scan --config .semgrep/semgrep.yml --error --metrics=off apps/vscode-extension/src apps/vscode-extension/scripts packages scripts
 ```
 
 Expected: fixture tests pass and the repository scan reports zero findings.
@@ -163,17 +169,20 @@ git commit -m "ci(repo): add custom Semgrep invariants (#508)"
 ### Task 4: Fast Pre-commit and Local Security Commands
 
 **Files:**
+
 - Modify: `.pre-commit-config.yaml`
 - Modify: `.gitignore`
 - Modify: `README.md`
 - Modify: `docs/board-ready-ops.md`
 - Modify: `apps/vscode-extension/scripts/local-security.sh`
 - Modify: `apps/vscode-extension/scripts/local-security.ps1`
+- Modify: `apps/vscode-extension/Taskfile.yml`
 - Modify: `docs/security.md`
 - Modify: `docs/testing-strategy.md`
 - Modify: `scripts/check-security-tooling.test.mjs`
 
 **Interfaces:**
+
 - Consumes: root scanner commands from Task 1.
 - Produces: a fast manual `pre-commit run --all-files` lane and documented heavy local scanner lane.
 
@@ -202,9 +211,9 @@ Run:
 ```bash
 uvx --from pre-commit==4.6.0 pre-commit run --all-files
 actionlint -config-file .github/actionlint.yaml
-uvx --from zizmor==1.27.0 zizmor --config .github/zizmor.yml --format plain --min-severity medium --min-confidence high .
-uvx --from semgrep==1.170.0 semgrep --test .semgrep
-uvx --from semgrep==1.170.0 semgrep scan --config .semgrep/semgrep.yml --error --metrics=off .
+uvx --from zizmor==1.27.0 zizmor --config .github/zizmor.yml --offline --strict-collection --format plain --min-severity medium --min-confidence high .
+uvx --from semgrep==1.170.0 semgrep --metrics=off --test --config .semgrep/semgrep.yml .semgrep/semgrep.ts
+uvx --from semgrep==1.170.0 semgrep scan --config .semgrep/semgrep.yml --error --metrics=off apps/vscode-extension/src apps/vscode-extension/scripts packages scripts
 corepack pnpm run check:security-tooling
 corepack pnpm --filter kicadstudiokit run test:security
 ```
@@ -218,6 +227,6 @@ Run frozen install, format, lint, typecheck, CI lane policy, branch-protection p
 - [ ] **Step 7: Commit**
 
 ```bash
-git add .pre-commit-config.yaml .gitignore README.md docs/board-ready-ops.md apps/vscode-extension/scripts/local-security.sh apps/vscode-extension/scripts/local-security.ps1 docs/security.md docs/testing-strategy.md scripts/check-security-tooling.test.mjs
+git add .pre-commit-config.yaml .gitignore README.md docs/board-ready-ops.md apps/vscode-extension/Taskfile.yml apps/vscode-extension/scripts/local-security.sh apps/vscode-extension/scripts/local-security.ps1 docs/security.md docs/testing-strategy.md scripts/check-security-tooling.test.mjs
 git commit -m "chore(repo): align local security gates (#508)"
 ```
