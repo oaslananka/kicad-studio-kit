@@ -58,7 +58,9 @@ function sameStringSet(actual, expected) {
   }
   return (
     actual.length === expected.length &&
-    [...actual].sort().every((value, index) => value === expected[index])
+    [...actual]
+      .sort((left, right) => left.localeCompare(right))
+      .every((value, index) => value === expected[index])
   );
 }
 
@@ -189,8 +191,8 @@ function validateDocumentation(root, errors) {
 export function validateDependabotPolicy(root = REPO_ROOT) {
   const errors = [];
   const { text, value } = readYaml(root, CONFIG_PATH, errors);
-  errors.push(...validateConfig(value, text));
   errors.push(
+    ...validateConfig(value, text),
     ...validateRenovate(readJson(root, "renovate.json", errors)),
     ...validateRootScripts(readJson(root, "package.json", errors)),
   );
