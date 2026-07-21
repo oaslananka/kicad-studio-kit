@@ -18,6 +18,7 @@ const RELEVANT_FILES = [
   "apps/vscode-extension/.gitignore",
   "apps/vscode-extension/jest.config.js",
   "apps/vscode-extension/package.json",
+  "apps/vscode-extension/webpack.config.js",
   "codecov.yml",
   "docs/testing-strategy.md",
   "package.json",
@@ -43,12 +44,50 @@ function replaceInFixture(root, relativePath, before, after) {
   writeFileSync(filePath, source.replace(before, after));
 }
 
-test("#511 current repository satisfies the Codecov coverage and test analytics contract", () => {
-  assert.deepEqual(validateCodecovPolicy(), []);
+function activateBundleFixture() {
+  const root = createFixture();
+  const docsPath = path.join(root, "docs/testing-strategy.md");
+  const docs = readFileSync(docsPath, "utf8");
+  if (
+    !docs.includes("kicad-studio-vscode-extension") ||
+    !docs.includes("fails closed")
+  ) {
+    writeFileSync(
+      docsPath,
+      `${docs}\nBundle Analysis uses the stable bundle name kicad-studio-vscode-extension and fails closed without a successful upload confirmation.\n`,
+    );
+  }
+  return root;
+}
+
+test("#514 activated fixture satisfies the Codecov bundle contract", () => {
+  const root = activateBundleFixture();
+  try {
+    assert.deepEqual(validateCodecovPolicy(root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
-test("#511 immutable Codecov action pins cannot drift", () => {
-  const root = createFixture();
+test("#514 exact bundle dependency pin cannot disappear", () => {
+  const root = activateBundleFixture();
+  try {
+    const packagePath = path.join(root, "apps/vscode-extension/package.json");
+    const packageJson = JSON.parse(readFileSync(packagePath, "utf8"));
+    delete packageJson.devDependencies["@codecov/webpack-plugin"];
+    writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
+    assert.ok(
+      validateCodecovPolicy(root).includes(
+        "extension devDependencies must pin @codecov/webpack-plugin 2.0.1",
+      ),
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#514 immutable Codecov action pins cannot drift", () => {
+  const root = activateBundleFixture();
   try {
     replaceInFixture(
       root,
@@ -66,8 +105,8 @@ test("#511 immutable Codecov action pins cannot drift", () => {
   }
 });
 
-test("#511 fork guards and failed-test reporting are mandatory", () => {
-  const root = createFixture();
+test("#514 fork guards and failed-test reporting are mandatory", () => {
+  const root = activateBundleFixture();
   try {
     replaceInFixture(
       root,
@@ -84,7 +123,7 @@ test("#511 fork guards and failed-test reporting are mandatory", () => {
     const errors = validateCodecovPolicy(root);
     assert.ok(
       errors.includes(
-        "ci.yml must skip token-backed Codecov work for fork pull requests",
+        "ci.yml must skip the Codecov report job for fork pull requests",
       ),
     );
     assert.ok(
@@ -97,16 +136,30 @@ test("#511 fork guards and failed-test reporting are mandatory", () => {
   }
 });
 
-test("#511 Bundle Analysis remains deferred until #514", () => {
-  const root = createFixture();
+test("#514 bundle upload context and success confirmation are mandatory", () => {
+  const root = activateBundleFixture();
   try {
-    const packagePath = path.join(root, "apps/vscode-extension/package.json");
-    const packageJson = JSON.parse(readFileSync(packagePath, "utf8"));
-    packageJson.devDependencies["@codecov/webpack-plugin"] = "2.0.1";
-    writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
+    replaceInFixture(
+      root,
+      ".github/workflows/ci.yml",
+      "CODECOV_BUNDLE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}",
+      "CODECOV_BUNDLE_SHA: ''",
+    );
+    replaceInFixture(
+      root,
+      ".github/workflows/ci.yml",
+      "[codecov] Successfully uploaded stats for bundle: kicad-studio-vscode-extension-cjs",
+      "bundle upload completed",
+    );
+    const errors = validateCodecovPolicy(root);
     assert.ok(
-      validateCodecovPolicy(root).includes(
-        "extension devDependencies must pin jest-junit 17.0.0 and defer @codecov/webpack-plugin to #514",
+      errors.includes(
+        "ci.yml must pass explicit branch, PR, SHA, and slug context to Bundle Analysis",
+      ),
+    );
+    assert.ok(
+      errors.includes(
+        "ci.yml must fail unless the stable Codecov bundle upload is positively confirmed",
       ),
     );
   } finally {
@@ -114,28 +167,66 @@ test("#511 Bundle Analysis remains deferred until #514", () => {
   }
 });
 
-test("#511 Codecov statuses remain informational during baseline establishment", () => {
-  const root = createFixture();
+test("#514 bundle plugin remains opt-in, tokenless, and telemetry-free", () => {
+  const root = activateBundleFixture();
+  try {
+    replaceInFixture(
+      root,
+      "apps/vscode-extension/webpack.config.js",
+      "environment.CODECOV_BUNDLE_ANALYSIS === 'true'",
+      "true",
+    );
+    replaceInFixture(
+      root,
+      "apps/vscode-extension/webpack.config.js",
+      "telemetry: false",
+      "telemetry: true",
+    );
+    replaceInFixture(
+      root,
+      "apps/vscode-extension/webpack.config.js",
+      "gitService: 'github',",
+      "gitService: 'github',\n        uploadToken: environment.CODECOV_TOKEN,",
+    );
+    const errors = validateCodecovPolicy(root);
+    assert.ok(
+      errors.includes(
+        "webpack bundle analysis must require CODECOV_BUNDLE_ANALYSIS=true",
+      ),
+    );
+    assert.ok(
+      errors.includes("Codecov bundle plugin telemetry must stay disabled"),
+    );
+    assert.ok(
+      errors.includes(
+        "Codecov bundle plugin must use tokenless GitHub authentication",
+      ),
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#514 Codecov statuses remain informational", () => {
+  const root = activateBundleFixture();
   try {
     replaceInFixture(
       root,
       "codecov.yml",
-      "informational: true",
-      "informational: false",
+      "status: informational",
+      "status: success",
     );
     const errors = validateCodecovPolicy(root);
     assert.ok(
-      errors.some((error) =>
-        error.includes("coverage status must be informational"),
-      ),
+      errors.some((error) => error.includes("must remain informational")),
     );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-test("#511 root check wiring cannot silently disappear", () => {
-  const root = createFixture();
+test("#514 root check wiring cannot silently disappear", () => {
+  const root = activateBundleFixture();
   try {
     const packagePath = path.join(root, "package.json");
     const packageJson = JSON.parse(readFileSync(packagePath, "utf8"));
@@ -143,7 +234,7 @@ test("#511 root check wiring cannot silently disappear", () => {
     writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
     assert.ok(
       validateCodecovPolicy(root).includes(
-        "package.json must expose check:codecov and compose it into the root check",
+        "package.json must expose check:codecov, include the Webpack contract test, and compose it into the root check",
       ),
     );
   } finally {
