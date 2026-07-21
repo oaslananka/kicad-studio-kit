@@ -6,7 +6,7 @@ $repoRoot = (Resolve-Path -LiteralPath (Join-Path $extensionRoot '../..')).Path
 Set-Location -LiteralPath $repoRoot
 
 Write-Host '==> pre-commit'
-uvx --from pre-commit==4.6.0 pre-commit run --all-files
+uvx --no-build --from pre-commit==4.6.0 pre-commit run --all-files
 
 Write-Host '==> pnpm audit'
 corepack pnpm audit --audit-level high

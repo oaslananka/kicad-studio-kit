@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "$EXTENSION_ROOT/../.." && pwd)"
 cd "$REPO_ROOT"
 
 echo "==> pre-commit"
-uvx --from pre-commit==4.6.0 pre-commit run --all-files
+uvx --no-build --from pre-commit==4.6.0 pre-commit run --all-files
 
 echo "==> pnpm audit"
 corepack pnpm audit --audit-level high

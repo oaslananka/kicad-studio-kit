@@ -15,6 +15,8 @@ import { validateSecurityTooling } from "./check-security-tooling.mjs";
 
 const RELEVANT_FILES = [
   ".github/workflows/security.yml",
+  "apps/vscode-extension/scripts/local-security.sh",
+  "apps/vscode-extension/scripts/local-security.ps1",
   ".github/zizmor.yml",
   ".pre-commit-config.yaml",
   ".semgrepignore",
@@ -118,6 +120,35 @@ test("#508 Semgrep rule fixtures cannot be ignored or silently removed", () => {
     const errors = validateSecurityTooling(root);
     assert.ok(errors.some((error) => error.includes("must not hide")));
     assert.ok(errors.some((error) => error.includes("fixtures must exercise")));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#508 scanner downloads and uvx execution stay fail-closed", () => {
+  const root = createFixture();
+  try {
+    replaceInFixture(
+      root,
+      ".github/workflows/security.yml",
+      "--proto '=https' --proto-redir '=https'",
+      "--location",
+    );
+    replaceInFixture(
+      root,
+      "apps/vscode-extension/scripts/local-security.sh",
+      "uvx --no-build --from pre-commit==4.6.0 pre-commit",
+      "uvx --from pre-commit==4.6.0 pre-commit",
+    );
+    replaceInFixture(
+      root,
+      "apps/vscode-extension/scripts/local-security.ps1",
+      "uvx --no-build --from pre-commit==4.6.0 pre-commit",
+      "uvx --from pre-commit==4.6.0 pre-commit",
+    );
+    const errors = validateSecurityTooling(root);
+    assert.ok(errors.some((error) => error.includes("redirects to HTTPS")));
+    assert.ok(errors.some((error) => error.includes("uvx --no-build")));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
