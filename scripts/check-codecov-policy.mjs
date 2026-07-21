@@ -11,6 +11,7 @@ const CODECOV_ACTION =
   "codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f";
 const CODECOV_CLI_VERSION = "v11.3.1";
 const CODECOV_BUNDLE_NAME = "kicad-studio-vscode-extension";
+const CODECOV_UPLOADED_BUNDLE_NAME = `${CODECOV_BUNDLE_NAME}-cjs`;
 const CODECOV_WEBPACK_PLUGIN_VERSION = "2.0.1";
 
 function readText(repoRoot, relativePath, errors) {
@@ -127,7 +128,7 @@ function validateWorkflow(errors, workflow) {
       "Failed to get pre-signed URL|Failed to upload stats",
     ) &&
       codecovJob.includes(
-        `Successfully uploaded stats for bundle: ${CODECOV_BUNDLE_NAME}`,
+        `grep -Fxq '[codecov] Successfully uploaded stats for bundle: ${CODECOV_UPLOADED_BUNDLE_NAME}'`,
       ) &&
       codecovJob.includes("set -o pipefail") &&
       codecovJob.includes("tee codecov-bundle.log"),

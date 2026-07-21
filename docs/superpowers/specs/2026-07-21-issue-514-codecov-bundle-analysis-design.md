@@ -29,7 +29,7 @@ A controlled API diagnostic isolated the authentication failure. The same public
 - `CODECOV_BUNDLE_ANALYSIS=true`;
 - `CODECOV_TOKEN` is a non-empty string.
 
-The plugin uses the stable bundle name `kicad-studio-vscode-extension`, disables plugin telemetry, and receives explicit GitHub branch, pull-request, SHA, and repository-slug overrides. Local builds, package builds, release builds, repeatability checks, and OS matrix builds leave the opt-in variable unset and therefore never upload bundle data.
+The plugin uses the stable configured bundle base `kicad-studio-vscode-extension` and its Webpack CommonJS upload name `kicad-studio-vscode-extension-cjs`, disables plugin telemetry, and receives explicit GitHub branch, pull-request, SHA, and repository-slug overrides. Local builds, package builds, release builds, repeatability checks, and OS matrix builds leave the opt-in variable unset and therefore never upload bundle data.
 
 ### Dedicated CI upload lane
 
@@ -38,7 +38,7 @@ The existing non-required `codecov` job remains the only external observability 
 The build output is captured with `tee` and `pipefail`. The step fails when either condition is true:
 
 - the plugin reports `Failed to get pre-signed URL` or `Failed to upload stats`;
-- the log does not contain `Successfully uploaded stats for bundle: kicad-studio-vscode-extension`.
+- the log does not contain `[codecov] Successfully uploaded stats for bundle: kicad-studio-vscode-extension-cjs`.
 
 This converts the plugin's non-fatal upload behavior into a fail-closed observability check without making Codecov part of the aggregate `required` branch-protection context.
 

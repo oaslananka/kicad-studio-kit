@@ -65,7 +65,7 @@ report after test failures. Fork pull requests skip the Codecov job that contain
 Existing product CI remains authoritative if Codecov is unavailable.
 
 JavaScript Bundle Analysis runs only in the dedicated `codecov` job and
-publishes the stable bundle name `kicad-studio-vscode-extension`. LCOV and JUnit
+configures the stable bundle base `kicad-studio-vscode-extension`. Webpack appends its CommonJS format suffix, so Codecov records and confirms `kicad-studio-vscode-extension-cjs`. LCOV and JUnit
 uploads continue to use the repository token, while the public-repository bundle
 upload uses Codecov's tokenless GitHub Actions authentication. The Webpack
 plugin is opt-in: normal local, matrix, package, release, and repeatability

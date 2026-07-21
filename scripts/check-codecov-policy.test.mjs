@@ -148,7 +148,7 @@ test("#514 bundle upload context and success confirmation are mandatory", () => 
     replaceInFixture(
       root,
       ".github/workflows/ci.yml",
-      "Successfully uploaded stats for bundle: kicad-studio-vscode-extension",
+      "[codecov] Successfully uploaded stats for bundle: kicad-studio-vscode-extension-cjs",
       "bundle upload completed",
     );
     const errors = validateCodecovPolicy(root);

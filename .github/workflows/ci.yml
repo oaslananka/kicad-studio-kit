@@ -370,7 +370,7 @@ jobs:
             echo "::error::Codecov bundle analysis reported an upload failure."
             exit 1
           fi
-          if ! grep -Fq 'Successfully uploaded stats for bundle: kicad-studio-vscode-extension' codecov-bundle.log; then
+          if ! grep -Fxq '[codecov] Successfully uploaded stats for bundle: kicad-studio-vscode-extension-cjs' codecov-bundle.log; then
             echo "::error::Codecov bundle analysis did not confirm a successful upload."
             exit 1
           fi

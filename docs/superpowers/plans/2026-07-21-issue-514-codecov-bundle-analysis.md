@@ -126,7 +126,7 @@ Set `fetch-depth: 0`, explicit branch/PR/SHA/slug variables, `CODECOV_BUNDLE_ANA
 
 - [ ] **Step 2: Enforce positive and negative log checks**
 
-Fail on `Failed to get pre-signed URL` or `Failed to upload stats`; separately fail when `Successfully uploaded stats for bundle: kicad-studio-vscode-extension` is absent.
+Fail on `Failed to get pre-signed URL` or `Failed to upload stats`; separately fail when `[codecov] Successfully uploaded stats for bundle: kicad-studio-vscode-extension-cjs` is absent.
 
 - [ ] **Step 3: Add informational YAML settings**
 
@@ -188,7 +188,7 @@ Open a PR closing #514. Keep Codecov outside `required` while requiring its own 
 
 - [ ] **Step 3: Inspect live Codecov logs**
 
-Require the GitHub Actions log to contain `Successfully uploaded stats for bundle: kicad-studio-vscode-extension` and no pre-signed URL or stats-upload failure.
+Require the GitHub Actions log to contain `[codecov] Successfully uploaded stats for bundle: kicad-studio-vscode-extension-cjs` and no pre-signed URL or stats-upload failure.
 
 - [ ] **Step 4: Verify Codecov product state**
 
