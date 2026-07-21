@@ -22,10 +22,12 @@
 ### Task 1: Add a failing Dependabot policy contract
 
 **Files:**
+
 - Create: `scripts/check-dependabot-policy.mjs`
 - Create: `scripts/check-dependabot-policy.test.mjs`
 
 **Interfaces:**
+
 - Produces: `validateDependabotPolicy(root?: string): string[]`
 
 - [ ] **Step 1: Write tests for the accepted active-root configuration and rejected stale targets**
@@ -37,10 +39,12 @@
 ### Task 2: Configure security-only Dependabot targets
 
 **Files:**
+
 - Create: `.github/dependabot.yml`
 - Modify: `package.json`
 
 **Interfaces:**
+
 - Consumes: `validateDependabotPolicy()` from Task 1.
 - Produces: root script `check:dependabot-policy` composed into `pnpm run check`.
 
@@ -53,10 +57,12 @@
 ### Task 3: Document dependency-update ownership
 
 **Files:**
+
 - Modify: `docs/security.md`
-- Modify: `docs/security/dependency-lifecycle.md`
+- Modify: `docs/dependency-lifecycle.md`
 
 **Interfaces:**
+
 - Documents: Renovate routine updates; Dependabot security-only active roots; removed MCP/uv ownership.
 
 - [ ] **Step 1: Extend the policy test to require the ownership statement in both security documents**
@@ -68,6 +74,7 @@
 ### Task 4: Verify, review, and integrate
 
 **Files:**
+
 - Verify all changed files.
 
 - [ ] **Step 1: Run frozen install and the complete root `pnpm run check` in the validation host**
