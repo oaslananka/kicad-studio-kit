@@ -62,7 +62,7 @@ This repository tracks Solo-maintainer Professional OSS / Mature OSS readiness t
 
 This repository's local release surface is:
 
-- VS Code extension: `oaslananka.kicadstudiokit` (`1.9.4`)
+- VS Code extension: `oaslananka.kicadstudiokit` (`1.9.5`)
 
 The Python package `kicad-mcp-pro`, container image, and MCP Registry listing
 are released from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/).
