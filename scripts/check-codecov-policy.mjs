@@ -97,10 +97,21 @@ function validateWorkflow(errors, workflow) {
     "ci.yml must enable bundle analysis only in the dedicated token-backed job",
   );
 
-  const requiredJob = workflow.match(/\n  required:\n[\s\S]*$/u)?.[0] ?? "";
+  const requiredJobStart = workflow.indexOf("\n  required:\n");
+  const requiredJob =
+    requiredJobStart >= 0 ? workflow.slice(requiredJobStart) : "";
+  const requiredNeedsStart = requiredJob.indexOf("\n    needs:\n");
+  const requiredNeedsEnd =
+    requiredNeedsStart >= 0
+      ? requiredJob.indexOf("\n    runs-on:", requiredNeedsStart)
+      : -1;
+  const requiredNeeds =
+    requiredNeedsStart >= 0 && requiredNeedsEnd > requiredNeedsStart
+      ? requiredJob.slice(requiredNeedsStart, requiredNeedsEnd)
+      : "";
   requireCondition(
     errors,
-    !/needs:\s*[\s\S]*?\n\s+- codecov(?:\n|$)/u.test(requiredJob),
+    !requiredNeeds.includes("\n      - codecov\n"),
     "Codecov must not be part of the aggregate required job during baseline establishment",
   );
 }
