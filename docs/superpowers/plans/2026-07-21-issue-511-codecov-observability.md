@@ -6,7 +6,7 @@
 
 **Architecture:** Reuse the canonical Ubuntu Jest reports from the existing matrix, upload them from one same-repository-only Codecov job, and enable the Webpack bundle plugin only in that job. Keep Jest thresholds and the aggregate `required` check unchanged.
 
-**Tech Stack:** GitHub Actions, pnpm 11, Node 24, Jest 30, jest-junit 17, Webpack 5, @codecov/webpack-plugin 2.0.1, Codecov Action v7.0.0, Codecov Test Results Action v1.2.1, YAML.
+**Tech Stack:** GitHub Actions, pnpm 11, Node 24, Jest 30, jest-junit 17, Webpack 5, @codecov/webpack-plugin 2.0.1, Codecov Action v7.0.0, YAML.
 
 ## Global Constraints
 
@@ -75,7 +75,7 @@
 - [ ] Add a failing policy assertion for the `codecov-reports` artifact and same-repository-only job.
 - [ ] Run the policy test and verify workflow assertions fail.
 - [ ] Upload reports from Ubuntu with `!cancelled()` and add the non-required `codecov` job with `always()` semantics.
-- [ ] Pin Codecov coverage action to `fb8b3582c8e4def4969c97caa2f19720cb33a72f` and Test Results action to `0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3`.
+- [ ] Pin Codecov coverage action to `fb8b3582c8e4def4969c97caa2f19720cb33a72f` for both coverage and test-result uploads.
 - [ ] Run workflow lint and policy tests; expect success.
 - [ ] Commit with `ci(repo): upload Codecov coverage and test analytics (#511)`.
 

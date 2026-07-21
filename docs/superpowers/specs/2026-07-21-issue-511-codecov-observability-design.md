@@ -40,7 +40,7 @@ The artifact step uses `!cancelled()` so reports produced before a failed Jest r
 
 A non-required `codecov` job runs after the extension lane with `always()` semantics. It runs only when the extension lane was selected and the event is a push, workflow dispatch, or a pull request whose head repository is the canonical repository. Fork pull requests never receive `CODECOV_TOKEN` and skip the job.
 
-Coverage uses the immutable Codecov Action v7.0.0 commit and an explicit LCOV file. Test Analytics uses the immutable Test Results Action v1.2.1 commit and the explicit JUnit file. Both pin Codecov CLI v11.3.1, disable report auto-discovery, and fail their own job if an attempted upload is invalid. Missing reports skip the matching upload rather than hiding the original test failure.
+Coverage uses the immutable Codecov Action v7.0.0 commit and an explicit LCOV file. Test Analytics uses the same immutable Codecov Action v7.0.0 commit with `report_type: test_results` and the explicit JUnit file. Both pin Codecov CLI v11.3.1, disable report auto-discovery, and fail their own job if an attempted upload is invalid. Missing reports skip the matching upload rather than hiding the original test failure.
 
 ### Bundle Analysis
 

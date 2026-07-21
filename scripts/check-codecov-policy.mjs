@@ -10,8 +10,6 @@ const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
 
 const COVERAGE_ACTION =
   "codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f";
-const TEST_RESULTS_ACTION =
-  "codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3";
 const CODECOV_CLI_VERSION = "v11.3.1";
 
 function readText(repoRoot, relativePath, errors) {
@@ -52,13 +50,13 @@ function requireCondition(errors, condition, message) {
 function validateWorkflow(errors, workflow) {
   requireCondition(
     errors,
-    workflow.includes(COVERAGE_ACTION),
-    "ci.yml must pin codecov/codecov-action v7.0.0 to fb8b3582c8e4def4969c97caa2f19720cb33a72f",
+    workflow.split(COVERAGE_ACTION).length - 1 === 2,
+    "ci.yml must pin both coverage and test-result uploads to codecov/codecov-action v7.0.0 commit fb8b3582c8e4def4969c97caa2f19720cb33a72f",
   );
   requireCondition(
     errors,
-    workflow.includes(TEST_RESULTS_ACTION),
-    "ci.yml must pin codecov/test-results-action v1.2.1 to 0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3",
+    !workflow.includes("codecov/test-results-action@"),
+    "ci.yml must not use the deprecated codecov/test-results-action",
   );
   requireCondition(
     errors,
@@ -87,14 +85,37 @@ function validateWorkflow(errors, workflow) {
   requireCondition(
     errors,
     workflow.includes("hashFiles('codecov-reports/test-results/junit.xml')") &&
-      workflow.includes("codecov/test-results-action@"),
-    "ci.yml must upload JUnit results when a failed test report is available",
+      workflow.includes("report_type: test_results") &&
+      workflow.includes("files: codecov-reports/test-results/junit.xml"),
+    "ci.yml must upload JUnit results through codecov-action when a failed test report is available",
   );
   requireCondition(
     errors,
     workflow.includes('CODECOV_BUNDLE_ANALYSIS: "true"') &&
-      workflow.includes("CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}"),
-    "ci.yml must enable bundle analysis only in the dedicated token-backed job",
+      workflow.includes("CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}") &&
+      workflow.includes("CODECOV_BUNDLE_SHA:") &&
+      workflow.includes("CODECOV_BUNDLE_BRANCH:") &&
+      workflow.includes("CODECOV_BUNDLE_PR:") &&
+      workflow.includes("CODECOV_BUNDLE_SLUG:") &&
+      workflow.includes(
+        "Successfully uploaded stats for bundle: kicad-studio-vscode-extension",
+      ),
+    "ci.yml must pass complete bundle upload context and fail without a success confirmation",
+  );
+
+  const codecovJobStart = workflow.indexOf("\n  codecov:\n");
+  const codecovJobEnd =
+    codecovJobStart >= 0
+      ? workflow.indexOf("\n  forbidden-refs:\n", codecovJobStart)
+      : -1;
+  const codecovJob =
+    codecovJobStart >= 0 && codecovJobEnd > codecovJobStart
+      ? workflow.slice(codecovJobStart, codecovJobEnd)
+      : "";
+  requireCondition(
+    errors,
+    codecovJob.includes("fetch-depth: 0"),
+    "Codecov job checkout must fetch enough history for bundle commit detection",
   );
 
   const requiredJobStart = workflow.indexOf("\n  required:\n");
@@ -187,6 +208,16 @@ function validateWebpack(errors, webpackConfig) {
     errors,
     webpackConfig.includes("bundleName: 'kicad-studio-vscode-extension'"),
     "Codecov bundle analysis must use the stable extension bundle name",
+  );
+  requireCondition(
+    errors,
+    webpackConfig.includes("branch: environment.CODECOV_BUNDLE_BRANCH") &&
+      webpackConfig.includes(
+        "pr: environment.CODECOV_BUNDLE_PR || undefined",
+      ) &&
+      webpackConfig.includes("sha: environment.CODECOV_BUNDLE_SHA") &&
+      webpackConfig.includes("slug: environment.CODECOV_BUNDLE_SLUG"),
+    "Codecov bundle analysis must pass explicit branch, PR, SHA, and slug overrides",
   );
   requireCondition(
     errors,

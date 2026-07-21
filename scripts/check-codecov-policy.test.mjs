@@ -59,7 +59,7 @@ test("#511 immutable Codecov action pins cannot drift", () => {
     );
     assert.ok(
       validateCodecovPolicy(root).includes(
-        "ci.yml must pin codecov/codecov-action v7.0.0 to fb8b3582c8e4def4969c97caa2f19720cb33a72f",
+        "ci.yml must pin both coverage and test-result uploads to codecov/codecov-action v7.0.0 commit fb8b3582c8e4def4969c97caa2f19720cb33a72f",
       ),
     );
   } finally {

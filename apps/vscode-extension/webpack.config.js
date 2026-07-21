@@ -21,6 +21,12 @@ function createPlugins(environment = process.env) {
         bundleName: 'kicad-studio-vscode-extension',
         uploadToken: environment.CODECOV_TOKEN,
         gitService: 'github',
+        uploadOverrides: {
+          branch: environment.CODECOV_BUNDLE_BRANCH,
+          pr: environment.CODECOV_BUNDLE_PR || undefined,
+          sha: environment.CODECOV_BUNDLE_SHA,
+          slug: environment.CODECOV_BUNDLE_SLUG
+        },
         telemetry: false
       })
     );
