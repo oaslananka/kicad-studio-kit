@@ -93,7 +93,9 @@ function productVersions() {
   return {
     root: root.version,
     extension: extension.version,
-    mcpServer: compatibility.products["kicad-studio"]?.compatibleMcpPro?.testedAgainst ?? "unknown",
+    mcpServer:
+      compatibility.products["kicad-studio"]?.compatibleMcpPro?.testedAgainst ??
+      "unknown",
   };
 }
 
@@ -482,6 +484,15 @@ Use the [dev container](devcontainer.md) for reproducible VS Code Dev Containers
 or GitHub Codespaces setup. Inside the container,
 \`corepack pnpm run dev-doctor -- --require-devcontainer\` confirms the
 devcontainer marker and required tools.
+
+For a least-privilege Linux validation or release-recovery host without a
+container daemon, use the [rootless validation-host runbook](validation-host.md):
+
+\`\`\`bash
+corepack pnpm run validation-host:bootstrap
+corepack pnpm run validation-host:doctor
+corepack pnpm run validation-host:check
+\`\`\`
 `;
 }
 
