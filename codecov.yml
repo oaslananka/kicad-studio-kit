@@ -40,3 +40,7 @@ ignore:
   - apps/vscode-extension/media/kicanvas/**
   - packages/test-harness/**
   - packages/kicad-fixtures/**
+
+bundle_analysis:
+  warning_threshold: "5%"
+  status: informational

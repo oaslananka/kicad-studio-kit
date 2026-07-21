@@ -112,61 +112,17 @@ function replaceInFixture(root, relativePath, before, after) {
 
 function activateBundleFixture() {
   const root = createFixture();
-
-  const rootPackagePath = path.join(root, "package.json");
-  const rootPackage = JSON.parse(readFileSync(rootPackagePath, "utf8"));
-  rootPackage.scripts["check:codecov"] =
-    "node scripts/check-codecov-policy.mjs && node --test scripts/check-codecov-policy.test.mjs apps/vscode-extension/scripts/webpack-config-codecov.test.mjs";
-  writeFileSync(rootPackagePath, `${JSON.stringify(rootPackage, null, 2)}\n`);
-
-  const extensionPackagePath = path.join(
-    root,
-    "apps/vscode-extension/package.json",
-  );
-  const extensionPackage = JSON.parse(
-    readFileSync(extensionPackagePath, "utf8"),
-  );
-  extensionPackage.devDependencies["@codecov/webpack-plugin"] = "2.0.1";
-  writeFileSync(
-    extensionPackagePath,
-    `${JSON.stringify(extensionPackage, null, 2)}\n`,
-  );
-
-  writeFileSync(
-    path.join(root, "apps/vscode-extension/webpack.config.js"),
-    ACTIVATED_WEBPACK_CONFIG,
-  );
-
-  const workflowPath = path.join(root, ".github/workflows/ci.yml");
-  let workflow = readFileSync(workflowPath, "utf8");
-  const codecovStart = workflow.indexOf("\n  codecov:\n");
-  const checkoutStart = workflow.indexOf(
-    "      - uses: actions/checkout@",
-    codecovStart,
-  );
-  const persistCredentials = workflow.indexOf(
-    "          persist-credentials: false",
-    checkoutStart,
-  );
-  workflow = `${workflow.slice(0, persistCredentials)}          fetch-depth: 0\n${workflow.slice(persistCredentials)}`;
-  workflow = workflow.replace(
-    "\n  forbidden-refs:\n",
-    `\n${BUNDLE_STEP}\n  forbidden-refs:\n`,
-  );
-  writeFileSync(workflowPath, workflow);
-
-  const codecovPath = path.join(root, "codecov.yml");
-  writeFileSync(
-    codecovPath,
-    `${readFileSync(codecovPath, "utf8")}\nbundle_analysis:\n  warning_threshold: "5%"\n  status: informational\n`,
-  );
-
   const docsPath = path.join(root, "docs/testing-strategy.md");
-  writeFileSync(
-    docsPath,
-    `${readFileSync(docsPath, "utf8")}\nBundle Analysis uses the stable bundle name kicad-studio-vscode-extension and fails closed without a successful upload confirmation.\n`,
-  );
-
+  const docs = readFileSync(docsPath, "utf8");
+  if (
+    !docs.includes("kicad-studio-vscode-extension") ||
+    !docs.includes("fails closed")
+  ) {
+    writeFileSync(
+      docsPath,
+      `${docs}\nBundle Analysis uses the stable bundle name kicad-studio-vscode-extension and fails closed without a successful upload confirmation.\n`,
+    );
+  }
   return root;
 }
 
@@ -179,12 +135,21 @@ test("#514 activated fixture satisfies the Codecov bundle contract", () => {
   }
 });
 
-test("#514 current deferred repository is rejected", () => {
-  assert.ok(
-    validateCodecovPolicy().includes(
-      "extension devDependencies must pin @codecov/webpack-plugin 2.0.1",
-    ),
-  );
+test("#514 exact bundle dependency pin cannot disappear", () => {
+  const root = activateBundleFixture();
+  try {
+    const packagePath = path.join(root, "apps/vscode-extension/package.json");
+    const packageJson = JSON.parse(readFileSync(packagePath, "utf8"));
+    delete packageJson.devDependencies["@codecov/webpack-plugin"];
+    writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
+    assert.ok(
+      validateCodecovPolicy(root).includes(
+        "extension devDependencies must pin @codecov/webpack-plugin 2.0.1",
+      ),
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("#514 immutable Codecov action pins cannot drift", () => {
