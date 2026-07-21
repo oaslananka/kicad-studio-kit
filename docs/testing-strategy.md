@@ -64,13 +64,19 @@ The Ubuntu artifact step uses `!cancelled()` so Jest can still publish a JUnit
 report after test failures. Fork pull requests skip the token-backed Codecov job.
 Existing product CI remains authoritative if Codecov is unavailable.
 
-JavaScript Bundle Analysis is tracked separately in GitHub issue #514. The
-Webpack plugin reached Codecov twice during the initial pull-request onboarding,
-including with explicit slug, SHA, branch, and PR context, but the bundle
-pre-signed URL endpoint returned `404` before a processed `main` baseline
-existed. The repository intentionally does not ship an always-on or silently
-failing bundle uploader; #514 requires a positive upload confirmation after the
-default-branch baseline is established.
+JavaScript Bundle Analysis runs only in the dedicated token-backed `codecov`
+job and publishes the stable bundle name `kicad-studio-vscode-extension`. The
+Webpack plugin is opt-in: normal local, matrix, package, release, and
+repeatability builds leave `CODECOV_BUNDLE_ANALYSIS` unset and never upload
+bundle data. The dedicated job supplies explicit repository slug, head SHA,
+branch, and pull-request context and disables plugin telemetry.
+
+Bundle upload verification fails closed. The job rejects Codecov pre-signed URL
+or stats-upload failures and also rejects a successful Webpack compilation when
+the log does not contain the positive
+`Successfully uploaded stats for bundle: kicad-studio-vscode-extension`
+confirmation. Bundle status remains informational with a 5% warning threshold;
+Jest and the aggregate `required` check remain the blocking authorities.
 
 Validate the repository policy and Codecov YAML with:
 
