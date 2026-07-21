@@ -1,0 +1,42 @@
+codecov:
+  require_ci_to_pass: false
+
+coverage:
+  precision: 2
+  round: down
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        informational: true
+        flags:
+          - vscode-extension-unit
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+        informational: true
+        flags:
+          - vscode-extension-unit
+
+comment:
+  layout: "reach,diff,flags,files"
+  behavior: default
+  require_changes: false
+  require_head: true
+  require_base: false
+
+flags:
+  vscode-extension-unit:
+    paths:
+      - apps/vscode-extension/src/
+    carryforward: false
+
+ignore:
+  - apps/vscode-extension/test/**
+  - apps/vscode-extension/out/**
+  - apps/vscode-extension/dist/**
+  - apps/vscode-extension/media/kicanvas/**
+  - packages/test-harness/**
+  - packages/kicad-fixtures/**

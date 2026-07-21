@@ -2591,6 +2591,7 @@
     "fast-check": "4.8.0",
     "husky": "9.1.7",
     "jest": "30.4.2",
+    "jest-junit": "17.0.0",
     "jest-util": "30.4.1",
     "lint-staged": "17.0.7",
     "mocha": "11.7.6",

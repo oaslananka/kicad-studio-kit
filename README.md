@@ -9,6 +9,7 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
   <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
   <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml/badge.svg" alt="CodeQL status"></a>
   <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml/badge.svg" alt="Security status"></a>
+  <a href="https://codecov.io/gh/oaslananka/kicad-studio-kit"><img src="https://codecov.io/gh/oaslananka/kicad-studio-kit/branch/main/graph/badge.svg" alt="Codecov coverage"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit"><img src="https://api.scorecard.dev/projects/github.com/oaslananka/kicad-studio-kit/badge" alt="OpenSSF Scorecard"></a>
   <a href="https://www.bestpractices.dev/projects/13405"><img src="https://www.bestpractices.dev/projects/13405/badge" alt="OpenSSF Best Practices"></a>
 </p>
