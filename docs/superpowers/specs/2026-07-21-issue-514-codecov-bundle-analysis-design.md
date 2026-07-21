@@ -18,6 +18,8 @@ PR #513 merged as commit `f4911e8eeb73b85368741dd0cd810967cde7473e`. The first `
 
 This satisfies the onboarding dependency recorded in #514.
 
+A controlled API diagnostic isolated the authentication failure. The same public-repository PR payload sent to `POST /upload/bundle_analysis/v1` returned `404` when the Webpack plugin attached the repository upload token, while the tokenless GitHub payload returned `202 queued` and a pre-signed upload URL. Coverage and test-result uploads continue to accept the repository token. Bundle Analysis therefore uses Codecov's documented tokenless GitHub path rather than passing the coverage token into the plugin.
+
 ## Architecture
 
 ### Webpack integration boundary
@@ -31,7 +33,7 @@ The plugin uses the stable bundle name `kicad-studio-vscode-extension`, disables
 
 ### Dedicated CI upload lane
 
-The existing non-required `codecov` job remains the only token-backed observability lane. Its checkout fetches full history. After LCOV and JUnit uploads, it runs one production build with explicit bundle context.
+The existing non-required `codecov` job remains the only external observability lane. Its checkout fetches full history. LCOV and JUnit actions use the repository token; the following production bundle build uses tokenless GitHub authentication with explicit bundle context.
 
 The build output is captured with `tee` and `pipefail`. The step fails when either condition is true:
 
@@ -46,8 +48,8 @@ This converts the plugin's non-fatal upload behavior into a fail-closed observab
 
 ## Security and failure handling
 
-- Fork pull requests skip the entire token-backed Codecov job.
-- The token is passed only through the dedicated job environment.
+- Fork pull requests skip the entire dedicated Codecov job.
+- The repository token remains limited to LCOV and JUnit actions; Bundle Analysis does not pass it to the Webpack plugin.
 - Plugin telemetry is disabled.
 - Actions remain pinned to immutable commit SHAs and the plugin dependency is exactly pinned.
 - Codecov failure does not weaken product CI; the existing aggregate `required` job remains authoritative.
@@ -55,6 +57,6 @@ This converts the plugin's non-fatal upload behavior into a fail-closed observab
 
 ## Testing strategy
 
-Repository policy tests verify exact dependency/configuration pins, fork guards, explicit Git context, full checkout history, fail-closed log matching, informational YAML, and exclusion from the aggregate required job. A focused Webpack test verifies normal builds exclude the plugin, explicit token-backed opt-in adds exactly one plugin, missing token does not enable upload, and telemetry/context options are present.
+Repository policy tests verify exact dependency/configuration pins, fork guards, explicit Git context, full checkout history, fail-closed log matching, informational YAML, and exclusion from the aggregate required job. A focused Webpack test verifies normal builds exclude the plugin, explicit GitHub tokenless opt-in adds exactly one plugin, missing token does not enable upload, and telemetry/context options are present.
 
 Final validation includes frozen install, policy tests, normal production build with bundle variables unset, package validation, official Codecov YAML validation, GitHub CI, live bundle upload logs, Codecov Bundles visibility, informational pull-request bundle status, and all bot/agent feedback.

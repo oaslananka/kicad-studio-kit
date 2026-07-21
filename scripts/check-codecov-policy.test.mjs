@@ -123,7 +123,7 @@ test("#514 fork guards and failed-test reporting are mandatory", () => {
     const errors = validateCodecovPolicy(root);
     assert.ok(
       errors.includes(
-        "ci.yml must skip token-backed Codecov work for fork pull requests",
+        "ci.yml must skip the Codecov report job for fork pull requests",
       ),
     );
     assert.ok(
@@ -167,7 +167,7 @@ test("#514 bundle upload context and success confirmation are mandatory", () => 
   }
 });
 
-test("#514 bundle plugin remains opt-in and telemetry-free", () => {
+test("#514 bundle plugin remains opt-in, tokenless, and telemetry-free", () => {
   const root = activateBundleFixture();
   try {
     replaceInFixture(
@@ -182,14 +182,25 @@ test("#514 bundle plugin remains opt-in and telemetry-free", () => {
       "telemetry: false",
       "telemetry: true",
     );
+    replaceInFixture(
+      root,
+      "apps/vscode-extension/webpack.config.js",
+      "gitService: 'github',",
+      "gitService: 'github',\n        uploadToken: environment.CODECOV_TOKEN,",
+    );
     const errors = validateCodecovPolicy(root);
     assert.ok(
       errors.includes(
-        "webpack bundle analysis must require CODECOV_BUNDLE_ANALYSIS=true and a non-empty token",
+        "webpack bundle analysis must require CODECOV_BUNDLE_ANALYSIS=true",
       ),
     );
     assert.ok(
       errors.includes("Codecov bundle plugin telemetry must stay disabled"),
+    );
+    assert.ok(
+      errors.includes(
+        "Codecov bundle plugin must use tokenless GitHub authentication",
+      ),
     );
   } finally {
     rmSync(root, { recursive: true, force: true });

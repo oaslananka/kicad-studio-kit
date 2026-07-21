@@ -85,7 +85,7 @@ function validateWorkflow(errors, workflow) {
     workflow.includes(
       "github.event.pull_request.head.repo.full_name == github.repository",
     ),
-    "ci.yml must skip token-backed Codecov work for fork pull requests",
+    "ci.yml must skip the Codecov report job for fork pull requests",
   );
   requireCondition(
     errors,
@@ -118,8 +118,7 @@ function validateWorkflow(errors, workflow) {
       codecovJob.includes(
         "CODECOV_BUNDLE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}",
       ) &&
-      codecovJob.includes("CODECOV_BUNDLE_SLUG: ${{ github.repository }}") &&
-      codecovJob.includes("CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}"),
+      codecovJob.includes("CODECOV_BUNDLE_SLUG: ${{ github.repository }}"),
     "ci.yml must pass explicit branch, PR, SHA, and slug context to Bundle Analysis",
   );
   requireCondition(
@@ -210,18 +209,20 @@ function validateJest(errors, jestConfig) {
 function validateWebpack(errors, webpackConfig) {
   requireCondition(
     errors,
-    webpackConfig.includes("environment.CODECOV_BUNDLE_ANALYSIS === 'true'") &&
-      webpackConfig.includes("typeof environment.CODECOV_TOKEN === 'string'") &&
-      webpackConfig.includes("environment.CODECOV_TOKEN.length > 0"),
-    "webpack bundle analysis must require CODECOV_BUNDLE_ANALYSIS=true and a non-empty token",
+    webpackConfig.includes("environment.CODECOV_BUNDLE_ANALYSIS === 'true'"),
+    "webpack bundle analysis must require CODECOV_BUNDLE_ANALYSIS=true",
   );
   requireCondition(
     errors,
     webpackConfig.includes("enableBundleAnalysis: true") &&
       webpackConfig.includes(`bundleName: '${CODECOV_BUNDLE_NAME}'`) &&
-      webpackConfig.includes("uploadToken: environment.CODECOV_TOKEN") &&
       webpackConfig.includes("gitService: 'github'"),
-    "webpack must configure the stable Codecov bundle name and GitHub upload token",
+    "webpack must configure the stable Codecov bundle name and GitHub service",
+  );
+  requireCondition(
+    errors,
+    !webpackConfig.includes("uploadToken:"),
+    "Codecov bundle plugin must use tokenless GitHub authentication",
   );
   requireCondition(
     errors,

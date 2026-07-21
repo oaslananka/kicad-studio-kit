@@ -9,17 +9,13 @@ function createPlugins(environment = process.env) {
     })
   ];
 
-  const bundleAnalysisEnabled =
-    environment.CODECOV_BUNDLE_ANALYSIS === 'true' &&
-    typeof environment.CODECOV_TOKEN === 'string' &&
-    environment.CODECOV_TOKEN.length > 0;
+  const bundleAnalysisEnabled = environment.CODECOV_BUNDLE_ANALYSIS === 'true';
 
   if (bundleAnalysisEnabled) {
     plugins.push(
       codecovWebpackPlugin({
         enableBundleAnalysis: true,
         bundleName: 'kicad-studio-vscode-extension',
-        uploadToken: environment.CODECOV_TOKEN,
         gitService: 'github',
         uploadOverrides: {
           branch: environment.CODECOV_BUNDLE_BRANCH,

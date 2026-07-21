@@ -363,7 +363,6 @@ jobs:
           CODECOV_BUNDLE_PR: ${{ github.event.pull_request.number }}
           CODECOV_BUNDLE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           CODECOV_BUNDLE_SLUG: ${{ github.repository }}
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
           set -o pipefail
           corepack pnpm --filter kicadstudiokit run build 2>&1 | tee codecov-bundle.log

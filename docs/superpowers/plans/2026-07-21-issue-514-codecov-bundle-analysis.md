@@ -13,7 +13,7 @@
 - Processed baseline: Codecov `main` head `f4911e8eeb73b85368741dd0cd810967cde7473e`, state `complete`, coverage 75.08%.
 - Bundle name: `kicad-studio-vscode-extension`.
 - Plugin version: `@codecov/webpack-plugin` `2.0.1` exactly.
-- Bundle upload requires `CODECOV_BUNDLE_ANALYSIS=true` and a non-empty `CODECOV_TOKEN`.
+- Bundle upload requires `CODECOV_BUNDLE_ANALYSIS=true`; bundle upload uses tokenless GitHub authentication.
 - Plugin telemetry remains disabled.
 - Checkout history in the Codecov job uses `fetch-depth: 0`.
 - Branch, pull request, SHA, and repository slug are passed explicitly.
@@ -75,11 +75,11 @@ git commit -s -m "test(repo): require Codecov bundle analysis (#514)"
 
 **Interfaces:**
 
-- Produces: `createWebpackConfig.createPlugins(environment)` returning the normal plugin list plus one Codecov plugin only for explicit token-backed opt-in.
+- Produces: `createWebpackConfig.createPlugins(environment)` returning the normal plugin list plus one Codecov plugin only for explicit GitHub tokenless opt-in.
 
 - [ ] **Step 1: Write the failing Webpack tests**
 
-Test normal environment, explicit token-backed environment with branch/PR/SHA/slug, and opt-in without a token. Assert that the Codecov plugin appears exactly once only in the explicit valid case.
+Test normal environment, explicit GitHub Actions environment with branch/PR/SHA/slug, and opt-in without a token. Assert that the Codecov plugin appears exactly once only in the explicit valid case.
 
 - [ ] **Step 2: Run the focused Webpack test and verify RED**
 
@@ -89,7 +89,7 @@ Expected: FAIL because `createPlugins` and the Codecov dependency do not exist.
 
 - [ ] **Step 3: Pin the plugin and implement the minimal factory**
 
-Add `@codecov/webpack-plugin: 2.0.1`, preserve the AWS ignore plugin, and configure `enableBundleAnalysis`, stable bundle name, upload token, GitHub service, explicit overrides, and `telemetry: false`.
+Add `@codecov/webpack-plugin: 2.0.1`, preserve the AWS ignore plugin, and configure `enableBundleAnalysis`, stable bundle name, tokenless GitHub service, explicit overrides, and `telemetry: false`.
 
 - [ ] **Step 4: Run focused tests and verify GREEN**
 

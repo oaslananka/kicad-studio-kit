@@ -61,15 +61,17 @@ The report ownership is explicit:
   `apps/vscode-extension/test-results/junit.xml`.
 
 The Ubuntu artifact step uses `!cancelled()` so Jest can still publish a JUnit
-report after test failures. Fork pull requests skip the token-backed Codecov job.
+report after test failures. Fork pull requests skip the Codecov job that contains token-backed LCOV and JUnit uploads.
 Existing product CI remains authoritative if Codecov is unavailable.
 
-JavaScript Bundle Analysis runs only in the dedicated token-backed `codecov`
-job and publishes the stable bundle name `kicad-studio-vscode-extension`. The
-Webpack plugin is opt-in: normal local, matrix, package, release, and
-repeatability builds leave `CODECOV_BUNDLE_ANALYSIS` unset and never upload
-bundle data. The dedicated job supplies explicit repository slug, head SHA,
-branch, and pull-request context and disables plugin telemetry.
+JavaScript Bundle Analysis runs only in the dedicated `codecov` job and
+publishes the stable bundle name `kicad-studio-vscode-extension`. LCOV and JUnit
+uploads continue to use the repository token, while the public-repository bundle
+upload uses Codecov's tokenless GitHub Actions authentication. The Webpack
+plugin is opt-in: normal local, matrix, package, release, and repeatability
+builds leave `CODECOV_BUNDLE_ANALYSIS` unset and never upload bundle data. The
+dedicated job supplies explicit repository slug, head SHA, branch, and
+pull-request context and disables plugin telemetry.
 
 Bundle upload verification fails closed. The job rejects Codecov pre-signed URL
 or stats-upload failures and also rejects a successful Webpack compilation when

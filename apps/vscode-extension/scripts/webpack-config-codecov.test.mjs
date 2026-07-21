@@ -42,10 +42,9 @@ test('#514 normal builds exclude Codecov bundle analysis', () => {
   assert.equal(capturedOptions, undefined);
 });
 
-test('#514 explicit token-backed opt-in configures stable bundle context', () => {
+test('#514 explicit GitHub opt-in configures tokenless stable bundle context', () => {
   const plugins = createPlugins({
     CODECOV_BUNDLE_ANALYSIS: 'true',
-    CODECOV_TOKEN: 'test-only-token',
     CODECOV_BUNDLE_BRANCH: 'ci/514-codecov-bundle',
     CODECOV_BUNDLE_PR: '514',
     CODECOV_BUNDLE_SHA: '0123456789abcdef',
@@ -56,7 +55,6 @@ test('#514 explicit token-backed opt-in configures stable bundle context', () =>
   assert.deepEqual(capturedOptions, {
     enableBundleAnalysis: true,
     bundleName: 'kicad-studio-vscode-extension',
-    uploadToken: 'test-only-token',
     gitService: 'github',
     uploadOverrides: {
       branch: 'ci/514-codecov-bundle',
@@ -66,14 +64,6 @@ test('#514 explicit token-backed opt-in configures stable bundle context', () =>
     },
     telemetry: false
   });
-});
-
-test('#514 explicit opt-in without a token does not enable analysis', () => {
-  const plugins = createPlugins({
-    CODECOV_BUNDLE_ANALYSIS: 'true'
-  });
-  assert.equal(plugins.length, 1);
-  assert.equal(capturedOptions, undefined);
 });
 
 test('#514 a token without explicit opt-in does not enable analysis', () => {
