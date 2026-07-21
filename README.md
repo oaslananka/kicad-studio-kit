@@ -107,7 +107,9 @@ Python/MCP server checks run from the
 For a reproducible VS Code Dev Containers or GitHub Codespaces environment, use
 the checked-in [devcontainer configuration](docs/devcontainer.md). The container
 sets up Node, pnpm, Python, uv, Playwright, shellcheck, actionlint, GitHub CLI,
-and best-effort KiCad CLI support for root checks and MCP tests.
+and best-effort KiCad CLI support for root checks and MCP tests. For a
+least-privilege VPS without a container daemon, use the checked-in
+[rootless validation-host profile](docs/validation-host.md).
 
 ## Install
 
@@ -135,6 +137,7 @@ for the command catalog.
 - [Release model](docs/architecture/release-model.md)
 - [Testing strategy](docs/testing-strategy.md)
 - [Dev container](docs/devcontainer.md)
+- [Rootless validation host](docs/validation-host.md)
 - [KiCad fixture corpus](docs/kicad-fixture-corpus.md)
 - [Integration model](docs/integration/kicad-studio-mcp.md)
 - [Agent onboarding](docs/agents/index.md)

@@ -22,11 +22,11 @@
 
 - Create: `scripts/check-validation-host.test.mjs`
 
-- [ ] Test exact mise pins and package-script wiring.
-- [ ] Test that bootstrap and runner are executable and contain rootless/least-privilege safeguards.
-- [ ] Test the runner's print-environment mode under a temporary HOME.
-- [ ] Test that documentation records the KiCad canary boundary.
-- [ ] Run the tests and verify RED before implementation.
+- [x] Test exact mise pins and package-script wiring.
+- [x] Test that bootstrap and runner are executable and contain rootless/least-privilege safeguards.
+- [x] Test the runner's print-environment mode under a temporary HOME.
+- [x] Test that documentation records the KiCad canary boundary.
+- [x] Run the tests and verify RED before implementation.
 
 ### Task 2: Implement the pinned and rootless environment
 
@@ -37,12 +37,12 @@
 - Create: `scripts/bootstrap-validation-host.sh`
 - Create: `scripts/run-validation-host.sh`
 
-- [ ] Pin Node 24.18.0, Python 3.13.14, uv 0.11.21, actionlint 1.7.12, and ShellCheck 0.9.0.
-- [ ] Force mise data/config/cache/state under `$HOME` and neutralize leaked global config paths.
-- [ ] Install tools, enable pnpm in the pinned Node prefix, install frozen dependencies, and install Chromium.
-- [ ] Derive Playwright dependencies, add Xvfb/xauth, resolve apt candidates, and atomically build a cached apt root.
-- [ ] Export PATH/library/font/XKB/Playwright variables only through the wrapper.
-- [ ] Prove repeat runs are no-op/cache reuse where inputs are unchanged.
+- [x] Pin Node 24.18.0, Python 3.13.14, uv 0.11.21, actionlint 1.7.12, and ShellCheck 0.9.0.
+- [x] Force mise data/config/cache/state under `$HOME` and neutralize leaked global config paths.
+- [x] Install tools, enable pnpm in the pinned Node prefix, install frozen dependencies, and install Chromium.
+- [x] Derive Playwright dependencies, add Xvfb/xauth, resolve apt candidates, and atomically build a cached apt root.
+- [x] Export PATH/library/font/XKB/Playwright variables only through the wrapper.
+- [x] Prove repeat runs are no-op/cache reuse where inputs are unchanged.
 
 ### Task 3: Add repository validation and documentation
 
@@ -53,16 +53,19 @@
 - Modify: `package.json`
 - Modify: `README.md`
 - Modify: `docs/contributing.md`
+- Modify: `scripts/generate-docs-site.mjs`
+- Modify: `packages/test-harness/test/paths.test.ts`
 
-- [ ] Validate exact pins, scripts, docs, package wiring, and canary ownership.
-- [ ] Add bootstrap, doctor, check, package, and static-check scripts.
-- [ ] Link the runbook from contributor entry points.
-- [ ] Run static tests and verify GREEN.
+- [x] Validate exact pins, scripts, docs, package wiring, and canary ownership.
+- [x] Add bootstrap, doctor, check, package, and static-check scripts.
+- [x] Link the runbook from contributor entry points.
+- [x] Run static tests and verify GREEN.
+- [x] Make repository-root validation work from canonical clones and Git worktrees.
 
 ### Task 4: Verify on VPS-2 and deliver
 
-- [ ] Bootstrap twice and verify idempotence.
-- [ ] Run strict doctor and confirm only documented optional/canary warnings remain.
-- [ ] Run real a11y under rootless Chromium libraries.
-- [ ] Run the full root check and extension package validation.
+- [x] Bootstrap twice and verify idempotence.
+- [x] Run strict doctor and confirm only documented optional/canary warnings remain.
+- [x] Run real a11y under rootless Chromium libraries.
+- [x] Run the full root check and extension package validation.
 - [ ] Review the diff, commit with DCO sign-off, push, open a PR closing #490, and watch all required checks to terminal state.
