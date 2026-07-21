@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -19,6 +20,14 @@ const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
+
+function restoreEnv(name, value) {
+  if (value === undefined) {
+    delete process.env[name];
+  } else {
+    process.env[name] = value;
+  }
+}
 
 test("release-please manifest mode is product-scoped and version aligned", () => {
   const result = validateRepositoryPolicy(REPO_ROOT);
@@ -235,6 +244,35 @@ test("release-please dry-run snapshot handles extension-only release", async () 
   assert.equal(snapshot.includesVsCodeExtensionRelease, true);
   assert.equal(snapshot.includesRootOnlyRelease, false);
   assert.deepEqual(snapshot.updatedPaths, [".release-please-manifest.json"]);
+});
+
+test("#519 synthetic repositories ignore hook-local Git environment", async () => {
+  const gitDirResult = spawnSync("git", ["rev-parse", "--absolute-git-dir"], {
+    cwd: REPO_ROOT,
+    encoding: "utf8",
+  });
+  assert.equal(gitDirResult.status, 0, gitDirResult.stderr);
+
+  const previous = {
+    GIT_DIR: process.env.GIT_DIR,
+    GIT_WORK_TREE: process.env.GIT_WORK_TREE,
+  };
+  process.env.GIT_DIR = gitDirResult.stdout.trim();
+  process.env.GIT_WORK_TREE = REPO_ROOT;
+  try {
+    const snapshot = await runSyntheticReleasePleaseDryRun(REPO_ROOT, {
+      token: "test-token",
+      spawnReleasePlease: () => ({
+        status: 0,
+        stdout: ROOT_ONLY_RELEASE_PLEASE_FIXTURE,
+        stderr: "",
+      }),
+    });
+    assert.equal(snapshot.pullRequestCount, 0);
+  } finally {
+    restoreEnv("GIT_DIR", previous.GIT_DIR);
+    restoreEnv("GIT_WORK_TREE", previous.GIT_WORK_TREE);
+  }
 });
 
 test("release-please dry-run snapshot ignores root-only changes", async () => {
