@@ -316,7 +316,6 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
-          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
@@ -354,27 +353,6 @@ jobs:
           flags: vscode-extension-unit
           name: vscode-extension-jest
           version: v11.3.1
-      - name: Build production bundle with Codecov analysis
-        if: ${{ !cancelled() }}
-        shell: bash
-        env:
-          CODECOV_BUNDLE_ANALYSIS: "true"
-          CODECOV_BUNDLE_BRANCH: ${{ github.head_ref || github.ref_name }}
-          CODECOV_BUNDLE_PR: ${{ github.event.pull_request.number }}
-          CODECOV_BUNDLE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          CODECOV_BUNDLE_SLUG: ${{ github.repository }}
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        run: |
-          set -o pipefail
-          corepack pnpm --filter kicadstudiokit run build 2>&1 | tee codecov-bundle.log
-          if grep -Eq 'Failed to get pre-signed URL|Failed to upload stats' codecov-bundle.log; then
-            echo "::error::Codecov bundle analysis reported an upload failure."
-            exit 1
-          fi
-          if ! grep -Fq 'Successfully uploaded stats for bundle: kicad-studio-vscode-extension' codecov-bundle.log; then
-            echo "::error::Codecov bundle analysis did not confirm a successful upload."
-            exit 1
-          fi
 
   forbidden-refs:
     needs: ci-lanes

@@ -7,8 +7,7 @@ import { parse } from "yaml";
 
 const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
-
-const COVERAGE_ACTION =
+const CODECOV_ACTION =
   "codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f";
 const CODECOV_CLI_VERSION = "v11.3.1";
 
@@ -50,7 +49,7 @@ function requireCondition(errors, condition, message) {
 function validateWorkflow(errors, workflow) {
   requireCondition(
     errors,
-    workflow.split(COVERAGE_ACTION).length - 1 === 2,
+    workflow.split(CODECOV_ACTION).length - 1 === 2,
     "ci.yml must pin both coverage and test-result uploads to codecov/codecov-action v7.0.0 commit fb8b3582c8e4def4969c97caa2f19720cb33a72f",
   );
   requireCondition(
@@ -91,31 +90,9 @@ function validateWorkflow(errors, workflow) {
   );
   requireCondition(
     errors,
-    workflow.includes('CODECOV_BUNDLE_ANALYSIS: "true"') &&
-      workflow.includes("CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}") &&
-      workflow.includes("CODECOV_BUNDLE_SHA:") &&
-      workflow.includes("CODECOV_BUNDLE_BRANCH:") &&
-      workflow.includes("CODECOV_BUNDLE_PR:") &&
-      workflow.includes("CODECOV_BUNDLE_SLUG:") &&
-      workflow.includes(
-        "Successfully uploaded stats for bundle: kicad-studio-vscode-extension",
-      ),
-    "ci.yml must pass complete bundle upload context and fail without a success confirmation",
-  );
-
-  const codecovJobStart = workflow.indexOf("\n  codecov:\n");
-  const codecovJobEnd =
-    codecovJobStart >= 0
-      ? workflow.indexOf("\n  forbidden-refs:\n", codecovJobStart)
-      : -1;
-  const codecovJob =
-    codecovJobStart >= 0 && codecovJobEnd > codecovJobStart
-      ? workflow.slice(codecovJobStart, codecovJobEnd)
-      : "";
-  requireCondition(
-    errors,
-    codecovJob.includes("fetch-depth: 0"),
-    "Codecov job checkout must fetch enough history for bundle commit detection",
+    !workflow.includes("CODECOV_BUNDLE_ANALYSIS") &&
+      !workflow.includes("Build production bundle with Codecov analysis"),
+    "Bundle Analysis must remain deferred to #514 until the default-branch baseline is processed",
   );
 
   const requiredJobStart = workflow.indexOf("\n  required:\n");
@@ -169,9 +146,8 @@ function validateCodecovYaml(errors, config) {
   );
   requireCondition(
     errors,
-    config?.bundle_analysis?.status === "informational" &&
-      config?.bundle_analysis?.warning_threshold === "5%",
-    "Codecov bundle analysis must remain informational with a 5% warning threshold",
+    config?.bundle_analysis === undefined,
+    "codecov.yml must defer Bundle Analysis configuration to #514",
   );
 }
 
@@ -192,40 +168,6 @@ function validateJest(errors, jestConfig) {
   );
 }
 
-function validateWebpack(errors, webpackConfig) {
-  requireCondition(
-    errors,
-    webpackConfig.includes("environment.CODECOV_BUNDLE_ANALYSIS === 'true'"),
-    "webpack bundle analysis must require CODECOV_BUNDLE_ANALYSIS=true",
-  );
-  requireCondition(
-    errors,
-    webpackConfig.includes("typeof environment.CODECOV_TOKEN === 'string'") &&
-      webpackConfig.includes("environment.CODECOV_TOKEN.length > 0"),
-    "webpack bundle analysis must require a non-empty Codecov token",
-  );
-  requireCondition(
-    errors,
-    webpackConfig.includes("bundleName: 'kicad-studio-vscode-extension'"),
-    "Codecov bundle analysis must use the stable extension bundle name",
-  );
-  requireCondition(
-    errors,
-    webpackConfig.includes("branch: environment.CODECOV_BUNDLE_BRANCH") &&
-      webpackConfig.includes(
-        "pr: environment.CODECOV_BUNDLE_PR || undefined",
-      ) &&
-      webpackConfig.includes("sha: environment.CODECOV_BUNDLE_SHA") &&
-      webpackConfig.includes("slug: environment.CODECOV_BUNDLE_SLUG"),
-    "Codecov bundle analysis must pass explicit branch, PR, SHA, and slug overrides",
-  );
-  requireCondition(
-    errors,
-    webpackConfig.includes("telemetry: false"),
-    "Codecov bundle plugin telemetry must stay disabled",
-  );
-}
-
 export function validateCodecovPolicy(repoRoot = DEFAULT_REPO_ROOT) {
   const errors = [];
   const workflow = readText(repoRoot, ".github/workflows/ci.yml", errors);
@@ -241,11 +183,6 @@ export function validateCodecovPolicy(repoRoot = DEFAULT_REPO_ROOT) {
     "apps/vscode-extension/jest.config.js",
     errors,
   );
-  const webpackConfig = readText(
-    repoRoot,
-    "apps/vscode-extension/webpack.config.js",
-    errors,
-  );
   const extensionIgnore = readText(
     repoRoot,
     "apps/vscode-extension/.gitignore",
@@ -256,7 +193,7 @@ export function validateCodecovPolicy(repoRoot = DEFAULT_REPO_ROOT) {
   requireCondition(
     errors,
     rootPackage?.scripts?.["check:codecov"] ===
-      "node scripts/check-codecov-policy.mjs && node --test scripts/check-codecov-policy.test.mjs apps/vscode-extension/scripts/webpack-config-codecov.test.mjs" &&
+      "node scripts/check-codecov-policy.mjs && node --test scripts/check-codecov-policy.test.mjs" &&
       rootPackage?.scripts?.check?.includes("pnpm run check:codecov"),
     "package.json must expose check:codecov and compose it into the root check",
   );
@@ -264,8 +201,8 @@ export function validateCodecovPolicy(repoRoot = DEFAULT_REPO_ROOT) {
     errors,
     extensionPackage?.devDependencies?.["jest-junit"] === "17.0.0" &&
       extensionPackage?.devDependencies?.["@codecov/webpack-plugin"] ===
-        "2.0.1",
-    "extension devDependencies must pin jest-junit 17.0.0 and @codecov/webpack-plugin 2.0.1",
+        undefined,
+    "extension devDependencies must pin jest-junit 17.0.0 and defer @codecov/webpack-plugin to #514",
   );
   requireCondition(
     errors,
@@ -275,15 +212,14 @@ export function validateCodecovPolicy(repoRoot = DEFAULT_REPO_ROOT) {
   requireCondition(
     errors,
     testingDocs.includes("### Codecov observability") &&
-      testingDocs.includes("Jest remains the blocking coverage authority"),
-    "testing strategy must document Codecov ownership and non-blocking semantics",
+      testingDocs.includes("Jest remains the blocking coverage authority") &&
+      testingDocs.includes("GitHub issue #514"),
+    "testing strategy must document Codecov ownership, non-blocking semantics, and Bundle Analysis deferral",
   );
 
   validateWorkflow(errors, workflow);
   validateCodecovYaml(errors, codecovConfig);
   validateJest(errors, jestConfig);
-  validateWebpack(errors, webpackConfig);
-
   return [...new Set(errors)];
 }
 
@@ -294,6 +230,6 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     for (const error of errors) console.error(`- ${error}`);
     process.exitCode = 1;
   } else {
-    console.log("Codecov observability policy is valid.");
+    console.log("Codecov coverage and test analytics policy is valid.");
   }
 }

@@ -26,18 +26,12 @@ comment:
   require_changes: false
   require_head: true
   require_base: false
-  require_bundle_changes: "bundle_increase"
-  bundle_change_threshold: "50Kb"
 
 flags:
   vscode-extension-unit:
     paths:
       - apps/vscode-extension/src/
     carryforward: false
-
-bundle_analysis:
-  warning_threshold: "5%"
-  status: "informational"
 
 ignore:
   - apps/vscode-extension/test/**

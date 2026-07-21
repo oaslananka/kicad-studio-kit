@@ -18,7 +18,6 @@ const RELEVANT_FILES = [
   "apps/vscode-extension/.gitignore",
   "apps/vscode-extension/jest.config.js",
   "apps/vscode-extension/package.json",
-  "apps/vscode-extension/webpack.config.js",
   "codecov.yml",
   "docs/testing-strategy.md",
   "package.json",
@@ -44,7 +43,7 @@ function replaceInFixture(root, relativePath, before, after) {
   writeFileSync(filePath, source.replace(before, after));
 }
 
-test("#511 current repository satisfies the Codecov observability contract", () => {
+test("#511 current repository satisfies the Codecov coverage and test analytics contract", () => {
   assert.deepEqual(validateCodecovPolicy(), []);
 });
 
@@ -98,29 +97,17 @@ test("#511 fork guards and failed-test reporting are mandatory", () => {
   }
 });
 
-test("#511 bundle analysis remains opt-in and telemetry-free", () => {
+test("#511 Bundle Analysis remains deferred until #514", () => {
   const root = createFixture();
   try {
-    replaceInFixture(
-      root,
-      "apps/vscode-extension/webpack.config.js",
-      "environment.CODECOV_BUNDLE_ANALYSIS === 'true'",
-      "true",
-    );
-    replaceInFixture(
-      root,
-      "apps/vscode-extension/webpack.config.js",
-      "telemetry: false",
-      "telemetry: true",
-    );
-    const errors = validateCodecovPolicy(root);
+    const packagePath = path.join(root, "apps/vscode-extension/package.json");
+    const packageJson = JSON.parse(readFileSync(packagePath, "utf8"));
+    packageJson.devDependencies["@codecov/webpack-plugin"] = "2.0.1";
+    writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
     assert.ok(
-      errors.includes(
-        "webpack bundle analysis must require CODECOV_BUNDLE_ANALYSIS=true",
+      validateCodecovPolicy(root).includes(
+        "extension devDependencies must pin jest-junit 17.0.0 and defer @codecov/webpack-plugin to #514",
       ),
-    );
-    assert.ok(
-      errors.includes("Codecov bundle plugin telemetry must stay disabled"),
     );
   } finally {
     rmSync(root, { recursive: true, force: true });

@@ -1,41 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
-const { codecovWebpackPlugin } = require('@codecov/webpack-plugin');
 
-function createPlugins(environment = process.env) {
-  const plugins = [
-    new webpack.IgnorePlugin({
-      resourceRegExp: /^@aws-sdk\/client-s3$/
-    })
-  ];
-
-  const bundleAnalysisEnabled =
-    environment.CODECOV_BUNDLE_ANALYSIS === 'true' &&
-    typeof environment.CODECOV_TOKEN === 'string' &&
-    environment.CODECOV_TOKEN.length > 0;
-
-  if (bundleAnalysisEnabled) {
-    plugins.push(
-      codecovWebpackPlugin({
-        enableBundleAnalysis: true,
-        bundleName: 'kicad-studio-vscode-extension',
-        uploadToken: environment.CODECOV_TOKEN,
-        gitService: 'github',
-        uploadOverrides: {
-          branch: environment.CODECOV_BUNDLE_BRANCH,
-          pr: environment.CODECOV_BUNDLE_PR || undefined,
-          sha: environment.CODECOV_BUNDLE_SHA,
-          slug: environment.CODECOV_BUNDLE_SLUG
-        },
-        telemetry: false
-      })
-    );
-  }
-
-  return plugins;
-}
-
-const createWebpackConfig = (env, argv) => ({
+module.exports = (env, argv) => ({
   target: 'node',
   mode: argv.mode || 'development',
   entry: './src/extension.ts',
@@ -69,8 +35,9 @@ const createWebpackConfig = (env, argv) => ({
       }
     ]
   },
-  plugins: createPlugins()
+  plugins: [
+    new webpack.IgnorePlugin({
+      resourceRegExp: /^@aws-sdk\/client-s3$/
+    })
+  ]
 });
-
-createWebpackConfig.createPlugins = createPlugins;
-module.exports = createWebpackConfig;
