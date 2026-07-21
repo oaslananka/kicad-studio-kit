@@ -304,6 +304,133 @@ function checkLocalProtocolSchemasAbsent(errors) {
   }
 }
 
+function parseKiCadPatchVersion(value) {
+  if (typeof value !== "string") return undefined;
+  const match = value.match(/^(\d+)\.(\d+)\.(\d+)(?:-rc(\d+))?$/u);
+  if (!match) return undefined;
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+    rc: match[4] === undefined ? undefined : Number(match[4]),
+  };
+}
+
+function comparePatchVersions(left, right) {
+  for (const key of ["major", "minor", "patch"]) {
+    if (left[key] !== right[key]) return left[key] - right[key];
+  }
+  return 0;
+}
+
+export function validateKiCadPatchBaseline({
+  compatibility,
+  repoRoot = REPO_ROOT,
+} = {}) {
+  const errors = [];
+  const stable = compatibility?.kicad?.latestVerified;
+  const parity = compatibility?.kicad10FeatureParity;
+  const baseline = parity?.baseline;
+
+  if (stable !== baseline) {
+    errors.push(
+      `kicad10FeatureParity.baseline must match kicad.latestVerified (${String(stable)}), found ${String(baseline)}`,
+    );
+  }
+
+  const stableVersion = parseKiCadPatchVersion(stable);
+  if (!stableVersion || stableVersion.rc !== undefined) {
+    errors.push(
+      "kicad.latestVerified must be a stable major.minor.patch version",
+    );
+  }
+
+  const documentation = parity?.documentation;
+  if (
+    typeof documentation !== "string" ||
+    !fs.existsSync(path.join(repoRoot, documentation))
+  ) {
+    errors.push(
+      `kicad10FeatureParity.documentation must reference an existing file, found ${String(documentation)}`,
+    );
+  }
+
+  if (
+    typeof stable === "string" &&
+    (!String(parity?.sources?.releaseNotes ?? "").includes(stable) ||
+      !String(parity?.sources?.releaseTag ?? "").endsWith(`/${stable}`))
+  ) {
+    errors.push(
+      "kicad10FeatureParity release notes and release tag must match kicad.latestVerified",
+    );
+  }
+
+  const stableEvidence = parity?.sources?.canaryEvidence;
+  if (
+    typeof stableEvidence !== "string" ||
+    !fs.existsSync(path.join(repoRoot, stableEvidence))
+  ) {
+    errors.push(
+      `kicad10FeatureParity.sources.canaryEvidence must reference an existing file, found ${String(stableEvidence)}`,
+    );
+  }
+
+  const canary = compatibility?.kicad?.patchCanary;
+  if (canary?.state !== "preview" || canary?.blocking !== false) {
+    errors.push("kicad.patchCanary must remain preview-only and non-blocking");
+  }
+
+  const canaryVersion = parseKiCadPatchVersion(canary?.version);
+  if (!canaryVersion || canaryVersion.rc === undefined) {
+    errors.push("kicad.patchCanary.version must be an rc patch version");
+  } else if (
+    stableVersion &&
+    comparePatchVersions(canaryVersion, stableVersion) <= 0
+  ) {
+    errors.push(
+      "kicad.patchCanary.version must be newer than kicad.latestVerified",
+    );
+  }
+
+  const reportedVersion = canaryVersion
+    ? `${canaryVersion.major}.${canaryVersion.minor}.${canaryVersion.patch}`
+    : undefined;
+  if (canary?.reportedVersion !== reportedVersion) {
+    errors.push(
+      `kicad.patchCanary.reportedVersion must match the prerelease base version (${String(reportedVersion)})`,
+    );
+  }
+
+  if (
+    typeof canary?.releaseNotes !== "string" ||
+    !canary.releaseNotes.startsWith("https://www.kicad.org/")
+  ) {
+    errors.push(
+      "kicad.patchCanary.releaseNotes must reference the official KiCad website",
+    );
+  }
+
+  if (
+    canary?.owner !== "KiCad MCP Pro" ||
+    canary?.ownerDocumentation !== "https://oaslananka.github.io/kicad-mcp-pro/"
+  ) {
+    errors.push(
+      "kicad.patchCanary ownership must remain with the KiCad MCP Pro compatibility product",
+    );
+  }
+
+  if (
+    typeof canary?.evidence !== "string" ||
+    !fs.existsSync(path.join(repoRoot, canary.evidence))
+  ) {
+    errors.push(
+      `kicad.patchCanary.evidence must reference an existing file, found ${String(canary?.evidence)}`,
+    );
+  }
+
+  return errors;
+}
+
 function checkRuntimePolicyMetadata(errors, options = {}) {
   if (
     !fileExists("compatibility.yaml") ||
@@ -353,6 +480,13 @@ export function validateCompatibilityContract(options = {}) {
   checkStudioConsumesPublishedPackage(errors);
   checkLocalProtocolSchemasAbsent(errors);
   checkRuntimePolicyMetadata(errors, options);
+  if (fileExists("compatibility.yaml")) {
+    errors.push(
+      ...validateKiCadPatchBaseline({
+        compatibility: parseYaml(readFile("compatibility.yaml")),
+      }),
+    );
+  }
   checkDocsChangedWithContract(errors, changedFiles);
 
   return errors;

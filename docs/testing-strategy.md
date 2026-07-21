@@ -417,7 +417,7 @@ trade-off, not missing coverage.
 | ---------------- | ---------------------------------------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
 | Operating system | `ubuntu-24.04`, `windows-2025`, `macos-15`                             | Same three runners                         | `.github/workflows/ci.yml` `vscode-extension` job matrix                                                        |
 | VS Code version  | Pinned `DEFAULT_VSCODE_TEST_VERSION`                                   | `engines.vscode` floor and Insiders canary | `apps/vscode-extension/test/vscodeTestRuntime.ts`, `.github/workflows/vscode-canary.yml`                        |
-| KiCad line       | Deterministic fixtures and mocked CLI probes (no `kicad-cli` required) | Real `kicad-cli` line from the canary host | `compatibility.yaml`, `.github/workflows/cross-repo-compatibility.yml`, KiCad MCP Pro                           |
+| KiCad line       | Deterministic fixtures and mocked CLI probes (no `kicad-cli` required) | Real `kicad-cli` line from the canary host | `compatibility.yaml`, deterministic fixture probes, KiCad MCP Pro live E2E                                      |
 | Workspace Trust  | Restricted and trusted contracts                                       | Same                                       | `apps/vscode-extension/test/integration/extension.test.ts`                                                      |
 | Workspace shape  | Single-root and multi-root                                             | Same                                       | `extension.test.ts` (single-root), `apps/vscode-extension/test/unit/multiProjectWorkspace.test.ts` (multi-root) |
 
@@ -464,7 +464,8 @@ CI ownership follows product boundaries:
 - `.github/workflows/cross-repo-compatibility.yml` owns published
   `kicad-mcp-pro` and `@oaslananka/kicad-protocol-schemas` artifact compatibility checks for this repository.
 - KiCad MCP Pro owns real KiCad CLI, GUI IPC, and MCP transport
-  canaries.
+  canaries. KiCad 10.0.4 is the current stable canary baseline; patch release
+  candidates remain non-blocking until a final release passes that owning lane.
 - Product-specific validation remains inside each product package so the root
   workflow can compose it without direct source imports between products.
 
@@ -486,8 +487,8 @@ This strategy was checked against current primary sources:
   and version checks.
 - KiCad PCB Editor documentation for action-plugin/GUI scripting boundaries and
   KiCad IPC API developer documentation for live-editor automation scope.
-- KiCad Windows Downloads for supported Windows versions and current stable
-  10.0.3 installer availability.
+- KiCad 10.0.4 release notes and the 10.0.5 RC1 announcement for the
+  current stable and preview patch states.
 - Chocolatey KiCad package metadata for the pinned Windows CI install command
   and checksum-backed official KiCad installer URL.
 - GitHub Actions artifact documentation and `actions/upload-artifact` metadata
