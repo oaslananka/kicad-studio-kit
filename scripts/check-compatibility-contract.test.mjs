@@ -6,6 +6,7 @@ import { parse as parseYaml } from "yaml";
 import {
   validateCompatibilityContract,
   validateEmbeddedExtensionCompatibilityMatrix,
+  validateKiCadPatchBaseline,
 } from "./check-compatibility-contract.mjs";
 
 const compatibility = parseYaml(fs.readFileSync("compatibility.yaml", "utf8"));
@@ -66,5 +67,43 @@ test("#494 compatibility contract rejects malformed runtime policy metadata", ()
       runtimePolicyExtensionPackage: extensionPackage,
     }).join("\n"),
     /runtimePolicy\.enforcement\.vscode/u,
+  );
+});
+
+test("#491 stable KiCad patch baseline and RC canary metadata are aligned", () => {
+  assert.equal(compatibility.kicad.latestVerified, "10.0.4");
+  assert.equal(compatibility.kicad10FeatureParity.baseline, "10.0.4");
+  assert.equal(compatibility.kicad.patchCanary.version, "10.0.5-rc1");
+  assert.deepEqual(validateKiCadPatchBaseline({ compatibility }), []);
+});
+
+test("#491 rejects stable parity drift", () => {
+  const drifted = structuredClone(compatibility);
+  drifted.kicad10FeatureParity.baseline = "10.0.3";
+
+  assert.match(
+    validateKiCadPatchBaseline({ compatibility: drifted }).join("\n"),
+    /kicad10FeatureParity\.baseline must match kicad\.latestVerified/u,
+  );
+});
+
+test("#491 keeps patch release candidates non-blocking", () => {
+  const blocking = structuredClone(compatibility);
+  blocking.kicad.patchCanary.blocking = true;
+
+  assert.match(
+    validateKiCadPatchBaseline({ compatibility: blocking }).join("\n"),
+    /kicad\.patchCanary must remain preview-only and non-blocking/u,
+  );
+});
+
+test("#491 requires reviewable stable canary evidence", () => {
+  const missingEvidence = structuredClone(compatibility);
+  missingEvidence.kicad10FeatureParity.sources.canaryEvidence =
+    "docs/evidence/missing.md";
+
+  assert.match(
+    validateKiCadPatchBaseline({ compatibility: missingEvidence }).join("\n"),
+    /sources\.canaryEvidence must reference an existing file/u,
   );
 });
