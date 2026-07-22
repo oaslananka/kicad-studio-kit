@@ -1,2 +1,11 @@
 #!/usr/bin/env sh
-pnpm run check
+set -eu
+
+# Prefer the pinned rootless validation host when it is already bootstrapped.
+# Contributor machines without that profile retain the normal Corepack path.
+if command -v bash >/dev/null 2>&1 && \
+  bash scripts/run-validation-host.sh true >/dev/null 2>&1; then
+  exec bash scripts/run-validation-host.sh corepack pnpm run check
+fi
+
+exec corepack pnpm run check

@@ -86,17 +86,18 @@
     "check:mcp-split-docs": "node scripts/check-mcp-split-docs.mjs && node --test scripts/check-mcp-split-docs.test.mjs",
     "check:vscode-typings-policy": "node scripts/check-vscode-typings-policy.mjs && node --test scripts/check-vscode-typings-policy.test.mjs",
     "validation-host:bootstrap": "bash scripts/bootstrap-validation-host.sh",
-    "validation-host:doctor": "bash scripts/run-validation-host.sh node scripts/dev-doctor.mjs --ci --strict",
+    "validation-host:doctor": "corepack pnpm run validation-host:workspace && bash scripts/run-validation-host.sh node scripts/dev-doctor.mjs --ci --strict",
     "validation-host:check": "bash scripts/run-validation-host.sh corepack pnpm run check",
     "validation-host:package": "bash scripts/run-validation-host.sh corepack pnpm run package:kicad-studio",
-    "check:validation-host": "node scripts/check-validation-host.mjs && node --test scripts/check-validation-host.test.mjs",
+    "check:validation-host": "node scripts/check-validation-host.mjs && node --test scripts/check-validation-host.test.mjs scripts/check-workspace-integrity.test.mjs",
     "check:security-tooling": "node scripts/check-security-tooling.mjs && node --test scripts/check-security-tooling.test.mjs",
     "security:workflows": "actionlint -config-file .github/actionlint.yaml && uvx --from zizmor==1.27.0 zizmor --config .github/zizmor.yml --offline --strict-collection --format plain --min-severity medium --min-confidence high .",
     "security:semgrep": "uvx --from semgrep==1.170.0 semgrep scan --config .semgrep/semgrep.yml --error --metrics=off apps/vscode-extension/src apps/vscode-extension/scripts packages scripts",
     "test:semgrep-rules": "uvx --from semgrep==1.170.0 semgrep --metrics=off --test --config .semgrep/semgrep.yml .semgrep/semgrep.ts",
     "check:dependabot-policy": "node scripts/check-dependabot-policy.mjs && node --test scripts/check-dependabot-policy.test.mjs",
     "check:trivy-devcontainer": "node scripts/check-trivy-devcontainer.mjs && node --test scripts/check-trivy-devcontainer.test.mjs",
-    "security:trivy-devcontainer": "trivy config --skip-version-check --severity HIGH,CRITICAL --exit-code 1 --format table .devcontainer"
+    "security:trivy-devcontainer": "trivy config --skip-version-check --severity HIGH,CRITICAL --exit-code 1 --format table .devcontainer",
+    "validation-host:workspace": "bash scripts/run-validation-host.sh node scripts/check-workspace-integrity.mjs --canonical"
   },
   "devDependencies": {
     "@commitlint/cli": "21.0.2",

@@ -47,11 +47,22 @@ The bootstrap ends with the strict CI-safe developer doctor. Optional remote
 
 ## Validation commands
 
+Validate the canonical Git checkout before running toolchain diagnostics:
+
 ```bash
+corepack pnpm run validation-host:workspace
 corepack pnpm run validation-host:doctor
 corepack pnpm run validation-host:check
 corepack pnpm run validation-host:package
 ```
+
+`validation-host:workspace` is a read-only check. It does not fetch, reset,
+prune, remove worktrees, or edit Git configuration. The doctor runs this check
+first so an invalid checkout cannot produce misleading release evidence.
+
+The pre-push hook automatically selects this pinned environment when the
+validation host is bootstrapped. Other contributor environments fall back to
+`corepack pnpm run check`; the hook never disables or bypasses validation.
 
 Run another command inside the same pinned/rootless environment:
 
@@ -78,7 +89,67 @@ in [testing strategy](testing-strategy.md) and the
 [KiCad support matrix](support-matrix.md). VPS-2 remains authoritative for the
 repository, browser, extension package, and release-recovery checks listed above.
 
-## Recovery
+## Canonical workspace topology
+
+The supported validation-host topology is a normal, non-bare canonical checkout
+on `main`. Issue and pull-request work belongs in linked worktrees created from
+that checkout. In the canonical checkout, `core.bare` must be `false`,
+`core.worktree` must be unset, the working tree must be clean, and `HEAD` must
+match the fetched `origin/main` revision. Linked worktrees are valid development environments,
+but they are not canonical release-recovery checkouts.
+
+Use the porcelain inventory when reviewing workspace state:
+
+```bash
+git status --short --branch
+git worktree list --porcelain
+corepack pnpm run validation-host:workspace
+```
+
+A worktree entry marked `prunable` is a failed invariant. Do not prune it until
+its directory, branch, uncommitted state, and associated pull request have been
+reviewed.
+
+## Workspace recovery and rollback
+
+Workspace repair is deliberately manual because deleting the wrong linked
+worktree can discard uncommitted work. Stop repository automation before making
+changes, then use this non-destructive sequence:
+
+1. Save a **private backup** of `.git/config` and the output of
+   `git worktree list --porcelain` outside the repository. Never commit this
+   backup because it can contain local paths or remote configuration.
+2. For every linked worktree, run `git status --porcelain`, record its branch
+   and revision, and confirm whether its pull request is active, merged, or
+   abandoned. Preserve any active or dirty worktree.
+3. Restore the canonical checkout configuration without rewriting history:
+
+   ```bash
+   git config --file .git/config core.bare false
+   git config --file .git/config --unset-all core.worktree || true
+   ```
+
+4. Remove only clean worktrees whose changes are confirmed merged or otherwise
+   preserved. Then run `git worktree prune --verbose`. Do not delete local branch
+   references as part of worktree cleanup.
+5. Synchronize the default branch with a fast-forward only update:
+
+   ```bash
+   git fetch --prune origin
+   git switch main
+   git merge --ff-only origin/main
+   ```
+
+6. Run `corepack pnpm run validation-host:workspace`, followed by
+   `corepack pnpm run validation-host:doctor` and
+   `corepack pnpm run validation-host:check`.
+
+For rollback, stop automation, restore the private `.git/config` backup, and
+recreate any removed linked worktree from its preserved branch or revision. A
+rollback must not force-push, rewrite public history, or restore an invalid
+`core.bare`/`core.worktree` combination as the final state.
+
+## Runtime cache recovery
 
 1. Remove `$HOME/.cache/kicad-studio-kit` only when rebuilding the extracted
    Ubuntu layer is desired.
