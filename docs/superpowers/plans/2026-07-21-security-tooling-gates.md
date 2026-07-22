@@ -6,7 +6,7 @@
 
 **Architecture:** Keep CodeQL as the broad SAST authority and GitHub push protection plus Gitleaks as the secret-scanning authority. Add a single root policy contract that pins tool versions and validates workflow/config wiring; run native actionlint, high-confidence zizmor, and narrow local Semgrep rules inside the existing required `security` job. Keep expensive scans out of the Git pre-commit hook while exposing explicit local commands.
 
-**Tech Stack:** Node.js 24 policy tests, GitHub Actions, actionlint 1.7.12, zizmor 1.27.0, Semgrep 1.170.0, pre-commit 4.6.0 with pre-commit-hooks v6.0.0.
+**Tech Stack:** Node.js 24 policy tests, GitHub Actions, actionlint 1.7.12, zizmor 1.28.0, Semgrep 1.170.0, pre-commit 4.6.0 with pre-commit-hooks v6.0.0.
 
 ## Global Constraints
 
@@ -50,7 +50,7 @@ Pin these command forms exactly:
 ```json
 {
   "check:security-tooling": "node scripts/check-security-tooling.mjs && node --test scripts/check-security-tooling.test.mjs",
-  "security:workflows": "actionlint -config-file .github/actionlint.yaml && uvx --from zizmor==1.27.0 zizmor --config .github/zizmor.yml --offline --strict-collection --format plain --min-severity medium --min-confidence high .",
+  "security:workflows": "actionlint -config-file .github/actionlint.yaml && uvx --from zizmor==1.28.0 zizmor --config .github/zizmor.yml --offline --strict-collection --format plain --min-severity medium --min-confidence high .",
   "security:semgrep": "uvx --from semgrep==1.170.0 semgrep scan --config .semgrep/semgrep.yml --error --metrics=off apps/vscode-extension/src apps/vscode-extension/scripts packages scripts",
   "test:semgrep-rules": "uvx --from semgrep==1.170.0 semgrep --metrics=off --test --config .semgrep/semgrep.yml .semgrep/semgrep.ts"
 }
@@ -109,7 +109,7 @@ Run:
 
 ```bash
 actionlint -config-file .github/actionlint.yaml
-uvx --from zizmor==1.27.0 zizmor --config .github/zizmor.yml --offline --strict-collection --format plain --min-severity medium --min-confidence high .
+uvx --from zizmor==1.28.0 zizmor --config .github/zizmor.yml --offline --strict-collection --format plain --min-severity medium --min-confidence high .
 ```
 
 Expected: both commands exit 0.
@@ -211,7 +211,7 @@ Run:
 ```bash
 uvx --from pre-commit==4.6.0 pre-commit run --all-files
 actionlint -config-file .github/actionlint.yaml
-uvx --from zizmor==1.27.0 zizmor --config .github/zizmor.yml --offline --strict-collection --format plain --min-severity medium --min-confidence high .
+uvx --from zizmor==1.28.0 zizmor --config .github/zizmor.yml --offline --strict-collection --format plain --min-severity medium --min-confidence high .
 uvx --from semgrep==1.170.0 semgrep --metrics=off --test --config .semgrep/semgrep.yml .semgrep/semgrep.ts
 uvx --from semgrep==1.170.0 semgrep scan --config .semgrep/semgrep.yml --error --metrics=off apps/vscode-extension/src apps/vscode-extension/scripts packages scripts
 corepack pnpm run check:security-tooling

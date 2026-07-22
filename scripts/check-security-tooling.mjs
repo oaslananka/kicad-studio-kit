@@ -13,7 +13,7 @@ const EXPECTED_SCRIPTS = {
   "check:security-tooling":
     "node scripts/check-security-tooling.mjs && node --test scripts/check-security-tooling.test.mjs",
   "security:workflows":
-    "actionlint -config-file .github/actionlint.yaml && uvx --from zizmor==1.27.0 zizmor --config .github/zizmor.yml --offline --strict-collection --format plain --min-severity medium --min-confidence high .",
+    "actionlint -config-file .github/actionlint.yaml && uvx --from zizmor==1.28.0 zizmor --config .github/zizmor.yml --offline --strict-collection --format plain --min-severity medium --min-confidence high .",
   "security:semgrep":
     "uvx --from semgrep==1.170.0 semgrep scan --config .semgrep/semgrep.yml --error --metrics=off apps/vscode-extension/src apps/vscode-extension/scripts packages scripts",
   "test:semgrep-rules":
@@ -74,7 +74,7 @@ function validatePackageScripts(packageJson) {
     scripts["security:workflows"] !== EXPECTED_SCRIPTS["security:workflows"]
   ) {
     errors.push(
-      "package.json must pin actionlint plus zizmor 1.27.0 in the deterministic workflow-security command",
+      "package.json must pin actionlint plus zizmor 1.28.0 in the deterministic workflow-security command",
     );
   }
   if (scripts["security:semgrep"] !== EXPECTED_SCRIPTS["security:semgrep"]) {
@@ -170,6 +170,49 @@ function validateZizmor(zizmor) {
   return errors;
 }
 
+function validateRenovate(renovate) {
+  const errors = [];
+  const customManagers = Array.isArray(renovate.customManagers)
+    ? renovate.customManagers
+    : [];
+  const hasZizmorManager = customManagers.some((manager) => {
+    return (
+      manager?.customType === "regex" &&
+      manager?.datasourceTemplate === "pypi" &&
+      manager?.depNameTemplate === "zizmor" &&
+      manager?.versioningTemplate === "pep440" &&
+      Array.isArray(manager.managerFilePatterns) &&
+      manager.managerFilePatterns.includes(String.raw`/^package\.json$/`) &&
+      Array.isArray(manager.matchStrings) &&
+      manager.matchStrings.some(
+        (pattern) =>
+          pattern.includes("zizmor==") && pattern.includes("currentValue"),
+      )
+    );
+  });
+  if (
+    !Array.isArray(renovate.enabledManagers) ||
+    !renovate.enabledManagers.includes("custom.regex") ||
+    !hasZizmorManager
+  ) {
+    errors.push(
+      "Renovate must own the exact zizmor PyPI pin through a custom regex manager",
+    );
+  }
+  return errors;
+}
+
+function validateSecurityDocs(securityDocs) {
+  const errors = [];
+  if (!securityDocs.includes("zizmor 1.28.0")) {
+    errors.push("docs/security.md must document the pinned zizmor 1.28.0 gate");
+  }
+  if (securityDocs.includes("zizmor 1.27.0")) {
+    errors.push("docs/security.md must not reference yanked zizmor 1.27.0");
+  }
+  return errors;
+}
+
 function validateSemgrep(semgrep, semgrepIgnore) {
   const errors = [];
   for (const rule of REQUIRED_SEMGREP_RULES) {
@@ -233,6 +276,8 @@ export function validateSecurityTooling(root = REPO_ROOT) {
     ),
     ...validatePrecommit(readText(root, ".pre-commit-config.yaml")),
     ...validateZizmor(readText(root, ".github/zizmor.yml")),
+    ...validateRenovate(readJson(root, "renovate.json")),
+    ...validateSecurityDocs(readText(root, "docs/security.md")),
     ...validateSemgrep(
       readText(root, ".semgrep/semgrep.yml"),
       readText(root, ".semgrepignore"),
