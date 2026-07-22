@@ -7,12 +7,15 @@ export const MCP_COMPAT =
 
 export type McpCompatStatus = 'ok' | 'warn' | 'incompatible';
 
-export function normalizeMcpVersion(version: string | undefined): string {
+function coerceMcpVersion(version: string | undefined): string | undefined {
   if (!version) {
-    return '0.0.0';
+    return undefined;
   }
-  const parsed = semver.coerce(version);
-  return parsed?.version ?? '0.0.0';
+  return semver.coerce(version)?.version;
+}
+
+export function normalizeMcpVersion(version: string | undefined): string {
+  return coerceMcpVersion(version) ?? '0.0.0';
 }
 
 export function isMcpVersionSupported(version: string | undefined): boolean {
@@ -33,7 +36,7 @@ export function getMcpCompatStatus(
 }
 
 export function describeMcpCompatibility(version: string | undefined): string {
-  const normalized = normalizeMcpVersion(version);
+  const normalized = coerceMcpVersion(version);
   if (!normalized) {
     return `Unable to determine kicad-mcp-pro version. Required range: ${MCP_COMPAT.required}.`;
   }

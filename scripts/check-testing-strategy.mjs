@@ -8,6 +8,12 @@ const compatibilityPath = path.join(root, "compatibility.yaml");
 const strategyPath = path.join(root, "docs", "testing-strategy.md");
 const packagePath = path.join(root, "package.json");
 const ciWorkflowPath = path.join(root, ".github", "workflows", "ci.yml");
+const mutationWorkflowPath = path.join(
+  root,
+  ".github",
+  "workflows",
+  "mutation.yml",
+);
 const vscodeCanaryWorkflowPath = path.join(
   root,
   ".github",
@@ -26,6 +32,7 @@ const requiredSections = [
   "## Gate Summary",
   "## Coverage and Mutation Thresholds",
   "### Coverage Scope Inventory",
+  "### Blocking Mutation Baseline",
   "## Test Layers",
   "## Fast PR Gates",
   "## Bug-Fix Regression Requirement",
@@ -53,6 +60,12 @@ const requiredPhrases = [
   "corepack pnpm run check:coverage-scope",
   "corepack pnpm --filter kicadstudiokit run coverage:inventory",
   "corepack pnpm --filter kicadstudiokit run test:coverage:ratchet",
+  "corepack pnpm --filter kicadstudiokit run check:mutation-policy",
+  "corepack pnpm --filter kicadstudiokit run test:mutation",
+  "corepack pnpm --filter kicadstudiokit run mutation:summary",
+  "apps/vscode-extension/mutation-baseline.json",
+  "96.3%",
+  "deferred expensive shards",
   "The headline percentage is not whole-product coverage",
   "maximum uncovered counts",
   "corepack pnpm run check:ci-lanes",
@@ -126,6 +139,7 @@ const compatibility = parse(readText(compatibilityPath));
 const packageJson = JSON.parse(readText(packagePath));
 const extensionPackageJson = JSON.parse(readText(extensionPackagePath));
 const ciWorkflow = readText(ciWorkflowPath);
+const mutationWorkflow = readText(mutationWorkflowPath);
 const vscodeCanaryWorkflow = readText(vscodeCanaryWorkflowPath);
 const vscodeCanaryWorkflowConfig = parse(vscodeCanaryWorkflow);
 const vscodeMinimum = requireString(
@@ -176,6 +190,17 @@ if (!scripts.check?.includes("pnpm run check:coverage-scope")) {
   throw new Error("package.json check must run check:coverage-scope");
 }
 
+if (
+  scripts["check:mutation-policy"] !==
+  "corepack pnpm --filter kicadstudiokit run check:mutation-policy"
+) {
+  throw new Error("package.json must define check:mutation-policy");
+}
+
+if (!scripts.check?.includes("pnpm run check:mutation-policy")) {
+  throw new Error("package.json check must run check:mutation-policy");
+}
+
 const extensionScripts = extensionPackageJson.scripts ?? {};
 for (const [scriptName, expectedCommand] of [
   [
@@ -186,6 +211,15 @@ for (const [scriptName, expectedCommand] of [
   [
     "test:coverage:ratchet",
     "jest --config jest.coverage-ratchet.config.js --runInBand --coverage",
+  ],
+  [
+    "check:mutation-policy",
+    "node --test scripts/mutation-baseline.test.mjs && node scripts/mutation-baseline.cjs",
+  ],
+  ["test:mutation", "stryker run"],
+  [
+    "mutation:summary",
+    "node scripts/mutation-baseline.cjs --report reports/mutation/mutation.json --write-summary",
   ],
 ]) {
   if (extensionScripts[scriptName] !== expectedCommand) {
@@ -204,6 +238,10 @@ if (!extensionScripts.check?.includes("test:coverage:ratchet")) {
   throw new Error("extension check must enforce the coverage ratchet");
 }
 
+if (!extensionScripts.check?.includes("check:mutation-policy")) {
+  throw new Error("extension check must enforce the mutation policy");
+}
+
 for (const requiredCoverageWorkflowText of [
   "Enforce critical coverage ratchet",
   "corepack pnpm --filter kicadstudiokit run test:coverage:ratchet",
@@ -213,6 +251,39 @@ for (const requiredCoverageWorkflowText of [
   'cat apps/vscode-extension/coverage/coverage-scope.md >> "$GITHUB_STEP_SUMMARY"',
 ]) {
   assertIncludes(ciWorkflow, requiredCoverageWorkflowText, "ci workflow");
+}
+
+for (const requiredMutationWorkflowText of [
+  "  mutation:",
+  "timeout-minutes: 10",
+  "Run blocking mutation baseline",
+  "corepack pnpm --filter kicadstudiokit run test:mutation",
+  "corepack pnpm --filter kicadstudiokit run mutation:summary",
+  "apps/vscode-extension/reports/mutation/summary.md",
+  "needs.mutation.result",
+]) {
+  assertIncludes(ciWorkflow, requiredMutationWorkflowText, "ci workflow");
+}
+
+for (const requiredScheduledMutationText of [
+  "name: Mutation Testing",
+  "cron:",
+  "timeout-minutes: 10",
+  "Run blocking mutation baseline",
+  "corepack pnpm --filter kicadstudiokit run test:mutation",
+  "corepack pnpm --filter kicadstudiokit run mutation:summary",
+  "Upload mutation evidence",
+]) {
+  assertIncludes(
+    mutationWorkflow,
+    requiredScheduledMutationText,
+    "mutation workflow",
+  );
+}
+if (mutationWorkflow.includes("continue-on-error")) {
+  throw new Error(
+    "mutation workflow must fail closed without continue-on-error",
+  );
 }
 
 assertIncludes(

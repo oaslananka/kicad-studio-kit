@@ -2510,17 +2510,17 @@
     "build": "pnpm run prepare:media && webpack --mode production",
     "build:prod": "pnpm run build",
     "watch": "webpack --mode development --watch",
-    "format": "prettier --ignore-unknown --no-error-on-unmatched-pattern --write package.json package.nls.json README.md SECURITY.md docs/**/*.md scripts/**/*.{cjs,js,mjs} .vscode/*.json tsconfig*.json playwright*.config.ts .prettierrc .prettierignore eslint.config.cjs jest.config.js webpack.config.js stryker.config.json Taskfile.yml .editorconfig .vscodeignore language-configuration.json schemas/**/*.json snippets/**/*.{json,code-snippets} syntaxes/**/*.json test/webview/**/*.ts test/visual/**/*.ts",
-    "format:check": "prettier --ignore-unknown --no-error-on-unmatched-pattern --check package.json package.nls.json README.md SECURITY.md docs/**/*.md scripts/**/*.{cjs,js,mjs} .vscode/*.json tsconfig*.json playwright*.config.ts .prettierrc .prettierignore eslint.config.cjs jest.config.js webpack.config.js stryker.config.json Taskfile.yml .editorconfig .vscodeignore language-configuration.json schemas/**/*.json snippets/**/*.{json,code-snippets} syntaxes/**/*.json test/webview/**/*.ts test/visual/**/*.ts",
+    "format": "prettier --ignore-unknown --no-error-on-unmatched-pattern --write package.json package.nls.json README.md SECURITY.md docs/**/*.md scripts/**/*.{cjs,js,mjs} .vscode/*.json tsconfig*.json playwright*.config.ts .prettierrc .prettierignore eslint.config.cjs jest.config.js webpack.config.js stryker.config.json mutation-baseline.json Taskfile.yml .editorconfig .vscodeignore language-configuration.json schemas/**/*.json snippets/**/*.{json,code-snippets} syntaxes/**/*.json test/webview/**/*.ts test/visual/**/*.ts",
+    "format:check": "prettier --ignore-unknown --no-error-on-unmatched-pattern --check package.json package.nls.json README.md SECURITY.md docs/**/*.md scripts/**/*.{cjs,js,mjs} .vscode/*.json tsconfig*.json playwright*.config.ts .prettierrc .prettierignore eslint.config.cjs jest.config.js webpack.config.js stryker.config.json mutation-baseline.json Taskfile.yml .editorconfig .vscodeignore language-configuration.json schemas/**/*.json snippets/**/*.{json,code-snippets} syntaxes/**/*.json test/webview/**/*.ts test/visual/**/*.ts",
     "lint": "eslint src test scripts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "audit:ci": "pnpm audit --audit-level high",
     "check:staged": "lint-staged",
-    "check": "pnpm run check:extension-manifest && pnpm run check:nls-parity && pnpm run check:coverage-scope && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run test:coverage:ratchet && pnpm run test:security && pnpm run test:a11y && pnpm run build && pnpm run package && pnpm run package:validate",
+    "check": "pnpm run check:extension-manifest && pnpm run check:nls-parity && pnpm run check:coverage-scope && pnpm run check:mutation-policy && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run test:coverage:ratchet && pnpm run test:security && pnpm run test:a11y && pnpm run build && pnpm run package && pnpm run package:validate",
     "check:extension-manifest": "node scripts/check-package-contributions.mjs",
     "check:nls-parity": "node ../../scripts/check-nls-parity.mjs && node --test ../../scripts/check-nls-parity.test.mjs",
     "check:workspace-trust": "node scripts/check-untrusted-workspace.js",
-    "check:ci": "pnpm run audit:ci && pnpm run format:check && pnpm run docs:check && pnpm run check:coverage-scope && pnpm run workflows:lint && pnpm run lint && pnpm run typecheck && pnpm run check:workspace-trust && pnpm run test:unit:coverage && pnpm run test:coverage:ratchet && pnpm run test:security && pnpm run test:a11y && pnpm run build && pnpm run test:integration && pnpm run package && pnpm run package:validate && pnpm run release:dry-run && pnpm run check:bundle-size",
+    "check:ci": "pnpm run audit:ci && pnpm run format:check && pnpm run docs:check && pnpm run check:coverage-scope && pnpm run check:mutation-policy && pnpm run workflows:lint && pnpm run lint && pnpm run typecheck && pnpm run check:workspace-trust && pnpm run test:unit:coverage && pnpm run test:coverage:ratchet && pnpm run test:security && pnpm run test:a11y && pnpm run build && pnpm run test:integration && pnpm run package && pnpm run package:validate && pnpm run release:dry-run && pnpm run check:bundle-size",
     "compile-tests": "tsc -p tsconfig.test.json",
     "test": "pnpm run test:unit && pnpm run test:security && pnpm run test:integration",
     "test:unit": "jest --runInBand",
@@ -2552,7 +2552,9 @@
     "test:dynamic-analysis": "pnpm run test:security && pnpm run test:webview && pnpm run test:a11y",
     "check:coverage-scope": "node --test scripts/coverage-scope.test.mjs && node scripts/coverage-scope.cjs --check",
     "coverage:inventory": "node scripts/coverage-scope.cjs --write",
-    "test:coverage:ratchet": "jest --config jest.coverage-ratchet.config.js --runInBand --coverage"
+    "test:coverage:ratchet": "jest --config jest.coverage-ratchet.config.js --runInBand --coverage",
+    "check:mutation-policy": "node --test scripts/mutation-baseline.test.mjs && node scripts/mutation-baseline.cjs",
+    "mutation:summary": "node scripts/mutation-baseline.cjs --report reports/mutation/mutation.json --write-summary"
   },
   "c8": {
     "reporter": [

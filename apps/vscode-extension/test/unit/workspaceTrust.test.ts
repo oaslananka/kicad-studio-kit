@@ -26,6 +26,21 @@ describe('workspace trust helpers', () => {
     );
   });
 
+  it('forwards trusted command arguments and return values', async () => {
+    const handler = jest.fn(async (value: string) => `handled:${value}`);
+    registerTrustedCommand(
+      'kicadstudio.testTrustedCommand',
+      handler,
+      'Export Gerbers'
+    );
+    const registered = (commands.registerCommand as jest.Mock).mock
+      .calls[0]?.[1] as (value: string) => Promise<string>;
+
+    await expect(registered('board-a')).resolves.toBe('handled:board-a');
+    expect(handler).toHaveBeenCalledWith('board-a');
+    expect(window.showWarningMessage).not.toHaveBeenCalled();
+  });
+
   it('wraps registered command handlers behind the trust check', async () => {
     workspace.isTrusted = false;
     const handler = jest.fn();

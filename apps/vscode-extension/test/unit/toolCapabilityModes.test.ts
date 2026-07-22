@@ -18,6 +18,17 @@ describe('#406 assistant tool capability modes', () => {
     }
   });
 
+  it('keeps capability descriptions explicit and non-empty', () => {
+    expect(MODE_DESCRIPTIONS).toEqual({
+      'read-only':
+        'Explorer mode. Returns information about the project and never changes files or project state.',
+      review:
+        'Advisory mode. Runs checks/validations and returns findings plus proposed next steps; it does not modify design files.',
+      'release-preparation':
+        'Release-preparation mode. Changes release-relevant project state or produces artifacts. Requires workspace trust and a preview/confirmation before acting.'
+    });
+  });
+
   it('does not classify any unknown tools', () => {
     const known = new Set<string>(Object.values(TOOL_NAMES));
     for (const toolName of Object.keys(TOOL_CAPABILITY_MODES)) {
