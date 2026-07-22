@@ -24,6 +24,8 @@ const extensionPackagePath = path.join(
 const requiredSections = [
   "# Testing Strategy",
   "## Gate Summary",
+  "## Coverage and Mutation Thresholds",
+  "### Coverage Scope Inventory",
   "## Test Layers",
   "## Fast PR Gates",
   "## Bug-Fix Regression Requirement",
@@ -48,6 +50,11 @@ const requiredPhrases = [
   "corepack pnpm run check:compatibility-contract",
   "Run from the KiCad MCP Pro repository",
   "corepack pnpm run check:performance-budgets",
+  "corepack pnpm run check:coverage-scope",
+  "corepack pnpm --filter kicadstudiokit run coverage:inventory",
+  "corepack pnpm --filter kicadstudiokit run test:coverage:ratchet",
+  "The headline percentage is not whole-product coverage",
+  "maximum uncovered counts",
   "corepack pnpm run check:ci-lanes",
   "corepack pnpm run check:kicad-gui-smoke",
   "corepack pnpm run test:fixtures",
@@ -156,6 +163,56 @@ if (
 
 if (!scripts.check?.includes("pnpm run check:testing-strategy")) {
   throw new Error("package.json check must run check:testing-strategy");
+}
+
+if (
+  scripts["check:coverage-scope"] !==
+  "corepack pnpm --filter kicadstudiokit run check:coverage-scope"
+) {
+  throw new Error("package.json must define check:coverage-scope");
+}
+
+if (!scripts.check?.includes("pnpm run check:coverage-scope")) {
+  throw new Error("package.json check must run check:coverage-scope");
+}
+
+const extensionScripts = extensionPackageJson.scripts ?? {};
+for (const [scriptName, expectedCommand] of [
+  [
+    "check:coverage-scope",
+    "node --test scripts/coverage-scope.test.mjs && node scripts/coverage-scope.cjs --check",
+  ],
+  ["coverage:inventory", "node scripts/coverage-scope.cjs --write"],
+  [
+    "test:coverage:ratchet",
+    "jest --config jest.coverage-ratchet.config.js --runInBand --coverage",
+  ],
+]) {
+  if (extensionScripts[scriptName] !== expectedCommand) {
+    throw new Error(
+      `apps/vscode-extension/package.json must define ${scriptName}`,
+    );
+  }
+}
+
+if (!extensionScripts["test:unit:coverage"]?.includes("coverage:inventory")) {
+  throw new Error(
+    "test:unit:coverage must generate the coverage scope inventory",
+  );
+}
+if (!extensionScripts.check?.includes("test:coverage:ratchet")) {
+  throw new Error("extension check must enforce the coverage ratchet");
+}
+
+for (const requiredCoverageWorkflowText of [
+  "Enforce critical coverage ratchet",
+  "corepack pnpm --filter kicadstudiokit run test:coverage:ratchet",
+  "Publish coverage scope inventory",
+  "apps/vscode-extension/coverage/coverage-scope.json",
+  "apps/vscode-extension/coverage/coverage-scope.md",
+  'cat apps/vscode-extension/coverage/coverage-scope.md >> "$GITHUB_STEP_SUMMARY"',
+]) {
+  assertIncludes(ciWorkflow, requiredCoverageWorkflowText, "ci workflow");
 }
 
 assertIncludes(

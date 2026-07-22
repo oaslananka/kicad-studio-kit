@@ -17,7 +17,7 @@ The root `check` script is the full repository gate. It can be expensive. For sm
 
 ## Coverage
 
-The repository has global coverage thresholds for extension unit tests. Do not lower thresholds without maintainer approval and an issue describing the reason and recovery plan.
+The repository has global coverage thresholds for the configured extension unit-test denominator. The percentage is not a whole-source claim. `apps/vscode-extension/coverage-scope.json` classifies every explicit exclusion and assigns either integration ownership or a targeted blocking ratchet. Validate the policy with `corepack pnpm run check:coverage-scope` and do not lower global or ratchet thresholds without maintainer approval and an issue describing the reason and recovery plan.
 
 ## Flaky or environment-bound tests
 

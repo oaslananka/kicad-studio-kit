@@ -41,6 +41,10 @@ MCP discovery, configuration, compatibility metadata, and user experience — se
 [ADR 0009](docs/adr/0009-split-kicad-mcp-pro-into-separate-repository.md) and
 [repository structure](docs/architecture/repo-structure.md).
 
+The coverage badge reports the configured Jest unit denominator, not every
+shipped source file. Exclusion ownership and the separate critical-module
+ratchet are documented in [the testing strategy](docs/testing-strategy.md#coverage-scope-inventory).
+
 This repository contains:
 
 - the KiCad Studio VS Code extension (`apps/vscode-extension`) — the only released product here;

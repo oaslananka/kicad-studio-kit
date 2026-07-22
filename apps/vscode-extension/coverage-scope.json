@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "description": "Ownership and test strategy for source omitted from the headline Jest unit-coverage denominator.",
+  "declarationExclusion": {
+    "pattern": "!src/**/*.d.ts",
+    "category": "generated",
+    "owner": "TypeScript declarations",
+    "strategy": "Declaration-only files contain no executable runtime statements.",
+    "rationale": "Type declarations are validated by typecheck rather than Istanbul coverage.",
+    "evidence": ["tsconfig.json", "tsconfig.test.json"]
+  },
+  "exclusions": {
+    "src/extension.ts": {
+      "category": "integration-owned",
+      "owner": "VS Code extension host",
+      "strategy": "Activation, contribution registration, and command wiring run inside @vscode/test-electron and real-pair host lanes.",
+      "rationale": "The entrypoint depends on the real VS Code host lifecycle and is not a meaningful Node-only unit denominator.",
+      "evidence": [
+        "test/integration/extension.test.ts",
+        "test/integration/realServer/extensionHost.flow.test.ts"
+      ]
+    },
+    "src/activation/activationState.ts": {
+      "category": "explicitly-justified",
+      "coverageMode": "targeted-ratchet",
+      "owner": "Activation unit tests",
+      "strategy": "Focused Jest coverage protects activation state without changing the established headline denominator.",
+      "rationale": "This file is covered by the critical-module ratchet while the wider activation directory remains host-owned.",
+      "evidence": ["test/unit/activationControllers.test.ts"]
+    },
+    "src/activation/mcpActivationController.ts": {
+      "category": "integration-owned",
+      "owner": "MCP activation integration",
+      "strategy": "Real server and extension-host compatibility flows exercise MCP startup, reconnect, and context propagation.",
+      "rationale": "The controller coordinates VS Code events and a live MCP transport boundary.",
+      "evidence": [
+        "test/integration/realServer/compatibility.flow.test.ts",
+        "test/integration/realServer/contextBridge.flow.test.ts"
+      ]
+    },
+    "src/activation/saveCheckController.ts": {
+      "category": "integration-owned",
+      "owner": "Editor save lifecycle",
+      "strategy": "Extension-host editor flows and activation tests own save-event registration and command availability.",
+      "rationale": "Save hooks require the VS Code workspace event loop and document lifecycle.",
+      "evidence": [
+        "test/integration/editorFlows.test.ts",
+        "test/integration/extension.test.ts"
+      ]
+    },
+    "src/activation/studioContextController.ts": {
+      "category": "explicitly-justified",
+      "coverageMode": "targeted-ratchet",
+      "owner": "Activation unit tests",
+      "strategy": "Focused Jest coverage protects design-block parsing and context refresh behavior.",
+      "rationale": "Host-bound context writes stay outside the headline denominator, but covered behavior cannot regress.",
+      "evidence": [
+        "test/unit/activationControllers.test.ts",
+        "test/unit/contextRefreshPerf.test.ts"
+      ]
+    },
+    "src/activation/workspaceContextController.ts": {
+      "category": "explicitly-justified",
+      "coverageMode": "targeted-ratchet",
+      "owner": "Workspace context unit tests",
+      "strategy": "Focused Jest coverage protects debounce, disposal, and context refresh seams.",
+      "rationale": "The controller mixes unit-testable scheduling with VS Code host context updates.",
+      "evidence": [
+        "test/unit/activationControllers.test.ts",
+        "test/unit/contextRefreshPerf.test.ts"
+      ]
+    },
+    "src/cli/exportCommands.ts": {
+      "category": "explicitly-justified",
+      "coverageMode": "targeted-ratchet",
+      "owner": "Export orchestration tests",
+      "strategy": "Focused Jest coverage protects command construction, output boundaries, and export-service orchestration.",
+      "rationale": "The large process-boundary module is measured separately so its lower baseline cannot dilute or be hidden by the headline denominator.",
+      "evidence": ["test/unit/exportCommands.test.ts"]
+    },
+    "src/providers/baseKiCanvasEditorProvider.ts": {
+      "category": "explicitly-justified",
+      "coverageMode": "targeted-ratchet",
+      "owner": "Viewer provider tests",
+      "strategy": "Focused unit and security coverage protects webview messages, path validation, and SVG fallback boundaries.",
+      "rationale": "The provider combines VS Code custom-editor lifecycle code with testable security and message seams.",
+      "evidence": [
+        "test/unit/viewerProviders.test.ts",
+        "test/security/securityRegression.test.ts"
+      ]
+    },
+    "src/providers/bomViewProvider.ts": {
+      "category": "integration-owned",
+      "owner": "BOM webview lifecycle",
+      "strategy": "Extension-host registration plus webview, accessibility, and visual fixture lanes protect the shipped BOM surface.",
+      "rationale": "The provider lifecycle depends on VS Code WebviewView resolution; generated HTML behavior is tested at the surface boundary.",
+      "evidence": [
+        "test/integration/extension.test.ts",
+        "test/a11y/accessibilityConformance.test.ts",
+        "test/visual/visualFixtures.ts"
+      ]
+    },
+    "src/providers/diffEditorProvider.ts": {
+      "category": "integration-owned",
+      "owner": "Visual diff custom editor",
+      "strategy": "Extension-host registration and visual fixture coverage protect the custom-editor boundary and rendered states.",
+      "rationale": "The provider is primarily VS Code custom-editor lifecycle glue around separately tested diff and viewer helpers.",
+      "evidence": [
+        "test/integration/extension.test.ts",
+        "test/unit/diffViewerAssets.test.ts",
+        "test/visual/visualFixtureData.ts"
+      ]
+    },
+    "src/providers/netlistViewProvider.ts": {
+      "category": "explicitly-justified",
+      "coverageMode": "targeted-ratchet",
+      "owner": "Netlist provider tests",
+      "strategy": "Focused Jest coverage protects CLI failures, generated files, webview messages, and provider refresh behavior.",
+      "rationale": "The targeted ratchet measures the provider without lowering the existing global coverage gate.",
+      "evidence": ["test/unit/netlistViewProvider.test.ts"]
+    },
+    "src/providers/projectTreeProvider.ts": {
+      "category": "explicitly-justified",
+      "coverageMode": "targeted-ratchet",
+      "owner": "Project tree tests",
+      "strategy": "Focused Jest coverage protects discovery, grouping, diagnostics, and cross-platform path behavior.",
+      "rationale": "The provider has substantial filesystem and VS Code tree lifecycle behavior with a dedicated ratchet baseline.",
+      "evidence": [
+        "test/unit/projectTreeProvider.test.ts",
+        "test/unit/pathRegressionSuite.test.ts",
+        "test/integration/extension.test.ts"
+      ]
+    },
+    "src/providers/viewerHtml.ts": {
+      "category": "explicitly-justified",
+      "coverageMode": "targeted-ratchet",
+      "owner": "Viewer boundary tests",
+      "strategy": "Focused unit, accessibility, security, and visual tests protect the large viewer template and message contract.",
+      "rationale": "The handwritten template is measured separately instead of being mistaken for generated or vendored code.",
+      "evidence": [
+        "test/unit/viewerHtml.test.ts",
+        "test/unit/diffViewerAssets.test.ts",
+        "test/a11y/accessibilityConformance.test.ts"
+      ]
+    },
+    "src/library/libraryIndexer.ts": {
+      "category": "integration-owned",
+      "owner": "KiCad library filesystem integration",
+      "strategy": "Component search and language-model tool tests exercise the indexer through its consumers; host integration owns workspace discovery.",
+      "rationale": "The indexer traverses external KiCad library roots and persistent workspace state.",
+      "evidence": [
+        "test/unit/componentSearch.test.ts",
+        "test/unit/languageModelTools.test.ts"
+      ]
+    },
+    "src/library/librarySearchProvider.ts": {
+      "category": "integration-owned",
+      "owner": "Library search webview integration",
+      "strategy": "Extension-host command registration and component-search tests protect the consumer-facing search contract.",
+      "rationale": "The provider combines VS Code webview lifecycle, index state, and external library roots.",
+      "evidence": [
+        "test/integration/extension.test.ts",
+        "test/unit/componentSearch.test.ts"
+      ]
+    },
+    "src/tasks/kicadTaskProvider.ts": {
+      "category": "integration-owned",
+      "owner": "VS Code task integration",
+      "strategy": "Extension-host activation and command registration validate the task provider inside the VS Code task API boundary.",
+      "rationale": "Task construction and execution depend on VS Code TaskProvider and ShellExecution host objects.",
+      "evidence": ["test/integration/extension.test.ts"]
+    }
+  },
+  "ratchet": {
+    "files": [
+      "src/activation/activationState.ts",
+      "src/activation/studioContextController.ts",
+      "src/activation/workspaceContextController.ts",
+      "src/cli/exportCommands.ts",
+      "src/providers/baseKiCanvasEditorProvider.ts",
+      "src/providers/netlistViewProvider.ts",
+      "src/providers/projectTreeProvider.ts",
+      "src/providers/viewerHtml.ts"
+    ],
+    "tests": [
+      "test/unit/activationControllers.test.ts",
+      "test/unit/contextRefreshPerf.test.ts",
+      "test/unit/exportCommands.test.ts",
+      "test/unit/viewerProviders.test.ts",
+      "test/unit/netlistViewProvider.test.ts",
+      "test/unit/projectTreeProvider.test.ts",
+      "test/unit/pathRegressionSuite.test.ts",
+      "test/unit/viewerHtml.test.ts",
+      "test/unit/diffViewerAssets.test.ts",
+      "test/security/securityRegression.test.ts"
+    ]
+  }
+}
