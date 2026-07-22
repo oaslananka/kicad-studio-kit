@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 1,
+  "description": "Blocking mutation-testing baseline for deterministic security, compatibility, trust, and assistant-tool boundary logic.",
+  "minimumScore": 96.3,
+  "scope": {
+    "mutate": [
+      "src/mcp/protocol/mcp2025ProtocolAdapter.ts",
+      "src/mcp/protocol/protocolAdapter.ts",
+      "src/mcp/protocol/protocolAdapterRegistry.ts",
+      "src/mcp/compat.ts",
+      "src/lm/toolCapabilityModes.ts",
+      "src/utils/workspaceTrust.ts",
+      "src/mcp/toolCallParser.ts"
+    ],
+    "testFiles": [
+      "test/unit/mcpProtocolAdapter.test.ts",
+      "test/unit/mcpCompat.test.ts",
+      "test/unit/toolCapabilityModes.test.ts",
+      "test/unit/workspaceTrust.test.ts",
+      "test/unit/toolCallParser.test.ts"
+    ],
+    "minimumMutants": 166,
+    "measuredTests": 27,
+    "measuredDurationSeconds": 93,
+    "ciBudgetMinutes": 10
+  },
+  "measured": {
+    "score": 96.3855,
+    "mutants": 166,
+    "killed": 160,
+    "timeout": 0,
+    "survived": 6,
+    "noCoverage": 0,
+    "errors": 0
+  },
+  "files": {
+    "src/lm/toolCapabilityModes.ts": {
+      "minimumScore": 80,
+      "minimumMutants": 20,
+      "measured": {
+        "score": 80.0,
+        "mutants": 20,
+        "killed": 16,
+        "timeout": 0,
+        "survived": 4,
+        "noCoverage": 0,
+        "errors": 0
+      }
+    },
+    "src/mcp/compat.ts": {
+      "minimumScore": 95,
+      "minimumMutants": 40,
+      "measured": {
+        "score": 95.0,
+        "mutants": 40,
+        "killed": 38,
+        "timeout": 0,
+        "survived": 2,
+        "noCoverage": 0,
+        "errors": 0
+      }
+    },
+    "src/mcp/protocol/mcp2025ProtocolAdapter.ts": {
+      "minimumScore": 100,
+      "minimumMutants": 28,
+      "measured": {
+        "score": 100.0,
+        "mutants": 28,
+        "killed": 28,
+        "timeout": 0,
+        "survived": 0,
+        "noCoverage": 0,
+        "errors": 0
+      }
+    },
+    "src/mcp/protocol/protocolAdapter.ts": {
+      "minimumScore": 100,
+      "minimumMutants": 4,
+      "measured": {
+        "score": 100.0,
+        "mutants": 4,
+        "killed": 4,
+        "timeout": 0,
+        "survived": 0,
+        "noCoverage": 0,
+        "errors": 0
+      }
+    },
+    "src/mcp/protocol/protocolAdapterRegistry.ts": {
+      "minimumScore": 100,
+      "minimumMutants": 10,
+      "measured": {
+        "score": 100.0,
+        "mutants": 10,
+        "killed": 10,
+        "timeout": 0,
+        "survived": 0,
+        "noCoverage": 0,
+        "errors": 0
+      }
+    },
+    "src/mcp/toolCallParser.ts": {
+      "minimumScore": 100,
+      "minimumMutants": 45,
+      "measured": {
+        "score": 100.0,
+        "mutants": 45,
+        "killed": 45,
+        "timeout": 0,
+        "survived": 0,
+        "noCoverage": 0,
+        "errors": 0
+      }
+    },
+    "src/utils/workspaceTrust.ts": {
+      "minimumScore": 100,
+      "minimumMutants": 19,
+      "measured": {
+        "score": 100.0,
+        "mutants": 19,
+        "killed": 19,
+        "timeout": 0,
+        "survived": 0,
+        "noCoverage": 0,
+        "errors": 0
+      }
+    }
+  },
+  "allowedSurvivors": [
+    {
+      "file": "src/lm/toolCapabilityModes.ts",
+      "id": "0",
+      "mutatorName": "ObjectLiteral",
+      "replacement": "{}",
+      "static": true,
+      "location": {
+        "end": {
+          "column": 2,
+          "line": 16
+        },
+        "start": {
+          "column": 66,
+          "line": 9
+        }
+      },
+      "classification": "static-initialization",
+      "reason": "Stryker marks this mutant static and reports no per-test coverage because Jest evaluates the exported constant during module initialization. Exact object and string values are asserted by test/unit/toolCapabilityModes.test.ts.",
+      "evidence": ["test/unit/toolCapabilityModes.test.ts"]
+    },
+    {
+      "file": "src/lm/toolCapabilityModes.ts",
+      "id": "1",
+      "mutatorName": "StringLiteral",
+      "replacement": "\"\"",
+      "static": true,
+      "location": {
+        "end": {
+          "column": 101,
+          "line": 11
+        },
+        "start": {
+          "column": 5,
+          "line": 11
+        }
+      },
+      "classification": "static-initialization",
+      "reason": "Stryker marks this mutant static and reports no per-test coverage because Jest evaluates the exported constant during module initialization. Exact object and string values are asserted by test/unit/toolCapabilityModes.test.ts.",
+      "evidence": ["test/unit/toolCapabilityModes.test.ts"]
+    },
+    {
+      "file": "src/lm/toolCapabilityModes.ts",
+      "id": "2",
+      "mutatorName": "StringLiteral",
+      "replacement": "\"\"",
+      "static": true,
+      "location": {
+        "end": {
+          "column": 125,
+          "line": 13
+        },
+        "start": {
+          "column": 5,
+          "line": 13
+        }
+      },
+      "classification": "static-initialization",
+      "reason": "Stryker marks this mutant static and reports no per-test coverage because Jest evaluates the exported constant during module initialization. Exact object and string values are asserted by test/unit/toolCapabilityModes.test.ts.",
+      "evidence": ["test/unit/toolCapabilityModes.test.ts"]
+    },
+    {
+      "file": "src/lm/toolCapabilityModes.ts",
+      "id": "3",
+      "mutatorName": "StringLiteral",
+      "replacement": "\"\"",
+      "static": true,
+      "location": {
+        "end": {
+          "column": 161,
+          "line": 15
+        },
+        "start": {
+          "column": 5,
+          "line": 15
+        }
+      },
+      "classification": "static-initialization",
+      "reason": "Stryker marks this mutant static and reports no per-test coverage because Jest evaluates the exported constant during module initialization. Exact object and string values are asserted by test/unit/toolCapabilityModes.test.ts.",
+      "evidence": ["test/unit/toolCapabilityModes.test.ts"]
+    },
+    {
+      "file": "src/mcp/compat.ts",
+      "id": "23",
+      "mutatorName": "ConditionalExpression",
+      "replacement": "false",
+      "static": false,
+      "location": {
+        "end": {
+          "column": 15,
+          "line": 11
+        },
+        "start": {
+          "column": 7,
+          "line": 11
+        }
+      },
+      "classification": "equivalent",
+      "reason": "Removing the explicit undefined guard is behaviorally equivalent because semver.coerce(undefined) returns null; normalization and user-facing descriptions are asserted by test/unit/mcpCompat.test.ts.",
+      "evidence": ["test/unit/mcpCompat.test.ts"]
+    },
+    {
+      "file": "src/mcp/compat.ts",
+      "id": "24",
+      "mutatorName": "BlockStatement",
+      "replacement": "{}",
+      "static": false,
+      "location": {
+        "end": {
+          "column": 4,
+          "line": 13
+        },
+        "start": {
+          "column": 17,
+          "line": 11
+        }
+      },
+      "classification": "equivalent",
+      "reason": "Removing the explicit undefined guard is behaviorally equivalent because semver.coerce(undefined) returns null; normalization and user-facing descriptions are asserted by test/unit/mcpCompat.test.ts.",
+      "evidence": ["test/unit/mcpCompat.test.ts"]
+    }
+  ],
+  "deferredExpensiveScope": {
+    "experiment": {
+      "mutateFiles": 11,
+      "testFiles": 9,
+      "tests": 55,
+      "mutants": 782,
+      "dryRunSeconds": 101,
+      "timeoutMinutes": 30,
+      "resultsEmittedBeforeTimeout": 310,
+      "outcome": "The combined scope exceeded the CI budget and projected roughly two hours, so large deterministic modules are split into future reviewed shards rather than silently excluded."
+    },
+    "files": [
+      {
+        "path": "src/cli/exportPresets.ts",
+        "owner": "CLI/export shard",
+        "reason": "Deferred from the first blocking shard after the 782-mutant combined experiment exceeded 30 minutes.",
+        "evidence": ["test/unit/exportPresets.test.ts"]
+      },
+      {
+        "path": "src/language/sExpressionParser.ts",
+        "owner": "Parser shard",
+        "reason": "Large parser surface dominated the combined mutation budget and requires a dedicated shard.",
+        "evidence": ["test/unit/sExpressionParser.test.ts"]
+      },
+      {
+        "path": "src/language/diagnosticsAggregator.ts",
+        "owner": "Diagnostics/state shard",
+        "reason": "Deferred to an isolated diagnostics shard so mutation runtime remains reviewable.",
+        "evidence": ["test/unit/diagnosticsAggregator.test.ts"]
+      },
+      {
+        "path": "src/utils/pathUtils.ts",
+        "owner": "Path normalization shard",
+        "reason": "Deferred to an isolated path-normalization shard after the combined experiment exceeded the CI budget.",
+        "evidence": ["test/unit/pathUtils.test.ts"]
+      }
+    ]
+  }
+}

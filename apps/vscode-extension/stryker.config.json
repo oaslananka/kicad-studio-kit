@@ -1,11 +1,35 @@
 {
   "packageManager": "pnpm",
-  "reporters": ["html", "clear-text", "progress"],
+  "reporters": ["html", "json", "clear-text", "progress"],
+  "jsonReporter": {
+    "fileName": "reports/mutation/mutation.json"
+  },
   "testRunner": "jest",
   "coverageAnalysis": "perTest",
+  "concurrency": 2,
+  "timeoutMS": 10000,
+  "dryRunTimeoutMinutes": 5,
+  "mutate": [
+    "src/mcp/protocol/mcp2025ProtocolAdapter.ts",
+    "src/mcp/protocol/protocolAdapter.ts",
+    "src/mcp/protocol/protocolAdapterRegistry.ts",
+    "src/mcp/compat.ts",
+    "src/lm/toolCapabilityModes.ts",
+    "src/utils/workspaceTrust.ts",
+    "src/mcp/toolCallParser.ts"
+  ],
+  "testFiles": [
+    "test/unit/mcpProtocolAdapter.test.ts",
+    "test/unit/mcpCompat.test.ts",
+    "test/unit/toolCapabilityModes.test.ts",
+    "test/unit/workspaceTrust.test.ts",
+    "test/unit/toolCallParser.test.ts"
+  ],
   "thresholds": {
-    "high": 80,
-    "low": 60,
-    "break": 0
-  }
+    "high": 97,
+    "low": 96.3,
+    "break": 96.3
+  },
+  "plugins": ["@stryker-mutator/jest-runner"],
+  "cleanTempDir": "always"
 }

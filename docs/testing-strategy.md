@@ -10,20 +10,21 @@ notes can add detail, but they should not weaken these gates.
 
 ## Gate Summary
 
-| Gate               | Trigger                                                              | Purpose                                                                                                              | Required command                                                                                |
-| ------------------ | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Fast PR gate       | Every pull request                                                   | Catch formatting, lint, type, unit, package, metadata, boundary, and compatibility regressions.                      | `corepack pnpm run check`                                                                       |
-| Bug-fix regression | Every bug-fix pull request                                           | Prove the repeatable bug fails before the fix, passes after it, and references the issue.                            | Relevant test command plus PR checklist evidence                                                |
-| Performance budget | Product, integration, and shared fixture/schema pull requests        | Report shared baseline drift and fail measured lanes that exceed the regression budget.                              | `corepack pnpm run check:performance-budgets`                                                   |
-| Product gate       | Product-scoped changes                                               | Prove the touched product still builds, tests, and packages independently.                                           | Product commands below                                                                          |
-| Accessibility gate | Extension-owned UI and webview changes                               | Prove WCAG 2.1 AA automated checks remain clean for in-scope extension surfaces.                                     | `corepack pnpm --filter kicadstudiokit run test:a11y`                                           |
-| Contract gate      | Protocol, compatibility, or cross-product changes                    | Prove extension and MCP assumptions remain aligned.                                                                  | `corepack pnpm run check:protocol-schemas` and `corepack pnpm run check:compatibility-contract` |
-| Protocol PR gate   | Protocol, compatibility, or cross-product review changes             | Keep protocol-impact PRs visible through the PR template and architecture guidance.                                  | `corepack pnpm run check:protocol-pr-template`                                                  |
-| GUI smoke policy   | Real KiCad GUI smoke workflow/test wiring changes                    | Keep live-editor IPC smoke coverage wired without adding GUI work to the PR path.                                    | `corepack pnpm run check:kicad-gui-smoke`                                                       |
-| Fixture gate       | Parser, diagnostics, command-builder, or KiCad file behavior changes | Prove deterministic KiCad corpus behavior stays stable.                                                              | `corepack pnpm run test:fixtures`                                                               |
-| VS Code canary     | Scheduled and manual workflow                                        | Check supported VS Code host lanes before runtime/API changes reach users.                                           | `.github/workflows/vscode-canary.yml`                                                           |
-| Cross-repo canary  | Push, pull request, and manual workflow                              | Verify this repository consumes published `@oaslananka/kicad-protocol-schemas` and `kicad-mcp-pro` server artifacts. | `.github/workflows/cross-repo-compatibility.yml`                                                |
-| Manual smoke       | Release candidate only                                               | Final human inspection where automation is not practical.                                                            | PR notes must name the exact manual check                                                       |
+| Gate               | Trigger                                                              | Purpose                                                                                                                 | Required command                                                                                |
+| ------------------ | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Fast PR gate       | Every pull request                                                   | Catch formatting, lint, type, unit, package, metadata, boundary, and compatibility regressions.                         | `corepack pnpm run check`                                                                       |
+| Bug-fix regression | Every bug-fix pull request                                           | Prove the repeatable bug fails before the fix, passes after it, and references the issue.                               | Relevant test command plus PR checklist evidence                                                |
+| Performance budget | Product, integration, and shared fixture/schema pull requests        | Report shared baseline drift and fail measured lanes that exceed the regression budget.                                 | `corepack pnpm run check:performance-budgets`                                                   |
+| Mutation baseline  | Extension compatibility, trust, protocol, and assistant-tool changes | Kill behavioral mutants and reject scope shrinkage, new survivors, no-coverage mutants, timeouts, or score regressions. | `corepack pnpm --filter kicadstudiokit run test:mutation`                                       |
+| Product gate       | Product-scoped changes                                               | Prove the touched product still builds, tests, and packages independently.                                              | Product commands below                                                                          |
+| Accessibility gate | Extension-owned UI and webview changes                               | Prove WCAG 2.1 AA automated checks remain clean for in-scope extension surfaces.                                        | `corepack pnpm --filter kicadstudiokit run test:a11y`                                           |
+| Contract gate      | Protocol, compatibility, or cross-product changes                    | Prove extension and MCP assumptions remain aligned.                                                                     | `corepack pnpm run check:protocol-schemas` and `corepack pnpm run check:compatibility-contract` |
+| Protocol PR gate   | Protocol, compatibility, or cross-product review changes             | Keep protocol-impact PRs visible through the PR template and architecture guidance.                                     | `corepack pnpm run check:protocol-pr-template`                                                  |
+| GUI smoke policy   | Real KiCad GUI smoke workflow/test wiring changes                    | Keep live-editor IPC smoke coverage wired without adding GUI work to the PR path.                                       | `corepack pnpm run check:kicad-gui-smoke`                                                       |
+| Fixture gate       | Parser, diagnostics, command-builder, or KiCad file behavior changes | Prove deterministic KiCad corpus behavior stays stable.                                                                 | `corepack pnpm run test:fixtures`                                                               |
+| VS Code canary     | Scheduled and manual workflow                                        | Check supported VS Code host lanes before runtime/API changes reach users.                                              | `.github/workflows/vscode-canary.yml`                                                           |
+| Cross-repo canary  | Push, pull request, and manual workflow                              | Verify this repository consumes published `@oaslananka/kicad-protocol-schemas` and `kicad-mcp-pro` server artifacts.    | `.github/workflows/cross-repo-compatibility.yml`                                                |
+| Manual smoke       | Release candidate only                                               | Final human inspection where automation is not practical.                                                               | PR notes must name the exact manual check                                                       |
 
 ## Coverage and Mutation Thresholds
 
@@ -72,11 +73,43 @@ current uncovered count observed across the pinned validation host and GitHub's
 Ubuntu runner, preventing platform-specific instrumentation variance from
 creating a false regression while still blocking any larger uncovered surface.
 
-Mutation testing is configured in `stryker.config.json` (Jest runner, `perTest`
-analysis, thresholds high 80 / low 60). It currently runs with `break: 0` so it
-never fails the build. Issue #496 owns the next mutation-baseline step and should
-reuse the same critical-module ownership map rather than adding a competing
-scope.
+### Blocking Mutation Baseline
+
+Mutation testing is configured in `apps/vscode-extension/stryker.config.json`
+with the Jest runner, `perTest` coverage analysis, explicit pnpm plugin loading,
+and two deterministic workers. `apps/vscode-extension/mutation-baseline.json`
+owns the reviewed scope, module baselines, survivor fingerprints, and CI budget.
+
+The first blocking shard covers seven compatibility, protocol, workspace-trust,
+tool-capability, and MCP tool-call parsing modules. Its accepted measurement is
+166 mutants, 160 killed, six documented survivors, zero timeout/no-coverage/error
+results, and a 96.3855% score. Stryker's `thresholds.break` is **96.3%**. The CI
+policy adds stronger ratchets: every module has a minimum score and mutant count,
+and any survivor not listed in the manifest fails even when the overall score
+would remain above the threshold. The aggregate `required` job depends on the
+mutation job, so a regression blocks merge and release readiness.
+
+Four survivors are static initialization mutants for exact capability-description
+constants. Stryker marks them `static: true` and cannot attribute them to a test
+after Jest has loaded the module; exact values remain asserted by unit tests. Two
+compatibility survivors are equivalent: removing the explicit undefined guard has
+the same result because `semver.coerce(undefined)` returns `null`. These exceptions
+are fingerprinted with reason and evidence; a new or stale exception fails policy.
+
+A broader experiment across 11 modules produced 782 mutants and emitted only 310
+results before a 30-minute timeout, with roughly two hours projected. Large parser,
+export, diagnostics, and path-normalization modules are therefore recorded as
+**deferred expensive shards** rather than silently excluded. Add them in separate
+reviewed shards without lowering the current baseline or exceeding the declared
+10-minute CI budget.
+
+Run and validate the baseline with:
+
+```bash
+corepack pnpm --filter kicadstudiokit run check:mutation-policy
+corepack pnpm --filter kicadstudiokit run test:mutation
+corepack pnpm --filter kicadstudiokit run mutation:summary
+```
 
 ### Codecov observability
 
@@ -398,22 +431,23 @@ right layer instead of relying on manual screenshots or ad-hoc verification.
 Use the narrowest command first while developing, then run the broader gate
 before pushing.
 
-| Change type                    | Narrow command                                                       | Broad command                          |
-| ------------------------------ | -------------------------------------------------------------------- | -------------------------------------- |
-| Root docs or governance        | `corepack pnpm run check:testing-strategy`                           | `corepack pnpm run check`              |
-| Performance baselines          | `corepack pnpm run check:performance-budgets`                        | CI `performance-budgets` artifact lane |
-| Extension unit behavior        | `corepack pnpm --filter kicadstudiokit run test:unit -- <test file>` | `corepack pnpm run check:kicad-studio` |
-| Extension accessibility        | `corepack pnpm --filter kicadstudiokit run test:a11y`                | `corepack pnpm run check:kicad-studio` |
-| Extension integration behavior | `corepack pnpm --filter kicadstudiokit run test:integration`         | `corepack pnpm run check:kicad-studio` |
-| Extension webview/E2E behavior | `corepack pnpm --filter kicadstudiokit run test:e2e`                 | `corepack pnpm run check:kicad-studio` |
-| Extension visual snapshots     | `corepack pnpm --filter kicadstudiokit run test:visual`              | Windows PR lane for committed goldens  |
-| MCP unit behavior              | See [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)     | Run from the KiCad MCP Pro repository  |
-| MCP full behavior              | See [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)     | Run from the KiCad MCP Pro repository  |
-| Protocol or compatibility      | `corepack pnpm run check:protocol-schemas`                           | `corepack pnpm run check`              |
-| Protocol PR checklist          | `corepack pnpm run check:protocol-pr-template`                       | `corepack pnpm run check`              |
-| KiCad GUI smoke wiring         | `corepack pnpm run check:kicad-gui-smoke`                            | `corepack pnpm run check`              |
-| Real KiCad GUI smoke           | See [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)     | Run from the KiCad MCP Pro repository  |
-| Fixtures                       | `corepack pnpm run test:fixtures`                                    | `corepack pnpm run check`              |
+| Change type                    | Narrow command                                                       | Broad command                                             |
+| ------------------------------ | -------------------------------------------------------------------- | --------------------------------------------------------- |
+| Root docs or governance        | `corepack pnpm run check:testing-strategy`                           | `corepack pnpm run check`                                 |
+| Performance baselines          | `corepack pnpm run check:performance-budgets`                        | CI `performance-budgets` artifact lane                    |
+| Mutation policy/baseline       | `corepack pnpm --filter kicadstudiokit run check:mutation-policy`    | `corepack pnpm --filter kicadstudiokit run test:mutation` |
+| Extension unit behavior        | `corepack pnpm --filter kicadstudiokit run test:unit -- <test file>` | `corepack pnpm run check:kicad-studio`                    |
+| Extension accessibility        | `corepack pnpm --filter kicadstudiokit run test:a11y`                | `corepack pnpm run check:kicad-studio`                    |
+| Extension integration behavior | `corepack pnpm --filter kicadstudiokit run test:integration`         | `corepack pnpm run check:kicad-studio`                    |
+| Extension webview/E2E behavior | `corepack pnpm --filter kicadstudiokit run test:e2e`                 | `corepack pnpm run check:kicad-studio`                    |
+| Extension visual snapshots     | `corepack pnpm --filter kicadstudiokit run test:visual`              | Windows PR lane for committed goldens                     |
+| MCP unit behavior              | See [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)     | Run from the KiCad MCP Pro repository                     |
+| MCP full behavior              | See [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)     | Run from the KiCad MCP Pro repository                     |
+| Protocol or compatibility      | `corepack pnpm run check:protocol-schemas`                           | `corepack pnpm run check`                                 |
+| Protocol PR checklist          | `corepack pnpm run check:protocol-pr-template`                       | `corepack pnpm run check`                                 |
+| KiCad GUI smoke wiring         | `corepack pnpm run check:kicad-gui-smoke`                            | `corepack pnpm run check`                                 |
+| Real KiCad GUI smoke           | See [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)     | Run from the KiCad MCP Pro repository                     |
+| Fixtures                       | `corepack pnpm run test:fixtures`                                    | `corepack pnpm run check`                                 |
 
 ## KiCad Fixture Corpus
 

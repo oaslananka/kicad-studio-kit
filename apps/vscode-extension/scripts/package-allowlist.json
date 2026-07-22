@@ -96,6 +96,7 @@
     "jest.config.js",
     "stryker.config.json",
     "release-please-config.json",
-    ".release-please-manifest.json"
+    ".release-please-manifest.json",
+    "mutation-baseline.json"
   ]
 }

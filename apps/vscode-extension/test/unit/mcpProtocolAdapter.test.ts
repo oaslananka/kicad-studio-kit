@@ -39,6 +39,18 @@ describe('MCP protocol adapter boundary (#492)', () => {
     }
   });
 
+  it('formats unsupported-version diagnostics for multiple supported adapters', () => {
+    const error = new UnsupportedMcpProtocolVersionError('draft', [
+      '2025-11-25',
+      '2026-07-28'
+    ]);
+
+    expect(error.message).toBe(
+      'Unsupported MCP protocol version draft. Supported versions: 2025-11-25, 2026-07-28.'
+    );
+    expect(error.name).toBe('UnsupportedMcpProtocolVersionError');
+  });
+
   it('builds the exact 2025 initialize discovery request (#492)', () => {
     const adapter = resolveMcpProtocolAdapter('2025-11-25');
 
@@ -131,7 +143,14 @@ describe('MCP protocol adapter boundary (#492)', () => {
       capabilities: {}
     };
 
+    expect(() => adapter.validateDiscoveryResult(undefined)).not.toThrow();
     expect(() => adapter.validateDiscoveryResult(legacyResult)).not.toThrow();
+    expect(() =>
+      adapter.validateDiscoveryResult({
+        ...legacyResult,
+        protocolVersion: '2025-11-25'
+      })
+    ).not.toThrow();
     expect(() =>
       adapter.validateDiscoveryResult({
         ...legacyResult,
@@ -151,6 +170,10 @@ describe('MCP protocol adapter boundary (#492)', () => {
         receivedVersion: '2026-07-28',
         hint: expect.stringContaining('matching protocol adapter')
       });
+      expect((error as Error).name).toBe('McpProtocolVersionMismatchError');
+      expect((error as Error).message).toBe(
+        'MCP protocol version mismatch: expected 2025-11-25, received 2026-07-28.'
+      );
     }
   });
 

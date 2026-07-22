@@ -44,6 +44,13 @@ pnpm run coverage:inventory
 
 # Block newly uncovered behavior in critical excluded modules
 pnpm run test:coverage:ratchet
+
+# Validate the mutation scope and documented survivor policy
+pnpm run check:mutation-policy
+
+# Run the blocking mutation baseline and render its summary
+pnpm run test:mutation
+pnpm run mutation:summary
 ```
 
 ## CI Behavior
@@ -64,7 +71,7 @@ pnpm run test:coverage:ratchet
   `coverage/coverage-scope.md`, and enforces the critical-module coverage
   ratchet separately. The ratchet freezes the maximum current uncovered count
   observed across the pinned validation host and GitHub Ubuntu runner.
-- Mutation score is tracked weekly; see Actions tab.
+- The 96.3% mutation baseline is required on extension changes and is also rerun weekly. CI publishes JSON, HTML, and Markdown evidence; undocumented survivors, scope shrinkage, timeouts, no-coverage mutants, or module-score regressions fail closed.
 
 ## VS Code Extension Test Constraints
 

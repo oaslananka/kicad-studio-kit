@@ -48,5 +48,6 @@ eslint.config.cjs
 jest.config.js
 renovate.json
 stryker.config.json
+mutation-baseline.json
 coverage-scope.json
 jest.coverage-ratchet.config.js

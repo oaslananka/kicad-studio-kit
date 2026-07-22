@@ -1,5 +1,6 @@
 import {
   MCP_COMPAT,
+  describeMcpCompatibility,
   getMcpCompatStatus,
   isMcpVersionSupported,
   normalizeMcpVersion
@@ -26,5 +27,32 @@ describe('MCP compatibility helpers', () => {
     expect(getMcpCompatStatus(undefined)).toBe('incompatible');
     expect(isMcpVersionSupported('3.5.2')).toBe(true);
     expect(isMcpVersionSupported('4.0.0')).toBe(false);
+  });
+
+  it('describes unknown, incompatible, warning, and supported versions', () => {
+    expect(describeMcpCompatibility(undefined)).toBe(
+      `Unable to determine kicad-mcp-pro version. Required range: ${MCP_COMPAT.required}.`
+    );
+    expect(describeMcpCompatibility('not-a-version')).toBe(
+      `Unable to determine kicad-mcp-pro version. Required range: ${MCP_COMPAT.required}.`
+    );
+    expect(describeMcpCompatibility('3.5.1')).toBe(
+      `kicad-mcp-pro 3.5.1 is outside the required range ${MCP_COMPAT.required}.`
+    );
+    expect(describeMcpCompatibility('3.9.2')).toBe(
+      'kicad-mcp-pro 3.9.2 is supported.'
+    );
+
+    const mutableCompat = MCP_COMPAT as { recommended: string };
+    const originalRecommended = mutableCompat.recommended;
+    try {
+      mutableCompat.recommended = '>=3.6.0 <4.0.0';
+      expect(getMcpCompatStatus('3.5.2')).toBe('warn');
+      expect(describeMcpCompatibility('3.5.2')).toBe(
+        'kicad-mcp-pro 3.5.2 satisfies the required range but is older than >=3.6.0 <4.0.0.'
+      );
+    } finally {
+      mutableCompat.recommended = originalRecommended;
+    }
   });
 });
