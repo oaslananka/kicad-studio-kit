@@ -15,6 +15,7 @@ Every PR should satisfy the following before merge:
 - Compatibility metadata is updated when supported versions, MCP schema, or feature gates change.
 - Release notes are updated or explicitly marked not required.
 - Sensitive data is not logged, committed, or added to artifacts.
+- Review evidence follows the [review evidence policy](review-evidence-policy.md); every bot/agent artifact is triaged and unavailable medium/high-risk review has compensating evidence.
 
 ## Applicability by change type
 
@@ -23,13 +24,13 @@ change type must address. A maintainer may waive any item, but a waived or
 not-applicable item must carry an explicit one-line justification in the PR (see
 [Not-applicable items](#not-applicable-items)).
 
-| Change type | Tests | Docs | Compatibility | Release notes | Security/trust |
-| --- | --- | --- | --- | --- | --- |
-| Feature | unit + integration/e2e for user-visible flows | yes | if it changes a supported surface | if user-visible | review trust/guard impact |
-| Refactor | preserve coverage; add tests for new seams | only if behavior/structure docs change | no behavior change expected | usually not required | review if security-relevant code moved |
-| Bug fix | regression test (fails before, passes after) | if the fix changes documented behavior | if a compatibility boundary changed | if user-visible | review if the bug was a security/trust gap |
-| Docs-only | not applicable | the change itself | no | no | not applicable |
-| Release engineering | gate/script tests | release/runbook docs | release gate result | release note | review workflow permissions and secrets |
+| Change type         | Tests                                         | Docs                                   | Compatibility                       | Release notes        | Security/trust                             |
+| ------------------- | --------------------------------------------- | -------------------------------------- | ----------------------------------- | -------------------- | ------------------------------------------ |
+| Feature             | unit + integration/e2e for user-visible flows | yes                                    | if it changes a supported surface   | if user-visible      | review trust/guard impact                  |
+| Refactor            | preserve coverage; add tests for new seams    | only if behavior/structure docs change | no behavior change expected         | usually not required | review if security-relevant code moved     |
+| Bug fix             | regression test (fails before, passes after)  | if the fix changes documented behavior | if a compatibility boundary changed | if user-visible      | review if the bug was a security/trust gap |
+| Docs-only           | not applicable                                | the change itself                      | no                                  | no                   | not applicable                             |
+| Release engineering | gate/script tests                             | release/runbook docs                   | release gate result                 | release note         | review workflow permissions and secrets    |
 
 ## Not-applicable items
 

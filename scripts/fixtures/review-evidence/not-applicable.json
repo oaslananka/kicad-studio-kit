@@ -1,0 +1,16 @@
+{
+  "name": "automated review not applicable",
+  "source": "historical-sanitized",
+  "applicable": false,
+  "requested": false,
+  "risk": "low",
+  "declaredOutcome": "not-applicable",
+  "notApplicableReason": "Generated documentation metadata only; no executable or policy behavior changed.",
+  "artifacts": [],
+  "triage": [],
+  "compensatingEvidence": [],
+  "expected": {
+    "outcome": "not-applicable",
+    "valid": true
+  }
+}

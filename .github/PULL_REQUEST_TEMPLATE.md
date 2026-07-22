@@ -57,6 +57,41 @@ Checklist reference: `docs/architecture/protocol-change-checklist.md`
 - [ ] No publish workflow was triggered
 - [ ] No secrets were printed or changed
 
+## Review evidence
+
+An availability, quota, rate-limit, or capacity notice is not a completed review.
+
+Select exactly one automated-review outcome:
+
+- [ ] Completed with findings; every finding is triaged below
+- [ ] Completed with no findings
+- [ ] Unavailable; compensating evidence recorded below
+- [ ] Not applicable; reason:
+
+Select exactly one change risk:
+
+- [ ] Low
+- [ ] Medium
+- [ ] High
+
+Bot and agent triage:
+
+- [ ] Every bot and agent comment is classified as actionable, resolved, informational, duplicate, or unavailable
+- [ ] No actionable finding remains unresolved
+- [ ] Unavailable notices are recorded as unavailable, not completed review
+
+Compensating evidence (required when automated review is unavailable for medium/high-risk changes):
+
+- [ ] Focused second-agent review
+- [ ] Architecture/security checklist
+- [ ] Additional regression tests
+- [ ] Documented manual review
+- [ ] Not required because review completed, was not applicable, or change risk is low
+
+Evidence links/notes:
+
+<!-- Link review comments, checklists, tests, or the final-head manual review record. -->
+
 ## Checklist
 
 - [ ] Tests pass locally

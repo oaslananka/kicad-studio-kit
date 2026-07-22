@@ -1,0 +1,41 @@
+{
+  "name": "completed automated review with resolved findings",
+  "source": "historical-sanitized",
+  "applicable": true,
+  "requested": true,
+  "risk": "high",
+  "declaredOutcome": "completed-findings",
+  "artifacts": [
+    {
+      "id": "agent-review-1",
+      "actorType": "agent",
+      "kind": "review",
+      "state": "CHANGES_REQUESTED",
+      "findingsCount": 2,
+      "body": "Automated review completed with two findings."
+    },
+    {
+      "id": "scanner-comment-1",
+      "actorType": "bot",
+      "kind": "comment",
+      "body": "Quality gate passed after the findings were fixed."
+    }
+  ],
+  "triage": [
+    {
+      "artifactId": "agent-review-1",
+      "classification": "resolved",
+      "resolution": "Both findings were fixed and verified by regression tests."
+    },
+    {
+      "artifactId": "scanner-comment-1",
+      "classification": "informational",
+      "resolution": "No action required."
+    }
+  ],
+  "compensatingEvidence": [],
+  "expected": {
+    "outcome": "completed-findings",
+    "valid": true
+  }
+}

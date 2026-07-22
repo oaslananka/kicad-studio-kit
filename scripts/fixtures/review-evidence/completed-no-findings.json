@@ -1,0 +1,30 @@
+{
+  "name": "completed automated review with no findings",
+  "source": "historical-sanitized",
+  "applicable": true,
+  "requested": true,
+  "risk": "medium",
+  "declaredOutcome": "completed-no-findings",
+  "artifacts": [
+    {
+      "id": "agent-review-2",
+      "actorType": "agent",
+      "kind": "review",
+      "state": "APPROVED",
+      "findingsCount": 0,
+      "body": "Automated review completed. No findings."
+    }
+  ],
+  "triage": [
+    {
+      "artifactId": "agent-review-2",
+      "classification": "informational",
+      "resolution": "Review completed without findings."
+    }
+  ],
+  "compensatingEvidence": [],
+  "expected": {
+    "outcome": "completed-no-findings",
+    "valid": true
+  }
+}

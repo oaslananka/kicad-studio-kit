@@ -1,0 +1,29 @@
+{
+  "name": "unavailable automated review without required compensation",
+  "source": "historical-sanitized",
+  "applicable": true,
+  "requested": true,
+  "risk": "high",
+  "declaredOutcome": "unavailable",
+  "artifacts": [
+    {
+      "id": "agent-capacity-2",
+      "actorType": "agent",
+      "kind": "comment",
+      "body": "The review service is at capacity. Try again later; no review was performed."
+    }
+  ],
+  "triage": [
+    {
+      "artifactId": "agent-capacity-2",
+      "classification": "unavailable",
+      "resolution": "Capacity notice only."
+    }
+  ],
+  "compensatingEvidence": [],
+  "expected": {
+    "outcome": "unavailable",
+    "valid": false,
+    "errorIncludes": "compensating review evidence"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "requested review with no outcome",
+  "source": "historical-sanitized",
+  "applicable": true,
+  "requested": true,
+  "risk": "medium",
+  "declaredOutcome": "missing",
+  "artifacts": [],
+  "triage": [],
+  "compensatingEvidence": [],
+  "expected": {
+    "outcome": "missing",
+    "valid": false,
+    "errorIncludes": "review outcome is missing"
+  }
+}

@@ -15,6 +15,7 @@ server is developed and released separately in
 - [Branch protection](branch-protection.md)
 - [Definition of done](definition-of-done.md)
 - [Protocol change checklist](protocol-change-checklist.md)
+- [Review evidence policy](review-evidence-policy.md)
 - [Governance board model](governance-board.md)
 - [M0 completion audit](m0-completion-audit.md)
 - [Testing strategy](testing-strategy.md)
