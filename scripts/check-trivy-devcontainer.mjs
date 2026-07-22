@@ -26,6 +26,12 @@ function includesAll(source, snippets) {
   return snippets.every((snippet) => source.includes(snippet));
 }
 
+function addErrorWhen(errors, condition, message) {
+  if (condition) {
+    errors.push(message);
+  }
+}
+
 export function validateTrivyDevcontainerPolicy(root = REPO_ROOT) {
   const errors = [];
   const workflow = readText(root, ".github/workflows/security.yml");
@@ -109,11 +115,20 @@ export function validateTrivyDevcontainerPolicy(root = REPO_ROOT) {
     );
   }
 
-  if (/scanners:\s*[^\n]*(?:vuln|secret|license)/iu.test(workflow)) {
-    errors.push(
-      "Trivy must not duplicate vulnerability, dependency, license, or secret scanning",
+  const duplicateScannerOwnership = workflow.split(/\r?\n/u).some((line) => {
+    const normalized = line.toLowerCase();
+    return (
+      normalized.includes("scanners:") &&
+      ["vuln", "secret", "license"].some((scanner) =>
+        normalized.includes(scanner),
+      )
     );
-  }
+  });
+  addErrorWhen(
+    errors,
+    duplicateScannerOwnership,
+    "Trivy must not duplicate vulnerability, dependency, license, or secret scanning",
+  );
 
   const localCommand = packageJson.scripts?.["security:trivy-devcontainer"];
   if (
@@ -171,7 +186,7 @@ export function validateTrivyDevcontainerPolicy(root = REPO_ROOT) {
   const customManagers = Array.isArray(renovate.customManagers)
     ? renovate.customManagers
     : [];
-  const trivyManager = customManagers.find(
+  const hasTrivyManager = customManagers.some(
     (manager) =>
       manager?.customType === "regex" &&
       JSON.stringify(manager).includes("aquasecurity/trivy") &&
@@ -180,7 +195,7 @@ export function validateTrivyDevcontainerPolicy(root = REPO_ROOT) {
   if (
     !Array.isArray(renovate.enabledManagers) ||
     !renovate.enabledManagers.includes("custom.regex") ||
-    !trivyManager
+    !hasTrivyManager
   ) {
     errors.push(
       "Renovate must own the explicit Trivy scanner version through a custom regex manager",
