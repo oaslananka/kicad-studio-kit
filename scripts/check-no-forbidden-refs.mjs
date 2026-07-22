@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
-const root = process.cwd();
 const ignoredDirs = new Set([
   ".git",
   "node_modules",
@@ -67,6 +67,14 @@ const patterns = rawPatterns.map((pattern) => [
 ]);
 const visualStudioHostPattern =
   /(?:^|[^A-Za-z0-9.-])([A-Za-z0-9.-]*visualstudio\.com)(?=[^A-Za-z0-9.-]|$)/gi;
+const allowedDependabotFiles = new Set([
+  "docs/dependency-lifecycle.md",
+  "docs/security.md",
+  "docs/superpowers/plans/2026-07-21-dependabot-security-targets.md",
+  "package.json",
+  "scripts/check-dependabot-policy.mjs",
+  "scripts/check-dependabot-policy.test.mjs",
+]);
 
 function isOfficialVscodeHostHit(line) {
   const hosts = [...line.matchAll(visualStudioHostPattern)].map((match) =>
@@ -83,64 +91,76 @@ function isOfficialVscodeHostHit(line) {
   );
 }
 
-function isAllowedHit(label, line) {
+function isAllowedHit(label, line, relativePath) {
   return (
     (label === "(?<![@.])oaslananka/kicad-mcp-pro" &&
       line.includes("ghcr.io/oaslananka/kicad-mcp-pro")) ||
-    (label === "visualstudio.com" && isOfficialVscodeHostHit(line))
+    (label === "visualstudio.com" && isOfficialVscodeHostHit(line)) ||
+    (label === "dependabot" && allowedDependabotFiles.has(relativePath))
   );
 }
 
-function shouldSkip(file) {
-  const rel = path.relative(root, file).replaceAll("\\", "/");
-  const parts = rel.split("/");
+function shouldSkip(root, file) {
+  const relativePath = path.relative(root, file).replaceAll("\\", "/");
+  const parts = relativePath.split("/");
   if (parts.some((part) => ignoredDirs.has(part))) return true;
   if (ignoredFiles.has(path.basename(file))) return true;
   if (ignoredExts.has(path.extname(file).toLowerCase())) return true;
-  if (rel === "scripts/check-no-forbidden-refs.mjs") return true;
-  if (rel === ".github/dependabot.yml") return true;
+  if (relativePath === "scripts/check-no-forbidden-refs.mjs") return true;
+  if (relativePath === ".github/dependabot.yml") return true;
   return false;
 }
 
-function* walk(dir) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (shouldSkip(full)) continue;
-    if (entry.isDirectory()) yield* walk(full);
-    else if (entry.isFile()) yield full;
+function* walk(root, directory) {
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const fullPath = path.join(directory, entry.name);
+    if (shouldSkip(root, fullPath)) continue;
+    if (entry.isDirectory()) yield* walk(root, fullPath);
+    else if (entry.isFile()) yield fullPath;
   }
 }
 
-const hits = [];
-for (const file of walk(root)) {
-  let text;
-  try {
-    text = fs.readFileSync(file, "utf8");
-  } catch {
-    continue;
-  }
-  const lines = text.split(/\r?\n/);
-  lines.forEach((line, index) => {
-    for (const [label, regex] of patterns) {
-      if (regex.test(line) && !isAllowedHit(label, line)) {
-        hits.push({
-          file: path.relative(root, file).replaceAll("\\", "/"),
-          line: index + 1,
-          pattern: label,
-          snippet: line.trim().slice(0, 180),
-        });
-      }
+export function scanForbiddenReferences(rootDir = process.cwd()) {
+  const root = path.resolve(rootDir);
+  const hits = [];
+  for (const file of walk(root, root)) {
+    let text;
+    try {
+      text = fs.readFileSync(file, "utf8");
+    } catch {
+      continue;
     }
-  });
-}
-
-if (hits.length > 0) {
-  for (const hit of hits) {
-    console.error(
-      `${hit.file}:${hit.line}: forbidden reference ${hit.pattern}: ${hit.snippet}`,
-    );
+    const relativePath = path.relative(root, file).replaceAll("\\", "/");
+    const lines = text.split(/\r?\n/u);
+    lines.forEach((line, index) => {
+      for (const [label, regex] of patterns) {
+        if (regex.test(line) && !isAllowedHit(label, line, relativePath)) {
+          hits.push({
+            file: relativePath,
+            line: index + 1,
+            pattern: label,
+            snippet: line.trim().slice(0, 180),
+          });
+        }
+      }
+    });
   }
-  process.exit(1);
+  return hits;
 }
 
-console.log("No forbidden repository references found.");
+function main() {
+  const hits = scanForbiddenReferences();
+  if (hits.length > 0) {
+    for (const hit of hits) {
+      console.error(
+        `${hit.file}:${hit.line}: forbidden reference ${hit.pattern}: ${hit.snippet}`,
+      );
+    }
+    process.exit(1);
+  }
+  console.log("No forbidden repository references found.");
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}

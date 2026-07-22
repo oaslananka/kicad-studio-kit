@@ -6,7 +6,7 @@ This runbook defines how dependency update PRs are created, triaged, labeled, te
 
 Renovate is the only normal version-update PR author for this repository. It owns scheduled updates for npm, Python project metadata, GitHub Actions, Dockerfiles, and lockfile maintenance.
 
-GitHub's dependency graph and security alert service should remain enabled in repository settings. Renovate consumes those alerts through its `vulnerabilityAlerts` configuration and raises vulnerability-fix PRs immediately when a fix is available. Do not add a second scheduled update config file for the GitHub-native updater unless the forbidden-reference policy is changed first; that would duplicate update PRs and reintroduce noisy alert surfaces.
+GitHub's dependency graph and security alert service remain enabled. Dependabot is security-only for the active root npm and GitHub Actions surfaces; `.github/dependabot.yml` uses `open-pull-requests-limit: 0`, so it can customize native security-fix pull requests without becoming a second routine version-update author. Renovate remains the normal version-update authority and also consumes vulnerability alerts for immediate lowest-patched fixes. The MCP server moved to KiCad MCP Pro, so this repository must never restore the retired `/packages/mcp-server` uv target.
 
 ## Update lanes
 
