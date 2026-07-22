@@ -1,0 +1,37 @@
+{
+  "name": "no automated reviewer available with compensating evidence",
+  "source": "historical-sanitized",
+  "applicable": true,
+  "requested": true,
+  "risk": "medium",
+  "declaredOutcome": "unavailable",
+  "reviewAvailability": {
+    "status": "unavailable",
+    "reason": "No automated agent reviewer is configured or available to submit a final-head review."
+  },
+  "artifacts": [
+    {
+      "id": "specialist-scan-1",
+      "actorType": "bot",
+      "kind": "comment",
+      "body": "Specialist security scan completed with no findings."
+    }
+  ],
+  "triage": [
+    {
+      "artifactId": "specialist-scan-1",
+      "classification": "informational",
+      "resolution": "Specialist scan passed but does not satisfy automated code review."
+    }
+  ],
+  "compensatingEvidence": [
+    {
+      "type": "documented-manual-review",
+      "reference": "PR comment: final-head manual review and full scanner triage"
+    }
+  ],
+  "expected": {
+    "outcome": "unavailable",
+    "valid": true
+  }
+}

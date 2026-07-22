@@ -82,6 +82,15 @@ function isAutomatedReviewerArtifact(artifact) {
   );
 }
 
+function hasExplicitUnavailableRecord(input) {
+  const record = input?.reviewAvailability;
+  return (
+    record?.status === "unavailable" &&
+    typeof record?.reason === "string" &&
+    record.reason.trim().length > 0
+  );
+}
+
 export function classifyReviewArtifacts(input) {
   if (input?.applicable === false) {
     return "not-applicable";
@@ -96,7 +105,10 @@ export function classifyReviewArtifacts(input) {
   if (artifacts.some(isCompletedWithNoFindings)) {
     return "completed-no-findings";
   }
-  if (artifacts.some(isUnavailableReviewArtifact)) {
+  if (
+    artifacts.some(isUnavailableReviewArtifact) ||
+    hasExplicitUnavailableRecord(input)
+  ) {
     return "unavailable";
   }
   return "missing";
@@ -106,6 +118,28 @@ function pushWhenInvalid(errors, condition, message) {
   if (!condition) {
     errors.push(message);
   }
+}
+
+function validateReviewAvailability(input, errors) {
+  const record = input?.reviewAvailability;
+  if (record === undefined) {
+    return;
+  }
+  pushWhenInvalid(
+    errors,
+    record?.status === "unavailable",
+    `unsupported review availability status ${record?.status}`,
+  );
+  pushWhenInvalid(
+    errors,
+    typeof record?.reason === "string" && record.reason.trim().length > 0,
+    "explicit reviewer unavailability record requires a reason",
+  );
+  pushWhenInvalid(
+    errors,
+    input?.applicable === true && input?.requested === true,
+    "explicit reviewer unavailability requires applicable and requested review",
+  );
 }
 
 function validateCompensatingEvidence(input, outcome, errors) {
@@ -258,6 +292,7 @@ export function validateReviewEvidence(input) {
     errors.push("review outcome is missing");
   }
 
+  validateReviewAvailability(input, errors);
   validateTriage(input, errors);
   validateCompensatingEvidence(input, outcome, errors);
   return errors;

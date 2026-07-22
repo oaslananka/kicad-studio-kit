@@ -15,8 +15,8 @@ test("#530 repository review-evidence policy is complete", () => {
 test("#530 checked-in historical fixtures dry-run truthfully", () => {
   const result = validateReviewEvidenceFixtures();
   assert.deepEqual(result.errors, []);
-  assert.equal(result.total, 6);
-  assert.equal(result.expectedValid, 4);
+  assert.equal(result.total, 7);
+  assert.equal(result.expectedValid, 5);
   assert.equal(result.expectedInvalid, 2);
 });
 

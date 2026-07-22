@@ -14,7 +14,7 @@ Select exactly one outcome in the pull-request template:
 | `not-applicable`        | Automated review is outside the configured scope for this change. The PR must include a reason.                                                    |
 | `missing`               | Review was applicable or requested, but neither a completed review nor an unavailable notice exists. This is not merge-ready evidence.             |
 
-Availability, quota, rate-limit, and capacity notices are not completed reviews. A message that says a review could not start or complete must be recorded as `unavailable`, even when other specialist scanners pass.
+Availability, quota, rate-limit, and capacity notices are not completed reviews. A message that says a review could not start or complete must be recorded as `unavailable`, even when other specialist scanners pass. When no automated reviewer is configured or available, record that fact explicitly with a non-empty reason; unexplained absence remains `missing`.
 
 ## Risk
 

@@ -22,6 +22,7 @@ for (const fixtureName of [
   "completed-findings.json",
   "completed-no-findings.json",
   "unavailable-with-compensation.json",
+  "unavailable-no-reviewer.json",
   "unavailable-without-compensation.json",
   "not-applicable.json",
   "missing-review.json",
@@ -140,5 +141,16 @@ test("#530 human review cannot satisfy the automated-review outcome", () => {
       ],
     }),
     "missing",
+  );
+});
+
+test("#530 explicit reviewer unavailability requires a reason", () => {
+  const fixture = loadFixture("unavailable-no-reviewer.json");
+  fixture.reviewAvailability.reason = "";
+  const errors = validateReviewEvidence(fixture);
+  assert.ok(
+    errors.some((error) =>
+      error.includes("unavailability record requires a reason"),
+    ),
   );
 });

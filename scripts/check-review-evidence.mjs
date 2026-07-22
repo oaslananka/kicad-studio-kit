@@ -51,7 +51,7 @@ export function validateReviewEvidenceSurfaces(surfaces) {
     "Select exactly one automated-review outcome",
     "Completed with findings",
     "Completed with no findings",
-    "Unavailable; compensating evidence recorded below",
+    "Unavailable; reason and compensating evidence recorded below",
     "Not applicable; reason:",
     "Select exactly one change risk",
     "Every bot and agent comment is classified",

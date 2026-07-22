@@ -14,7 +14,7 @@ The automated-review outcome is exactly one of:
 
 - `completed-findings`: a reviewer completed and returned one or more findings;
 - `completed-no-findings`: a reviewer completed and explicitly returned no findings;
-- `unavailable`: a requested reviewer returned quota, rate-limit, capacity, authentication, or service-unavailable text instead of a code review;
+- `unavailable`: a requested reviewer returned quota, rate-limit, capacity, authentication, or service-unavailable text instead of a code review, or an explicit reason records that no automated reviewer is configured/available;
 - `not-applicable`: automated review was not requested because the change is outside the configured review scope;
 - `missing`: review was applicable/requested but no completed or unavailable artifact exists.
 
