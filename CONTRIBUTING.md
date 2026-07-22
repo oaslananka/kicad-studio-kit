@@ -66,6 +66,8 @@ Contributions should follow [Conventional Commits](docs/development/commit-conve
 
 For most pull requests, start with focused checks and paste the exact command output into the PR template. Do not claim a skipped check passed; mark it not applicable with a reason.
 
+Complete the review-evidence section using the vendor-neutral [review evidence policy](docs/architecture/review-evidence-policy.md). A quota, capacity, rate-limit, authentication, or other availability notice is not a completed review. Triage every bot and agent artifact and record compensating evidence when an automated reviewer is unavailable for a medium/high-risk change.
+
 ## Developer Certificate of Origin
 
 By contributing a non-trivial change, you certify the [Developer Certificate of

@@ -1,0 +1,44 @@
+{
+  "name": "unavailable automated review with medium-risk compensation",
+  "source": "historical-sanitized",
+  "applicable": true,
+  "requested": true,
+  "risk": "medium",
+  "declaredOutcome": "unavailable",
+  "artifacts": [
+    {
+      "id": "agent-capacity-1",
+      "actorType": "agent",
+      "kind": "comment",
+      "body": "Review unavailable because the usage quota was exhausted. No code review was performed."
+    },
+    {
+      "id": "security-bot-1",
+      "actorType": "bot",
+      "kind": "comment",
+      "body": "Security scan completed with no findings."
+    }
+  ],
+  "triage": [
+    {
+      "artifactId": "agent-capacity-1",
+      "classification": "unavailable",
+      "resolution": "Recorded as unavailable; it is not review evidence."
+    },
+    {
+      "artifactId": "security-bot-1",
+      "classification": "informational",
+      "resolution": "Specialist scan passed."
+    }
+  ],
+  "compensatingEvidence": [
+    {
+      "type": "documented-manual-review",
+      "reference": "PR comment: final-head manual diff and scanner review"
+    }
+  ],
+  "expected": {
+    "outcome": "unavailable",
+    "valid": true
+  }
+}

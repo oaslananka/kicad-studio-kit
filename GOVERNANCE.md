@@ -25,7 +25,9 @@ Critical release and security procedures must be documented well enough that a s
 
 ## Review policy
 
-Human changes to `main` should go through pull requests with CODEOWNERS review once the branch ruleset is active. Direct pushes to `main` should be reserved for emergency recovery and documented afterward.
+Human changes to `main` should go through pull requests. Required checks, signed commits, and review-thread resolution remain the merge authority under the current solo-maintainer model; no independent-approval requirement should be introduced if it would deadlock maintenance.
+
+Pull requests must follow the [review evidence policy](docs/architecture/review-evidence-policy.md). Automated-review results must be recorded truthfully, all bot and agent comments must be triaged, and unavailable reviewers require compensating evidence for medium/high-risk changes. Direct pushes to `main` should be reserved for emergency recovery and documented afterward.
 
 ## Related documents
 
