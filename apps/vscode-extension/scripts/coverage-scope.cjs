@@ -617,9 +617,8 @@ function runCli() {
   const result = validateCoverageScope(extensionRoot);
   if (result.errors.length > 0) {
     process.stderr.write('Coverage scope policy failed:\n');
-    process.stderr.write(
-      `${result.errors.map((error) => `- ${error}`).join('\n')}\n`
-    );
+    const errorDetails = result.errors.map((error) => `- ${error}`).join('\n');
+    process.stderr.write(`${errorDetails}\n`);
     process.exitCode = 1;
     return;
   }
