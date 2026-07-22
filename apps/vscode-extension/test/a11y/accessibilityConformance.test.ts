@@ -72,8 +72,11 @@ describe('WCAG 2.1 AA webview conformance gate', () => {
   });
 
   afterAll(async () => {
-    await page?.close();
-    await browser?.close();
+    try {
+      await page?.close();
+    } finally {
+      await browser?.close();
+    }
   });
 
   it.each(themeSurfaceCases())(
@@ -1030,20 +1033,34 @@ async function collectMcpToolsTreeIssues(): Promise<string[]> {
     prompts: ['manufacturing-review'],
     diagnostics: ['Live KiCad PCB context is unavailable.']
   };
-  const provider = new McpToolsProvider({
-    getState: () => ({
-      kind: 'Connected',
-      available: true,
-      connected: true,
-      install: { found: true, command: 'uvx', source: 'uvx', version: '1.0.0' },
-      server: {
-        version: '1.0.0',
-        compat: 'ok',
-        capturedAt: '2026-05-24T00:00:00.000Z',
-        capabilities
-      }
-    })
-  } as never);
+  const provider = new McpToolsProvider(
+    {
+      getState: () => ({
+        kind: 'Connected',
+        available: true,
+        connected: true,
+        install: {
+          found: true,
+          command: 'uvx',
+          source: 'uvx',
+          version: '1.0.0'
+        },
+        server: {
+          version: '1.0.0',
+          compat: 'ok',
+          capturedAt: '2026-05-24T00:00:00.000Z',
+          capabilities
+        }
+      })
+    } as never,
+    {
+      installed: false,
+      healthy: false,
+      message:
+        'External BoardReadyOps probes are disabled in accessibility fixtures.',
+      tools: []
+    }
+  );
   return collectTreeProviderIssues('MCP Tools', provider);
 }
 
