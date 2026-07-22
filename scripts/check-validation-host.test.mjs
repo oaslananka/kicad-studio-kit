@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -32,6 +32,15 @@ function repositoryContract() {
       path.join(repoRoot, "scripts/run-validation-host.sh"),
       "utf8",
     ),
+    workspaceCheckerText: readFileSync(
+      path.join(repoRoot, "scripts/check-workspace-integrity.mjs"),
+      "utf8",
+    ),
+    workspaceTestText: readFileSync(
+      path.join(repoRoot, "scripts/check-workspace-integrity.test.mjs"),
+      "utf8",
+    ),
+    prePushText: readFileSync(path.join(repoRoot, ".husky/pre-push"), "utf8"),
     docsText: readFileSync(
       path.join(repoRoot, "docs/validation-host.md"),
       "utf8",
@@ -83,7 +92,49 @@ test("bootstrap must remain rootless and derive Playwright packages (#490)", () 
   assert.match(errors, /must not invoke sudo/u);
 });
 
-test("root package exposes bootstrap, doctor, check, and package entrypoints (#490)", () => {
+test("validation-host contract requires hook-safe pre-push execution (#525)", () => {
+  const contract = repositoryContract();
+  contract.prePushText = "";
+
+  const errors = validateValidationHostContract(contract).join("\n");
+  assert.match(errors, /pre-push hook/u);
+});
+
+test("validation-host recovery docs require canonical workspace guidance (#525)", () => {
+  const contract = repositoryContract();
+  for (const phrase of [
+    "validation-host:workspace",
+    "git worktree list --porcelain",
+    "core.bare",
+    "core.worktree",
+    "private backup",
+    "fast-forward",
+    "rollback",
+  ]) {
+    contract.docsText = contract.docsText.replaceAll(phrase, "removed");
+  }
+
+  const errors = validateValidationHostContract(contract).join("\n");
+  assert.match(errors, /validation-host:workspace/u);
+  assert.match(errors, /git worktree list --porcelain/u);
+  assert.match(errors, /core\.bare/u);
+  assert.match(errors, /core\.worktree/u);
+  assert.match(errors, /private backup/u);
+  assert.match(errors, /fast-forward/u);
+  assert.match(errors, /rollback/u);
+});
+
+test("validation-host contract requires workspace integrity coverage (#525)", () => {
+  const contract = repositoryContract();
+  contract.workspaceCheckerText = "";
+  contract.workspaceTestText = "";
+
+  const errors = validateValidationHostContract(contract).join("\n");
+  assert.match(errors, /workspace integrity checker/u);
+  assert.match(errors, /workspace integrity tests/u);
+});
+
+test("root package exposes bootstrap, workspace, doctor, check, and package entrypoints (#490, #525)", () => {
   const scripts = repositoryContract().packageJson.scripts;
 
   assert.equal(
@@ -91,8 +142,12 @@ test("root package exposes bootstrap, doctor, check, and package entrypoints (#4
     "bash scripts/bootstrap-validation-host.sh",
   );
   assert.equal(
+    scripts["validation-host:workspace"],
+    "bash scripts/run-validation-host.sh node scripts/check-workspace-integrity.mjs --canonical",
+  );
+  assert.equal(
     scripts["validation-host:doctor"],
-    "bash scripts/run-validation-host.sh node scripts/dev-doctor.mjs --ci --strict",
+    "corepack pnpm run validation-host:workspace && bash scripts/run-validation-host.sh node scripts/dev-doctor.mjs --ci --strict",
   );
   assert.equal(
     scripts["validation-host:check"],
@@ -104,7 +159,17 @@ test("root package exposes bootstrap, doctor, check, and package entrypoints (#4
   );
   assert.equal(
     scripts["check:validation-host"],
-    "node scripts/check-validation-host.mjs && node --test scripts/check-validation-host.test.mjs",
+    "node scripts/check-validation-host.mjs && node --test scripts/check-validation-host.test.mjs scripts/check-workspace-integrity.test.mjs",
+  );
+  assert.equal(
+    existsSync(path.join(repoRoot, "scripts/check-workspace-integrity.mjs")),
+    true,
+  );
+  assert.equal(
+    existsSync(
+      path.join(repoRoot, "scripts/check-workspace-integrity.test.mjs"),
+    ),
+    true,
   );
   assert.match(scripts.check, /pnpm run check:validation-host/u);
 });

@@ -85,12 +85,60 @@ export function validateValidationHostContract(contract) {
   }
 
   for (const phrase of [
+    "scripts/run-validation-host.sh true",
+    "scripts/run-validation-host.sh corepack pnpm run check",
+    "corepack pnpm run check",
+  ]) {
+    requireIncludes(
+      errors,
+      "pre-push hook",
+      contract.prePushText ?? "",
+      phrase,
+    );
+  }
+  if ((contract.prePushText ?? "").includes("HUSKY=0")) {
+    errors.push("pre-push hook must not bypass Husky validation");
+  }
+
+  for (const phrase of [
+    "parseWorktreePorcelain",
+    "--canonical",
+    "canonical checkout must be clean",
+    "origin/main",
+  ]) {
+    requireIncludes(
+      errors,
+      "workspace integrity checker",
+      contract.workspaceCheckerText ?? "",
+      phrase,
+    );
+  }
+  for (const phrase of [
+    "prunable worktree",
+    "canonical mode accepts a synchronized normal repository",
+  ]) {
+    requireIncludes(
+      errors,
+      "workspace integrity tests",
+      contract.workspaceTestText ?? "",
+      phrase,
+    );
+  }
+
+  for (const phrase of [
     "Ubuntu 24.04",
     "KiCad 7.0.11",
     "KiCad MCP Pro",
+    "validation-host:workspace",
     "validation-host:doctor",
     "validation-host:check",
     "validation-host:package",
+    "git worktree list --porcelain",
+    "core.bare",
+    "core.worktree",
+    "private backup",
+    "fast-forward",
+    "rollback",
     "$HOME/.cache/kicad-studio-kit",
   ]) {
     requireIncludes(
@@ -116,14 +164,16 @@ export function validateValidationHostContract(contract) {
   const scripts = contract.packageJson?.scripts ?? {};
   const expectedScripts = {
     "validation-host:bootstrap": "bash scripts/bootstrap-validation-host.sh",
+    "validation-host:workspace":
+      "bash scripts/run-validation-host.sh node scripts/check-workspace-integrity.mjs --canonical",
     "validation-host:doctor":
-      "bash scripts/run-validation-host.sh node scripts/dev-doctor.mjs --ci --strict",
+      "corepack pnpm run validation-host:workspace && bash scripts/run-validation-host.sh node scripts/dev-doctor.mjs --ci --strict",
     "validation-host:check":
       "bash scripts/run-validation-host.sh corepack pnpm run check",
     "validation-host:package":
       "bash scripts/run-validation-host.sh corepack pnpm run package:kicad-studio",
     "check:validation-host":
-      "node scripts/check-validation-host.mjs && node --test scripts/check-validation-host.test.mjs",
+      "node scripts/check-validation-host.mjs && node --test scripts/check-validation-host.test.mjs scripts/check-workspace-integrity.test.mjs",
   };
   for (const [name, expected] of Object.entries(expectedScripts)) {
     if (scripts[name] !== expected) {
@@ -145,6 +195,9 @@ export function validateValidationHostRepository(repoRoot = defaultRepoRoot) {
     commonText: read("scripts/lib/validation-host-env.sh"),
     bootstrapText: read("scripts/bootstrap-validation-host.sh"),
     runnerText: read("scripts/run-validation-host.sh"),
+    workspaceCheckerText: read("scripts/check-workspace-integrity.mjs"),
+    workspaceTestText: read("scripts/check-workspace-integrity.test.mjs"),
+    prePushText: read(".husky/pre-push"),
     docsText: read("docs/validation-host.md"),
     readmeText: read("README.md"),
     contributingText: read("docs/contributing.md"),
