@@ -2526,7 +2526,7 @@
     "test:unit": "jest --runInBand",
     "test:unit:coverage": "jest --runInBand --coverage",
     "test:security": "jest --config jest.config.js --runInBand --coverage=false --testMatch \"<rootDir>/test/security/**/*.test.ts\"",
-    "test:a11y": "jest --config jest.config.js --runInBand --coverage=false --testMatch \"<rootDir>/test/a11y/**/*.test.ts\"",
+    "test:a11y": "node --test scripts/run-a11y-tests.test.mjs && node scripts/run-a11y-tests.cjs",
     "test:perf": "jest --config jest.config.js --runInBand --coverage=false --testMatch \"<rootDir>/test/performance/**/*.test.ts\"",
     "test:integration": "pnpm run build && pnpm run compile-tests && node ./out/test/runTest.js",
     "test:integration:real": "pnpm run compile-tests && node ./out/test/integration/realServer/quickstart.flow.test.js && node ./out/test/integration/realServer/qualityGate.flow.test.js && node ./out/test/integration/realServer/contextBridge.flow.test.js && node ./out/test/integration/realServer/compatibility.flow.test.js",
