@@ -178,6 +178,16 @@
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "aquasecurity/trivy",
       "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^package\\.json$/"],
+      "matchStrings": [
+        "uvx --from zizmor==(?<currentValue>\\d+\\.\\d+\\.\\d+) zizmor"
+      ],
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "zizmor",
+      "versioningTemplate": "pep440"
     }
   ]
 }

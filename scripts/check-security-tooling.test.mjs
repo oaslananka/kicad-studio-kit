@@ -23,6 +23,8 @@ const RELEVANT_FILES = [
   ".semgrep/semgrep.yml",
   ".semgrep/semgrep.ts",
   "package.json",
+  "renovate.json",
+  "docs/security.md",
 ];
 
 function createFixture() {
@@ -54,11 +56,43 @@ test("#508 repository security-tooling policy is complete", () => {
 test("#508 exact scanner versions cannot drift", () => {
   const root = createFixture();
   try {
-    replaceInFixture(root, "package.json", "zizmor==1.27.0", "zizmor==latest");
+    replaceInFixture(root, "package.json", "zizmor==1.28.0", "zizmor==latest");
     replaceInFixture(root, "package.json", "semgrep==1.170.0", "semgrep");
     const errors = validateSecurityTooling(root);
-    assert.ok(errors.some((error) => error.includes("zizmor 1.27.0")));
+    assert.ok(errors.some((error) => error.includes("zizmor 1.28.0")));
     assert.ok(errors.some((error) => error.includes("Semgrep 1.170.0")));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#524 Renovate owns the exact zizmor pin", () => {
+  const root = createFixture();
+  try {
+    const renovatePath = path.join(root, "renovate.json");
+    const renovate = JSON.parse(readFileSync(renovatePath, "utf8"));
+    renovate.customManagers = (renovate.customManagers ?? []).filter(
+      (manager) => !JSON.stringify(manager).includes("zizmor"),
+    );
+    writeFileSync(renovatePath, `${JSON.stringify(renovate, null, 2)}\n`);
+    const errors = validateSecurityTooling(root);
+    assert.ok(errors.some((error) => error.includes("Renovate")));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#524 security documentation rejects the yanked zizmor release", () => {
+  const root = createFixture();
+  try {
+    replaceInFixture(
+      root,
+      "docs/security.md",
+      "zizmor 1.28.0",
+      "zizmor 1.27.0",
+    );
+    const errors = validateSecurityTooling(root);
+    assert.ok(errors.some((error) => error.includes("yanked zizmor 1.27.0")));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

@@ -14,7 +14,7 @@ sections that follow give the detail for each lane.
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Code scanning (CodeQL, JS/TS + Python) | `CodeQL` workflow on pull requests, pushes, and weekly                                                                            | High-severity code-scanning alerts block merge                                                   |
 | Repository-specific SAST               | Semgrep 1.170.0 custom rules in the required `Security` workflow                                                                  | Shell-string execution, dynamic evaluation, and sensitive-value logging findings fail `security` |
-| Workflow security                      | actionlint 1.7.12 and zizmor 1.27.0 in the required `Security` workflow                                                           | Syntax/shell errors and high-confidence medium-or-higher Actions findings fail `security`        |
+| Workflow security                      | actionlint 1.7.12 and zizmor 1.28.0 in the required `Security` workflow                                                           | Syntax/shell errors and high-confidence medium-or-higher Actions findings fail `security`        |
 | Development-container configuration    | Trivy v0.72.0 configuration-only scan in the required `Security` workflow on pull requests, pushes, weekly, and manual runs       | HIGH/CRITICAL misconfigurations fail `security`; SARIF is published under `trivy-devcontainer`   |
 | Secret scanning                        | `Gitleaks` workflow on every pull request plus the local security gate; GitHub secret scanning with push protection stays enabled | A new secret-scanning alert blocks release until triaged                                         |
 | Dependency review                      | `Security` workflow `dependency-review` job on pull requests                                                                      | New `high`+ dependency additions block the pull request                                          |
@@ -114,7 +114,7 @@ changes, run the local scanner gate as well:
 The MCP server security checks now run in the [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository.
 
 That gate requires `pre-commit` 4.6.0, `gitleaks`, native actionlint 1.7.12,
-zizmor 1.27.0, and Semgrep 1.170.0. Run it with
+zizmor 1.28.0, and Semgrep 1.170.0. Run it with
 `task security:local` from `apps/vscode-extension`, or run the focused root
 commands `pnpm run security:workflows`, `pnpm run test:semgrep-rules`,
 `pnpm run security:semgrep`, and `pnpm run security:trivy-devcontainer`. The

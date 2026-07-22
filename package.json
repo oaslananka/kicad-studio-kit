@@ -91,7 +91,7 @@
     "validation-host:package": "bash scripts/run-validation-host.sh corepack pnpm run package:kicad-studio",
     "check:validation-host": "node scripts/check-validation-host.mjs && node --test scripts/check-validation-host.test.mjs scripts/check-workspace-integrity.test.mjs",
     "check:security-tooling": "node scripts/check-security-tooling.mjs && node --test scripts/check-security-tooling.test.mjs",
-    "security:workflows": "actionlint -config-file .github/actionlint.yaml && uvx --from zizmor==1.27.0 zizmor --config .github/zizmor.yml --offline --strict-collection --format plain --min-severity medium --min-confidence high .",
+    "security:workflows": "actionlint -config-file .github/actionlint.yaml && uvx --from zizmor==1.28.0 zizmor --config .github/zizmor.yml --offline --strict-collection --format plain --min-severity medium --min-confidence high .",
     "security:semgrep": "uvx --from semgrep==1.170.0 semgrep scan --config .semgrep/semgrep.yml --error --metrics=off apps/vscode-extension/src apps/vscode-extension/scripts packages scripts",
     "test:semgrep-rules": "uvx --from semgrep==1.170.0 semgrep --metrics=off --test --config .semgrep/semgrep.yml .semgrep/semgrep.ts",
     "check:dependabot-policy": "node scripts/check-dependabot-policy.mjs && node --test scripts/check-dependabot-policy.test.mjs",
