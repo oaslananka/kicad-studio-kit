@@ -182,7 +182,7 @@ function validateRenovate(renovate) {
       manager?.depNameTemplate === "zizmor" &&
       manager?.versioningTemplate === "pep440" &&
       Array.isArray(manager.managerFilePatterns) &&
-      manager.managerFilePatterns.includes("/^package\\.json$/") &&
+      manager.managerFilePatterns.includes(String.raw`/^package\.json$/`) &&
       Array.isArray(manager.matchStrings) &&
       manager.matchStrings.some(
         (pattern) =>
