@@ -62,7 +62,8 @@ pnpm run test:coverage:ratchet
   shipped TypeScript file.
 - CI publishes `coverage/coverage-scope.json` and
   `coverage/coverage-scope.md`, and enforces the critical-module coverage
-  ratchet separately.
+  ratchet separately. The ratchet freezes the maximum current uncovered count
+  observed across the pinned validation host and GitHub Ubuntu runner.
 - Mutation score is tracked weekly; see Actions tab.
 
 ## VS Code Extension Test Constraints

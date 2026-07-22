@@ -36,10 +36,10 @@ module.exports = {
       lines: -340
     },
     'src/providers/baseKiCanvasEditorProvider.ts': {
-      statements: -118,
-      branches: -101,
+      statements: -120,
+      branches: -105,
       functions: -19,
-      lines: -113
+      lines: -115
     },
     'src/providers/netlistViewProvider.ts': {
       statements: -30,

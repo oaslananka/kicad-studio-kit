@@ -35,6 +35,21 @@ test('current coverage scope is complete and deterministic (#528)', () => {
   assert.doesNotMatch(markdown, /generated at/iu);
 });
 
+test('GitHub Ubuntu ratchet baseline is frozen for the base viewer provider (#528)', () => {
+  const ratchetConfig = require('../jest.coverage-ratchet.config.js');
+  assert.deepEqual(
+    ratchetConfig.coverageThreshold[
+      'src/providers/baseKiCanvasEditorProvider.ts'
+    ],
+    {
+      statements: -120,
+      branches: -105,
+      functions: -19,
+      lines: -115
+    }
+  );
+});
+
 test('glob matching expands directory exclusions predictably (#528)', () => {
   assert.equal(
     matchGlob('src/activation/activationState.ts', 'src/activation/**/*.ts'),

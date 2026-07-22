@@ -67,7 +67,10 @@ counts. CI appends the Markdown inventory to the Ubuntu job summary and stores
 both formats with the coverage artifact. The critical-module ratchet uses Jest
 negative thresholds as maximum uncovered counts. Adding uncovered statements,
 branches, functions, or lines to a ratcheted file therefore fails without
-lowering the existing global percentage thresholds.
+lowering the existing global percentage thresholds. Baselines use the maximum
+current uncovered count observed across the pinned validation host and GitHub's
+Ubuntu runner, preventing platform-specific instrumentation variance from
+creating a false regression while still blocking any larger uncovered surface.
 
 Mutation testing is configured in `stryker.config.json` (Jest runner, `perTest`
 analysis, thresholds high 80 / low 60). It currently runs with `break: 0` so it
