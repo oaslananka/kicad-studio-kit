@@ -29,9 +29,16 @@ notes can add detail, but they should not weaken these gates.
 
 Extension unit coverage is enforced by Jest (`apps/vscode-extension/jest.config.js`)
 and must not regress. The global floor is **statements 83 / branches 70 /
-functions 88 / lines 83**, set just below the measured suite so new uncovered
-code fails the gate rather than silently lowering the bar. Raise these floors as
-coverage improves; do not lower them to make a change pass.
+functions 88 / lines 83**, set just below the measured unit-test denominator so
+new uncovered code in that denominator fails the gate rather than silently
+lowering the bar. Raise these floors as coverage improves; do not lower them to
+make a change pass.
+
+The headline percentage is not whole-product coverage. Some shipped source is
+owned by VS Code extension-host, visual, accessibility, or real-pair integration
+lanes, while selected high-risk exclusions are measured by a separate blocking
+ratchet. The source inventory below makes that denominator explicit instead of
+allowing exclusions or never-imported modules to disappear from review.
 
 Branch coverage is the laggard metric: the remaining gap is concentrated in
 mocking-heavy command handlers (`src/commands/*`) and the AI/LM providers
@@ -39,11 +46,37 @@ mocking-heavy command handlers (`src/commands/*`) and the AI/LM providers
 guard-clause paths — that is the highest-value place to add tests, not the
 already-strong pure helpers.
 
+### Coverage Scope Inventory
+
+`apps/vscode-extension/coverage-scope.json` is the source-controlled ownership
+manifest. Every explicit `collectCoverageFrom` exclusion is classified as a
+TypeScript declaration, integration-owned host boundary, or explicitly
+justified targeted ratchet. Each entry names its owner, strategy, rationale, and
+reviewable evidence paths.
+
+Generate the deterministic JSON and Markdown inventory with:
+
+```bash
+corepack pnpm run check:coverage-scope
+corepack pnpm --filter kicadstudiokit run coverage:inventory
+corepack pnpm --filter kicadstudiokit run test:coverage:ratchet
+```
+
+The generated inventory reports included and excluded file and source-line
+counts. CI appends the Markdown inventory to the Ubuntu job summary and stores
+both formats with the coverage artifact. The critical-module ratchet uses Jest
+negative thresholds as maximum uncovered counts. Adding uncovered statements,
+branches, functions, or lines to a ratcheted file therefore fails without
+lowering the existing global percentage thresholds. Baselines use the maximum
+current uncovered count observed across the pinned validation host and GitHub's
+Ubuntu runner, preventing platform-specific instrumentation variance from
+creating a false regression while still blocking any larger uncovered surface.
+
 Mutation testing is configured in `stryker.config.json` (Jest runner, `perTest`
 analysis, thresholds high 80 / low 60). It currently runs with `break: 0` so it
-never fails the build. The next step is to run `pnpm exec stryker run` against
-the core modules, record the baseline mutation score here, and raise `break` to
-that baseline so mutation coverage cannot regress.
+never fails the build. Issue #496 owns the next mutation-baseline step and should
+reuse the same critical-module ownership map rather than adding a competing
+scope.
 
 ### Codecov observability
 

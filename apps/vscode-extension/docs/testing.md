@@ -35,8 +35,15 @@ xvfb-run -a pnpm run test:e2e:real
 xvfb-run -a pnpm exec task e2e # Linux
 pnpm exec task e2e # macOS / Windows
 
-# Coverage report
+# Coverage report for the configured unit denominator
 pnpm run test:unit:coverage
+
+# Validate and generate the included/excluded source inventory
+pnpm run check:coverage-scope
+pnpm run coverage:inventory
+
+# Block newly uncovered behavior in critical excluded modules
+pnpm run test:coverage:ratchet
 ```
 
 ## CI Behavior
@@ -51,6 +58,12 @@ pnpm run test:unit:coverage
 - Real-pair failures upload server stdout/stderr, harness metadata, Playwright
   screenshots, traces, and videos from `apps/vscode-extension/test-results`.
 - Coverage is generated on ubuntu-24.04 during CI.
+- The headline percentage covers the configured Jest unit denominator, not every
+  shipped TypeScript file.
+- CI publishes `coverage/coverage-scope.json` and
+  `coverage/coverage-scope.md`, and enforces the critical-module coverage
+  ratchet separately. The ratchet freezes the maximum current uncovered count
+  observed across the pinned validation host and GitHub Ubuntu runner.
 - Mutation score is tracked weekly; see Actions tab.
 
 ## VS Code Extension Test Constraints

@@ -104,12 +104,22 @@ jobs:
       - run: corepack pnpm --filter kicadstudiokit run lint
       - run: corepack pnpm --filter kicadstudiokit run typecheck
       - run: corepack pnpm --filter kicadstudiokit run test:unit:coverage
+      - name: Enforce critical coverage ratchet
+        if: matrix.os == 'ubuntu-24.04'
+        run: corepack pnpm --filter kicadstudiokit run test:coverage:ratchet
+      - name: Publish coverage scope inventory
+        if: matrix.os == 'ubuntu-24.04'
+        shell: bash
+        run: cat apps/vscode-extension/coverage/coverage-scope.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload coverage summary
         if: matrix.os == 'ubuntu-24.04' && github.event_name == 'pull_request'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: coverage-summary
-          path: apps/vscode-extension/coverage/coverage-summary.json
+          path: |
+            apps/vscode-extension/coverage/coverage-summary.json
+            apps/vscode-extension/coverage/coverage-scope.json
+            apps/vscode-extension/coverage/coverage-scope.md
           if-no-files-found: ignore
       - name: Upload Codecov reports
         if: ${{ !cancelled() && matrix.os == 'ubuntu-24.04' }}
@@ -119,6 +129,8 @@ jobs:
           path: |
             apps/vscode-extension/coverage/lcov.info
             apps/vscode-extension/coverage/coverage-summary.json
+            apps/vscode-extension/coverage/coverage-scope.json
+            apps/vscode-extension/coverage/coverage-scope.md
             apps/vscode-extension/test-results/junit.xml
           if-no-files-found: warn
           retention-days: 7
