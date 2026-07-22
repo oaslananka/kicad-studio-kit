@@ -139,12 +139,7 @@ function validateCompensatingEvidence(input, outcome, errors) {
   }
 }
 
-function validateTriage(input, errors) {
-  const artifacts = Array.isArray(input?.artifacts) ? input.artifacts : [];
-  const reviewArtifacts = artifacts.filter((artifact) =>
-    ["bot", "agent"].includes(artifact?.actorType),
-  );
-  const triage = Array.isArray(input?.triage) ? input.triage : [];
+function collectArtifactIds(reviewArtifacts, errors) {
   const artifactIds = new Set();
   for (const artifact of reviewArtifacts) {
     pushWhenInvalid(
@@ -157,8 +152,11 @@ function validateTriage(input, errors) {
     }
     artifactIds.add(artifact?.id);
   }
-  const triageByArtifact = new Map();
+  return artifactIds;
+}
 
+function buildTriageMap(triage, artifactIds, errors) {
+  const triageByArtifact = new Map();
   for (const entry of triage) {
     pushWhenInvalid(
       errors,
@@ -181,6 +179,39 @@ function validateTriage(input, errors) {
     }
     triageByArtifact.set(entry?.artifactId, entry);
   }
+  return triageByArtifact;
+}
+
+function validateArtifactDisposition(artifact, entry, errors) {
+  pushWhenInvalid(
+    errors,
+    entry.classification !== "actionable",
+    `artifact ${artifact.id} remains actionable`,
+  );
+  if (isUnavailableReviewArtifact(artifact)) {
+    pushWhenInvalid(
+      errors,
+      entry.classification === "unavailable",
+      `unavailable artifact ${artifact.id} must be classified as unavailable`,
+    );
+  }
+  if (isCompletedWithFindings(artifact)) {
+    pushWhenInvalid(
+      errors,
+      ["resolved", "duplicate"].includes(entry.classification),
+      `finding artifact ${artifact.id} must be resolved or duplicate before merge`,
+    );
+  }
+}
+
+function validateTriage(input, errors) {
+  const artifacts = Array.isArray(input?.artifacts) ? input.artifacts : [];
+  const reviewArtifacts = artifacts.filter((artifact) =>
+    ["bot", "agent"].includes(artifact?.actorType),
+  );
+  const triage = Array.isArray(input?.triage) ? input.triage : [];
+  const artifactIds = collectArtifactIds(reviewArtifacts, errors);
+  const triageByArtifact = buildTriageMap(triage, artifactIds, errors);
 
   for (const artifact of reviewArtifacts) {
     const entry = triageByArtifact.get(artifact.id);
@@ -189,27 +220,8 @@ function validateTriage(input, errors) {
       Boolean(entry),
       `missing triage for ${artifact.id}`,
     );
-    if (!entry) {
-      continue;
-    }
-    pushWhenInvalid(
-      errors,
-      entry.classification !== "actionable",
-      `artifact ${artifact.id} remains actionable`,
-    );
-    if (isUnavailableReviewArtifact(artifact)) {
-      pushWhenInvalid(
-        errors,
-        entry.classification === "unavailable",
-        `unavailable artifact ${artifact.id} must be classified as unavailable`,
-      );
-    }
-    if (isCompletedWithFindings(artifact)) {
-      pushWhenInvalid(
-        errors,
-        ["resolved", "duplicate"].includes(entry.classification),
-        `finding artifact ${artifact.id} must be resolved or duplicate before merge`,
-      );
+    if (entry) {
+      validateArtifactDisposition(artifact, entry, errors);
     }
   }
 }

@@ -244,8 +244,12 @@ function runFixture(root, fixturePath) {
   const fixture = readJson(root, fixturePath);
   const result = validateFixture(fixture, fixturePath);
   const evidenceErrors = validateReviewEvidence(fixture);
+  const evidenceStatus =
+    evidenceErrors.length === 0
+      ? "valid"
+      : `invalid (${evidenceErrors.join("; ")})`;
   process.stdout.write(
-    `${fixturePath}: ${result.outcome}; ${evidenceErrors.length === 0 ? "valid" : `invalid (${evidenceErrors.join("; ")})`}\n`,
+    `${fixturePath}: ${result.outcome}; ${evidenceStatus}\n`,
   );
   return result.errors;
 }
