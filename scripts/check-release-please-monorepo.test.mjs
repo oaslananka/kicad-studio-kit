@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  createGitSubprocessEnv,
   listCommits,
   listCommitsForPullRequest,
   parseConventionalSubject,
@@ -19,6 +21,14 @@ const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
+
+function restoreEnv(name, value) {
+  if (value === undefined) {
+    delete process.env[name];
+  } else {
+    process.env[name] = value;
+  }
+}
 
 test("release-please manifest mode is product-scoped and version aligned", () => {
   const result = validateRepositoryPolicy(REPO_ROOT);
@@ -187,6 +197,22 @@ test("PR commit discovery fails closed when PR SHAs cannot be fetched", () => {
   );
 });
 
+test("#519 Git subprocess environment removes local variables only", () => {
+  const env = createGitSubprocessEnv({
+    PATH: "/test/bin",
+    KICAD_TEST_SENTINEL: "preserved",
+    GIT_DIR: "/caller/.git",
+    GIT_WORK_TREE: "/caller",
+    GIT_INDEX_FILE: "/caller/.git/index",
+  });
+
+  assert.equal(env.PATH, "/test/bin");
+  assert.equal(env.KICAD_TEST_SENTINEL, "preserved");
+  assert.equal(env.GIT_DIR, undefined);
+  assert.equal(env.GIT_WORK_TREE, undefined);
+  assert.equal(env.GIT_INDEX_FILE, undefined);
+});
+
 test("Windows command resolution only appends .cmd for package manager shims", () => {
   assert.equal(resolveExecutable("pnpm", "win32"), "pnpm.cmd");
   assert.equal(resolveExecutable("npm", "win32"), "npm.cmd");
@@ -235,6 +261,39 @@ test("release-please dry-run snapshot handles extension-only release", async () 
   assert.equal(snapshot.includesVsCodeExtensionRelease, true);
   assert.equal(snapshot.includesRootOnlyRelease, false);
   assert.deepEqual(snapshot.updatedPaths, [".release-please-manifest.json"]);
+});
+
+test("#519 synthetic repositories ignore hook-local Git environment", async () => {
+  const gitDirResult = spawnSync("git", ["rev-parse", "--absolute-git-dir"], {
+    cwd: REPO_ROOT,
+    encoding: "utf8",
+  });
+  assert.equal(gitDirResult.status, 0, gitDirResult.stderr);
+
+  const previous = {
+    GIT_DIR: process.env.GIT_DIR,
+    GIT_WORK_TREE: process.env.GIT_WORK_TREE,
+  };
+  process.env.GIT_DIR = gitDirResult.stdout.trim();
+  process.env.GIT_WORK_TREE = REPO_ROOT;
+  try {
+    const snapshot = await runSyntheticReleasePleaseDryRun(REPO_ROOT, {
+      token: "test-token",
+      spawnReleasePlease: (_command, _args, options) => {
+        assert.equal(options.env.GIT_DIR, undefined);
+        assert.equal(options.env.GIT_WORK_TREE, undefined);
+        return {
+          status: 0,
+          stdout: ROOT_ONLY_RELEASE_PLEASE_FIXTURE,
+          stderr: "",
+        };
+      },
+    });
+    assert.equal(snapshot.pullRequestCount, 0);
+  } finally {
+    restoreEnv("GIT_DIR", previous.GIT_DIR);
+    restoreEnv("GIT_WORK_TREE", previous.GIT_WORK_TREE);
+  }
 });
 
 test("release-please dry-run snapshot ignores root-only changes", async () => {
