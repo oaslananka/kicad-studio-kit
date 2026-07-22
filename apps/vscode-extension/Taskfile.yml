@@ -72,9 +72,15 @@ tasks:
     cmds:
       - task: security
 
-  security:local:
-    desc: Heavy local security checks (requires uv, gitleaks, and actionlint)
+  security:trivy-devcontainer:
+    desc: Scan development container configuration for HIGH/CRITICAL misconfigurations
     cmds:
+      - pnpm --dir ../.. run security:trivy-devcontainer
+
+  security:local:
+    desc: Heavy local security checks (requires uv, gitleaks, actionlint, and Trivy)
+    cmds:
+      - task: security:trivy-devcontainer
       - cmd: bash scripts/local-security.sh
         platforms: [linux, darwin]
       - cmd: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/local-security.ps1

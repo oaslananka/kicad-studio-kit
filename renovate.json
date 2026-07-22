@@ -16,7 +16,13 @@
   "prHourlyLimit": 2,
   "prConcurrentLimit": 5,
   "minimumReleaseAge": "3 days",
-  "enabledManagers": ["npm", "github-actions", "dockerfile", "pep621"],
+  "enabledManagers": [
+    "npm",
+    "github-actions",
+    "dockerfile",
+    "pep621",
+    "custom.regex"
+  ],
   "rangeStrategy": "pin",
   "separateMajorMinor": true,
   "separateMinorPatch": false,
@@ -161,5 +167,17 @@
     "automergeType": "pr",
     "platformAutomerge": true,
     "addLabels": ["risk:low"]
-  }
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github\\/workflows\\/security\\.yml$/"],
+      "matchStrings": [
+        "# renovate: datasource=github-releases depName=aquasecurity/trivy\\n\\s*TRIVY_VERSION: v(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "aquasecurity/trivy",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    }
+  ]
 }

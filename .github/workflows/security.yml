@@ -17,6 +17,8 @@ concurrency:
 
 env:
   pnpm_config_pm_on_fail: ignore
+  # renovate: datasource=github-releases depName=aquasecurity/trivy
+  TRIVY_VERSION: v0.72.0
 
 jobs:
   dependency-review:
@@ -31,6 +33,9 @@ jobs:
   security:
     if: github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
@@ -68,6 +73,41 @@ jobs:
       - run: corepack pnpm run test:semgrep-rules
       - run: corepack pnpm run security:semgrep
       - run: corepack pnpm audit --audit-level high
+      - name: Scan development container misconfigurations
+        id: trivy-devcontainer
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .devcontainer
+          format: sarif
+          output: trivy-devcontainer.sarif
+          exit-code: "1"
+          severity: HIGH,CRITICAL
+          limit-severities-for-sarif: true
+          hide-progress: true
+          skip-version-check: true
+          version: ${{ env.TRIVY_VERSION }}
+      - name: Upload development container SARIF
+        if: ${{ always() && hashFiles('trivy-devcontainer.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e
+        with:
+          sarif_file: trivy-devcontainer.sarif
+          category: trivy-devcontainer
+      - name: Store development container SARIF
+        if: ${{ always() && hashFiles('trivy-devcontainer.sarif') != '' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: trivy-devcontainer-sarif
+          path: trivy-devcontainer.sarif
+          if-no-files-found: error
+          retention-days: 14
+      - name: Fail on development container misconfigurations
+        if: ${{ steps.trivy-devcontainer.outcome == 'failure' }}
+        shell: bash
+        run: |
+          echo "::error::Trivy found HIGH or CRITICAL development-container misconfigurations, or the scan failed operationally."
+          exit 1
 
   extension-security-regressions:
     if: github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops'
