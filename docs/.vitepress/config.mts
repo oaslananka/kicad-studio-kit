@@ -1,10 +1,12 @@
 import { defineConfig } from "vitepress";
 import { docsSiteBase } from "../../scripts/lib/docs-site-config.mjs";
+import { renderDocsSearchContent } from "../../scripts/lib/docs-search-index.mjs";
 
 export default defineConfig({
   vite: {
     build: {
       target: "es2021",
+      chunkSizeWarningLimit: 625,
     },
   },
   lang: "en-US",
@@ -32,6 +34,9 @@ export default defineConfig({
     siteTitle: "KiCad Studio Kit",
     search: {
       provider: "local",
+      options: {
+        _render: renderDocsSearchContent,
+      },
     },
     nav: [
       { text: "Install", link: "/install" },

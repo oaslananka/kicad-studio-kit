@@ -116,3 +116,39 @@ When a new producer becomes PR-required:
    the producer.
 3. Set `ciRequired` only after the PR workflow actually emits the measurement.
 4. Keep the workflow artifact path stable so comparisons remain scriptable.
+
+## Bundle and Documentation Load Baselines
+
+Issue #531 records optional bundle measurements separately from the runtime
+latency catalog. These values are enforced by
+`apps/vscode-extension/scripts/check-bundle-size.js` and
+`scripts/check-docs-bundle-size.mjs`.
+
+The 2026-07-23 pinned validation-host measurement produced:
+
+| Artifact                     |         Raw |           Gzip |         Brotli | Load behavior                       |
+| ---------------------------- | ----------: | -------------: | -------------: | ----------------------------------- |
+| `dist/extension.js`          |   742,064 B |      203,353 B |      164,251 B | Initial extension activation        |
+| `dist/exceljs.js`            |   461,338 B |      117,896 B |      101,205 B | Loaded only for XLSX export         |
+| `media/kicanvas/kicanvas.js` |   471,937 B |      111,397 B |       92,468 B | Loaded by viewer surfaces           |
+| VitePress local-search index |   603,787 B |      135,850 B |      106,656 B | Loaded only when local search opens |
+| VitePress framework chunk    |   110,329 B |       43,633 B |       39,265 B | Shared documentation runtime        |
+| `kicadstudiokit-1.9.5.vsix`  | 1,724,081 B | not applicable | not applicable | Installable package                 |
+
+The narrow ExcelJS Workbook entry reduced the spreadsheet chunk from 825,685
+bytes to 461,338 bytes, a 44.1 percent raw reduction. The initial extension
+chunk stayed effectively unchanged, confirming that spreadsheet code remains
+outside activation. The packaged VSIX fell from the observed 1.74 MB validation
+artifact to 1.64 MB as reported by `vsce`.
+
+VitePress local search excludes `docs/superpowers/**` implementation records and
+rendered code blocks. That reduced the search chunk from 833,243 bytes to
+603,787 bytes, a 27.5 percent raw reduction, while keeping product,
+compatibility, architecture, release, and user guidance searchable. The search
+index has a measured 625,000-byte limit; every other documentation JavaScript
+chunk retains the 500,000-byte limit. A build fails if either boundary is
+crossed or the local-search chunk disappears.
+
+Re-measure these values after dependency or documentation-corpus changes. Do not
+raise a limit without recording raw, gzip, and Brotli evidence and explaining
+why a further split would reduce usability or increase runtime complexity.

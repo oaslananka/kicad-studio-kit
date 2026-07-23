@@ -19,7 +19,7 @@ test('current coverage scope is complete and deterministic (#528)', () => {
   const result = validateCoverageScope(extensionRoot);
   assert.deepEqual(result.errors, []);
   assert.equal(result.inventory.schemaVersion, 1);
-  assert.equal(result.inventory.summary.excludedFiles, 17);
+  assert.equal(result.inventory.summary.excludedFiles, 18);
   assert.equal(
     result.inventory.excluded.filter((item) => !item.path.endsWith('.d.ts'))
       .length,

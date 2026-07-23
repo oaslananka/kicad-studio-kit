@@ -75,9 +75,9 @@
     "docs:lint": "node scripts/check-docs-site.mjs --markdown",
     "docs:links": "node scripts/check-docs-site.mjs --links",
     "docs:check-generated": "node scripts/check-docs-site.mjs --generated",
-    "docs:build": "pnpm run docs:generate && vitepress build docs",
+    "docs:build": "pnpm run docs:generate && vitepress build docs && pnpm run check:docs-bundle",
     "docs:preview": "vitepress preview docs",
-    "check:docs-site": "pnpm run docs:check-generated && pnpm run docs:lint && pnpm run docs:links && vitepress build docs",
+    "check:docs-site": "pnpm run docs:check-generated && pnpm run docs:lint && pnpm run docs:links && vitepress build docs && pnpm run check:docs-bundle",
     "governance:sync:dry-run": "node scripts/sync-governance-project-items.mjs --dry-run --chunk-size 10",
     "check": "pnpm run check:forbidden-refs && pnpm run check:boundaries && pnpm run check:version && pnpm run check:compatibility-contract && pnpm run check:vscode-typings-policy && pnpm run check:codecov && pnpm run check:coverage-scope && pnpm run check:mutation-policy && pnpm run check:supply-chain && pnpm run check:governance && pnpm run check:branch-protection && pnpm run check:actions-permissions && pnpm run check:dependabot-policy && pnpm run check:security-tooling && pnpm run check:trivy-devcontainer && pnpm run check:best-practices && pnpm run check:fixtures && pnpm run check:protocol-schemas && pnpm run check:ci-lanes && pnpm run check:testing-strategy && pnpm run check:regression-policy && pnpm run check:protocol-pr-template && pnpm run check:review-evidence && pnpm run check:validation-host && pnpm run check:dev-doctor && pnpm run check:devcontainer && pnpm run check:performance-budgets && pnpm run check:beta-program && pnpm run check:agent-configs && pnpm run check:examples && pnpm run check:extension-doc-links && pnpm run check:docs-site && pnpm run release:verify && pnpm -r run check",
     "check:best-practices": "node scripts/check-best-practices-evidence.mjs && pnpm run check:scorecard-evidence && pnpm run check:repeatable-vsix && node --test scripts/check-best-practices-evidence.test.mjs scripts/report-best-practices-status.test.mjs",
@@ -102,7 +102,8 @@
     "check:coverage-scope": "corepack pnpm --filter kicadstudiokit run check:coverage-scope",
     "check:mutation-policy": "corepack pnpm --filter kicadstudiokit run check:mutation-policy",
     "check:actions-permissions": "node scripts/check-actions-permissions-policy.mjs && node --test scripts/check-actions-permissions-policy.test.mjs",
-    "check:scorecard-evidence": "node scripts/check-scorecard-evidence.mjs && node --test scripts/check-scorecard-evidence.test.mjs"
+    "check:scorecard-evidence": "node scripts/check-scorecard-evidence.mjs && node --test scripts/check-scorecard-evidence.test.mjs",
+    "check:docs-bundle": "node --test scripts/docs-search-index.test.mjs scripts/check-docs-bundle-size.test.mjs && node scripts/check-docs-bundle-size.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "21.0.2",
