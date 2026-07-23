@@ -57,7 +57,7 @@ export function createKiCanvasViewerHtml(
     );
 
   return injectWebviewLocalization(
-    compactHtmlDocument(String.raw`<!DOCTYPE html>
+    compactHtmlDocument(`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
