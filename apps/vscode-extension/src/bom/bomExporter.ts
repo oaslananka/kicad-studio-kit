@@ -3,18 +3,18 @@ import * as path from 'node:path';
 import type { BomEntry } from '../types';
 import { localizeWebviewMessage, webviewLocale } from '../webviewI18n';
 
-type ExcelJsModule = typeof import('exceljs');
+type ExcelJsWorkbook = typeof import('exceljs').Workbook;
 
-let excelJsModulePromise: Promise<ExcelJsModule> | undefined;
+let excelJsWorkbookPromise: Promise<ExcelJsWorkbook> | undefined;
 
-async function loadExcelJs(): Promise<ExcelJsModule> {
-  if (!excelJsModulePromise) {
-    excelJsModulePromise = import(
+async function loadExcelJsWorkbook(): Promise<ExcelJsWorkbook> {
+  if (!excelJsWorkbookPromise) {
+    excelJsWorkbookPromise = import(
       /* webpackChunkName: "exceljs" */
-      'exceljs'
-    );
+      'exceljs/lib/doc/workbook.js'
+    ).then((module) => module.default);
   }
-  return excelJsModulePromise;
+  return excelJsWorkbookPromise;
 }
 
 export class BomExporter {
@@ -60,8 +60,8 @@ export class BomExporter {
   }
 
   async exportXlsx(entries: BomEntry[], outputFile: string): Promise<string> {
-    const ExcelJS = await loadExcelJs();
-    const workbook = new ExcelJS.Workbook();
+    const Workbook = await loadExcelJsWorkbook();
+    const workbook = new Workbook();
     const sheet = workbook.addWorksheet('BOM');
 
     sheet.columns = [

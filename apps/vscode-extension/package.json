@@ -2536,7 +2536,7 @@
     "test:visual": "playwright test --config playwright.visual.config.ts",
     "test:mutation": "stryker run",
     "test:e2e:real": "playwright test test/e2e/realPair.test.ts",
-    "check:bundle-size": "node scripts/check-bundle-size.js",
+    "check:bundle-size": "node --test scripts/bundle-import-policy.test.mjs && node scripts/check-bundle-size.js",
     "bundle-kicanvas": "node scripts/bundle-kicanvas.js",
     "package": "node scripts/package-extension.js",
     "package:vsce": "node scripts/package-extension.js",
