@@ -44,6 +44,17 @@ jobs:
           --repo "$GITHUB_REPOSITORY"
           --json retired-dependency-evidence.json
           --summary "$GITHUB_STEP_SUMMARY"
+      - name: Collect Scorecard evidence
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_AUTH_TOKEN }}
+        run: >-
+          node scripts/check-scorecard-evidence.mjs
+          --fetch
+          --repo "$GITHUB_REPOSITORY"
+          --governance-json governance-evidence.json
+          --json scorecard-evidence.json
+          --summary "$GITHUB_STEP_SUMMARY"
       - name: Upload governance evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -52,5 +63,6 @@ jobs:
           path: |
             governance-evidence.json
             retired-dependency-evidence.json
+            scorecard-evidence.json
           if-no-files-found: warn
           retention-days: 30

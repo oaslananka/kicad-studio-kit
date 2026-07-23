@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "repository": "oaslananka/kicad-studio-kit",
+  "sampleSize": 30,
+  "sast": {
+    "alertNumber": 19,
+    "ruleId": "SASTID",
+    "disposition": "false-positive",
+    "dismissalReason": "false positive",
+    "requiredCategories": [
+      "/language:javascript-typescript",
+      "/language:python"
+    ],
+    "rationale": "Repository-owned API evidence must show both CodeQL language analyses for every sampled default-branch commit before the Scorecard heuristic alert can be treated as a false positive."
+  },
+  "branchProtection": {
+    "alertNumber": 9,
+    "ruleId": "BranchProtectionID",
+    "disposition": "accepted-risk",
+    "dismissalReason": "won't fix",
+    "owner": "oaslananka",
+    "reviewCadence": "quarterly",
+    "expectedWarnings": [
+      "'branch protection settings apply to administrators' is disabled on branch 'main'",
+      "'stale review dismissal' is disabled on branch 'main'",
+      "branch 'main' does not require approvers",
+      "codeowners review is not required on branch 'main'",
+      "'last push approval' is disabled on branch 'main'"
+    ],
+    "compensatingControls": [
+      "pull requests are mandatory",
+      "six strict required checks must pass",
+      "signed commits are required",
+      "conversation resolution is required",
+      "force pushes and branch deletion are blocked",
+      "bot and agent findings are triaged with compensating manual review evidence"
+    ],
+    "strongerApprovalTriggers": [
+      "a second qualified maintainer becomes reliably available",
+      "the repository gains multiple active human contributors",
+      "administrator bypass expands beyond pull-request merges",
+      "required-check or signed-commit enforcement weakens",
+      "a high-risk release or credential change lacks independent review"
+    ]
+  }
+}

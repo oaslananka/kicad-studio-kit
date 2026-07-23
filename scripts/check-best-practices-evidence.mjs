@@ -94,6 +94,16 @@ export function validateBestPracticesEvidence(root = repoRoot) {
   const dockerfile = readFromRoot(".devcontainer/Dockerfile");
   const devDoctor = readFromRoot("scripts/dev-doctor.mjs");
   const ruleset = JSON.parse(readFromRoot(".github/rulesets/main.json"));
+  const scorecardPolicy = JSON.parse(
+    readFromRoot(".github/scorecard-residual-risk.json"),
+  );
+  const scorecardEvidenceCli = readFromRoot(
+    "scripts/check-scorecard-evidence.mjs",
+  );
+  const governanceWorkflow = readFromRoot(
+    ".github/workflows/governance-evidence.yml",
+  );
+  const rootPackage = JSON.parse(readFromRoot("package.json"));
   const coverageThreshold = validateCoveragePolicy(root);
 
   requireIncludes(
@@ -123,6 +133,10 @@ export function validateBestPracticesEvidence(root = repoRoot) {
     "Pinned-Dependencies",
     "Signed-Releases",
     "A strict main-branch ruleset with stable required checks is versioned in the repo.",
+    ".github/scorecard-residual-risk.json",
+    "30/30",
+    "quarterly",
+    "No finding is dismissed solely to improve a score",
   ]) {
     requireIncludes("docs/best-practices-evidence.md", evidence, phrase);
   }
@@ -232,6 +246,36 @@ export function validateBestPracticesEvidence(root = repoRoot) {
 
   requireIncludes("scripts/dev-doctor.mjs", devDoctor, "playwright-chromium");
 
+  assert.equal(scorecardPolicy.schemaVersion, 1);
+  assert.equal(scorecardPolicy.repository, "oaslananka/kicad-studio-kit");
+  assert.equal(scorecardPolicy.sampleSize, 30);
+  assert.equal(scorecardPolicy.sast.alertNumber, 19);
+  assert.equal(scorecardPolicy.sast.disposition, "false-positive");
+  assert.equal(scorecardPolicy.branchProtection.alertNumber, 9);
+  assert.equal(scorecardPolicy.branchProtection.disposition, "accepted-risk");
+  assert.equal(scorecardPolicy.branchProtection.owner, "oaslananka");
+  assert.equal(scorecardPolicy.branchProtection.reviewCadence, "quarterly");
+  assert.equal(scorecardPolicy.branchProtection.expectedWarnings.length, 5);
+  requireIncludes(
+    "scripts/check-scorecard-evidence.mjs",
+    scorecardEvidenceCli,
+    "buildUnavailableScorecardEvidenceReport",
+  );
+  requireIncludes(
+    ".github/workflows/governance-evidence.yml",
+    governanceWorkflow,
+    "scorecard-evidence.json",
+  );
+  requireIncludes(
+    ".github/workflows/governance-evidence.yml",
+    governanceWorkflow,
+    "--governance-json governance-evidence.json",
+  );
+  assert.match(
+    rootPackage.scripts?.["check:best-practices"] ?? "",
+    /check:scorecard-evidence/u,
+  );
+
   const requiredStatusRule = (ruleset.rules ?? []).find(
     (entry) => entry.type === "required_status_checks",
   );
@@ -252,6 +296,12 @@ export function validateBestPracticesEvidence(root = repoRoot) {
     projectId: 13405,
     requiredStatusChecks: contexts,
     coverageThreshold,
+    scorecard: {
+      sampleSize: scorecardPolicy.sampleSize,
+      branchWarningCount:
+        scorecardPolicy.branchProtection.expectedWarnings.length,
+      reviewCadence: scorecardPolicy.branchProtection.reviewCadence,
+    },
   };
 }
 
