@@ -1,5 +1,7 @@
 import { Script } from 'node:vm';
 import { createKiCanvasViewerHtml } from '../../src/providers/viewerHtml';
+import { createViewerControllerScript } from '../../src/providers/viewer/viewerControllerScript';
+import { compactHtmlDocument } from '../../src/providers/viewer/viewerTemplate';
 
 describe('createKiCanvasViewerHtml', () => {
   it('includes hard timeout messaging instead of soft resolve text', () => {
@@ -415,6 +417,10 @@ describe('createKiCanvasViewerHtml', () => {
     for (const script of scripts) {
       expect(() => new Script(script)).not.toThrow();
     }
+
+    expect(scripts).toContain(
+      compactHtmlDocument(createViewerControllerScript())
+    );
   });
 
   it('normalizes minimal PCB inline text with fallback layer definitions', () => {
