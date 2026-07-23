@@ -10,6 +10,11 @@ import {
   validateRetiredDependencyPolicy,
 } from "./lib/retired-dependency-evidence.mjs";
 
+import {
+  classifyGraphResponse,
+  parseNextLinkHeader,
+} from "./check-retired-dependency-evidence.mjs";
+
 const RETIRED_PATH = "packages/mcp-server/uv.lock";
 
 function currentPolicy() {
@@ -90,4 +95,39 @@ test("#526 no graph residue and no open alert is current", () => {
   });
   assert.equal(report.status, "current");
   assert.equal(report.manifests[0].graphStatus, "absent");
+});
+
+test("#526 GraphQL retry classification distinguishes transient and terminal responses", () => {
+  assert.deepEqual(
+    classifyGraphResponse(
+      { ok: false, status: 502, statusText: "Bad Gateway" },
+      "upstream unavailable",
+    ),
+    { payload: null, failure: "HTTP 502 Bad Gateway", retryable: true },
+  );
+  const timedOut = classifyGraphResponse(
+    { ok: true, status: 200, statusText: "OK" },
+    JSON.stringify({ errors: [{ message: "Query timedout" }] }),
+  );
+  assert.equal(timedOut.payload, null);
+  assert.equal(timedOut.retryable, true);
+  assert.match(timedOut.failure, /timedout/u);
+  const terminalPayload = { errors: [{ message: "Field denied" }] };
+  const terminal = classifyGraphResponse(
+    { ok: true, status: 200, statusText: "OK" },
+    JSON.stringify(terminalPayload),
+  );
+  assert.deepEqual(terminal.payload, terminalPayload);
+  assert.equal(terminal.retryable, false);
+});
+
+test("#526 Link pagination parser avoids ambiguous regular-expression matching", () => {
+  const header =
+    '<https://api.github.com/example?page=2>; rel="next", <https://api.github.com/example?page=4>; rel="last"';
+  assert.equal(
+    parseNextLinkHeader(header),
+    "https://api.github.com/example?page=2",
+  );
+  assert.equal(parseNextLinkHeader("<unterminated; rel=next"), null);
+  assert.equal(parseNextLinkHeader("x".repeat(10000)), null);
 });

@@ -65,32 +65,52 @@ function sleep(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
+const GRAPH_ATTEMPT_LIMIT = 4;
+const TRANSIENT_GRAPH_STATUSES = new Set([502, 503, 504]);
+
+function isTimeoutMessage(message) {
+  const normalized = String(message).toLowerCase().replaceAll(" ", "");
+  return normalized.includes("timeout") || normalized.includes("timedout");
+}
+
+export function classifyGraphResponse(response, text) {
+  if (!response.ok) {
+    const failure = `HTTP ${response.status} ${response.statusText}`;
+    return {
+      payload: null,
+      failure,
+      retryable: TRANSIENT_GRAPH_STATUSES.has(response.status),
+    };
+  }
+  const payload = text ? JSON.parse(text) : null;
+  const messages = Array.isArray(payload?.errors)
+    ? payload.errors.map((error) => error.message)
+    : [];
+  if (messages.length === 0) {
+    return { payload, failure: "", retryable: false };
+  }
+  const failure = messages.join("; ");
+  const retryable = messages.some(isTimeoutMessage);
+  return { payload: retryable ? null : payload, failure, retryable };
+}
+
 async function fetchGraphPage(token, owner, name, query, after) {
   let lastFailure = "unknown GraphQL failure";
-  for (let attempt = 0; attempt < 4; attempt += 1) {
+  for (let attempt = 0; attempt < GRAPH_ATTEMPT_LIMIT; attempt += 1) {
     const response = await fetch("https://api.github.com/graphql", {
       method: "POST",
       headers: graphqlHeaders(token),
       body: JSON.stringify({ query, variables: { owner, name, after } }),
     });
-    const text = await response.text();
-    if (response.ok) {
-      const payload = text ? JSON.parse(text) : null;
-      const messages = Array.isArray(payload?.errors)
-        ? payload.errors.map((error) => error.message)
-        : [];
-      if (messages.length === 0) return payload;
-      lastFailure = messages.join("; ");
-      if (!messages.some((message) => /timed?out/iu.test(message))) {
-        return payload;
-      }
-    } else {
-      lastFailure = `HTTP ${response.status} ${response.statusText}`;
-      if (![502, 503, 504].includes(response.status)) {
-        throw new Error(`dependency graph manifests: ${lastFailure}`);
-      }
+    const result = classifyGraphResponse(response, await response.text());
+    if (result.payload) return result.payload;
+    lastFailure = result.failure;
+    if (!result.retryable) {
+      throw new Error(`dependency graph manifests: ${lastFailure}`);
     }
-    if (attempt < 3) await sleep(500 * 2 ** attempt);
+    if (attempt + 1 < GRAPH_ATTEMPT_LIMIT) {
+      await sleep(500 * 2 ** attempt);
+    }
   }
   throw new Error(`dependency graph manifests: ${lastFailure}`);
 }
@@ -134,11 +154,18 @@ async function fetchGraphManifests(token, repository) {
   return manifests;
 }
 
-function nextLink(linkHeader) {
+export function parseNextLinkHeader(linkHeader) {
   if (!linkHeader) return null;
   for (const part of linkHeader.split(",")) {
-    const match = part.match(/<([^>]+)>;\s*rel="next"/u);
-    if (match) return match[1];
+    const segments = part.split(";").map((segment) => segment.trim());
+    const relation = segments
+      .slice(1)
+      .find((segment) => segment === 'rel="next"' || segment === "rel=next");
+    if (!relation) continue;
+    const target = segments[0];
+    if (target.startsWith("<") && target.endsWith(">")) {
+      return target.slice(1, -1);
+    }
   }
   return null;
 }
@@ -148,7 +175,7 @@ async function fetchOpenAlerts(token, repository) {
   let url = `https://api.github.com/repos/${repository}/dependabot/alerts?state=open&per_page=100`;
   while (url) {
     const response = await fetch(url, { headers: requestHeaders(token) });
-    const next = nextLink(response.headers.get("link"));
+    const next = parseNextLinkHeader(response.headers.get("link"));
     const payload = await readJson(response, "open Dependabot alerts");
     alerts.push(
       ...payload.map((alert) => ({
