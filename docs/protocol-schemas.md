@@ -75,14 +75,14 @@ Each repo's `compatibility.yaml` declares the sibling product's acceptable range
 
 The cross-repo compatibility canary validates **published artifacts only**:
 
-| Check                                    | What it verifies                                                |
-| ---------------------------------------- | --------------------------------------------------------------- |
-| npm `@oaslananka/kicad-protocol-schemas` | Package resolves and exports `validateProtocolPayload`          |
-| PyPI `kicad-mcp-pro`                     | Published version resolves (smoke-test, not full integration)   |
-| `compatibility.yaml`                     | Studio declares the external `compatibleMcpPro` range            |
-| Guard                                    | `packages/protocol-schemas` local directory must NOT exist      |
-| `check:protocol-schemas`                 | Existing npm-schema resolution check                            |
-| `check:compatibility-contract`           | Existing compatibility matrix validation                        |
+| Check                                    | What it verifies                                              |
+| ---------------------------------------- | ------------------------------------------------------------- |
+| npm `@oaslananka/kicad-protocol-schemas` | Package resolves and exports `validateProtocolPayload`        |
+| PyPI `kicad-mcp-pro`                     | Published version resolves (smoke-test, not full integration) |
+| `compatibility.yaml`                     | Studio declares the external `compatibleMcpPro` range         |
+| Guard                                    | `packages/protocol-schemas` local directory must NOT exist    |
+| `check:protocol-schemas`                 | Existing npm-schema resolution check                          |
+| `check:compatibility-contract`           | Existing compatibility matrix validation                      |
 
 The canary does **not** replace a full cross-repo contract test (which would require
 installing a VSIX or running the complete MCP server via PyPI). It is a lightweight
@@ -205,11 +205,11 @@ corepack pnpm run check:compatibility-contract
 
 ### pnpm minimumReleaseAge policy
 
-The `pnpm-workspace.yaml` `minimumReleaseAge: 1440` rule prevents CI from
-accepting freshly published packages before 24 hours of registry propagation.
-When a new protocol-schemas version must bypass this window (e.g. a CI pipeline
-consuming a schema release from minutes ago), add the exact version to
-`minimumReleaseAgeExclude`. Revert the exclusion when the age requirement is
+The `pnpm-workspace.yaml` `minimumReleaseAge: 10080` rule prevents CI from
+accepting freshly published packages before seven days of registry observation.
+When a new protocol-schemas version must bypass this window (for example, a CI
+pipeline consuming a just-published security fix), add only the exact version
+to `minimumReleaseAgeExclude`. Revert the exclusion when the age requirement is
 satisfied or on the next version bump.
 
 ## Migration

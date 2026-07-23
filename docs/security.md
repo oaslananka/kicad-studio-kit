@@ -73,19 +73,53 @@ Pull requests and scheduled workflows keep the supply chain surface visible:
 - `Scorecard` publishes repository health findings through code scanning.
 - PyPI and TestPyPI publish jobs use Trusted Publishing through GitHub OIDC and
   upload registry-native attestations through `pypa/gh-action-pypi-publish`.
-- pnpm 11 supply-chain defaults are made explicit in `pnpm-workspace.yaml`:
-  `minimumReleaseAge: 1440` delays newly published npm versions by 24 hours,
-  and `blockExoticSubdeps: true` keeps transitive dependencies on trusted
-  registry, workspace, local, or trusted upstream sources.
-- `minimumReleaseAgeExclude` is limited by `check:supply-chain` to
-  version-scoped security patch exceptions. The current exception,
-  `tmp@0.2.6`, resolves GHSA-ph9p-34f9-6g65 without broadening the maturity
-  bypass to future `tmp` releases.
+- pnpm 11 supply-chain controls are explicit in `pnpm-workspace.yaml`:
+  `minimumReleaseAge: 10080` delays newly published npm versions for seven days,
+  `trustPolicy: no-downgrade` rejects weaker package provenance, and
+  `blockExoticSubdeps: true` keeps transitive dependencies on trusted registry,
+  workspace, local, or trusted upstream sources.
+- `minimumReleaseAgeExclude` is limited by `check:supply-chain` to exact
+  security-patch versions. `tmp@0.2.7` retains the reviewed tmp remediation and
+  `fast-uri@3.1.4` resolves GHSA-4c8g-83qw-93j6 while that release completes the
+  seven-day cooldown.
+- `trustPolicyExclude` is limited to the reviewed lockfile baseline selectors
+  `@octokit/endpoint@9.0.6`, `chokidar@4.0.3`, and
+  `semver@5.7.2 || 6.3.1`. Remove each selector as soon as the transitive graph
+  no longer resolves that exact version; broad package-name exclusions are not
+  permitted.
 - GHCR image publishing uses GitHub Container Registry, BuildKit SBOM and
   provenance, Trivy image scanning, and keyless Sigstore `cosign` signing.
 - Release publish workflows validate package contents, emit SHA-256 checksum
   evidence, and create GitHub artifact attestations where package registries do
   not already provide provenance.
+
+## Multi-Scanner Audit Dispositions
+
+The 2026-07-23 VPS audit used SonarQube CLI, Semgrep 1.170.0, OSV Scanner
+2.4.0, and Trivy 0.72.0 in addition to the repository's existing CodeQL,
+Gitleaks, dependency-review, and custom Semgrep gates.
+
+- SonarQube secret scanning of tracked text and configuration files reported no
+  issues. General agentic code analysis and SCA were unavailable in the active
+  organization plan and were not recorded as passing scans.
+- OSV Scanner evaluated all 1,198 `pnpm-lock.yaml` packages and reported no
+  known vulnerabilities.
+- Trivy filesystem scanning reported no HIGH/CRITICAL vulnerabilities, secrets,
+  or misconfigurations.
+- Repository-owned Semgrep rules reported no findings. Broader community rules
+  produced audit candidates dominated by nonce-protected VS Code webviews,
+  escaped or controlled regular expressions, tests, and pnpm/Renovate location
+  heuristics. Those are recorded as non-actionable under the repository's
+  single-owner scanner model.
+- Actionable defense-in-depth findings were corrected: policy-pack globs now use
+  deterministic non-RegExp matching, the TOML subset parser rejects
+  prototype-sensitive keys, and pnpm/Renovate enforce the seven-day cooldown
+  plus no-downgrade trust policy.
+
+Do not add another mandatory broad SAST, SCA, or secret scanner solely to repeat
+these categories. CodeQL owns broad SAST, custom Semgrep owns repository
+invariants, OSV/dependency review/pnpm audit own dependency evidence, and
+Gitleaks plus GitHub push protection own committed secrets.
 
 ## Alert Triage
 
@@ -135,7 +169,9 @@ pnpm 11.3 or newer.
 Emergency vulnerability patches that are newer than `minimumReleaseAge` may use
 a version-scoped `minimumReleaseAgeExclude` entry only when a reviewed advisory
 identifies the fixed version and `check:supply-chain` is updated to reject broad
-package-name exceptions.
+package-name exceptions. Trust-policy exceptions follow the same rule: exact
+versions only, documented evidence, and removal when the dependency graph moves
+past the affected release.
 
 Validate the policy with:
 

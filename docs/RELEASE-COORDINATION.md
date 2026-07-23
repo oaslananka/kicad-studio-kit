@@ -187,9 +187,9 @@ See [Product Dry Runs](publishing.md#product-dry-runs) for what each validates.
   3. Run `check:protocol-schemas` and `check:compatibility-contract`.
   4. Create a PR if any of those gates fail or the dependency version
      needs to be recorded.
-  5. Add the new version to `minimumReleaseAgeExclude` in
-     `pnpm-workspace.yaml` if CI consumes it within 24 hours of publish;
-     revert the exclusion on the next version bump.
+  5. Add the exact new version to `minimumReleaseAgeExclude` in
+     `pnpm-workspace.yaml` if CI must consume it before the seven-day cooldown;
+     document the reason and revert the exclusion on the next version bump.
 
 ### C.4 CI gates on PRs
 
