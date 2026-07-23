@@ -80,60 +80,82 @@ function validatePullRequestWriteJob(errors, key, job, mode) {
   }
 }
 
-export function validateWorkflowPermissionPolicy(
-  workflowName,
-  workflow,
-  policy,
-) {
-  const errors = [];
-  const events = workflowEvents(workflow);
+function validateWorkflowHeader(errors, workflowName, workflow, events) {
   if (events.includes("pull_request_target")) {
     errors.push(`${workflowName} must not use pull_request_target`);
   }
-
   const topWrites = writeScopes(workflow?.permissions);
   if (topWrites.length > 0) {
     errors.push(
       `${workflowName} top-level permissions must not grant write: ${topWrites.join(", ")}`,
     );
   }
+}
 
+function validateJobWriteScopes(errors, key, job, policy, events) {
+  const actualWrites = writeScopes(job?.permissions);
+  const expectedWrites = sorted(policy?.writeJobs?.[key] ?? []);
+  const hasWritePolicy = actualWrites.length > 0 || expectedWrites.length > 0;
+  if (hasWritePolicy) {
+    compareScopes(errors, key, expectedWrites, actualWrites);
+  }
+  if (events.includes("pull_request") && actualWrites.length > 0) {
+    validatePullRequestWriteJob(
+      errors,
+      key,
+      job,
+      policy?.pullRequestWriteJobs?.[key],
+    );
+  }
+  return hasWritePolicy;
+}
+
+function countPersistedCheckoutCredentials(errors, key, job) {
+  let count = 0;
+  for (const step of checkoutSteps(job)) {
+    const persisted = step?.with?.["persist-credentials"];
+    if (persisted === true) {
+      count += 1;
+    } else if (persisted !== false) {
+      errors.push(`${key} checkout must set persist-credentials: false`);
+    }
+  }
+  return count;
+}
+
+function inspectWorkflowJobs(errors, workflowName, workflow, policy, events) {
   const seenWriteJobs = new Set();
   const persistedCounts = new Map();
   for (const [jobName, job] of Object.entries(workflow?.jobs ?? {})) {
     const key = `${workflowName}#${jobName}`;
-    const actualWrites = writeScopes(job?.permissions);
-    const expectedWrites = sorted(policy?.writeJobs?.[key] ?? []);
-    if (actualWrites.length > 0 || expectedWrites.length > 0) {
-      compareScopes(errors, key, expectedWrites, actualWrites);
+    if (validateJobWriteScopes(errors, key, job, policy, events)) {
       seenWriteJobs.add(key);
     }
-
-    if (events.includes("pull_request") && actualWrites.length > 0) {
-      validatePullRequestWriteJob(
-        errors,
-        key,
-        job,
-        policy?.pullRequestWriteJobs?.[key],
-      );
-    }
-
-    for (const step of checkoutSteps(job)) {
-      const persisted = step?.with?.["persist-credentials"];
-      if (persisted === true) {
-        persistedCounts.set(key, (persistedCounts.get(key) ?? 0) + 1);
-      } else if (persisted !== false) {
-        errors.push(`${key} checkout must set persist-credentials: false`);
-      }
-    }
+    const persistedCount = countPersistedCheckoutCredentials(errors, key, job);
+    if (persistedCount > 0) persistedCounts.set(key, persistedCount);
   }
+  return { seenWriteJobs, persistedCounts };
+}
 
+function validateWriteJobInventory(
+  errors,
+  workflowName,
+  policy,
+  seenWriteJobs,
+) {
   for (const key of Object.keys(policy?.writeJobs ?? {})) {
     if (key.startsWith(`${workflowName}#`) && !seenWriteJobs.has(key)) {
       errors.push(`${key} write-job policy is stale or the job is missing`);
     }
   }
+}
 
+function validatePersistedCheckoutInventory(
+  errors,
+  workflowName,
+  policy,
+  persistedCounts,
+) {
   const persistedPolicy = policy?.persistedCheckoutCredentials ?? {};
   const persistedKeys = new Set([
     ...persistedCounts.keys(),
@@ -150,7 +172,30 @@ export function validateWorkflowPermissionPolicy(
       );
     }
   }
+}
 
+export function validateWorkflowPermissionPolicy(
+  workflowName,
+  workflow,
+  policy,
+) {
+  const errors = [];
+  const events = workflowEvents(workflow);
+  validateWorkflowHeader(errors, workflowName, workflow, events);
+  const { seenWriteJobs, persistedCounts } = inspectWorkflowJobs(
+    errors,
+    workflowName,
+    workflow,
+    policy,
+    events,
+  );
+  validateWriteJobInventory(errors, workflowName, policy, seenWriteJobs);
+  validatePersistedCheckoutInventory(
+    errors,
+    workflowName,
+    policy,
+    persistedCounts,
+  );
   return errors;
 }
 

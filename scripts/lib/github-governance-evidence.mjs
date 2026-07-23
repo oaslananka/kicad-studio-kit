@@ -210,105 +210,99 @@ function endpointSetting(observation, id, label) {
   );
 }
 
-export function buildGovernanceEvidenceReport({
-  expectedRuleset,
-  liveRuleset,
-  repository,
-  privateVulnerabilityReporting,
-  endpointAvailability = {},
-  expectedActionsPermissions = null,
-  liveActionsPermissions = null,
-  actionsPermissionsAvailability = null,
-  generatedAt = new Date().toISOString(),
-}) {
+function buildRulesetEvidence(expectedRuleset, liveRuleset) {
   const expected = normalizeRuleset(expectedRuleset);
-  let ruleset;
-  let status;
-  let exitCode;
-
   if (!liveRuleset) {
-    ruleset = {
+    return {
       status: "unavailable",
-      differences: ["Active default-branch ruleset could not be read."],
-      expected,
-      live: null,
+      exitCode: 1,
+      evidence: {
+        status: "unavailable",
+        differences: ["Active default-branch ruleset could not be read."],
+        expected,
+        live: null,
+      },
     };
-    status = "unavailable";
-    exitCode = 1;
-  } else {
-    const live = normalizeRuleset(liveRuleset);
-    const differences = compareRulesets(expected, live);
-    ruleset = {
-      status: differences.length === 0 ? "current" : "drift",
-      differences,
-      expected,
-      live,
-    };
-    status = differences.length === 0 ? "current" : "drift";
-    exitCode = differences.length === 0 ? 0 : 1;
   }
+  const live = normalizeRuleset(liveRuleset);
+  const differences = compareRulesets(expected, live);
+  const status = differences.length === 0 ? "current" : "drift";
+  return {
+    status,
+    exitCode: differences.length === 0 ? 0 : 1,
+    evidence: { status, differences, expected, live },
+  };
+}
 
-  let actionsPermissions = null;
-  if (expectedActionsPermissions) {
-    const expectedActions = normalizeActionsPermissions(
-      expectedActionsPermissions,
-    );
-    if (!liveActionsPermissions) {
-      actionsPermissions = {
+function buildActionsPermissionsEvidence(
+  expectedActionsPermissions,
+  liveActionsPermissions,
+  availability,
+) {
+  if (!expectedActionsPermissions) return null;
+  const expected = normalizeActionsPermissions(expectedActionsPermissions);
+  if (!liveActionsPermissions) {
+    return {
+      status: "unavailable",
+      exitCode: 1,
+      evidence: {
         status: "unavailable",
         differences: [
-          actionsPermissionsAvailability?.reason ??
+          availability?.reason ??
             "Repository Actions permissions could not be read.",
         ],
-        expected: expectedActions,
+        expected,
         live: null,
-      };
-      status = "unavailable";
-      exitCode = 1;
-    } else {
-      const liveActions = normalizeActionsPermissions(liveActionsPermissions);
-      const differences = compareActionsPermissions(
-        expectedActions,
-        liveActions,
-      );
-      actionsPermissions = {
-        status: differences.length === 0 ? "current" : "drift",
-        differences,
-        expected: expectedActions,
-        live: liveActions,
-      };
-      if (differences.length > 0) {
-        if (status !== "unavailable") status = "drift";
-        exitCode = 1;
-      }
-    }
+      },
+    };
   }
+  const live = normalizeActionsPermissions(liveActionsPermissions);
+  const differences = compareActionsPermissions(expected, live);
+  const status = differences.length === 0 ? "current" : "drift";
+  return {
+    status,
+    exitCode: differences.length === 0 ? 0 : 1,
+    evidence: { status, differences, expected, live },
+  };
+}
 
-  const settings = [];
-  if (privateVulnerabilityReporting?.available === true) {
-    settings.push(
-      setting(
-        "private-vulnerability-reporting",
-        "Private vulnerability reporting",
-        privateVulnerabilityReporting.enabled ? "confirmed" : "unconfirmed",
-        Boolean(privateVulnerabilityReporting.enabled),
-        `enabled=${String(Boolean(privateVulnerabilityReporting.enabled))}`,
-      ),
-    );
-  } else {
-    settings.push(
-      setting(
-        "private-vulnerability-reporting",
-        "Private vulnerability reporting",
-        "unavailable",
-        null,
-        privateVulnerabilityReporting?.reason ??
-          "GitHub endpoint was not queried.",
-      ),
+function combineEvidenceStatus(rulesetResult, actionsResult) {
+  const results = [rulesetResult, actionsResult].filter(Boolean);
+  if (results.some((result) => result.status === "unavailable")) {
+    return { status: "unavailable", exitCode: 1 };
+  }
+  if (results.some((result) => result.status === "drift")) {
+    return { status: "drift", exitCode: 1 };
+  }
+  return { status: "current", exitCode: 0 };
+}
+
+function privateVulnerabilitySetting(observation) {
+  if (observation?.available === true) {
+    return setting(
+      "private-vulnerability-reporting",
+      "Private vulnerability reporting",
+      observation.enabled ? "confirmed" : "unconfirmed",
+      Boolean(observation.enabled),
+      `enabled=${String(Boolean(observation.enabled))}`,
     );
   }
+  return setting(
+    "private-vulnerability-reporting",
+    "Private vulnerability reporting",
+    "unavailable",
+    null,
+    observation?.reason ?? "GitHub endpoint was not queried.",
+  );
+}
 
-  settings.push(
+function buildRepositorySecuritySettings(
+  repository,
+  privateVulnerabilityReporting,
+  endpointAvailability,
+) {
+  return [
+    privateVulnerabilitySetting(privateVulnerabilityReporting),
     analysisSetting(
       repository,
       `${DEPENDENCY_SECURITY_PROVIDER}_security_updates`,
@@ -354,22 +348,49 @@ export function buildGovernanceEvidenceReport({
       "secret-scanning-alerts",
       "Secret scanning alerts endpoint",
     ),
-  );
+  ];
+}
 
+function repositorySummary(repository) {
+  return repository
+    ? {
+        defaultBranch: repository.default_branch ?? null,
+        visibility: repository.visibility ?? null,
+      }
+    : null;
+}
+
+export function buildGovernanceEvidenceReport({
+  expectedRuleset,
+  liveRuleset,
+  repository,
+  privateVulnerabilityReporting,
+  endpointAvailability = {},
+  expectedActionsPermissions = null,
+  liveActionsPermissions = null,
+  actionsPermissionsAvailability = null,
+  generatedAt = new Date().toISOString(),
+}) {
+  const rulesetResult = buildRulesetEvidence(expectedRuleset, liveRuleset);
+  const actionsResult = buildActionsPermissionsEvidence(
+    expectedActionsPermissions,
+    liveActionsPermissions,
+    actionsPermissionsAvailability,
+  );
+  const overall = combineEvidenceStatus(rulesetResult, actionsResult);
   return {
     schemaVersion: 1,
     generatedAt,
-    repository: repository
-      ? {
-          defaultBranch: repository.default_branch ?? null,
-          visibility: repository.visibility ?? null,
-        }
-      : null,
-    status,
-    exitCode,
-    ruleset,
-    actionsPermissions,
-    settings,
+    repository: repositorySummary(repository),
+    status: overall.status,
+    exitCode: overall.exitCode,
+    ruleset: rulesetResult.evidence,
+    actionsPermissions: actionsResult?.evidence ?? null,
+    settings: buildRepositorySecuritySettings(
+      repository,
+      privateVulnerabilityReporting,
+      endpointAvailability,
+    ),
   };
 }
 
