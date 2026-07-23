@@ -199,11 +199,21 @@ test("#495 governance evidence workflow is scheduled, manual, pinned, and least 
     source,
     /node scripts\/check-retired-dependency-evidence\.mjs[\s\S]*--fetch/u,
   );
+  const scorecardStep = workflow.jobs.evidence.steps.find(
+    (step) => step.name === "Collect Scorecard evidence",
+  );
+  assert.equal(scorecardStep.if, "always()");
+  assert.equal(scorecardStep.env.GITHUB_TOKEN, "${{ secrets.GH_AUTH_TOKEN }}");
+  assert.match(
+    source,
+    /node scripts\/check-scorecard-evidence\.mjs[\s\S]*--governance-json governance-evidence\.json/u,
+  );
   const artifactPath = workflow.jobs.evidence.steps.find(
     (step) => step.name === "Upload governance evidence",
   ).with.path;
   assert.match(artifactPath, /governance-evidence\.json/u);
   assert.match(artifactPath, /retired-dependency-evidence\.json/u);
+  assert.match(artifactPath, /scorecard-evidence\.json/u);
   for (const action of source.matchAll(/uses:\s*([^\s]+)/gu)) {
     assert.match(action[1], /@[0-9a-f]{40}$/u);
   }

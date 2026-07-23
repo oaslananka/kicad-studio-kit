@@ -17,4 +17,9 @@ test("Best Practices evidence has the repository-controlled scorecard hardening 
   assert.ok(result.coverageThreshold.statements >= 80);
   assert.ok(result.coverageThreshold.lines >= 80);
   assert.ok(result.coverageThreshold.functions >= 80);
+  assert.deepEqual(result.scorecard, {
+    sampleSize: 30,
+    branchWarningCount: 5,
+    reviewCadence: "quarterly",
+  });
 });

@@ -88,6 +88,24 @@ The strict up-to-date rule currently favors a current green `main` integration
 point over merge throughput. Re-evaluate it with the required-check set if the
 repository adopts a merge queue or concurrent merge volume grows.
 
+## Scorecard residual risk
+
+OpenSSF Scorecard currently deducts five points-oriented controls that are not
+enabled for the solo-maintainer model: administrator enforcement, stale-review
+dismissal, mandatory approvers, CODEOWNERS approval, and last-push approval.
+These exact warnings are registered in `.github/scorecard-residual-risk.json` as
+an accepted risk owned by `oaslananka` and reviewed quarterly. No finding is
+dismissed solely to improve a score.
+
+The accepted risk remains valid only while the checked-in and live rulesets match,
+pull requests stay mandatory, six strict checks remain required, signed commits
+and conversation resolution remain enforced, and force pushes/deletion remain
+blocked. `scripts/check-scorecard-evidence.mjs` fails closed for any additional
+Scorecard warning or governance drift. Stronger approval rules become mandatory
+when another qualified maintainer is reliably available, multiple active human
+contributors emerge, bypass scope expands, required enforcement weakens, or a
+high-risk release or credential change lacks independent review.
+
 ## Live evidence
 
 `.github/workflows/governance-evidence.yml` runs weekly and on demand only from
