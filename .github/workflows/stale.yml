@@ -5,12 +5,13 @@ on:
     - cron: "42 1 * * *"
   workflow_dispatch:
 
-permissions:
-  issues: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   stale:
+    permissions:
+      issues: write
+      pull-requests: write
     if: github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops'
     runs-on: ubuntu-24.04
     steps:

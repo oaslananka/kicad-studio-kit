@@ -79,5 +79,5 @@ ruleset contexts from drifting.
 The versioned ruleset is `.github/rulesets/main.json`. The 2026-07-20 audit
 confirmed that the active `main-protection` ruleset matches it, including six
 required checks. `.github/workflows/governance-evidence.yml` repeats this
-comparison weekly and on demand; investigate any drift before changing maturity
-claims.
+comparison weekly and on demand from `main` using a protected administrative
+read token; investigate any drift before changing maturity claims.
