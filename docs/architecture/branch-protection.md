@@ -91,10 +91,11 @@ repository adopts a merge queue or concurrent merge volume grows.
 ## Live evidence
 
 `.github/workflows/governance-evidence.yml` runs weekly and on demand. It compares
-the active default-branch ruleset with `.github/rulesets/main.json`, reports
-repository security settings as confirmed, unconfirmed, or unavailable, and
-uploads a machine-readable JSON artifact. Live ruleset drift fails that workflow;
-API unavailability is never treated as confirmation.
+the active default-branch ruleset with `.github/rulesets/main.json`, reports repository security settings as confirmed, unconfirmed, or unavailable,
+compares live GitHub Actions defaults with the checked-in
+[Actions permissions policy](actions-permissions.md), and uploads a
+machine-readable JSON artifact. Live ruleset or Actions-permission drift fails
+that workflow; API unavailability is never treated as confirmation.
 
 The legacy branch-protection REST endpoint can return `404 Branch not protected`
 when protection is implemented entirely through repository rulesets. Treat the

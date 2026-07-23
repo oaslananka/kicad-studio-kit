@@ -35,3 +35,7 @@ Security reports should include:
 - whether public credit is requested after disclosure.
 
 The project will coordinate public disclosure after a fix, mitigation, or maintainer-approved advisory is ready. Reporter credit is supported when requested and when disclosure is coordinated responsibly.
+
+## GitHub Actions permissions
+
+Repository workflow tokens default to read-only, GitHub Actions cannot approve pull-request reviews, and platform SHA pinning is required. Workflow-specific write permissions are job-scoped and validated by `corepack pnpm run check:actions-permissions`. See [GitHub Actions permissions](docs/architecture/actions-permissions.md).

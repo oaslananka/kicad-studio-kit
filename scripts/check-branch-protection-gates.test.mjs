@@ -217,3 +217,53 @@ test("#507 solo-maintainer ruleset avoids review deadlock", () => {
   assert.equal(pullRequest.requiredReviewThreadResolution, true);
   assert.equal(pullRequest.dismissStaleReviewsOnPush, false);
 });
+
+test("#527 governance evidence fails closed on Actions permission drift", () => {
+  const expectedActionsPermissions = {
+    default_workflow_permissions: "read",
+    can_approve_pull_request_reviews: false,
+    allowed_actions: "all",
+    sha_pinning_required: true,
+  };
+  const report = buildGovernanceEvidenceReport({
+    expectedRuleset: expectedRulesetFixture,
+    liveRuleset: expectedRulesetFixture,
+    expectedActionsPermissions,
+    liveActionsPermissions: {
+      ...expectedActionsPermissions,
+      default_workflow_permissions: "write",
+    },
+    repository: {},
+    privateVulnerabilityReporting: { available: true, enabled: true },
+  });
+  assert.equal(report.status, "drift");
+  assert.equal(report.exitCode, 1);
+  assert.match(
+    report.actionsPermissions.differences.join("\n"),
+    /defaultWorkflowPermissions/u,
+  );
+});
+
+test("#527 governance evidence confirms least-privilege Actions defaults", () => {
+  const actionsPermissions = {
+    default_workflow_permissions: "read",
+    can_approve_pull_request_reviews: false,
+    allowed_actions: "all",
+    sha_pinning_required: true,
+  };
+  const report = buildGovernanceEvidenceReport({
+    expectedRuleset: expectedRulesetFixture,
+    liveRuleset: expectedRulesetFixture,
+    expectedActionsPermissions: actionsPermissions,
+    liveActionsPermissions: actionsPermissions,
+    repository: {},
+    privateVulnerabilityReporting: { available: true, enabled: true },
+  });
+  assert.equal(report.status, "current");
+  assert.equal(report.exitCode, 0);
+  assert.equal(report.actionsPermissions.status, "current");
+  assert.match(
+    renderGovernanceEvidenceMarkdown(report),
+    /GitHub Actions permissions/u,
+  );
+});

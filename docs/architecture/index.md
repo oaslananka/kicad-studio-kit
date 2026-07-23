@@ -13,6 +13,7 @@ server is developed and released separately in
 - [Product boundaries](product-boundaries.md)
 - [Release model](release-model.md)
 - [Branch protection](branch-protection.md)
+- [GitHub Actions permissions](actions-permissions.md)
 - [Definition of done](definition-of-done.md)
 - [Protocol change checklist](protocol-change-checklist.md)
 - [Review evidence policy](review-evidence-policy.md)

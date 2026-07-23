@@ -77,6 +77,7 @@ jobs:
       - run: corepack pnpm run check:compatibility-contract
       - run: corepack pnpm run check:governance
       - run: corepack pnpm run check:branch-protection
+      - run: corepack pnpm run check:actions-permissions
       - run: corepack pnpm run check:agent-configs
       - run: corepack pnpm run check:review-evidence
       - run: corepack pnpm run check:extension-manifest
@@ -334,7 +335,7 @@ jobs:
 
   coverage-report:
     needs: vscode-extension
-    if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && github.event_name == 'pull_request' && needs.vscode-extension.result == 'success' }}
+    if: ${{ (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && needs.vscode-extension.result == 'success' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read

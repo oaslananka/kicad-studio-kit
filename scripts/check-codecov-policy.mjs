@@ -81,11 +81,13 @@ function validateWorkflow(errors, workflow) {
       workflow.includes("disable_search: true"),
     "ci.yml must upload explicit LCOV and JUnit report paths with discovery disabled",
   );
+  const forkGuard =
+    "github.event.pull_request.head.repo.full_name == github.repository";
+  const coverageReportJob = extractJob(workflow, "coverage-report", "codecov");
+  const codecovJob = extractJob(workflow, "codecov", "forbidden-refs");
   requireCondition(
     errors,
-    workflow.includes(
-      "github.event.pull_request.head.repo.full_name == github.repository",
-    ),
+    coverageReportJob.includes(forkGuard) && codecovJob.includes(forkGuard),
     "ci.yml must skip the Codecov report job for fork pull requests",
   );
   requireCondition(
@@ -101,7 +103,6 @@ function validateWorkflow(errors, workflow) {
     "ci.yml must upload JUnit results through codecov-action when a failed test report is available",
   );
 
-  const codecovJob = extractJob(workflow, "codecov", "forbidden-refs");
   requireCondition(
     errors,
     codecovJob.includes("fetch-depth: 0"),

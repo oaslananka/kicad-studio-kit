@@ -13,6 +13,10 @@ import {
 const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
 const DEFAULT_RULESET_PATH = path.join(REPO_ROOT, ".github/rulesets/main.json");
+const ACTIONS_PERMISSIONS_PATH = path.join(
+  REPO_ROOT,
+  ".github/actions-permissions.json",
+);
 const DEPENDENCY_SECURITY_PROVIDER = ["depend", "abot"].join("");
 
 function parseArgs(argv) {
@@ -44,6 +48,11 @@ function parseArgs(argv) {
 
 function readExpectedRuleset() {
   return JSON.parse(fs.readFileSync(DEFAULT_RULESET_PATH, "utf8"));
+}
+
+function readExpectedActionsPermissions() {
+  return JSON.parse(fs.readFileSync(ACTIONS_PERMISSIONS_PATH, "utf8"))
+    .repositoryDefaults;
 }
 
 function safeReason(status, statusText) {
@@ -94,6 +103,11 @@ async function fetchLiveEvidence(repositoryName, expectedRuleset) {
         reason: "GITHUB_TOKEN or GH_TOKEN is not set.",
       },
       endpointAvailability: {},
+      liveActionsPermissions: null,
+      actionsPermissionsAvailability: {
+        available: false,
+        reason: "GITHUB_TOKEN or GH_TOKEN is not set.",
+      },
     };
   }
 
@@ -124,15 +138,25 @@ async function fetchLiveEvidence(repositoryName, expectedRuleset) {
     }
   }
 
-  const [dependencyAlerts, codeScanningAlerts, secretScanningAlerts] =
-    await Promise.all([
-      apiRequest(
-        `${repoPath}/${DEPENDENCY_SECURITY_PROVIDER}/alerts?per_page=1`,
-        token,
-      ),
-      apiRequest(`${repoPath}/code-scanning/alerts?per_page=1`, token),
-      apiRequest(`${repoPath}/secret-scanning/alerts?per_page=1`, token),
-    ]);
+  const [
+    dependencyAlerts,
+    codeScanningAlerts,
+    secretScanningAlerts,
+    workflowPermissions,
+    actionsPermissions,
+  ] = await Promise.all([
+    apiRequest(
+      `${repoPath}/${DEPENDENCY_SECURITY_PROVIDER}/alerts?per_page=1`,
+      token,
+    ),
+    apiRequest(`${repoPath}/code-scanning/alerts?per_page=1`, token),
+    apiRequest(`${repoPath}/secret-scanning/alerts?per_page=1`, token),
+    apiRequest(`${repoPath}/actions/permissions/workflow`, token),
+    apiRequest(`${repoPath}/actions/permissions`, token),
+  ]);
+
+  const actionsAvailable =
+    workflowPermissions.available && actionsPermissions.available;
 
   return {
     liveRuleset,
@@ -145,6 +169,19 @@ async function fetchLiveEvidence(repositoryName, expectedRuleset) {
       : {
           available: false,
           reason: privateReportingResult.reason,
+        },
+    liveActionsPermissions: actionsAvailable
+      ? { ...workflowPermissions.data, ...actionsPermissions.data }
+      : null,
+    actionsPermissionsAvailability: actionsAvailable
+      ? { available: true, reason: "" }
+      : {
+          available: false,
+          reason:
+            [workflowPermissions.reason, actionsPermissions.reason]
+              .filter(Boolean)
+              .join("; ") ||
+            "Actions permissions endpoints were not available.",
         },
     endpointAvailability: {
       dependencyAlerts: {
@@ -172,11 +209,12 @@ function writeOutput(filePath, content) {
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   const expectedRuleset = readExpectedRuleset();
+  const expectedActionsPermissions = readExpectedActionsPermissions();
 
   if (!options.fetch) {
     const normalized = normalizeRuleset(expectedRuleset);
     console.log(
-      `Checked-in governance ruleset is parseable (${normalized.requiredStatusChecks.contexts.length} required checks).`,
+      `Checked-in governance ruleset and Actions permission policy are parseable (${normalized.requiredStatusChecks.contexts.length} required checks; default workflow permissions=${expectedActionsPermissions.default_workflow_permissions}).`,
     );
     return;
   }
@@ -187,6 +225,7 @@ async function main() {
   );
   const report = buildGovernanceEvidenceReport({
     expectedRuleset,
+    expectedActionsPermissions,
     ...liveEvidence,
   });
   const markdown = renderGovernanceEvidenceMarkdown(report);

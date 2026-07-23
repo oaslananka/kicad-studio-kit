@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "repositoryDefaults": {
+    "default_workflow_permissions": "read",
+    "can_approve_pull_request_reviews": false,
+    "allowed_actions": "all",
+    "sha_pinning_required": true
+  },
+  "writeJobs": {
+    "ci.yml#coverage-report": ["pull-requests"],
+    "codeql.yml#analyze": ["security-events"],
+    "docs.yml#deploy": ["id-token", "pages"],
+    "publish-extension.yml#package": [
+      "artifact-metadata",
+      "attestations",
+      "contents",
+      "id-token"
+    ],
+    "release-please.yml#release": [
+      "actions",
+      "contents",
+      "issues",
+      "pull-requests"
+    ],
+    "scorecard.yml#analysis": ["id-token", "security-events"],
+    "security.yml#security": ["security-events"],
+    "stale.yml#stale": ["issues", "pull-requests"],
+    "vscode-canary.yml#extension-host": ["issues"]
+  },
+  "persistedCheckoutCredentials": {
+    "release-please.yml#release": 2
+  },
+  "pullRequestWriteJobs": {
+    "ci.yml#coverage-report": "same-repository-head-only",
+    "codeql.yml#analyze": "github-fork-token-read-only",
+    "docs.yml#deploy": "non-pull-request-job",
+    "security.yml#security": "github-fork-token-read-only"
+  }
+}

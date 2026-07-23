@@ -1,3 +1,8 @@
+import {
+  compareActionsPermissions,
+  normalizeActionsPermissions,
+} from "./actions-permissions.mjs";
+
 const DEPENDENCY_SECURITY_PROVIDER = ["depend", "abot"].join("");
 
 function compareStrings(left, right) {
@@ -211,6 +216,9 @@ export function buildGovernanceEvidenceReport({
   repository,
   privateVulnerabilityReporting,
   endpointAvailability = {},
+  expectedActionsPermissions = null,
+  liveActionsPermissions = null,
+  actionsPermissionsAvailability = null,
   generatedAt = new Date().toISOString(),
 }) {
   const expected = normalizeRuleset(expectedRuleset);
@@ -238,6 +246,42 @@ export function buildGovernanceEvidenceReport({
     };
     status = differences.length === 0 ? "current" : "drift";
     exitCode = differences.length === 0 ? 0 : 1;
+  }
+
+  let actionsPermissions = null;
+  if (expectedActionsPermissions) {
+    const expectedActions = normalizeActionsPermissions(
+      expectedActionsPermissions,
+    );
+    if (!liveActionsPermissions) {
+      actionsPermissions = {
+        status: "unavailable",
+        differences: [
+          actionsPermissionsAvailability?.reason ??
+            "Repository Actions permissions could not be read.",
+        ],
+        expected: expectedActions,
+        live: null,
+      };
+      status = "unavailable";
+      exitCode = 1;
+    } else {
+      const liveActions = normalizeActionsPermissions(liveActionsPermissions);
+      const differences = compareActionsPermissions(
+        expectedActions,
+        liveActions,
+      );
+      actionsPermissions = {
+        status: differences.length === 0 ? "current" : "drift",
+        differences,
+        expected: expectedActions,
+        live: liveActions,
+      };
+      if (differences.length > 0) {
+        if (status !== "unavailable") status = "drift";
+        exitCode = 1;
+      }
+    }
   }
 
   const settings = [];
@@ -324,6 +368,7 @@ export function buildGovernanceEvidenceReport({
     status,
     exitCode,
     ruleset,
+    actionsPermissions,
     settings,
   };
 }
@@ -349,6 +394,23 @@ export function renderGovernanceEvidenceMarkdown(report) {
     lines.push("", ...report.ruleset.differences.map((item) => `- ${item}`));
   } else {
     lines.push("", "The active ruleset matches the checked-in policy.");
+  }
+
+  if (report.actionsPermissions) {
+    lines.push(
+      "",
+      "## GitHub Actions permissions",
+      "",
+      `Status: **${report.actionsPermissions.status}**`,
+    );
+    if (report.actionsPermissions.differences.length > 0) {
+      lines.push(
+        "",
+        ...report.actionsPermissions.differences.map((item) => `- ${item}`),
+      );
+    } else {
+      lines.push("", "Live Actions permissions match the checked-in policy.");
+    }
   }
 
   lines.push(
