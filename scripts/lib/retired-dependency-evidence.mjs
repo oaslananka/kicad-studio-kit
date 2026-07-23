@@ -49,6 +49,11 @@ function validateManifestEntry(entry, index) {
       `${label} ownerDocumentation must identify the external KiCad MCP Pro documentation`,
     );
   }
+  if (!/^DGM_[A-Za-z0-9_-]+$/u.test(entry?.graphNodeId ?? "")) {
+    errors.push(
+      `${label} graphNodeId must be a DependencyGraphManifest node ID`,
+    );
+  }
   if (!/^[0-9a-f]{40}$/u.test(entry?.removalCommit ?? "")) {
     errors.push(`${label} removalCommit must be a full commit SHA`);
   }
@@ -178,6 +183,7 @@ function manifestReport(entry, presentPaths, graphManifests, openAlerts) {
     path: entry.path,
     directory: entry.directory,
     ownerDocumentation: entry.ownerDocumentation,
+    graphNodeId: entry.graphNodeId,
     removalCommit: entry.removalCommit,
     dismissalReason: entry.dismissalReason,
     residueDisposition: entry.residueDisposition,
@@ -218,6 +224,55 @@ export function buildRetiredDependencyEvidenceReport({
   };
 }
 
+function unavailableManifestReport(entry, presentPaths, reason) {
+  const treePresent =
+    presentPaths.includes(entry.path) || presentPaths.includes(entry.directory);
+  const differences = [
+    `Live dependency evidence unavailable: ${String(reason).slice(0, 300)}`,
+  ];
+  if (treePresent) {
+    differences.unshift(`${entry.path} is present in the repository tree`);
+  }
+  return {
+    path: entry.path,
+    directory: entry.directory,
+    ownerDocumentation: entry.ownerDocumentation,
+    graphNodeId: entry.graphNodeId,
+    removalCommit: entry.removalCommit,
+    dismissalReason: entry.dismissalReason,
+    residueDisposition: entry.residueDisposition,
+    allowedResidualDependencyCounts: entry.allowedResidualDependencyCounts,
+    treeStatus: treePresent ? "present" : "absent",
+    graphStatus: "unavailable",
+    graphDependencyCount: null,
+    openAlertCount: null,
+    status: "unavailable",
+    differences,
+  };
+}
+
+export function buildUnavailableRetiredDependencyEvidenceReport({
+  policy,
+  presentPaths = [],
+  reason,
+  generatedAt = new Date().toISOString(),
+}) {
+  return {
+    schemaVersion: 1,
+    generatedAt,
+    repository: policy.repository,
+    status: "unavailable",
+    exitCode: 1,
+    manifests: policy.manifests.map((entry) =>
+      unavailableManifestReport(entry, presentPaths, reason),
+    ),
+  };
+}
+
+function displayEvidenceValue(value) {
+  return value === null || value === undefined ? "unavailable" : String(value);
+}
+
 function escapeTable(value) {
   return String(value)
     .replaceAll("|", String.raw`\|`)
@@ -235,7 +290,7 @@ export function renderRetiredDependencyEvidenceMarkdown(report) {
   ];
   for (const manifest of report.manifests) {
     lines.push(
-      `| ${escapeTable(manifest.path)} | ${manifest.treeStatus} | ${manifest.graphStatus} (${manifest.graphDependencyCount}) | ${manifest.openAlertCount} | ${manifest.status} |`,
+      `| ${escapeTable(manifest.path)} | ${manifest.treeStatus} | ${manifest.graphStatus} (${displayEvidenceValue(manifest.graphDependencyCount)}) | ${displayEvidenceValue(manifest.openAlertCount)} | ${manifest.status} |`,
     );
     for (const difference of manifest.differences) {
       lines.push(`- ${difference}`);

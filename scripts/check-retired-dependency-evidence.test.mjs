@@ -6,12 +6,15 @@ import test from "node:test";
 
 import {
   buildRetiredDependencyEvidenceReport,
+  buildUnavailableRetiredDependencyEvidenceReport,
   loadRetiredDependencyPolicy,
   validateRetiredDependencyPolicy,
 } from "./lib/retired-dependency-evidence.mjs";
 
 import {
+  buildGraphNodeRequest,
   classifyGraphResponse,
+  graphManifestFromPayload,
   parseNextLinkHeader,
 } from "./check-retired-dependency-evidence.mjs";
 
@@ -130,4 +133,66 @@ test("#526 Link pagination parser avoids ambiguous regular-expression matching",
   );
   assert.equal(parseNextLinkHeader("<unterminated; rel=next"), null);
   assert.equal(parseNextLinkHeader("x".repeat(10000)), null);
+});
+
+test("#526 exact graph-node request avoids the unstable manifest connection", () => {
+  const manifest = currentPolicy().manifests[0];
+  const request = buildGraphNodeRequest(manifest.graphNodeId);
+  assert.deepEqual(request.variables, { id: manifest.graphNodeId });
+  assert.match(request.query, /node\(id: \$id\)/u);
+  assert.doesNotMatch(request.query, /dependencyGraphManifests/u);
+});
+
+test("#526 exact graph-node payload must retain the expected manifest path", () => {
+  const manifest = currentPolicy().manifests[0];
+  assert.deepEqual(
+    graphManifestFromPayload(
+      {
+        data: {
+          node: {
+            id: manifest.graphNodeId,
+            filename: RETIRED_PATH,
+            dependenciesCount: 183,
+          },
+        },
+      },
+      manifest,
+    ),
+    { filename: RETIRED_PATH, dependenciesCount: 183 },
+  );
+  assert.equal(
+    graphManifestFromPayload({ data: { node: null } }, manifest),
+    null,
+  );
+  assert.throws(
+    () =>
+      graphManifestFromPayload(
+        {
+          data: {
+            node: {
+              id: manifest.graphNodeId,
+              filename: "unexpected/uv.lock",
+              dependenciesCount: 183,
+            },
+          },
+        },
+        manifest,
+      ),
+    /path mismatch/u,
+  );
+});
+
+test("#526 unavailable API evidence fails closed and remains artifact-safe", () => {
+  const report = buildUnavailableRetiredDependencyEvidenceReport({
+    policy: currentPolicy(),
+    presentPaths: [],
+    reason: "dependency graph manifests: HTTP 502 Bad Gateway",
+    generatedAt: "2026-07-23T00:00:00.000Z",
+  });
+  assert.equal(report.status, "unavailable");
+  assert.equal(report.exitCode, 1);
+  assert.equal(report.manifests[0].graphStatus, "unavailable");
+  assert.equal(report.manifests[0].graphDependencyCount, null);
+  assert.equal(report.manifests[0].openAlertCount, null);
+  assert.match(report.manifests[0].differences.join("\n"), /HTTP 502/u);
 });

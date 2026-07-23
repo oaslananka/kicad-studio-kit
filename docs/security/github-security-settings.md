@@ -54,12 +54,15 @@ correlator. The repository does not depend on an undocumented destructive API or
 on a persistent user-submitted tombstone.
 
 `.github/retired-dependency-manifests.json` records the ownership boundary,
-removal commit, dismissal rationale, and the observed residual dependency counts
-`0` and `183`. The root Dependabot policy rejects restoration of the retired
-directory or lockfile. The scheduled Governance Evidence workflow fails if the
-native residue changes to any other count or if an open alert references the
-absent manifest. A future GitHub cleanup to zero dependencies or complete
-manifest removal remains an accepted improvement.
+removal commit, dismissal rationale, exact native GraphQL node ID, and the
+observed residual dependency counts `0` and `183`. The root Dependabot policy
+rejects restoration of the retired directory or lockfile. The scheduled
+Governance Evidence workflow reads that exact node instead of enumerating the
+repository-wide manifest connection, fails if the native residue changes to any
+other count, and fails if an open alert references the absent manifest. If
+GitHub's graph or alert API is unavailable, the workflow still uploads a
+sanitized `unavailable` artifact before failing. A future GitHub cleanup to zero
+dependencies or complete manifest removal remains an accepted improvement.
 
 This is not a blanket vulnerability waiver: any alert that references a manifest
 present on the default branch must be remediated or separately justified.
@@ -75,6 +78,6 @@ present on the default branch must be remediated or separately justified.
 `.github/workflows/governance-evidence.yml` runs weekly and manually only from
 `main`, with read-only repository contents permission and the protected
 `GH_AUTH_TOKEN` secret for administrative read endpoints. It compares the live
-ruleset and Actions defaults with checked-in policy and reports security settings
-as `confirmed`, `unconfirmed`, or `unavailable`. The JSON artifact intentionally
-excludes alert payloads.
+ruleset, Actions defaults, and retired dependency evidence with checked-in
+policy. It reports confirmed, current, drift, or unavailable states as applicable.
+The JSON artifacts intentionally exclude alert payloads and credentials.

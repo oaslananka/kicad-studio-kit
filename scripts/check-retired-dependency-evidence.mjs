@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
   buildRetiredDependencyEvidenceReport,
+  buildUnavailableRetiredDependencyEvidenceReport,
   loadRetiredDependencyPolicy,
   renderRetiredDependencyEvidenceMarkdown,
   validateRetiredDependencyPolicy,
@@ -94,63 +95,79 @@ export function classifyGraphResponse(response, text) {
   return { payload: retryable ? null : payload, failure, retryable };
 }
 
-async function fetchGraphPage(token, owner, name, query, after) {
+async function fetchGraphRequest(token, query, variables) {
   let lastFailure = "unknown GraphQL failure";
   for (let attempt = 0; attempt < GRAPH_ATTEMPT_LIMIT; attempt += 1) {
     const response = await fetch("https://api.github.com/graphql", {
       method: "POST",
       headers: graphqlHeaders(token),
-      body: JSON.stringify({ query, variables: { owner, name, after } }),
+      body: JSON.stringify({ query, variables }),
     });
     const result = classifyGraphResponse(response, await response.text());
     if (result.payload) return result.payload;
     lastFailure = result.failure;
     if (!result.retryable) {
-      throw new Error(`dependency graph manifests: ${lastFailure}`);
+      throw new Error(`dependency graph manifest: ${lastFailure}`);
     }
     if (attempt + 1 < GRAPH_ATTEMPT_LIMIT) {
       await sleep(500 * 2 ** attempt);
     }
   }
-  throw new Error(`dependency graph manifests: ${lastFailure}`);
+  throw new Error(`dependency graph manifest: ${lastFailure}`);
 }
 
-async function fetchGraphManifests(token, repository) {
-  const { owner, name } = repositoryParts(repository);
-  const query = `query($owner: String!, $name: String!, $after: String) {
-    repository(owner: $owner, name: $name) {
-      dependencyGraphManifests(first: 10, after: $after) {
-        nodes {
+export function buildGraphNodeRequest(graphNodeId) {
+  return {
+    query: `query($id: ID!) {
+      node(id: $id) {
+        ... on DependencyGraphManifest {
+          id
           filename
           dependenciesCount
           dependencies(first: 1) { totalCount }
         }
-        pageInfo { hasNextPage endCursor }
       }
-    }
-  }`;
-  const manifests = [];
-  let after = null;
-  do {
-    const payload = await fetchGraphPage(token, owner, name, query, after);
-    if (Array.isArray(payload?.errors) && payload.errors.length > 0) {
-      throw new Error(
-        `dependency graph manifests: ${payload.errors.map((error) => error.message).join("; ")}`,
-      );
-    }
-    const connection = payload?.data?.repository?.dependencyGraphManifests;
-    if (!connection)
-      throw new Error("dependency graph manifests were unavailable");
-    manifests.push(
-      ...connection.nodes.map((manifest) => ({
-        filename: manifest.filename,
-        dependenciesCount: manifest.dependenciesCount,
-      })),
+    }`,
+    variables: { id: graphNodeId },
+  };
+}
+
+export function graphManifestFromPayload(payload, expectedManifest) {
+  if (Array.isArray(payload?.errors) && payload.errors.length > 0) {
+    throw new Error(
+      `dependency graph manifest: ${payload.errors.map((error) => error.message).join("; ")}`,
     );
-    after = connection.pageInfo.hasNextPage
-      ? connection.pageInfo.endCursor
-      : null;
-  } while (after);
+  }
+  const node = payload?.data?.node ?? null;
+  if (!node) return null;
+  if (node.id !== expectedManifest.graphNodeId) {
+    throw new Error(
+      `dependency graph node ID mismatch for ${expectedManifest.path}`,
+    );
+  }
+  if (node.filename !== expectedManifest.path) {
+    throw new Error(
+      `dependency graph manifest path mismatch: expected ${expectedManifest.path}, received ${node.filename}`,
+    );
+  }
+  return {
+    filename: node.filename,
+    dependenciesCount: Number(node.dependenciesCount ?? 0),
+  };
+}
+
+async function fetchGraphManifests(token, policy) {
+  const manifests = [];
+  for (const expectedManifest of policy.manifests) {
+    const request = buildGraphNodeRequest(expectedManifest.graphNodeId);
+    const payload = await fetchGraphRequest(
+      token,
+      request.query,
+      request.variables,
+    );
+    const manifest = graphManifestFromPayload(payload, expectedManifest);
+    if (manifest) manifests.push(manifest);
+  }
   return manifests;
 }
 
@@ -171,6 +188,7 @@ export function parseNextLinkHeader(linkHeader) {
 }
 
 async function fetchOpenAlerts(token, repository) {
+  repositoryParts(repository);
   const alerts = [];
   let url = `https://api.github.com/repos/${repository}/dependabot/alerts?state=open&per_page=100`;
   while (url) {
@@ -216,19 +234,31 @@ export async function run(argv = process.argv.slice(2)) {
   if (policyErrors.length > 0) {
     throw new Error(policyErrors.join("; "));
   }
+  const presentPaths = presentRetiredPaths(policy);
   let graphManifests = [];
   let openAlerts = [];
   if (options.fetch) {
     const token = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? "";
-    if (!token)
-      throw new Error("GITHUB_TOKEN or GH_TOKEN is required with --fetch");
     const repository = options.repo || policy.repository;
-    graphManifests = await fetchGraphManifests(token, repository);
-    openAlerts = await fetchOpenAlerts(token, repository);
+    try {
+      if (!token) {
+        throw new Error("GITHUB_TOKEN or GH_TOKEN is required with --fetch");
+      }
+      graphManifests = await fetchGraphManifests(token, policy);
+      openAlerts = await fetchOpenAlerts(token, repository);
+    } catch (error) {
+      const report = buildUnavailableRetiredDependencyEvidenceReport({
+        policy,
+        presentPaths,
+        reason: error.message,
+      });
+      writeEvidence(options, report);
+      return report.exitCode;
+    }
   }
   const report = buildRetiredDependencyEvidenceReport({
     policy,
-    presentPaths: presentRetiredPaths(policy),
+    presentPaths,
     graphManifests,
     openAlerts,
   });
