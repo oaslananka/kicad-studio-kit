@@ -44,14 +44,19 @@ describe('BomExporter', () => {
     await fs.rm(tempDirectory, { recursive: true, force: true });
   });
 
-  it('builds the XLSX workbook through the lazy Workbook constructor', async () => {
-    const outputFile = path.join(tempDirectory, 'bom.xlsx');
+  it('builds XLSX workbooks through the memoized lazy constructor', async () => {
+    const firstOutputFile = path.join(tempDirectory, 'bom.xlsx');
+    const secondOutputFile = path.join(tempDirectory, 'bom-copy.xlsx');
     const exporter = new BomExporter();
 
-    await expect(exporter.exportXlsx([ENTRY], outputFile)).resolves.toBe(
-      outputFile
+    await expect(exporter.exportXlsx([ENTRY], firstOutputFile)).resolves.toBe(
+      firstOutputFile
+    );
+    await expect(exporter.exportXlsx([ENTRY], secondOutputFile)).resolves.toBe(
+      secondOutputFile
     );
 
+    expect(addWorksheet).toHaveBeenCalledTimes(2);
     expect(addWorksheet).toHaveBeenCalledWith('BOM');
     expect(addRow).toHaveBeenCalledWith({
       reference: 'R1 R2',
@@ -64,7 +69,9 @@ describe('BomExporter', () => {
       description: 'Thick-film resistor',
       dnp: false
     });
+    expect(getRow).toHaveBeenCalledTimes(2);
     expect(getRow).toHaveBeenCalledWith(1);
-    expect(writeFile).toHaveBeenCalledWith(outputFile);
+    expect(writeFile).toHaveBeenNthCalledWith(1, firstOutputFile);
+    expect(writeFile).toHaveBeenNthCalledWith(2, secondOutputFile);
   });
 });
