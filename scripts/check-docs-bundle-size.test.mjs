@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import {
   DOCS_CHUNK_MAX_BYTES,
@@ -61,6 +63,18 @@ test("#531 fails closed when the local-search asset is missing", () => {
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("#531 CLI rejects caller-controlled filesystem roots", () => {
+  const scriptPath = fileURLToPath(
+    new URL("./check-docs-bundle-size.mjs", import.meta.url),
+  );
+  const result = spawnSync(process.execPath, [scriptPath, os.tmpdir()], {
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /does not accept a filesystem path argument/u);
 });
 
 test("#531 root documentation scripts retain bundle-policy tests and enforcement", () => {

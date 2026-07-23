@@ -63,11 +63,17 @@ function formatBytes(bytes) {
 }
 
 function runCli() {
+  if (process.argv.length > 2) {
+    console.error(
+      "Documentation bundle checking does not accept a filesystem path argument.",
+    );
+    process.exitCode = 1;
+    return;
+  }
+
   const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
   const repoRoot = path.resolve(scriptDirectory, "..");
-  const rootDirectory = path.resolve(
-    process.argv[2] ?? path.join(repoRoot, "site"),
-  );
+  const rootDirectory = path.join(repoRoot, "site");
   const { assets, errors } = validateDocsBundle(rootDirectory);
 
   for (const asset of assets.slice(0, 10)) {
