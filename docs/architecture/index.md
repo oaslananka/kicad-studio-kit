@@ -11,6 +11,7 @@ server is developed and released separately in
 
 - [Repository structure](repo-structure.md)
 - [Product boundaries](product-boundaries.md)
+- [VS Code extension hotspot map](vscode-hotspots.md)
 - [Release model](release-model.md)
 - [Branch protection](branch-protection.md)
 - [GitHub Actions permissions](actions-permissions.md)

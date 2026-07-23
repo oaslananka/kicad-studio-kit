@@ -1,6 +1,11 @@
 import type { DetectedKiCadCli } from '../types';
 import { COMPATIBILITY_MATRIX } from '../mcp/compatibilityMatrix';
-import type { KiCadCliCapabilitySnapshot } from './kicadCliDetector';
+import {
+  parseKiCadMajor,
+  type KiCadCliCapabilitySnapshot
+} from './kicadCliCapabilities';
+
+export { parseKiCadMajor } from './kicadCliCapabilities';
 
 export type KiCadSupportState =
   | 'primary'
@@ -41,20 +46,6 @@ export interface KiCadFeatureSupport {
 }
 
 const KI_CAD_PRIMARY_RANGE = COMPATIBILITY_MATRIX.kicad.primary;
-
-export function parseKiCadMajor(
-  cli: Pick<DetectedKiCadCli, 'version'> | undefined
-): number | undefined {
-  if (!cli) {
-    return undefined;
-  }
-  const match = cli.version.match(/^(\d+)/);
-  if (!match) {
-    return undefined;
-  }
-  const major = Number.parseInt(match[1]!, 10);
-  return Number.isFinite(major) ? major : undefined;
-}
 
 export function describeKiCadSupportLine(
   cli: Pick<DetectedKiCadCli, 'version' | 'versionLabel'> | undefined
