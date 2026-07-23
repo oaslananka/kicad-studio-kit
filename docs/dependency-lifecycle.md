@@ -8,6 +8,10 @@ Renovate is the only normal version-update PR author for this repository. It own
 
 GitHub's dependency graph and security alert service remain enabled. Dependabot is security-only for the active root npm and GitHub Actions surfaces; `.github/dependabot.yml` uses `open-pull-requests-limit: 0`, so it can customize native security-fix pull requests without becoming a second routine version-update author. Renovate remains the normal version-update authority and also consumes vulnerability alerts for immediate lowest-patched fixes. The MCP server moved to KiCad MCP Pro, so this repository must never restore the retired `/packages/mcp-server` uv target.
 
+### Retired manifest reconciliation
+
+`.github/retired-dependency-manifests.json` is the source of truth for dependency manifests that moved to another repository. `check:dependabot-policy` fails if a retired directory or manifest returns to the working tree. The weekly Governance Evidence workflow reads the live dependency graph and open-alert endpoint with the protected administrative read token. An absent graph node, an empty residue, or the frozen 183-dependency native Python graph residue is current while the manifest remains absent and open alerts remain zero. Any other dependency count, any open alert, or restoration of the retired tree fails closed.
+
 ## Update lanes
 
 | Lane              | Source                                                                                      | Default cadence                       | Approval                                                                                                                                     |

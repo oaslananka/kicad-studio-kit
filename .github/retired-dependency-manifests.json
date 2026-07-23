@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "repository": "oaslananka/kicad-studio-kit",
+  "manifests": [
+    {
+      "path": "packages/mcp-server/uv.lock",
+      "directory": "packages/mcp-server",
+      "removalCommit": "59c971605bc2e4451a622276a992af8d4f5a5fcc",
+      "dismissalReason": "not_used",
+      "ownerDocumentation": "https://oaslananka.github.io/kicad-mcp-pro/",
+      "allowedResidualDependencyCounts": [0, 183],
+      "residueDisposition": "github-native-python-graph-residue"
+    }
+  ]
+}

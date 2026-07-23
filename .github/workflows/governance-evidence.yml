@@ -34,11 +34,23 @@ jobs:
           --repo "$GITHUB_REPOSITORY"
           --json governance-evidence.json
           --summary "$GITHUB_STEP_SUMMARY"
+      - name: Collect retired dependency evidence
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_AUTH_TOKEN }}
+        run: >-
+          node scripts/check-retired-dependency-evidence.mjs
+          --fetch
+          --repo "$GITHUB_REPOSITORY"
+          --json retired-dependency-evidence.json
+          --summary "$GITHUB_STEP_SUMMARY"
       - name: Upload governance evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: governance-evidence
-          path: governance-evidence.json
+          path: |
+            governance-evidence.json
+            retired-dependency-evidence.json
           if-no-files-found: warn
           retention-days: 30

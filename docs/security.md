@@ -39,7 +39,7 @@ sections that follow give the detail for each lane.
   enforce it locally before pushing.
 - **Dependency review** runs on every pull request and blocks high-severity
   dependency additions.
-- **Automated security updates**: Dependabot is security-only for the active root npm and GitHub Actions surfaces; both entries use `open-pull-requests-limit: 0`, while routine dependency version bumps remain delegated to Renovate. The removed MCP server has no local Dependabot ecosystem, and the retired `/packages/mcp-server` uv target must never be restored here.
+- **Automated security updates**: Dependabot is security-only for the active root npm and GitHub Actions surfaces; both entries use `open-pull-requests-limit: 0`, while routine dependency version bumps remain delegated to Renovate. The removed MCP server has no local Dependabot ecosystem. `.github/retired-dependency-manifests.json`, `check:dependabot-policy`, and weekly live evidence prevent the retired `/packages/mcp-server` uv target from returning and fail on new dependency-graph or open-alert drift.
 - **Workflow permissions** are least-privilege: every workflow declares a
   top-level `permissions:` block that defaults to `contents: read`. Jobs
   escalate only the scopes they need, for example `security-events: write` for
