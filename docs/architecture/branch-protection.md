@@ -90,7 +90,9 @@ repository adopts a merge queue or concurrent merge volume grows.
 
 ## Live evidence
 
-`.github/workflows/governance-evidence.yml` runs weekly and on demand. It compares
+`.github/workflows/governance-evidence.yml` runs weekly and on demand only from
+`main`. The workflow keeps `contents: read` and uses the protected
+`GH_AUTH_TOKEN` secret only for administrative read endpoints. It compares
 the active default-branch ruleset with `.github/rulesets/main.json`, reports repository security settings as confirmed, unconfirmed, or unavailable,
 compares live GitHub Actions defaults with the checked-in
 [Actions permissions policy](actions-permissions.md), and uploads a

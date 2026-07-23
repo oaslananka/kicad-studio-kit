@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   evidence:
-    if: github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops'
+    if: (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -27,7 +27,7 @@ jobs:
           package-manager-cache: false
       - name: Collect live governance evidence
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GH_AUTH_TOKEN }}
         run: >-
           node scripts/check-github-governance-evidence.mjs
           --fetch

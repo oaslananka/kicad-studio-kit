@@ -172,6 +172,17 @@ test("#495 governance evidence workflow is scheduled, manual, pinned, and least 
   assert.ok(Object.hasOwn(workflow.on, "workflow_dispatch"));
   assert.ok(Array.isArray(workflow.on.schedule));
   assert.deepEqual(workflow.permissions, { contents: "read" });
+  assert.equal(Object.hasOwn(workflow.on, "pull_request"), false);
+  assert.match(
+    workflow.jobs.evidence.if,
+    /github\.ref == 'refs\/heads\/main'/u,
+  );
+  assert.equal(
+    workflow.jobs.evidence.steps.find(
+      (step) => step.name === "Collect live governance evidence",
+    ).env.GITHUB_TOKEN,
+    "${{ secrets.GH_AUTH_TOKEN }}",
+  );
   assert.match(
     source,
     /node scripts\/check-github-governance-evidence\.mjs[\s\S]*--fetch/u,

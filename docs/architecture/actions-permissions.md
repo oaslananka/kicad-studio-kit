@@ -37,4 +37,4 @@ Build, test, lint, package validation, dependency review, and normal pull-reques
 
 ## Live drift evidence
 
-`.github/workflows/governance-evidence.yml` reads the repository Actions permission endpoints weekly and on demand. It compares live settings with `.github/actions-permissions.json`. Missing API evidence, a write-capable default token, review-approval permission, disabled SHA pinning, or any other mismatch fails the evidence run.
+`.github/workflows/governance-evidence.yml` reads the repository Actions permission endpoints weekly and on demand, only from `main`. The workflow has `contents: read` and receives the protected `GH_AUTH_TOKEN` secret because GitHub's built-in workflow token cannot read these administrative endpoints. It compares live settings with `.github/actions-permissions.json`. Missing API evidence, a write-capable default token, review-approval permission, disabled SHA pinning, or any other mismatch fails the evidence run.

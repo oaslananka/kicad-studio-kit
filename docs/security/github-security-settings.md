@@ -46,7 +46,9 @@ present on the default branch must be remediated or separately justified.
 
 ## Automated evidence
 
-`.github/workflows/governance-evidence.yml` runs weekly and manually with
-read-only repository contents permission. It compares the live ruleset with the
-checked-in policy and reports security settings as `confirmed`, `unconfirmed`, or
-`unavailable`. The JSON artifact intentionally excludes alert payloads.
+`.github/workflows/governance-evidence.yml` runs weekly and manually only from
+`main`, with read-only repository contents permission and the protected
+`GH_AUTH_TOKEN` secret for administrative read endpoints. It compares the live
+ruleset and Actions defaults with checked-in policy and reports security settings
+as `confirmed`, `unconfirmed`, or `unavailable`. The JSON artifact intentionally
+excludes alert payloads.

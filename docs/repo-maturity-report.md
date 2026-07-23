@@ -182,9 +182,10 @@ Before this PR, the main missing maturity files were:
 
 The repository has CI, CodeQL, Scorecard, Gitleaks, security, dependency review,
 docs, release-readiness, publish, and release-please workflows. This reconciliation
-adds `governance-evidence.yml`, a read-only scheduled/manual workflow that compares
-live GitHub governance state with the checked-in ruleset and uploads a sanitized
-JSON report.
+adds `governance-evidence.yml`, a scheduled/manual workflow restricted to `main`
+that uses read-only workflow permissions plus a protected administrative read
+token to compare live GitHub governance state with checked-in policy and upload a
+sanitized JSON report.
 
 ## Verified live settings and scoped changes
 

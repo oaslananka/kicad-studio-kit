@@ -21,10 +21,7 @@ export {
   normalizeActionsPermissions,
 } from "./lib/actions-permissions.mjs";
 
-import {
-  compareActionsPermissions,
-  normalizeActionsPermissions,
-} from "./lib/actions-permissions.mjs";
+import { normalizeActionsPermissions } from "./lib/actions-permissions.mjs";
 
 export function loadActionsPermissionPolicy(root = REPO_ROOT) {
   return JSON.parse(fs.readFileSync(path.join(root, POLICY_PATH), "utf8"));
