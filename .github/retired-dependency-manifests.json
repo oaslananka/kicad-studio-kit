@@ -9,7 +9,8 @@
       "dismissalReason": "not_used",
       "ownerDocumentation": "https://oaslananka.github.io/kicad-mcp-pro/",
       "allowedResidualDependencyCounts": [0, 183],
-      "residueDisposition": "github-native-python-graph-residue"
+      "residueDisposition": "github-native-python-graph-residue",
+      "graphNodeId": "DGM_kwDOSiap86stMjA5NDM5NjAwNw"
     }
   ]
 }

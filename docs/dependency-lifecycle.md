@@ -10,7 +10,7 @@ GitHub's dependency graph and security alert service remain enabled. Dependabot 
 
 ### Retired manifest reconciliation
 
-`.github/retired-dependency-manifests.json` is the source of truth for dependency manifests that moved to another repository. `check:dependabot-policy` fails if a retired directory or manifest returns to the working tree. The weekly Governance Evidence workflow reads the live dependency graph and open-alert endpoint with the protected administrative read token. An absent graph node, an empty residue, or the frozen 183-dependency native Python graph residue is current while the manifest remains absent and open alerts remain zero. Any other dependency count, any open alert, or restoration of the retired tree fails closed.
+``.github/retired-dependency-manifests.json` is the source of truth for dependency manifests that moved to another repository. `check:dependabot-policy` fails if a retired directory or manifest returns to the working tree. The weekly Governance Evidence workflow reads each recorded native manifest by its exact GitHub GraphQL node ID and separately queries the open-alert endpoint with the protected administrative read token. An absent graph node, an empty residue, or the frozen 183-dependency native Python graph residue is current while the manifest remains absent and open alerts remain zero. Any other dependency count, any open alert, or restoration of the retired tree fails closed. If either live API is unavailable, the job fails and still uploads a sanitized `unavailable` evidence artifact.
 
 ## Update lanes
 
