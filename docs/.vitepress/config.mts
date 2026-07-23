@@ -122,6 +122,10 @@ export default defineConfig({
             text: "Product Boundaries",
             link: "/architecture/product-boundaries",
           },
+          {
+            text: "VS Code Hotspot Map",
+            link: "/architecture/vscode-hotspots",
+          },
           { text: "Release Model", link: "/architecture/release-model" },
           {
             text: "Branch Protection",

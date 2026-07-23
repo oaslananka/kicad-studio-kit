@@ -9,7 +9,12 @@ import {
   SETTINGS
 } from '../constants';
 import { DOCUMENTATION_URLS } from '../documentation/documentationUrls';
-import { parseKiCadMajor } from './kicadCliSupport';
+import {
+  deriveCommandVersionStatus,
+  parseKiCadMajor,
+  type KiCadCliCapabilityName,
+  type KiCadCliCapabilitySnapshot
+} from './kicadCliCapabilities';
 import type { DetectedKiCadCli } from '../types';
 import { normalizeUserPath } from '../utils/pathUtils';
 
@@ -56,31 +61,11 @@ const STATUS_MENU_CAPABILITY_COMMANDS = [
   'pcbImport'
 ] as const satisfies ReadonlyArray<keyof typeof CLI_CAPABILITY_COMMANDS>;
 
-export type KiCadCliCapabilityName = keyof typeof CLI_CAPABILITY_COMMANDS;
-export type KiCadCliCapabilitySnapshot = Partial<
-  Record<KiCadCliCapabilityName, boolean>
-> & {
-  variantOption?: boolean;
-  allegroImport?: boolean;
-  /** The detected KiCad version string. */
-  version?: string;
-  /** Support state label: primary | deprecated | preview | unknown */
-  versionStatus?: string;
-  /** Absolute path to the detected kicad-cli binary. */
-  kicadCliPath?: string;
-  /** How the CLI was discovered: settings | common-path | path */
-  detectionSource?: string;
-  /** ISO timestamp of the last successful probe. */
-  lastProbeAt?: string;
-  /** Non-functional upstream CLI surfaces that are documented but not usable. */
-  nonFunctionalUpstream?: string[];
-  /** Probe errors or warnings. */
-  errors?: string[];
-  /** Per-command minimum KiCad major version from the metadata registry. */
-  commandMinVersion?: Partial<Record<KiCadCliCapabilityName, number>>;
-  /** Per-command version eligibility for the detected KiCad version line. */
-  commandVersionStatus?: Partial<Record<KiCadCliCapabilityName, string>>;
-};
+export {
+  deriveCommandVersionStatus,
+  type KiCadCliCapabilityName,
+  type KiCadCliCapabilitySnapshot
+} from './kicadCliCapabilities';
 
 export function getCliCandidates(
   platform = process.platform,
@@ -241,9 +226,7 @@ export class KiCadCliDetector {
     );
   }
 
-  async hasCapability(
-    command: keyof typeof CLI_CAPABILITY_COMMANDS
-  ): Promise<boolean> {
+  async hasCapability(command: KiCadCliCapabilityName): Promise<boolean> {
     const detected = await this.detect();
     if (!detected) {
       return false;
@@ -505,25 +488,4 @@ function syncProbeOptions(): {
     timeout: SYNC_PROBE_TIMEOUT_MS,
     maxBuffer: SYNC_PROBE_MAX_BUFFER
   };
-}
-
-/** Derive the per-command version status from the detected KiCad major version
- *  and the command's minimum required major version. */
-export function deriveCommandVersionStatus(
-  detectedMajor: number,
-  commandMinimumMajor: number
-): string {
-  if (detectedMajor < commandMinimumMajor) {
-    return 'unsupported';
-  }
-  if (detectedMajor === 10) {
-    return 'primary';
-  }
-  if (detectedMajor >= 11) {
-    return 'preview';
-  }
-  if (detectedMajor >= 8) {
-    return 'deprecated';
-  }
-  return 'unknown';
 }

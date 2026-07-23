@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { COMMANDS, SETTINGS } from '../constants';
 import type { DetectedKiCadCli, DiagnosticSummary } from '../types';
-import type { KiCadCliCapabilitySnapshot } from '../cli/kicadCliDetector';
+import type { KiCadCliCapabilitySnapshot } from '../cli/kicadCliCapabilities';
 import {
   buildKiCadFeatureSupport,
   describeKiCadSupportLine
