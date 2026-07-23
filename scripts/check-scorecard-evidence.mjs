@@ -50,8 +50,7 @@ function parseNextLink(linkHeader) {
   if (!linkHeader) return null;
   for (const part of linkHeader.split(",")) {
     const segments = part.split(";").map((segment) => segment.trim());
-    if (!segments.slice(1).some((segment) => segment === 'rel="next"'))
-      continue;
+    if (!segments.slice(1).includes('rel="next"')) continue;
     const target = segments[0];
     if (target.startsWith("<") && target.endsWith(">"))
       return target.slice(1, -1);
@@ -78,7 +77,7 @@ async function fetchAll(url, token, label) {
   while (next) {
     const page = await fetchJson(next, token, label);
     if (!Array.isArray(page.data))
-      throw new Error(`${label}: expected an array response`);
+      throw new TypeError(`${label}: expected an array response`);
     values.push(...page.data);
     next = page.next;
   }
@@ -98,7 +97,7 @@ async function collectLiveEvidence(options, policy, token) {
     "recent default-branch commits",
   );
   if (!Array.isArray(commitsResult.data)) {
-    throw new Error(
+    throw new TypeError(
       "recent default-branch commits: expected an array response",
     );
   }

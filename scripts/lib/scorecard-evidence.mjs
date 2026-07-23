@@ -244,13 +244,14 @@ function buildBranchProtectionEvidence(policy, alerts, governanceReport) {
   if (!governanceCurrent) status = "governance-drift";
   else if (selection.unexpectedActive.length > 0)
     status = "alert-identity-drift";
-  else if (alert?.state === "fixed") status = "resolved";
   else if (
-    unexpectedWarnings.length > 0 ||
-    missingExpectedWarnings.length > 0
+    alert?.state !== "fixed" &&
+    (unexpectedWarnings.length > 0 || missingExpectedWarnings.length > 0)
   ) {
     status = "scorecard-drift";
-  } else if (alert) status = "accepted-risk-current";
+  } else if (alert?.state !== "fixed" && alert) {
+    status = "accepted-risk-current";
+  }
   return {
     status,
     disposition: branchPolicy.disposition,
@@ -317,7 +318,7 @@ function sanitizeReason(reason) {
   return String(reason)
     .replace(/\b(?:token|authorization)\s*[:=]\s*[^\s;]+/giu, "[redacted]")
     .replace(/\bbearer\s+[^\s;]+/giu, "Bearer [redacted]")
-    .replace(/gh[pousr]_[A-Za-z0-9_]+/gu, "[redacted-token]")
+    .replace(/gh[pousr]_\w+/gu, "[redacted-token]")
     .slice(0, 300);
 }
 
