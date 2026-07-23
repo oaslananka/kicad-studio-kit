@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const SOURCE_EXTENSIONS = [".ts", ".tsx"];
+const SOURCE_EXTENSIONS = new Set([".ts", ".tsx"]);
 const IGNORED_DIRECTORIES = new Set([
   "coverage",
   "dist",
@@ -11,9 +11,20 @@ const IGNORED_DIRECTORIES = new Set([
 ]);
 
 const IMPORT_PATTERNS = [
-  /\b(?:import|export)\s+(?:type\s+)?(?:[^'";]*?\s+from\s+)?["']([^"']+)["']/gu,
-  /\bimport\(\s*["']([^"']+)["']\s*\)/gu,
+  /\bfrom\s*["']([^"']+)["']/gu,
+  /\bimport\s*["']([^"']+)["']/gu,
+  /\bimport\s*\(\s*["']([^"']+)["']\s*\)/gu,
 ];
+
+function comparePaths(left, right) {
+  if (left < right) {
+    return -1;
+  }
+  if (left > right) {
+    return 1;
+  }
+  return 0;
+}
 
 function toPosix(filePath) {
   return filePath.split(path.sep).join("/");
@@ -32,7 +43,7 @@ function walkTypeScriptFiles(directory) {
     }
     if (
       entry.isFile() &&
-      SOURCE_EXTENSIONS.includes(path.extname(entry.name)) &&
+      SOURCE_EXTENSIONS.has(path.extname(entry.name)) &&
       !entry.name.endsWith(".d.ts")
     ) {
       files.push(absolutePath);
@@ -64,7 +75,7 @@ function importCandidates(importer, specifier) {
   const extension = path.extname(unresolved);
   const candidates = [];
 
-  if (SOURCE_EXTENSIONS.includes(extension)) {
+  if (SOURCE_EXTENSIONS.has(extension)) {
     candidates.push(unresolved);
   } else if (extension === ".js" || extension === ".jsx") {
     const withoutExtension = unresolved.slice(0, -extension.length);
@@ -72,8 +83,10 @@ function importCandidates(importer, specifier) {
   } else {
     candidates.push(`${unresolved}.ts`, `${unresolved}.tsx`);
   }
-  candidates.push(path.join(unresolved, "index.ts"));
-  candidates.push(path.join(unresolved, "index.tsx"));
+  candidates.push(
+    path.join(unresolved, "index.ts"),
+    path.join(unresolved, "index.tsx"),
+  );
   return candidates;
 }
 
@@ -98,7 +111,7 @@ export function buildTypeScriptImportGraph(rootDirectory) {
   const knownFiles = new Set(files);
   const graph = new Map();
 
-  for (const file of files.sort()) {
+  for (const file of files.toSorted(comparePaths)) {
     const relativeFile = toPosix(path.relative(absoluteRoot, file));
     const dependencies = new Set();
     const source = fs.readFileSync(file, "utf8");
@@ -161,15 +174,17 @@ export function findImportCycles(graph) {
     const selfCycle =
       component.length === 1 && graph.get(component[0])?.has(component[0]);
     if (component.length > 1 || selfCycle) {
-      cycles.push(component.sort());
+      const sortedComponent = component.toSorted(comparePaths);
+      cycles.push(sortedComponent);
     }
   }
 
-  for (const node of [...graph.keys()].sort()) {
+  const sortedNodes = [...graph.keys()].toSorted(comparePaths);
+  for (const node of sortedNodes) {
     if (!indices.has(node)) {
       visit(node);
     }
   }
 
-  return cycles.sort((left, right) => left[0].localeCompare(right[0]));
+  return cycles.toSorted((left, right) => comparePaths(left[0], right[0]));
 }

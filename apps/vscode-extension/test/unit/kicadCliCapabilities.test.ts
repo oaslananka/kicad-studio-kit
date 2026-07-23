@@ -8,6 +8,7 @@ describe('kicadCliCapabilities', () => {
     expect(parseKiCadMajor({ version: '10.0.3' })).toBe(10);
     expect(parseKiCadMajor({ version: '11.0.0-rc1' })).toBe(11);
     expect(parseKiCadMajor({ version: 'nightly' })).toBeUndefined();
+    expect(parseKiCadMajor({ version: '9'.repeat(400) })).toBeUndefined();
     expect(parseKiCadMajor(undefined)).toBeUndefined();
   });
 

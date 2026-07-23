@@ -26,9 +26,10 @@ test("#497 extracts static relative imports and ignores packages", () => {
       import type { A } from './a';
       export { B } from "../b";
       const c = import('./c');
+      import './side-effect';
       import fs from 'node:fs';
     `),
-    ["./a", "../b", "./c"],
+    ["./a", "../b", "./side-effect", "./c"],
   );
 });
 

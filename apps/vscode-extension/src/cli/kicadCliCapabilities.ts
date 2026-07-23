@@ -34,7 +34,7 @@ export function parseKiCadMajor(
   if (!cli) {
     return undefined;
   }
-  const match = cli.version.match(/^(\d+)/);
+  const match = /^(\d+)/u.exec(cli.version);
   if (!match) {
     return undefined;
   }
