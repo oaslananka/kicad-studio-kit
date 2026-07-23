@@ -7,8 +7,13 @@ import { parse } from "yaml";
 
 const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
-const MINIMUM_RELEASE_AGE_MINUTES = 1440;
-const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = ["tmp@0.2.7"];
+const MINIMUM_RELEASE_AGE_MINUTES = 10080;
+const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = ["tmp@0.2.7", "fast-uri@3.1.4"];
+const ALLOWED_TRUST_POLICY_EXCLUDES = [
+  "@octokit/endpoint@9.0.6",
+  "chokidar@4.0.3",
+  "semver@5.7.2 || 6.3.1",
+];
 const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   "brace-expansion@2.1.1": "2.1.2",
   "brace-expansion@5.0.6": "5.0.7",
@@ -21,6 +26,8 @@ const FORBIDDEN_PNPM_SETTINGS = [
   "minimumReleaseAge",
   "minimumReleaseAgeExclude",
   "blockExoticSubdeps",
+  "trustPolicy",
+  "trustPolicyExclude",
   "trustLockfile",
 ];
 
@@ -67,7 +74,12 @@ function validateWorkspace(errors, workspace) {
   assertCondition(
     errors,
     workspace?.minimumReleaseAge === MINIMUM_RELEASE_AGE_MINUTES,
-    "pnpm-workspace.yaml must set minimumReleaseAge: 1440",
+    "pnpm-workspace.yaml must set minimumReleaseAge: 10080",
+  );
+  assertCondition(
+    errors,
+    workspace?.trustPolicy === "no-downgrade",
+    "pnpm-workspace.yaml must set trustPolicy: no-downgrade",
   );
   assertCondition(
     errors,
@@ -85,7 +97,15 @@ function validateWorkspace(errors, workspace) {
       workspace?.minimumReleaseAgeExclude,
       ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES,
     ),
-    "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7",
+    "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4",
+  );
+  assertCondition(
+    errors,
+    sameStringList(
+      workspace?.trustPolicyExclude,
+      ALLOWED_TRUST_POLICY_EXCLUDES,
+    ),
+    "pnpm-workspace.yaml trustPolicyExclude must be limited to reviewed version-scoped exceptions: @octokit/endpoint@9.0.6, chokidar@4.0.3, semver@5.7.2 || 6.3.1",
   );
   for (const [selector, version] of Object.entries(
     REQUIRED_SECURITY_OVERRIDES,
@@ -116,6 +136,27 @@ function validatePackageJson(errors, packageJson) {
       `package.json must not define pnpm.${setting}; use pnpm-workspace.yaml`,
     );
   }
+}
+
+function validateRenovate(errors, renovate) {
+  assertCondition(
+    errors,
+    renovate?.minimumReleaseAge === "7 days",
+    'renovate.json must set top-level minimumReleaseAge to "7 days"',
+  );
+  const packageRules = Array.isArray(renovate?.packageRules)
+    ? renovate.packageRules
+    : [];
+  assertCondition(
+    errors,
+    packageRules.every(
+      (rule) =>
+        typeof rule !== "object" ||
+        rule === null ||
+        !Object.hasOwn(rule, "minimumReleaseAge"),
+    ),
+    "renovate.json packageRules must not duplicate minimumReleaseAge; use the top-level policy",
+  );
 }
 
 function validateNpmrc(errors, npmrc) {
@@ -153,6 +194,7 @@ export function validatePnpmSupplyChain(repoRoot = DEFAULT_REPO_ROOT) {
   const errors = [];
   const workspace = readYaml(repoRoot, "pnpm-workspace.yaml", errors);
   const rootPackage = readJson(repoRoot, "package.json", errors);
+  const renovate = readJson(repoRoot, "renovate.json", errors);
   const npmrc = readText(repoRoot, ".npmrc", errors, { optional: true });
   const securityWorkflow = readText(
     repoRoot,
@@ -162,6 +204,7 @@ export function validatePnpmSupplyChain(repoRoot = DEFAULT_REPO_ROOT) {
 
   validateWorkspace(errors, workspace);
   validatePackageJson(errors, rootPackage);
+  validateRenovate(errors, renovate);
   validateNpmrc(errors, npmrc);
   validateSecurityWorkflow(errors, securityWorkflow);
 

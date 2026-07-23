@@ -213,10 +213,40 @@ export function parsePolicyPack(input: string | unknown): PolicyPack {
 }
 
 function matchesPattern(value: string, pattern: string): boolean {
-  // Glob-lite: `*` matches any run of characters; everything else is literal.
-  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/gu, '\\$&');
-  const regex = new RegExp(`^${escaped.replace(/\*/gu, '.*')}$`, 'u');
-  return regex.test(value);
+  // Glob-lite: `*` matches any run of Unicode characters; everything else is
+  // literal. The greedy backtracking state is bounded to one remembered star,
+  // so matching is deterministic and cannot trigger RegExp backtracking.
+  const valueCharacters = [...value];
+  const patternCharacters = [...pattern];
+  let valueIndex = 0;
+  let patternIndex = 0;
+  let starIndex = -1;
+  let starValueIndex = 0;
+
+  while (valueIndex < valueCharacters.length) {
+    if (patternCharacters[patternIndex] === valueCharacters[valueIndex]) {
+      valueIndex += 1;
+      patternIndex += 1;
+      continue;
+    }
+    if (patternCharacters[patternIndex] === '*') {
+      starIndex = patternIndex;
+      starValueIndex = valueIndex;
+      patternIndex += 1;
+      continue;
+    }
+    if (starIndex === -1) {
+      return false;
+    }
+    starValueIndex += 1;
+    valueIndex = starValueIndex;
+    patternIndex = starIndex + 1;
+  }
+
+  while (patternCharacters[patternIndex] === '*') {
+    patternIndex += 1;
+  }
+  return patternIndex === patternCharacters.length;
 }
 
 function evaluateRule(

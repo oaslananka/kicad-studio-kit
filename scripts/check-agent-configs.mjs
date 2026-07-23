@@ -221,6 +221,14 @@ function readJson(repoRoot, relativePath, errors) {
   }
 }
 
+const UNSAFE_TOML_KEYS = new Set(["__proto__", "prototype", "constructor"]);
+
+function assertSafeTomlKey(key, sourceName, lineNumber) {
+  if (UNSAFE_TOML_KEYS.has(key)) {
+    throw new Error(`${sourceName}:${lineNumber}: unsafe TOML key: ${key}`);
+  }
+}
+
 function setNestedValue(root, tablePath, key, value) {
   let target = root;
   for (const part of tablePath) {
@@ -270,6 +278,9 @@ export function parseTomlSubset(text, sourceName = "config.toml") {
     const table = line.match(/^\[([A-Za-z0-9_.-]+)\]$/u);
     if (table) {
       currentTable = table[1].split(".");
+      for (const key of currentTable) {
+        assertSafeTomlKey(key, sourceName, lineNumber);
+      }
       return;
     }
 
@@ -277,6 +288,7 @@ export function parseTomlSubset(text, sourceName = "config.toml") {
     if (!assignment) {
       throw new Error(`${sourceName}:${lineNumber}: invalid TOML line`);
     }
+    assertSafeTomlKey(assignment[1], sourceName, lineNumber);
     setNestedValue(
       root,
       currentTable,
@@ -478,16 +490,16 @@ function validateWorkspaceDefaults(repoRoot, errors) {
     errors,
   );
   const env = httpTask.options?.env;
-    if (env?.KICAD_MCP_WORKSPACE_ROOT) {
-      errors.push(
-        ".vscode/tasks.json: HTTP dev task must not set KICAD_MCP_WORKSPACE_ROOT",
-      );
-    }
-    if (env?.KICAD_MCP_PROJECT_DIR !== "${workspaceFolder}") {
-      errors.push(
-        ".vscode/tasks.json: HTTP dev task must set KICAD_MCP_PROJECT_DIR",
-      );
-    }
+  if (env?.KICAD_MCP_WORKSPACE_ROOT) {
+    errors.push(
+      ".vscode/tasks.json: HTTP dev task must not set KICAD_MCP_WORKSPACE_ROOT",
+    );
+  }
+  if (env?.KICAD_MCP_PROJECT_DIR !== "${workspaceFolder}") {
+    errors.push(
+      ".vscode/tasks.json: HTTP dev task must set KICAD_MCP_PROJECT_DIR",
+    );
+  }
   if (env?.KICAD_MCP_PROFILE !== "analysis") {
     errors.push(".vscode/tasks.json: HTTP dev task profile must be analysis");
   }

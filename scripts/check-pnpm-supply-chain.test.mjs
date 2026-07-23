@@ -15,9 +15,15 @@ function createFixture(overrides = {}) {
     overrides.workspace ??
       [
         "packages:",
-        "minimumReleaseAge: 1440",
+        "minimumReleaseAge: 10080",
+        "trustPolicy: no-downgrade",
         "minimumReleaseAgeExclude:",
         "  - tmp@0.2.7",
+        "  - fast-uri@3.1.4",
+        "trustPolicyExclude:",
+        '  - "@octokit/endpoint@9.0.6"',
+        "  - chokidar@4.0.3",
+        '  - "semver@5.7.2 || 6.3.1"',
         "blockExoticSubdeps: true",
         "overrides:",
         '  "brace-expansion@2.1.1": "2.1.2"',
@@ -35,6 +41,15 @@ function createFixture(overrides = {}) {
       overrides.rootPackage ?? {
         packageManager: "pnpm@11.3.0",
         engines: { pnpm: ">=11.0.0 <12" },
+      },
+    ),
+  );
+  writeFileSync(
+    path.join(repoRoot, "renovate.json"),
+    JSON.stringify(
+      overrides.renovate ?? {
+        minimumReleaseAge: "7 days",
+        packageRules: [{ matchManagers: ["npm"], rangeStrategy: "pin" }],
       },
     ),
   );
@@ -77,8 +92,11 @@ test("disabled pnpm supply-chain controls fail validation", () => {
     workspace: [
       "packages:",
       "minimumReleaseAge: 0",
+      "trustPolicy: off",
       "minimumReleaseAgeExclude:",
       "  - tmp",
+      "trustPolicyExclude:",
+      "  - chokidar",
       "blockExoticSubdeps: false",
       "trustLockfile: true",
       "overrides:",
@@ -93,10 +111,29 @@ test("disabled pnpm supply-chain controls fail validation", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml must set minimumReleaseAge: 1440",
+      "pnpm-workspace.yaml must set minimumReleaseAge: 10080",
+      "pnpm-workspace.yaml must set trustPolicy: no-downgrade",
       "pnpm-workspace.yaml must set blockExoticSubdeps: true",
       "pnpm-workspace.yaml must not enable trustLockfile for public PR CI",
-      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7",
+      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4",
+      "pnpm-workspace.yaml trustPolicyExclude must be limited to reviewed version-scoped exceptions: @octokit/endpoint@9.0.6, chokidar@4.0.3, semver@5.7.2 || 6.3.1",
+    ]);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("#542 Renovate uses the same seven-day top-level cooldown without package-rule duplication", () => {
+  const repoRoot = createFixture({
+    renovate: {
+      minimumReleaseAge: "3 days",
+      packageRules: [{ matchManagers: ["npm"], minimumReleaseAge: "1 day" }],
+    },
+  });
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      'renovate.json must set top-level minimumReleaseAge to "7 days"',
+      "renovate.json packageRules must not duplicate minimumReleaseAge; use the top-level policy",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -105,17 +142,26 @@ test("disabled pnpm supply-chain controls fail validation", () => {
 
 test(".npmrc and package.json cannot carry ignored pnpm supply-chain settings", () => {
   const repoRoot = createFixture({
-    npmrc: "minimumReleaseAge=0\n",
+    npmrc:
+      "minimumReleaseAge=0\ntrustPolicy=off\ntrustPolicyExclude=chokidar\n",
     rootPackage: {
       packageManager: "pnpm@11.3.0",
       engines: { pnpm: ">=11.0.0 <12" },
-      pnpm: { blockExoticSubdeps: false },
+      pnpm: {
+        blockExoticSubdeps: false,
+        trustPolicy: "off",
+        trustPolicyExclude: ["chokidar"],
+      },
     },
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
       "package.json must not define pnpm.blockExoticSubdeps; use pnpm-workspace.yaml",
+      "package.json must not define pnpm.trustPolicy; use pnpm-workspace.yaml",
+      "package.json must not define pnpm.trustPolicyExclude; use pnpm-workspace.yaml",
       ".npmrc must not define minimumReleaseAge; pnpm 11 reads it from pnpm-workspace.yaml",
+      ".npmrc must not define trustPolicy; pnpm 11 reads it from pnpm-workspace.yaml",
+      ".npmrc must not define trustPolicyExclude; pnpm 11 reads it from pnpm-workspace.yaml",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -126,9 +172,15 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
   const repoRoot = createFixture({
     workspace: [
       "packages:",
-      "minimumReleaseAge: 1440",
+      "minimumReleaseAge: 10080",
+      "trustPolicy: no-downgrade",
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
+      "  - fast-uri@3.1.4",
+      "trustPolicyExclude:",
+      '  - "@octokit/endpoint@9.0.6"',
+      "  - chokidar@4.0.3",
+      '  - "semver@5.7.2 || 6.3.1"',
       "blockExoticSubdeps: true",
       "overrides:",
       "  js-yaml: 4.3.0",
@@ -152,9 +204,15 @@ test("#506 stale js-yaml security override fails validation", () => {
   const repoRoot = createFixture({
     workspace: [
       "packages:",
-      "minimumReleaseAge: 1440",
+      "minimumReleaseAge: 10080",
+      "trustPolicy: no-downgrade",
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
+      "  - fast-uri@3.1.4",
+      "trustPolicyExclude:",
+      '  - "@octokit/endpoint@9.0.6"',
+      "  - chokidar@4.0.3",
+      '  - "semver@5.7.2 || 6.3.1"',
       "blockExoticSubdeps: true",
       "overrides:",
       '  "brace-expansion@2.1.1": "2.1.2"',
@@ -179,9 +237,15 @@ test("#506 stale tar security override fails validation", () => {
   const repoRoot = createFixture({
     workspace: [
       "packages:",
-      "minimumReleaseAge: 1440",
+      "minimumReleaseAge: 10080",
+      "trustPolicy: no-downgrade",
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
+      "  - fast-uri@3.1.4",
+      "trustPolicyExclude:",
+      '  - "@octokit/endpoint@9.0.6"',
+      "  - chokidar@4.0.3",
+      '  - "semver@5.7.2 || 6.3.1"',
       "blockExoticSubdeps: true",
       "overrides:",
       '  "brace-expansion@2.1.1": "2.1.2"',
@@ -206,9 +270,15 @@ test("#508 newly disclosed transitive security fixes stay pinned", () => {
   const repoRoot = createFixture({
     workspace: [
       "packages:",
-      "minimumReleaseAge: 1440",
+      "minimumReleaseAge: 10080",
+      "trustPolicy: no-downgrade",
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
+      "  - fast-uri@3.1.4",
+      "trustPolicyExclude:",
+      '  - "@octokit/endpoint@9.0.6"',
+      "  - chokidar@4.0.3",
+      '  - "semver@5.7.2 || 6.3.1"',
       "blockExoticSubdeps: true",
       "overrides:",
       '  "brace-expansion@2.1.1": "2.1.2"',

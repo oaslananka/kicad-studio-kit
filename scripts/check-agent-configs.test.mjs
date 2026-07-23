@@ -34,6 +34,20 @@ KICAD_MCP_OPERATING_MODE = "readonly"
   );
 });
 
+test("#542 TOML parser rejects prototype-sensitive table and assignment keys", () => {
+  for (const unsafeKey of ["__proto__", "prototype", "constructor"]) {
+    assert.throws(
+      () => parseTomlSubset(`[mcp_servers.${unsafeKey}]\ncommand = "uvx"`),
+      new RegExp(`unsafe TOML key: ${unsafeKey}`, "u"),
+    );
+    assert.throws(
+      () => parseTomlSubset(`[mcp_servers.kicad]\n${unsafeKey} = "value"`),
+      new RegExp(`unsafe TOML key: ${unsafeKey}`, "u"),
+    );
+  }
+  assert.equal(Object.prototype.polluted, undefined);
+});
+
 test("stdio validator rejects unsafe profile and mode drift", () => {
   const errors = validateStdioServer(
     {

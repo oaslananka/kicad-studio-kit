@@ -141,6 +141,52 @@ describe('#402 policy packs', () => {
       expect(evaluation.overall).toBe('pass');
     });
 
+    it('treats regex metacharacters as literal glob characters', () => {
+      const literalPack = parsePolicyPack({
+        ...VALID,
+        rules: [
+          {
+            id: 'literal',
+            type: 'forbiddenFootprints',
+            severity: 'error',
+            patterns: ['Vendor:(Legacy)+[1].*']
+          }
+        ]
+      });
+      const evaluation = evaluatePolicyPack(literalPack, {
+        footprints: ['Vendor:(Legacy)+[1].Connector']
+      });
+      expect(evaluation.results[0]?.status).toBe('fail');
+    });
+
+    it('matches adversarial multi-star patterns without regular expressions', () => {
+      const pattern = `${'*a'.repeat(100)}*b`;
+      const deterministicPack = parsePolicyPack({
+        ...VALID,
+        rules: [
+          {
+            id: 'deterministic',
+            type: 'forbiddenFootprints',
+            severity: 'error',
+            patterns: [pattern]
+          }
+        ]
+      });
+      const evaluation = evaluatePolicyPack(deterministicPack, {
+        footprints: ['a'.repeat(20_000)]
+      });
+      expect(evaluation.results[0]?.status).toBe('pass');
+    });
+
+    it('allows a trailing star to match an empty suffix', () => {
+      const evaluation = evaluatePolicyPack(pack, {
+        footprints: ['Deprecated:']
+      });
+      expect(evaluation.results.find((r) => r.id === 'forbidden')?.status).toBe(
+        'fail'
+      );
+    });
+
     it('flags forbidden footprints via glob patterns', () => {
       const evaluation = evaluatePolicyPack(pack, {
         drcViolations: 0,

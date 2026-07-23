@@ -15,7 +15,7 @@
   "schedule": ["before 6am on monday"],
   "prHourlyLimit": 2,
   "prConcurrentLimit": 5,
-  "minimumReleaseAge": "3 days",
+  "minimumReleaseAge": "7 days",
   "enabledManagers": [
     "npm",
     "github-actions",
