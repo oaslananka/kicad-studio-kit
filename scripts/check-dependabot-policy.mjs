@@ -6,6 +6,8 @@ import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "yaml";
 
+import { validateRetiredDependencyPolicy } from "./lib/retired-dependency-evidence.mjs";
+
 const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
 const CONFIG_PATH = ".github/dependabot.yml";
@@ -21,7 +23,7 @@ const REQUIRED_LABELS = [
 const OWNERSHIP_SENTENCE =
   "Dependabot is security-only for the active root npm and GitHub Actions surfaces";
 const ROOT_SCRIPT =
-  "node scripts/check-dependabot-policy.mjs && node --test scripts/check-dependabot-policy.test.mjs";
+  "node scripts/check-dependabot-policy.mjs && node --test scripts/check-dependabot-policy.test.mjs scripts/check-retired-dependency-evidence.test.mjs";
 
 function readText(root, relativePath, errors) {
   try {
@@ -195,6 +197,7 @@ export function validateDependabotPolicy(root = REPO_ROOT) {
     ...validateConfig(value, text),
     ...validateRenovate(readJson(root, "renovate.json", errors)),
     ...validateRootScripts(readJson(root, "package.json", errors)),
+    ...validateRetiredDependencyPolicy(root),
   );
   validateDocumentation(root, errors);
   return errors;

@@ -16,6 +16,7 @@ import { scanForbiddenReferences } from "./check-no-forbidden-refs.mjs";
 
 const RELEVANT_FILES = [
   ".github/dependabot.yml",
+  ".github/retired-dependency-manifests.json",
   "docs/security.md",
   "docs/dependency-lifecycle.md",
   "package.json",

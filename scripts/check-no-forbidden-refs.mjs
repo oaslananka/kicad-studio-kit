@@ -70,10 +70,13 @@ const visualStudioHostPattern =
 const allowedDependabotFiles = new Set([
   "docs/dependency-lifecycle.md",
   "docs/security.md",
+  "docs/security/github-security-settings.md",
   "docs/superpowers/plans/2026-07-21-dependabot-security-targets.md",
   "package.json",
   "scripts/check-dependabot-policy.mjs",
   "scripts/check-dependabot-policy.test.mjs",
+  "scripts/check-retired-dependency-evidence.mjs",
+  "scripts/lib/retired-dependency-evidence.mjs",
 ]);
 
 function isOfficialVscodeHostHit(line) {
