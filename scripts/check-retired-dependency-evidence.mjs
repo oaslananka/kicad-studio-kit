@@ -160,7 +160,7 @@ export function parseNextLinkHeader(linkHeader) {
     const segments = part.split(";").map((segment) => segment.trim());
     const relation = segments
       .slice(1)
-      .find((segment) => segment === 'rel="next"' || segment === "rel=next");
+      .some((segment) => segment === 'rel="next"' || segment === "rel=next");
     if (!relation) continue;
     const target = segments[0];
     if (target.startsWith("<") && target.endsWith(">")) {
