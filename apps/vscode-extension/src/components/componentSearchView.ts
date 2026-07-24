@@ -69,10 +69,13 @@ export function buildComponentSearchViewHtml(
         </div>
       </section>`
     : '';
+  const projectContext = state.projectName
+    ? `<p class="section-context">${escapeHtml(state.projectName)}</p>`
+    : '';
   const recommendations = state.recommendations.length
     ? `<section class="suggestions" aria-label="Recommended parts">
         <h2>Recommended parts</h2>
-        ${state.projectName ? `<p class="section-context">${escapeHtml(state.projectName)}</p>` : ''}
+        ${projectContext}
         <div class="suggestion-list">
           ${state.recommendations
             .map((recommendation) =>
@@ -96,16 +99,17 @@ export function buildComponentSearchViewHtml(
         </div>
       </section>`
     : '';
-  const resultList = state.results.length
-    ? `<section class="results" aria-live="polite">
+  let resultList = '';
+  if (state.results.length) {
+    resultList = `<section class="results" aria-live="polite">
         <h2>Results</h2>
         <ol>
           ${state.results.map((result, index) => resultRow(result, index)).join('')}
         </ol>
-      </section>`
-    : state.query && !state.loading && !state.error
-      ? `<section class="empty" aria-live="polite">No matching components yet.</section>`
-      : '';
+      </section>`;
+  } else if (state.query && !state.loading && !state.error) {
+    resultList = `<section class="empty" aria-live="polite">No matching components yet.</section>`;
+  }
   const loading = state.loading
     ? '<section class="loading" aria-live="polite">Searching providers...</section>'
     : '';
@@ -393,11 +397,11 @@ export function buildComponentDetailsHtml(
 
 function escapeHtml(value: string): string {
   return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replaceAll("'", '&#39;');
 }
 
 function searchPill(
