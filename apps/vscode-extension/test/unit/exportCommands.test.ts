@@ -240,15 +240,43 @@ describe('buildCliExportCommands', () => {
     ]);
   });
 
-  it('reads IPC-2581 version and units from settings', () => {
-    const command = buildCliExportCommands(
-      'export-ipc2581',
-      '/project/board.kicad_pcb',
-      '/project/fab'
-    )[0];
-    expect(command).toEqual(
-      expect.arrayContaining(['--version', 'C', '--units', 'mm'])
-    );
+  it('resolves configured values through the compatibility wrapper', () => {
+    __setConfiguration({
+      'kicadstudio.gerber.precision': 7,
+      'kicadstudio.ipc2581.version': 'B',
+      'kicadstudio.ipc2581.units': 'inch',
+      'kicadstudio.viewer.theme': 'kicad-classic',
+      'kicadstudio.bom.fields': ['Reference', 'MPN']
+    });
+
+    expect(
+      buildCliExportCommands(
+        'export-gerbers',
+        '/project/board.kicad_pcb',
+        '/project/fab'
+      )[0]
+    ).toEqual(expect.arrayContaining(['--precision', '7']));
+    expect(
+      buildCliExportCommands(
+        'export-ipc2581',
+        '/project/board.kicad_pcb',
+        '/project/fab'
+      )[0]
+    ).toEqual(expect.arrayContaining(['--version', 'B', '--units', 'inch']));
+    expect(
+      buildCliExportCommands(
+        'export-sym-svg',
+        '/project/library.kicad_sym',
+        '/project/fab'
+      )[0]
+    ).toEqual(expect.arrayContaining(['--theme', 'kicad-classic']));
+    expect(
+      buildCliExportCommands(
+        'export-sch-bom',
+        '/project/main.kicad_sch',
+        '/project/fab'
+      )[0]
+    ).toEqual(expect.arrayContaining(['--fields', 'Reference,MPN']));
   });
 });
 
