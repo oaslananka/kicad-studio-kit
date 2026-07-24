@@ -108,7 +108,7 @@ export function buildComponentSearchViewHtml(
           ${state.results.map((result, index) => resultRow(result, index)).join('')}
         </ol>
       </section>`;
-  } else if (query && !state.loading && !state.error) {
+  } else if (query.length > 0 && !state.loading && !state.error) {
     resultList = `<section class="empty" aria-live="polite">No matching components yet.</section>`;
   }
   const loading = state.loading
