@@ -47,6 +47,7 @@ export interface ComponentSearchProjectContext {
 export function buildComponentSearchViewHtml(
   state: ComponentSearchViewState
 ): string {
+  const query = state.query ?? '';
   const providerChips = state.providers
     .map(
       (provider) => `<span class="provider provider-${escapeHtml(
@@ -107,7 +108,7 @@ export function buildComponentSearchViewHtml(
           ${state.results.map((result, index) => resultRow(result, index)).join('')}
         </ol>
       </section>`;
-  } else if (state.query && !state.loading && !state.error) {
+  } else if (query && !state.loading && !state.error) {
     resultList = `<section class="empty" aria-live="polite">No matching components yet.</section>`;
   }
   const loading = state.loading
@@ -294,7 +295,7 @@ export function buildComponentSearchViewHtml(
 <body>
   <form id="component-search-form" class="search-form">
     <label class="sr-only" for="component-search-input">Search components</label>
-    <input id="component-search-input" type="search" value="${escapeHtml(state.query)}" placeholder="Part number, value, or footprint" autocomplete="off">
+    <input id="component-search-input" type="search" value="${escapeHtml(query)}" placeholder="Part number, value, or footprint" autocomplete="off">
     <button type="submit">Search</button>
   </form>
   <div class="providers" aria-label="Provider status">${providerChips}</div>

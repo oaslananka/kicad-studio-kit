@@ -74,4 +74,21 @@ describe('component search view boundary', () => {
     expect(detailsHtml).toContain('Install PCM Library');
     expect(detailsHtml).toContain('&lt;script&gt;alert(1)&lt;/script&gt; MCU');
   });
+
+  it('normalizes a malformed null query before rendering the input', () => {
+    const html = buildComponentSearchViewHtml({
+      nonce: 'nonce-value',
+      cspSource: 'vscode-resource:',
+      query: null as unknown as string,
+      loading: false,
+      providers: [],
+      warnings: [],
+      recentSearches: [],
+      recommendations: [],
+      results: []
+    });
+
+    expect(html).toContain('value=""');
+    expect(html).not.toContain('No matching components yet.');
+  });
 });
