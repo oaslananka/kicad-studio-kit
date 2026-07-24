@@ -2,16 +2,16 @@
 
 This page records the responsibility, churn, and dependency order for the incremental decomposition tracked by issue #497. It is a dated architecture snapshot, not a line-count target. A module should be split only when a stable responsibility boundary and regression gate exist.
 
-## 2026-07-23 Snapshot
+## 2026-07-24 Snapshot
 
-The production graph contains 142 TypeScript modules. After the CLI capability-model extraction, the graph contains **0 import cycles**. The repository enforces this with `pnpm run check:vscode-architecture`.
+The production graph contains 143 TypeScript modules. After the CLI capability-model and viewer-controller extractions, the graph contains **0 import cycles**. The repository enforces this with `pnpm run check:vscode-architecture`.
 
 Line counts use the checked-in source tree. Churn counts are the number of commits touching each file in the latest 100 commits at the snapshot date.
 
 | Order | Target                                                                               |          Lines | Recent touches | Current responsibilities                                                                         | Required boundary and validation                                                                             |
 | ----: | ------------------------------------------------------------------------------------ | -------------: | -------------: | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
 |     1 | `cli/kicadCliDetector.ts` / `cli/kicadCliSupport.ts` / `cli/kicadCliCapabilities.ts` | 491 / 351 / 64 |    6 / 3 / new | platform discovery, support decisions, and the extracted immutable capability model              | **Completed in phase 1:** pure capability model; architecture-cycle guard; detector/support/model unit tests |
-|     2 | `providers/viewerHtml.ts`                                                            |          1,997 |             10 | HTML template, styles, browser controller, state serialization, message contract                 | split by template/styles/controller/message contract; visual, accessibility, and viewer snapshot gates       |
+|     2 | `providers/viewerHtml.ts` / `providers/viewer/viewerControllerScript.ts`             |    297 / 1,704 |       11 / new | host HTML/CSP/payload assembly and the extracted browser controller                              | **Completed in phase 2a:** pure controller source boundary; byte-equivalent HTML; unit/security/viewer gates |
 |     3 | `cli/exportCommands.ts`                                                              |          1,916 |              4 | export command construction, input validation, capability checks, execution, result presentation | command builders plus execution service; unit, integration, CLI compatibility, package-size gates            |
 |     4 | `components/componentSearch.ts`                                                      |          1,215 |              6 | provider requests, normalization, cache policy, scoring, detail rendering                        | provider adapters, cache, ranking model; network/cache/unit and UI result tests                              |
 |     5 | `library/pcmService.ts`                                                              |          1,142 |              3 | HTTP catalog, archive download, integrity verification, install, table persistence               | catalog client, verified archive installer, persistence adapter; security and PCM regression tests           |
@@ -36,3 +36,11 @@ Each phase must satisfy all of the following:
 `cli/kicadCliCapabilities.ts` owns immutable capability names, snapshots, KiCad-major parsing, and command-version eligibility. It has no VS Code or process-execution dependency.
 
 `cli/kicadCliDetector.ts` owns discovery, path validation, subprocess probes, caches, and snapshot construction. `cli/kicadCliSupport.ts` owns user-facing release-line and feature-support descriptions. Both depend on the capability model and no longer depend on one another.
+
+## Viewer Document and Controller Ownership
+
+`providers/viewerHtml.ts` owns the host-side webview document: payload construction, CSP and nonce placement, palette variables, localized HTML structure, error HTML, and VS Code resource URI generation.
+
+`providers/viewer/viewerControllerScript.ts` owns the static browser-side controller source: DOM orchestration, viewer state, host messages, worker-based source preparation, KiCanvas startup, SVG fallback, exports, and keyboard/pointer interactions. It is a pure string producer with no VS Code or process dependency at module-evaluation time.
+
+Phase 2a preserved the normalized generated viewer HTML byte-for-byte while reducing `viewerHtml.ts` from 1,997 to 297 lines. Typed host/webview message-contract extraction and finer browser-controller feature splits remain separate #497 phases so they can receive dedicated behavioral regression gates.
