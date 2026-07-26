@@ -11,6 +11,7 @@ import { normalizeUserPath } from '../utils/pathUtils';
 import type { Logger } from '../utils/logger';
 import type { KiCadLibraryIndexer } from './libraryIndexer';
 import { assertPcmSha256, extractPcmZipArchive } from './pcmArchive';
+import { PcmLibraryTablePersistence } from './pcmLibraryTable';
 import { PcmInstalledPackagePersistence } from './pcmPersistence';
 import {
   isPcmVersionNewer,
@@ -56,6 +57,7 @@ export class PcmService implements vscode.Disposable {
   readonly onDidChange = this.onDidChangeEmitter.event;
 
   private readonly installed = new Map<string, PcmInstalledPackage>();
+  private readonly libraryTables: PcmLibraryTablePersistence;
   private readonly persistence: PcmInstalledPackagePersistence;
   private repositories: PcmRepository[] = [];
 
@@ -70,6 +72,9 @@ export class PcmService implements vscode.Disposable {
     this.persistence = new PcmInstalledPackagePersistence(
       context.globalState,
       () => this.getConfigDir()
+    );
+    this.libraryTables = new PcmLibraryTablePersistence(() =>
+      this.getConfigDir()
     );
     for (const entry of this.persistence.read()) {
       this.installed.set(entry.identifier, entry);
@@ -391,7 +396,7 @@ export class PcmService implements vscode.Disposable {
       ? await this.extractWithInjectedAdapter(archive, installPath, pkg)
       : extractPcmZipArchive(archive, installPath);
 
-    await this.refreshLibraryTables(pkg, installPath);
+    this.libraryTables.refresh(pkg, installPath);
 
     return this.buildInstalledEntry(pkg, version, {
       source: 'direct',
@@ -439,7 +444,7 @@ export class PcmService implements vscode.Disposable {
   private async removeDirectInstallFiles(
     installed: PcmInstalledPackage
   ): Promise<void> {
-    await this.removeManagedLibraryEntries(installed.identifier);
+    this.libraryTables.remove(installed.identifier);
     if (installed.source === 'direct' && installed.installPath) {
       const thirdParty = path.resolve(this.getThirdPartyDir());
       const installPath = path.resolve(installed.installPath);
@@ -457,58 +462,6 @@ export class PcmService implements vscode.Disposable {
     fs.rmSync(installPath, { recursive: true, force: true });
     fs.mkdirSync(installPath, { recursive: true });
     return await this.options.extractArchive!(archive, installPath, pkg);
-  }
-
-  private async refreshLibraryTables(
-    pkg: PcmPackage,
-    installPath: string
-  ): Promise<void> {
-    const symbolLibraries = collectPaths(installPath, (entry) =>
-      entry.endsWith('.kicad_sym')
-    );
-    const footprintLibraries = collectDirectories(installPath, (entry) =>
-      entry.endsWith('.pretty')
-    );
-    const prefix = managedLibraryPrefix(pkg.metadata.identifier);
-    const configDir = this.getConfigDir();
-    fs.mkdirSync(configDir, { recursive: true });
-
-    upsertLibraryTable({
-      filePath: path.join(configDir, 'sym-lib-table'),
-      rootName: 'sym_lib_table',
-      namePrefix: prefix,
-      entries: symbolLibraries.map((libraryPath) => ({
-        name: `${prefix}_${path.basename(libraryPath, '.kicad_sym')}`,
-        uri: libraryPath,
-        description: `Installed by KiCad Studio PCM: ${pkg.metadata.name}`
-      }))
-    });
-    upsertLibraryTable({
-      filePath: path.join(configDir, 'fp-lib-table'),
-      rootName: 'fp_lib_table',
-      namePrefix: prefix,
-      entries: footprintLibraries.map((libraryPath) => ({
-        name: `${prefix}_${path.basename(libraryPath, '.pretty')}`,
-        uri: libraryPath,
-        description: `Installed by KiCad Studio PCM: ${pkg.metadata.name}`
-      }))
-    });
-  }
-
-  private async removeManagedLibraryEntries(identifier: string): Promise<void> {
-    const configDir = this.getConfigDir();
-    const prefix = managedLibraryPrefix(identifier);
-    for (const [fileName, rootName] of [
-      ['sym-lib-table', 'sym_lib_table'],
-      ['fp-lib-table', 'fp_lib_table']
-    ] as const) {
-      upsertLibraryTable({
-        filePath: path.join(configDir, fileName),
-        rootName,
-        namePrefix: prefix,
-        entries: []
-      });
-    }
   }
 
   private async refreshLibraryIndex(): Promise<void> {
@@ -625,98 +578,8 @@ function sanitizeIdentifier(identifier: string): string {
   return identifier.replace(/[^a-zA-Z0-9._-]+/gu, '_').replace(/\./gu, '_');
 }
 
-function managedLibraryPrefix(identifier: string): string {
-  return `PCM_${sanitizeIdentifier(identifier)}`;
-}
-
 function getCommandCwd(): string {
   return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? os.homedir();
-}
-
-function collectPaths(
-  root: string,
-  predicate: (entry: string) => boolean
-): string[] {
-  const results: string[] = [];
-  walk(root, (entry, stat) => {
-    if (stat.isFile() && predicate(entry)) {
-      results.push(entry);
-    }
-  });
-  return results;
-}
-
-function collectDirectories(
-  root: string,
-  predicate: (entry: string) => boolean
-): string[] {
-  const results: string[] = [];
-  walk(root, (entry, stat) => {
-    if (stat.isDirectory() && predicate(entry)) {
-      results.push(entry);
-    }
-  });
-  return results;
-}
-
-function walk(
-  root: string,
-  visit: (entry: string, stat: fs.Stats) => void
-): void {
-  if (!fs.existsSync(root)) {
-    return;
-  }
-  for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
-    const fullPath = path.join(root, entry.name);
-    const stat = fs.statSync(fullPath);
-    visit(fullPath, stat);
-    if (entry.isDirectory()) {
-      walk(fullPath, visit);
-    }
-  }
-}
-
-function upsertLibraryTable(options: {
-  filePath: string;
-  rootName: 'sym_lib_table' | 'fp_lib_table';
-  namePrefix: string;
-  entries: Array<{ name: string; uri: string; description: string }>;
-}): void {
-  const existing = fs.existsSync(options.filePath)
-    ? fs.readFileSync(options.filePath, 'utf8')
-    : `(${options.rootName}\n)\n`;
-  const filteredLines = existing
-    .split(/\r?\n/u)
-    .filter((line) => !line.includes(`(name "${options.namePrefix}`));
-  const entryLines = options.entries.map(
-    (entry) =>
-      `  (lib (name "${escapeTableString(entry.name)}")(type "KiCad")(uri "${escapeTableString(entry.uri)}")(options "")(descr "${escapeTableString(entry.description)}"))`
-  );
-  let closeIndex = -1;
-  for (let index = filteredLines.length - 1; index >= 0; index -= 1) {
-    if (filteredLines[index]?.trim() === ')') {
-      closeIndex = index;
-      break;
-    }
-  }
-  const nextLines =
-    closeIndex >= 0
-      ? [
-          ...filteredLines.slice(0, closeIndex),
-          ...entryLines,
-          ...filteredLines.slice(closeIndex)
-        ]
-      : [`(${options.rootName}`, ...entryLines, ')'];
-  fs.mkdirSync(path.dirname(options.filePath), { recursive: true });
-  fs.writeFileSync(
-    options.filePath,
-    `${nextLines.join('\n').trimEnd()}\n`,
-    'utf8'
-  );
-}
-
-function escapeTableString(value: string): string {
-  return value.replace(/\\/gu, '\\\\').replace(/"/gu, '\\"');
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {

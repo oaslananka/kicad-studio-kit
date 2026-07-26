@@ -124,6 +124,30 @@ test("#497 PCM persistence adapter uses only reviewed filesystem and catalog dep
   assert.doesNotMatch(source, /from ["']vscode["']/u);
 });
 
+test("#497 PCM library-table adapter uses only reviewed filesystem and catalog dependencies", () => {
+  const repoRoot = path.resolve(import.meta.dirname, "..");
+  const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
+  const graph = buildTypeScriptImportGraph(sourceRoot);
+  assert.deepEqual(
+    [...(graph.get("library/pcmLibraryTable.ts") ?? [])],
+    ["library/pcmCatalog.ts"],
+  );
+
+  const source = fs.readFileSync(
+    path.join(sourceRoot, "library", "pcmLibraryTable.ts"),
+    "utf8",
+  );
+  const importSpecifiers = [...source.matchAll(/from ["']([^"']+)["']/gu)].map(
+    (match) => match[1],
+  );
+  assert.deepEqual(importSpecifiers.toSorted(), [
+    "./pcmCatalog",
+    "node:fs",
+    "node:path",
+  ]);
+  assert.doesNotMatch(source, /from ["']vscode["']/u);
+});
+
 test("#497 root check cannot silently drop the architecture guard", () => {
   const repoRoot = path.resolve(import.meta.dirname, "..");
   const packageJson = JSON.parse(
@@ -150,6 +174,7 @@ test("#497 root check cannot silently drop the architecture guard", () => {
     "library/pcmCatalog.ts",
     "library/pcmArchive.ts",
     "library/pcmPersistence.ts",
+    "library/pcmLibraryTable.ts",
     "state/stateStores.ts",
   ]) {
     assert.match(
@@ -157,6 +182,6 @@ test("#497 root check cannot silently drop the architecture guard", () => {
       new RegExp(target.replaceAll(".", "\\."), "u"),
     );
   }
-  assert.match(architectureDoc, /148 TypeScript modules/u);
+  assert.match(architectureDoc, /149 TypeScript modules/u);
   assert.match(architectureDoc, /0 import cycles/u);
 });
