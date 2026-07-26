@@ -50,6 +50,7 @@ validation_host_activate_rootless_runtime() {
   export FONTCONFIG_PATH="${KICAD_STUDIO_VALIDATION_APT_ROOT}/.fontconfig"
   export FONTCONFIG_FILE="${KICAD_STUDIO_VALIDATION_APT_ROOT}/.fontconfig/fonts.conf"
   export XKB_CONFIG_ROOT="${KICAD_STUDIO_VALIDATION_APT_ROOT}/usr/share/X11/xkb"
+  export XKB_BIN="${KICAD_STUDIO_VALIDATION_APT_ROOT}/usr/bin"
   return 0
 }
 
@@ -63,5 +64,6 @@ validation_host_print_environment() {
   printf 'KICAD_STUDIO_VALIDATION_APT_ROOT=%s\n' "${KICAD_STUDIO_VALIDATION_APT_ROOT}"
   printf 'KICAD_STUDIO_VALIDATION_DEB_ROOT=%s\n' "${KICAD_STUDIO_VALIDATION_DEB_ROOT}"
   printf 'PLAYWRIGHT_BROWSERS_PATH=%s\n' "${PLAYWRIGHT_BROWSERS_PATH}"
+  printf 'XKB_BIN=%s\n' "${KICAD_STUDIO_VALIDATION_APT_ROOT}/usr/bin"
   return 0
 }
