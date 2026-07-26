@@ -149,6 +149,7 @@ protecting users on the stable line while maintainers test the next major line.
 | Current nightly smoke  | Run from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) with a configured nightly `kicad-cli`.                        |
 | KiCad 11 RC smoke      | Run from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) once the installed prerelease reports `11.0.x`.               |
 | Migration guide        | [`docs/compatibility/kicad-10-to-11-migration.md`](compatibility/kicad-10-to-11-migration.md).                                      |
+| Generated dashboard    | [`docs/compatibility/kicad-11-readiness-dashboard.md`](compatibility/kicad-11-readiness-dashboard.md).                              |
 
 Status surfaces:
 

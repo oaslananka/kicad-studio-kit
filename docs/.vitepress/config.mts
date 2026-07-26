@@ -62,6 +62,10 @@ export default defineConfig({
             link: "/compatibility/kicad-10-0-5-feature-parity",
           },
           {
+            text: "KiCad 11 Readiness Dashboard",
+            link: "/compatibility/kicad-11-readiness-dashboard",
+          },
+          {
             text: "KiCad 10 → 11 Migration Guide",
             link: "/compatibility/kicad-10-to-11-migration",
           },
