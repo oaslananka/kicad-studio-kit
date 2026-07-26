@@ -11,82 +11,31 @@ import type { ComponentSearchResult } from '../types';
 import { normalizeUserPath } from '../utils/pathUtils';
 import type { Logger } from '../utils/logger';
 import type { KiCadLibraryIndexer } from './libraryIndexer';
+import {
+  isPcmVersionNewer,
+  normalizePcmPackage,
+  scorePcmPackageMatch,
+  toKiCadPcmPackageJson,
+  type PcmInstalledPackage,
+  type PcmInstallState,
+  type PcmPackage,
+  type PcmPackageVersion,
+  type PcmRepository
+} from './pcmCatalog';
 
-export type PcmPackageKind =
-  | 'symbols'
-  | 'footprints'
-  | '3d-models'
-  | 'plugins'
-  | 'color-themes';
-
-export type PcmInstallState =
-  | 'available'
-  | 'installed'
-  | 'update-available';
-
-export interface PcmPackageVersion {
-  version: string;
-  versionEpoch: number;
-  downloadUrl?: string | undefined;
-  downloadSha256?: string | undefined;
-  status: 'stable' | 'testing' | 'development' | 'deprecated' | string;
-  kicadVersion?: string | undefined;
-  platforms: string[];
-}
-
-export interface PcmPackageMetadata {
-  name: string;
-  description: string;
-  descriptionFull: string;
-  identifier: string;
-  type: string;
-  category?: string | undefined;
-  license?: string | undefined;
-  tags: string[];
-  resources: Record<string, string>;
-  versions: PcmPackageVersion[];
-  raw: Record<string, unknown>;
-}
-
-export interface PcmInstalledPackage {
-  identifier: string;
-  version: string;
-  repositoryId: string;
-  repositoryName: string;
-  repositoryUrl: string;
-  installedAt: string;
-  installPath?: string | undefined;
-  extractedFiles: string[];
-  checksum?: string | undefined;
-  source: 'cli' | 'direct';
-  package: PcmPackageMetadata;
-}
-
-export interface PcmPackage {
-  repositoryId: string;
-  repositoryName: string;
-  repositoryUrl: string;
-  metadata: PcmPackageMetadata;
-  latestVersion?: PcmPackageVersion | undefined;
-  contentTypes: PcmPackageKind[];
-  state: PcmInstallState;
-  installed?: PcmInstalledPackage | undefined;
-}
-
-export interface PcmRepository {
-  id: string;
-  name: string;
-  url: string;
-  packageResourceUrl: string;
-  packages: PcmPackage[];
-  fetchedAt: string;
-}
+export {
+  PCM_PACKAGE_KINDS,
+  type PcmInstalledPackage,
+  type PcmInstallState,
+  type PcmPackage,
+  type PcmPackageKind,
+  type PcmPackageMetadata,
+  type PcmPackageVersion,
+  type PcmRepository
+} from './pcmCatalog';
 
 export interface PcmServiceOptions {
-  fetchBytes?: (
-    url: string,
-    accept: string
-  ) => Promise<Buffer> | Buffer;
+  fetchBytes?: (url: string, accept: string) => Promise<Buffer> | Buffer;
   extractArchive?: (
     archive: Buffer,
     targetDir: string,
@@ -100,20 +49,8 @@ export interface PcmServiceOptions {
 export const DEFAULT_PCM_REPOSITORY_URL =
   'https://repository.kicad.org/repository.json';
 
-export const PCM_PACKAGE_KINDS: Array<{
-  kind: PcmPackageKind;
-  label: string;
-}> = [
-  { kind: 'symbols', label: 'Symbols' },
-  { kind: 'footprints', label: 'Footprints' },
-  { kind: '3d-models', label: '3D Models' },
-  { kind: 'plugins', label: 'Plugins' },
-  { kind: 'color-themes', label: 'Color Themes' }
-];
-
 const PCM_STATE_KEY = 'kicadstudio.pcm.installedPackages.v1';
-const PCM_ACCEPT =
-  'application/vnd.kicad.pcm.v2+json, application/json;q=0.9';
+const PCM_ACCEPT = 'application/vnd.kicad.pcm.v2+json, application/json;q=0.9';
 
 export class PcmService implements vscode.Disposable {
   private readonly onDidChangeEmitter = new vscode.EventEmitter<void>();
@@ -170,11 +107,15 @@ export class PcmService implements vscode.Disposable {
     return this.getPackages();
   }
 
-  async installPackage(target: string | PcmPackage): Promise<PcmInstalledPackage> {
+  async installPackage(
+    target: string | PcmPackage
+  ): Promise<PcmInstalledPackage> {
     const pkg = await this.resolvePackage(target);
     const version = pkg.latestVersion;
     if (!version) {
-      throw new Error(`PCM package ${pkg.metadata.identifier} has no installable version.`);
+      throw new Error(
+        `PCM package ${pkg.metadata.identifier} has no installable version.`
+      );
     }
 
     const existing = this.installed.get(pkg.metadata.identifier);
@@ -198,7 +139,9 @@ export class PcmService implements vscode.Disposable {
     return installed;
   }
 
-  async updatePackage(target: string | PcmPackage): Promise<PcmInstalledPackage> {
+  async updatePackage(
+    target: string | PcmPackage
+  ): Promise<PcmInstalledPackage> {
     const pkg = await this.resolvePackage(target);
     const installed = this.installed.get(pkg.metadata.identifier);
     if (!installed) {
@@ -223,7 +166,8 @@ export class PcmService implements vscode.Disposable {
   }
 
   async uninstallPackage(target: string | PcmPackage): Promise<void> {
-    const identifier = typeof target === 'string' ? target : target.metadata.identifier;
+    const identifier =
+      typeof target === 'string' ? target : target.metadata.identifier;
     const installed = this.installed.get(identifier);
     if (!installed) {
       return;
@@ -231,10 +175,9 @@ export class PcmService implements vscode.Disposable {
 
     await this.removeDirectInstallFiles(installed);
     this.installed.delete(identifier);
-    await this.context.globalState.update(
-      PCM_STATE_KEY,
-      [...this.installed.values()]
-    );
+    await this.context.globalState.update(PCM_STATE_KEY, [
+      ...this.installed.values()
+    ]);
     await this.writeKiCadInstalledPackages();
     await this.refreshLibraryIndex();
     this.refreshPackageStates();
@@ -244,15 +187,15 @@ export class PcmService implements vscode.Disposable {
   isUpdateAvailable(pkg: PcmPackage): boolean {
     return Boolean(
       pkg.installed &&
-        pkg.latestVersion &&
-        isVersionNewer(
-          pkg.latestVersion.version,
-          pkg.installed.version,
-          pkg.latestVersion.versionEpoch,
-          pkg.installed.package.versions.find(
-            (version) => version.version === pkg.installed?.version
-          )?.versionEpoch ?? 0
-        )
+      pkg.latestVersion &&
+      isPcmVersionNewer(
+        pkg.latestVersion.version,
+        pkg.installed.version,
+        pkg.latestVersion.versionEpoch,
+        pkg.installed.package.versions.find(
+          (version) => version.version === pkg.installed?.version
+        )?.versionEpoch ?? 0
+      )
     );
   }
 
@@ -283,7 +226,7 @@ export class PcmService implements vscode.Disposable {
           (kind) => kind === 'symbols' || kind === 'footprints'
         )
       )
-      .map((pkg) => ({ pkg, score: scorePackageMatch(pkg, haystack) }))
+      .map((pkg) => ({ pkg, score: scorePcmPackageMatch(pkg, haystack) }))
       .filter((entry) => entry.score > 0)
       .sort((left, right) => right.score - left.score)[0]?.pkg;
   }
@@ -299,7 +242,7 @@ export class PcmService implements vscode.Disposable {
     return this.getPackages()
       .map((pkg) => ({
         pkg,
-        score: scorePackageMatch(pkg, normalized)
+        score: scorePcmPackageMatch(pkg, normalized)
       }))
       .filter((entry) => entry.score > 0)
       .sort((left, right) => right.score - left.score)
@@ -357,7 +300,9 @@ export class PcmService implements vscode.Disposable {
     return path.join(this.getConfigDir(), '3rdparty');
   }
 
-  private async resolvePackage(target: string | PcmPackage): Promise<PcmPackage> {
+  private async resolvePackage(
+    target: string | PcmPackage
+  ): Promise<PcmPackage> {
     if (typeof target !== 'string') {
       return target;
     }
@@ -401,7 +346,7 @@ export class PcmService implements vscode.Disposable {
     const fetchedAt = this.now().toISOString();
     const packages = rawPackages
       .map((raw) =>
-        normalizePackage(raw, {
+        normalizePcmPackage(raw, {
           repositoryId,
           repositoryName,
           repositoryUrl
@@ -489,10 +434,9 @@ export class PcmService implements vscode.Disposable {
   ): Promise<void> {
     this.installed.set(installed.identifier, installed);
     this.managedIdentifiers.add(installed.identifier);
-    await this.context.globalState.update(
-      PCM_STATE_KEY,
-      [...this.installed.values()]
-    );
+    await this.context.globalState.update(PCM_STATE_KEY, [
+      ...this.installed.values()
+    ]);
     await this.writeKiCadInstalledPackages();
     await this.refreshLibraryIndex();
     this.refreshPackageStates();
@@ -573,13 +517,15 @@ export class PcmService implements vscode.Disposable {
       ? (existing['packages'] as unknown[]).filter(
           (entry) =>
             !this.managedIdentifiers.has(
-              asString(asRecord(entry)?.['package'] && asRecord(asRecord(entry)?.['package'])?.['identifier']) ??
-                ''
+              asString(
+                asRecord(entry)?.['package'] &&
+                  asRecord(asRecord(entry)?.['package'])?.['identifier']
+              ) ?? ''
             )
         )
       : [];
     const managed = [...this.installed.values()].map((entry) => ({
-      package: toKiCadPackageJson(entry.package),
+      package: toKiCadPcmPackageJson(entry.package),
       current_version: {
         version: entry.version
       },
@@ -616,7 +562,7 @@ export class PcmService implements vscode.Disposable {
     const installed = this.installed.get(pkg.metadata.identifier);
     const state: PcmInstallState = installed
       ? pkg.latestVersion &&
-        isVersionNewer(
+        isPcmVersionNewer(
           pkg.latestVersion.version,
           installed.version,
           pkg.latestVersion.versionEpoch,
@@ -637,9 +583,7 @@ export class PcmService implements vscode.Disposable {
   private getRepositoryUrls(): string[] {
     const configured = vscode.workspace
       .getConfiguration()
-      .get<string[]>(SETTINGS.pcmRepositoryUrls, [
-        DEFAULT_PCM_REPOSITORY_URL
-      ]);
+      .get<string[]>(SETTINGS.pcmRepositoryUrls, [DEFAULT_PCM_REPOSITORY_URL]);
     const urls = configured.length ? configured : [DEFAULT_PCM_REPOSITORY_URL];
     return [...new Set(urls.map((url) => url.trim()).filter(Boolean))];
   }
@@ -677,9 +621,7 @@ function readInstalledState(
   context: vscode.ExtensionContext
 ): PcmInstalledPackage[] {
   const value = context.globalState.get<unknown>(PCM_STATE_KEY);
-  return Array.isArray(value)
-    ? value.filter(isInstalledPackage)
-    : [];
+  return Array.isArray(value) ? value.filter(isInstalledPackage) : [];
 }
 
 function isInstalledPackage(value: unknown): value is PcmInstalledPackage {
@@ -687,200 +629,19 @@ function isInstalledPackage(value: unknown): value is PcmInstalledPackage {
   const pkg = asRecord(record?.['package']);
   return Boolean(
     record &&
-      pkg &&
-      asString(record['identifier']) &&
-      asString(record['version']) &&
-      asString(pkg['identifier'])
+    pkg &&
+    asString(record['identifier']) &&
+    asString(record['version']) &&
+    asString(pkg['identifier'])
   );
 }
 
-function normalizePackage(
-  raw: unknown,
-  repository: {
-    repositoryId: string;
-    repositoryName: string;
-    repositoryUrl: string;
-  }
-): PcmPackage | undefined {
-  const record = asRecord(raw);
-  const identifier = asString(record?.['identifier']);
-  const name = asString(record?.['name']);
-  if (!record || !identifier || !name) {
-    return undefined;
-  }
-  const versions = Array.isArray(record['versions'])
-    ? record['versions']
-        .map(normalizeVersion)
-        .filter((version): version is PcmPackageVersion => Boolean(version))
-    : [];
-  const metadata: PcmPackageMetadata = {
-    name,
-    description: asString(record['description']) ?? '',
-    descriptionFull: asString(record['description_full']) ?? '',
-    identifier,
-    type: asString(record['type']) ?? 'library',
-    category: asString(record['category']),
-    license: asString(record['license']),
-    tags: readStringArray(record['tags']),
-    resources: readStringRecord(record['resources']),
-    versions,
-    raw: record
-  };
-  return {
-    ...repository,
-    metadata,
-    latestVersion: selectLatestVersion(versions),
-    contentTypes: classifyPackage(metadata),
-    state: 'available'
-  };
-}
-
-function normalizeVersion(raw: unknown): PcmPackageVersion | undefined {
-  const record = asRecord(raw);
-  const version = asString(record?.['version']);
-  if (!record || !version) {
-    return undefined;
-  }
-  return {
-    version,
-    versionEpoch: asNumber(record['version_epoch']) ?? 0,
-    downloadUrl: asString(record['download_url']),
-    downloadSha256: asString(record['download_sha256']),
-    status: asString(record['status']) ?? 'stable',
-    kicadVersion: asString(record['kicad_version']),
-    platforms: readStringArray(record['platforms'])
-  };
-}
-
-function classifyPackage(metadata: PcmPackageMetadata): PcmPackageKind[] {
-  const words = [
-    metadata.type,
-    metadata.category,
-    metadata.name,
-    metadata.description,
-    ...metadata.tags
-  ]
-    .filter((value): value is string => Boolean(value))
-    .join(' ')
-    .toLowerCase();
-  if (/\bplugin\b/u.test(words)) {
-    return ['plugins'];
-  }
-  if (/colou?r[- ]?theme|theme|color/u.test(words)) {
-    return ['color-themes'];
-  }
-  const kinds = new Set<PcmPackageKind>();
-  if (/symbol/u.test(words)) {
-    kinds.add('symbols');
-  }
-  if (/footprint|pretty/u.test(words)) {
-    kinds.add('footprints');
-  }
-  if (/3d|model|step|wrl/u.test(words)) {
-    kinds.add('3d-models');
-  }
-  if (!kinds.size) {
-    kinds.add('symbols');
-    kinds.add('footprints');
-    kinds.add('3d-models');
-  }
-  return [...kinds];
-}
-
-function selectLatestVersion(
-  versions: PcmPackageVersion[]
-): PcmPackageVersion | undefined {
-  const candidates = versions.filter((version) => version.status !== 'deprecated');
-  return [...(candidates.length ? candidates : versions)].sort((left, right) =>
-    compareVersions(right.version, left.version, right.versionEpoch, left.versionEpoch)
-  )[0];
-}
-
-function isVersionNewer(
-  candidate: string,
-  current: string,
-  candidateEpoch = 0,
-  currentEpoch = 0
-): boolean {
-  return compareVersions(candidate, current, candidateEpoch, currentEpoch) > 0;
-}
-
-function compareVersions(
-  left: string,
-  right: string,
-  leftEpoch = 0,
-  rightEpoch = 0
-): number {
-  if (leftEpoch !== rightEpoch) {
-    return leftEpoch - rightEpoch;
-  }
-  const leftParts = left.split('.').map((part) => Number.parseInt(part, 10) || 0);
-  const rightParts = right
-    .split('.')
-    .map((part) => Number.parseInt(part, 10) || 0);
-  for (let index = 0; index < Math.max(leftParts.length, rightParts.length); index += 1) {
-    const diff = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
-    if (diff !== 0) {
-      return diff;
-    }
-  }
-  return 0;
-}
-
-function scorePackageMatch(pkg: PcmPackage, query: string): number {
-  const fields = [
-    pkg.metadata.identifier,
-    pkg.metadata.name,
-    pkg.metadata.description,
-    pkg.metadata.descriptionFull,
-    pkg.metadata.category,
-    ...pkg.metadata.tags
-  ]
-    .filter((value): value is string => Boolean(value))
-    .map((value) => value.toLowerCase());
-  const tokens = query
-    .split(/[^a-z0-9._+-]+/u)
-    .map((token) => token.trim())
-    .filter((token) => token.length >= 2);
-  let score = 0;
-  for (const token of tokens) {
-    if (fields.some((field) => field === token)) {
-      score += 8;
-    } else if (fields.some((field) => field.includes(token))) {
-      score += 2;
-    }
-  }
-  return score;
-}
-
-function toKiCadPackageJson(pkg: PcmPackageMetadata): Record<string, unknown> {
-  return {
-    ...pkg.raw,
-    name: pkg.name,
-    description: pkg.description,
-    description_full: pkg.descriptionFull,
-    identifier: pkg.identifier,
-    type: pkg.type,
-    ...(pkg.category ? { category: pkg.category } : {}),
-    ...(pkg.license ? { license: pkg.license } : {}),
-    resources: pkg.resources,
-    tags: pkg.tags,
-    versions: pkg.versions.map((version) => ({
-      version: version.version,
-      version_epoch: version.versionEpoch,
-      ...(version.downloadUrl ? { download_url: version.downloadUrl } : {}),
-      ...(version.downloadSha256
-        ? { download_sha256: version.downloadSha256 }
-        : {}),
-      status: version.status,
-      ...(version.kicadVersion ? { kicad_version: version.kicadVersion } : {}),
-      ...(version.platforms.length ? { platforms: version.platforms } : {})
-    }))
-  };
-}
-
 function createRepositoryId(repositoryUrl: string): string {
-  return crypto.createHash('sha256').update(repositoryUrl).digest('hex').slice(0, 16);
+  return crypto
+    .createHash('sha256')
+    .update(repositoryUrl)
+    .digest('hex')
+    .slice(0, 16);
 }
 
 function assertSha256(bytes: Buffer, expected: string, label: string): void {
@@ -892,7 +653,10 @@ function assertSha256(bytes: Buffer, expected: string, label: string): void {
   }
 }
 
-function parseJsonObject(bytes: Buffer, label: string): Record<string, unknown> {
+function parseJsonObject(
+  bytes: Buffer,
+  label: string
+): Record<string, unknown> {
   try {
     const parsed = JSON.parse(bytes.toString('utf8')) as unknown;
     if (parsed && typeof parsed === 'object') {
@@ -1002,7 +766,11 @@ function upsertLibraryTable(options: {
         ]
       : [`(${options.rootName}`, ...entryLines, ')'];
   fs.mkdirSync(path.dirname(options.filePath), { recursive: true });
-  fs.writeFileSync(options.filePath, `${nextLines.join('\n').trimEnd()}\n`, 'utf8');
+  fs.writeFileSync(
+    options.filePath,
+    `${nextLines.join('\n').trimEnd()}\n`,
+    'utf8'
+  );
 }
 
 function escapeTableString(value: string): string {
@@ -1014,7 +782,9 @@ function extractZipArchive(buffer: Buffer, targetDir: string): string[] {
   if (endOfCentralDirectory < 0) {
     throw new Error('PCM package archive is not a ZIP file.');
   }
-  const centralDirectoryOffset = buffer.readUInt32LE(endOfCentralDirectory + 16);
+  const centralDirectoryOffset = buffer.readUInt32LE(
+    endOfCentralDirectory + 16
+  );
   const totalEntries = buffer.readUInt16LE(endOfCentralDirectory + 10);
   const extracted: string[] = [];
   let offset = centralDirectoryOffset;
@@ -1040,7 +810,8 @@ function extractZipArchive(buffer: Buffer, targetDir: string): string[] {
     }
     const localNameLength = buffer.readUInt16LE(localHeaderOffset + 26);
     const localExtraLength = buffer.readUInt16LE(localHeaderOffset + 28);
-    const dataStart = localHeaderOffset + 30 + localNameLength + localExtraLength;
+    const dataStart =
+      localHeaderOffset + 30 + localNameLength + localExtraLength;
     const compressed = buffer.subarray(dataStart, dataStart + compressedSize);
     const targetPath = path.join(targetDir, safeName);
 
@@ -1117,26 +888,4 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
 
 function asString(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
-}
-
-function asNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-}
-
-function readStringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter((entry): entry is string => typeof entry === 'string')
-    : [];
-}
-
-function readStringRecord(value: unknown): Record<string, string> {
-  const record = asRecord(value);
-  if (!record) {
-    return {};
-  }
-  return Object.fromEntries(
-    Object.entries(record).filter(
-      (entry): entry is [string, string] => typeof entry[1] === 'string'
-    )
-  );
 }
