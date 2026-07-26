@@ -78,6 +78,28 @@ test("#497 PCM catalog model has no production dependencies", () => {
   assert.doesNotMatch(source, /\b(?:import\s*(?:\(|[\s{*])|require\s*\()/u);
 });
 
+test("#497 PCM archive adapter depends only on reviewed Node built-ins", () => {
+  const repoRoot = path.resolve(import.meta.dirname, "..");
+  const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
+  const graph = buildTypeScriptImportGraph(sourceRoot);
+  assert.deepEqual([...(graph.get("library/pcmArchive.ts") ?? [])], []);
+
+  const source = fs.readFileSync(
+    path.join(sourceRoot, "library", "pcmArchive.ts"),
+    "utf8",
+  );
+  const importSpecifiers = [...source.matchAll(/from ["']([^"']+)["']/gu)].map(
+    (match) => match[1],
+  );
+  assert.deepEqual(importSpecifiers.toSorted(), [
+    "node:crypto",
+    "node:fs",
+    "node:path",
+    "node:zlib",
+  ]);
+  assert.doesNotMatch(source, /from ["'](?:vscode|\.)/u);
+});
+
 test("#497 root check cannot silently drop the architecture guard", () => {
   const repoRoot = path.resolve(import.meta.dirname, "..");
   const packageJson = JSON.parse(
@@ -102,6 +124,7 @@ test("#497 root check cannot silently drop the architecture guard", () => {
     "components/componentSearchView.ts",
     "library/pcmService.ts",
     "library/pcmCatalog.ts",
+    "library/pcmArchive.ts",
     "state/stateStores.ts",
   ]) {
     assert.match(
@@ -109,6 +132,6 @@ test("#497 root check cannot silently drop the architecture guard", () => {
       new RegExp(target.replaceAll(".", "\\."), "u"),
     );
   }
-  assert.match(architectureDoc, /146 TypeScript modules/u);
+  assert.match(architectureDoc, /147 TypeScript modules/u);
   assert.match(architectureDoc, /0 import cycles/u);
 });
