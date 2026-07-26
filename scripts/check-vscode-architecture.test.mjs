@@ -86,6 +86,7 @@ test("#497 root check cannot silently drop the architecture guard", () => {
     "cli/exportCommands.ts",
     "cli/exportCommandBuilder.ts",
     "components/componentSearch.ts",
+    "components/componentSearchView.ts",
     "library/pcmService.ts",
     "state/stateStores.ts",
   ]) {
@@ -94,6 +95,6 @@ test("#497 root check cannot silently drop the architecture guard", () => {
       new RegExp(target.replaceAll(".", "\\."), "u"),
     );
   }
-  assert.match(architectureDoc, /144 TypeScript modules/u);
+  assert.match(architectureDoc, /145 TypeScript modules/u);
   assert.match(architectureDoc, /0 import cycles/u);
 });
