@@ -5,6 +5,10 @@ without changing the current supported baseline. Verified KiCad 10.0.5 in
 the 10.0.x line remains the primary release-blocking target until a KiCad 11 stable or release-candidate
 canary has passed and the support matrix is updated in `compatibility.yaml`.
 
+The generated [KiCad 11 readiness dashboard](kicad-11-readiness-dashboard.md)
+shows the current owner, evidence, blocker, critical CLI snapshot contract, and
+same-day stable-release checklist for every readiness dimension.
+
 ## Compatibility Boundary
 
 | Surface                        | KiCad 10.0.x              | KiCad 11 readiness                          |

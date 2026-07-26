@@ -5,6 +5,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { docsSiteUrl } from "./lib/docs-site-config.mjs";
+import {
+  renderKiCad11ReadinessDashboard,
+  validateKiCad11Readiness,
+} from "./lib/kicad-11-readiness-dashboard.mjs";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -543,6 +547,7 @@ function renderSitemap() {
     "/workflows/manufacturing-export.html",
     "/architecture/",
     "/support-matrix.html",
+    "/compatibility/kicad-11-readiness-dashboard.html",
     "/versions.html",
     "/changelog/",
     "/contributing.html",
@@ -583,11 +588,26 @@ function copyStaticAssets() {
 }
 
 function main() {
+  const compatibility = readYaml("compatibility.yaml");
+  const readinessErrors = validateKiCad11Readiness({
+    compatibility,
+    repoRoot,
+  });
+  if (readinessErrors.length > 0) {
+    throw new Error(
+      `KiCad 11 readiness dashboard contract is invalid:\n- ${readinessErrors.join("\n- ")}`,
+    );
+  }
+
   writeGenerated("extension/commands.md", renderExtensionCommands());
   writeGenerated("extension/settings.md", renderExtensionSettings());
   writeGenerated("extension/views.md", renderExtensionViews());
   writeGenerated("mcp/api-reference.md", renderMcpApiReference());
   updateSupportMatrix();
+  writeGenerated(
+    "compatibility/kicad-11-readiness-dashboard.md",
+    renderKiCad11ReadinessDashboard(compatibility),
+  );
   writeGenerated("versions.md", renderVersions());
   writeGenerated("contributing.md", renderContributing());
   writeGenerated("contributors.md", renderContributors());

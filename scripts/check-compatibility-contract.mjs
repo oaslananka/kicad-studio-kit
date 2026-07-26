@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 
+import { validateKiCad11Readiness } from "./lib/kicad-11-readiness-dashboard.mjs";
 import { validateRuntimePolicyMetadata } from "./lib/runtime-policy.mjs";
 
 const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -19,6 +20,7 @@ const DOCS_FILES = [
   "docs/protocol-schemas.md",
   "docs/support-matrix.md",
   "docs/compatibility/runtime-policy.md",
+  "docs/compatibility/kicad-11-readiness-dashboard.md",
 ];
 
 const REQUIRED_FILES = [
@@ -39,6 +41,10 @@ const REQUIRED_FILES = [
   {
     path: "docs/compatibility/runtime-policy.md",
     label: "Runtime policy documentation",
+  },
+  {
+    path: "docs/compatibility/kicad-11-readiness-dashboard.md",
+    label: "KiCad 11 readiness dashboard",
   },
 ];
 
@@ -495,10 +501,10 @@ export function validateCompatibilityContract(options = {}) {
   checkLocalProtocolSchemasAbsent(errors);
   checkRuntimePolicyMetadata(errors, options);
   if (fileExists("compatibility.yaml")) {
+    const compatibility = parseYaml(readFile("compatibility.yaml"));
+    errors.push(...validateKiCadPatchBaseline({ compatibility }));
     errors.push(
-      ...validateKiCadPatchBaseline({
-        compatibility: parseYaml(readFile("compatibility.yaml")),
-      }),
+      ...validateKiCad11Readiness({ compatibility, repoRoot: REPO_ROOT }),
     );
   }
   checkDocsChangedWithContract(errors, changedFiles);
