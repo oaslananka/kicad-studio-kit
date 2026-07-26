@@ -14,6 +14,10 @@ import test from "node:test";
 import { validateSecurityTooling } from "./check-security-tooling.mjs";
 
 const RELEVANT_FILES = [
+  ".github/workflows/ci.yml",
+  ".github/workflows/cross-repo-compatibility.yml",
+  ".github/workflows/docs.yml",
+  ".github/workflows/performance-nightly.yml",
   ".github/workflows/security.yml",
   "apps/vscode-extension/scripts/local-security.sh",
   "apps/vscode-extension/scripts/local-security.ps1",
@@ -154,6 +158,34 @@ test("#508 Semgrep rule fixtures cannot be ignored or silently removed", () => {
     const errors = validateSecurityTooling(root);
     assert.ok(errors.some((error) => error.includes("must not hide")));
     assert.ok(errors.some((error) => error.includes("fixtures must exercise")));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#555 every setup-uv action pins the repository uv version", () => {
+  const root = createFixture();
+  try {
+    replaceInFixture(
+      root,
+      ".github/workflows/cross-repo-compatibility.yml",
+      "          version: 0.11.21\n",
+      "          version: latest\n",
+    );
+    replaceInFixture(
+      root,
+      ".github/workflows/docs.yml",
+      "          version: 0.11.21\n",
+      "",
+    );
+    const errors = validateSecurityTooling(root);
+    for (const workflow of ["cross-repo-compatibility.yml", "docs.yml"]) {
+      assert.ok(
+        errors.some(
+          (error) => error.includes(workflow) && error.includes("uv 0.11.21"),
+        ),
+      );
+    }
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

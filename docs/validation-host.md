@@ -22,11 +22,13 @@ and ShellCheck 0.9.0. Bootstrap forces mise state below the executing account's
 `$HOME`, enables pnpm through Corepack, installs the frozen workspace lockfile,
 and installs Playwright Chromium.
 
-On Ubuntu 24.04, Chromium and Xvfb system packages are downloaded through the
-host's signed apt metadata and extracted below
-`$HOME/.cache/kicad-studio-kit`. Nothing is written to `/usr`, no daemon is
-required, and repeated runs reuse a manifest-keyed cache. The cache can be
-removed safely; the next bootstrap reconstructs it.
+On Ubuntu 24.04, Chromium, VS Code Electron, and Xvfb system packages are
+downloaded through the host's signed apt metadata and extracted below
+`$HOME/.cache/kicad-studio-kit`. The extracted Xvfb copy is deterministically
+relocated so its `xkbcomp` lookup resolves inside that cache rather than the
+host `/usr/bin`. Nothing is written to `/usr`, no daemon is required, and
+repeated runs reuse a manifest-keyed cache. The cache can be removed safely;
+the next bootstrap reconstructs it.
 
 ## Bootstrap
 

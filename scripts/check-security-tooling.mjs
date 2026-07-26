@@ -9,6 +9,10 @@ const REPO_ROOT = path.resolve(
   "..",
 );
 
+const UV_VERSION = "0.11.21";
+const SETUP_UV_ACTION =
+  "astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39";
+
 const EXPECTED_SCRIPTS = {
   "check:security-tooling":
     "node scripts/check-security-tooling.mjs && node --test scripts/check-security-tooling.test.mjs",
@@ -86,6 +90,69 @@ function validatePackageScripts(packageJson) {
     scripts["test:semgrep-rules"] !== EXPECTED_SCRIPTS["test:semgrep-rules"]
   ) {
     errors.push("package.json must pin Semgrep 1.170.0 for custom rule tests");
+  }
+  return errors;
+}
+
+function readWorkflowTexts(root) {
+  const workflowRoot = path.join(root, ".github/workflows");
+  if (!fs.existsSync(workflowRoot)) {
+    return [];
+  }
+  return fs
+    .readdirSync(workflowRoot, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && /\.ya?ml$/u.test(entry.name))
+    .map((entry) => [
+      `.github/workflows/${entry.name}`,
+      fs.readFileSync(path.join(workflowRoot, entry.name), "utf8"),
+    ]);
+}
+
+function stepBlockForLine(lines, lineIndex) {
+  const usesIndent =
+    lines[lineIndex].length - lines[lineIndex].trimStart().length;
+  let stepStart = lineIndex;
+  if (!lines[lineIndex].trimStart().startsWith("- ")) {
+    for (let index = lineIndex - 1; index >= 0; index -= 1) {
+      const line = lines[index];
+      const indent = line.length - line.trimStart().length;
+      if (line.trimStart().startsWith("- ") && indent < usesIndent) {
+        stepStart = index;
+        break;
+      }
+    }
+  }
+  const stepIndent =
+    lines[stepStart].length - lines[stepStart].trimStart().length;
+  let stepEnd = lines.length;
+  for (let index = stepStart + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+    const indent = line.length - line.trimStart().length;
+    if (line.trimStart().startsWith("- ") && indent === stepIndent) {
+      stepEnd = index;
+      break;
+    }
+  }
+  return lines.slice(stepStart, stepEnd).join("\n");
+}
+
+function validateSetupUvPins(workflows) {
+  const errors = [];
+  for (const [relativePath, workflow] of workflows) {
+    const lines = workflow.split(/\r?\n/u);
+    for (const [lineIndex, line] of lines.entries()) {
+      if (!line.includes(`uses: ${SETUP_UV_ACTION}`)) {
+        continue;
+      }
+      const block = stepBlockForLine(lines, lineIndex);
+      if (
+        !block
+          .split(/\r?\n/u)
+          .some((stepLine) => stepLine.trim() === `version: ${UV_VERSION}`)
+      ) {
+        errors.push(`${relativePath} setup-uv step must pin uv ${UV_VERSION}`);
+      }
+    }
   }
   return errors;
 }
@@ -267,6 +334,7 @@ function validateSemgrepFixtures(fixtures) {
 export function validateSecurityTooling(root = REPO_ROOT) {
   return [
     ...validatePackageScripts(readJson(root, "package.json")),
+    ...validateSetupUvPins(readWorkflowTexts(root)),
     ...validateSecurityWorkflow(
       readText(root, ".github/workflows/security.yml"),
     ),
