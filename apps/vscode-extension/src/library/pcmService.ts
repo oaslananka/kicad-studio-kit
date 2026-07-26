@@ -388,11 +388,9 @@ export class PcmService implements vscode.Disposable {
       this.getThirdPartyDir(),
       sanitizeIdentifier(pkg.metadata.identifier)
     );
-    fs.rmSync(installPath, { recursive: true, force: true });
-    fs.mkdirSync(installPath, { recursive: true });
-    const extractedFiles = await (this.options.extractArchive
-      ? this.options.extractArchive(archive, installPath, pkg)
-      : extractPcmZipArchive(archive, installPath));
+    const extractedFiles = this.options.extractArchive
+      ? await this.extractWithInjectedAdapter(archive, installPath, pkg)
+      : extractPcmZipArchive(archive, installPath);
 
     await this.refreshLibraryTables(pkg, installPath);
 
@@ -454,6 +452,16 @@ export class PcmService implements vscode.Disposable {
         fs.rmSync(installPath, { recursive: true, force: true });
       }
     }
+  }
+
+  private async extractWithInjectedAdapter(
+    archive: Buffer,
+    installPath: string,
+    pkg: PcmPackage
+  ): Promise<string[]> {
+    fs.rmSync(installPath, { recursive: true, force: true });
+    fs.mkdirSync(installPath, { recursive: true });
+    return await this.options.extractArchive!(archive, installPath, pkg);
   }
 
   private async refreshLibraryTables(
