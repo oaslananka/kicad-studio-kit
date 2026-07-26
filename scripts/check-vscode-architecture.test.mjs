@@ -148,6 +148,30 @@ test("#497 PCM library-table adapter uses only reviewed filesystem and catalog d
   assert.doesNotMatch(source, /from ["']vscode["']/u);
 });
 
+test("#497 project state store uses only reviewed project-domain dependencies", () => {
+  const repoRoot = path.resolve(import.meta.dirname, "..");
+  const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
+  const graph = buildTypeScriptImportGraph(sourceRoot);
+  assert.deepEqual(
+    [...(graph.get("state/projectStateStore.ts") ?? [])],
+    ["types.ts", "workspace/projectContext.ts"],
+  );
+
+  const source = fs.readFileSync(
+    path.join(sourceRoot, "state", "projectStateStore.ts"),
+    "utf8",
+  );
+  const importSpecifiers = [...source.matchAll(/from ["']([^"']+)["']/gu)].map(
+    (match) => match[1],
+  );
+  assert.deepEqual(importSpecifiers.toSorted(), [
+    "../types",
+    "../workspace/projectContext",
+    "vscode",
+  ]);
+  assert.doesNotMatch(source, /from ["']node:/u);
+});
+
 test("#497 viewer state store uses only reviewed viewer-domain dependencies", () => {
   const repoRoot = path.resolve(import.meta.dirname, "..");
   const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
@@ -207,6 +231,7 @@ test("#497 root check cannot silently drop the architecture guard", () => {
     "library/pcmPersistence.ts",
     "library/pcmLibraryTable.ts",
     "state/stateStores.ts",
+    "state/projectStateStore.ts",
     "state/viewerStateStore.ts",
   ]) {
     assert.match(
@@ -214,6 +239,6 @@ test("#497 root check cannot silently drop the architecture guard", () => {
       new RegExp(target.replaceAll(".", "\\."), "u"),
     );
   }
-  assert.match(architectureDoc, /150 TypeScript modules/u);
+  assert.match(architectureDoc, /151 TypeScript modules/u);
   assert.match(architectureDoc, /0 import cycles/u);
 });
