@@ -148,6 +148,37 @@ test("#497 PCM library-table adapter uses only reviewed filesystem and catalog d
   assert.doesNotMatch(source, /from ["']vscode["']/u);
 });
 
+test("#497 viewer state store uses only reviewed viewer-domain dependencies", () => {
+  const repoRoot = path.resolve(import.meta.dirname, "..");
+  const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
+  const graph = buildTypeScriptImportGraph(sourceRoot);
+  assert.deepEqual(
+    [...(graph.get("state/viewerStateStore.ts") ?? [])],
+    [
+      "providers/viewer/viewerEngine.ts",
+      "types.ts",
+      "utils/secrets.ts",
+      "workspace/projectContext.ts",
+    ],
+  );
+
+  const source = fs.readFileSync(
+    path.join(sourceRoot, "state", "viewerStateStore.ts"),
+    "utf8",
+  );
+  const importSpecifiers = [...source.matchAll(/from ["']([^"']+)["']/gu)].map(
+    (match) => match[1],
+  );
+  assert.deepEqual(importSpecifiers.toSorted(), [
+    "../providers/viewer/viewerEngine",
+    "../types",
+    "../utils/secrets",
+    "../workspace/projectContext",
+    "vscode",
+  ]);
+  assert.doesNotMatch(source, /from ["']node:/u);
+});
+
 test("#497 root check cannot silently drop the architecture guard", () => {
   const repoRoot = path.resolve(import.meta.dirname, "..");
   const packageJson = JSON.parse(
@@ -176,12 +207,13 @@ test("#497 root check cannot silently drop the architecture guard", () => {
     "library/pcmPersistence.ts",
     "library/pcmLibraryTable.ts",
     "state/stateStores.ts",
+    "state/viewerStateStore.ts",
   ]) {
     assert.match(
       architectureDoc,
       new RegExp(target.replaceAll(".", "\\."), "u"),
     );
   }
-  assert.match(architectureDoc, /149 TypeScript modules/u);
+  assert.match(architectureDoc, /150 TypeScript modules/u);
   assert.match(architectureDoc, /0 import cycles/u);
 });
