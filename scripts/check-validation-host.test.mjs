@@ -92,6 +92,35 @@ test("bootstrap must remain rootless and derive Playwright packages (#490)", () 
   assert.match(errors, /must not invoke sudo/u);
 });
 
+test("bootstrap includes the VS Code Electron GTK runtime (#490)", () => {
+  const bootstrapText = repositoryContract().bootstrapText;
+
+  for (const packageName of [
+    "libcairo-gobject2",
+    "libepoxy0",
+    "libgdk-pixbuf-2.0-0",
+    "libgtk-3-0t64",
+    "libgtk-3-common",
+    "libpangocairo-1.0-0",
+    "libpangoft2-1.0-0",
+    "libwayland-client0",
+    "libwayland-cursor0",
+    "libwayland-egl1",
+    "libxcursor1",
+    "libxinerama1",
+  ]) {
+    assert.match(bootstrapText, new RegExp(`\\b${packageName}\\b`, "u"));
+  }
+});
+
+test("rootless Xvfb resolves xkbcomp inside the validation runtime (#490)", () => {
+  const contract = repositoryContract();
+
+  assert.match(contract.commonText, /XKB_BIN/u);
+  assert.match(contract.bootstrapText, /\$XKB_BIN/u);
+  assert.match(contract.bootstrapText, /xvfb-run -a true/u);
+});
+
 test("validation-host contract requires hook-safe pre-push execution (#525)", () => {
   const contract = repositoryContract();
   contract.prePushText = "";

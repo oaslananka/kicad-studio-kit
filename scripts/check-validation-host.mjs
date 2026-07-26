@@ -42,6 +42,7 @@ export function validateValidationHostContract(contract) {
     "KICAD_STUDIO_VALIDATION_APT_ROOT",
     "LD_LIBRARY_PATH",
     "XKB_CONFIG_ROOT",
+    "XKB_BIN",
   ]) {
     requireIncludes(
       errors,
@@ -60,6 +61,8 @@ export function validateValidationHostContract(contract) {
     "playwright install-deps --dry-run chromium",
     'apt-get download "${packages[@]}"',
     'dpkg-deb -x "${archive}"',
+    'rootless_path = b"$XKB_BIN\\0"',
+    "xvfb-run -a true",
     ".validation-host-manifest",
     "node scripts/dev-doctor.mjs --ci --strict",
   ]) {

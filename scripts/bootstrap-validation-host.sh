@@ -25,6 +25,7 @@ if [[ "${dry_run}" -eq 1 ]]; then
 - install workspace dependencies with the frozen lockfile
 - install Playwright Chromium
 - derive Playwright Linux packages with playwright install-deps --dry-run chromium
+- include VS Code Electron GTK packages and relocate rootless Xvfb xkbcomp lookup
 - download signed Ubuntu packages with apt-get download and extract them without root
 - run strict dev-doctor in the activated validation environment
 VALIDATION_PLAN
@@ -67,7 +68,25 @@ if [[ "${playwright_dependency_status}" -ne 0 ]] \
   exit "${playwright_dependency_status}"
 fi
 
-packages=(xauth x11-xkb-utils libxfont2 xserver-common xvfb)
+packages=(
+  libcairo-gobject2
+  libepoxy0
+  libgdk-pixbuf-2.0-0
+  libgtk-3-0t64
+  libgtk-3-common
+  libpangocairo-1.0-0
+  libpangoft2-1.0-0
+  libwayland-client0
+  libwayland-cursor0
+  libwayland-egl1
+  libxcursor1
+  libxinerama1
+  xauth
+  x11-xkb-utils
+  libxfont2
+  xserver-common
+  xvfb
+)
 while IFS= read -r package; do
   [[ -n "${package}" ]] && packages+=("${package}")
 done < <(
@@ -85,7 +104,7 @@ if [[ "${#packages[@]}" -eq 0 ]]; then
 fi
 
 manifest_lines=(
-  "schema=1"
+  "schema=2"
   "codename=$(validation_host_os_codename)"
   "architecture=$(validation_host_architecture)"
 )
@@ -103,7 +122,8 @@ manifest_path="${KICAD_STUDIO_VALIDATION_APT_ROOT}/.validation-host-manifest"
 
 if [[ -f "${manifest_path}" ]] \
   && grep -qx "hash=${manifest_hash}" "${manifest_path}" \
-  && [[ -x "${KICAD_STUDIO_VALIDATION_APT_ROOT}/usr/bin/xvfb-run" ]]; then
+  && [[ -x "${KICAD_STUDIO_VALIDATION_APT_ROOT}/usr/bin/xvfb-run" ]] \
+  && grep -aFq "\$XKB_BIN" "${KICAD_STUDIO_VALIDATION_APT_ROOT}/usr/bin/Xvfb"; then
   echo "Rootless Ubuntu runtime is current: ${manifest_hash}"
 else
   apt_parent="$(dirname "${KICAD_STUDIO_VALIDATION_APT_ROOT}")"
@@ -122,6 +142,19 @@ else
   for archive in "${deb_staging}"/*.deb; do
     dpkg-deb -x "${archive}" "${apt_staging}"
   done
+
+  mise exec -- python - "${apt_staging}/usr/bin/Xvfb" <<'PYTHON'
+from pathlib import Path
+import sys
+
+xvfb_path = Path(sys.argv[1])
+data = xvfb_path.read_bytes()
+compiled_path = b"/usr/bin\0"
+rootless_path = b"$XKB_BIN\0"
+if data.count(compiled_path) != 1 or data.count(rootless_path) != 0:
+    raise SystemExit("Unexpected Xvfb xkbcomp path layout; refusing binary relocation")
+xvfb_path.write_bytes(data.replace(compiled_path, rootless_path, 1))
+PYTHON
 
   case "${KICAD_STUDIO_VALIDATION_APT_ROOT}" in
     "${KICAD_STUDIO_VALIDATION_CACHE_ROOT}"/apt-root/*) ;;
@@ -162,7 +195,7 @@ FONTCONFIG
 fi
 
 validation_host_activate_rootless_runtime
-xvfb-run --help >/dev/null
+xvfb-run -a true
 browser="$(
   find "${PLAYWRIGHT_BROWSERS_PATH}" -type f -name chrome-headless-shell -perm -u+x -print -quit
 )"
