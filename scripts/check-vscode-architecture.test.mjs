@@ -65,6 +65,19 @@ test("#497 repository production graph contains no cycles", () => {
   assert.deepEqual(validateVscodeArchitecture(repoRoot).cycles, []);
 });
 
+test("#497 PCM catalog model has no production dependencies", () => {
+  const repoRoot = path.resolve(import.meta.dirname, "..");
+  const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
+  const graph = buildTypeScriptImportGraph(sourceRoot);
+  assert.deepEqual([...(graph.get("library/pcmCatalog.ts") ?? [])], []);
+
+  const source = fs.readFileSync(
+    path.join(sourceRoot, "library", "pcmCatalog.ts"),
+    "utf8",
+  );
+  assert.doesNotMatch(source, /\b(?:import\s*(?:\(|[\s{*])|require\s*\()/u);
+});
+
 test("#497 root check cannot silently drop the architecture guard", () => {
   const repoRoot = path.resolve(import.meta.dirname, "..");
   const packageJson = JSON.parse(
@@ -88,6 +101,7 @@ test("#497 root check cannot silently drop the architecture guard", () => {
     "components/componentSearch.ts",
     "components/componentSearchView.ts",
     "library/pcmService.ts",
+    "library/pcmCatalog.ts",
     "state/stateStores.ts",
   ]) {
     assert.match(
@@ -95,6 +109,6 @@ test("#497 root check cannot silently drop the architecture guard", () => {
       new RegExp(target.replaceAll(".", "\\."), "u"),
     );
   }
-  assert.match(architectureDoc, /145 TypeScript modules/u);
+  assert.match(architectureDoc, /146 TypeScript modules/u);
   assert.match(architectureDoc, /0 import cycles/u);
 });
