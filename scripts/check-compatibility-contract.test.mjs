@@ -70,11 +70,25 @@ test("#494 compatibility contract rejects malformed runtime policy metadata", ()
   );
 });
 
-test("#491 stable KiCad patch baseline and RC canary metadata are aligned", () => {
-  assert.equal(compatibility.kicad.latestVerified, "10.0.4");
-  assert.equal(compatibility.kicad10FeatureParity.baseline, "10.0.4");
-  assert.equal(compatibility.kicad.patchCanary.version, "10.0.5-rc1");
+test("#558 final KiCad 10.0.5 baseline is aligned and has no active patch preview", () => {
+  assert.equal(compatibility.kicad.latestVerified, "10.0.5");
+  assert.equal(compatibility.kicad10FeatureParity.baseline, "10.0.5");
+  assert.equal(
+    compatibility.kicad10FeatureParity.sources.canaryEvidence,
+    "docs/evidence/kicad-10-0-5/2026-07-26/summary.md",
+  );
+  assert.equal(compatibility.kicad.patchCanary, undefined);
   assert.deepEqual(validateKiCadPatchBaseline({ compatibility }), []);
+});
+
+test("#558 verified stable patches do not require an active prerelease canary", () => {
+  const stableOnly = structuredClone(compatibility);
+  delete stableOnly.kicad.patchCanary;
+
+  assert.deepEqual(
+    validateKiCadPatchBaseline({ compatibility: stableOnly }),
+    [],
+  );
 });
 
 test("#491 rejects stable parity drift", () => {
@@ -87,9 +101,19 @@ test("#491 rejects stable parity drift", () => {
   );
 });
 
-test("#491 keeps patch release candidates non-blocking", () => {
+test("#491 keeps future patch release candidates non-blocking", () => {
   const blocking = structuredClone(compatibility);
-  blocking.kicad.patchCanary.blocking = true;
+  blocking.kicad.patchCanary = {
+    version: "10.0.6-rc1",
+    reportedVersion: "10.0.6",
+    state: "preview",
+    blocking: true,
+    owner: "KiCad MCP Pro",
+    ownerDocumentation: "https://oaslananka.github.io/kicad-mcp-pro/",
+    releaseNotes:
+      "https://www.kicad.org/blog/2026/08/KiCad-Version-10.0.6-Release-Candidate-1-Available/",
+    evidence: "docs/evidence/kicad-10-0-5-rc1/2026-07-21/summary.md",
+  };
 
   assert.match(
     validateKiCadPatchBaseline({ compatibility: blocking }).join("\n"),

@@ -323,6 +323,65 @@ function comparePatchVersions(left, right) {
   return 0;
 }
 
+function validateKiCadPatchCanary({ canary, stableVersion, repoRoot }) {
+  const errors = [];
+  if (canary === undefined) return errors;
+
+  if (canary?.state !== "preview" || canary?.blocking !== false) {
+    errors.push("kicad.patchCanary must remain preview-only and non-blocking");
+  }
+
+  const canaryVersion = parseKiCadPatchVersion(canary?.version);
+  if (!canaryVersion || canaryVersion.rc === undefined) {
+    errors.push("kicad.patchCanary.version must be an rc patch version");
+  } else if (
+    stableVersion &&
+    comparePatchVersions(canaryVersion, stableVersion) <= 0
+  ) {
+    errors.push(
+      "kicad.patchCanary.version must be newer than kicad.latestVerified",
+    );
+  }
+
+  const reportedVersion = canaryVersion
+    ? `${canaryVersion.major}.${canaryVersion.minor}.${canaryVersion.patch}`
+    : undefined;
+  if (canary?.reportedVersion !== reportedVersion) {
+    errors.push(
+      `kicad.patchCanary.reportedVersion must match the prerelease base version (${String(reportedVersion)})`,
+    );
+  }
+
+  if (
+    typeof canary?.releaseNotes !== "string" ||
+    !canary.releaseNotes.startsWith("https://www.kicad.org/")
+  ) {
+    errors.push(
+      "kicad.patchCanary.releaseNotes must reference the official KiCad website",
+    );
+  }
+
+  if (
+    canary?.owner !== "KiCad MCP Pro" ||
+    canary?.ownerDocumentation !== "https://oaslananka.github.io/kicad-mcp-pro/"
+  ) {
+    errors.push(
+      "kicad.patchCanary ownership must remain with the KiCad MCP Pro compatibility product",
+    );
+  }
+
+  if (
+    typeof canary?.evidence !== "string" ||
+    !fs.existsSync(path.join(repoRoot, canary.evidence))
+  ) {
+    errors.push(
+      `kicad.patchCanary.evidence must reference an existing file, found ${String(canary?.evidence)}`,
+    );
+  }
+
+  return errors;
+}
+
 export function validateKiCadPatchBaseline({
   compatibility,
   repoRoot = REPO_ROOT,
@@ -375,58 +434,13 @@ export function validateKiCadPatchBaseline({
     );
   }
 
-  const canary = compatibility?.kicad?.patchCanary;
-  if (canary?.state !== "preview" || canary?.blocking !== false) {
-    errors.push("kicad.patchCanary must remain preview-only and non-blocking");
-  }
-
-  const canaryVersion = parseKiCadPatchVersion(canary?.version);
-  if (!canaryVersion || canaryVersion.rc === undefined) {
-    errors.push("kicad.patchCanary.version must be an rc patch version");
-  } else if (
-    stableVersion &&
-    comparePatchVersions(canaryVersion, stableVersion) <= 0
-  ) {
-    errors.push(
-      "kicad.patchCanary.version must be newer than kicad.latestVerified",
-    );
-  }
-
-  const reportedVersion = canaryVersion
-    ? `${canaryVersion.major}.${canaryVersion.minor}.${canaryVersion.patch}`
-    : undefined;
-  if (canary?.reportedVersion !== reportedVersion) {
-    errors.push(
-      `kicad.patchCanary.reportedVersion must match the prerelease base version (${String(reportedVersion)})`,
-    );
-  }
-
-  if (
-    typeof canary?.releaseNotes !== "string" ||
-    !canary.releaseNotes.startsWith("https://www.kicad.org/")
-  ) {
-    errors.push(
-      "kicad.patchCanary.releaseNotes must reference the official KiCad website",
-    );
-  }
-
-  if (
-    canary?.owner !== "KiCad MCP Pro" ||
-    canary?.ownerDocumentation !== "https://oaslananka.github.io/kicad-mcp-pro/"
-  ) {
-    errors.push(
-      "kicad.patchCanary ownership must remain with the KiCad MCP Pro compatibility product",
-    );
-  }
-
-  if (
-    typeof canary?.evidence !== "string" ||
-    !fs.existsSync(path.join(repoRoot, canary.evidence))
-  ) {
-    errors.push(
-      `kicad.patchCanary.evidence must reference an existing file, found ${String(canary?.evidence)}`,
-    );
-  }
+  errors.push(
+    ...validateKiCadPatchCanary({
+      canary: compatibility?.kicad?.patchCanary,
+      stableVersion,
+      repoRoot,
+    }),
+  );
 
   return errors;
 }

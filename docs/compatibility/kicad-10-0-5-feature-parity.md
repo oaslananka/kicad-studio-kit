@@ -1,8 +1,8 @@
-# KiCad 10.0.4 Feature Parity
+# KiCad 10.0.5 Feature Parity
 
 This page is the human-readable view of
 [`compatibility.yaml`](../../compatibility.yaml) `kicad10FeatureParity`. It
-tracks KiCad 10.0.4 parity separately from the current KiCad 11 readiness plan
+tracks KiCad 10.0.5 parity separately from the current KiCad 11 readiness plan
 so release gates stay focused on the stable KiCad line.
 
 Status vocabulary:
@@ -87,7 +87,7 @@ Status vocabulary:
 
 ## KiCad 11 Readiness
 
-KiCad 11 readiness is represented separately from KiCad 10.0.4 parity:
+KiCad 11 readiness is represented separately from KiCad 10.0.5 parity:
 
 | Feature id           | State       | Product boundary                                                                                   | Evidence or issue                                                 |
 | -------------------- | ----------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
@@ -119,35 +119,36 @@ matrix appears on this page.
 
 ## Source Verification
 
-Checked on 2026-07-21:
+Checked on 2026-07-26:
 
-- [KiCad 10.0.4 release notes](https://www.kicad.org/blog/2026/06/KiCad-10.0.4-Release/)
-- [KiCad 10.0.4 GitHub release tag](https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.4)
-- [KiCad 10.0.4 stable client evidence](../evidence/kicad-10-0-4/2026-07-21/summary.md)
+- [KiCad 10.0.5 release notes](https://www.kicad.org/blog/2026/07/KiCad-10.0.5-Release/)
+- [KiCad 10.0.5 GitHub release tag](https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.5)
+- [KiCad 10.0.5 stable client evidence](../evidence/kicad-10-0-5/2026-07-26/summary.md)
+- [Historical KiCad 10.0.5 RC1 evidence](../evidence/kicad-10-0-5-rc1/2026-07-21/summary.md)
 - [KiCad 10.0 CLI reference](https://docs.kicad.org/10.0/en/cli/cli.html)
 - [KiCad 10.0 PCB Editor reference](https://docs.kicad.org/10.0/en/pcbnew/pcbnew.html)
 - [KiCad PCB Python bindings deprecation notice](https://dev-docs.kicad.org/en/apis-and-binding/pcbnew/)
 - [KiCad nightly and release candidate guidance](https://www.kicad.org/help/nightlies-and-rcs/)
 
-## KiCad 10.0.5 RC1 Preview
+## KiCad 10.0.5 Stable Promotion
 
-KiCad 10.0.5 RC1 is tracked as preview-only evidence and does not change the
-10.0.4 stable support claim. On 2026-07-21, the official Linux AppImages for
-10.0.4 and 10.0.5 RC1 were compared against the `clean-led-kicad10` fixture.
-The top-level CLI, PCB export, PCB import, and schematic export help surfaces
-were identical. Both versions completed DRC, ERC, BOM, netlist, Gerber, drill,
-schematic/PCB PDF, STEP, and board-statistics generation with matching semantic
-results.
+The official final 10.0.5 Linux AppImage passed the owning KiCad MCP Pro
+`10.0.x` canary on 2026-07-26: 30 required steps passed, the optional Allegro
+capability probe remained the single intentional skip, and no fixture failed.
+The canary covered DRC, ERC, BOM, netlist, Gerber, drill, IPC-2581, PDF, SVG,
+DXF, STEP-family exports, board statistics, path-with-spaces, Unicode paths, and
+read-only output behavior.
 
-The RC reports `10.0.5` through `kicad-cli --version` and
-`KiCad 10.0.5-rc1` in generated metadata. The checked-in evidence summary is
-[`docs/evidence/kicad-10-0-5-rc1/2026-07-21/summary.md`](../evidence/kicad-10-0-5-rc1/2026-07-21/summary.md).
-A final 10.0.5 release must pass the owning KiCad MCP Pro canary before the
-stable baseline is promoted.
+The [final stable evidence](../evidence/kicad-10-0-5/2026-07-26/summary.md)
+records the official AppImage digest, exact canary source commit and command,
+semantic outcomes, and normalized evidence-bundle digest. The
+[RC1 evidence](../evidence/kicad-10-0-5-rc1/2026-07-21/summary.md) remains
+historical; it is no longer an active patch preview in the compatibility
+contract.
 
 ## Historical Fixture Provenance
 
 The `kicad-10-0-3-regressions` fixture remains intentionally named for the
 patch release that introduced those regression snapshots. It is carried forward
-under the 10.0.4 baseline rather than renamed, preserving stable fixture IDs and
+under the 10.0.5 baseline rather than renamed, preserving stable fixture IDs and
 historical attribution.
