@@ -2,9 +2,9 @@
 
 This page records the responsibility, churn, and dependency order for the incremental decomposition tracked by issue #497. It is a dated architecture snapshot, not a line-count target. A module should be split only when a stable responsibility boundary and regression gate exist.
 
-## 2026-07-26 Snapshot
+## 2026-07-27 Snapshot
 
-The production graph contains 149 TypeScript modules. After the CLI capability-model, viewer-controller, export-command-builder, Component Search view, PCM catalog, PCM archive, PCM installed-state persistence, and PCM library-table extractions, the graph contains **0 import cycles**. The repository enforces this with `pnpm run check:vscode-architecture`.
+The production graph contains 150 TypeScript modules. After the CLI capability-model, viewer-controller, export-command-builder, Component Search view, PCM catalog, PCM archive, PCM installed-state persistence, PCM library-table, and viewer-state-store extractions, the graph contains **0 import cycles**. The repository enforces this with `pnpm run check:vscode-architecture`.
 
 Line counts use the checked-in source tree. Churn counts are the number of commits touching each file in the latest 100 commits at the snapshot date.
 
@@ -15,7 +15,7 @@ Line counts use the checked-in source tree. Churn counts are the number of commi
 |     3 | `cli/exportCommands.ts` / `cli/exportCommandBuilder.ts`                                                                                  |                 1,401 / 693 |                   4 / new | VS Code export orchestration and the extracted deterministic CLI argument builder   | **Completed in phase 3a:** pure command builder; compatibility wrapper; unit/coverage/security/package gates         |
 |     4 | `components/componentSearch.ts` / `components/componentSearchView.ts`                                                                    |                   784 / 450 |                   6 / new | provider/cache orchestration and the extracted deterministic webview renderer       | **Completed in phase 4a:** pure view contracts/HTML; byte-equivalent output; unit/a11y/package gates                 |
 |     5 | `library/pcmService.ts` / `library/pcmCatalog.ts` / `library/pcmArchive.ts` / `library/pcmPersistence.ts` / `library/pcmLibraryTable.ts` | 593 / 315 / 641 / 110 / 150 | 6 / new / new / new / new | install orchestration plus catalog, archive, state, and library-table adapters      | **Completed through phase 5d:** PCM catalog, archive, installed state, and KiCad library-table persistence extracted |
-|     6 | `state/stateStores.ts`                                                                                                                   |                         888 |                         5 | multiple domain stores, serialization, migrations, workspace/global state routing   | domain-specific stores with shared storage adapter; migration and state-store tests                                  |
+|     6 | `state/stateStores.ts` / `state/viewerStateStore.ts`                                                                                     |                   764 / 129 |                   6 / new | project, diagnostic, MCP, and export stores plus the extracted viewer state store   | **Completed through phase 6a:** viewer state ownership extracted; remaining domain stores stay phase-scoped          |
 |     7 | `types.ts` / `constants.ts`                                                                                                              |                   505 / 465 |                   14 / 15 | broad shared type and constant fan-in                                               | move definitions only with their owning domain phases; full typecheck and contribution-manifest gates                |
 
 `mcp/mcpClient.ts` is intentionally excluded from this order. Issue #492 owns its protocol/transport decomposition and final `2026-07-28` compatibility work.
@@ -82,3 +82,9 @@ Phase 5c reduces `library/pcmService.ts` from 798 to 730 lines without changing 
 `library/pcmLibraryTable.ts` owns recursive `.kicad_sym` and `.pretty` discovery, managed library-name construction, KiCad table string escaping, deterministic managed-entry replacement, foreign-entry preservation, and uninstall cleanup for `sym-lib-table` and `fp-lib-table`. It accepts a config-directory provider and depends only on `node:fs`, `node:path`, and the PCM catalog model. Direct tests cover nested discovery, foreign-entry preservation, stale managed-entry replacement, selected-package removal, quotes and backslashes, and missing install roots.
 
 `library/pcmService.ts` continues to own repository fetching, install-path selection, injected extractor support, CLI-backed installation, in-memory package state, config-directory selection, reindexing, and user-visible change events. Phase 5d reduces the service from 730 to 593 lines without changing install, update, or uninstall behavior.
+
+## Viewer State Store Ownership
+
+`state/viewerStateStore.ts` owns viewer lifecycle transitions, immutable viewer/project snapshots, change events, and diagnostic error redaction. Its reviewed dependencies are VS Code, viewer-engine cloning, shared types, secret redaction, and project-context cloning. Direct tests cover mutation isolation, project ownership, reload state preservation, error clearing, and redaction.
+
+`state/stateStores.ts` re-exports the viewer store for compatibility and retains the project, diagnostic, MCP, and export stores. Phase 6a reduces it from 888 to 764 lines and fixes retained project-context mutation.
