@@ -1,8 +1,8 @@
 # KiCad 10 to 11 Migration
 
 This guide keeps KiCad Studio and KiCad MCP Pro ready for the KiCad 11 line
-without changing the current supported baseline. KiCad 10.0.x remains the
-primary release-blocking target until a KiCad 11 stable or release-candidate
+without changing the current supported baseline. Verified KiCad 10.0.5 in
+the 10.0.x line remains the primary release-blocking target until a KiCad 11 stable or release-candidate
 canary has passed and the support matrix is updated in `compatibility.yaml`.
 
 ## Compatibility Boundary
@@ -45,7 +45,8 @@ uv run python scripts/check_no_pcbnew.py
 
 KiCad nightly builds use the development branch version before a release
 candidate and switch to the next major version during the RC window. As of
-2026-05-26, KiCad 10.0.x is the stable line, so the next-major readiness smoke
+2026-07-26, KiCad 10.0.5 is the verified stable patch in the 10.0.x line,
+so the next-major readiness smoke
 has two manual paths:
 
 Run the nightly KiCad CLI contract suite from
@@ -96,7 +97,7 @@ corepack pnpm run check:compatibility-contract
 
 ## Source Verification
 
-Checked on 2026-05-26:
+Checked on 2026-07-26:
 
 - [KiCad PCB Python bindings](https://dev-docs.kicad.org/en/apis-and-binding/pcbnew/)
   for the SWIG `pcbnew` deprecation and KiCad 11 removal plan.

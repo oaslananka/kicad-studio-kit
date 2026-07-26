@@ -536,8 +536,8 @@ CI ownership follows product boundaries:
 - `.github/workflows/cross-repo-compatibility.yml` owns published
   `kicad-mcp-pro` and `@oaslananka/kicad-protocol-schemas` artifact compatibility checks for this repository.
 - KiCad MCP Pro owns real KiCad CLI, GUI IPC, and MCP transport
-  canaries. KiCad 10.0.4 is the current stable canary baseline; patch release
-  candidates remain non-blocking until a final release passes that owning lane.
+  canaries. KiCad 10.0.5 is the current stable canary baseline; future patch
+  release candidates remain non-blocking until a final release passes that owning lane.
 - Product-specific validation remains inside each product package so the root
   workflow can compose it without direct source imports between products.
 
@@ -559,8 +559,8 @@ This strategy was checked against current primary sources:
   and version checks.
 - KiCad PCB Editor documentation for action-plugin/GUI scripting boundaries and
   KiCad IPC API developer documentation for live-editor automation scope.
-- KiCad 10.0.4 release notes and the 10.0.5 RC1 announcement for the
-  current stable and preview patch states.
+- KiCad 10.0.5 release notes, final stable canary evidence, and historical
+  10.0.5 RC1 evidence for the current patch-state decision.
 - Chocolatey KiCad package metadata for the pinned Windows CI install command
   and checksum-backed official KiCad installer URL.
 - GitHub Actions artifact documentation and `actions/upload-artifact` metadata

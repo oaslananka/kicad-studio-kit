@@ -1,5 +1,5 @@
 schemaVersion: 1
-updated: "2026-07-21"
+updated: "2026-07-26"
 source: "https://github.com/oaslananka/kicad-studio-kit"
 
 kicad:
@@ -7,7 +7,7 @@ kicad:
   # the official KiCad release notes and the KiCad/kicad-source-mirror release
   # tag. Do not forward-reference patch numbers before both sources exist.
   primary: "10.0.x"
-  latestVerified: "10.0.4"
+  latestVerified: "10.0.5"
   supported:
     - range: "10.0.x"
       state: "primary"
@@ -28,17 +28,6 @@ kicad:
       ci: "manual"
       notes: "File-level read and migration support only; removal requires a release note."
   dropped: []
-  patchCanary:
-    version: "10.0.5-rc1"
-    reportedVersion: "10.0.5"
-    state: "preview"
-    blocking: false
-    reviewed: "2026-07-21"
-    owner: "KiCad MCP Pro"
-    ownerDocumentation: "https://oaslananka.github.io/kicad-mcp-pro/"
-    releaseNotes: "https://www.kicad.org/blog/2026/07/KiCad-Version-10.0.5-Release-Candidate-1-Available/"
-    evidence: "docs/evidence/kicad-10-0-5-rc1/2026-07-21/summary.md"
-    notes: "Preview-only patch canary; do not promote stable support claims until the final release passes the owning KiCad MCP Pro canary."
   pcbImportWorkflows:
     reviewed: "2026-05-27"
     commandProbe: "kicad-cli pcb import --help"
@@ -94,10 +83,10 @@ kicad:
         evidence: "KiCad 10 CLI import help advertises the format."
 
 kicad10FeatureParity:
-  reviewed: "2026-07-21"
-  baseline: "10.0.4"
+  reviewed: "2026-07-26"
+  baseline: "10.0.5"
   primaryIssue: "https://github.com/oaslananka/kicad-studio-kit/issues/177"
-  documentation: "docs/compatibility/kicad-10-0-4-feature-parity.md"
+  documentation: "docs/compatibility/kicad-10-0-5-feature-parity.md"
   allowedStatuses:
     - "supported"
     - "not-applicable"
@@ -106,9 +95,9 @@ kicad10FeatureParity:
     - "future"
     - "external"
   sources:
-    releaseNotes: "https://www.kicad.org/blog/2026/06/KiCad-10.0.4-Release/"
-    releaseTag: "https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.4"
-    canaryEvidence: "docs/evidence/kicad-10-0-4/2026-07-21/summary.md"
+    releaseNotes: "https://www.kicad.org/blog/2026/07/KiCad-10.0.5-Release/"
+    releaseTag: "https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.5"
+    canaryEvidence: "docs/evidence/kicad-10-0-5/2026-07-26/summary.md"
     cliReference: "https://docs.kicad.org/10.0/en/cli/cli.html"
     pcbEditorReference: "https://docs.kicad.org/10.0/en/pcbnew/pcbnew.html"
     pcbnewDeprecation: "https://dev-docs.kicad.org/en/apis-and-binding/pcbnew/"
@@ -132,8 +121,8 @@ kicad10FeatureParity:
         evidence:
           - "path:apps/vscode-extension/test/unit/importCommands.test.ts"
           - "fixture:kicad-10-0-3-regressions"
-          - "command:kicad-cli pcb import --help does not advertise allegro in KiCad 10.0.4"
-        notes: "KiCad 10.0.4 documents GUI Allegro import, but the stable CLI surface is not available."
+          - "command:kicad-cli pcb import --help does not advertise allegro in KiCad 10.0.5"
+        notes: "KiCad 10.0.5 documents GUI Allegro import, but the stable CLI surface is not available."
       cadstar:
         status: "supported"
         nativeSurface: "kicad-cli pcb import --format cadstar"
@@ -379,7 +368,7 @@ kicad10FeatureParity:
       evidence:
         - "path:docs/compatibility/kicad-10-to-11-migration.md"
         - "command:corepack pnpm run test:kicad-cli-contract:future"
-      notes: "KiCad 11 is intentionally separate from the KiCad 10.0.4 release-blocking baseline."
+      notes: "KiCad 11 is intentionally separate from the KiCad 10.0.5 release-blocking baseline."
     nightly_canary:
       status: "supported"
       nativeSurface: "KiCad development-branch nightly CLI"
