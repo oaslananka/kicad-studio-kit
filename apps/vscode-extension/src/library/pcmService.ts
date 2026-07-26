@@ -11,11 +11,11 @@ import { normalizeUserPath } from '../utils/pathUtils';
 import type { Logger } from '../utils/logger';
 import type { KiCadLibraryIndexer } from './libraryIndexer';
 import { assertPcmSha256, extractPcmZipArchive } from './pcmArchive';
+import { PcmInstalledPackagePersistence } from './pcmPersistence';
 import {
   isPcmVersionNewer,
   normalizePcmPackage,
   scorePcmPackageMatch,
-  toKiCadPcmPackageJson,
   type PcmInstalledPackage,
   type PcmInstallState,
   type PcmPackage,
@@ -49,7 +49,6 @@ export interface PcmServiceOptions {
 export const DEFAULT_PCM_REPOSITORY_URL =
   'https://repository.kicad.org/repository.json';
 
-const PCM_STATE_KEY = 'kicadstudio.pcm.installedPackages.v1';
 const PCM_ACCEPT = 'application/vnd.kicad.pcm.v2+json, application/json;q=0.9';
 
 export class PcmService implements vscode.Disposable {
@@ -57,7 +56,7 @@ export class PcmService implements vscode.Disposable {
   readonly onDidChange = this.onDidChangeEmitter.event;
 
   private readonly installed = new Map<string, PcmInstalledPackage>();
-  private readonly managedIdentifiers = new Set<string>();
+  private readonly persistence: PcmInstalledPackagePersistence;
   private repositories: PcmRepository[] = [];
 
   constructor(
@@ -68,9 +67,12 @@ export class PcmService implements vscode.Disposable {
     private readonly logger: Logger,
     private readonly options: PcmServiceOptions = {}
   ) {
-    for (const entry of readInstalledState(context)) {
+    this.persistence = new PcmInstalledPackagePersistence(
+      context.globalState,
+      () => this.getConfigDir()
+    );
+    for (const entry of this.persistence.read()) {
       this.installed.set(entry.identifier, entry);
-      this.managedIdentifiers.add(entry.identifier);
     }
   }
 
@@ -175,10 +177,7 @@ export class PcmService implements vscode.Disposable {
 
     await this.removeDirectInstallFiles(installed);
     this.installed.delete(identifier);
-    await this.context.globalState.update(PCM_STATE_KEY, [
-      ...this.installed.values()
-    ]);
-    await this.writeKiCadInstalledPackages();
+    await this.persistence.write(this.installed.values());
     await this.refreshLibraryIndex();
     this.refreshPackageStates();
     this.onDidChangeEmitter.fire();
@@ -431,11 +430,7 @@ export class PcmService implements vscode.Disposable {
     installed: PcmInstalledPackage
   ): Promise<void> {
     this.installed.set(installed.identifier, installed);
-    this.managedIdentifiers.add(installed.identifier);
-    await this.context.globalState.update(PCM_STATE_KEY, [
-      ...this.installed.values()
-    ]);
-    await this.writeKiCadInstalledPackages();
+    await this.persistence.write(this.installed.values());
     await this.refreshLibraryIndex();
     this.refreshPackageStates();
     this.onDidChangeEmitter.fire();
@@ -516,39 +511,6 @@ export class PcmService implements vscode.Disposable {
     }
   }
 
-  private async writeKiCadInstalledPackages(): Promise<void> {
-    const configDir = this.getConfigDir();
-    fs.mkdirSync(configDir, { recursive: true });
-    const filePath = path.join(configDir, 'installed_packages.json');
-    const existing = readJsonFile(filePath);
-    const existingPackages = Array.isArray(existing?.['packages'])
-      ? (existing['packages'] as unknown[]).filter(
-          (entry) =>
-            !this.managedIdentifiers.has(
-              asString(
-                asRecord(entry)?.['package'] &&
-                  asRecord(asRecord(entry)?.['package'])?.['identifier']
-              ) ?? ''
-            )
-        )
-      : [];
-    const managed = [...this.installed.values()].map((entry) => ({
-      package: toKiCadPcmPackageJson(entry.package),
-      current_version: {
-        version: entry.version
-      },
-      repository_id: entry.repositoryId,
-      repository_name: entry.repositoryName,
-      install_timestamp: Date.parse(entry.installedAt) / 1000 || 0,
-      pinned: false
-    }));
-    fs.writeFileSync(
-      filePath,
-      `${JSON.stringify({ packages: [...existingPackages, ...managed] }, null, 2)}\n`,
-      'utf8'
-    );
-  }
-
   private async refreshLibraryIndex(): Promise<void> {
     try {
       await this.libraryIndexer.indexAll();
@@ -623,25 +585,6 @@ export class PcmService implements vscode.Disposable {
   private now(): Date {
     return this.options.now?.() ?? new Date();
   }
-}
-
-function readInstalledState(
-  context: vscode.ExtensionContext
-): PcmInstalledPackage[] {
-  const value = context.globalState.get<unknown>(PCM_STATE_KEY);
-  return Array.isArray(value) ? value.filter(isInstalledPackage) : [];
-}
-
-function isInstalledPackage(value: unknown): value is PcmInstalledPackage {
-  const record = asRecord(value);
-  const pkg = asRecord(record?.['package']);
-  return Boolean(
-    record &&
-    pkg &&
-    asString(record['identifier']) &&
-    asString(record['version']) &&
-    asString(pkg['identifier'])
-  );
 }
 
 function createRepositoryId(repositoryUrl: string): string {
@@ -774,17 +717,6 @@ function upsertLibraryTable(options: {
 
 function escapeTableString(value: string): string {
   return value.replace(/\\/gu, '\\\\').replace(/"/gu, '\\"');
-}
-
-function readJsonFile(filePath: string): Record<string, unknown> | undefined {
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8')) as Record<
-      string,
-      unknown
-    >;
-  } catch {
-    return undefined;
-  }
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
