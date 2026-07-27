@@ -8,6 +8,9 @@ import { parse as parseYaml } from "yaml";
 
 import { validateKiCad11Readiness } from "./lib/kicad-11-readiness-dashboard.mjs";
 import { validateRuntimePolicyMetadata } from "./lib/runtime-policy.mjs";
+import { validateMcpProtocolActivation } from "./lib/mcp-protocol-activation.mjs";
+
+export { validateMcpProtocolActivation };
 
 const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
@@ -21,6 +24,8 @@ const DOCS_FILES = [
   "docs/support-matrix.md",
   "docs/compatibility/runtime-policy.md",
   "docs/compatibility/kicad-11-readiness-dashboard.md",
+  "docs/adr/0008-mcp-2026-07-28-protocol-upgrade.md",
+  "docs/evidence/mcp-2026-07-28/2026-07-27-preflight.md",
 ];
 
 const REQUIRED_FILES = [
@@ -502,8 +507,12 @@ export function validateCompatibilityContract(options = {}) {
   checkRuntimePolicyMetadata(errors, options);
   if (fileExists("compatibility.yaml")) {
     const compatibility = parseYaml(readFile("compatibility.yaml"));
-    errors.push(...validateKiCadPatchBaseline({ compatibility }));
     errors.push(
+      ...validateKiCadPatchBaseline({ compatibility }),
+      ...validateMcpProtocolActivation({
+        compatibility,
+        repoRoot: REPO_ROOT,
+      }),
       ...validateKiCad11Readiness({ compatibility, repoRoot: REPO_ROOT }),
     );
   }

@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 import { parse as parseYaml } from "yaml";
 
@@ -7,6 +9,7 @@ import {
   validateCompatibilityContract,
   validateEmbeddedExtensionCompatibilityMatrix,
   validateKiCadPatchBaseline,
+  validateMcpProtocolActivation,
 } from "./check-compatibility-contract.mjs";
 
 const compatibility = parseYaml(fs.readFileSync("compatibility.yaml", "utf8"));
@@ -129,5 +132,239 @@ test("#491 requires reviewable stable canary evidence", () => {
   assert.match(
     validateKiCadPatchBaseline({ compatibility: missingEvidence }).join("\n"),
     /sources\.canaryEvidence must reference an existing file/u,
+  );
+});
+
+test("#492 current MCP final-activation record remains blocked and valid", () => {
+  assert.deepEqual(
+    validateMcpProtocolActivation({
+      compatibility,
+      repoRoot: process.cwd(),
+      registrySource: fs.readFileSync(
+        "apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts",
+        "utf8",
+      ),
+      adrSource: fs.readFileSync(
+        "docs/adr/0008-mcp-2026-07-28-protocol-upgrade.md",
+        "utf8",
+      ),
+      adrIndexSource: fs.readFileSync("docs/adr/README.md", "utf8"),
+    }),
+    [],
+  );
+});
+
+test("#492 rejects selecting the target protocol while final evidence is incomplete", () => {
+  const activated = structuredClone(compatibility);
+  activated.mcp.protocolVersion = activated.mcp.nextProtocolVersion;
+  delete activated.mcp.nextProtocolVersion;
+  activated.mcp.activation.state = "active";
+
+  assert.match(
+    validateMcpProtocolActivation({
+      compatibility: activated,
+      repoRoot: process.cwd(),
+      registrySource:
+        "export const SUPPORTED_MCP_PROTOCOL_VERSIONS = ['2026-07-28'];",
+      adrSource: "Status: Proposed",
+      adrIndexSource: "| 0008 | MCP | Proposed |",
+    }).join("\n"),
+    /finalSpecification|pythonSdk|protocolSchemas|serverArtifact|extensionAdapter|realPair/u,
+  );
+});
+
+test("#492 accepts activation only with stable published artifacts and accepted ADR evidence", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-activation-"));
+  try {
+    fs.mkdirSync(path.join(root, "src"), { recursive: true });
+    fs.mkdirSync(path.join(root, "evidence"), { recursive: true });
+    fs.mkdirSync(path.join(root, "docs", "adr"), { recursive: true });
+    fs.mkdirSync(
+      path.join(root, "apps", "vscode-extension", "src", "mcp", "protocol"),
+      { recursive: true },
+    );
+    fs.writeFileSync(
+      path.join(root, "src", "mcp2026ProtocolAdapter.ts"),
+      "export const MCP_2026_PROTOCOL_VERSION = '2026-07-28';\nexport const lifecycle = 'stateless-discovery';\n",
+    );
+    fs.writeFileSync(
+      path.join(
+        root,
+        "apps",
+        "vscode-extension",
+        "src",
+        "mcp",
+        "protocol",
+        "protocolAdapterRegistry.ts",
+      ),
+      "export const SUPPORTED_MCP_PROTOCOL_VERSIONS = ['2025-11-25', '2026-07-28'];\n",
+    );
+    fs.writeFileSync(path.join(root, "evidence", "real-pair.md"), "passed\n");
+    fs.writeFileSync(
+      path.join(root, "evidence", "activation.md"),
+      "reviewed\n",
+    );
+    fs.writeFileSync(
+      path.join(root, "docs", "adr", "0008.md"),
+      "# ADR 0008\n\nStatus: Accepted\n",
+    );
+
+    const activated = structuredClone(compatibility);
+    activated.mcp.protocolVersion = "2026-07-28";
+    delete activated.mcp.nextProtocolVersion;
+    activated.mcp.activation = {
+      targetProtocolVersion: "2026-07-28",
+      state: "active",
+      reviewed: "2026-07-28",
+      evidenceNote: "evidence/activation.md",
+      finalSpecification: {
+        version: "2026-07-28",
+        source:
+          "https://github.com/modelcontextprotocol/modelcontextprotocol/releases/tag/2026-07-28",
+      },
+      pythonSdk: {
+        package: "mcp",
+        version: "2.0.0",
+        source: "https://pypi.org/project/mcp/2.0.0/",
+      },
+      protocolSchemas: {
+        package: "@oaslananka/kicad-protocol-schemas",
+        version: "2.0.0",
+        source:
+          "https://www.npmjs.com/package/@oaslananka/kicad-protocol-schemas/v/2.0.0",
+      },
+      serverArtifact: {
+        package: "kicad-mcp-pro",
+        version: "4.0.0",
+        protocolVersion: "2026-07-28",
+        source: "https://pypi.org/project/kicad-mcp-pro/4.0.0/",
+      },
+      extensionAdapter: { path: "src/mcp2026ProtocolAdapter.ts" },
+      realPair: { evidence: "evidence/real-pair.md" },
+      adr: { path: "docs/adr/0008.md", status: "Accepted" },
+    };
+
+    assert.deepEqual(
+      validateMcpProtocolActivation({
+        compatibility: activated,
+        repoRoot: root,
+        adrSource: "# ADR 0008\n\nStatus: Accepted\n",
+        adrIndexSource: "| 0008 | MCP | Accepted |",
+      }),
+      [],
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#492 detects ADR status drift before final protocol activation", () => {
+  const current = structuredClone(compatibility);
+  current.mcp.activation.adr.status = "Proposed";
+
+  assert.match(
+    validateMcpProtocolActivation({
+      compatibility: current,
+      repoRoot: process.cwd(),
+      registrySource: fs.readFileSync(
+        "apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts",
+        "utf8",
+      ),
+      adrSource: "Status: Proposed",
+      adrIndexSource: "| 0008 | MCP | Accepted |",
+    }).join("\n"),
+    /ADR 0008 index status must match/u,
+  );
+});
+
+test("#492 rejects RC specification and prerelease SDK evidence for active protocol", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-prerelease-"));
+  try {
+    fs.mkdirSync(path.join(root, "src"), { recursive: true });
+    fs.mkdirSync(path.join(root, "evidence"), { recursive: true });
+    fs.mkdirSync(path.join(root, "docs", "adr"), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, "src", "adapter.ts"),
+      "export const version = '2026-07-28'; export const lifecycle = 'stateless-discovery';",
+    );
+    fs.writeFileSync(
+      path.join(root, "evidence", "activation.md"),
+      "reviewed\n",
+    );
+    fs.writeFileSync(path.join(root, "evidence", "real-pair.md"), "passed\n");
+    fs.writeFileSync(
+      path.join(root, "docs", "adr", "0008.md"),
+      "Status: Accepted\n",
+    );
+
+    const activated = structuredClone(compatibility);
+    activated.mcp.protocolVersion = "2026-07-28";
+    delete activated.mcp.nextProtocolVersion;
+    activated.mcp.activation = {
+      targetProtocolVersion: "2026-07-28",
+      state: "active",
+      reviewed: "2026-07-28",
+      evidenceNote: "evidence/activation.md",
+      finalSpecification: {
+        version: "2026-07-28",
+        source:
+          "https://github.com/modelcontextprotocol/modelcontextprotocol/releases/tag/2026-07-28-RC",
+      },
+      pythonSdk: {
+        package: "mcp",
+        version: "2.0.0b2",
+        source: "https://pypi.org/project/mcp/2.0.0b2/",
+      },
+      protocolSchemas: {
+        package: "@oaslananka/kicad-protocol-schemas",
+        version: "2.0.0-rc.1",
+        source:
+          "https://www.npmjs.com/package/@oaslananka/kicad-protocol-schemas/v/2.0.0-rc.1",
+      },
+      serverArtifact: {
+        package: "kicad-mcp-pro",
+        version: "4.0.0rc1",
+        protocolVersion: "2026-07-28",
+        source: "https://pypi.org/project/kicad-mcp-pro/4.0.0rc1/",
+      },
+      extensionAdapter: { path: "src/adapter.ts" },
+      realPair: { evidence: "evidence/real-pair.md" },
+      adr: { path: "docs/adr/0008.md", status: "Accepted" },
+    };
+
+    const errors = validateMcpProtocolActivation({
+      compatibility: activated,
+      repoRoot: root,
+      registrySource:
+        "export const SUPPORTED_MCP_PROTOCOL_VERSIONS = ['2026-07-28'];",
+      adrSource: "Status: Accepted",
+      adrIndexSource: "| 0008 | MCP | Accepted |",
+    }).join("\n");
+
+    assert.match(errors, /official stable release/u);
+    assert.match(errors, /pythonSdk\.version must be a stable/u);
+    assert.match(errors, /protocolSchemas\.version must be a stable/u);
+    assert.match(errors, /serverArtifact\.version must be a stable/u);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#492 activation evidence paths cannot escape the repository", () => {
+  const escaped = structuredClone(compatibility);
+  escaped.mcp.activation.evidenceNote = "../../outside.md";
+
+  assert.match(
+    validateMcpProtocolActivation({
+      compatibility: escaped,
+      repoRoot: process.cwd(),
+      registrySource: fs.readFileSync(
+        "apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts",
+        "utf8",
+      ),
+      adrSource: "Status: Proposed",
+      adrIndexSource: "| 0008 | MCP | Proposed |",
+    }).join("\n"),
+    /evidenceNote must remain inside the repository/u,
   );
 });

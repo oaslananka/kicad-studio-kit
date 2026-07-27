@@ -657,6 +657,20 @@ mcp:
   nextProtocolVersion: "2026-07-28"
   toolSchema: "1.0"
   registrySchema: "2025-12-11"
+  activation:
+    targetProtocolVersion: "2026-07-28"
+    state: "blocked"
+    reviewed: "2026-07-27"
+    evidenceNote: "docs/evidence/mcp-2026-07-28/2026-07-27-preflight.md"
+    finalSpecification: null
+    pythonSdk: null
+    protocolSchemas: null
+    serverArtifact: null
+    extensionAdapter: null
+    realPair: null
+    adr:
+      path: "docs/adr/0008-mcp-2026-07-28-protocol-upgrade.md"
+      status: "Proposed"
 
 products:
   kicad-studio:
