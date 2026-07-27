@@ -1,7 +1,8 @@
 import { COMMANDS } from '../../src/constants';
 import {
   TASK_GROUPS,
-  type TaskGroupId
+  type TaskGroupId,
+  type TaskHubContext
 } from '../../src/commands/taskHubCatalog';
 import { registerTaskHubCommands } from '../../src/commands/taskHubCommands';
 import { commands, window } from './vscodeMock';
@@ -18,13 +19,27 @@ function handler(commandId: string): () => Promise<void> {
   return entry[1];
 }
 
+function taskContext(overrides: Partial<TaskHubContext> = {}): TaskHubContext {
+  return {
+    hasProject: true,
+    workspaceTrusted: true,
+    schematicOpen: true,
+    pcbOpen: true,
+    jobsetOpen: true,
+    hasVariants: true,
+    aiEnabled: true,
+    mcpAvailable: true,
+    mcpConnected: true,
+    mcpRetryAvailable: true,
+    mcpManufacturingMode: true,
+    ...overrides
+  };
+}
+
 describe('task-oriented command hub', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    registerTaskHubCommands(() => ({
-      hasProject: true,
-      workspaceTrusted: true
-    }));
+    registerTaskHubCommands(() => taskContext());
   });
 
   it('defines the five product task groups in stable order', () => {
@@ -99,10 +114,7 @@ describe('task-oriented command hub', () => {
 
   it('filters task groups that are unavailable in the current workspace', async () => {
     jest.clearAllMocks();
-    registerTaskHubCommands(() => ({
-      hasProject: false,
-      workspaceTrusted: true
-    }));
+    registerTaskHubCommands(() => taskContext({ hasProject: false }));
     (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
 
     await handler(COMMANDS.openTaskHub)();
@@ -119,10 +131,7 @@ describe('task-oriented command hub', () => {
 
   it('hides trusted maintenance actions in an untrusted workspace', async () => {
     jest.clearAllMocks();
-    registerTaskHubCommands(() => ({
-      hasProject: true,
-      workspaceTrusted: false
-    }));
+    registerTaskHubCommands(() => taskContext({ workspaceTrusted: false }));
     (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
 
     await handler(COMMANDS.openMaintainTasks)();
@@ -131,6 +140,60 @@ describe('task-oriented command hub', () => {
     expect(items).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({ command: COMMANDS.detectCli })
+      ])
+    );
+  });
+
+  it('hides validate actions whose runtime prerequisites are unavailable', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() =>
+      taskContext({
+        schematicOpen: false,
+        pcbOpen: false,
+        aiEnabled: false,
+        mcpConnected: false
+      })
+    );
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
+
+    await handler(COMMANDS.openValidateTasks)();
+
+    const items = (window.showQuickPick as jest.Mock).mock.calls[0][0];
+    expect(items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ command: COMMANDS.boardReadyOpsCheck }),
+        expect.objectContaining({ command: COMMANDS.qualityGateOpenDocs })
+      ])
+    );
+    expect(items).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ command: COMMANDS.qualityGateRunAll }),
+        expect.objectContaining({ command: COMMANDS.runDRC }),
+        expect.objectContaining({ command: COMMANDS.runERC }),
+        expect.objectContaining({ command: COMMANDS.aiProactiveDRC })
+      ])
+    );
+  });
+
+  it('shows release outputs without exposing the manufacturing wizard in read-only MCP mode', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() => taskContext({ mcpManufacturingMode: false }));
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
+
+    await handler(COMMANDS.openReleaseTasks)();
+
+    const items = (window.showQuickPick as jest.Mock).mock.calls[0][0];
+    expect(items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          command: COMMANDS.exportManufacturingPackage
+        }),
+        expect.objectContaining({ command: COMMANDS.exportGerbersWithDrill })
+      ])
+    );
+    expect(items).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ command: COMMANDS.manufacturingRelease })
       ])
     );
   });

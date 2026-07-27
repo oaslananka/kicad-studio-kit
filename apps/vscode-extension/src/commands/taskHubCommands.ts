@@ -4,7 +4,8 @@ import {
   TASK_GROUPS,
   type TaskAvailability,
   type TaskGroup,
-  type TaskHubContext
+  type TaskHubContext,
+  type TaskRequirements
 } from './taskHubCatalog';
 
 interface TaskGroupQuickPickItem extends vscode.QuickPickItem {
@@ -15,7 +16,9 @@ interface TaskActionQuickPickItem extends vscode.QuickPickItem {
   readonly command: TaskGroup['actions'][number]['command'];
 }
 
-export type TaskHubContextProvider = () => TaskHubContext;
+export type TaskHubContextProvider = () =>
+  | TaskHubContext
+  | Promise<TaskHubContext>;
 
 function isAvailable(
   availability: TaskAvailability = 'always',
@@ -33,8 +36,21 @@ function isAvailable(
   }
 }
 
+function meetsRequirements(
+  requirements: TaskRequirements | undefined,
+  context: TaskHubContext
+): boolean {
+  if (!requirements) {
+    return true;
+  }
+  const allSatisfied = (requirements.all ?? []).every((key) => context[key]);
+  const anySatisfied =
+    !requirements.any?.length || requirements.any.some((key) => context[key]);
+  return allSatisfied && anySatisfied;
+}
+
 async function openTaskHub(getContext: TaskHubContextProvider): Promise<void> {
-  const context = getContext();
+  const context = await getContext();
   const selection = await vscode.window.showQuickPick<TaskGroupQuickPickItem>(
     TASK_GROUPS.filter((group) => isAvailable(group.availability, context)).map(
       (group) => ({
@@ -58,14 +74,18 @@ async function openTaskGroup(
   group: TaskGroup,
   getContext: TaskHubContextProvider
 ): Promise<void> {
-  const context = getContext();
+  const context = await getContext();
   if (!isAvailable(group.availability, context)) {
     return;
   }
 
   const selection = await vscode.window.showQuickPick<TaskActionQuickPickItem>(
     group.actions
-      .filter((action) => isAvailable(action.availability, context))
+      .filter(
+        (action) =>
+          isAvailable(action.availability, context) &&
+          meetsRequirements(action.requirements, context)
+      )
       .map((action) => ({
         label: action.label,
         description: action.description,

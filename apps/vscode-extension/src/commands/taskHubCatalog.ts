@@ -12,6 +12,22 @@ type CommandId = (typeof COMMANDS)[keyof typeof COMMANDS];
 export interface TaskHubContext {
   readonly hasProject: boolean;
   readonly workspaceTrusted: boolean;
+  readonly schematicOpen: boolean;
+  readonly pcbOpen: boolean;
+  readonly jobsetOpen: boolean;
+  readonly hasVariants: boolean;
+  readonly aiEnabled: boolean;
+  readonly mcpAvailable: boolean;
+  readonly mcpConnected: boolean;
+  readonly mcpRetryAvailable: boolean;
+  readonly mcpManufacturingMode: boolean;
+}
+
+export type TaskContextKey = keyof TaskHubContext;
+
+export interface TaskRequirements {
+  readonly all?: readonly TaskContextKey[];
+  readonly any?: readonly TaskContextKey[];
 }
 
 export type TaskAvailability =
@@ -25,6 +41,7 @@ export interface TaskAction {
   readonly description: string;
   readonly command: CommandId;
   readonly availability?: TaskAvailability;
+  readonly requirements?: TaskRequirements;
 }
 
 export interface TaskGroup {
@@ -61,12 +78,14 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
       {
         label: 'Open schematic viewer',
         description: 'Inspect the active schematic in KiCad Studio',
-        command: COMMANDS.openSchematic
+        command: COMMANDS.openSchematic,
+        requirements: { all: ['schematicOpen'] }
       },
       {
         label: 'Open PCB viewer',
         description: 'Inspect the active board in KiCad Studio',
-        command: COMMANDS.openPCB
+        command: COMMANDS.openPCB,
+        requirements: { all: ['pcbOpen'] }
       },
       {
         label: 'Show visual diff',
@@ -76,12 +95,17 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
       {
         label: 'Generate diff report',
         description: 'Create a reviewable KiCad diff summary',
-        command: COMMANDS.generateDiffReport
+        command: COMMANDS.generateDiffReport,
+        requirements: {
+          all: ['workspaceTrusted'],
+          any: ['schematicOpen', 'pcbOpen']
+        }
       },
       {
         label: 'Compare variant BOMs',
         description: 'Review differences between KiCad 10 variants',
-        command: COMMANDS.diffVariantBom
+        command: COMMANDS.diffVariantBom,
+        requirements: { all: ['hasVariants'] }
       }
     ]
   },
@@ -97,27 +121,32 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
       {
         label: 'Run all quality gates',
         description: 'Execute the MCP-backed project quality gate set',
-        command: COMMANDS.qualityGateRunAll
+        command: COMMANDS.qualityGateRunAll,
+        requirements: { all: ['workspaceTrusted', 'mcpConnected'] }
       },
       {
         label: 'Run Design Rule Check (DRC)',
         description: 'Validate PCB design rules with kicad-cli',
-        command: COMMANDS.runDRC
+        command: COMMANDS.runDRC,
+        requirements: { all: ['workspaceTrusted', 'pcbOpen'] }
       },
       {
         label: 'Run Electrical Rule Check (ERC)',
         description: 'Validate schematic electrical rules with kicad-cli',
-        command: COMMANDS.runERC
+        command: COMMANDS.runERC,
+        requirements: { all: ['workspaceTrusted', 'schematicOpen'] }
       },
       {
         label: 'Check board readiness',
         description: 'Run BoardReadyOps checks for manufacturing readiness',
-        command: COMMANDS.boardReadyOpsCheck
+        command: COMMANDS.boardReadyOpsCheck,
+        requirements: { all: ['workspaceTrusted'] }
       },
       {
         label: 'Analyze latest DRC results with AI',
         description: 'Summarize and prioritize the most recent DRC findings',
-        command: COMMANDS.aiProactiveDRC
+        command: COMMANDS.aiProactiveDRC,
+        requirements: { all: ['aiEnabled', 'pcbOpen'] }
       },
       {
         label: 'Open quality gate documentation',
@@ -139,22 +168,26 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
       {
         label: 'Open manufacturing release wizard',
         description: 'Run the gated MCP-assisted release workflow',
-        command: COMMANDS.manufacturingRelease
+        command: COMMANDS.manufacturingRelease,
+        requirements: { all: ['mcpConnected', 'mcpManufacturingMode'] }
       },
       {
         label: 'Export manufacturing package',
         description: 'Create the standard fabrication output bundle',
-        command: COMMANDS.exportManufacturingPackage
+        command: COMMANDS.exportManufacturingPackage,
+        requirements: { all: ['pcbOpen'] }
       },
       {
         label: 'Export Gerbers and drill files',
         description: 'Generate board fabrication layers and drill outputs',
-        command: COMMANDS.exportGerbersWithDrill
+        command: COMMANDS.exportGerbersWithDrill,
+        requirements: { all: ['pcbOpen'] }
       },
       {
         label: 'Export BOM (XLSX)',
         description: 'Create a spreadsheet bill of materials',
-        command: COMMANDS.exportBOMXLSX
+        command: COMMANDS.exportBOMXLSX,
+        requirements: { all: ['schematicOpen'] }
       },
       {
         label: 'Run export preset',
@@ -164,7 +197,8 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
       {
         label: 'Run KiCad jobset',
         description: 'Execute the active .kicad_jobset workflow',
-        command: COMMANDS.runJobset
+        command: COMMANDS.runJobset,
+        requirements: { all: ['jobsetOpen'] }
       }
     ]
   },
@@ -180,32 +214,38 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
       {
         label: 'Set up MCP integration',
         description: 'Generate the workspace MCP configuration',
-        command: COMMANDS.setupMcpIntegration
+        command: COMMANDS.setupMcpIntegration,
+        requirements: { all: ['workspaceTrusted'] }
       },
       {
         label: 'Install kicad-mcp-pro',
         description: 'Install the optional MCP server artifact',
-        command: COMMANDS.installMcp
+        command: COMMANDS.installMcp,
+        requirements: { all: ['workspaceTrusted'] }
       },
       {
         label: 'Retry MCP connection',
         description: 'Refresh the current MCP server connection',
-        command: COMMANDS.retryMcp
+        command: COMMANDS.retryMcp,
+        requirements: { all: ['mcpRetryAvailable'] }
       },
       {
         label: 'Pick MCP profile',
         description: 'Select the smallest tool profile for this project',
-        command: COMMANDS.pickMcpProfile
+        command: COMMANDS.pickMcpProfile,
+        requirements: { all: ['workspaceTrusted'] }
       },
       {
         label: 'Open design intent',
         description: 'Review or update MCP-backed design intent',
-        command: COMMANDS.openDesignIntent
+        command: COMMANDS.openDesignIntent,
+        requirements: { all: ['workspaceTrusted', 'mcpConnected'] }
       },
       {
         label: 'Open AI chat',
         description: 'Start the configured project-aware assistant',
-        command: COMMANDS.openAiChat
+        command: COMMANDS.openAiChat,
+        requirements: { all: ['aiEnabled'] }
       },
       {
         label: 'Manage chat provider',
@@ -215,7 +255,8 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
       {
         label: 'Refresh AI fix queue',
         description: 'Reload proposed MCP-backed project fixes',
-        command: COMMANDS.refreshFixQueue
+        command: COMMANDS.refreshFixQueue,
+        requirements: { all: ['workspaceTrusted', 'mcpConnected'] }
       }
     ]
   },
@@ -293,7 +334,8 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
       {
         label: 'Open MCP log',
         description: 'Inspect the current MCP integration log',
-        command: COMMANDS.openMcpLog
+        command: COMMANDS.openMcpLog,
+        requirements: { all: ['mcpAvailable'] }
       },
       {
         label: 'Send feedback',
