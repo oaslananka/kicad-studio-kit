@@ -11,6 +11,7 @@ import { registerSettingsCommands } from './settingsCommands';
 import { registerViewerCommands } from './viewerCommands';
 import { registerFeedbackCommands } from './feedbackCommands';
 import { registerBoardReadyOpsCommands } from './boardReadyOpsCommands';
+import { registerTaskHubCommands } from './taskHubCommands';
 import type { CommandServices } from './types';
 
 export type { CommandServices } from './types';
@@ -38,6 +39,7 @@ export function registerAllCommands(
     ...registerSettingsCommands(extensionContext, services),
     ...registerViewerCommands(services),
     ...registerFeedbackCommands(),
-    ...registerBoardReadyOpsCommands(services)
+    ...registerBoardReadyOpsCommands(services),
+    ...registerTaskHubCommands()
   );
 }
