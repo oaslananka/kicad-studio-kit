@@ -21,7 +21,10 @@ function handler(commandId: string): () => Promise<void> {
 describe('task-oriented command hub', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    registerTaskHubCommands();
+    registerTaskHubCommands(() => ({
+      hasProject: true,
+      workspaceTrusted: true
+    }));
   });
 
   it('defines the five product task groups in stable order', () => {
@@ -91,6 +94,44 @@ describe('task-oriented command hub', () => {
     );
     expect(commands.executeCommand).toHaveBeenCalledWith(
       COMMANDS.qualityGateRunAll
+    );
+  });
+
+  it('filters task groups that are unavailable in the current workspace', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() => ({
+      hasProject: false,
+      workspaceTrusted: true
+    }));
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
+
+    await handler(COMMANDS.openTaskHub)();
+
+    expect(window.showQuickPick).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          taskCommand: COMMANDS.openMaintainTasks
+        })
+      ],
+      expect.any(Object)
+    );
+  });
+
+  it('hides trusted maintenance actions in an untrusted workspace', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() => ({
+      hasProject: true,
+      workspaceTrusted: false
+    }));
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
+
+    await handler(COMMANDS.openMaintainTasks)();
+
+    const items = (window.showQuickPick as jest.Mock).mock.calls[0][0];
+    expect(items).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ command: COMMANDS.detectCli })
+      ])
     );
   });
 

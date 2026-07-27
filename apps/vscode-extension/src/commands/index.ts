@@ -40,6 +40,9 @@ export function registerAllCommands(
     ...registerViewerCommands(services),
     ...registerFeedbackCommands(),
     ...registerBoardReadyOpsCommands(services),
-    ...registerTaskHubCommands()
+    ...registerTaskHubCommands(() => ({
+      hasProject: Boolean(services.projectState.getActiveProject()),
+      workspaceTrusted: vscode.workspace.isTrusted
+    }))
   );
 }

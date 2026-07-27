@@ -9,10 +9,22 @@ export type TaskGroupId =
 
 type CommandId = (typeof COMMANDS)[keyof typeof COMMANDS];
 
+export interface TaskHubContext {
+  readonly hasProject: boolean;
+  readonly workspaceTrusted: boolean;
+}
+
+export type TaskAvailability =
+  | 'always'
+  | 'project'
+  | 'trusted'
+  | 'trustedProject';
+
 export interface TaskAction {
   readonly label: string;
   readonly description: string;
   readonly command: CommandId;
+  readonly availability?: TaskAvailability;
 }
 
 export interface TaskGroup {
@@ -22,6 +34,7 @@ export interface TaskGroup {
   readonly label: string;
   readonly description: string;
   readonly placeholder: string;
+  readonly availability: TaskAvailability;
   readonly actions: readonly TaskAction[];
 }
 
@@ -33,6 +46,7 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
     label: 'Review',
     description: 'Inspect the active project, viewers, variants, and diffs',
     placeholder: 'Review — choose a project inspection action',
+    availability: 'project',
     actions: [
       {
         label: 'Show project status',
@@ -78,6 +92,7 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
     label: 'Validate',
     description: 'Run DRC, ERC, quality gates, and readiness checks',
     placeholder: 'Validate — choose a project check',
+    availability: 'project',
     actions: [
       {
         label: 'Run all quality gates',
@@ -119,6 +134,7 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
     label: 'Fabrication Release',
     description: 'Prepare reviewed manufacturing outputs and release evidence',
     placeholder: 'Fabrication Release — choose an output workflow',
+    availability: 'trustedProject',
     actions: [
       {
         label: 'Open manufacturing release wizard',
@@ -159,6 +175,7 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
     label: 'Automate',
     description: 'Configure MCP and AI-assisted project workflows',
     placeholder: 'Automate — choose an MCP or AI workflow',
+    availability: 'project',
     actions: [
       {
         label: 'Set up MCP integration',
@@ -209,11 +226,13 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
     label: 'Maintain',
     description: 'Manage KiCad CLI, libraries, settings, logs, and support',
     placeholder: 'Maintain — choose a setup or maintenance action',
+    availability: 'always',
     actions: [
       {
         label: 'Detect kicad-cli',
         description: 'Refresh the installed KiCad command-line capability',
-        command: COMMANDS.detectCli
+        command: COMMANDS.detectCli,
+        availability: 'trusted'
       },
       {
         label: 'Open settings panel',
@@ -223,22 +242,26 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
       {
         label: 'Refresh project tree',
         description: 'Rescan the active workspace project structure',
-        command: COMMANDS.refreshProjectTree
+        command: COMMANDS.refreshProjectTree,
+        availability: 'project'
       },
       {
         label: 'Reindex libraries',
         description: 'Rebuild symbol and footprint search indexes',
-        command: COMMANDS.reindexLibraries
+        command: COMMANDS.reindexLibraries,
+        availability: 'project'
       },
       {
         label: 'Refresh PCM repositories',
         description: 'Reload configured KiCad package repositories',
-        command: COMMANDS.refreshPcmLibraries
+        command: COMMANDS.refreshPcmLibraries,
+        availability: 'project'
       },
       {
         label: 'Update all PCM packages',
         description: 'Apply available package content updates',
-        command: COMMANDS.updateAllPcmPackages
+        command: COMMANDS.updateAllPcmPackages,
+        availability: 'trustedProject'
       },
       {
         label: 'Set component search API key',
