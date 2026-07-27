@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { OCTOPART_SECRET_KEY } from '../constants';
-import type { ComponentSearchResult } from '../types';
+import type { ComponentSearchResult } from './componentSearchTypes';
 import { fetchWithTimeout } from './fetchWithTimeout';
 
 export class OctopartClient {

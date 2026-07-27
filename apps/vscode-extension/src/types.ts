@@ -6,6 +6,13 @@ import type {
 
 export type { McpServerInfoCompatibilityRange, McpServerInfoContract };
 
+export type { BomEntry, BomSummary, BomWebviewMessage } from './bom/bomTypes';
+export type {
+  ComponentOffer,
+  ComponentPriceBreak,
+  ComponentSearchResult
+} from './components/componentSearchTypes';
+
 export interface FileReference {
   uri: vscode.Uri;
   fsPath: string;
@@ -139,35 +146,6 @@ export interface ViewerMetadata {
   notes?: string[] | undefined;
 }
 
-export interface BomEntry {
-  references: string[];
-  value: string;
-  footprint: string;
-  quantity: number;
-  mpn: string;
-  manufacturer: string;
-  lcsc: string;
-  description: string;
-  dnp: boolean;
-  uuid?: string | undefined;
-}
-
-export interface BomSummary {
-  totalComponents: number;
-  uniqueValues: number;
-}
-
-export interface BomWebviewMessage {
-  type:
-    | 'setData'
-    | 'setStatus'
-    | 'highlight'
-    | 'exportCsv'
-    | 'exportXlsx'
-    | 'rowSelected';
-  payload?: Record<string, unknown>;
-}
-
 export interface NetlistNode {
   netName: string;
   nodes: Array<{
@@ -179,35 +157,6 @@ export interface NetlistNode {
 export interface NetlistWebviewMessage {
   type: 'setNetlist' | 'selectReference';
   payload?: Record<string, unknown>;
-}
-
-export interface ComponentPriceBreak {
-  quantity: number;
-  price: number;
-  currency: string;
-}
-
-export interface ComponentOffer {
-  seller: string;
-  inventoryLevel?: number | undefined;
-  prices: ComponentPriceBreak[];
-}
-
-export interface ComponentSearchResult {
-  source: 'octopart' | 'lcsc' | 'local';
-  mpn: string;
-  manufacturer: string;
-  description: string;
-  category?: string | undefined;
-  datasheetUrl?: string | undefined;
-  imageUrl?: string | undefined;
-  lcscPartNumber?: string | undefined;
-  pcmPackageId?: string | undefined;
-  offers: ComponentOffer[];
-  specs: Array<{
-    name: string;
-    value: string;
-  }>;
 }
 
 export interface ComponentDiff {
@@ -434,7 +383,6 @@ export type QualityGateStatus =
   | 'BLOCKED'
   | 'PENDING'
   | 'EMPTY';
-
 
 export interface QualityGateViolation {
   message: string;

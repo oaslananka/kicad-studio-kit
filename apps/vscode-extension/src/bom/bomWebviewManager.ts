@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { BomEntry, BomWebviewMessage } from '../types';
+import type { BomEntry, BomWebviewMessage } from './bomTypes';
 
 export class BomWebviewManager {
   private view?: vscode.WebviewView;

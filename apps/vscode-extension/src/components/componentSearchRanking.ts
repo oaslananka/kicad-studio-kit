@@ -1,4 +1,5 @@
-import type { BomEntry, ComponentSearchResult } from '../types';
+import type { BomEntry } from '../bom/bomTypes';
+import type { ComponentSearchResult } from './componentSearchTypes';
 import type {
   ComponentSearchProjectContext,
   ComponentSearchRecommendation,
