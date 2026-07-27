@@ -1,6 +1,6 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import type { BomEntry } from '../types';
+import type { BomEntry } from './bomTypes';
 import { localizeWebviewMessage, webviewLocale } from '../webviewI18n';
 
 type ExcelJsWorkbook = typeof import('exceljs').Workbook;

@@ -1,4 +1,4 @@
-import type { ComponentSearchResult } from '../types';
+import type { ComponentSearchResult } from './componentSearchTypes';
 import { injectWebviewLocalization } from '../webviewI18n';
 
 type ProviderStatus = 'ready' | 'warning' | 'disabled';

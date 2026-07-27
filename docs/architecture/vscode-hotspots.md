@@ -1,22 +1,26 @@
+---
+search: false
+---
+
 # VS Code Extension Hotspot Map
 
 This page records the responsibility, churn, and dependency order for the incremental decomposition tracked by issue #497. It is a dated architecture snapshot, not a line-count target. A module should be split only when a stable responsibility boundary and regression gate exist.
 
 ## 2026-07-27 Snapshot
 
-The production graph contains 152 TypeScript modules. After the CLI, viewer, export, Component Search, PCM, project-state, viewer-state, and MCP-state boundaries, the graph contains **0 import cycles**. The repository enforces this with `pnpm run check:vscode-architecture`.
+The production graph contains 158 TypeScript modules and **0 import cycles** after the reviewed CLI, viewer, export, Component Search, PCM, and state extractions. The repository enforces this with `pnpm run check:vscode-architecture`.
 
 Line counts use the checked-in source tree. Churn counts are the number of commits touching each file in the latest 100 commits at the snapshot date.
 
-| Order | Target                                                                                                                                   |                       Lines |            Recent touches | Current responsibilities                                                            | Required boundary and validation                                                                                     |
-| ----: | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------: | ------------------------: | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-|     1 | `cli/kicadCliDetector.ts` / `cli/kicadCliSupport.ts` / `cli/kicadCliCapabilities.ts`                                                     |              491 / 351 / 64 |               6 / 3 / new | platform discovery, support decisions, and the extracted immutable capability model | **Completed in phase 1:** pure capability model; architecture-cycle guard; detector/support/model unit tests         |
-|     2 | `providers/viewerHtml.ts` / `providers/viewer/viewerControllerScript.ts`                                                                 |                 297 / 1,704 |                  11 / new | host HTML/CSP/payload assembly and the extracted browser controller                 | **Completed in phase 2a:** pure controller source boundary; byte-equivalent HTML; unit/security/viewer gates         |
-|     3 | `cli/exportCommands.ts` / `cli/exportCommandBuilder.ts`                                                                                  |                 1,401 / 693 |                   4 / new | VS Code export orchestration and the extracted deterministic CLI argument builder   | **Completed in phase 3a:** pure command builder; compatibility wrapper; unit/coverage/security/package gates         |
-|     4 | `components/componentSearch.ts` / `components/componentSearchView.ts`                                                                    |                   784 / 450 |                   6 / new | provider/cache orchestration and the extracted deterministic webview renderer       | **Completed in phase 4a:** pure view contracts/HTML; byte-equivalent output; unit/a11y/package gates                 |
-|     5 | `library/pcmService.ts` / `library/pcmCatalog.ts` / `library/pcmArchive.ts` / `library/pcmPersistence.ts` / `library/pcmLibraryTable.ts` | 593 / 315 / 641 / 110 / 150 | 6 / new / new / new / new | install orchestration plus catalog, archive, state, and library-table adapters      | **Completed through phase 5d:** PCM catalog, archive, installed state, and KiCad library-table persistence extracted |
-|     6 | `state/stateStores.ts` / `state/projectStateStore.ts` / `state/viewerStateStore.ts` / `state/mcpStateStore.ts`                           |        537 / 93 / 129 / 163 |       7 / new / new / new | diagnostic and export stores plus extracted project/viewer/MCP stores               | **Completed through phase 6c:** project, viewer, and MCP state extracted; remaining stores stay phase-scoped         |
-|     7 | `types.ts` / `constants.ts`                                                                                                              |                   505 / 465 |                   14 / 15 | broad shared type and constant fan-in                                               | move definitions only with their owning domain phases; full typecheck and contribution-manifest gates                |
+| Order | Target                                                                                                                                                                                           |                           Lines |                  Recent touches | Current responsibilities                                                            | Required boundary and validation                                                                                     |
+| ----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------: | ------------------------------: | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+|     1 | `cli/kicadCliDetector.ts` / `cli/kicadCliSupport.ts` / `cli/kicadCliCapabilities.ts`                                                                                                             |                  491 / 351 / 64 |                     6 / 3 / new | platform discovery, support decisions, and the extracted immutable capability model | **Completed in phase 1:** pure capability model; architecture-cycle guard; detector/support/model unit tests         |
+|     2 | `providers/viewerHtml.ts` / `providers/viewer/viewerControllerScript.ts`                                                                                                                         |                     297 / 1,704 |                        11 / new | host HTML/CSP/payload assembly and the extracted browser controller                 | **Completed in phase 2a:** pure controller source boundary; byte-equivalent HTML; unit/security/viewer gates         |
+|     3 | `cli/exportCommands.ts` / `cli/exportCommandBuilder.ts`                                                                                                                                          |                     1,401 / 693 |                         4 / new | VS Code export orchestration and the extracted deterministic CLI argument builder   | **Completed in phase 3a:** pure command builder; compatibility wrapper; unit/coverage/security/package gates         |
+|     4 | `components/componentSearch.ts` / `components/componentSearchProviders.ts` / `components/componentSearchRanking.ts` / `components/componentSearchView.ts` / `components/componentSearchTypes.ts` |       671 / 85 / 140 / 455 / 28 |       9 / new / new / new / new | VS Code orchestration plus provider, ranking, rendering, and type boundaries        | **Completed through phase 8a:** all Component Search ownership extracted                                             |
+|     5 | `library/pcmService.ts` / `library/pcmCatalog.ts` / `library/pcmArchive.ts` / `library/pcmPersistence.ts` / `library/pcmLibraryTable.ts`                                                         |     593 / 315 / 641 / 110 / 150 |       6 / new / new / new / new | install orchestration plus catalog, archive, state, and library-table adapters      | **Completed through phase 5d:** PCM catalog, archive, installed state, and KiCad library-table persistence extracted |
+|     6 | `state/stateStores.ts` / `state/diagnosticStateStore.ts` / `state/exportStateStore.ts` / `state/projectStateStore.ts` / `state/viewerStateStore.ts` / `state/mcpStateStore.ts`                   | 15 / 416 / 115 / 93 / 129 / 163 | 9 / new / new / new / new / new | compatibility exports and five domain stores                                        | **Completed through phase 6e:** all state ownership extracted                                                        |
+|     7 | `bom/bomTypes.ts` / `components/componentSearchTypes.ts` / `types.ts` / `constants.ts`                                                                                                           |             28 / 28 / 454 / 465 |             new / new / 14 / 15 | domain types, compatibility aggregation, and central contribution constants         | **Completed in phase 8a:** owned types moved; central constants retained deliberately                                |
 
 `mcp/mcpClient.ts` is intentionally excluded from this order. Issue #492 owns its protocol/transport decomposition and final `2026-07-28` compatibility work.
 
@@ -57,9 +61,15 @@ Phase 3a preserves the existing `buildCliExportCommands()` import surface throug
 
 `components/componentSearchView.ts` owns the deterministic Component Search presentation boundary: view-state contracts, provider chips, recommendations, result rows, search and details HTML, CSP/nonce placement, browser message wiring, and escaping of provider-controlled text. It has no VS Code, network, cache, secret-storage, filesystem, PCM, or provider-client dependency.
 
-`components/componentSearch.ts` remains the VS Code-facing orchestration surface. It owns provider selection, request and cache fallbacks, local-library and PCM integration, settings and secrets, project-context recommendation discovery, view-model calculation, panel lifecycle, and command handling. It preserves the previous renderer imports through compatibility re-exports.
+`components/componentSearchProviders.ts` owns remote/cache execution, Octopart warnings, LCSC retry, and local-to-PCM fallback order. Adapters are injected; direct tests cover every branch.
 
-Phase 4a preserves representative generated search and details HTML byte-for-byte while reducing `componentSearch.ts` from 1,215 to 784 lines. Provider-adapter and ranking-model extraction remain separate #497 phases with their own network/cache and relevance regression gates.
+`components/componentSearchRanking.ts` owns result labels, confidence, and BOM recommendations. It uses only component/BOM and view types; locale/messages are injected.
+
+`components/componentSearchTypes.ts` owns result, offer, and price shapes. `components/componentSearch.ts` keeps VS Code, local/PCM, parsing, panel, and command orchestration. Phases 4a–8a reduce it from 1,215 to 671 lines without behavior changes.
+
+## Shared Type and Constant Ownership
+
+`bom/bomTypes.ts` and `components/componentSearchTypes.ts` are dependency-free owners; `types.ts` keeps compatibility re-exports. `constants.ts` remains the central command, view, setting, and manifest contract.
 
 ## PCM Catalog Ownership
 
@@ -83,8 +93,8 @@ Phase 5c reduces `library/pcmService.ts` from 798 to 730 lines without changing 
 
 `library/pcmService.ts` continues to own repository fetching, install-path selection, injected extractor support, CLI-backed installation, in-memory package state, config-directory selection, reindexing, and user-visible change events. Phase 5d reduces the service from 730 to 593 lines without changing install, update, or uninstall behavior.
 
-## Project, Viewer, and MCP State Store Ownership
+## State Store Ownership
 
-`state/projectStateStore.ts` owns project selection, lookup, snapshots, active-resource serialization, and events. `state/viewerStateStore.ts` owns viewer transitions, snapshots, events, and error redaction. `state/mcpStateStore.ts` owns connection snapshots, deep-cloned server metadata, legacy mode defaults, events, and diagnostic redaction. Direct tests cover mutation isolation, sparse/legacy state, redaction, and disposal.
+Five domain stores own snapshots, events, cloning, lifecycle transitions, and redaction. Direct tests cover project isolation, freshness/Problems transitions, mutation isolation, legacy state, export lifecycle, and disposal.
 
-`state/stateStores.ts` re-exports all three stores and retains diagnostic and export state. Phases 6a–6c reduce it from 888 to 537 lines and close retained-reference leaks.
+`state/stateStores.ts` is a 15-line compatibility export surface; phases 6a–6e removed all implementation from the former 888-line aggregator.

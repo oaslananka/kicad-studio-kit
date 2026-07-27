@@ -1,4 +1,4 @@
-import type { BomEntry } from '../types';
+import type { BomEntry } from './bomTypes';
 
 // Component intelligence / BOM risk scoring (#403). The core scoring is offline
 // and deterministic — it makes no network calls and hard-codes no vendor
