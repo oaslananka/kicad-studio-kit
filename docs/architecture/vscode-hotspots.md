@@ -8,7 +8,7 @@ This page records the responsibility, churn, and dependency order for the increm
 
 ## 2026-07-27 Snapshot
 
-The production graph contains 158 TypeScript modules and **0 import cycles** after the reviewed CLI, viewer, export, Component Search, PCM, and state extractions. The repository enforces this with `pnpm run check:vscode-architecture`.
+The production graph contains 160 TypeScript modules and **0 import cycles** after the reviewed CLI, viewer, export, Component Search, PCM, and state extractions. The repository enforces this with `pnpm run check:vscode-architecture`.
 
 Line counts use the checked-in source tree. Churn counts are the number of commits touching each file in the latest 100 commits at the snapshot date.
 
@@ -22,7 +22,11 @@ Line counts use the checked-in source tree. Churn counts are the number of commi
 |     6 | `state/stateStores.ts` / `state/diagnosticStateStore.ts` / `state/exportStateStore.ts` / `state/projectStateStore.ts` / `state/viewerStateStore.ts` / `state/mcpStateStore.ts`                   | 15 / 416 / 115 / 93 / 129 / 163 | 9 / new / new / new / new / new | compatibility exports and five domain stores                                        | **Completed through phase 6e:** all state ownership extracted                                                        |
 |     7 | `bom/bomTypes.ts` / `components/componentSearchTypes.ts` / `types.ts` / `constants.ts`                                                                                                           |             28 / 28 / 454 / 465 |             new / new / 14 / 15 | domain types, compatibility aggregation, and central contribution constants         | **Completed in phase 8a:** owned types moved; central constants retained deliberately                                |
 
-`mcp/mcpClient.ts` is intentionally excluded from this order. Issue #492 owns its protocol/transport decomposition and final `2026-07-28` compatibility work.
+`mcp/mcpClient.ts` is intentionally excluded from this order. Issue #492 owns its protocol lifecycle and final `2026-07-28` compatibility work.
+
+## MCP Protocol Boundary Ownership
+
+`mcp/protocol/protocolLifecycle.ts` owns request IDs, coalesced discovery, protocol request execution, response metadata, and lifecycle-aware session reuse. `mcp/adapters/vscodeProtocolSessionStore.ts` hides the persisted VS Code Memento key behind a narrow store contract. `mcp/mcpClient.ts` retains endpoint settings, connection state, compatibility cards, diagnostics, and domain normalization. The draft stateless protocol remains non-selectable until the final specification and compatible published server artifacts are available.
 
 ## Phase Rules
 

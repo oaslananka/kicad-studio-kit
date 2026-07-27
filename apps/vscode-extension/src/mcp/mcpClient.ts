@@ -20,15 +20,14 @@ import { MCP_COMPAT, getMcpCompatStatus, normalizeMcpVersion } from './compat';
 import { MCP_PROTOCOL_VERSION } from './compatibilityMatrix';
 import { McpDetector } from './mcpDetector';
 import type { McpLogger } from './mcpLogger';
-import type {
-  McpDiscoveryResult,
-  McpProtocolAdapter
-} from './protocol/protocolAdapter';
+import type { McpDiscoveryResult } from './protocol/protocolAdapter';
 import { resolveMcpProtocolAdapter } from './protocol/protocolAdapterRegistry';
 import {
-  HttpJsonRpcTransport,
-  type McpRpcTransport
-} from './transport/httpJsonRpcTransport';
+  McpProtocolLifecycle,
+  type McpProtocolRuntime
+} from './protocol/protocolLifecycle';
+import { VscodeProtocolSessionStore } from './adapters/vscodeProtocolSessionStore';
+import { HttpJsonRpcTransport } from './transport/httpJsonRpcTransport';
 
 export interface McpClientOptions {
   maxRetries?: number | undefined;
@@ -37,7 +36,6 @@ export interface McpClientOptions {
   logger?: McpLogger | undefined;
 }
 
-const MCP_SESSION_ID_KEY = 'kicadstudio.mcp.sessionId';
 const MCP_LAST_SERVER_CARD_KEY = 'kicadstudio.mcp.lastServerCard';
 const KNOWN_MCP_SDK_VERSION_HINTS = new Set(['1.27.0']);
 const FILE_BACKED_FIX_DISABLED_REASON =
@@ -48,12 +46,8 @@ const DEFAULT_RECONNECT_DELAYS_MS = [
 
 export class McpClient {
   private lastInstall: McpInstallStatus = { found: false, source: 'none' };
-  private sessionId: string | undefined;
-  private protocolReadyPromise: Promise<void> | undefined;
   private connectionTestPromise: Promise<McpConnectionState> | undefined;
-  private nextRpcId = 1;
-  private readonly protocolAdapter: McpProtocolAdapter;
-  private readonly transport: McpRpcTransport;
+  private readonly protocolLifecycle: McpProtocolLifecycle;
   private readonly reconnectDelaysMs: readonly number[];
   private state: McpConnectionState;
   private incompatibleWarningLogged = false;
@@ -65,13 +59,19 @@ export class McpClient {
     private readonly logger: Logger,
     options: McpClientOptions = {}
   ) {
-    this.sessionId = context.globalState.get<string>(MCP_SESSION_ID_KEY);
-    this.protocolAdapter = resolveMcpProtocolAdapter(MCP_PROTOCOL_VERSION);
-    this.transport = new HttpJsonRpcTransport({
-      logger,
-      trafficLogger: options.logger,
-      maxRetries: options.maxRetries,
-      retryBaseDelayMs: options.retryBaseDelayMs
+    this.protocolLifecycle = new McpProtocolLifecycle({
+      adapter: resolveMcpProtocolAdapter(MCP_PROTOCOL_VERSION),
+      transport: new HttpJsonRpcTransport({
+        logger,
+        trafficLogger: options.logger,
+        maxRetries: options.maxRetries,
+        retryBaseDelayMs: options.retryBaseDelayMs
+      }),
+      clientInfo: {
+        name: 'kicad-studio',
+        version: getExtensionVersion(context)
+      },
+      sessionStore: new VscodeProtocolSessionStore(context.globalState)
     });
     this.reconnectDelaysMs =
       options.reconnectDelaysMs ?? DEFAULT_RECONNECT_DELAYS_MS;
@@ -443,8 +443,11 @@ export class McpClient {
       );
     }
 
-    const result = await this.executeProtocolRequest<T>(method, params);
-    await this.applyResponseMetadata(result.headers);
+    const result = await this.protocolLifecycle.execute<T>(
+      method,
+      params,
+      this.getProtocolRuntime()
+    );
     if (result.json.error) {
       throw createErrorFromRpc(result.json.error);
     }
@@ -454,78 +457,32 @@ export class McpClient {
   private async ensureProtocolReady(
     options: { force?: boolean } = {}
   ): Promise<void> {
-    if (
-      this.protocolAdapter.canReuseDiscovery({
-        force: options.force ?? false,
-        sessionId: this.sessionId,
-        hasServerCard: Boolean(this.state.server)
-      })
-    ) {
-      return;
-    }
-    if (this.protocolReadyPromise) {
-      return this.protocolReadyPromise;
-    }
-
-    this.protocolReadyPromise = (async () => {
-      this.setState({
-        ...this.state,
-        kind: 'Connecting',
-        connected: false
-      });
-      const discovery = this.protocolAdapter.createDiscoveryRequest({
-        name: 'kicad-studio',
-        version: getExtensionVersion(this.context)
-      });
-      const result = await this.executeProtocolRequest<McpDiscoveryResult>(
-        discovery.method,
-        discovery.params
-      );
-      if (result.json.error) {
-        throw createErrorFromRpc(result.json.error);
-      }
-      this.protocolAdapter.validateDiscoveryResult(result.json.result);
-      await this.applyResponseMetadata(result.headers);
-      await this.captureServerCard(result.json.result);
-    })();
-
-    try {
-      await this.protocolReadyPromise;
-    } finally {
-      this.protocolReadyPromise = undefined;
-    }
+    await this.protocolLifecycle.ensureReady(
+      this.getProtocolRuntime(),
+      {
+        onConnecting: () => {
+          this.setState({
+            ...this.state,
+            kind: 'Connecting',
+            connected: false
+          });
+        },
+        onDiscovery: (result) => this.captureServerCard(result),
+        createRpcError: createErrorFromRpc
+      },
+      options
+    );
   }
 
-  private executeProtocolRequest<T>(
-    method: string,
-    params: Record<string, unknown>
-  ) {
-    return this.transport.execute<T>({
+  private getProtocolRuntime(): McpProtocolRuntime {
+    return {
       baseEndpoint: this.getEndpoint(),
-      id: this.nextRpcId++,
-      method,
-      params,
-      headers: this.protocolAdapter.createRequestHeaders({
-        method,
-        sessionId: this.sessionId
-      }),
       allowLegacySse: vscode.workspace
         .getConfiguration()
         .get<boolean>(SETTINGS.mcpAllowLegacySse, false),
-      timeoutMs: getMcpRequestTimeoutMs()
-    });
-  }
-
-  private async applyResponseMetadata(headers: Headers): Promise<void> {
-    const metadata = this.protocolAdapter.readResponseMetadata(headers);
-    if (metadata.sessionId) {
-      await this.persistSessionId(metadata.sessionId);
-    }
-  }
-
-  private async persistSessionId(sessionId: string): Promise<void> {
-    this.sessionId = sessionId;
-    await this.context.globalState.update(MCP_SESSION_ID_KEY, sessionId);
+      timeoutMs: getMcpRequestTimeoutMs(),
+      hasDiscoveryState: Boolean(this.state.server)
+    };
   }
 
   private async captureServerCard(
@@ -564,8 +521,7 @@ export class McpClient {
     await this.context.globalState.update(MCP_LAST_SERVER_CARD_KEY, card);
 
     if (compat === 'incompatible') {
-      await this.context.globalState.update(MCP_SESSION_ID_KEY, undefined);
-      this.sessionId = undefined;
+      await this.protocolLifecycle.clearSession();
       if (!this.incompatibleWarningLogged) {
         this.incompatibleWarningLogged = true;
         this.logger.warn(

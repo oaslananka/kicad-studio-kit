@@ -109,5 +109,5 @@
 - [x] Run extension build, package, and package validation.
 - [x] Run `git diff --check` and review the complete diff.
 - [x] Commit with DCO sign-off.
-- [ ] Push and open a draft PR linked to `#492`.
-- [ ] Watch required GitHub checks to terminal state, address review findings, then mark ready.
+- [x] Push and open a draft PR linked to `#492` (completed in PR 501).
+- [x] Watch required GitHub checks to terminal state, address review findings, then mark ready (PR 501 merged as `742bce9`).

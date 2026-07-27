@@ -247,6 +247,76 @@ test("#497 Component Search ranking model uses only reviewed result-model depend
   assert.doesNotMatch(source, /from ["'](?:node:|vscode)/u);
 });
 
+test("#492 protocol lifecycle uses only reviewed protocol and transport dependencies", () => {
+  const repoRoot = path.resolve(import.meta.dirname, "..");
+  const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
+  const graph = buildTypeScriptImportGraph(sourceRoot);
+  assert.deepEqual(
+    [...(graph.get("mcp/protocol/protocolLifecycle.ts") ?? [])],
+    [
+      "mcp/protocol/protocolAdapter.ts",
+      "mcp/transport/httpJsonRpcTransport.ts",
+    ],
+  );
+
+  const source = fs.readFileSync(
+    path.join(sourceRoot, "mcp", "protocol", "protocolLifecycle.ts"),
+    "utf8",
+  );
+  const importSpecifiers = [...source.matchAll(/from ["']([^"']+)["']/gu)].map(
+    (match) => match[1],
+  );
+  assert.deepEqual(importSpecifiers.toSorted(), [
+    "../transport/httpJsonRpcTransport",
+    "./protocolAdapter",
+  ]);
+  assert.doesNotMatch(source, /from ["'](?:node:|vscode)/u);
+});
+
+test("#492 VS Code protocol session adapter depends only on the lifecycle contract", () => {
+  const repoRoot = path.resolve(import.meta.dirname, "..");
+  const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
+  const graph = buildTypeScriptImportGraph(sourceRoot);
+  assert.deepEqual(
+    [...(graph.get("mcp/adapters/vscodeProtocolSessionStore.ts") ?? [])],
+    ["mcp/protocol/protocolLifecycle.ts"],
+  );
+
+  const source = fs.readFileSync(
+    path.join(sourceRoot, "mcp", "adapters", "vscodeProtocolSessionStore.ts"),
+    "utf8",
+  );
+  const importSpecifiers = [...source.matchAll(/from ["']([^"']+)["']/gu)].map(
+    (match) => match[1],
+  );
+  assert.deepEqual(importSpecifiers, ["../protocol/protocolLifecycle"]);
+  assert.doesNotMatch(source, /from ["'](?:node:|vscode)/u);
+});
+
+test("#492 MCP client delegates protocol lifecycle ownership", () => {
+  const repoRoot = path.resolve(import.meta.dirname, "..");
+  const source = fs.readFileSync(
+    path.join(
+      repoRoot,
+      "apps",
+      "vscode-extension",
+      "src",
+      "mcp",
+      "mcpClient.ts",
+    ),
+    "utf8",
+  );
+  assert.match(source, /from ["']\.\/protocol\/protocolLifecycle["']/u);
+  assert.match(
+    source,
+    /from ["']\.\/adapters\/vscodeProtocolSessionStore["']/u,
+  );
+  assert.doesNotMatch(
+    source,
+    /MCP_SESSION_ID_KEY|protocolReadyPromise|nextRpcId|MCP-Session-Id/u,
+  );
+});
+
 test("#497 project state store uses only reviewed project-domain dependencies", () => {
   const repoRoot = path.resolve(import.meta.dirname, "..");
   const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
@@ -401,6 +471,8 @@ test("#497 root check cannot silently drop the architecture guard", () => {
     "state/projectStateStore.ts",
     "state/mcpStateStore.ts",
     "state/viewerStateStore.ts",
+    "mcp/protocol/protocolLifecycle.ts",
+    "mcp/adapters/vscodeProtocolSessionStore.ts",
   ]) {
     assert.match(
       architectureDoc,
@@ -408,6 +480,6 @@ test("#497 root check cannot silently drop the architecture guard", () => {
     );
   }
   assert.match(architectureDoc, /^---\nsearch: false\n---/u);
-  assert.match(architectureDoc, /158 TypeScript modules/u);
+  assert.match(architectureDoc, /160 TypeScript modules/u);
   assert.match(architectureDoc, /0 import cycles/u);
 });
