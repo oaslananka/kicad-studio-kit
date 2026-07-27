@@ -1,0 +1,465 @@
+{
+  "schemaVersion": 1,
+  "commands": {
+    "kicadstudio.openSchematic": {
+      "task": "review",
+      "surface": "contextual"
+    },
+    "kicadstudio.openPCB": {
+      "task": "review",
+      "surface": "contextual"
+    },
+    "kicadstudio.openInKiCad": {
+      "task": "review",
+      "surface": "contextual"
+    },
+    "kicadstudio.showStatusMenu": {
+      "task": "review",
+      "surface": "hub"
+    },
+    "kicadstudio.detectCli": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportGerbers": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportGerbersWithDrill": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportPDF": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportPCBPDF": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportSVG": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportIPC2581": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportODB": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.export3DGLB": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.export3DBREP": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.export3DPLY": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportGenCAD": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportIPCD356": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportDXF": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportPickAndPlace": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportFootprintSVG": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportSymbolSVG": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportManufacturingPackage": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportBOMCSV": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportBOMXLSX": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportNetlist": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.runJobset": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportInteractiveBOM": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.runDRC": {
+      "task": "validate",
+      "surface": "contextual"
+    },
+    "kicadstudio.runERC": {
+      "task": "validate",
+      "surface": "contextual"
+    },
+    "kicadstudio.searchComponent": {
+      "task": "review",
+      "surface": "contextual"
+    },
+    "kicadstudio.showDiff": {
+      "task": "review",
+      "surface": "contextual"
+    },
+    "kicadstudio.aiAnalyzeError": {
+      "task": "validate",
+      "surface": "contextual"
+    },
+    "kicadstudio.aiProactiveDRC": {
+      "task": "validate",
+      "surface": "contextual"
+    },
+    "kicadstudio.aiExplainCircuit": {
+      "task": "automate",
+      "surface": "contextual"
+    },
+    "kicadstudio.openAiChat": {
+      "task": "automate",
+      "surface": "contextual"
+    },
+    "kicadstudio.openSettings": {
+      "task": "maintain",
+      "surface": "hub"
+    },
+    "kicadstudio.testAiConnection": {
+      "task": "automate",
+      "surface": "contextual"
+    },
+    "kicadstudio.searchLibrarySymbol": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.searchLibraryFootprint": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.reindexLibraries": {
+      "task": "maintain",
+      "surface": "hub"
+    },
+    "kicadstudio.refreshProjectTree": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.saveExportPreset": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.runExportPreset": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.setOctopartApiKey": {
+      "task": "maintain",
+      "surface": "hub"
+    },
+    "kicadstudio.setAiApiKey": {
+      "task": "maintain",
+      "surface": "hub"
+    },
+    "kicadstudio.clearAiKey": {
+      "task": "maintain",
+      "surface": "hub"
+    },
+    "kicadstudio.clearSecrets": {
+      "task": "maintain",
+      "surface": "hub"
+    },
+    "kicadstudio.showStoredSecrets": {
+      "task": "maintain",
+      "surface": "hub"
+    },
+    "kicadstudio.manageChatProvider": {
+      "task": "automate",
+      "surface": "hub"
+    },
+    "kicadstudio.export3DPdf": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.setupMcpIntegration": {
+      "task": "automate",
+      "surface": "hub"
+    },
+    "kicadstudio.mcp.install": {
+      "task": "automate",
+      "surface": "contextual"
+    },
+    "kicadstudio.mcp.retry": {
+      "task": "automate",
+      "surface": "contextual"
+    },
+    "kicadstudio.mcp.launchHttp": {
+      "task": "automate",
+      "surface": "contextual"
+    },
+    "kicadstudio.mcp.openUpgradeGuide": {
+      "task": "automate",
+      "surface": "contextual"
+    },
+    "kicadstudio.mcp.pickProfile": {
+      "task": "automate",
+      "surface": "contextual"
+    },
+    "kicadstudio.mcp.openLog": {
+      "task": "automate",
+      "surface": "contextual"
+    },
+    "kicadstudio.mcp.saveLog": {
+      "task": "automate",
+      "surface": "contextual"
+    },
+    "kicadstudio.mcp.clearLog": {
+      "task": "automate",
+      "surface": "contextual"
+    },
+    "kicadstudio.openDesignIntent": {
+      "task": "automate",
+      "surface": "contextual"
+    },
+    "kicadstudio.refreshFixQueue": {
+      "task": "automate",
+      "surface": "contextual"
+    },
+    "kicadstudio.applyFixQueueItem": {
+      "task": "automate",
+      "surface": "internal"
+    },
+    "kicadstudio.fixQueue.apply": {
+      "task": "automate",
+      "surface": "internal"
+    },
+    "kicadstudio.fixQueue.applyAll": {
+      "task": "automate",
+      "surface": "contextual"
+    },
+    "kicadstudio.qualityGate.runAll": {
+      "task": "validate",
+      "surface": "contextual"
+    },
+    "kicadstudio.qualityGate.runThis": {
+      "task": "validate",
+      "surface": "internal"
+    },
+    "kicadstudio.qualityGate.showRaw": {
+      "task": "validate",
+      "surface": "internal"
+    },
+    "kicadstudio.qualityGate.openDocs": {
+      "task": "validate",
+      "surface": "hub"
+    },
+    "kicadstudio.manufacturing.release": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.variant.create": {
+      "task": "review",
+      "surface": "contextual"
+    },
+    "kicadstudio.variant.setActive": {
+      "task": "review",
+      "surface": "contextual"
+    },
+    "kicadstudio.variant.diffBom": {
+      "task": "review",
+      "surface": "contextual"
+    },
+    "kicadstudio.variant.refresh": {
+      "task": "review",
+      "surface": "contextual"
+    },
+    "kicadstudio.drcRule.reveal": {
+      "task": "validate",
+      "surface": "internal"
+    },
+    "kicadstudio.drcRule.createDefault": {
+      "task": "validate",
+      "surface": "contextual"
+    },
+    "kicadstudio.drcRule.importTemplate": {
+      "task": "validate",
+      "surface": "contextual"
+    },
+    "kicadstudio.drcRule.addWithMcp": {
+      "task": "validate",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportViewerSvg": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.importPads": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.importAltium": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.importEagle": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.importCadstar": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.importFabmaster": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.importPcad": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.importSolidworks": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.importGeda": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.pcm.refresh": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.pcm.filter": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.pcm.install": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.pcm.update": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.pcm.updateAll": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.pcm.uninstall": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.sendFeedback": {
+      "task": "maintain",
+      "surface": "hub"
+    },
+    "kicadstudio.importAllegro": {
+      "task": "maintain",
+      "surface": "contextual"
+    },
+    "kicadstudio.boardReadyOps.check": {
+      "task": "validate",
+      "surface": "contextual"
+    },
+    "kicadstudio.boardReadyOps.configure": {
+      "task": "validate",
+      "surface": "contextual"
+    },
+    "kicadstudio.boardReadyOps.showReport": {
+      "task": "validate",
+      "surface": "contextual"
+    },
+    "kicadstudio.boardReadyOps.openDocs": {
+      "task": "validate",
+      "surface": "contextual"
+    },
+    "kicadstudio.export3DStep": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.export3DStpz": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.export3DXao": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.export3DStl": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.export3DU3d": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.export3DVrml": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportPcbPs": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportSchPs": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.exportStats": {
+      "task": "release",
+      "surface": "contextual"
+    },
+    "kicadstudio.selectActiveProject": {
+      "task": "review",
+      "surface": "contextual"
+    },
+    "kicadstudio.generateKicadDiffReport": {
+      "task": "review",
+      "surface": "contextual"
+    },
+    "kicadstudio.tasks.open": {
+      "task": "maintain",
+      "surface": "top-level"
+    },
+    "kicadstudio.tasks.review": {
+      "task": "review",
+      "surface": "top-level"
+    },
+    "kicadstudio.tasks.validate": {
+      "task": "validate",
+      "surface": "top-level"
+    },
+    "kicadstudio.tasks.release": {
+      "task": "release",
+      "surface": "top-level"
+    },
+    "kicadstudio.tasks.automate": {
+      "task": "automate",
+      "surface": "top-level"
+    },
+    "kicadstudio.tasks.maintain": {
+      "task": "maintain",
+      "surface": "top-level"
+    }
+  }
+}

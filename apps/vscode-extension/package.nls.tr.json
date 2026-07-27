@@ -399,5 +399,12 @@
   "kicadstudio.contributes.commands.107.category": "KiCad",
   "kicadstudio.contributes.commands.diffReport.title": "KiCad: Fark Raporu Oluştur",
   "kicadstudio.contributes.commands.diffReport.category": "KiCad",
-  "kicadstudio.contributes.languageModelChatProviders.0.displayName": "KiCad Studio"
+  "kicadstudio.contributes.languageModelChatProviders.0.displayName": "KiCad Studio",
+  "kicadstudio.contributes.commands.taskHub.category": "KiCad Studio",
+  "kicadstudio.contributes.commands.taskHub.open.title": "KiCad Studio: Görev Merkezini Aç",
+  "kicadstudio.contributes.commands.taskHub.review.title": "KiCad Studio: Projeyi İncele",
+  "kicadstudio.contributes.commands.taskHub.validate.title": "KiCad Studio: Projeyi Doğrula",
+  "kicadstudio.contributes.commands.taskHub.release.title": "KiCad Studio: Üretim Yayını",
+  "kicadstudio.contributes.commands.taskHub.automate.title": "KiCad Studio: Projeyi Otomatikleştir",
+  "kicadstudio.contributes.commands.taskHub.maintain.title": "KiCad Studio: Çalışma Alanını Yönet"
 }
