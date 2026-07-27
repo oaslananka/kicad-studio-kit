@@ -40,6 +40,10 @@ export {
 } from './componentSearchView';
 import type { KiCadLibraryIndexer } from '../library/libraryIndexer';
 import type { PcmService } from '../library/pcmService';
+import {
+  buildComponentSearchRecommendation,
+  buildComponentSearchViewResults
+} from './componentSearchRanking';
 
 type ComponentSearchSource = 'octopart' | 'lcsc';
 interface ComponentSearchProviderState {
@@ -667,118 +671,35 @@ export class ComponentSearchService implements vscode.WebviewViewProvider {
     entry: BomEntry,
     projectContext: ComponentSearchProjectContext
   ): ComponentSearchRecommendation | undefined {
-    const query =
-      entry.mpn ||
-      entry.lcsc ||
-      [entry.value, compactFootprint(entry.footprint)]
-        .filter(Boolean)
-        .join(' ');
-    if (!query) {
-      return undefined;
-    }
-    const reference = entry.references[0] ?? 'symbol';
-    return {
-      label: vscode.l10n.t({
-        message: 'Recommended for {reference}',
-        args: { reference },
-        comment: 'Suggested component search label for a schematic reference.'
-      }),
-      query,
-      detail: [
-        projectContext.projectName,
-        entry.value,
-        compactFootprint(entry.footprint)
-      ]
-        .filter(Boolean)
-        .join(' • ')
-    };
+    return buildComponentSearchRecommendation(entry, projectContext, {
+      recommendedFor: (reference) =>
+        vscode.l10n.t({
+          message: 'Recommended for {reference}',
+          args: { reference },
+          comment: 'Suggested component search label for a schematic reference.'
+        })
+    });
   }
 
   private toViewResults(
     results: ComponentSearchResult[],
     query: string
   ): ComponentSearchViewResult[] {
-    return results.map((result) => ({
-      result,
-      availability: formatAvailability(result),
-      footprintMatch: formatFootprintMatch(result),
-      datasheet: result.datasheetUrl ? 'Available' : 'Not provided',
-      confidence: estimateConfidence(result, query)
-    }));
-  }
-}
-
-function formatAvailability(result: ComponentSearchResult): string {
-  const totalInventory = result.offers.reduce(
-    (total, offer) => total + (offer.inventoryLevel ?? 0),
-    0
-  );
-  if (totalInventory > 0) {
-    const count = new Intl.NumberFormat(vscode.env.language || 'en').format(
-      totalInventory
-    );
-    return vscode.l10n.t({
-      message: '{count} in stock',
-      args: { count },
-      comment: 'Component availability count shown in search results.'
+    return buildComponentSearchViewResults(results, query, {
+      locale: vscode.env.language || 'en',
+      messages: {
+        inStock: (count) =>
+          vscode.l10n.t({
+            message: '{count} in stock',
+            args: { count },
+            comment: 'Component availability count shown in search results.'
+          }),
+        stockNotReported: vscode.l10n.t('Stock not reported'),
+        noAvailabilityData: vscode.l10n.t('No availability data'),
+        footprintNotReported: vscode.l10n.t('Not reported'),
+        datasheetAvailable: 'Available',
+        datasheetNotProvided: 'Not provided'
+      }
     });
   }
-  return result.offers.length
-    ? vscode.l10n.t('Stock not reported')
-    : vscode.l10n.t('No availability data');
-}
-
-function formatFootprintMatch(result: ComponentSearchResult): string {
-  const footprint = result.specs.find((spec) =>
-    /footprint|package|case/iu.test(spec.name)
-  );
-  return footprint?.value || result.category || vscode.l10n.t('Not reported');
-}
-
-function estimateConfidence(
-  result: ComponentSearchResult,
-  query: string
-): string {
-  const normalizedQuery = query.trim().toLowerCase();
-  const identifiers = [result.mpn, result.lcscPartNumber]
-    .filter(Boolean)
-    .map((value) => value!.toLowerCase());
-  if (
-    identifiers.some(
-      (identifier) =>
-        identifier === normalizedQuery ||
-        identifier.includes(normalizedQuery) ||
-        normalizedQuery.includes(identifier)
-    )
-  ) {
-    return 'High';
-  }
-  if (result.source === 'local') {
-    return 'High';
-  }
-  const searchable = [
-    result.description,
-    result.manufacturer,
-    result.category,
-    ...result.specs.map((spec) => `${spec.name} ${spec.value}`)
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-  const tokens = normalizedQuery
-    .split(/\s+/u)
-    .filter((token) => token.length > 2);
-  const matchedTokens = tokens.filter((token) => searchable.includes(token));
-  if (matchedTokens.length >= Math.max(1, Math.ceil(tokens.length / 2))) {
-    return 'Medium';
-  }
-  return 'Low';
-}
-
-function compactFootprint(footprint: string): string {
-  if (!footprint) {
-    return '';
-  }
-  const parts = footprint.split(':');
-  return parts.at(-1) ?? footprint;
 }

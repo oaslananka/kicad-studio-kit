@@ -148,6 +148,26 @@ test("#497 PCM library-table adapter uses only reviewed filesystem and catalog d
   assert.doesNotMatch(source, /from ["']vscode["']/u);
 });
 
+test("#497 Component Search ranking model uses only reviewed result-model dependencies", () => {
+  const repoRoot = path.resolve(import.meta.dirname, "..");
+  const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
+  const graph = buildTypeScriptImportGraph(sourceRoot);
+  assert.deepEqual(
+    [...(graph.get("components/componentSearchRanking.ts") ?? [])],
+    ["types.ts", "components/componentSearchView.ts"],
+  );
+
+  const source = fs.readFileSync(
+    path.join(sourceRoot, "components", "componentSearchRanking.ts"),
+    "utf8",
+  );
+  const importSpecifiers = [...source.matchAll(/from ["']([^"']+)["']/gu)].map(
+    (match) => match[1],
+  );
+  assert.deepEqual(importSpecifiers.toSorted(), ["../types", "./componentSearchView"]);
+  assert.doesNotMatch(source, /from ["'](?:node:|vscode)/u);
+});
+
 test("#497 project state store uses only reviewed project-domain dependencies", () => {
   const repoRoot = path.resolve(import.meta.dirname, "..");
   const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
@@ -289,6 +309,7 @@ test("#497 root check cannot silently drop the architecture guard", () => {
     "cli/exportCommandBuilder.ts",
     "components/componentSearch.ts",
     "components/componentSearchView.ts",
+    "components/componentSearchRanking.ts",
     "library/pcmService.ts",
     "library/pcmCatalog.ts",
     "library/pcmArchive.ts",
@@ -306,6 +327,6 @@ test("#497 root check cannot silently drop the architecture guard", () => {
       new RegExp(target.replaceAll(".", "\\."), "u"),
     );
   }
-  assert.match(architectureDoc, /154 TypeScript modules/u);
+  assert.match(architectureDoc, /155 TypeScript modules/u);
   assert.match(architectureDoc, /0 import cycles/u);
 });
