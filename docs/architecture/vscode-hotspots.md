@@ -4,7 +4,7 @@ This page records the responsibility, churn, and dependency order for the increm
 
 ## 2026-07-27 Snapshot
 
-The production graph contains 153 TypeScript modules. After the CLI, viewer, export, Component Search, PCM, and state-domain boundaries, the graph contains **0 import cycles**. The repository enforces this with `pnpm run check:vscode-architecture`.
+The production graph contains 154 TypeScript modules and **0 import cycles** after the reviewed CLI, viewer, export, Component Search, PCM, and state extractions. The repository enforces this with `pnpm run check:vscode-architecture`.
 
 Line counts use the checked-in source tree. Churn counts are the number of commits touching each file in the latest 100 commits at the snapshot date.
 
@@ -15,7 +15,7 @@ Line counts use the checked-in source tree. Churn counts are the number of commi
 |     3 | `cli/exportCommands.ts` / `cli/exportCommandBuilder.ts`                                                                                  |                 1,401 / 693 |                   4 / new | VS Code export orchestration and the extracted deterministic CLI argument builder   | **Completed in phase 3a:** pure command builder; compatibility wrapper; unit/coverage/security/package gates         |
 |     4 | `components/componentSearch.ts` / `components/componentSearchView.ts`                                                                    |                   784 / 450 |                   6 / new | provider/cache orchestration and the extracted deterministic webview renderer       | **Completed in phase 4a:** pure view contracts/HTML; byte-equivalent output; unit/a11y/package gates                 |
 |     5 | `library/pcmService.ts` / `library/pcmCatalog.ts` / `library/pcmArchive.ts` / `library/pcmPersistence.ts` / `library/pcmLibraryTable.ts` | 593 / 315 / 641 / 110 / 150 | 6 / new / new / new / new | install orchestration plus catalog, archive, state, and library-table adapters      | **Completed through phase 5d:** PCM catalog, archive, installed state, and KiCad library-table persistence extracted |
-|     6 | `state/stateStores.ts` / `state/exportStateStore.ts` / `state/projectStateStore.ts` / `state/viewerStateStore.ts` / `state/mcpStateStore.ts` | 428 / 115 / 93 / 129 / 163 | 8 / new / new / new / new | diagnostic store plus extracted export/project/viewer/MCP stores | **Completed through phase 6d:** export, project, viewer, and MCP state extracted; diagnostic state remains |
+|     6 | `state/stateStores.ts` / `state/diagnosticStateStore.ts` / `state/exportStateStore.ts` / `state/projectStateStore.ts` / `state/viewerStateStore.ts` / `state/mcpStateStore.ts` | 15 / 416 / 115 / 93 / 129 / 163 | 9 / new / new / new / new / new | compatibility exports and five domain stores | **Completed through phase 6e:** all state ownership extracted |
 |     7 | `types.ts` / `constants.ts`                                                                                                              |                   505 / 465 |                   14 / 15 | broad shared type and constant fan-in                                               | move definitions only with their owning domain phases; full typecheck and contribution-manifest gates                |
 
 `mcp/mcpClient.ts` is intentionally excluded from this order. Issue #492 owns its protocol/transport decomposition and final `2026-07-28` compatibility work.
@@ -85,6 +85,6 @@ Phase 5c reduces `library/pcmService.ts` from 798 to 730 lines without changing 
 
 ## State Store Ownership
 
-`state/projectStateStore.ts`, `viewerStateStore.ts`, `mcpStateStore.ts`, and `exportStateStore.ts` own their typed snapshots, events, cloning/serialization, lifecycle transitions, and diagnostic redaction. Direct tests cover mutation isolation, sparse/legacy state, export lifecycle isolation, redaction, and disposal.
+Five domain stores own snapshots, events, cloning, lifecycle transitions, and redaction. Direct tests cover project isolation, freshness/Problems transitions, mutation isolation, legacy state, export lifecycle, and disposal.
 
-`state/stateStores.ts` re-exports the four stores and retains diagnostic state. Phases 6a–6d reduce it from 888 to 428 lines and close retained-reference leaks.
+`state/stateStores.ts` is a 15-line compatibility export surface; phases 6a–6e removed all implementation from the former 888-line aggregator.
