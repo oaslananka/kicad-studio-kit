@@ -52,7 +52,7 @@
 - Update this plan with exact evidence.
 
 - [x] Run compatibility, protocol-schema, MCP split-docs, docs, format, and lint gates.
-- [ ] Run the full repository pre-push chain.
-- [ ] Commit with DCO sign-off and open a phase-scoped PR without auto-closing the umbrella issue.
+- [x] Run the full repository pre-push chain. Full root gate passed before branch publication; extension evidence: 970 unit, 128 ratchet, 12 security, 76 accessibility tests.
+- [x] Commit with DCO sign-off and open phase-scoped PR 577 without auto-closing the umbrella issue.
 - [ ] Merge only after all required and external checks pass.
 - [ ] Update issue progress while leaving final adapter activation and ADR acceptance open.
