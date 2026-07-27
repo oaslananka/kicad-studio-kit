@@ -128,6 +128,12 @@ jobs:
             exit 1
           fi
 
+      - name: Canary published MCP 2026 RC artifact
+        env:
+          KICAD_MCP_PRO_VERSION: ${{ steps.pypi-check.outputs.pypi_version }}
+        run: |
+          corepack pnpm run check:mcp-2026-rc-artifact -- --version "$KICAD_MCP_PRO_VERSION"
+
       # ── C. Studio compatibility checks ──────────────────────────────────
       - name: Run check:compatibility-contract (compatibility contract validation)
         run: pnpm run check:compatibility-contract
