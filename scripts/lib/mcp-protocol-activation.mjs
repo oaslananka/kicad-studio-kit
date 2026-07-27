@@ -29,10 +29,8 @@ function readStatus(source) {
 function readAdrIndexStatus(source) {
   for (const line of sourceLines(source)) {
     if (!line.startsWith("|")) continue;
-    const cells = line
-      .slice(1, line.endsWith("|") ? -1 : undefined)
-      .split("|")
-      .map((cell) => cell.trim());
+    const row = line.endsWith("|") ? line.slice(1, -1) : line.slice(1);
+    const cells = row.split("|").map((cell) => cell.trim());
     if (cells[0] === "0008") {
       return cells.at(-1) || undefined;
     }
