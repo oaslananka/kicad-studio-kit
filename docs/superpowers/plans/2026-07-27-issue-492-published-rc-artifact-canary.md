@@ -90,7 +90,7 @@
 - [x] Run `corepack pnpm run check:mcp-2026-rc-artifact -- --version 3.29.1` with `UV=/var/lib/exec-agent/.local/bin/uv` (24 tools; stateless private-cache responses).
 - [x] Run `corepack pnpm run check:compatibility-contract` and `corepack pnpm run check:protocol-schemas`.
 - [x] Run architecture, docs, format, and workflow-policy gates (160 production modules, 0 cycles).
-- [ ] Run the full repository pre-push chain.
-- [ ] Commit with DCO sign-off and open a phase-scoped PR without auto-closing issue 492.
+- [x] Run the full repository pre-push chain on implementation commit `eba5825`.
+- [x] Commit with DCO sign-off and open phase-scoped PR 578 without auto-closing issue 492.
 - [ ] Merge only after all required and external checks pass with zero open Sonar findings.
 - [ ] Update issue 492, keeping the final activation and ADR acceptance criteria open.
