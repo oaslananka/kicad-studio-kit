@@ -44,8 +44,11 @@ import {
   buildComponentSearchRecommendation,
   buildComponentSearchViewResults
 } from './componentSearchRanking';
+import {
+  searchComponentProviders,
+  type ComponentSearchSource
+} from './componentSearchProviders';
 
-type ComponentSearchSource = 'octopart' | 'lcsc';
 interface ComponentSearchProviderState {
   providers: ComponentSearchProviderChip[];
   warnings: string[];
@@ -290,32 +293,23 @@ export class ComponentSearchService implements vscode.WebviewViewProvider {
     query: string,
     sources: ComponentSearchSource[] = ['octopart', 'lcsc']
   ): Promise<ComponentSearchResult[]> {
-    const results: ComponentSearchResult[] = [];
-    const selectedSources = new Set(sources);
-
-    if (selectedSources.has('octopart')) {
-      results.push(...(await this.searchWithCache('octopart', query)));
-    }
-    if (selectedSources.has('lcsc')) {
-      results.push(...(await this.searchWithCache('lcsc', query)));
-    }
-    if (
-      !results.length &&
-      selectedSources.has('octopart') &&
-      vscode.workspace
+    return searchComponentProviders(query, sources, {
+      octopart: this.octopart,
+      lcsc: this.lcsc,
+      cache: this.cache,
+      buildCacheKey: (value, source) =>
+        ComponentSearchCache.buildKey(value, source),
+      lcscEnabled: vscode.workspace
         .getConfiguration()
-        .get<boolean>(SETTINGS.enableLCSC, true)
-    ) {
-      results.push(...(await this.searchWithCache('lcsc', query)));
-    }
-    if (!results.length) {
-      results.push(...(await this.searchLocalLibrary(query)));
-    }
-    if (!results.length) {
-      results.push(...(await this.searchPcmPackages(query)));
-    }
-
-    return results;
+        .get<boolean>(SETTINGS.enableLCSC, true),
+      onOctopartFailure: (message) => {
+        void vscode.window.showWarningMessage(
+          `Octopart/Nexar search failed. Falling back to LCSC when available. ${message}`
+        );
+      },
+      searchLocal: (value) => this.searchLocalLibrary(value),
+      searchPcm: (value) => this.searchPcmPackages(value)
+    });
   }
 
   private async showDetails(result: ComponentSearchResult): Promise<void> {
@@ -358,35 +352,6 @@ export class ComponentSearchService implements vscode.WebviewViewProvider {
       nonce,
       cspSource
     });
-  }
-
-  private async searchWithCache(
-    source: ComponentSearchSource,
-    query: string
-  ): Promise<ComponentSearchResult[]> {
-    const key = ComponentSearchCache.buildKey(query, source);
-    const cached = await this.cache.get(key);
-    if (cached) {
-      return cached;
-    }
-
-    try {
-      const results =
-        source === 'octopart'
-          ? await this.octopart.search(query)
-          : await this.lcsc.search(query);
-      await this.cache.set(key, results, source, query);
-      return results;
-    } catch (error) {
-      if (source === 'octopart') {
-        void vscode.window.showWarningMessage(
-          `Octopart/Nexar search failed. Falling back to LCSC when available. ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
-      }
-      return [];
-    }
   }
 
   private async searchLocalLibrary(

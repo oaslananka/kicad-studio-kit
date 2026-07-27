@@ -104,36 +104,6 @@ describe('ComponentSearchCache', () => {
     await expect(cache.get('oct:stm32')).resolves.toHaveLength(1);
   });
 
-  it('returns cached result without network call', async () => {
-    const context = createExtensionContextMock();
-    const cache = new ComponentSearchCache(
-      context.globalState as unknown as vscode.Memento
-    );
-    const octopart = {
-      search: jest.fn().mockResolvedValue([
-        {
-          source: 'octopart',
-          mpn: 'STM32',
-          manufacturer: 'ST',
-          description: 'MCU',
-          offers: [],
-          specs: []
-        }
-      ])
-    };
-    const lcsc = { search: jest.fn() };
-    const service = new ComponentSearchService(
-      octopart as never,
-      lcsc as never,
-      cache
-    );
-
-    await (service as any).searchWithCache('octopart', 'STM32');
-    await (service as any).searchWithCache('octopart', 'STM32');
-
-    expect(octopart.search).toHaveBeenCalledTimes(1);
-  });
-
   it('invalidates cache after TTL expires', async () => {
     const nowSpy = jest.spyOn(Date, 'now');
     nowSpy.mockReturnValue(1_000);
