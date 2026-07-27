@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { SETTINGS } from '../constants';
 import type { KiCadCliDetector } from '../cli/kicadCliDetector';
 import type { KiCadCliRunner } from '../cli/kicadCliRunner';
-import type { ComponentSearchResult } from '../types';
+import type { ComponentSearchResult } from '../components/componentSearchTypes';
 import { normalizeUserPath } from '../utils/pathUtils';
 import type { Logger } from '../utils/logger';
 import type { KiCadLibraryIndexer } from './libraryIndexer';

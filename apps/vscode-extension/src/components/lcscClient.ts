@@ -1,4 +1,4 @@
-import type { ComponentSearchResult } from '../types';
+import type { ComponentSearchResult } from './componentSearchTypes';
 import { fetchWithTimeout } from './fetchWithTimeout';
 
 export class LcscClient {

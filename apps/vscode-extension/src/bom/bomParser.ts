@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { SETTINGS } from '../constants';
-import type { BomEntry } from '../types';
+import type { BomEntry } from './bomTypes';
 import { SExpressionParser, type SNode } from '../language/sExpressionParser';
 
 interface RawBomRow {

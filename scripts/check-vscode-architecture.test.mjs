@@ -148,13 +148,64 @@ test("#497 PCM library-table adapter uses only reviewed filesystem and catalog d
   assert.doesNotMatch(source, /from ["']vscode["']/u);
 });
 
+test("#497 BOM and Component Search type modules are dependency-free", () => {
+  const repoRoot = path.resolve(import.meta.dirname, "..");
+  const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
+  const graph = buildTypeScriptImportGraph(sourceRoot);
+  for (const target of [
+    "bom/bomTypes.ts",
+    "components/componentSearchTypes.ts",
+  ]) {
+    assert.deepEqual([...(graph.get(target) ?? [])], []);
+    const source = fs.readFileSync(path.join(sourceRoot, target), "utf8");
+    assert.doesNotMatch(source, /import/u);
+    assert.doesNotMatch(source, /from ["'](?:node:|vscode)/u);
+  }
+});
+
+test("#497 domain owners do not regress to broad moved-type imports", () => {
+  const repoRoot = path.resolve(import.meta.dirname, "..");
+  const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
+  const targets = [
+    "bom/bomExporter.ts",
+    "bom/bomParser.ts",
+    "bom/bomRisk.ts",
+    "bom/bomWebviewManager.ts",
+    "components/componentSearch.ts",
+    "components/componentSearchCache.ts",
+    "components/componentSearchProviders.ts",
+    "components/componentSearchRanking.ts",
+    "components/componentSearchView.ts",
+    "components/lcscClient.ts",
+    "components/octopartClient.ts",
+    "library/pcmService.ts",
+  ];
+  for (const target of targets) {
+    const source = fs.readFileSync(path.join(sourceRoot, target), "utf8");
+    assert.doesNotMatch(source, /from ["']\.\.\/types["']/u);
+  }
+
+  const compatibility = fs.readFileSync(
+    path.join(sourceRoot, "types.ts"),
+    "utf8",
+  );
+  assert.match(
+    compatibility,
+    /export type \{[^}]+\} from ["']\.\/bom\/bomTypes["']/su,
+  );
+  assert.match(
+    compatibility,
+    /export type \{[^}]+\} from ["']\.\/components\/componentSearchTypes["']/su,
+  );
+});
+
 test("#497 Component Search provider coordinator uses only reviewed provider-model dependencies", () => {
   const repoRoot = path.resolve(import.meta.dirname, "..");
   const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
   const graph = buildTypeScriptImportGraph(sourceRoot);
   assert.deepEqual(
     [...(graph.get("components/componentSearchProviders.ts") ?? [])],
-    ["types.ts"],
+    ["components/componentSearchTypes.ts"],
   );
 
   const source = fs.readFileSync(
@@ -164,7 +215,7 @@ test("#497 Component Search provider coordinator uses only reviewed provider-mod
   const importSpecifiers = [...source.matchAll(/from ["']([^"']+)["']/gu)].map(
     (match) => match[1],
   );
-  assert.deepEqual(importSpecifiers.toSorted(), ["../types"]);
+  assert.deepEqual(importSpecifiers.toSorted(), ["./componentSearchTypes"]);
   assert.doesNotMatch(source, /from ["'](?:node:|vscode)/u);
 });
 
@@ -174,7 +225,11 @@ test("#497 Component Search ranking model uses only reviewed result-model depend
   const graph = buildTypeScriptImportGraph(sourceRoot);
   assert.deepEqual(
     [...(graph.get("components/componentSearchRanking.ts") ?? [])],
-    ["types.ts", "components/componentSearchView.ts"],
+    [
+      "bom/bomTypes.ts",
+      "components/componentSearchTypes.ts",
+      "components/componentSearchView.ts",
+    ],
   );
 
   const source = fs.readFileSync(
@@ -184,7 +239,11 @@ test("#497 Component Search ranking model uses only reviewed result-model depend
   const importSpecifiers = [...source.matchAll(/from ["']([^"']+)["']/gu)].map(
     (match) => match[1],
   );
-  assert.deepEqual(importSpecifiers.toSorted(), ["../types", "./componentSearchView"]);
+  assert.deepEqual(importSpecifiers.toSorted(), [
+    "../bom/bomTypes",
+    "./componentSearchTypes",
+    "./componentSearchView",
+  ]);
   assert.doesNotMatch(source, /from ["'](?:node:|vscode)/u);
 });
 
@@ -348,6 +407,7 @@ test("#497 root check cannot silently drop the architecture guard", () => {
       new RegExp(target.replaceAll(".", "\\."), "u"),
     );
   }
-  assert.match(architectureDoc, /156 TypeScript modules/u);
+  assert.match(architectureDoc, /^---\nsearch: false\n---/u);
+  assert.match(architectureDoc, /158 TypeScript modules/u);
   assert.match(architectureDoc, /0 import cycles/u);
 });

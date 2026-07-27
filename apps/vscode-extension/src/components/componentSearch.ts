@@ -6,7 +6,8 @@ import {
   SEARCH_DEBOUNCE_MS,
   SETTINGS
 } from '../constants';
-import type { BomEntry, ComponentSearchResult } from '../types';
+import type { BomEntry } from '../bom/bomTypes';
+import type { ComponentSearchResult } from './componentSearchTypes';
 import { BomParser } from '../bom/bomParser';
 import { SExpressionParser } from '../language/sExpressionParser';
 import {
