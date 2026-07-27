@@ -4,7 +4,7 @@ This page records the responsibility, churn, and dependency order for the increm
 
 ## 2026-07-27 Snapshot
 
-The production graph contains 151 TypeScript modules. After the CLI, viewer, export, Component Search, PCM, project-state, and viewer-state boundaries, the graph contains **0 import cycles**. The repository enforces this with `pnpm run check:vscode-architecture`.
+The production graph contains 152 TypeScript modules. After the CLI, viewer, export, Component Search, PCM, project-state, viewer-state, and MCP-state boundaries, the graph contains **0 import cycles**. The repository enforces this with `pnpm run check:vscode-architecture`.
 
 Line counts use the checked-in source tree. Churn counts are the number of commits touching each file in the latest 100 commits at the snapshot date.
 
@@ -15,7 +15,7 @@ Line counts use the checked-in source tree. Churn counts are the number of commi
 |     3 | `cli/exportCommands.ts` / `cli/exportCommandBuilder.ts`                                                                                  |                 1,401 / 693 |                   4 / new | VS Code export orchestration and the extracted deterministic CLI argument builder   | **Completed in phase 3a:** pure command builder; compatibility wrapper; unit/coverage/security/package gates         |
 |     4 | `components/componentSearch.ts` / `components/componentSearchView.ts`                                                                    |                   784 / 450 |                   6 / new | provider/cache orchestration and the extracted deterministic webview renderer       | **Completed in phase 4a:** pure view contracts/HTML; byte-equivalent output; unit/a11y/package gates                 |
 |     5 | `library/pcmService.ts` / `library/pcmCatalog.ts` / `library/pcmArchive.ts` / `library/pcmPersistence.ts` / `library/pcmLibraryTable.ts` | 593 / 315 / 641 / 110 / 150 | 6 / new / new / new / new | install orchestration plus catalog, archive, state, and library-table adapters      | **Completed through phase 5d:** PCM catalog, archive, installed state, and KiCad library-table persistence extracted |
-|     6 | `state/stateStores.ts` / `state/projectStateStore.ts` / `state/viewerStateStore.ts`                                                      |              684 / 93 / 129 |             7 / new / new | diagnostic, MCP, and export stores plus extracted project/viewer stores             | **Completed through phase 6b:** project and viewer state extracted; remaining stores stay phase-scoped               |
+|     6 | `state/stateStores.ts` / `state/projectStateStore.ts` / `state/viewerStateStore.ts` / `state/mcpStateStore.ts`                           |        537 / 93 / 129 / 163 |       7 / new / new / new | diagnostic and export stores plus extracted project/viewer/MCP stores               | **Completed through phase 6c:** project, viewer, and MCP state extracted; remaining stores stay phase-scoped         |
 |     7 | `types.ts` / `constants.ts`                                                                                                              |                   505 / 465 |                   14 / 15 | broad shared type and constant fan-in                                               | move definitions only with their owning domain phases; full typecheck and contribution-manifest gates                |
 
 `mcp/mcpClient.ts` is intentionally excluded from this order. Issue #492 owns its protocol/transport decomposition and final `2026-07-28` compatibility work.
@@ -83,8 +83,8 @@ Phase 5c reduces `library/pcmService.ts` from 798 to 730 lines without changing 
 
 `library/pcmService.ts` continues to own repository fetching, install-path selection, injected extractor support, CLI-backed installation, in-memory package state, config-directory selection, reindexing, and user-visible change events. Phase 5d reduces the service from 730 to 593 lines without changing install, update, or uninstall behavior.
 
-## Project and Viewer State Store Ownership
+## Project, Viewer, and MCP State Store Ownership
 
-`state/projectStateStore.ts` owns project selection, lookup, immutable snapshots, active-resource serialization, and events. `state/viewerStateStore.ts` owns viewer transitions, immutable viewer/project snapshots, events, and error redaction. Direct tests cover mutation isolation, lookup, reload state, redaction, and disposal.
+`state/projectStateStore.ts` owns project selection, lookup, snapshots, active-resource serialization, and events. `state/viewerStateStore.ts` owns viewer transitions, snapshots, events, and error redaction. `state/mcpStateStore.ts` owns connection snapshots, deep-cloned server metadata, legacy mode defaults, events, and diagnostic redaction. Direct tests cover mutation isolation, sparse/legacy state, redaction, and disposal.
 
-`state/stateStores.ts` re-exports both stores and retains diagnostic, MCP, and export state. Phases 6a–6b reduce it from 888 to 684 lines and fix retained project-context mutation.
+`state/stateStores.ts` re-exports all three stores and retains diagnostic and export state. Phases 6a–6c reduce it from 888 to 537 lines and close retained-reference leaks.
