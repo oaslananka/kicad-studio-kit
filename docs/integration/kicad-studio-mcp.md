@@ -46,19 +46,23 @@ Protocol changes must update both product tests, compatibility metadata, release
 
 The extension keeps protocol-version behavior separate from HTTP execution:
 
-- `apps/vscode-extension/src/mcp/protocol/` owns discovery lifecycle,
-  protocol-specific request headers, response metadata such as the current
-  session identifier, negotiated-version validation, and the strict registry of
-  production-supported protocol adapters.
+- `apps/vscode-extension/src/mcp/protocol/` owns the versioned adapter registry
+  and the lifecycle coordinator for request IDs, coalesced discovery,
+  protocol-specific headers, response metadata, session reuse, and negotiated
+  version validation.
+- `apps/vscode-extension/src/mcp/adapters/vscodeProtocolSessionStore.ts` hides
+  the current VS Code Memento session key behind a narrow store contract. The
+  lifecycle reads or writes it only for session-based adapters; stateless
+  adapters never receive or persist legacy session state.
 - `apps/vscode-extension/src/mcp/transport/` owns JSON-RPC serialization,
   Streamable HTTP execution, timeout and retry policy, JSON/SSE response
   parsing, the opt-in legacy `/sse` fallback, and traffic-log evidence. The
   transport returns raw response headers and must not interpret protocol
   sessions.
-- `apps/vscode-extension/src/mcp/mcpClient.ts` owns VS Code state, persisted
-  extension state, server compatibility cards, diagnostics, and domain result
-  normalization. It selects the adapter named by `MCP_PROTOCOL_VERSION` and
-  does not embed version-specific lifecycle behavior.
+- `apps/vscode-extension/src/mcp/mcpClient.ts` owns endpoint configuration,
+  VS Code connection state, server compatibility cards, diagnostics, and domain
+  result normalization. It selects the adapter named by
+  `MCP_PROTOCOL_VERSION` and delegates request/session lifecycle behavior.
 
 Only `2025-11-25` is production-selectable. The
 `test/fixtures/mcp-protocol/2026-07-28-draft.json` envelope is an RC planning
