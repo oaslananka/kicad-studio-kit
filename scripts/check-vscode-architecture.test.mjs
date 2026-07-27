@@ -172,6 +172,26 @@ test("#497 project state store uses only reviewed project-domain dependencies", 
   assert.doesNotMatch(source, /from ["']node:/u);
 });
 
+test("#497 export state store uses only reviewed export-domain dependencies", () => {
+  const repoRoot = path.resolve(import.meta.dirname, "..");
+  const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
+  const graph = buildTypeScriptImportGraph(sourceRoot);
+  assert.deepEqual(
+    [...(graph.get("state/exportStateStore.ts") ?? [])],
+    ["utils/secrets.ts"],
+  );
+
+  const source = fs.readFileSync(
+    path.join(sourceRoot, "state", "exportStateStore.ts"),
+    "utf8",
+  );
+  const importSpecifiers = [...source.matchAll(/from ["']([^"']+)["']/gu)].map(
+    (match) => match[1],
+  );
+  assert.deepEqual(importSpecifiers.toSorted(), ["../utils/secrets", "vscode"]);
+  assert.doesNotMatch(source, /from ["']node:/u);
+});
+
 test("#497 MCP state store uses only reviewed MCP-domain dependencies", () => {
   const repoRoot = path.resolve(import.meta.dirname, "..");
   const sourceRoot = path.join(repoRoot, "apps", "vscode-extension", "src");
@@ -255,6 +275,7 @@ test("#497 root check cannot silently drop the architecture guard", () => {
     "library/pcmPersistence.ts",
     "library/pcmLibraryTable.ts",
     "state/stateStores.ts",
+    "state/exportStateStore.ts",
     "state/projectStateStore.ts",
     "state/mcpStateStore.ts",
     "state/viewerStateStore.ts",
@@ -264,6 +285,6 @@ test("#497 root check cannot silently drop the architecture guard", () => {
       new RegExp(target.replaceAll(".", "\\."), "u"),
     );
   }
-  assert.match(architectureDoc, /152 TypeScript modules/u);
+  assert.match(architectureDoc, /153 TypeScript modules/u);
   assert.match(architectureDoc, /0 import cycles/u);
 });
