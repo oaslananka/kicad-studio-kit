@@ -102,6 +102,14 @@ async function openTaskGroup(
   }
 }
 
+function getTaskGroup(id: TaskGroup['id']): TaskGroup {
+  const group = TASK_GROUPS.find((candidate) => candidate.id === id);
+  if (!group) {
+    throw new Error(`Task group is not defined: ${id}`);
+  }
+  return group;
+}
+
 export function registerTaskHubCommands(
   getContext: TaskHubContextProvider
 ): vscode.Disposable[] {
@@ -109,10 +117,20 @@ export function registerTaskHubCommands(
     vscode.commands.registerCommand(COMMANDS.openTaskHub, () =>
       openTaskHub(getContext)
     ),
-    ...TASK_GROUPS.map((group) =>
-      vscode.commands.registerCommand(group.command, () =>
-        openTaskGroup(group, getContext)
-      )
+    vscode.commands.registerCommand(COMMANDS.openReviewTasks, () =>
+      openTaskGroup(getTaskGroup('review'), getContext)
+    ),
+    vscode.commands.registerCommand(COMMANDS.openValidateTasks, () =>
+      openTaskGroup(getTaskGroup('validate'), getContext)
+    ),
+    vscode.commands.registerCommand(COMMANDS.openReleaseTasks, () =>
+      openTaskGroup(getTaskGroup('release'), getContext)
+    ),
+    vscode.commands.registerCommand(COMMANDS.openAutomateTasks, () =>
+      openTaskGroup(getTaskGroup('automate'), getContext)
+    ),
+    vscode.commands.registerCommand(COMMANDS.openMaintainTasks, () =>
+      openTaskGroup(getTaskGroup('maintain'), getContext)
     )
   ];
 }
