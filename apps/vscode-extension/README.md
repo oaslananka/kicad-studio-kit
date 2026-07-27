@@ -35,6 +35,18 @@ KiCad Studio turns VS Code into a KiCad-aware engineering cockpit: project navig
 5. Run **KiCad: Run DRC** or **KiCad: Run ERC** to populate Problems and validation views.
 6. Optional: start `kicad-mcp-pro` and connect your AI client with the generated `.vscode/mcp.json` schema.
 
+## Task-Oriented Workflows
+
+Open **KiCad Studio: Open Task Hub** from the Command Palette or use the task button in the **KiCad Project** view title. Existing command IDs remain available, while the primary workflows are grouped around the engineering outcome you need.
+
+| Task                | Top-level command                     | Use it for                                                                                 |
+| ------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Review              | **KiCad Studio: Review Project**      | Inspect project status, schematics, PCBs, variants, and design diffs                       |
+| Validate            | **KiCad Studio: Validate Project**    | Run DRC, ERC, quality gates, AI-assisted findings, and board-readiness checks              |
+| Fabrication Release | **KiCad Studio: Fabrication Release** | Prepare reviewed Gerbers, drill files, BOMs, jobsets, and release packages                 |
+| Automate            | **KiCad Studio: Automate Project**    | Configure MCP, AI chat, design intent, profiles, and fix queues                            |
+| Maintain            | **KiCad Studio: Maintain Workspace**  | Manage KiCad CLI detection, settings, libraries, packages, credentials, logs, and feedback |
+
 ## Core Workflow
 
 ![Open a project, inspect the PCB, and run DRC](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/marketplace/core-workflow.gif)

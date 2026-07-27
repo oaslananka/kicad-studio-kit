@@ -56,6 +56,18 @@ project** at a time:
   diagnostics, and the live MCP context. If the selected project is removed, the
   extension falls back to another available project automatically.
 
+## First 10 Minutes: Task-Oriented Workflow
+
+Open **KiCad Studio: Open Task Hub** from the Command Palette or select the task button in the **KiCad Project** view title. The same five entry points remain available directly in the Command Palette when their workspace context is relevant.
+
+1. **Review** — run **KiCad Studio: Review Project** to inspect the active project, open viewers, compare variants, or generate a design diff.
+2. **Validate** — run **KiCad Studio: Validate Project** to execute DRC, ERC, quality gates, or board-readiness checks.
+3. **Fabrication Release** — run **KiCad Studio: Fabrication Release** after review and validation to prepare manufacturing outputs.
+4. **Automate** — run **KiCad Studio: Automate Project** to configure optional MCP and AI-assisted workflows.
+5. **Maintain** — run **KiCad Studio: Maintain Workspace** for CLI detection, settings, libraries, credentials, logs, and support.
+
+The task hubs delegate to the existing commands, so scripts, keybindings, and documented command IDs remain compatible.
+
 ---
 
 ## 4. View a Schematic
