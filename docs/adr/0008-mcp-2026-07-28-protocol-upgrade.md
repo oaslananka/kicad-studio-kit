@@ -1,10 +1,10 @@
 # ADR 0008: MCP 2026-07-28 Protocol Upgrade Plan
 
-Status: Draft
+Status: Proposed
 
 Date: 2026-05-30
 
-Last reviewed: 2026-07-20
+Last reviewed: 2026-07-27
 
 ## Context
 
@@ -117,6 +117,21 @@ of the following are true:
 
 A draft fixture, planning document, or unmerged adapter boundary is not a
 compatibility claim.
+
+### Machine-enforced activation record
+
+The `mcp.activation` record in `compatibility.yaml` is the fail-closed release
+control for this decision. While its state is `blocked`, the active protocol must
+remain different from the target, `nextProtocolVersion` must identify the target,
+the production adapter registry must not select the target, and ADR 0008 must
+remain `Proposed`.
+
+The state may change to `active` only when the record identifies the official
+stable specification, a stable Python SDK, stable published protocol schemas, a
+stable KiCad MCP Pro artifact advertising the target protocol, the checked-in
+stateless extension adapter, published-artifact real-pair evidence, and this ADR
+as `Accepted`. Prerelease, RC, draft, source-checkout, or missing-file evidence
+fails the compatibility contract.
 
 ## Phase 0: Preparation while 2025-11-25 remains active
 
