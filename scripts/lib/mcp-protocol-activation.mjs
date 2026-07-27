@@ -1,18 +1,43 @@
 import fs from "node:fs";
 import path from "node:path";
 
+const ACTIVATION_STATES = new Set(["blocked", "active"]);
+const STATUS_PREFIX = "Status:";
+const REGISTRY_NAME = "SUPPORTED_MCP_PROTOCOL_VERSIONS";
+const REGISTRY_PATH =
+  "apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts";
+
 function isStableSemver(value) {
   return typeof value === "string" && /^\d+\.\d+\.\d+$/u.test(value);
 }
 
+function sourceLines(source) {
+  if (typeof source !== "string") return [];
+  return source
+    .split("\n")
+    .map((line) => (line.endsWith("\r") ? line.slice(0, -1) : line));
+}
+
 function readStatus(source) {
-  return source?.match(/^Status:\s*([^\r\n]+)$/mu)?.[1]?.trim();
+  const line = sourceLines(source).find((candidate) =>
+    candidate.startsWith(STATUS_PREFIX),
+  );
+  const status = line?.slice(STATUS_PREFIX.length).trim();
+  return status || undefined;
 }
 
 function readAdrIndexStatus(source) {
-  return source
-    ?.match(/^\|\s*0008\s*\|[^\r\n]*\|\s*([^|]+?)\s*\|$/mu)?.[1]
-    ?.trim();
+  for (const line of sourceLines(source)) {
+    if (!line.startsWith("|")) continue;
+    const cells = line
+      .slice(1, line.endsWith("|") ? -1 : undefined)
+      .split("|")
+      .map((cell) => cell.trim());
+    if (cells[0] === "0008") {
+      return cells.at(-1) || undefined;
+    }
+  }
+  return undefined;
 }
 
 function resolveRepositoryPath(errors, repoRoot, value, label, required) {
@@ -42,13 +67,12 @@ function resolveRepositoryPath(errors, repoRoot, value, label, required) {
 
 function registrySupportsTarget(source, target) {
   if (typeof source !== "string" || typeof target !== "string") return false;
-  const body = source.match(
-    /SUPPORTED_MCP_PROTOCOL_VERSIONS[\s\S]*?=\s*\[([\s\S]*?)\]/u,
-  )?.[1];
-  if (!body) return false;
-  return [...body.matchAll(/["']([^"']+)["']/gu)].some(
-    (match) => match[1] === target,
-  );
+  const declaration = source.indexOf(REGISTRY_NAME);
+  if (declaration < 0) return false;
+  const openingBracket = source.indexOf("[", declaration);
+  const closingBracket = source.indexOf("]", openingBracket);
+  if (openingBracket < 0 || closingBracket < 0) return false;
+  return source.slice(openingBracket + 1, closingBracket).includes(target);
 }
 
 function validatePublishedArtifact(
@@ -127,23 +151,7 @@ function validateFinalSpecification(
   }
 }
 
-export function validateMcpProtocolActivation({
-  compatibility,
-  repoRoot,
-  registrySource = "",
-  adrSource,
-  adrIndexSource,
-} = {}) {
-  const errors = [];
-  const root = repoRoot ? path.resolve(repoRoot) : process.cwd();
-  const mcp = compatibility?.mcp;
-  const activation = mcp?.activation;
-  if (!mcp || !activation) {
-    return [
-      "compatibility.yaml mcp.activation must define the final protocol activation gate",
-    ];
-  }
-
+function validateActivationHeader(errors, activation, root) {
   const target = activation.targetProtocolVersion;
   if (typeof target !== "string" || !target) {
     errors.push("mcp.activation.targetProtocolVersion is required");
@@ -160,104 +168,131 @@ export function validateMcpProtocolActivation({
     "mcp.activation.evidenceNote",
     true,
   );
-
-  const state = activation.state;
-  if (state !== "blocked" && state !== "active") {
+  if (!ACTIVATION_STATES.has(activation.state)) {
     errors.push('mcp.activation.state must be "blocked" or "active"');
   }
-  const active = state === "active";
+  return target;
+}
 
-  const adrPath = activation.adr?.path;
-  const resolvedAdrPath = resolveRepositoryPath(
+function resolveAdrStatus(errors, activation, root, adrSource, adrIndexSource) {
+  const adrPath = resolveRepositoryPath(
     errors,
     root,
-    adrPath,
+    activation.adr?.path,
     "mcp.activation.adr.path",
     true,
   );
   const resolvedAdrSource =
-    adrSource ??
-    (resolvedAdrPath ? fs.readFileSync(resolvedAdrPath, "utf8") : "");
+    adrSource ?? (adrPath ? fs.readFileSync(adrPath, "utf8") : "");
   const indexPath = path.join(root, "docs/adr/README.md");
-  const resolvedAdrIndexSource =
+  const resolvedIndexSource =
     adrIndexSource ??
     (fs.existsSync(indexPath) ? fs.readFileSync(indexPath, "utf8") : "");
-  const declaredAdrStatus = activation.adr?.status;
-  const fileAdrStatus = readStatus(resolvedAdrSource);
-  const indexAdrStatus = readAdrIndexStatus(resolvedAdrIndexSource);
-  if (declaredAdrStatus !== fileAdrStatus) {
-    errors.push(
-      `ADR 0008 file status must match mcp.activation.adr.status (${String(declaredAdrStatus)})`,
-    );
-  }
-  if (declaredAdrStatus !== indexAdrStatus) {
-    errors.push(
-      `ADR 0008 index status must match mcp.activation.adr.status (${String(declaredAdrStatus)})`,
-    );
-  }
+  const declaredStatus = activation.adr?.status;
 
-  const registryPath = path.join(
+  if (declaredStatus !== readStatus(resolvedAdrSource)) {
+    errors.push(
+      `ADR 0008 file status must match mcp.activation.adr.status (${String(declaredStatus)})`,
+    );
+  }
+  if (declaredStatus !== readAdrIndexStatus(resolvedIndexSource)) {
+    errors.push(
+      `ADR 0008 index status must match mcp.activation.adr.status (${String(declaredStatus)})`,
+    );
+  }
+  return declaredStatus;
+}
+
+function resolveRegistrySource(root, registrySource) {
+  if (registrySource) return registrySource;
+  const registryPath = path.join(root, REGISTRY_PATH);
+  return fs.existsSync(registryPath)
+    ? fs.readFileSync(registryPath, "utf8")
+    : "";
+}
+
+function validateBlockedState(errors, context) {
+  const { mcp, target, declaredAdrStatus, supportsTarget } = context;
+  if (mcp.protocolVersion === target) {
+    errors.push(
+      "mcp.protocolVersion cannot select the target while mcp.activation.state is blocked",
+    );
+  }
+  if (mcp.nextProtocolVersion !== target) {
+    errors.push(
+      "mcp.nextProtocolVersion must match the blocked activation target",
+    );
+  }
+  if (declaredAdrStatus !== "Proposed") {
+    errors.push("ADR 0008 must remain Proposed while activation is blocked");
+  }
+  if (supportsTarget) {
+    errors.push(
+      "blocked MCP target must not appear in the production supported-adapter registry",
+    );
+  }
+}
+
+function validateActiveState(errors, context) {
+  const { mcp, target, declaredAdrStatus, supportsTarget } = context;
+  if (mcp.protocolVersion !== target) {
+    errors.push("active MCP activation target must equal mcp.protocolVersion");
+  }
+  if (mcp.nextProtocolVersion !== undefined) {
+    errors.push(
+      "mcp.nextProtocolVersion must be removed when the target protocol is active",
+    );
+  }
+  if (declaredAdrStatus !== "Accepted") {
+    errors.push("ADR 0008 must be Accepted when the target protocol is active");
+  }
+  if (!supportsTarget) {
+    errors.push(
+      "production supported-adapter registry must select the active target",
+    );
+  }
+}
+
+function validateExtensionAdapter(errors, activation, root, target, required) {
+  const adapterPath = resolveRepositoryPath(
+    errors,
     root,
-    "apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts",
+    activation.extensionAdapter?.path,
+    "mcp.activation.extensionAdapter.path",
+    required,
   );
-  const resolvedRegistrySource =
-    registrySource ||
-    (fs.existsSync(registryPath) ? fs.readFileSync(registryPath, "utf8") : "");
-  const supportsTarget = registrySupportsTarget(resolvedRegistrySource, target);
-  if (state === "blocked") {
-    if (mcp.protocolVersion === target) {
-      errors.push(
-        "mcp.protocolVersion cannot select the target while mcp.activation.state is blocked",
-      );
-    }
-    if (mcp.nextProtocolVersion !== target) {
-      errors.push(
-        "mcp.nextProtocolVersion must match the blocked activation target",
-      );
-    }
-    if (declaredAdrStatus !== "Proposed") {
-      errors.push("ADR 0008 must remain Proposed while activation is blocked");
-    }
-    if (supportsTarget) {
-      errors.push(
-        "blocked MCP target must not appear in the production supported-adapter registry",
-      );
-    }
-  } else if (state === "active") {
-    if (mcp.protocolVersion !== target) {
-      errors.push(
-        "active MCP activation target must equal mcp.protocolVersion",
-      );
-    }
-    if (mcp.nextProtocolVersion !== undefined) {
-      errors.push(
-        "mcp.nextProtocolVersion must be removed when the target protocol is active",
-      );
-    }
-    if (declaredAdrStatus !== "Accepted") {
-      errors.push(
-        "ADR 0008 must be Accepted when the target protocol is active",
-      );
-    }
-    if (!supportsTarget) {
-      errors.push(
-        "production supported-adapter registry must select the active target",
-      );
-    }
-  }
+  if (!adapterPath) return;
 
+  const adapterSource = fs.readFileSync(adapterPath, "utf8");
+  if (
+    !adapterSource.includes(target) ||
+    !adapterSource.includes("stateless-discovery")
+  ) {
+    errors.push(
+      "mcp.activation.extensionAdapter must implement the target stateless lifecycle",
+    );
+  }
+}
+
+function validateActivationEvidence(
+  errors,
+  activation,
+  root,
+  target,
+  required,
+) {
   validateFinalSpecification(
     errors,
     activation.finalSpecification,
     target,
-    active,
+    required,
   );
   validatePublishedArtifact(
     errors,
     activation.pythonSdk,
     { package: "mcp", sourcePrefix: "https://pypi.org/project/mcp/" },
     "mcp.activation.pythonSdk",
-    active,
+    required,
   );
   validatePublishedArtifact(
     errors,
@@ -268,7 +303,7 @@ export function validateMcpProtocolActivation({
         "https://www.npmjs.com/package/@oaslananka/kicad-protocol-schemas",
     },
     "mcp.activation.protocolSchemas",
-    active,
+    required,
   );
   validatePublishedArtifact(
     errors,
@@ -278,7 +313,7 @@ export function validateMcpProtocolActivation({
       sourcePrefix: "https://pypi.org/project/kicad-mcp-pro/",
     },
     "mcp.activation.serverArtifact",
-    active,
+    required,
   );
   if (
     activation.serverArtifact &&
@@ -288,33 +323,58 @@ export function validateMcpProtocolActivation({
       "mcp.activation.serverArtifact.protocolVersion must match the target",
     );
   }
-
-  const adapterPath = resolveRepositoryPath(
-    errors,
-    root,
-    activation.extensionAdapter?.path,
-    "mcp.activation.extensionAdapter.path",
-    active,
-  );
-  if (adapterPath) {
-    const adapterSource = fs.readFileSync(adapterPath, "utf8");
-    if (
-      !adapterSource.includes(target) ||
-      !adapterSource.includes("stateless-discovery")
-    ) {
-      errors.push(
-        "mcp.activation.extensionAdapter must implement the target stateless lifecycle",
-      );
-    }
-  }
-
+  validateExtensionAdapter(errors, activation, root, target, required);
   resolveRepositoryPath(
     errors,
     root,
     activation.realPair?.evidence,
     "mcp.activation.realPair.evidence",
-    active,
+    required,
   );
+}
 
+export function validateMcpProtocolActivation({
+  compatibility,
+  repoRoot,
+  registrySource = "",
+  adrSource,
+  adrIndexSource,
+} = {}) {
+  const mcp = compatibility?.mcp;
+  const activation = mcp?.activation;
+  if (!mcp || !activation) {
+    return [
+      "compatibility.yaml mcp.activation must define the final protocol activation gate",
+    ];
+  }
+
+  const errors = [];
+  const root = repoRoot ? path.resolve(repoRoot) : process.cwd();
+  const target = validateActivationHeader(errors, activation, root);
+  const declaredAdrStatus = resolveAdrStatus(
+    errors,
+    activation,
+    root,
+    adrSource,
+    adrIndexSource,
+  );
+  const supportsTarget = registrySupportsTarget(
+    resolveRegistrySource(root, registrySource),
+    target,
+  );
+  const stateContext = { mcp, target, declaredAdrStatus, supportsTarget };
+
+  if (activation.state === "blocked") {
+    validateBlockedState(errors, stateContext);
+  } else if (activation.state === "active") {
+    validateActiveState(errors, stateContext);
+  }
+  validateActivationEvidence(
+    errors,
+    activation,
+    root,
+    target,
+    activation.state === "active",
+  );
   return errors;
 }

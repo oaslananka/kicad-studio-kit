@@ -507,14 +507,12 @@ export function validateCompatibilityContract(options = {}) {
   checkRuntimePolicyMetadata(errors, options);
   if (fileExists("compatibility.yaml")) {
     const compatibility = parseYaml(readFile("compatibility.yaml"));
-    errors.push(...validateKiCadPatchBaseline({ compatibility }));
     errors.push(
+      ...validateKiCadPatchBaseline({ compatibility }),
       ...validateMcpProtocolActivation({
         compatibility,
         repoRoot: REPO_ROOT,
       }),
-    );
-    errors.push(
       ...validateKiCad11Readiness({ compatibility, repoRoot: REPO_ROOT }),
     );
   }
