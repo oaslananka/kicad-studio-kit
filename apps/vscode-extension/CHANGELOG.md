@@ -10,6 +10,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.9.7](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.9.6...vscode-extension-v1.9.7) (2026-07-27)
+
+
+### Bug Fixes
+
+* **kicad-studio:** bound PCM archive extraction ([263b3f4](https://github.com/oaslananka/kicad-studio-kit/commit/263b3f431f69b026525b7ef816dff05919d1645b)), closes [#563](https://github.com/oaslananka/kicad-studio-kit/issues/563)
+
 ## [1.9.6](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.9.5...vscode-extension-v1.9.6) (2026-07-26)
 
 
