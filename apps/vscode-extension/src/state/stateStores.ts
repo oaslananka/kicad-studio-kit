@@ -2,11 +2,7 @@ import * as vscode from 'vscode';
 import type {
   DiagnosticFreshness,
   DiagnosticSummary,
-  McpCapabilityCard,
-  McpConnectionState,
-  McpInstallStatus,
-  ProjectContext,
-  McpServerCard
+  ProjectContext
 } from '../types';
 import { redactSensitiveText } from '../utils/secrets';
 
@@ -14,6 +10,7 @@ export {
   ProjectStateStore,
   type ProjectStateSnapshot
 } from './projectStateStore';
+export { McpStateStore } from './mcpStateStore';
 export { ViewerStateStore, type ViewerStateSnapshot } from './viewerStateStore';
 
 export interface DiagnosticStateSnapshot {
@@ -334,62 +331,6 @@ export class DiagnosticStateStore implements vscode.Disposable {
   }
 }
 
-export class McpStateStore implements vscode.Disposable {
-  private readonly onDidChangeEmitter =
-    new vscode.EventEmitter<McpConnectionState>();
-  readonly onDidChange = this.onDidChangeEmitter.event;
-  private state: McpConnectionState = {
-    kind: 'Disconnected',
-    available: false,
-    connected: false
-  };
-
-  update(state: McpConnectionState): McpConnectionState {
-    this.state = cloneMcpConnectionState(state);
-    const snapshot = this.getState();
-    this.onDidChangeEmitter.fire(snapshot);
-    return snapshot;
-  }
-
-  getState(): McpConnectionState {
-    return cloneMcpConnectionState(this.state);
-  }
-
-  getDiagnosticBundleSnapshot(): McpConnectionState {
-    const snapshot = this.getState();
-    return {
-      ...snapshot,
-      message: snapshot.message
-        ? redactSensitiveText(snapshot.message)
-        : undefined,
-      server: snapshot.server
-        ? {
-            ...snapshot.server,
-            capabilities: {
-              ...snapshot.server.capabilities,
-              diagnostics: snapshot.server.capabilities.diagnostics?.map(
-                (value) => redactSensitiveText(value)
-              ),
-              serverInfo: snapshot.server.capabilities.serverInfo
-                ? {
-                    ...snapshot.server.capabilities.serverInfo,
-                    diagnostics:
-                      snapshot.server.capabilities.serverInfo.diagnostics?.map(
-                        (value) => redactSensitiveText(value)
-                      ) ?? []
-                  }
-                : undefined
-            }
-          }
-        : undefined
-    };
-  }
-
-  dispose(): void {
-    this.onDidChangeEmitter.dispose();
-  }
-}
-
 export type ExportSurfaceKind = 'export' | 'bom' | 'netlist';
 type ExportSurfaceStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -593,92 +534,4 @@ function cloneStaleDiagnostic(
     stale.tags = [...diagnostic.tags];
   }
   return stale;
-}
-
-function cloneMcpConnectionState(
-  state: McpConnectionState
-): McpConnectionState {
-  return {
-    ...state,
-    install: cloneInstall(state.install),
-    server: cloneServerCard(state.server)
-  };
-}
-
-function cloneInstall(
-  install: McpInstallStatus | undefined
-): McpInstallStatus | undefined {
-  return install ? { ...install } : undefined;
-}
-
-function cloneServerCard(
-  server: McpServerCard | undefined
-): McpServerCard | undefined {
-  return server
-    ? {
-        ...server,
-        capabilities: cloneCapabilities(server.capabilities)
-      }
-    : undefined;
-}
-
-function cloneCapabilities(capabilities: McpCapabilityCard): McpCapabilityCard {
-  const serverInfo = capabilities.serverInfo;
-  return {
-    ...capabilities,
-    tools: [...(capabilities.tools ?? [])],
-    resources: [...(capabilities.resources ?? [])],
-    prompts: [...(capabilities.prompts ?? [])],
-    diagnostics: capabilities.diagnostics
-      ? [...capabilities.diagnostics]
-      : undefined,
-    serverInfo: serverInfo
-      ? {
-          ...serverInfo,
-          compatibilityRange: {
-            kicadStudio: {
-              ...serverInfo.compatibilityRange?.kicadStudio
-            },
-            kicadMcpPro: {
-              ...serverInfo.compatibilityRange?.kicadMcpPro
-            }
-          },
-          transport: { ...serverInfo.transport },
-          kicad: { ...serverInfo.kicad },
-          operatingMode: cloneOperatingMode(serverInfo),
-          capabilities: {
-            ...serverInfo.capabilities,
-            cliExports: {
-              ...serverInfo.capabilities?.cliExports
-            }
-          },
-          diagnostics: [...(serverInfo.diagnostics ?? [])]
-        }
-      : undefined
-  };
-}
-
-function cloneOperatingMode(
-  serverInfo: NonNullable<McpCapabilityCard['serverInfo']>
-): NonNullable<McpCapabilityCard['serverInfo']>['operatingMode'] {
-  const mode = serverInfo.operatingMode;
-  if (!mode) {
-    return {
-      active: 'readonly',
-      default: 'readonly',
-      available: ['readonly', 'write', 'manufacturing', 'experimental'],
-      experimentalEnabled: false,
-      toolAvailability: {}
-    };
-  }
-  return {
-    ...mode,
-    available: [...mode.available],
-    toolAvailability: Object.fromEntries(
-      Object.entries(mode.toolAvailability).map(([name, availability]) => [
-        name,
-        { ...availability }
-      ])
-    )
-  };
 }
