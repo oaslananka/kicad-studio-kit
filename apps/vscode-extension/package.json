@@ -1128,6 +1128,42 @@
         "title": "%kicadstudio.contributes.commands.diffReport.title%",
         "category": "%kicadstudio.contributes.commands.diffReport.category%",
         "icon": "$(diff)"
+      },
+      {
+        "command": "kicadstudio.tasks.open",
+        "title": "%kicadstudio.contributes.commands.taskHub.open.title%",
+        "category": "%kicadstudio.contributes.commands.taskHub.category%",
+        "icon": "$(list-selection)"
+      },
+      {
+        "command": "kicadstudio.tasks.review",
+        "title": "%kicadstudio.contributes.commands.taskHub.review.title%",
+        "category": "%kicadstudio.contributes.commands.taskHub.category%",
+        "icon": "$(search)"
+      },
+      {
+        "command": "kicadstudio.tasks.validate",
+        "title": "%kicadstudio.contributes.commands.taskHub.validate.title%",
+        "category": "%kicadstudio.contributes.commands.taskHub.category%",
+        "icon": "$(check-all)"
+      },
+      {
+        "command": "kicadstudio.tasks.release",
+        "title": "%kicadstudio.contributes.commands.taskHub.release.title%",
+        "category": "%kicadstudio.contributes.commands.taskHub.category%",
+        "icon": "$(package)"
+      },
+      {
+        "command": "kicadstudio.tasks.automate",
+        "title": "%kicadstudio.contributes.commands.taskHub.automate.title%",
+        "category": "%kicadstudio.contributes.commands.taskHub.category%",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "kicadstudio.tasks.maintain",
+        "title": "%kicadstudio.contributes.commands.taskHub.maintain.title%",
+        "category": "%kicadstudio.contributes.commands.taskHub.category%",
+        "icon": "$(tools)"
       }
     ],
     "menus": {
@@ -1161,6 +1197,11 @@
         }
       ],
       "view/title": [
+        {
+          "command": "kicadstudio.tasks.open",
+          "when": "view == kicadstudio.projectTree",
+          "group": "navigation@1"
+        },
         {
           "when": "view == kicadstudio.projectTree",
           "command": "kicadstudio.openSettings",
@@ -1446,23 +1487,28 @@
           "when": "kicadstudio.aiEnabled"
         },
         {
-          "command": "kicadstudio.searchComponent"
+          "command": "kicadstudio.searchComponent",
+          "when": "kicadstudio.hasProject"
         },
         {
           "command": "kicadstudio.showDiff",
           "when": "kicadstudio.hasProject"
         },
         {
-          "command": "kicadstudio.refreshProjectTree"
+          "command": "kicadstudio.refreshProjectTree",
+          "when": "kicadstudio.hasProject"
         },
         {
-          "command": "kicadstudio.openSettings"
+          "command": "kicadstudio.openSettings",
+          "when": "false"
         },
         {
-          "command": "kicadstudio.sendFeedback"
+          "command": "kicadstudio.sendFeedback",
+          "when": "false"
         },
         {
-          "command": "kicadstudio.setupMcpIntegration"
+          "command": "kicadstudio.setupMcpIntegration",
+          "when": "false"
         },
         {
           "command": "kicadstudio.mcp.launchHttp",
@@ -1473,23 +1519,28 @@
           "when": "kicadstudio.workspaceTrusted"
         },
         {
-          "command": "kicadstudio.mcp.retry"
+          "command": "kicadstudio.mcp.retry",
+          "when": "kicadstudio.mcpDisconnected || kicadstudio.mcpIncompatible"
         },
         {
-          "command": "kicadstudio.mcp.openUpgradeGuide"
+          "command": "kicadstudio.mcp.openUpgradeGuide",
+          "when": "kicadstudio.mcpIncompatible"
         },
         {
           "command": "kicadstudio.mcp.pickProfile",
           "when": "kicadstudio.workspaceTrusted"
         },
         {
-          "command": "kicadstudio.mcp.openLog"
+          "command": "kicadstudio.mcp.openLog",
+          "when": "kicadstudio.mcpAvailable"
         },
         {
-          "command": "kicadstudio.mcp.saveLog"
+          "command": "kicadstudio.mcp.saveLog",
+          "when": "kicadstudio.mcpAvailable"
         },
         {
-          "command": "kicadstudio.mcp.clearLog"
+          "command": "kicadstudio.mcp.clearLog",
+          "when": "kicadstudio.mcpAvailable"
         },
         {
           "command": "kicadstudio.qualityGate.runAll",
@@ -1504,29 +1555,36 @@
           "when": "false"
         },
         {
-          "command": "kicadstudio.qualityGate.openDocs"
+          "command": "kicadstudio.qualityGate.openDocs",
+          "when": "false"
         },
         {
           "command": "kicadstudio.manufacturing.release",
           "when": "kicadstudio.mcpConnected && kicadstudio.hasProject && kicadstudio.workspaceTrusted && kicadstudio.mcpManufacturingMode"
         },
         {
-          "command": "kicadstudio.showStoredSecrets"
+          "command": "kicadstudio.showStoredSecrets",
+          "when": "false"
         },
         {
-          "command": "kicadstudio.clearAiKey"
+          "command": "kicadstudio.clearAiKey",
+          "when": "false"
         },
         {
-          "command": "kicadstudio.setOctopartApiKey"
+          "command": "kicadstudio.setOctopartApiKey",
+          "when": "false"
         },
         {
-          "command": "kicadstudio.setAiApiKey"
+          "command": "kicadstudio.setAiApiKey",
+          "when": "false"
         },
         {
-          "command": "kicadstudio.clearSecrets"
+          "command": "kicadstudio.clearSecrets",
+          "when": "false"
         },
         {
-          "command": "kicadstudio.manageChatProvider"
+          "command": "kicadstudio.manageChatProvider",
+          "when": "false"
         },
         {
           "command": "kicadstudio.openDesignIntent",
@@ -1585,19 +1643,24 @@
           "when": "kicadstudio.aiEnabled"
         },
         {
-          "command": "kicadstudio.searchLibrarySymbol"
+          "command": "kicadstudio.searchLibrarySymbol",
+          "when": "kicadstudio.hasProject"
         },
         {
-          "command": "kicadstudio.searchLibraryFootprint"
+          "command": "kicadstudio.searchLibraryFootprint",
+          "when": "kicadstudio.hasProject"
         },
         {
-          "command": "kicadstudio.reindexLibraries"
+          "command": "kicadstudio.reindexLibraries",
+          "when": "false"
         },
         {
-          "command": "kicadstudio.pcm.refresh"
+          "command": "kicadstudio.pcm.refresh",
+          "when": "kicadstudio.hasProject"
         },
         {
-          "command": "kicadstudio.pcm.filter"
+          "command": "kicadstudio.pcm.filter",
+          "when": "kicadstudio.hasProject"
         },
         {
           "command": "kicadstudio.pcm.install",
@@ -1624,7 +1687,8 @@
           "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject"
         },
         {
-          "command": "kicadstudio.showStatusMenu"
+          "command": "kicadstudio.showStatusMenu",
+          "when": "false"
         },
         {
           "command": "kicadstudio.importPads",
@@ -1677,6 +1741,28 @@
         {
           "command": "kicadstudio.boardReadyOps.openDocs",
           "when": "kicadstudio.workspaceTrusted"
+        },
+        {
+          "command": "kicadstudio.tasks.open"
+        },
+        {
+          "command": "kicadstudio.tasks.review",
+          "when": "kicadstudio.hasProject"
+        },
+        {
+          "command": "kicadstudio.tasks.validate",
+          "when": "kicadstudio.hasProject"
+        },
+        {
+          "command": "kicadstudio.tasks.release",
+          "when": "kicadstudio.hasProject && kicadstudio.workspaceTrusted"
+        },
+        {
+          "command": "kicadstudio.tasks.automate",
+          "when": "kicadstudio.hasProject"
+        },
+        {
+          "command": "kicadstudio.tasks.maintain"
         }
       ]
     },
@@ -2517,7 +2603,7 @@
     "audit:ci": "pnpm audit --audit-level high",
     "check:staged": "lint-staged",
     "check": "pnpm run check:extension-manifest && pnpm run check:nls-parity && pnpm run check:coverage-scope && pnpm run check:mutation-policy && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run test:coverage:ratchet && pnpm run test:security && pnpm run test:a11y && pnpm run build && pnpm run package && pnpm run package:validate",
-    "check:extension-manifest": "node scripts/check-package-contributions.mjs",
+    "check:extension-manifest": "node --test scripts/command-surface-policy.test.mjs scripts/task-vocabulary.test.mjs && node scripts/check-package-contributions.mjs",
     "check:nls-parity": "node ../../scripts/check-nls-parity.mjs && node --test ../../scripts/check-nls-parity.test.mjs",
     "check:workspace-trust": "node scripts/check-untrusted-workspace.js",
     "check:ci": "pnpm run audit:ci && pnpm run format:check && pnpm run docs:check && pnpm run check:coverage-scope && pnpm run check:mutation-policy && pnpm run workflows:lint && pnpm run lint && pnpm run typecheck && pnpm run check:workspace-trust && pnpm run test:unit:coverage && pnpm run test:coverage:ratchet && pnpm run test:security && pnpm run test:a11y && pnpm run build && pnpm run test:integration && pnpm run package && pnpm run package:validate && pnpm run release:dry-run && pnpm run check:bundle-size",

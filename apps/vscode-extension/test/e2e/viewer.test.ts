@@ -12,7 +12,10 @@ test.describe('KiCad Studio VS Code E2E', () => {
       await expect(session.page.locator('body')).toContainText(
         'sample.kicad_pcb'
       );
-      await expectCommandPaletteEntry(session.page, 'KiCad: Setup MCP');
+      await expectCommandPaletteEntry(
+        session.page,
+        'KiCad Studio: Open Task Hub'
+      );
 
       const statusBar = session.page.locator('.statusbar');
       const hasKiCadItem = await statusBar.evaluate((el) =>

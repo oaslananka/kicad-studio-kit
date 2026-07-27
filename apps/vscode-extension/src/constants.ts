@@ -63,6 +63,12 @@ export const KICAD_FILE_EXTENSIONS = [
   '.kicad_dru'
 ] as const;
 export const COMMANDS = {
+  openTaskHub: 'kicadstudio.tasks.open',
+  openReviewTasks: 'kicadstudio.tasks.review',
+  openValidateTasks: 'kicadstudio.tasks.validate',
+  openReleaseTasks: 'kicadstudio.tasks.release',
+  openAutomateTasks: 'kicadstudio.tasks.automate',
+  openMaintainTasks: 'kicadstudio.tasks.maintain',
   showStatusMenu: 'kicadstudio.showStatusMenu',
   selectActiveProject: 'kicadstudio.selectActiveProject',
   generateDiffReport: 'kicadstudio.generateKicadDiffReport',
