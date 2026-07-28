@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import test from "node:test";
@@ -29,6 +30,22 @@ function restoreEnv(name, value) {
     process.env[name] = value;
   }
 }
+
+test("release workflow uses GitHub-signed commits for generated surfaces", () => {
+  const workflow = fs.readFileSync(
+    path.join(REPO_ROOT, ".github/workflows/release-please.yml"),
+    "utf8",
+  );
+
+  assert.equal(
+    (workflow.match(/node scripts\/create-github-signed-commit\.mjs/g) ?? [])
+      .length,
+    2,
+  );
+  assert.match(workflow, /GITHUB_TOKEN: \${{ github\.token }}/);
+  assert.doesNotMatch(workflow, /git commit/);
+  assert.doesNotMatch(workflow, /git push/);
+});
 
 test("release-please manifest mode is product-scoped and version aligned", () => {
   const result = validateRepositoryPolicy(REPO_ROOT);

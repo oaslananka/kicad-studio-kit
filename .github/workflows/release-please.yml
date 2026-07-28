@@ -43,7 +43,7 @@ jobs:
         with:
           ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
       - if: ${{ steps.release.outputs.pr }}
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
@@ -60,23 +60,22 @@ jobs:
       - if: ${{ steps.release.outputs.pr }}
         run: corepack pnpm run docs:generate
       - if: ${{ steps.release.outputs.pr }}
+        name: Commit release surfaces with a GitHub signature
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          # --no-verify: this is an automated bot commit of deterministically
-          # generated surfaces. Skipping husky avoids running lint-staged on
-          # commit and the full `pnpm run check` pre-push hook inside this job;
-          # the release PR's own CI re-validates every surface.
-          git diff --cached --quiet || git commit --no-verify -m "chore(repo): sync release surfaces for the pending release"
-          git push --no-verify
+          node scripts/create-github-signed-commit.mjs \
+            --repository "$GITHUB_REPOSITORY" \
+            --branch "$RELEASE_BRANCH" \
+            --message "chore(repo): sync release surfaces for the pending release"
 
       # Regenerate changelog docs after a release PR is merged
       - if: ${{ steps.release.outputs.releases_created == 'true' }}
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
       - if: ${{ steps.release.outputs.releases_created == 'true' }}
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
@@ -91,14 +90,15 @@ jobs:
       - if: ${{ steps.release.outputs.releases_created == 'true' }}
         run: corepack pnpm run docs:generate
       - if: ${{ steps.release.outputs.releases_created == 'true' }}
+        name: Commit post-release docs with a GitHub signature
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          # --no-verify: automated bot commit of generated docs; skip husky so
-          # this job does not run lint-staged / the full pre-push check.
-          git diff --cached --quiet || git commit --no-verify -m "docs(repo): regenerate changelog and versions after release"
-          git push --no-verify
+          node scripts/create-github-signed-commit.mjs \
+            --repository "$GITHUB_REPOSITORY" \
+            --branch "$DEFAULT_BRANCH" \
+            --message "docs(repo): regenerate changelog and versions after release"
 
       # Release Please creates releases with GITHUB_TOKEN, which does not
       # recursively trigger release-event workflows. Dispatch the publish

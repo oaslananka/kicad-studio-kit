@@ -44,7 +44,7 @@
     "check:release-surface": "node scripts/check-release-surface.mjs && node --test scripts/check-release-surface.test.mjs",
     "check:forbidden-refs": "node scripts/check-no-forbidden-refs.mjs && pnpm run check:mcp-split-docs",
     "check:boundaries": "node scripts/check-boundaries.mjs",
-    "test:release-please": "node --test scripts/check-release-please-monorepo.test.mjs",
+    "test:release-please": "node --test scripts/check-release-please-monorepo.test.mjs scripts/create-github-signed-commit.test.mjs",
     "test:release-provenance": "node --test scripts/check-release-provenance.test.mjs scripts/verify-npm-release.test.mjs",
     "check:release-please": "node scripts/check-release-please-monorepo.mjs && pnpm run test:release-please",
     "check:version": "node scripts/check-version-consistency.mjs && node --test scripts/check-version-consistency.test.mjs && pnpm run check:release-please && pnpm run check:release-surface",
