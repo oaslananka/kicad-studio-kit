@@ -19,8 +19,8 @@ The repository uses secure defaults and explicit job-level escalation. The check
 - Every write scope is declared on the exact job that needs it and must match the allowlist in `.github/actions-permissions.json`.
 - `pull_request_target` is forbidden.
 - Fork pull requests receive GitHub's read-only token behavior; jobs that comment on a pull request are additionally restricted to same-repository heads.
-- Every checkout sets `persist-credentials: false` unless the checked-in policy records a reviewed push path.
-- The only persisted-checkout exceptions are the two Release Please checkouts that create deterministic commits on the release branch or `main`.
+- Every checkout sets `persist-credentials: false`; workflows that write use an explicit, job-scoped token instead of storing credentials in the Git checkout.
+- Release Please creates deterministic generated-surface commits through GitHub's commit API and verifies the resulting GitHub signature before continuing.
 
 ## Write-capable jobs
 

@@ -27,9 +27,7 @@
     "stale.yml#stale": ["issues", "pull-requests"],
     "vscode-canary.yml#extension-host": ["issues"]
   },
-  "persistedCheckoutCredentials": {
-    "release-please.yml#release": 2
-  },
+  "persistedCheckoutCredentials": {},
   "pullRequestWriteJobs": {
     "ci.yml#coverage-report": "same-repository-head-only",
     "codeql.yml#analyze": "github-fork-token-read-only",
