@@ -10,6 +10,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.10.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.9.7...vscode-extension-v1.10.0) (2026-07-28)
+
+
+### Features
+
+* **kicad-studio:** organize task-oriented command surface ([d1dddfd](https://github.com/oaslananka/kicad-studio-kit/commit/d1dddfd0a5acd1bcd211a206a4d44a68571b9654)), closes [#498](https://github.com/oaslananka/kicad-studio-kit/issues/498)
+
 ## [1.9.7](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.9.6...vscode-extension-v1.9.7) (2026-07-27)
 
 
