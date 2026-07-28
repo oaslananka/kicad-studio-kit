@@ -6,6 +6,11 @@ mutation($input: CreateCommitOnBranchInput!) {
     commit {
       oid
       url
+      signature {
+        isValid
+        state
+        wasSignedByGitHub
+      }
     }
   }
 }`;
@@ -42,12 +47,8 @@ export function buildCreateCommitRequest({
   headline,
   changes,
 }) {
-  if (!repository?.includes("/")) {
-    throw new Error("repository must use owner/name format");
-  }
-  if (!branch) {
-    throw new Error("branch is required");
-  }
+  assertRepositorySlug(repository);
+  assertBranchName(branch);
   if (!/^[0-9a-f]{40}$/i.test(expectedHeadOid ?? "")) {
     throw new Error("expectedHeadOid must be a 40-character Git SHA");
   }
@@ -67,7 +68,7 @@ export function buildCreateCommitRequest({
       continue;
     }
     if (!Buffer.isBuffer(change.contents)) {
-      throw new Error(`contents must be a Buffer for ${change.path}`);
+      throw new TypeError(`contents must be a Buffer for ${change.path}`);
     }
     additions.push({
       path: change.path,
@@ -89,6 +90,52 @@ export function buildCreateCommitRequest({
       },
     },
   };
+}
+
+function assertRepositorySlug(repository) {
+  if (typeof repository !== "string") {
+    throw new TypeError("repository must use owner/name format");
+  }
+  const parts = repository.split("/");
+  if (parts.length !== 2) {
+    throw new Error("repository must use owner/name format");
+  }
+  const [owner, name] = parts;
+  const ownerIsValid = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/u.test(
+    owner,
+  );
+  const nameIsValid =
+    name.length <= 100 &&
+    name !== "." &&
+    name !== ".." &&
+    /^[A-Za-z0-9._-]+$/u.test(name);
+  if (!ownerIsValid || !nameIsValid) {
+    throw new Error("repository must use a safe owner/name format");
+  }
+}
+
+function assertBranchName(branch) {
+  if (typeof branch !== "string") {
+    throw new TypeError("branch must be a safe Git branch name");
+  }
+  const hasInvalidCharacter = [...branch].some((character) => {
+    const code = character.codePointAt(0);
+    return code <= 0x20 || code === 0x7f || "~^:?*[\\".includes(character);
+  });
+  if (
+    branch.length === 0 ||
+    branch.length > 255 ||
+    hasInvalidCharacter ||
+    branch.startsWith("-") ||
+    branch.startsWith("/") ||
+    branch.endsWith("/") ||
+    branch.endsWith(".") ||
+    branch.includes("..") ||
+    branch.includes("@{") ||
+    branch.includes("//")
+  ) {
+    throw new Error("branch must be a safe Git branch name");
+  }
 }
 
 function assertRepositoryPath(filePath) {

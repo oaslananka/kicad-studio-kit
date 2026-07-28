@@ -42,7 +42,7 @@ const request = buildCreateCommitRequest({
   changes,
 });
 
-const graphResponse = await githubRequest("https://api.github.com/graphql", {
+const graphResponse = await githubGraphqlRequest({
   method: "POST",
   body: JSON.stringify(request),
 });
@@ -53,25 +53,22 @@ if (graphResponse.errors?.length) {
 }
 
 const commit = graphResponse.data?.createCommitOnBranch?.commit;
-if (!commit?.oid) {
-  throw new Error("GitHub createCommitOnBranch returned no commit OID");
+if (!/^[0-9a-f]{40}$/iu.test(commit?.oid ?? "")) {
+  throw new Error("GitHub createCommitOnBranch returned no valid commit OID");
+}
+const signature = commit.signature;
+if (
+  signature?.isValid !== true ||
+  signature?.state !== "VALID" ||
+  signature?.wasSignedByGitHub !== true
+) {
+  throw new Error("GitHub createCommitOnBranch returned an unverified commit");
 }
 
-const commitResponse = await githubRequest(
-  `https://api.github.com/repos/${repository}/commits/${commit.oid}`,
-  { method: "GET" },
-);
-const verification = commitResponse.commit?.verification;
-if (verification?.verified !== true) {
-  throw new Error(
-    `GitHub commit ${commit.oid} is not verified (${verification?.reason ?? "unknown"})`,
-  );
-}
+console.log("Created a verified GitHub commit on the requested branch.");
 
-console.log(`Created verified GitHub commit ${commit.oid} on ${branch}.`);
-
-async function githubRequest(url, init) {
-  const response = await fetch(url, {
+async function githubGraphqlRequest(init) {
+  const response = await fetch("https://api.github.com/graphql", {
     ...init,
     headers: {
       Accept: "application/vnd.github+json",
@@ -92,7 +89,7 @@ async function githubRequest(url, init) {
 }
 
 function git(args) {
-  return execFileSync("git", args, { encoding: "utf8" });
+  return execFileSync("/usr/bin/git", args, { encoding: "utf8" });
 }
 
 function parseArguments(args) {
