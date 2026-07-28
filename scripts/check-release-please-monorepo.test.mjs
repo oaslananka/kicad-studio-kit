@@ -43,6 +43,10 @@ test("release workflow uses GitHub-signed commits for generated surfaces", () =>
     2,
   );
   assert.match(workflow, /GITHUB_TOKEN: \${{ github\.token }}/);
+  assert.match(workflow, /RELEASE_PR_JSON: \${{ steps\.release\.outputs\.pr }}/);
+  assert.match(workflow, /ref: \${{ steps\.release-pr\.outputs\.branch }}/);
+  assert.match(workflow, /RELEASE_BRANCH: \${{ steps\.release-pr\.outputs\.branch }}/);
+  assert.doesNotMatch(workflow, /fromJSON\(steps\.release\.outputs\.pr\)/);
   assert.doesNotMatch(workflow, /git commit/);
   assert.doesNotMatch(workflow, /git push/);
 });

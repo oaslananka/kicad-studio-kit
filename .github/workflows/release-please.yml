@@ -39,9 +39,38 @@ jobs:
       # compatibility.yaml / compatibilityMatrix.ts / generated-docs version
       # drift and the release can never be merged.
       - if: ${{ steps.release.outputs.pr }}
+        id: release-pr
+        name: Resolve the Release Please branch
+        env:
+          RELEASE_PR_JSON: ${{ steps.release.outputs.pr }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_branch="$(node --input-type=module <<'NODE'
+          const releasePr = JSON.parse(process.env.RELEASE_PR_JSON ?? "");
+          const branch = releasePr.headBranchName;
+          if (
+            typeof branch !== "string" ||
+            branch.length === 0 ||
+            /[\u0000-\u0020\u007f~^:?*\[\]\\]/u.test(branch) ||
+            branch.startsWith("-") ||
+            branch.startsWith("/") ||
+            branch.endsWith("/") ||
+            branch.endsWith(".") ||
+            branch.includes("..") ||
+            branch.includes("@{") ||
+            branch.includes("//")
+          ) {
+            throw new Error("Release Please returned an unsafe head branch name");
+          }
+          process.stdout.write(branch);
+          NODE
+          )"
+          printf 'branch=%s\n' "$release_branch" >> "$GITHUB_OUTPUT"
+      - if: ${{ steps.release.outputs.pr }}
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
-          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          ref: ${{ steps.release-pr.outputs.branch }}
           fetch-depth: 0
           persist-credentials: false
       - if: ${{ steps.release.outputs.pr }}
@@ -63,7 +92,7 @@ jobs:
         name: Commit release surfaces with a GitHub signature
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          RELEASE_BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          RELEASE_BRANCH: ${{ steps.release-pr.outputs.branch }}
         run: |
           node scripts/create-github-signed-commit.mjs \
             --repository "$GITHUB_REPOSITORY" \
