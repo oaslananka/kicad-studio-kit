@@ -12,16 +12,9 @@ const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = [
   "tmp@0.2.7",
   "fast-uri@3.1.4",
   "postcss@8.5.18",
+  "brace-expansion@2.1.4",
   "brace-expansion@5.0.8",
   "tar@7.5.21",
-];
-const ALLOWED_AUDIT_IGNORES = ["GHSA-mh99-v99m-4gvg"];
-const REQUIRED_BRACE_PATCH = "patches/brace-expansion@2.1.2.patch";
-const REQUIRED_BRACE_PATCH_MARKERS = [
-  "CVE-2026-14257",
-  "EXPANSION_MAX_LENGTH",
-  "if (length + expansion.length > maxLength)",
-  "module.exports = expand;",
 ];
 const ALLOWED_TRUST_POLICY_EXCLUDES = [
   "@octokit/endpoint@9.0.6",
@@ -29,7 +22,7 @@ const ALLOWED_TRUST_POLICY_EXCLUDES = [
   "semver@5.7.2 || 6.3.1",
 ];
 const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
-  "brace-expansion@2.1.1": "2.1.2",
+  "brace-expansion@2.1.1": "2.1.4",
   "brace-expansion@5.0.6": "5.0.8",
   "brace-expansion@5.0.7": "5.0.8",
   "postcss@8.5.15": "8.5.18",
@@ -107,16 +100,11 @@ function validateWorkspace(errors, workspace) {
     workspace?.trustLockfile !== true,
     "pnpm-workspace.yaml must not enable trustLockfile for public PR CI",
   );
+  const auditIgnores = workspace?.auditConfig?.ignoreGhsas;
   assertCondition(
     errors,
-    sameStringList(workspace?.auditConfig?.ignoreGhsas, ALLOWED_AUDIT_IGNORES),
-    "pnpm-workspace.yaml auditConfig.ignoreGhsas must contain only GHSA-mh99-v99m-4gvg",
-  );
-  assertCondition(
-    errors,
-    workspace?.patchedDependencies?.["brace-expansion@2.1.2"] ===
-      REQUIRED_BRACE_PATCH,
-    `pnpm-workspace.yaml patchedDependencies must map brace-expansion@2.1.2 to ${REQUIRED_BRACE_PATCH}`,
+    auditIgnores === undefined || sameStringList(auditIgnores, []),
+    "pnpm-workspace.yaml auditConfig.ignoreGhsas must be empty; use patched upstream releases instead of suppressing active advisories",
   );
   assertCondition(
     errors,
@@ -124,7 +112,7 @@ function validateWorkspace(errors, workspace) {
       workspace?.minimumReleaseAgeExclude,
       ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES,
     ),
-    "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4, postcss@8.5.18, brace-expansion@5.0.8, tar@7.5.21",
+    "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4, postcss@8.5.18, brace-expansion@2.1.4, brace-expansion@5.0.8, tar@7.5.21",
   );
   assertCondition(
     errors,
@@ -141,16 +129,6 @@ function validateWorkspace(errors, workspace) {
       errors,
       workspace?.overrides?.[selector] === version,
       `pnpm-workspace.yaml overrides must pin ${selector} to ${version}`,
-    );
-  }
-}
-
-function validateBracePatch(errors, patchText) {
-  for (const marker of REQUIRED_BRACE_PATCH_MARKERS) {
-    assertCondition(
-      errors,
-      patchText.includes(marker),
-      `brace-expansion security patch must include ${marker}`,
     );
   }
 }
@@ -238,10 +216,7 @@ export function validatePnpmSupplyChain(repoRoot = DEFAULT_REPO_ROOT) {
     ".github/workflows/security.yml",
     errors,
   );
-  const bracePatch = readText(repoRoot, REQUIRED_BRACE_PATCH, errors);
-
   validateWorkspace(errors, workspace);
-  validateBracePatch(errors, bracePatch);
   validatePackageJson(errors, rootPackage);
   validateRenovate(errors, renovate);
   validateNpmrc(errors, npmrc);

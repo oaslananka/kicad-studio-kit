@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  brace-expansion@2.1.1: 2.1.2
+  brace-expansion@2.1.1: 2.1.4
   brace-expansion@5.0.6: 5.0.8
   brace-expansion@5.0.7: 5.0.8
   postcss@8.5.15: 8.5.18
@@ -29,9 +29,6 @@ overrides:
   uuid: 14.0.0
   vite: 6.4.3
   undici: 7.28.0
-
-patchedDependencies:
-  brace-expansion@2.1.2: 49a8130046327c55da952cb334cbac5bab649f22f901a80abfbcaa6dfca65a6b
 
 importers:
 
@@ -2454,8 +2451,8 @@ packages:
   boundary@2.0.0:
     resolution: {integrity: sha512-rJKn5ooC9u8q13IMCrW0RSp31pxBCHE3y9V/tp3TdWSLf8Em3p6Di4NBpfzbJge9YjjFEsD0RtFEjtvHL5VyEA==}
 
-  brace-expansion@2.1.2:
-    resolution: {integrity: sha512-w5JZcKgdhDOgOwm8H+KgbosopHMuGcl6qbulwjtz3SM7I7P3yW1eAjzMPLrIE+NQ9vjgANKHWeMHnrT0OXW1oA==}
+  brace-expansion@2.1.4:
+    resolution: {integrity: sha512-hGfVzPxthbf3+2yjg/RBs60cB0FhqBS/zvdV/4wn4/BmN0bNMMHPc4V/BbFieqf1TKAGGAHnY4eSjajCl0f2Xg==}
 
   brace-expansion@5.0.8:
     resolution: {integrity: sha512-JZyDyq3D4AUifKTPOB7DELf6XsB3WdPuNxCtob1vFXPsSXhdAiHBWJ/tJ8HAc9aH84BK+5JFZLNkJKx3G9kzQg==}
@@ -7853,7 +7850,7 @@ snapshots:
 
   boundary@2.0.0: {}
 
-  brace-expansion@2.1.2(patch_hash=49a8130046327c55da952cb334cbac5bab649f22f901a80abfbcaa6dfca65a6b):
+  brace-expansion@2.1.4:
     dependencies:
       balanced-match: 1.0.2
 
@@ -9590,7 +9587,7 @@ snapshots:
 
   minimatch@9.0.9:
     dependencies:
-      brace-expansion: 2.1.2(patch_hash=49a8130046327c55da952cb334cbac5bab649f22f901a80abfbcaa6dfca65a6b)
+      brace-expansion: 2.1.4
 
   minimist-options@4.1.0:
     dependencies:
