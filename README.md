@@ -19,14 +19,14 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
   <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/badge/VS%20Marketplace-install-blue" alt="Install from Visual Studio Marketplace"></a>
   <a href="https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
   <a href="https://oaslananka.github.io/kicad-studio-kit/"><img src="https://img.shields.io/badge/docs-site-blue" alt="Documentation site"></a>
+  <a href="https://deepwiki.com/oaslananka/kicad-studio-kit"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
 <p>
   <a href="docs/best-practices-evidence.md">Best Practices evidence</a> ·
   <a href="GOVERNANCE.md">Governance</a> ·
   <a href="ROADMAP.md">Roadmap</a> ·
-  <a href="SUPPORT.md">Support</a> ·
-  <a href="https://deepwiki.com/oaslananka/kicad-studio-kit">Ask DeepWiki</a>
+  <a href="SUPPORT.md">Support</a>
 </p>
 
 <p>
