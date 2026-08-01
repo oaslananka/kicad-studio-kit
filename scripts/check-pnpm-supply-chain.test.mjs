@@ -28,6 +28,7 @@ function createFixture(overrides = {}) {
         "  - tmp@0.2.7",
         "  - fast-uri@3.1.4",
         "  - postcss@8.5.18",
+        "  - brace-expansion@2.1.4",
         "  - brace-expansion@5.0.8",
         "  - tar@7.5.21",
         "trustPolicyExclude:",
@@ -35,11 +36,8 @@ function createFixture(overrides = {}) {
         "  - chokidar@4.0.3",
         '  - "semver@5.7.2 || 6.3.1"',
         "blockExoticSubdeps: true",
-        "auditConfig:",
-        "  ignoreGhsas:",
-        "    - GHSA-mh99-v99m-4gvg",
         "overrides:",
-        '  "brace-expansion@2.1.1": "2.1.2"',
+        '  "brace-expansion@2.1.1": "2.1.4"',
         '  "brace-expansion@5.0.6": "5.0.8"',
         '  "brace-expansion@5.0.7": "5.0.8"',
         '  "postcss@8.5.15": "8.5.18"',
@@ -47,20 +45,6 @@ function createFixture(overrides = {}) {
         "  tar: 7.5.21",
         "  fast-uri: 3.1.4",
         "  linkify-it: 5.0.2",
-        "patchedDependencies:",
-        "  brace-expansion@2.1.2: patches/brace-expansion@2.1.2.patch",
-        "",
-      ].join("\n"),
-  );
-  mkdirSync(path.join(repoRoot, "patches"), { recursive: true });
-  writeFileSync(
-    path.join(repoRoot, "patches/brace-expansion@2.1.2.patch"),
-    overrides.bracePatch ??
-      [
-        "+// CVE-2026-14257",
-        "+var EXPANSION_MAX_LENGTH = 4000000;",
-        "+if (length + expansion.length > maxLength) return out;",
-        "+module.exports = expand;",
         "",
       ].join("\n"),
   );
@@ -127,12 +111,9 @@ test("disabled pnpm supply-chain controls fail validation", () => {
       "trustPolicyExclude:",
       "  - chokidar",
       "blockExoticSubdeps: false",
-      "auditConfig:",
-      "  ignoreGhsas:",
-      "    - GHSA-mh99-v99m-4gvg",
       "trustLockfile: true",
       "overrides:",
-      '  "brace-expansion@2.1.1": "2.1.2"',
+      '  "brace-expansion@2.1.1": "2.1.4"',
       '  "brace-expansion@5.0.6": "5.0.8"',
       '  "brace-expansion@5.0.7": "5.0.8"',
       '  "postcss@8.5.15": "8.5.18"',
@@ -140,8 +121,6 @@ test("disabled pnpm supply-chain controls fail validation", () => {
       "  tar: 7.5.21",
       "  fast-uri: 3.1.4",
       "  linkify-it: 5.0.2",
-      "patchedDependencies:",
-      "  brace-expansion@2.1.2: patches/brace-expansion@2.1.2.patch",
       "",
     ].join("\n"),
   });
@@ -151,7 +130,7 @@ test("disabled pnpm supply-chain controls fail validation", () => {
       "pnpm-workspace.yaml must set trustPolicy: no-downgrade",
       "pnpm-workspace.yaml must set blockExoticSubdeps: true",
       "pnpm-workspace.yaml must not enable trustLockfile for public PR CI",
-      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4, postcss@8.5.18, brace-expansion@5.0.8, tar@7.5.21",
+      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4, postcss@8.5.18, brace-expansion@2.1.4, brace-expansion@5.0.8, tar@7.5.21",
       "pnpm-workspace.yaml trustPolicyExclude must be limited to reviewed version-scoped exceptions: @octokit/endpoint@9.0.6, chokidar@4.0.3, semver@5.7.2 || 6.3.1",
     ]);
   } finally {
@@ -214,6 +193,7 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
       "  - tmp@0.2.7",
       "  - fast-uri@3.1.4",
       "  - postcss@8.5.18",
+      "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.8",
       "  - tar@7.5.21",
       "trustPolicyExclude:",
@@ -221,22 +201,17 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
       "  - chokidar@4.0.3",
       '  - "semver@5.7.2 || 6.3.1"',
       "blockExoticSubdeps: true",
-      "auditConfig:",
-      "  ignoreGhsas:",
-      "    - GHSA-mh99-v99m-4gvg",
       "overrides:",
       "  js-yaml: 4.3.0",
       "  tar: 7.5.21",
       "  fast-uri: 3.1.4",
       "  linkify-it: 5.0.2",
-      "patchedDependencies:",
-      "  brace-expansion@2.1.2: patches/brace-expansion@2.1.2.patch",
       "",
     ].join("\n"),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml overrides must pin brace-expansion@2.1.1 to 2.1.2",
+      "pnpm-workspace.yaml overrides must pin brace-expansion@2.1.1 to 2.1.4",
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.8",
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.8",
       "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.18",
@@ -256,6 +231,7 @@ test("#506 stale js-yaml security override fails validation", () => {
       "  - tmp@0.2.7",
       "  - fast-uri@3.1.4",
       "  - postcss@8.5.18",
+      "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.8",
       "  - tar@7.5.21",
       "trustPolicyExclude:",
@@ -263,11 +239,8 @@ test("#506 stale js-yaml security override fails validation", () => {
       "  - chokidar@4.0.3",
       '  - "semver@5.7.2 || 6.3.1"',
       "blockExoticSubdeps: true",
-      "auditConfig:",
-      "  ignoreGhsas:",
-      "    - GHSA-mh99-v99m-4gvg",
       "overrides:",
-      '  "brace-expansion@2.1.1": "2.1.2"',
+      '  "brace-expansion@2.1.1": "2.1.4"',
       '  "brace-expansion@5.0.6": "5.0.8"',
       '  "brace-expansion@5.0.7": "5.0.8"',
       '  "postcss@8.5.15": "8.5.18"',
@@ -275,8 +248,6 @@ test("#506 stale js-yaml security override fails validation", () => {
       "  tar: 7.5.21",
       "  fast-uri: 3.1.4",
       "  linkify-it: 5.0.2",
-      "patchedDependencies:",
-      "  brace-expansion@2.1.2: patches/brace-expansion@2.1.2.patch",
       "",
     ].join("\n"),
   });
@@ -299,6 +270,7 @@ test("#506 stale tar security override fails validation", () => {
       "  - tmp@0.2.7",
       "  - fast-uri@3.1.4",
       "  - postcss@8.5.18",
+      "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.8",
       "  - tar@7.5.21",
       "trustPolicyExclude:",
@@ -306,11 +278,8 @@ test("#506 stale tar security override fails validation", () => {
       "  - chokidar@4.0.3",
       '  - "semver@5.7.2 || 6.3.1"',
       "blockExoticSubdeps: true",
-      "auditConfig:",
-      "  ignoreGhsas:",
-      "    - GHSA-mh99-v99m-4gvg",
       "overrides:",
-      '  "brace-expansion@2.1.1": "2.1.2"',
+      '  "brace-expansion@2.1.1": "2.1.4"',
       '  "brace-expansion@5.0.6": "5.0.8"',
       '  "brace-expansion@5.0.7": "5.0.8"',
       '  "postcss@8.5.15": "8.5.18"',
@@ -318,8 +287,6 @@ test("#506 stale tar security override fails validation", () => {
       "  tar: 7.5.18",
       "  fast-uri: 3.1.4",
       "  linkify-it: 5.0.2",
-      "patchedDependencies:",
-      "  brace-expansion@2.1.2: patches/brace-expansion@2.1.2.patch",
       "",
     ].join("\n"),
   });
@@ -342,6 +309,7 @@ test("#508 newly disclosed transitive security fixes stay pinned", () => {
       "  - tmp@0.2.7",
       "  - fast-uri@3.1.4",
       "  - postcss@8.5.18",
+      "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.8",
       "  - tar@7.5.21",
       "trustPolicyExclude:",
@@ -349,11 +317,8 @@ test("#508 newly disclosed transitive security fixes stay pinned", () => {
       "  - chokidar@4.0.3",
       '  - "semver@5.7.2 || 6.3.1"',
       "blockExoticSubdeps: true",
-      "auditConfig:",
-      "  ignoreGhsas:",
-      "    - GHSA-mh99-v99m-4gvg",
       "overrides:",
-      '  "brace-expansion@2.1.1": "2.1.2"',
+      '  "brace-expansion@2.1.1": "2.1.4"',
       '  "brace-expansion@5.0.6": "5.0.8"',
       '  "brace-expansion@5.0.7": "5.0.8"',
       '  "postcss@8.5.15": "8.5.18"',
@@ -361,8 +326,6 @@ test("#508 newly disclosed transitive security fixes stay pinned", () => {
       "  tar: 7.5.21",
       "  fast-uri: 3.1.2",
       "  linkify-it: 5.0.1",
-      "patchedDependencies:",
-      "  brace-expansion@2.1.2: patches/brace-expansion@2.1.2.patch",
       "",
     ].join("\n"),
   });
@@ -390,24 +353,19 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
       "  - chokidar@4.0.3",
       '  - "semver@5.7.2 || 6.3.1"',
       "blockExoticSubdeps: true",
-      "auditConfig:",
-      "  ignoreGhsas:",
-      "    - GHSA-mh99-v99m-4gvg",
       "overrides:",
-      '  "brace-expansion@2.1.1": "2.1.2"',
+      '  "brace-expansion@2.1.1": "2.1.4"',
       '  "brace-expansion@5.0.6": "5.0.7"',
       "  js-yaml: 4.3.0",
       "  tar: 7.5.21",
       "  fast-uri: 3.1.4",
       "  linkify-it: 5.0.2",
-      "patchedDependencies:",
-      "  brace-expansion@2.1.2: patches/brace-expansion@2.1.2.patch",
       "",
     ].join("\n"),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4, postcss@8.5.18, brace-expansion@5.0.8, tar@7.5.21",
+      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4, postcss@8.5.18, brace-expansion@2.1.4, brace-expansion@5.0.8, tar@7.5.21",
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.8",
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.8",
       "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.18",
@@ -417,31 +375,61 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
   }
 });
 
-test("#554 brace-expansion audit ignore requires the reviewed patch contract", () => {
+test("#554 active advisory suppressions fail validation", () => {
   const repoRoot = createFixture({
-    bracePatch: "+module.exports = expand;\n",
+    workspace: [
+      "packages:",
+      "minimumReleaseAge: 10080",
+      "trustPolicy: no-downgrade",
+      "minimumReleaseAgeExclude:",
+      "  - tmp@0.2.7",
+      "  - fast-uri@3.1.4",
+      "  - postcss@8.5.18",
+      "  - brace-expansion@2.1.4",
+      "  - brace-expansion@5.0.8",
+      "  - tar@7.5.21",
+      "trustPolicyExclude:",
+      '  - "@octokit/endpoint@9.0.6"',
+      "  - chokidar@4.0.3",
+      '  - "semver@5.7.2 || 6.3.1"',
+      "blockExoticSubdeps: true",
+      "auditConfig:",
+      "  ignoreGhsas:",
+      "    - GHSA-mh99-v99m-4gvg",
+      "overrides:",
+      '  "brace-expansion@2.1.1": "2.1.4"',
+      '  "brace-expansion@5.0.6": "5.0.8"',
+      '  "brace-expansion@5.0.7": "5.0.8"',
+      '  "postcss@8.5.15": "8.5.18"',
+      "  js-yaml: 4.3.0",
+      "  tar: 7.5.21",
+      "  fast-uri: 3.1.4",
+      "  linkify-it: 5.0.2",
+      "",
+    ].join("\n"),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "brace-expansion security patch must include CVE-2026-14257",
-      "brace-expansion security patch must include EXPANSION_MAX_LENGTH",
-      "brace-expansion security patch must include if (length + expansion.length > maxLength)",
+      "pnpm-workspace.yaml auditConfig.ignoreGhsas must be empty; use patched upstream releases instead of suppressing active advisories",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
   }
 });
 
-test("#554 patched brace-expansion preserves minimatch API and bounds output", () => {
+test("#554 official brace-expansion release preserves minimatch API and bounds output", () => {
   const pnpmRoot = path.resolve("node_modules/.pnpm");
-  const patchedDirectory = readdirSync(pnpmRoot).find((entry) =>
-    entry.startsWith("brace-expansion@2.1.2_patch_hash="),
+  const officialDirectory = readdirSync(pnpmRoot).find((entry) =>
+    entry.startsWith("brace-expansion@2.1.4"),
   );
-  assert.ok(patchedDirectory, "expected patched brace-expansion installation");
+  assert.ok(
+    officialDirectory,
+    "expected official brace-expansion 2.1.4 installation",
+  );
 
   const packageRoot = path.join(
     pnpmRoot,
-    patchedDirectory,
+    officialDirectory,
     "node_modules/brace-expansion",
   );
   const require = createRequire(import.meta.url);
