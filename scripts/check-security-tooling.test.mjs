@@ -4,21 +4,43 @@ import {
   mkdtempSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { validateSecurityTooling } from "./check-security-tooling.mjs";
 
-const RELEVANT_FILES = [
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
+const MISE_TEXT = readFileSync(path.join(REPO_ROOT, "mise.toml"), "utf8");
+const UV_VERSION = /\buv\s*=\s*"(?<version>\d+\.\d+\.\d+)"/u.exec(MISE_TEXT)
+  ?.groups?.version;
+assert.ok(UV_VERSION, "mise.toml must expose the canonical uv version");
+
+const UV_PIN_SURFACES = [
+  ".devcontainer/Dockerfile",
+  ".devcontainer/devcontainer.json",
   ".github/workflows/ci.yml",
   ".github/workflows/cross-repo-compatibility.yml",
   ".github/workflows/docs.yml",
   ".github/workflows/performance-nightly.yml",
   ".github/workflows/security.yml",
+  "docs/validation-host.md",
+  "mise.toml",
+  "scripts/check-devcontainer.mjs",
+  "scripts/check-security-tooling.mjs",
+  "scripts/check-validation-host.mjs",
+];
+
+const RELEVANT_FILES = [
+  ...UV_PIN_SURFACES,
   "apps/vscode-extension/scripts/local-security.sh",
   "apps/vscode-extension/scripts/local-security.ps1",
   ".github/zizmor.yml",
@@ -34,7 +56,7 @@ const RELEVANT_FILES = [
 function createFixture() {
   const root = mkdtempSync(path.join(os.tmpdir(), "kicad-security-tooling-"));
   for (const relativePath of RELEVANT_FILES) {
-    const source = path.resolve(relativePath);
+    const source = path.join(REPO_ROOT, relativePath);
     const target = path.join(root, relativePath);
     mkdirSync(path.dirname(target), { recursive: true });
     try {
@@ -52,6 +74,115 @@ function replaceInFixture(root, relativePath, before, after) {
   assert.ok(source.includes(before), `${relativePath} must contain ${before}`);
   writeFileSync(filePath, source.replace(before, after));
 }
+
+function renovateFilePattern(pattern) {
+  assert.match(pattern, /^\/.+\/[a-z]*$/u);
+  const delimiter = pattern.lastIndexOf("/");
+  const source = pattern.slice(1, delimiter);
+  const flags = pattern.slice(delimiter + 1);
+  return new RegExp(source, flags.includes("u") ? flags : `${flags}u`);
+}
+
+function countManagedUvPins(manager, text) {
+  return manager.matchStrings.reduce((count, pattern) => {
+    const regex = new RegExp(pattern, "gmu");
+    return (
+      count +
+      [...text.matchAll(regex)].filter(
+        (match) => match.groups?.currentValue === UV_VERSION,
+      ).length
+    );
+  }, 0);
+}
+
+test("Renovate owns every repository uv pin surface", () => {
+  const renovate = JSON.parse(
+    readFileSync(path.join(REPO_ROOT, "renovate.json"), "utf8"),
+  );
+  const uvManagers = (renovate.customManagers ?? []).filter(
+    (manager) =>
+      manager.customType === "regex" &&
+      manager.datasourceTemplate === "github-releases" &&
+      manager.depNameTemplate === "astral-sh/uv",
+  );
+  assert.equal(uvManagers.length, 1);
+  const manager = uvManagers[0];
+  assert.equal(manager.versioningTemplate, "semver-coerced");
+  assert.ok(Array.isArray(manager.managerFilePatterns));
+  assert.ok(Array.isArray(manager.matchStrings));
+
+  const nativeManagerDisabled = (renovate.packageRules ?? []).some(
+    (rule) =>
+      rule.enabled === false &&
+      rule.matchManagers?.includes("github-actions") &&
+      rule.matchPackageNames?.includes("astral-sh/uv"),
+  );
+  assert.equal(
+    nativeManagerDisabled,
+    true,
+    "the native github-actions uses-with update must be disabled for astral-sh/uv",
+  );
+
+  const atomicUpdateRule = (renovate.packageRules ?? []).some(
+    (rule) =>
+      rule.matchManagers?.includes("custom.regex") &&
+      rule.matchPackageNames?.includes("astral-sh/uv") &&
+      rule.groupName === "repository uv toolchain" &&
+      rule.semanticCommitScope === "repo" &&
+      rule.dependencyDashboardApproval === true &&
+      rule.automerge === false,
+  );
+  assert.equal(
+    atomicUpdateRule,
+    true,
+    "the uv custom manager must produce one manually reviewed repository-scoped PR",
+  );
+
+  for (const relativePath of UV_PIN_SURFACES) {
+    assert.ok(
+      manager.managerFilePatterns.some((pattern) =>
+        renovateFilePattern(pattern).test(relativePath),
+      ),
+      `${relativePath} must be included in the uv custom manager`,
+    );
+    const contents = readFileSync(path.join(REPO_ROOT, relativePath), "utf8");
+    const expectedMatches = contents.split(UV_VERSION).length - 1;
+    assert.ok(
+      expectedMatches > 0,
+      `${relativePath} must contain ${UV_VERSION}`,
+    );
+    assert.equal(
+      countManagedUvPins(manager, contents),
+      expectedMatches,
+      `${relativePath} must expose every uv pin to Renovate`,
+    );
+  }
+});
+
+test("every setup-node workflow reads the canonical .node-version file", () => {
+  const workflowRoot = path.join(REPO_ROOT, ".github/workflows");
+  for (const entry of readdirSync(workflowRoot, { withFileTypes: true })) {
+    if (!entry.isFile() || !/\.ya?ml$/u.test(entry.name)) continue;
+    const relativePath = `.github/workflows/${entry.name}`;
+    const workflow = readFileSync(path.join(workflowRoot, entry.name), "utf8");
+    if (!workflow.includes("actions/setup-node@")) continue;
+    assert.doesNotMatch(
+      workflow,
+      /^\s*node-version:\s*\d/mu,
+      `${relativePath} must not duplicate the Node runtime pin`,
+    );
+    const setupNodeSteps =
+      workflow.match(/actions\/setup-node@/gu)?.length ?? 0;
+    const nodeVersionFiles =
+      workflow.match(/^\s*node-version-file:\s*\.node-version\s*$/gmu)
+        ?.length ?? 0;
+    assert.equal(
+      nodeVersionFiles,
+      setupNodeSteps,
+      `${relativePath} must source every setup-node step from .node-version`,
+    );
+  }
+});
 
 test("#508 repository security-tooling policy is complete", () => {
   assert.deepEqual(validateSecurityTooling(), []);
@@ -169,20 +300,21 @@ test("#555 every setup-uv action pins the repository uv version", () => {
     replaceInFixture(
       root,
       ".github/workflows/cross-repo-compatibility.yml",
-      "          version: 0.11.32\n",
+      `          version: ${UV_VERSION}\n`,
       "          version: latest\n",
     );
     replaceInFixture(
       root,
       ".github/workflows/docs.yml",
-      "          version: 0.11.32\n",
+      `          version: ${UV_VERSION}\n`,
       "",
     );
     const errors = validateSecurityTooling(root);
     for (const workflow of ["cross-repo-compatibility.yml", "docs.yml"]) {
       assert.ok(
         errors.some(
-          (error) => error.includes(workflow) && error.includes("uv 0.11.32"),
+          (error) =>
+            error.includes(workflow) && error.includes(`uv ${UV_VERSION}`),
         ),
       );
     }
