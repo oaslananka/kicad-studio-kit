@@ -27,10 +27,8 @@ function createFixture(overrides = {}) {
         "minimumReleaseAgeExclude:",
         "  - tmp@0.2.7",
         "  - fast-uri@3.1.4",
-        "  - postcss@8.5.18",
         "  - brace-expansion@2.1.4",
         "  - brace-expansion@5.0.8",
-        "  - tar@7.5.21",
         "trustPolicyExclude:",
         '  - "@octokit/endpoint@9.0.6"',
         "  - chokidar@4.0.3",
@@ -40,9 +38,9 @@ function createFixture(overrides = {}) {
         '  "brace-expansion@2.1.1": "2.1.4"',
         '  "brace-expansion@5.0.6": "5.0.8"',
         '  "brace-expansion@5.0.7": "5.0.8"',
-        '  "postcss@8.5.15": "8.5.18"',
+        '  "postcss@8.5.15": "8.5.23"',
         "  js-yaml: 4.3.0",
-        "  tar: 7.5.21",
+        "  tar: 7.5.22",
         "  fast-uri: 3.1.4",
         "  linkify-it: 5.0.2",
         "",
@@ -109,6 +107,45 @@ test("fixture with expected supply-chain settings passes", () => {
   }
 });
 
+test("mature PostCSS and tar releases cannot remain age exceptions", () => {
+  const repoRoot = createFixture({
+    workspace: [
+      "packages:",
+      "minimumReleaseAge: 10080",
+      "trustPolicy: no-downgrade",
+      "minimumReleaseAgeExclude:",
+      "  - tmp@0.2.7",
+      "  - fast-uri@3.1.4",
+      "  - brace-expansion@2.1.4",
+      "  - brace-expansion@5.0.8",
+      "  - postcss@8.5.23",
+      "  - tar@7.5.22",
+      "trustPolicyExclude:",
+      '  - "@octokit/endpoint@9.0.6"',
+      "  - chokidar@4.0.3",
+      '  - "semver@5.7.2 || 6.3.1"',
+      "blockExoticSubdeps: true",
+      "overrides:",
+      '  "brace-expansion@2.1.1": "2.1.4"',
+      '  "brace-expansion@5.0.6": "5.0.8"',
+      '  "brace-expansion@5.0.7": "5.0.8"',
+      '  "postcss@8.5.15": "8.5.23"',
+      "  js-yaml: 4.3.0",
+      "  tar: 7.5.22",
+      "  fast-uri: 3.1.4",
+      "  linkify-it: 5.0.2",
+      "",
+    ].join("\n"),
+  });
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4, brace-expansion@2.1.4, brace-expansion@5.0.8",
+    ]);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
 test("disabled pnpm supply-chain controls fail validation", () => {
   const repoRoot = createFixture({
     workspace: [
@@ -125,9 +162,9 @@ test("disabled pnpm supply-chain controls fail validation", () => {
       '  "brace-expansion@2.1.1": "2.1.4"',
       '  "brace-expansion@5.0.6": "5.0.8"',
       '  "brace-expansion@5.0.7": "5.0.8"',
-      '  "postcss@8.5.15": "8.5.18"',
+      '  "postcss@8.5.15": "8.5.23"',
       "  js-yaml: 4.3.0",
-      "  tar: 7.5.21",
+      "  tar: 7.5.22",
       "  fast-uri: 3.1.4",
       "  linkify-it: 5.0.2",
       "",
@@ -139,7 +176,7 @@ test("disabled pnpm supply-chain controls fail validation", () => {
       "pnpm-workspace.yaml must set trustPolicy: no-downgrade",
       "pnpm-workspace.yaml must set blockExoticSubdeps: true",
       "pnpm-workspace.yaml must not enable trustLockfile for public PR CI",
-      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4, postcss@8.5.18, brace-expansion@2.1.4, brace-expansion@5.0.8, tar@7.5.21",
+      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4, brace-expansion@2.1.4, brace-expansion@5.0.8",
       "pnpm-workspace.yaml trustPolicyExclude must be limited to reviewed version-scoped exceptions: @octokit/endpoint@9.0.6, chokidar@4.0.3, semver@5.7.2 || 6.3.1",
     ]);
   } finally {
@@ -210,10 +247,8 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
       "  - fast-uri@3.1.4",
-      "  - postcss@8.5.18",
       "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.8",
-      "  - tar@7.5.21",
       "trustPolicyExclude:",
       '  - "@octokit/endpoint@9.0.6"',
       "  - chokidar@4.0.3",
@@ -221,7 +256,7 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
       "blockExoticSubdeps: true",
       "overrides:",
       "  js-yaml: 4.3.0",
-      "  tar: 7.5.21",
+      "  tar: 7.5.22",
       "  fast-uri: 3.1.4",
       "  linkify-it: 5.0.2",
       "",
@@ -232,7 +267,7 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
       "pnpm-workspace.yaml overrides must pin brace-expansion@2.1.1 to 2.1.4",
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.8",
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.8",
-      "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.18",
+      "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.23",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -248,10 +283,8 @@ test("#506 stale js-yaml security override fails validation", () => {
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
       "  - fast-uri@3.1.4",
-      "  - postcss@8.5.18",
       "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.8",
-      "  - tar@7.5.21",
       "trustPolicyExclude:",
       '  - "@octokit/endpoint@9.0.6"',
       "  - chokidar@4.0.3",
@@ -261,9 +294,9 @@ test("#506 stale js-yaml security override fails validation", () => {
       '  "brace-expansion@2.1.1": "2.1.4"',
       '  "brace-expansion@5.0.6": "5.0.8"',
       '  "brace-expansion@5.0.7": "5.0.8"',
-      '  "postcss@8.5.15": "8.5.18"',
+      '  "postcss@8.5.15": "8.5.23"',
       "  js-yaml: 4.2.0",
-      "  tar: 7.5.21",
+      "  tar: 7.5.22",
       "  fast-uri: 3.1.4",
       "  linkify-it: 5.0.2",
       "",
@@ -287,10 +320,8 @@ test("#506 stale tar security override fails validation", () => {
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
       "  - fast-uri@3.1.4",
-      "  - postcss@8.5.18",
       "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.8",
-      "  - tar@7.5.21",
       "trustPolicyExclude:",
       '  - "@octokit/endpoint@9.0.6"',
       "  - chokidar@4.0.3",
@@ -300,7 +331,7 @@ test("#506 stale tar security override fails validation", () => {
       '  "brace-expansion@2.1.1": "2.1.4"',
       '  "brace-expansion@5.0.6": "5.0.8"',
       '  "brace-expansion@5.0.7": "5.0.8"',
-      '  "postcss@8.5.15": "8.5.18"',
+      '  "postcss@8.5.15": "8.5.23"',
       "  js-yaml: 4.3.0",
       "  tar: 7.5.18",
       "  fast-uri: 3.1.4",
@@ -310,7 +341,7 @@ test("#506 stale tar security override fails validation", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml overrides must pin tar to 7.5.21",
+      "pnpm-workspace.yaml overrides must pin tar to 7.5.22",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -326,10 +357,8 @@ test("#508 newly disclosed transitive security fixes stay pinned", () => {
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
       "  - fast-uri@3.1.4",
-      "  - postcss@8.5.18",
       "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.8",
-      "  - tar@7.5.21",
       "trustPolicyExclude:",
       '  - "@octokit/endpoint@9.0.6"',
       "  - chokidar@4.0.3",
@@ -339,9 +368,9 @@ test("#508 newly disclosed transitive security fixes stay pinned", () => {
       '  "brace-expansion@2.1.1": "2.1.4"',
       '  "brace-expansion@5.0.6": "5.0.8"',
       '  "brace-expansion@5.0.7": "5.0.8"',
-      '  "postcss@8.5.15": "8.5.18"',
+      '  "postcss@8.5.15": "8.5.23"',
       "  js-yaml: 4.3.0",
-      "  tar: 7.5.21",
+      "  tar: 7.5.22",
       "  fast-uri: 3.1.2",
       "  linkify-it: 5.0.1",
       "",
@@ -375,7 +404,7 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
       '  "brace-expansion@2.1.1": "2.1.4"',
       '  "brace-expansion@5.0.6": "5.0.7"',
       "  js-yaml: 4.3.0",
-      "  tar: 7.5.21",
+      "  tar: 7.5.22",
       "  fast-uri: 3.1.4",
       "  linkify-it: 5.0.2",
       "",
@@ -383,10 +412,10 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4, postcss@8.5.18, brace-expansion@2.1.4, brace-expansion@5.0.8, tar@7.5.21",
+      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4, brace-expansion@2.1.4, brace-expansion@5.0.8",
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.8",
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.8",
-      "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.18",
+      "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.23",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -402,10 +431,8 @@ test("#554 active advisory suppressions fail validation", () => {
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
       "  - fast-uri@3.1.4",
-      "  - postcss@8.5.18",
       "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.8",
-      "  - tar@7.5.21",
       "trustPolicyExclude:",
       '  - "@octokit/endpoint@9.0.6"',
       "  - chokidar@4.0.3",
@@ -418,9 +445,9 @@ test("#554 active advisory suppressions fail validation", () => {
       '  "brace-expansion@2.1.1": "2.1.4"',
       '  "brace-expansion@5.0.6": "5.0.8"',
       '  "brace-expansion@5.0.7": "5.0.8"',
-      '  "postcss@8.5.15": "8.5.18"',
+      '  "postcss@8.5.15": "8.5.23"',
       "  js-yaml: 4.3.0",
-      "  tar: 7.5.21",
+      "  tar: 7.5.22",
       "  fast-uri: 3.1.4",
       "  linkify-it: 5.0.2",
       "",
