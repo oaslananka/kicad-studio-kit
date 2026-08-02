@@ -2,12 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 export type JsonValue =
-  | null
-  | boolean
-  | number
-  | string
-  | JsonValue[]
-  | { [key: string]: JsonValue };
+  null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
 export interface GoldenComparison {
   pass: boolean;
