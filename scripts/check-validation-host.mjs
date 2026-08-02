@@ -27,7 +27,7 @@ export function validateValidationHostContract(contract) {
   const expectedPins = [
     'node = "24.18.0"',
     'python = "3.13.14"',
-    'uv = "0.11.21"',
+    'uv = "0.11.32"',
     'actionlint = "1.7.12"',
     'shellcheck = "0.9.0"',
   ];

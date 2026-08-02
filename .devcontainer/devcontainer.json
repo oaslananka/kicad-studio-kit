@@ -5,7 +5,7 @@
     "context": "..",
     "args": {
       "ACTIONLINT_VERSION": "1.7.12",
-      "UV_VERSION": "0.11.21"
+      "UV_VERSION": "0.11.32"
     }
   },
   "features": {

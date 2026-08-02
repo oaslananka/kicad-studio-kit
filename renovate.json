@@ -116,7 +116,7 @@
       "description": "GitHub Actions updates are isolated from product runtime updates.",
       "matchManagers": ["github-actions"],
       "groupName": "github actions",
-      "semanticCommitScope": "github-actions",
+      "semanticCommitScope": "repo",
       "addLabels": ["ci", "risk:medium"],
       "dependencyDashboardApproval": true,
       "automerge": false,
