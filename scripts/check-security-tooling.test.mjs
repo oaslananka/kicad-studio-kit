@@ -169,20 +169,20 @@ test("#555 every setup-uv action pins the repository uv version", () => {
     replaceInFixture(
       root,
       ".github/workflows/cross-repo-compatibility.yml",
-      "          version: 0.11.21\n",
+      "          version: 0.11.32\n",
       "          version: latest\n",
     );
     replaceInFixture(
       root,
       ".github/workflows/docs.yml",
-      "          version: 0.11.21\n",
+      "          version: 0.11.32\n",
       "",
     );
     const errors = validateSecurityTooling(root);
     for (const workflow of ["cross-repo-compatibility.yml", "docs.yml"]) {
       assert.ok(
         errors.some(
-          (error) => error.includes(workflow) && error.includes("uv 0.11.21"),
+          (error) => error.includes(workflow) && error.includes("uv 0.11.32"),
         ),
       );
     }

@@ -9,7 +9,7 @@ const REPO_ROOT = path.resolve(
   "..",
 );
 
-const UV_VERSION = "0.11.21";
+const UV_VERSION = "0.11.32";
 const SETUP_UV_ACTION =
   "astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39";
 

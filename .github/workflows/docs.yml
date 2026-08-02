@@ -29,11 +29,11 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
-          node-version: 24.16.0
+          node-version: 24.18.0
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
         with:
           enable-cache: true
-          version: 0.11.21
+          version: 0.11.32
 
       - run: corepack enable
       - run: corepack prepare pnpm@11.6.0 --activate

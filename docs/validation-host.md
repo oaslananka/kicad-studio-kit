@@ -17,7 +17,7 @@ does not install `mise` itself.
 
 ## What the bootstrap installs
 
-`mise.toml` pins Node 24.18.0, Python 3.13.14, uv 0.11.21, actionlint 1.7.12,
+`mise.toml` pins Node 24.18.0, Python 3.13.14, uv 0.11.32, actionlint 1.7.12,
 and ShellCheck 0.9.0. Bootstrap forces mise state below the executing account's
 `$HOME`, enables pnpm through Corepack, installs the frozen workspace lockfile,
 and installs Playwright Chromium.

@@ -3,7 +3,7 @@ FROM ghcr.io/astral-sh/uv@sha256:ff07b86af50d4d9391d9daf4ff89ce427bc544f9aae8705
 FROM mcr.microsoft.com/devcontainers/python:3.13-bookworm@sha256:bf253e8b9200ad2c159015e87b63dc68a7d185e89cd5a9a1fa9d0d4f4ba6ad76
 
 ARG ACTIONLINT_VERSION=1.7.12
-ARG UV_VERSION=0.11.21
+ARG UV_VERSION=0.11.32
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV KICAD_STUDIO_DEVCONTAINER=1 \
