@@ -11,10 +11,8 @@ const MINIMUM_RELEASE_AGE_MINUTES = 10080;
 const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = [
   "tmp@0.2.7",
   "fast-uri@3.1.4",
-  "postcss@8.5.18",
   "brace-expansion@2.1.4",
   "brace-expansion@5.0.8",
-  "tar@7.5.21",
 ];
 const ALLOWED_TRUST_POLICY_EXCLUDES = [
   "@octokit/endpoint@9.0.6",
@@ -25,9 +23,9 @@ const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   "brace-expansion@2.1.1": "2.1.4",
   "brace-expansion@5.0.6": "5.0.8",
   "brace-expansion@5.0.7": "5.0.8",
-  "postcss@8.5.15": "8.5.18",
+  "postcss@8.5.15": "8.5.23",
   "js-yaml": "4.3.0",
-  tar: "7.5.21",
+  tar: "7.5.22",
   "fast-uri": "3.1.4",
   "linkify-it": "5.0.2",
 });
@@ -112,7 +110,7 @@ function validateWorkspace(errors, workspace) {
       workspace?.minimumReleaseAgeExclude,
       ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES,
     ),
-    "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4, postcss@8.5.18, brace-expansion@2.1.4, brace-expansion@5.0.8, tar@7.5.21",
+    "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.4, brace-expansion@2.1.4, brace-expansion@5.0.8",
   );
   assertCondition(
     errors,
