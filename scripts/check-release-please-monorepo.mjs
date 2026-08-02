@@ -128,8 +128,10 @@ export function validateRepositoryPolicy(repoRoot = REPO_ROOT) {
       );
     }
   }
-  errors.push(...validateLinkedVersionGroups(config, manifest));
-  errors.push(...validateRenovateCommitScopes(renovate));
+  errors.push(
+    ...validateLinkedVersionGroups(config, manifest),
+    ...validateRenovateCommitScopes(renovate),
+  );
 
   const releaseDocs = readText(repoRoot, "docs/release.md");
   for (const scope of ALLOWED_SCOPES) {

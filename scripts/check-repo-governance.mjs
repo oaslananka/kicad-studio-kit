@@ -69,12 +69,12 @@ function validateRenovate() {
     {
       groupName: "root workspace tooling",
       files: ["package.json", "pnpm-workspace.yaml"],
-      scope: "root-tooling",
+      scope: "deps",
     },
     {
       groupName: "vscode extension npm dependencies",
       files: ["apps/vscode-extension/package.json"],
-      scope: "vscode-extension",
+      scope: "deps",
     },
   ];
 
