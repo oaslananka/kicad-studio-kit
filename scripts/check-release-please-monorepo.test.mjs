@@ -15,6 +15,7 @@ import {
   validateCommitScopeCoverage,
   validateLinkedVersionGroups,
   validatePrTitle,
+  validateRenovateCommitScopes,
   validateRepositoryPolicy,
 } from "./check-release-please-monorepo.mjs";
 
@@ -43,9 +44,15 @@ test("release workflow uses GitHub-signed commits for generated surfaces", () =>
     2,
   );
   assert.match(workflow, /GITHUB_TOKEN: \${{ github\.token }}/);
-  assert.match(workflow, /RELEASE_PR_JSON: \${{ steps\.release\.outputs\.pr }}/);
+  assert.match(
+    workflow,
+    /RELEASE_PR_JSON: \${{ steps\.release\.outputs\.pr }}/,
+  );
   assert.match(workflow, /ref: \${{ steps\.release-pr\.outputs\.branch }}/);
-  assert.match(workflow, /RELEASE_BRANCH: \${{ steps\.release-pr\.outputs\.branch }}/);
+  assert.match(
+    workflow,
+    /RELEASE_BRANCH: \${{ steps\.release-pr\.outputs\.branch }}/,
+  );
   assert.doesNotMatch(workflow, /fromJSON\(steps\.release\.outputs\.pr\)/);
   assert.doesNotMatch(workflow, /git commit/);
   assert.doesNotMatch(workflow, /git push/);
@@ -61,6 +68,31 @@ test("release-please manifest mode is product-scoped and version aligned", () =>
   assert.deepEqual(result.changelogPaths, {
     "apps/vscode-extension": "apps/vscode-extension/CHANGELOG.md",
   });
+});
+
+test("Renovate semantic commit scopes stay inside the repository contract", () => {
+  assert.deepEqual(
+    validateRenovateCommitScopes({
+      packageRules: [
+        { semanticCommitScope: "deps" },
+        { semanticCommitScope: "repo" },
+        { matchManagers: ["dockerfile"] },
+      ],
+    }),
+    [],
+  );
+  assert.deepEqual(
+    validateRenovateCommitScopes({
+      packageRules: [
+        { semanticCommitScope: "node-runtime" },
+        { semanticCommitScope: "root-tooling" },
+      ],
+    }),
+    [
+      'renovate.json packageRules[0] semanticCommitScope "node-runtime" is not allowed; use kicad-studio, kicad-mcp-pro, repo, deps, docs, superpowers, .gitignore',
+      'renovate.json packageRules[1] semanticCommitScope "root-tooling" is not allowed; use kicad-studio, kicad-mcp-pro, repo, deps, docs, superpowers, .gitignore',
+    ],
+  );
 });
 
 test("PR title lint accepts only documented product release scopes", () => {

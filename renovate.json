@@ -57,7 +57,7 @@
       "matchFileNames": ["package.json", "pnpm-workspace.yaml"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "root workspace tooling",
-      "semanticCommitScope": "root-tooling",
+      "semanticCommitScope": "deps",
       "addLabels": ["product:repo", "ci"]
     },
     {
@@ -66,7 +66,7 @@
       "matchFileNames": ["apps/vscode-extension/package.json"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "vscode extension npm dependencies",
-      "semanticCommitScope": "vscode-extension",
+      "semanticCommitScope": "deps",
       "addLabels": ["product:vscode-extension"]
     },
     {
@@ -78,7 +78,7 @@
         "peerDependencies"
       ],
       "groupName": "node runtime dependencies",
-      "semanticCommitScope": "node-runtime",
+      "semanticCommitScope": "deps",
       "addLabels": ["risk:medium"]
     },
     {
@@ -86,7 +86,7 @@
       "matchManagers": ["npm"],
       "matchDepTypes": ["devDependencies"],
       "groupName": "node build and test dependencies",
-      "semanticCommitScope": "node-dev",
+      "semanticCommitScope": "deps",
       "addLabels": ["ci"],
       "prPriority": -1
     },
