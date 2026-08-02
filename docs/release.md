@@ -82,11 +82,12 @@ The publish workflows keep release evidence product-scoped:
   back to the exact commit and workflow run that produced it. `release-summary.md`
   restates the same evidence and links the Visual Studio Marketplace, Open VSX,
   and GitHub Release locations for the published version.
-- Release Please explicitly dispatches `publish-extension.yml` after creating a
-  release because GitHub does not recursively trigger release-event workflows
-  from releases created with `GITHUB_TOKEN`. The dispatch checks out the release
-  tag and attaches VSIX, checksum, SBOM, and provenance evidence to that GitHub
-  Release.
+- Release Please uses the dedicated `RELEASE_PLEASE_TOKEN` to create release PRs,
+  update their generated surfaces, and publish GitHub Releases. The authenticated
+  `release: published` event triggers `publish-extension.yml` exactly once; the
+  workflow checks out the release tag and attaches VSIX, checksum, SBOM, and
+  provenance evidence to that GitHub Release. Manual workflow dispatch remains a
+  recovery path for restoring evidence or selectively retrying marketplaces.
 - `publish-python.yml` (now in [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/)) validates the wheel and source distribution, emits SHA256SUMS.txt, emits a CycloneDX SBOM,
   uploads that evidence as `python-release-evidence`, and creates GitHub
   artifact attestations for the Python wheel and source distribution before PyPI

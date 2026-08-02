@@ -37,13 +37,29 @@ test("release workflow uses GitHub-signed commits for generated surfaces", () =>
     path.join(REPO_ROOT, ".github/workflows/release-please.yml"),
     "utf8",
   );
+  const publishWorkflow = fs.readFileSync(
+    path.join(REPO_ROOT, ".github/workflows/publish-extension.yml"),
+    "utf8",
+  );
 
   assert.equal(
     (workflow.match(/node scripts\/create-github-signed-commit\.mjs/g) ?? [])
       .length,
     2,
   );
-  assert.match(workflow, /GITHUB_TOKEN: \${{ github\.token }}/);
+  assert.match(workflow, /token: \${{ secrets\.RELEASE_PLEASE_TOKEN }}/);
+  assert.doesNotMatch(
+    workflow,
+    /id: release[\s\S]*?token: \${{ github\.token }}/,
+  );
+  assert.match(
+    workflow,
+    /name: Commit release surfaces[\s\S]*?GITHUB_TOKEN: \${{ secrets\.RELEASE_PLEASE_TOKEN }}/,
+  );
+  assert.match(
+    workflow,
+    /name: Commit post-release docs[\s\S]*?GITHUB_TOKEN: \${{ github\.token }}/,
+  );
   assert.match(
     workflow,
     /RELEASE_PR_JSON: \${{ steps\.release\.outputs\.pr }}/,
@@ -56,6 +72,8 @@ test("release workflow uses GitHub-signed commits for generated surfaces", () =>
   assert.doesNotMatch(workflow, /fromJSON\(steps\.release\.outputs\.pr\)/);
   assert.doesNotMatch(workflow, /git commit/);
   assert.doesNotMatch(workflow, /git push/);
+  assert.doesNotMatch(workflow, /gh workflow run publish-extension\.yml/);
+  assert.match(publishWorkflow, /release:\n\s+types: \[published\]/);
 });
 
 test("release-please manifest mode is product-scoped and version aligned", () => {
