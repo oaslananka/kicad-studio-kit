@@ -96,6 +96,21 @@ function validateRenovate() {
     hasPackageRule(
       rules,
       (rule) =>
+        arrayIncludesAll(rule.matchPackageNames, [
+          "@oaslananka/kicad-protocol-schemas",
+        ]) &&
+        rule.groupName === "protocol schemas" &&
+        rule.semanticCommitType === "fix" &&
+        rule.semanticCommitScope === "deps" &&
+        rule.automerge === false,
+    ),
+    "Renovate must update protocol schemas atomically across root and extension manifests",
+  );
+
+  requireCondition(
+    hasPackageRule(
+      rules,
+      (rule) =>
         arrayIncludesAll(rule.matchDepTypes, ["devDependencies"]) &&
         arrayIncludesAll(rule.matchUpdateTypes, ["patch"]) &&
         rule.automerge === true &&

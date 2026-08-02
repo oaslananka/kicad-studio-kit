@@ -102,6 +102,22 @@
       "prPriority": 1
     },
     {
+      "description": "Update the published protocol schema package atomically across root and extension manifests.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@oaslananka/kicad-protocol-schemas"],
+      "groupName": "protocol schemas",
+      "semanticCommitType": "fix",
+      "semanticCommitScope": "deps",
+      "automerge": false,
+      "addLabels": [
+        "compatibility",
+        "risk:high",
+        "product:repo",
+        "product:vscode-extension"
+      ],
+      "prPriority": 7
+    },
+    {
       "description": "Protocol and runtime-surface updates require compatibility review.",
       "matchPackageNames": [
         "mcp",
