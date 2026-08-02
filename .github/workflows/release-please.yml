@@ -47,13 +47,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          release_branch="$(node --input-type=module <<'NODE'
+          mapfile -t release_metadata < <(node --input-type=module <<'NODE'
           const releasePr = JSON.parse(process.env.RELEASE_PR_JSON ?? "");
           const branch = releasePr.headBranchName;
+          const title = releasePr.title;
+          const invalidBranchCharacter =
+            typeof branch === "string" &&
+            [...branch].some((character) => {
+              const code = character.codePointAt(0);
+              return (
+                code <= 0x20 ||
+                code === 0x7f ||
+                code === 0x5c ||
+                "~^:?*[".includes(character)
+              );
+            });
           if (
             typeof branch !== "string" ||
             branch.length === 0 ||
-            /[\u0000-\u0020\u007f~^:?*\[\]\\]/u.test(branch) ||
+            !branch.startsWith("release-please--branches--") ||
+            invalidBranchCharacter ||
             branch.startsWith("-") ||
             branch.startsWith("/") ||
             branch.endsWith("/") ||
@@ -64,10 +77,21 @@ jobs:
           ) {
             throw new Error("Release Please returned an unsafe head branch name");
           }
-          process.stdout.write(branch);
+          if (
+            typeof title !== "string" ||
+            !/^chore\(main\): release [a-z0-9._-]+ [0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/u.test(title)
+          ) {
+            throw new Error("Release Please returned an unsafe release PR title");
+          }
+          process.stdout.write(`${branch}\n${title}\n`);
           NODE
-          )"
-          printf 'branch=%s\n' "$release_branch" >> "$GITHUB_OUTPUT"
+          )
+          if [[ "${#release_metadata[@]}" -ne 2 ]]; then
+            echo "Release Please returned incomplete PR metadata" >&2
+            exit 1
+          fi
+          printf 'branch=%s\n' "${release_metadata[0]}" >> "$GITHUB_OUTPUT"
+          printf 'title=%s\n' "${release_metadata[1]}" >> "$GITHUB_OUTPUT"
       - if: ${{ steps.release.outputs.pr }}
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
@@ -90,15 +114,18 @@ jobs:
       - if: ${{ steps.release.outputs.pr }}
         run: corepack pnpm run docs:generate
       - if: ${{ steps.release.outputs.pr }}
-        name: Commit release surfaces with a GitHub signature
+        name: Create a single GitHub-signed release commit
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           RELEASE_BRANCH: ${{ steps.release-pr.outputs.branch }}
+          RELEASE_BASE_SHA: ${{ github.sha }}
+          RELEASE_TITLE: ${{ steps.release-pr.outputs.title }}
         run: |
           node scripts/create-github-signed-commit.mjs \
             --repository "$GITHUB_REPOSITORY" \
             --branch "$RELEASE_BRANCH" \
-            --message "chore(repo): sync release surfaces for the pending release"
+            --base "$RELEASE_BASE_SHA" \
+            --message "${RELEASE_TITLE}"$'\n\nSigned-off-by: oaslananka <info@oaslananka.dev>'
 
       # Regenerate changelog docs after a release PR is merged
       - if: ${{ steps.release.outputs.releases_created == 'true' }}

@@ -8,6 +8,7 @@ import {
   buildCreateCommitRequest,
   parseGitStatus,
 } from "./lib/github-signed-commit.mjs";
+import * as signedCommitHelpers from "./lib/github-signed-commit.mjs";
 
 const REPO_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
@@ -111,4 +112,93 @@ test("signed commit CLI uses its fixed GraphQL request helper", () => {
   );
   assert.match(source, /await githubGraphqlRequest\(\{/u);
   assert.doesNotMatch(source, /\bgithubRequest\(/u);
+});
+
+test("release diff parser captures tracked additions and deletions", () => {
+  assert.equal(typeof signedCommitHelpers.parseGitNameStatus, "function");
+  assert.deepEqual(
+    signedCommitHelpers.parseGitNameStatus(
+      "M\0docs/versions.md\0A\0docs/new.md\0D\0docs/retired.md\0",
+    ),
+    [
+      { path: "docs/versions.md", deleted: false },
+      { path: "docs/new.md", deleted: false },
+      { path: "docs/retired.md", deleted: true },
+    ],
+  );
+});
+
+test("release branch rewrite creates one commit from the base ref", async () => {
+  assert.equal(typeof signedCommitHelpers.rewriteReleaseBranch, "function");
+  const calls = [];
+  const result = await signedCommitHelpers.rewriteReleaseBranch({
+    repository: "oaslananka/kicad-studio-kit",
+    branch: "release-please--branches--main--components--vscode-extension",
+    baseOid: "a".repeat(40),
+    expectedHeadOid: "b".repeat(40),
+    headline:
+      "chore(main): release vscode-extension 1.10.1\n\nSigned-off-by: oaslananka <info@oaslananka.dev>",
+    changes: [{ path: "docs/versions.md", contents: Buffer.from("1.10.1\n") }],
+    getRemoteHead: async () => "b".repeat(40),
+    forceUpdateRef: async ({ sha }) => calls.push(["force", sha]),
+    createCommit: async (request) => {
+      calls.push(["commit", request.variables.input.expectedHeadOid]);
+      return { oid: "c".repeat(40) };
+    },
+  });
+
+  assert.deepEqual(calls, [
+    ["force", "a".repeat(40)],
+    ["commit", "a".repeat(40)],
+  ]);
+  assert.deepEqual(result, { oid: "c".repeat(40) });
+});
+
+test("release branch rewrite rejects stale heads and rolls back commit failures", async () => {
+  assert.equal(typeof signedCommitHelpers.rewriteReleaseBranch, "function");
+  const base = {
+    repository: "oaslananka/kicad-studio-kit",
+    branch: "release-please--branches--main--components--vscode-extension",
+    baseOid: "a".repeat(40),
+    expectedHeadOid: "b".repeat(40),
+    headline: "chore(main): release vscode-extension 1.10.1",
+    changes: [{ path: "docs/versions.md", contents: Buffer.from("1.10.1\n") }],
+  };
+
+  await assert.rejects(
+    signedCommitHelpers.rewriteReleaseBranch({
+      ...base,
+      branch: "main",
+      getRemoteHead: async () =>
+        assert.fail("must reject before remote access"),
+      forceUpdateRef: async () => assert.fail("must reject before ref update"),
+      createCommit: async () =>
+        assert.fail("must reject before commit creation"),
+    }),
+    /restricted to Release Please branches/u,
+  );
+
+  await assert.rejects(
+    signedCommitHelpers.rewriteReleaseBranch({
+      ...base,
+      getRemoteHead: async () => "d".repeat(40),
+      forceUpdateRef: async () => assert.fail("must not rewrite a stale ref"),
+      createCommit: async () => assert.fail("must not create on a stale ref"),
+    }),
+    /remote release branch moved/u,
+  );
+
+  const calls = [];
+  await assert.rejects(
+    signedCommitHelpers.rewriteReleaseBranch({
+      ...base,
+      getRemoteHead: async () => "b".repeat(40),
+      forceUpdateRef: async ({ sha }) => calls.push(sha),
+      createCommit: async () => {
+        throw new Error("synthetic create failure");
+      },
+    }),
+    /synthetic create failure/u,
+  );
+  assert.deepEqual(calls, ["a".repeat(40), "b".repeat(40)]);
 });

@@ -40,6 +40,91 @@ export function parseGitStatus(rawStatus) {
   return changes;
 }
 
+export function parseGitNameStatus(rawStatus) {
+  const entries = String(rawStatus).split("\0").filter(Boolean);
+  if (entries.length % 2 !== 0) {
+    throw new Error("Malformed git name-status output");
+  }
+
+  const changes = [];
+  for (let index = 0; index < entries.length; index += 2) {
+    const status = entries[index];
+    const filePath = entries[index + 1];
+    if (/[RC]/u.test(status)) {
+      throw new Error("Git rename or copy entries are not supported");
+    }
+    if (!/^[AMDT]$/u.test(status)) {
+      throw new Error(`Unsupported git diff status: ${JSON.stringify(status)}`);
+    }
+    assertRepositoryPath(filePath);
+    changes.push({ path: filePath, deleted: status === "D" });
+  }
+  return changes;
+}
+
+export async function rewriteReleaseBranch({
+  repository,
+  branch,
+  baseOid,
+  expectedHeadOid,
+  headline,
+  changes,
+  getRemoteHead,
+  forceUpdateRef,
+  createCommit,
+}) {
+  assertRepositorySlug(repository);
+  assertBranchName(branch);
+  assertReleaseBranchName(branch);
+  assertOid(baseOid, "baseOid");
+  assertOid(expectedHeadOid, "expectedHeadOid");
+  if (typeof getRemoteHead !== "function") {
+    throw new TypeError("getRemoteHead must be a function");
+  }
+  if (typeof forceUpdateRef !== "function") {
+    throw new TypeError("forceUpdateRef must be a function");
+  }
+  if (typeof createCommit !== "function") {
+    throw new TypeError("createCommit must be a function");
+  }
+
+  const remoteHead = await getRemoteHead({ repository, branch });
+  if (remoteHead !== expectedHeadOid) {
+    throw new Error(
+      `remote release branch moved: expected ${expectedHeadOid}, found ${remoteHead}`,
+    );
+  }
+
+  const request = buildCreateCommitRequest({
+    repository,
+    branch,
+    expectedHeadOid: baseOid,
+    headline,
+    changes,
+  });
+
+  await forceUpdateRef({ repository, branch, sha: baseOid, force: true });
+  try {
+    return await createCommit(request);
+  } catch (error) {
+    try {
+      await forceUpdateRef({
+        repository,
+        branch,
+        sha: expectedHeadOid,
+        force: true,
+      });
+    } catch (rollbackError) {
+      throw new AggregateError(
+        [error, rollbackError],
+        "release branch rewrite failed and rollback failed",
+        { cause: error },
+      );
+    }
+    throw error;
+  }
+}
+
 export function buildCreateCommitRequest({
   repository,
   branch,
@@ -49,9 +134,7 @@ export function buildCreateCommitRequest({
 }) {
   assertRepositorySlug(repository);
   assertBranchName(branch);
-  if (!/^[0-9a-f]{40}$/i.test(expectedHeadOid ?? "")) {
-    throw new Error("expectedHeadOid must be a 40-character Git SHA");
-  }
+  assertOid(expectedHeadOid, "expectedHeadOid");
   if (!headline) {
     throw new Error("headline is required");
   }
@@ -90,6 +173,20 @@ export function buildCreateCommitRequest({
       },
     },
   };
+}
+
+function assertOid(value, label) {
+  if (!/^[0-9a-f]{40}$/iu.test(value ?? "")) {
+    throw new Error(`${label} must be a 40-character Git SHA`);
+  }
+}
+
+function assertReleaseBranchName(branch) {
+  if (!branch.startsWith("release-please--branches--")) {
+    throw new Error(
+      "release history rewrites are restricted to Release Please branches",
+    );
+  }
 }
 
 function assertRepositorySlug(repository) {
