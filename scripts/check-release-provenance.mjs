@@ -193,8 +193,25 @@ function checkWorkflowEvidence(failures) {
   );
   expectIncludes(
     releasePleaseWorkflow,
-    "gh workflow run publish-extension.yml",
+    "token: ${{ secrets.RELEASE_PLEASE_TOKEN }}",
     "release-please workflow",
+    failures,
+  );
+  expectIncludes(
+    releasePleaseWorkflow,
+    "GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}",
+    "release-please workflow release-branch commit",
+    failures,
+  );
+  expectIncludes(
+    extension,
+    "release:\n    types: [published]",
+    "extension workflow",
+    failures,
+  );
+  expect(
+    !releasePleaseWorkflow.includes("gh workflow run publish-extension.yml"),
+    "release-please workflow must rely on the authenticated release event and avoid a duplicate publish dispatch",
     failures,
   );
   expectIncludes(

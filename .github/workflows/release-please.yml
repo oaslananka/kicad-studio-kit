@@ -29,6 +29,7 @@ jobs:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7
         id: release
         with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
@@ -91,7 +92,7 @@ jobs:
       - if: ${{ steps.release.outputs.pr }}
         name: Commit release surfaces with a GitHub signature
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           RELEASE_BRANCH: ${{ steps.release-pr.outputs.branch }}
         run: |
           node scripts/create-github-signed-commit.mjs \
@@ -128,26 +129,3 @@ jobs:
             --repository "$GITHUB_REPOSITORY" \
             --branch "$DEFAULT_BRANCH" \
             --message "docs(repo): regenerate changelog and versions after release"
-
-      # Release Please creates releases with GITHUB_TOKEN, which does not
-      # recursively trigger release-event workflows. Dispatch the publish
-      # workflow explicitly so packaging, evidence, and marketplaces run.
-      - if: ${{ steps.release.outputs.releases_created == 'true' }}
-        name: Publish extension to marketplaces
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          # Derive the tag from the released version rather than a Release Please
-          # output: in manifest mode the per-package outputs are path-prefixed
-          # (e.g. apps/vscode-extension--tag_name) and the bare tag_name output is
-          # unset, which previously left this dispatch with an empty ref. The
-          # component tag is component-name + "-v" + version, and this step runs
-          # on the checked-out main where package.json already holds the new
-          # version.
-          version="$(node -p "require('./apps/vscode-extension/package.json').version")"
-          tag="vscode-extension-v${version}"
-          echo "Triggering publish-extension workflow for tag ${tag}…"
-          gh workflow run publish-extension.yml \
-            --ref "${tag}" \
-            -f release_tag="${tag}"
