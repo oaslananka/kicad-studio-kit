@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.14
+# syntax=docker/dockerfile:1.25@sha256:0adf442eae370b6087e08edc7c50b552d80ddf261576f4ebd6421006b2461f12
 FROM ghcr.io/astral-sh/uv@sha256:ff07b86af50d4d9391d9daf4ff89ce427bc544f9aae87057e69a1cc0aa369946 AS uv-bin
 FROM mcr.microsoft.com/devcontainers/python:3.13-bookworm@sha256:bf253e8b9200ad2c159015e87b63dc68a7d185e89cd5a9a1fa9d0d4f4ba6ad76
 
