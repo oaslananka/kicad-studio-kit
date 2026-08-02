@@ -43,18 +43,22 @@ test("OASLANA-52 protocol schemas are consumed from npm package", () => {
   const packageJson = readJson(path.join(pkgRoot, "package.json"));
 
   assert.equal(packageJson.name, "@oaslananka/kicad-protocol-schemas");
-  assert.equal(packageJson.version, "1.1.1");
   assert.equal(packageJson.main, "dist/index.js");
   assert.equal(packageJson.types, "dist/index.d.ts");
   assert.deepEqual(packageJson.files, ["dist/", "schemas/", "README.md"]);
 
-  const rootPackage = JSON.parse(
-    fs.readFileSync(path.join(repoRoot, "package.json"), "utf8"),
+  const rootPackage = readJson(path.join(repoRoot, "package.json"));
+  const extensionPackage = readJson(
+    path.join(repoRoot, "apps/vscode-extension/package.json"),
   );
+  const expectedVersion =
+    rootPackage.devDependencies["@oaslananka/kicad-protocol-schemas"];
+  assert.match(expectedVersion, /^\d+\.\d+\.\d+$/u);
   assert.equal(
-    rootPackage.devDependencies["@oaslananka/kicad-protocol-schemas"],
-    "1.1.1",
+    extensionPackage.dependencies["@oaslananka/kicad-protocol-schemas"],
+    expectedVersion,
   );
+  assert.equal(packageJson.version, expectedVersion);
   assert.match(
     rootPackage.scripts["check:protocol-schemas"],
     /check-protocol-schemas-package.test.mjs/u,
