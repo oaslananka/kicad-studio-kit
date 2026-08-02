@@ -123,6 +123,23 @@
       "prPriority": 3
     },
     {
+      "description": "Disable setup-uv uses-with updates so the repository-wide custom manager can update every uv pin atomically.",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["astral-sh/uv"],
+      "enabled": false
+    },
+    {
+      "description": "Update every repository-owned uv toolchain pin in one reviewed pull request.",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["astral-sh/uv"],
+      "groupName": "repository uv toolchain",
+      "semanticCommitScope": "repo",
+      "addLabels": ["ci", "risk:medium"],
+      "dependencyDashboardApproval": true,
+      "automerge": false,
+      "prPriority": 4
+    },
+    {
       "matchPackageNames": ["@types/vscode"],
       "allowedVersions": "<=1.101.0",
       "description": "Keep VS Code typings at the engines.vscode minimum until the extension engine, compatibility metadata, and typings are intentionally raised together."
@@ -169,6 +186,26 @@
     "addLabels": ["risk:low"]
   },
   "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Keep all repository-owned uv toolchain pins synchronized from GitHub releases.",
+      "managerFilePatterns": [
+        "/^\\.devcontainer\\/(Dockerfile|devcontainer\\.json)$/",
+        "/^\\.github\\/workflows\\/(ci|cross-repo-compatibility|docs|performance-nightly|security)\\.yml$/",
+        "/^docs\\/validation-host\\.md$/",
+        "/^mise\\.toml$/",
+        "/^scripts\\/check-(devcontainer|security-tooling|validation-host)\\.mjs$/"
+      ],
+      "matchStrings": [
+        "uses:\\s+astral-sh/setup-uv@[^\\n]+\\n\\s+with:\\n(?:\\s+[^\\n]+\\n)*?\\s+version:\\s+(?<currentValue>\\d+\\.\\d+\\.\\d+)",
+        "UV_VERSION(?:=|\"\\s*:\\s*\"|\\s*=\\s*\")(?<currentValue>\\d+\\.\\d+\\.\\d+)",
+        "uv\\s*=\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\"",
+        "\\buv\\s+(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "astral-sh/uv",
+      "versioningTemplate": "semver-coerced"
+    },
     {
       "customType": "regex",
       "managerFilePatterns": ["/^\\.github\\/workflows\\/security\\.yml$/"],
