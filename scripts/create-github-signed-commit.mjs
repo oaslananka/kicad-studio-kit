@@ -24,13 +24,12 @@ if (!repository || !branch || !headline || !token) {
   );
 }
 
-let commit;
 if (baseOid) {
   const expectedHeadOid = git(["rev-parse", "HEAD"]).trim();
   ensureBaseIsAncestor(baseOid, expectedHeadOid);
   const descriptors = collectReleaseChanges(baseOid);
   const changes = readChanges(descriptors);
-  commit = await rewriteReleaseBranch({
+  await rewriteReleaseBranch({
     repository,
     branch,
     baseOid,
@@ -62,7 +61,7 @@ if (baseOid) {
     headline,
     changes: readChanges(descriptors),
   });
-  commit = await createGitHubCommit(request);
+  await createGitHubCommit(request);
 }
 
 console.log("Created a verified GitHub commit on the requested branch.");
