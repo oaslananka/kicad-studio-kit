@@ -3,7 +3,7 @@
 This page is the evidence register for the OpenSSF Best Practices project at
 <https://www.bestpractices.dev/projects/13405>.
 
-Last reviewed: 2026-07-23.
+Last reviewed: 2026-08-02.
 
 ## Current badge status
 
@@ -15,7 +15,9 @@ Silver badge achieved on 2026-06-30. The live badge is embedded in the README an
 | Repository URL           | `https://github.com/oaslananka/kicad-studio-kit` |
 | Product represented here | VS Code extension: `oaslananka.kicadstudiokit`   |
 | Current badge status     | Passing and Silver achieved                      |
-| Next priority            | Gold gap analysis without overclaiming           |
+| Next priority            | Preserve Silver evidence and detect policy drift |
+
+Silver is the final declared badge target. Gold-only review, maintainer-count, and coverage requirements are not repository gaps. Existing controls that exceed Silver remain product-quality and security controls and must not be weakened.
 
 ## Evidence matrix
 
@@ -39,7 +41,7 @@ Silver badge achieved on 2026-06-30. The live badge is embedded in the README an
 | Release notes         | Releases are generated and documented.                                                                                           | `.github/workflows/release-please.yml`, `docs/changelog/`, `docs/release.md`, `apps/vscode-extension/CHANGELOG.md`                                                              | Call out security fixes explicitly.                                                                                                                                           |
 | Provenance            | Release evidence includes checksums, SBOM, and attestation steps.                                                                | `.github/workflows/publish-extension.yml`, `apps/vscode-extension/scripts/create-release-assets.js`, `scripts/check-release-provenance.mjs`, `docs/release.md`                  | Re-check Scorecard Signed-Releases after the next attested release.                                                                                                           |
 | Branch protection     | A strict main-branch ruleset with stable required checks is versioned in the repo.                                               | `.github/rulesets/main.json`, `.github/scorecard-residual-risk.json`, `docs/architecture/branch-protection.md`, `scripts/check-scorecard-evidence.mjs`                          | The five solo-maintainer approval deductions are an explicit quarterly reviewed risk; any new deduction or live ruleset drift fails closed.                                   |
-| Review process        | CODEOWNERS and PR templates exist; solo-maintainer PRs are gated by CI and conversation resolution without a mandatory approval. | `.github/CODEOWNERS`, `.github/pull_request_template.md`, `docs/architecture/branch-protection.md`                                                                              | Add independent human review when another qualified maintainer is available; do not create a solo-maintainer merge deadlock.                                                  |
+| Review process        | CODEOWNERS and PR templates exist; solo-maintainer PRs are gated by CI and conversation resolution without a mandatory approval. | `.github/CODEOWNERS`, `.github/pull_request_template.md`, `docs/architecture/branch-protection.md`                                                                              | Keep PR, CI, bot checks, and conversation resolution enforced; independent approval remains optional under the solo-maintainer model.                                         |
 | Documentation         | User, extension, integration, release, security, and architecture docs are maintained.                                           | `docs/`, `docs/.vitepress/config.mts`, `scripts/check-docs-site.mjs`                                                                                                            | Keep links validated by `corepack pnpm run check:docs-site`.                                                                                                                  |
 | Accessibility         | Webview accessibility tests are present and run under the extension check.                                                       | `apps/vscode-extension/test/a11y/`, `docs/accessibility.md`, `scripts/dev-doctor.mjs`                                                                                           | Keep Playwright browser cache covered by `dev-doctor`.                                                                                                                        |
 | Internationalization  | UI string parity is validated.                                                                                                   | `apps/vscode-extension/package.nls.json`, `scripts/check-nls-parity.mjs`, `apps/vscode-extension/src/webviewI18n.ts`                                                            | Fill the corresponding badge field with NLS parity evidence.                                                                                                                  |

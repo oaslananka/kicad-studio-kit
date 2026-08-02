@@ -11,25 +11,28 @@ This file is a concise evidence map for OpenSSF Best Practices and Scorecard rea
 | Product                | VS Code extension: `oaslananka.kicadstudiokit`                             |
 | License                | `LICENSE` / MIT                                                            |
 | Best Practices project | `https://www.bestpractices.dev/projects/13405`                             |
+| Declared badge target  | OpenSSF Best Practices Silver                                              |
 | Scorecard viewer       | `https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit` |
 
 ## OpenSSF Best Practices evidence
 
-| Area                  | Status  | Evidence                                                                                                                     |
-| --------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Identification        | Passed  | `README.md`, `CANONICAL.md`, `package.json`.                                                                                 |
-| FLOSS license         | Passed  | `LICENSE`, README badge.                                                                                                     |
-| Contribution process  | Passed  | `CONTRIBUTING.md`, PR template, DCO section.                                                                                 |
-| Code of Conduct       | Passed  | `CODE_OF_CONDUCT.md`.                                                                                                        |
-| Security reporting    | Passed  | `SECURITY.md`, GitHub Security Advisory link.                                                                                |
-| Build and install     | Passed  | `README.md`, `docs/tutorials/getting-started.md`, `docs/devcontainer.md`.                                                    |
-| Test policy           | Passed  | `docs/testing-strategy.md`, `docs/development/testing-policy.md`.                                                            |
-| Static analysis       | Passed  | CodeQL, ESLint, TypeScript, actionlint/security checks.                                                                      |
-| Dependency management | Passed  | Renovate, GitHub-native dependency alerts/update configuration, pnpm lockfile, supply-chain checks.                          |
-| Release evidence      | Passed  | `publish-extension.yml`, checksums, SBOM, provenance, attestations.                                                          |
-| Branch protection     | Passed  | Active `main-protection` ruleset matches `.github/rulesets/main.json`; weekly live evidence detects drift.                   |
-| Human review          | Partial | Solo-maintainer ruleset requires PRs and CI but zero approvals; sustained independent human-review evidence remains limited. |
-| Gold                  | Missing | Multiple independent maintainers/reviewers and sustained review evidence are not present.                                    |
+The declared final badge target is Silver. Higher badge tiers are not roadmap goals; controls beyond Silver are retained when they serve concrete security, release, or governance needs.
+
+| Area                  | Status       | Evidence                                                                                                                     |
+| --------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Identification        | Passed       | `README.md`, `CANONICAL.md`, `package.json`.                                                                                 |
+| FLOSS license         | Passed       | `LICENSE`, README badge.                                                                                                     |
+| Contribution process  | Passed       | `CONTRIBUTING.md`, PR template, DCO section.                                                                                 |
+| Code of Conduct       | Passed       | `CODE_OF_CONDUCT.md`.                                                                                                        |
+| Security reporting    | Passed       | `SECURITY.md`, GitHub Security Advisory link.                                                                                |
+| Build and install     | Passed       | `README.md`, `docs/tutorials/getting-started.md`, `docs/devcontainer.md`.                                                    |
+| Test policy           | Passed       | `docs/testing-strategy.md`, `docs/development/testing-policy.md`.                                                            |
+| Static analysis       | Passed       | CodeQL, ESLint, TypeScript, actionlint/security checks.                                                                      |
+| Dependency management | Passed       | Renovate, GitHub-native dependency alerts/update configuration, pnpm lockfile, supply-chain checks.                          |
+| Release evidence      | Passed       | `publish-extension.yml`, checksums, SBOM, provenance, attestations.                                                          |
+| Branch protection     | Passed       | Active `main-protection` ruleset matches `.github/rulesets/main.json`; weekly live evidence detects drift.                   |
+| Human review          | Partial      | Solo-maintainer ruleset requires PRs and CI but zero approvals; sustained independent human-review evidence remains limited. |
+| Higher badge tiers    | Not targeted | Gold-only maintainer, review, and coverage requirements are not roadmap items for the solo-maintainer operating model.       |
 
 ## Scorecard evidence
 

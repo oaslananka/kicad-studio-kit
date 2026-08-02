@@ -3,13 +3,13 @@
 Repository: `oaslananka/kicad-studio-kit`
 Audit date: 2026-07-20
 Mode: Live GitHub evidence reconciliation + implementation PR
-Target: Solo-maintainer Professional OSS / Mature OSS
+Target: OpenSSF Best Practices Silver / Solo-maintainer Professional OSS
 
 ## Executive summary
 
 KiCad Studio Kit already has a strong professional open-source foundation: an MIT license, README, contribution guide, Code of Conduct, security policy, support policy, release automation, pinned GitHub Actions, CodeQL, Scorecard, Gitleaks, Renovate, release evidence, and a documented support matrix.
 
-The repository is best classified as **Solo-maintainer Professional OSS / Mature OSS in progress**. It is intentionally not assessed as Gold/foundation-grade because the project is solo-maintained. The 2026-07-20 live audit confirmed that `main` is protected by the active `main-protection` repository ruleset with signed commits, pull-request-only changes, strict required checks, deletion protection, and non-fast-forward protection.
+The repository is best classified as **Solo-maintainer Professional OSS / Mature OSS in progress**. Gold/foundation-grade is intentionally not targeted under the project's solo-maintainer operating model. The 2026-07-20 live audit confirmed that `main` is protected by the active `main-protection` repository ruleset with signed commits, pull-request-only changes, strict required checks, deletion protection, and non-fast-forward protection.
 
 The legacy branch-protection endpoint still returns `404 Branch not protected` because enforcement is ruleset-based. The active ruleset and `branches/main.protected: true` are the authoritative evidence for this repository.
 
@@ -27,9 +27,9 @@ Rationale:
 
 ## Target maturity level
 
-**Solo-maintainer Professional OSS / Mature OSS.**
+**OpenSSF Best Practices Silver / Solo-maintainer Professional OSS.**
 
-Gold/foundation-grade is intentionally out of scope for the current solo-maintainer operating model. It remains a future gap list only, not a near-term target.
+Silver is the final declared OpenSSF Best Practices target. Gold/foundation-grade and its badge-specific governance requirements are not roadmap goals for the current solo-maintainer operating model.
 
 ## GitHub Community Standards status
 
@@ -47,14 +47,14 @@ Gold/foundation-grade is intentionally out of scope for the current solo-maintai
 
 ## OpenSSF Best Practices status
 
-| Area                    | Status         | Evidence / action                                                                                                                   |
-| ----------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Passing readiness       | Passed         | Evidence register and current docs indicate passing readiness.                                                                      |
-| Silver readiness        | Partial        | Existing evidence says Silver achieved; human confirmation should keep BadgeApp current.                                            |
-| Gold feasibility        | Not applicable | Gold/foundation-grade is intentionally not a target for the current solo-maintainer model; future-only gaps are tracked separately. |
-| `.bestpractices.json`   | Passed         | Added in this PR as a local evidence index.                                                                                         |
-| BadgeApp proposal links | Passed         | `docs/openssf-proposal-links.md` added.                                                                                             |
-| Evidence file           | Passed         | `docs/openssf-evidence.md` and existing `docs/best-practices-evidence.md`.                                                          |
+| Area                    | Status       | Evidence / action                                                                                         |
+| ----------------------- | ------------ | --------------------------------------------------------------------------------------------------------- |
+| Passing readiness       | Passed       | Evidence register and current docs indicate passing readiness.                                            |
+| Silver status           | Achieved     | Silver was achieved on 2026-06-30; repository evidence and BadgeApp links must remain current.            |
+| Higher badge tiers      | Not targeted | Gold/foundation-grade is not a roadmap target; Gold-only requirements are not treated as repository gaps. |
+| `.bestpractices.json`   | Passed       | Added in this PR as a local evidence index.                                                               |
+| BadgeApp proposal links | Passed       | `docs/openssf-proposal-links.md` added.                                                                   |
+| Evidence file           | Passed       | `docs/openssf-evidence.md` and existing `docs/best-practices-evidence.md`.                                |
 
 ## Scorecard readiness
 
@@ -101,17 +101,17 @@ The repository already has extensive architecture, release, testing, compatibili
 
 ## Quality maturity
 
-| Criterion          | Status  | Evidence / action                                                                                       |
-| ------------------ | ------- | ------------------------------------------------------------------------------------------------------- |
-| CI                 | Passed  | `ci.yml`.                                                                                               |
-| Lint               | Passed  | Extension lint and root gates.                                                                          |
-| Typecheck          | Passed  | Extension and package typecheck scripts.                                                                |
-| Unit tests         | Passed  | Jest/unit suites.                                                                                       |
-| Integration tests  | Passed  | Integration and real-pair lanes exist; real-pair needs local server checkout.                           |
-| Coverage threshold | Partial | Global coverage threshold exists; Gold-level coverage claims still require human confirmation.          |
-| Quality gate       | Passed  | Root `check` script and CI lanes.                                                                       |
-| Test policy        | Passed  | `docs/testing-strategy.md` and this PR's `docs/development/testing-policy.md`.                          |
-| Dependency policy  | Passed  | Renovate, GitHub-native dependency alert/update configuration, and this PR's dependency management doc. |
+| Criterion          | Status | Evidence / action                                                                                                           |
+| ------------------ | ------ | --------------------------------------------------------------------------------------------------------------------------- |
+| CI                 | Passed | `ci.yml`.                                                                                                                   |
+| Lint               | Passed | Extension lint and root gates.                                                                                              |
+| Typecheck          | Passed | Extension and package typecheck scripts.                                                                                    |
+| Unit tests         | Passed | Jest/unit suites.                                                                                                           |
+| Integration tests  | Passed | Integration and real-pair lanes exist; real-pair needs local server checkout.                                               |
+| Coverage threshold | Passed | Global statement, line, and function thresholds support the achieved Silver claim; higher badge thresholds are not claimed. |
+| Quality gate       | Passed | Root `check` script and CI lanes.                                                                                           |
+| Test policy        | Passed | `docs/testing-strategy.md` and this PR's `docs/development/testing-policy.md`.                                              |
+| Dependency policy  | Passed | Renovate, GitHub-native dependency alert/update configuration, and this PR's dependency management doc.                     |
 
 ## Governance maturity
 
@@ -207,7 +207,7 @@ forward.
 ## Recommended issues
 
 1. Keep the live governance evidence workflow green and investigate any ruleset drift.
-2. Keep solo-maintainer continuity documented; recruit another maintainer only if Gold/foundation-grade becomes a real goal.
+2. Keep solo-maintainer continuity documented; add maintainer capacity when project workload or risk requires it, not for badge progression.
 3. Optional future: implement full REUSE/SPDX automation if desired; current legal assessment is documented.
 4. Add historical CHAOSS metrics collection for issue response, PR review latency, and release cadence.
 5. Evaluate optional secret-scanning non-provider patterns and validity checks before enabling them.
@@ -217,8 +217,8 @@ forward.
 ## Created tracking issues
 
 - #471 Enable enforced main branch protection for OSS maturity.
-- #472 Human PR review evidence is optional/future-only for Gold; closed as not required for solo-maintainer Professional OSS.
-- #473 Additional maintainer capacity is optional/future-only for Gold; closed as not required for solo-maintainer Professional OSS.
+- #472 Mandatory independent review is outside the declared Silver target; closed because it is not required for the solo-maintainer model.
+- #473 Additional maintainer capacity is not a badge-driven requirement for the declared Silver target; closed as not required.
 - #474 REUSE/SPDX/NOTICE assessment completed in `docs/legal/reuse-spdx-notice-assessment.md`.
 - #475 GitHub security settings confirmed in `docs/security/github-security-settings.md`.
 
@@ -228,4 +228,4 @@ forward.
 2. Let the weekly governance evidence workflow verify live ruleset and security-setting drift.
 3. Re-run OpenSSF Scorecard after the updated evidence reaches `main`.
 4. Update the Best Practices BadgeApp with the refreshed evidence links in `docs/openssf-proposal-links.md`.
-5. Keep Gold/foundation-grade issues closed or optional unless the project intentionally changes from solo-maintainer mode.
+5. Keep Gold/foundation-grade badge work out of the roadmap; reconsider only if the maintainer explicitly changes the declared target.

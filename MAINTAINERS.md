@@ -21,9 +21,9 @@ Maintainers are expected to:
 
 ## Succession and continuity
 
-The repository is intentionally operated as a solo-maintainer project. This is compatible with the current Professional OSS target when governance, release, security, and support procedures are documented. Recruiting another maintainer is optional and only required for a future Gold/foundation-grade claim.
+The repository is intentionally operated as a solo-maintainer project. This is compatible with the declared OpenSSF Best Practices Silver / Professional OSS target when governance, release, security, and support procedures are documented. Gold/foundation-grade is not a roadmap target; additional maintainers should be recruited when workload, risk, or continuity needs justify it.
 
-Future-only continuity target:
+Optional continuity improvements:
 
 - at least two maintainers with administrative recovery knowledge;
 - optional external reviewer for high-risk PRs;

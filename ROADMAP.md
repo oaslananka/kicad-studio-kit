@@ -4,7 +4,7 @@ KiCad Studio Kit is the VS Code extension surface for KiCad-focused EDA workflow
 
 ## Current priorities
 
-1. **Repository trust maintenance** — keep the active `main-protection` ruleset, OpenSSF Best Practices evidence, and Scorecard/governance scans current; investigate automated score-detection gaps without weakening the solo-maintainer operating model.
+1. **Repository trust maintenance** — preserve the active `main-protection` ruleset, OpenSSF Silver evidence, and periodic Scorecard/governance verification. Silver is the declared final OpenSSF Best Practices target; higher badge tiers are not roadmap goals.
 2. **Release evidence maturity** — keep VSIX checksums, SBOM, provenance, and GitHub artifact attestations attached to every marketplace release.
 3. **Compatibility reliability** — keep KiCad, VS Code, Node, Python, MCP integration, and protocol-schema compatibility documented and tested.
 4. **Premium user experience** — continue reducing viewer, diagnostics, status, and workflow friction with regression tests for every fixed user-facing bug.
