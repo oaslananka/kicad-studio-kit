@@ -22,7 +22,9 @@ const REPO_ROOT = path.resolve(
 const MISE_TEXT = readFileSync(path.join(REPO_ROOT, "mise.toml"), "utf8");
 const UV_VERSION = /\buv\s*=\s*"(?<version>\d+\.\d+\.\d+)"/u.exec(MISE_TEXT)
   ?.groups?.version;
-assert.ok(UV_VERSION, "mise.toml must expose the canonical uv version");
+if (!UV_VERSION) {
+  throw new Error("mise.toml must expose the canonical uv version");
+}
 
 const UV_PIN_SURFACES = [
   ".devcontainer/Dockerfile",
