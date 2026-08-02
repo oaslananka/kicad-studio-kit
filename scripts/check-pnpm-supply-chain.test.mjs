@@ -62,7 +62,16 @@ function createFixture(overrides = {}) {
     JSON.stringify(
       overrides.renovate ?? {
         minimumReleaseAge: "7 days",
-        packageRules: [{ matchManagers: ["npm"], rangeStrategy: "pin" }],
+        internalChecksFilter: "strict",
+        minimumReleaseAgeBehaviour: "timestamp-required",
+        packageRules: [
+          {
+            matchDatasources: ["npm"],
+            minimumReleaseAge: "7 days",
+            internalChecksFilter: "strict",
+            minimumReleaseAgeBehaviour: "timestamp-required",
+          },
+        ],
       },
     ),
   );
@@ -138,17 +147,26 @@ test("disabled pnpm supply-chain controls fail validation", () => {
   }
 });
 
-test("#542 Renovate uses the same seven-day top-level cooldown without package-rule duplication", () => {
+test("#542 Renovate and pnpm enforce the same strict seven-day npm maturity gate", () => {
   const repoRoot = createFixture({
     renovate: {
       minimumReleaseAge: "3 days",
-      packageRules: [{ matchManagers: ["npm"], minimumReleaseAge: "1 day" }],
+      internalChecksFilter: "flexible",
+      minimumReleaseAgeBehaviour: "timestamp-optional",
+      packageRules: [
+        {
+          matchDatasources: ["npm"],
+          minimumReleaseAge: "1 day",
+        },
+      ],
     },
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
       'renovate.json must set top-level minimumReleaseAge to "7 days"',
-      "renovate.json packageRules must not duplicate minimumReleaseAge; use the top-level policy",
+      'renovate.json must set internalChecksFilter to "strict"',
+      'renovate.json must set minimumReleaseAgeBehaviour to "timestamp-required"',
+      'renovate.json must define one npm package rule with minimumReleaseAge "7 days", internalChecksFilter "strict", and minimumReleaseAgeBehaviour "timestamp-required"',
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
