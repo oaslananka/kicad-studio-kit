@@ -6,7 +6,7 @@ KiCad Studio Kit releases the VS Code extension from this repository. The MCP se
 
 ## Release automation
 
-- `release-please.yml` opens and maintains release PRs with the dedicated `RELEASE_PLEASE_TOKEN`, preserving read-only default GitHub Actions permissions.
+- `release-please.yml` opens and maintains release PRs with the dedicated `RELEASE_PLEASE_TOKEN`, then collapses each generated branch to one GitHub-signed, DCO-signed-off release commit so the protected default branch can enforce required signatures while preserving read-only default GitHub Actions permissions.
 - `publish-extension.yml` packages the VSIX, validates metadata, stages checksums, SBOM, provenance, and attestations, then publishes to marketplaces from the authenticated release event.
 - `release.yml` is a low-risk release-readiness workflow that validates release evidence without publishing.
 

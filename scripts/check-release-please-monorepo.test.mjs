@@ -54,7 +54,7 @@ test("release workflow uses GitHub-signed commits for generated surfaces", () =>
   );
   assert.match(
     workflow,
-    /name: Commit release surfaces[\s\S]*?GITHUB_TOKEN: \${{ secrets\.RELEASE_PLEASE_TOKEN }}/,
+    /name: Create a single GitHub-signed release commit[\s\S]*?GITHUB_TOKEN: \${{ secrets\.RELEASE_PLEASE_TOKEN }}/,
   );
   assert.match(
     workflow,
@@ -68,6 +68,17 @@ test("release workflow uses GitHub-signed commits for generated surfaces", () =>
   assert.match(
     workflow,
     /RELEASE_BRANCH: \${{ steps\.release-pr\.outputs\.branch }}/,
+  );
+  assert.match(workflow, /RELEASE_BASE_SHA: \${{ github\.sha }}/);
+  assert.match(
+    workflow,
+    /RELEASE_TITLE: \${{ steps\.release-pr\.outputs\.title }}/,
+  );
+  assert.match(workflow, /--base "\$RELEASE_BASE_SHA"/);
+  assert.match(workflow, /Signed-off-by: oaslananka <info@oaslananka\.dev>/);
+  assert.doesNotMatch(
+    workflow,
+    /--message "chore\(repo\): sync release surfaces for the pending release"/,
   );
   assert.doesNotMatch(workflow, /fromJSON\(steps\.release\.outputs\.pr\)/);
   assert.doesNotMatch(workflow, /git commit/);
