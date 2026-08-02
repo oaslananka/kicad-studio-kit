@@ -159,18 +159,35 @@ function validateRenovate(errors, renovate) {
     renovate?.minimumReleaseAge === "7 days",
     'renovate.json must set top-level minimumReleaseAge to "7 days"',
   );
+  assertCondition(
+    errors,
+    renovate?.internalChecksFilter === "strict",
+    'renovate.json must set internalChecksFilter to "strict"',
+  );
+  assertCondition(
+    errors,
+    renovate?.minimumReleaseAgeBehaviour === "timestamp-required",
+    'renovate.json must set minimumReleaseAgeBehaviour to "timestamp-required"',
+  );
   const packageRules = Array.isArray(renovate?.packageRules)
     ? renovate.packageRules
     : [];
+  const maturityRules = packageRules.filter(
+    (rule) =>
+      typeof rule === "object" &&
+      rule !== null &&
+      Object.hasOwn(rule, "minimumReleaseAge"),
+  );
+  const hasCanonicalNpmRule =
+    maturityRules.length === 1 &&
+    sameStringList(maturityRules[0]?.matchDatasources, ["npm"]) &&
+    maturityRules[0]?.minimumReleaseAge === "7 days" &&
+    maturityRules[0]?.internalChecksFilter === "strict" &&
+    maturityRules[0]?.minimumReleaseAgeBehaviour === "timestamp-required";
   assertCondition(
     errors,
-    packageRules.every(
-      (rule) =>
-        typeof rule !== "object" ||
-        rule === null ||
-        !Object.hasOwn(rule, "minimumReleaseAge"),
-    ),
-    "renovate.json packageRules must not duplicate minimumReleaseAge; use the top-level policy",
+    hasCanonicalNpmRule,
+    'renovate.json must define one npm package rule with minimumReleaseAge "7 days", internalChecksFilter "strict", and minimumReleaseAgeBehaviour "timestamp-required"',
   );
 }
 
