@@ -63,6 +63,7 @@ export function validateRepositoryPolicy(repoRoot = REPO_ROOT) {
   const errors = [];
   const config = readJson(repoRoot, "release-please-config.json");
   const manifest = readJson(repoRoot, ".release-please-manifest.json");
+  const renovate = readJson(repoRoot, "renovate.json");
   const packagePaths = Object.keys(config.packages ?? {}).sort();
   const expectedPaths = Object.keys(EXPECTED_PACKAGES).sort();
   const changelogPaths = {};
@@ -127,7 +128,10 @@ export function validateRepositoryPolicy(repoRoot = REPO_ROOT) {
       );
     }
   }
-  errors.push(...validateLinkedVersionGroups(config, manifest));
+  errors.push(
+    ...validateLinkedVersionGroups(config, manifest),
+    ...validateRenovateCommitScopes(renovate),
+  );
 
   const releaseDocs = readText(repoRoot, "docs/release.md");
   for (const scope of ALLOWED_SCOPES) {
@@ -155,6 +159,25 @@ export function parseConventionalSubject(subject) {
     scopes: splitScopes(match[2] ?? ""),
     subject: match[3],
   };
+}
+
+export function validateRenovateCommitScopes(renovate) {
+  const packageRules = Array.isArray(renovate?.packageRules)
+    ? renovate.packageRules
+    : [];
+  const errors = [];
+  for (const [index, rule] of packageRules.entries()) {
+    const scope = rule?.semanticCommitScope;
+    if (scope === undefined) {
+      continue;
+    }
+    if (typeof scope !== "string" || !ALLOWED_SCOPES.includes(scope)) {
+      errors.push(
+        `renovate.json packageRules[${index}] semanticCommitScope "${String(scope)}" is not allowed; use ${ALLOWED_SCOPES.join(", ")}`,
+      );
+    }
+  }
+  return errors;
 }
 
 export function validatePrTitle(title, options = {}) {
