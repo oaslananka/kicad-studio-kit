@@ -109,11 +109,11 @@
     "test:mcp-2026-rc-artifact": "node --test scripts/mcp-2026-rc-artifact-canary.test.mjs"
   },
   "devDependencies": {
-    "@commitlint/cli": "21.0.2",
-    "@commitlint/config-conventional": "21.0.2",
+    "@commitlint/cli": "21.2.1",
+    "@commitlint/config-conventional": "21.2.0",
     "@oaslananka/kicad-protocol-schemas": "1.1.1",
     "husky": "9.1.7",
-    "prettier": "3.8.4",
+    "prettier": "3.9.6",
     "typescript": "6.0.3",
     "vitepress": "1.6.4",
     "yaml": "2.9.0"
