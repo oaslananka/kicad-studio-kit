@@ -1,57 +1,55 @@
-# OpenSSF Gap Analysis
+# OpenSSF Silver Maintenance Analysis
 
-Audit date: 2026-07-02
+Review date: 2026-08-02
 
 ## Summary
 
-The repository has strong Passing/Silver evidence. Gold/foundation-grade is intentionally out of scope for the current solo-maintainer operating model and should remain future-only.
+Passing and Silver are achieved and form the repository's declared OpenSSF Best Practices target. Gold/foundation-grade is not a planned maturity target for the current solo-maintainer operating model.
 
 ## Passing readiness
 
-| Criterion area             | Status | Notes                                                              |
-| -------------------------- | ------ | ------------------------------------------------------------------ |
-| Basic project metadata     | Passed | README, license, support, contribution, and security docs exist.   |
-| Public source availability | Passed | Public GitHub repository.                                          |
-| Build/test instructions    | Passed | pnpm-based commands and devcontainer docs exist.                   |
-| Vulnerability reporting    | Passed | SECURITY.md exists; GitHub setting still needs human confirmation. |
-| Automated tests            | Passed | CI/test matrix exists.                                             |
-| Static analysis            | Passed | CodeQL and lint/typecheck exist.                                   |
+| Criterion area             | Status | Notes                                                                |
+| -------------------------- | ------ | -------------------------------------------------------------------- |
+| Basic project metadata     | Passed | README, license, support, contribution, and security docs exist.     |
+| Public source availability | Passed | Public GitHub repository.                                            |
+| Build/test instructions    | Passed | pnpm-based commands and devcontainer docs exist.                     |
+| Vulnerability reporting    | Passed | `SECURITY.md` exists and private vulnerability reporting is enabled. |
+| Automated tests            | Passed | CI/test matrix exists.                                               |
+| Static analysis            | Passed | CodeQL and lint/typecheck exist.                                     |
 
-## Silver readiness
+## Silver maintenance
 
-| Criterion area             | Status  | Notes                                                                                                 |
-| -------------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
-| Stronger security evidence | Partial | Threat model and release integrity docs exist; settings must be confirmed.                            |
-| Coverage evidence          | Partial | Threshold exists; exact sustained Silver/Gold coverage evidence should remain current.                |
-| Dependency management      | Passed  | Renovate and GitHub-native dependency alert/update configuration exist alongside supply-chain checks. |
-| Release evidence           | Passed  | Checksums, SBOM, provenance, and attestation flow exist.                                              |
-| Review process             | Partial | Process exists, enforcement and practice need branch protection/human review.                         |
+| Criterion area             | Status | Notes                                                                                                                      |
+| -------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Stronger security evidence | Passed | Threat model, release integrity evidence, and live security settings are documented.                                       |
+| Coverage evidence          | Passed | The extension enforces the statement, line, and function thresholds used for the Silver claim.                             |
+| Dependency management      | Passed | Renovate and GitHub-native dependency alert/update configuration exist alongside supply-chain checks.                      |
+| Release evidence           | Passed | Checksums, SBOM, provenance, and attestation flow exist.                                                                   |
+| Review process             | Passed | Pull requests, required CI, signed commits, and resolved conversations are enforced without deadlocking a solo maintainer. |
 
-## Future-only Gold feasibility
+## Non-targeted higher-tier criteria
 
-| Gold/foundation-grade requirement | Status         | Gap                                                                                                                                                          |
-| --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Multiple active maintainers       | Not applicable | Current evidence documents one primary maintainer; this is acceptable for the current solo-maintainer target and only matters if Gold becomes a future goal. |
-| Independent contributor/reviewer  | Not applicable | Not required for the current solo-maintainer target.                                                                                                         |
-| Regular independent PR review     | Not applicable | Optional/future-only for Gold; not required for the current target.                                                                                          |
-| Branch protection                 | Missing        | GitHub API reported `main` as not protected.                                                                                                                 |
-| Sustainable governance            | Passed         | Governance docs exist for the solo-maintainer model; multi-maintainer governance is future-only.                                                             |
-| High test coverage                | Partial        | Coverage thresholds exist; Gold-level coverage evidence requires human confirmation.                                                                         |
-| Repeatable/reproducible release   | Partial        | Repeatable VSIX and attestations exist; prove across repeated real releases.                                                                                 |
+| Higher-tier criterion            | Status         | Policy                                                                                                                                  |
+| -------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Multiple active maintainers      | Not applicable | Not required by the declared Silver target; maintainer growth should be driven by project needs rather than badge progression.          |
+| Independent contributor/reviewer | Not applicable | Not required by the declared Silver target.                                                                                             |
+| Regular independent PR review    | Not applicable | Not required by the declared Silver target; independent review may still be used for high-risk work when available.                     |
+| Branch protection                | Passed         | The active `main-protection` ruleset protects `main`; the legacy branch-protection endpoint is not the authoritative ruleset API.       |
+| Sustainable governance           | Passed         | Governance and continuity documentation match the solo-maintainer operating model.                                                      |
+| Higher coverage thresholds       | Not targeted   | Silver coverage evidence is maintained; Gold-only thresholds are not roadmap requirements.                                              |
+| Additional release assurance     | Maintained     | Repeatable VSIX checks, checksums, SBOM, provenance, and attestations remain product-quality controls independent of badge progression. |
 
-## Issues to create or keep open
+## Maintenance policy
 
-- Enable branch protection/rulesets for `main`.
-- Require CODEOWNERS review for protected paths.
-- Add REUSE/SPDX per-file license readiness.
-- Confirm GitHub private vulnerability reporting, GitHub-native dependency alerts, secret scanning, and push protection.
-- Evaluate standalone OSV scanner and container scanner baselines.
+- Do not create or keep issues solely to pursue OpenSSF Gold.
+- Keep the active ruleset, security settings, Silver evidence URLs, release evidence, and coverage gate under periodic drift review.
+- Add legal, scanning, review, or maintainer controls only when they address a concrete project risk or user need.
 
 ## Created tracking issues
 
 - #471 Enable enforced main branch protection for OSS maturity.
-- #472 Closed as optional/future-only for Gold.
-- #473 Closed as optional/future-only for Gold.
+- #472 Closed because mandatory independent review is outside the declared Silver target and would deadlock the current solo-maintainer model.
+- #473 Closed because additional maintainer capacity is not a badge-driven requirement for the declared Silver target.
 - #474 Assess REUSE, SPDX, and NOTICE readiness.
 - #475 Confirm GitHub security settings for OpenSSF readiness.
 

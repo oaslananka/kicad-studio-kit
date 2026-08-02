@@ -11,13 +11,13 @@
     "openssf_gap_analysis": "docs/openssf-gap-analysis.md",
     "proposal_links": "docs/openssf-proposal-links.md"
   },
-  "declared_target": "Solo-maintainer Professional OSS / Mature OSS",
-  "gold_claim": "not_claimed",
-  "gold_blockers": [
-    "Main is protected by the active main-protection ruleset, but maximal Gold review settings are intentionally not claimed under the solo-maintainer operating model.",
-    "Gold/foundation-grade is not the current target for the solo-maintainer operating model.",
-    "Multiple independent maintainers, independent reviewers, and two-person review are future-only Gold requirements.",
-    "Gold-level coverage and governance claims require a separate future assessment."
-  ],
-  "last_reviewed": "2026-08-02"
+  "declared_target": "OpenSSF Best Practices Silver / Solo-maintainer Professional OSS",
+  "gold_claim": "not_targeted",
+  "gold_blockers": [],
+  "last_reviewed": "2026-08-02",
+  "target_notes": [
+    "Silver is the repository's final OpenSSF Best Practices badge target.",
+    "Gold-only governance requirements are not roadmap items for the solo-maintainer operating model.",
+    "Existing security, release, provenance, and governance controls remain in force even when they exceed Silver requirements."
+  ]
 }
