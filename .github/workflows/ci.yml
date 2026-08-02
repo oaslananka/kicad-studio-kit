@@ -65,7 +65,7 @@ jobs:
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
         with:
           enable-cache: true
-          version: 0.11.32
+          version: 0.12.1
 
       - run: corepack enable
       - run: corepack prepare pnpm@11.6.0 --activate
@@ -249,7 +249,7 @@ jobs:
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
         with:
           enable-cache: true
-          version: 0.11.32
+          version: 0.12.1
 
       - run: corepack enable
       - run: corepack prepare pnpm@11.6.0 --activate
@@ -271,7 +271,7 @@ jobs:
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
         with:
           enable-cache: true
-          version: 0.11.32
+          version: 0.12.1
 
       - run: corepack enable
       - run: corepack prepare pnpm@11.6.0 --activate
@@ -309,7 +309,7 @@ jobs:
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
         with:
           enable-cache: true
-          version: 0.11.32
+          version: 0.12.1
 
       - run: corepack enable
       - run: corepack prepare pnpm@11.6.0 --activate
