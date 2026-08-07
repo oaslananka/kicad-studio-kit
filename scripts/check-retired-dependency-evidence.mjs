@@ -187,6 +187,18 @@ export function parseNextLinkHeader(linkHeader) {
   return null;
 }
 
+export function normalizeOpenAlerts(payload) {
+  if (!Array.isArray(payload)) {
+    throw new TypeError("open Dependabot alerts payload must be an array");
+  }
+  return payload
+    .filter((alert) => alert?.state === "open")
+    .map((alert) => ({
+      number: alert.number,
+      manifestPath: alert.dependency?.manifest_path ?? "",
+    }));
+}
+
 async function fetchOpenAlerts(token, repository) {
   repositoryParts(repository);
   const alerts = [];
@@ -195,12 +207,7 @@ async function fetchOpenAlerts(token, repository) {
     const response = await fetch(url, { headers: requestHeaders(token) });
     const next = parseNextLinkHeader(response.headers.get("link"));
     const payload = await readJson(response, "open Dependabot alerts");
-    alerts.push(
-      ...payload.map((alert) => ({
-        number: alert.number,
-        manifestPath: alert.dependency?.manifest_path ?? "",
-      })),
-    );
+    alerts.push(...normalizeOpenAlerts(payload));
     url = next;
   }
   return alerts;
