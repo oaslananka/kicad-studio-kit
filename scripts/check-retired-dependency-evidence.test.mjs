@@ -15,6 +15,7 @@ import {
   buildGraphNodeRequest,
   classifyGraphResponse,
   graphManifestFromPayload,
+  normalizeOpenAlerts,
   parseNextLinkHeader,
 } from "./check-retired-dependency-evidence.mjs";
 
@@ -122,6 +123,24 @@ test("#526 GraphQL retry classification distinguishes transient and terminal res
   );
   assert.deepEqual(terminal.payload, terminalPayload);
   assert.equal(terminal.retryable, false);
+});
+
+test("#526 open-alert pagination trusts each alert state over a stale query filter", () => {
+  assert.deepEqual(
+    normalizeOpenAlerts([
+      {
+        number: 76,
+        state: "dismissed",
+        dependency: { manifest_path: RETIRED_PATH },
+      },
+      {
+        number: 77,
+        state: "open",
+        dependency: { manifest_path: RETIRED_PATH },
+      },
+    ]),
+    [{ number: 77, manifestPath: RETIRED_PATH }],
+  );
 });
 
 test("#526 Link pagination parser avoids ambiguous regular-expression matching", () => {
