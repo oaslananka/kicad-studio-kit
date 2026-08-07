@@ -79,9 +79,9 @@ Pull requests and scheduled workflows keep the supply chain surface visible:
   `blockExoticSubdeps: true` keeps transitive dependencies on trusted registry,
   workspace, local, or trusted upstream sources.
 - `minimumReleaseAgeExclude` is limited by `check:supply-chain` to exact
-  security-patch versions. `tmp@0.2.7` retains the reviewed tmp remediation and
-  `fast-uri@3.1.4` resolves GHSA-4c8g-83qw-93j6 while that release completes the
-  seven-day cooldown.
+  reviewed security-patch versions. Remove each exception once its release
+  satisfies the seven-day maturity gate; broad package-name exclusions are not
+  permitted.
 - `trustPolicyExclude` is limited to the reviewed lockfile baseline selectors
   `@octokit/endpoint@9.0.6`, `chokidar@4.0.3`, and
   `semver@5.7.2 || 6.3.1`. Remove each selector as soon as the transitive graph
