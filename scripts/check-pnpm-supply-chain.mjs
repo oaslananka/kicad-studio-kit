@@ -25,7 +25,7 @@ const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   "brace-expansion@2.1.1": "2.1.4",
   "brace-expansion@5.0.6": "5.0.9",
   "brace-expansion@5.0.7": "5.0.9",
-  "postcss@8.5.15": "8.5.23",
+  "postcss@8.5.15": "8.5.24",
   "nanoid@3.3.16": "3.3.17",
   "js-yaml": "4.3.1",
   tar: "7.5.22",
