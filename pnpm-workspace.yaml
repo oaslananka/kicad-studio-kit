@@ -11,7 +11,7 @@ minimumReleaseAgeExclude:
   - js-yaml@4.3.1
   - brace-expansion@2.1.4
   - brace-expansion@5.0.9
-  - nanoid@3.3.17
+  - nanoid@3.3.18
 trustPolicyExclude:
   - "@octokit/endpoint@9.0.6"
   - chokidar@4.0.3
@@ -32,7 +32,8 @@ overrides:
   "brace-expansion@5.0.6": 5.0.9
   "brace-expansion@5.0.7": 5.0.9
   "postcss@8.5.15": 8.5.24
-  "nanoid@3.3.16": 3.3.17
+  "nanoid@3.3.16": 3.3.18
+  "nanoid@3.3.17": 3.3.18
   "@vscode/vsce>keytar": "-"
   encoding-sniffer: 1.0.2
   js-yaml: 4.3.1
