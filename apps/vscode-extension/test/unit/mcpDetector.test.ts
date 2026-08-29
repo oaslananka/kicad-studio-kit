@@ -300,19 +300,31 @@ describe('McpDetector.generateMcpJson', () => {
     );
   });
 
-  it('discovers installer candidates in uvx, pipx, then pip order', async () => {
+  it('#620 discovers installer candidates in uv, pipx, then pip order', async () => {
     execFileMock.mockImplementation(
       (
         command: string,
-        _args: string[],
+        args: string[],
         _opts: unknown,
         callback: (err: Error | null, stdout: string, stderr: string) => void
       ) => {
-        if (['uvx', 'pipx', 'pip'].includes(command)) {
-          callback(null, `${command} version`, '');
-        } else {
-          callback(new Error('missing'), '', 'missing');
+        if (command === 'uv' && args[0] === '--version') {
+          callback(null, 'uv 0.8.0', '');
+          return;
         }
+        if (command === 'pipx' && args[0] === '--version') {
+          callback(null, 'pipx 1.8.0', '');
+          return;
+        }
+        if (command === 'python3.13' && args[0] === '-c') {
+          callback(null, '3.13\n/usr/bin/python3.13\n', '');
+          return;
+        }
+        if (command === '/usr/bin/python3.13' && args[0] === '-m') {
+          callback(null, 'pip 25.2', '');
+          return;
+        }
+        callback(new Error('missing'), '', 'missing');
       }
     );
 
@@ -323,22 +335,88 @@ describe('McpDetector.generateMcpJson', () => {
       'pipx',
       'pip'
     ]);
-    expect(candidates[0]?.args).toEqual(['tool', 'install', 'kicad-mcp-pro']);
+    expect(candidates[0]?.args).toEqual([
+      'tool',
+      'install',
+      '--python',
+      '3.13',
+      'kicad-mcp-pro'
+    ]);
   });
 
-  it('discovers python -m pip as installer fallback', async () => {
+  it('#620 pins pipx to a compatible Python interpreter', async () => {
     execFileMock.mockImplementation(
       (
         command: string,
-        _args: string[],
+        args: string[],
         _opts: unknown,
         callback: (err: Error | null, stdout: string, stderr: string) => void
       ) => {
-        if (command === 'python') {
-          callback(null, 'pip 25', '');
-        } else {
-          callback(new Error('missing'), '', 'missing');
+        if (command === 'pipx' && args[0] === '--version') {
+          callback(null, '1.8.0', '');
+          return;
         }
+        if (command === 'python3.13' && args[0] === '-c') {
+          callback(null, '3.13\n/usr/bin/python3.13\n', '');
+          return;
+        }
+        callback(new Error('missing'), '', 'missing');
+      }
+    );
+
+    const candidates = await new McpDetector().detectInstallers();
+
+    expect(candidates).toContainEqual(
+      expect.objectContaining({
+        id: 'pipx',
+        command: 'pipx',
+        args: ['install', '--python', '/usr/bin/python3.13', 'kicad-mcp-pro']
+      })
+    );
+  });
+
+  it('#620 does not offer pipx when only an incompatible Python is available', async () => {
+    execFileMock.mockImplementation(
+      (
+        command: string,
+        args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string, stderr: string) => void
+      ) => {
+        if (command === 'pipx' && args[0] === '--version') {
+          callback(null, '1.8.0', '');
+          return;
+        }
+        if (command === 'python3' && args[0] === '-c') {
+          callback(null, '3.12\n/usr/bin/python3\n', '');
+          return;
+        }
+        callback(new Error('missing'), '', 'missing');
+      }
+    );
+
+    const candidates = await new McpDetector().detectInstallers();
+
+    expect(candidates.some((candidate) => candidate.id === 'pipx')).toBe(false);
+  });
+
+  it('#620 discovers a compatible python -m pip as installer fallback', async () => {
+    execFileMock.mockImplementation(
+      (
+        command: string,
+        args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string, stderr: string) => void
+      ) => {
+        if (command === 'python' && args[0] === '-c') {
+          callback(null, '3.13\npython\n', '');
+          return;
+        }
+        if (command === 'python' && args[0] === '-m') {
+          callback(null, 'pip 25', '');
+          return;
+        }
+        callback(new Error('missing'), '', 'missing');
       }
     );
 

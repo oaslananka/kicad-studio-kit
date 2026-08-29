@@ -20,6 +20,30 @@ export interface McpDoctorResult {
   error?: string | undefined;
 }
 
+const MCP_MINIMUM_PYTHON = { major: 3, minor: 13 } as const;
+const PYTHON_RUNTIME_SCRIPT =
+  'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}"); print(sys.executable)';
+
+interface PythonRuntimeProbe {
+  command: string;
+  prefixArgs: string[];
+}
+
+interface CompatiblePythonRuntime {
+  executable: string;
+  version: string;
+}
+
+const PYTHON_RUNTIME_PROBES: readonly PythonRuntimeProbe[] = [
+  { command: 'python3.13', prefixArgs: [] },
+  { command: 'python3.14', prefixArgs: [] },
+  { command: 'python3', prefixArgs: [] },
+  { command: 'python', prefixArgs: [] },
+  { command: 'py', prefixArgs: ['-3.13'] },
+  { command: 'py', prefixArgs: ['-3.14'] },
+  { command: 'py', prefixArgs: ['-3'] }
+];
+
 function runExecFile(
   command: string,
   args: string[],
@@ -64,6 +88,44 @@ async function run(
     const message = error instanceof Error ? error.message : String(error);
     return { ok: false, output: message };
   }
+}
+
+function isCompatiblePythonVersion(version: string): boolean {
+  const match = /^(\d+)\.(\d+)$/.exec(version.trim());
+  if (!match) {
+    return false;
+  }
+  const major = Number(match[1]);
+  const minor = Number(match[2]);
+  return (
+    major > MCP_MINIMUM_PYTHON.major ||
+    (major === MCP_MINIMUM_PYTHON.major && minor >= MCP_MINIMUM_PYTHON.minor)
+  );
+}
+
+async function detectCompatiblePythonRuntime(): Promise<
+  CompatiblePythonRuntime | undefined
+> {
+  for (const probe of PYTHON_RUNTIME_PROBES) {
+    const result = await run(probe.command, [
+      ...probe.prefixArgs,
+      '-c',
+      PYTHON_RUNTIME_SCRIPT
+    ]);
+    if (!result.ok) {
+      continue;
+    }
+
+    const [version, executable] = result.output
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (!version || !executable || !isCompatiblePythonVersion(version)) {
+      continue;
+    }
+    return { executable, version };
+  }
+  return undefined;
 }
 
 export class McpDetector {
@@ -321,45 +383,41 @@ export class McpDetector {
 
   async detectInstallers(): Promise<McpInstallerCandidate[]> {
     const candidates: McpInstallerCandidate[] = [];
-    if (
-      (await run('uvx', ['--version'])).ok ||
-      (await run('uv', ['--version'])).ok
-    ) {
+    if ((await run('uv', ['--version'])).ok) {
       candidates.push({
         id: 'uvx',
         label: 'uv tool install kicad-mcp-pro',
         description: 'Recommended isolated Python tool install',
         command: 'uv',
-        args: ['tool', 'install', 'kicad-mcp-pro']
+        args: ['tool', 'install', '--python', '3.13', 'kicad-mcp-pro']
       });
     }
-    if ((await run('pipx', ['--version'])).ok) {
+
+    const pythonRuntime = await detectCompatiblePythonRuntime();
+    if ((await run('pipx', ['--version'])).ok && pythonRuntime) {
       candidates.push({
         id: 'pipx',
         label: 'pipx install kicad-mcp-pro',
-        description: 'Install as an isolated Python app with pipx',
+        description: `Install with Python ${pythonRuntime.version}`,
         command: 'pipx',
-        args: ['install', 'kicad-mcp-pro']
+        args: ['install', '--python', pythonRuntime.executable, 'kicad-mcp-pro']
       });
     }
-    for (const command of ['pip', 'pip3', 'python', 'python3']) {
-      const result = await run(
-        command,
-        command.startsWith('python')
-          ? ['-m', 'pip', '--version']
-          : ['--version']
-      );
-      if (result.ok) {
+
+    if (pythonRuntime) {
+      const pipResult = await run(pythonRuntime.executable, [
+        '-m',
+        'pip',
+        '--version'
+      ]);
+      if (pipResult.ok) {
         candidates.push({
           id: 'pip',
-          label: `${command} install --user kicad-mcp-pro`,
-          description: 'Fallback user-site Python install',
-          command,
-          args: command.startsWith('python')
-            ? ['-m', 'pip', 'install', '--user', 'kicad-mcp-pro']
-            : ['install', '--user', 'kicad-mcp-pro']
+          label: `${pythonRuntime.executable} -m pip install --user kicad-mcp-pro`,
+          description: `Fallback user-site install with Python ${pythonRuntime.version}`,
+          command: pythonRuntime.executable,
+          args: ['-m', 'pip', 'install', '--user', 'kicad-mcp-pro']
         });
-        break;
       }
     }
     return candidates;
