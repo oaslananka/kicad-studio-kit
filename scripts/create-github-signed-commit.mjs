@@ -5,7 +5,9 @@ import fs from "node:fs";
 import process from "node:process";
 
 import {
+  appendReleaseBranchCommit,
   buildCreateCommitRequest,
+  createReleaseBranchFromBase,
   parseGitNameStatus,
   parseGitStatus,
   rewriteReleaseBranch,
@@ -16,6 +18,8 @@ const repository = options.repository ?? process.env.GITHUB_REPOSITORY;
 const branch = options.branch;
 const headline = options.message;
 const baseOid = options.base;
+const createFromBaseOid = options["create-from-base"];
+const ontoHeadOid = options["onto-head"];
 const token = process.env.GITHUB_TOKEN;
 
 if (!repository || !branch || !headline || !token) {
@@ -24,7 +28,45 @@ if (!repository || !branch || !headline || !token) {
   );
 }
 
-if (baseOid) {
+const branchModes = [baseOid, createFromBaseOid, ontoHeadOid].filter(Boolean);
+if (branchModes.length > 1) {
+  throw new Error(
+    "--base, --create-from-base, and --onto-head are mutually exclusive",
+  );
+}
+
+if (ontoHeadOid) {
+  assertLocalCommit(ontoHeadOid, "--onto-head");
+  const descriptors = collectReleaseChanges(ontoHeadOid, { allowEmpty: true });
+  if (descriptors.length === 0) {
+    console.log(
+      "Signed release shadow already matches the generated release tree.",
+    );
+    process.exit(0);
+  }
+  await appendReleaseBranchCommit({
+    repository,
+    branch,
+    expectedHeadOid: ontoHeadOid,
+    headline,
+    changes: readChanges(descriptors),
+    createCommit: createGitHubCommit,
+  });
+} else if (createFromBaseOid) {
+  const localHeadOid = git(["rev-parse", "HEAD"]).trim();
+  ensureBaseIsAncestor(createFromBaseOid, localHeadOid);
+  const descriptors = collectReleaseChanges(createFromBaseOid);
+  await createReleaseBranchFromBase({
+    repository,
+    branch,
+    baseOid: createFromBaseOid,
+    headline,
+    changes: readChanges(descriptors),
+    createRef,
+    deleteRef,
+    createCommit: createGitHubCommit,
+  });
+} else if (baseOid) {
   const expectedHeadOid = git(["rev-parse", "HEAD"]).trim();
   ensureBaseIsAncestor(baseOid, expectedHeadOid);
   const descriptors = collectReleaseChanges(baseOid);
@@ -66,7 +108,7 @@ if (baseOid) {
 
 console.log("Created a verified GitHub commit on the requested branch.");
 
-function collectReleaseChanges(baseOid) {
+function collectReleaseChanges(baseOid, { allowEmpty = false } = {}) {
   const tracked = parseGitNameStatus(
     git(["diff", "--name-status", "--no-renames", "-z", baseOid, "--"]),
   );
@@ -77,7 +119,7 @@ function collectReleaseChanges(baseOid) {
   for (const filePath of untracked) {
     byPath.set(filePath, { path: filePath, deleted: false });
   }
-  if (byPath.size === 0) {
+  if (byPath.size === 0 && !allowEmpty) {
     throw new Error("release branch has no changes relative to the base SHA");
   }
   return [...byPath.values()].sort((left, right) =>
@@ -93,6 +135,17 @@ function readChanges(descriptors) {
   );
 }
 
+function assertLocalCommit(oid, label) {
+  if (!/^[0-9a-f]{40}$/iu.test(oid ?? "")) {
+    throw new Error(`${label} must be a 40-character Git SHA`);
+  }
+  try {
+    git(["cat-file", "-e", `${oid}^{commit}`]);
+  } catch {
+    throw new Error(`${label} must name a local commit`);
+  }
+}
+
 function ensureBaseIsAncestor(baseOid, expectedHeadOid) {
   if (!/^[0-9a-f]{40}$/iu.test(baseOid ?? "")) {
     throw new Error("--base must be a 40-character Git SHA");
@@ -105,6 +158,24 @@ function ensureBaseIsAncestor(baseOid, expectedHeadOid) {
   } catch {
     throw new Error("--base must be an ancestor of the release branch HEAD");
   }
+}
+
+async function createRef({
+  repository: repositorySlug,
+  branch: branchName,
+  sha,
+}) {
+  await githubRestRequest(`/repos/${repositorySlug}/git/refs`, {
+    method: "POST",
+    body: JSON.stringify({ ref: `refs/heads/${branchName}`, sha }),
+  });
+}
+
+async function deleteRef({ repository: repositorySlug, branch: branchName }) {
+  await githubRestRequest(
+    `/repos/${repositorySlug}/git/refs/heads/${encodeBranchPath(branchName)}`,
+    { method: "DELETE" },
+  );
 }
 
 async function getRemoteHead({
@@ -192,7 +263,8 @@ async function githubApiRequest(url, init) {
       ...init.headers,
     },
   });
-  const payload = await response.json();
+  const responseText = await response.text();
+  const payload = responseText ? JSON.parse(responseText) : null;
   if (!response.ok) {
     throw new Error(
       `GitHub API ${response.status} ${response.statusText}: ${JSON.stringify(payload)}`,
@@ -214,7 +286,16 @@ function parseArguments(args) {
       throw new Error(`Invalid argument sequence near ${flag ?? "(end)"}`);
     }
     const name = flag.slice(2);
-    if (!new Set(["repository", "branch", "message", "base"]).has(name)) {
+    if (
+      !new Set([
+        "repository",
+        "branch",
+        "message",
+        "base",
+        "create-from-base",
+        "onto-head",
+      ]).has(name)
+    ) {
       throw new Error(`Unknown argument: ${flag}`);
     }
     parsed[name] = value;

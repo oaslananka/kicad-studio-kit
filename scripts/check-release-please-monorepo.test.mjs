@@ -32,7 +32,7 @@ function restoreEnv(name, value) {
   }
 }
 
-test("release workflow appends GitHub-signed generated surfaces without rewriting the PR branch", () => {
+test("#645 release workflow promotes a GitHub-signed parseable shadow PR without rewriting refs", () => {
   const workflow = fs.readFileSync(
     path.join(REPO_ROOT, ".github/workflows/release-please.yml"),
     "utf8",
@@ -45,7 +45,7 @@ test("release workflow appends GitHub-signed generated surfaces without rewritin
   assert.equal(
     (workflow.match(/node scripts\/create-github-signed-commit\.mjs/g) ?? [])
       .length,
-    2,
+    3,
   );
   assert.match(workflow, /token: \${{ secrets\.RELEASE_PLEASE_TOKEN }}/);
   assert.doesNotMatch(
@@ -54,7 +54,7 @@ test("release workflow appends GitHub-signed generated surfaces without rewritin
   );
   assert.match(
     workflow,
-    /name: Append GitHub-signed release surfaces[\s\S]*?GITHUB_TOKEN: \${{ secrets\.RELEASE_PLEASE_TOKEN }}/,
+    /name: Sync signed Release Please shadow PR[\s\S]*?GITHUB_TOKEN: \${{ secrets\.RELEASE_PLEASE_TOKEN }}/,
   );
   assert.match(
     workflow,
@@ -67,23 +67,44 @@ test("release workflow appends GitHub-signed generated surfaces without rewritin
   assert.match(workflow, /ref: \${{ steps\.release-pr\.outputs\.branch }}/);
   assert.match(
     workflow,
-    /RELEASE_BRANCH: \${{ steps\.release-pr\.outputs\.branch }}/,
+    /SIGNED_RELEASE_BRANCH: release-please\/branches\/main\/components\/vscode-extension/,
   );
-  assert.doesNotMatch(workflow, /RELEASE_BASE_SHA/);
+  assert.match(workflow, /--create-from-base "\$RELEASE_BASE_SHA"/);
+  assert.match(workflow, /--onto-head "\$SIGNED_RELEASE_HEAD"/);
   assert.match(
     workflow,
-    /RELEASE_TITLE: \${{ steps\.release-pr\.outputs\.title }}/,
+    /gh pr update-branch "\$SIGNED_RELEASE_PR"[\s\S]*?SIGNED_RELEASE_HEAD=[\s\S]*?headRefOid[\s\S]*?--onto-head "\$SIGNED_RELEASE_HEAD"/,
   );
-  assert.doesNotMatch(workflow, /--base /);
-  assert.match(workflow, /Signed-off-by: oaslananka <info@oaslananka\.dev>/);
+  assert.match(
+    workflow,
+    /commit\.verification\.verified[\s\S]*?Signed release shadow head is not GitHub-verified/,
+  );
+  assert.match(
+    workflow,
+    /gh pr create[\s\S]*?--head "\$SIGNED_RELEASE_BRANCH"/,
+  );
   assert.doesNotMatch(
     workflow,
-    /--message "chore\(repo\): sync release surfaces for the pending release"/,
+    /gh pr create[\s\S]*?--draft[\s\S]*?--head "\$SIGNED_RELEASE_BRANCH"/,
   );
-  assert.doesNotMatch(workflow, /fromJSON\(steps\.release\.outputs\.pr\)/);
-  assert.doesNotMatch(workflow, /git commit/);
+  assert.match(
+    workflow,
+    /gh pr edit "\$SIGNED_RELEASE_PR" --add-label "autorelease: pending"/,
+  );
+  assert.match(
+    workflow,
+    /gh pr view "\$RELEASE_PR_NUMBER" --json isDraft[\s\S]*?gh pr ready --undo "\$RELEASE_PR_NUMBER"/,
+  );
+  assert.doesNotMatch(workflow, /gh pr close "\$RELEASE_PR_NUMBER"/);
+  assert.doesNotMatch(
+    workflow,
+    /gh pr edit "\$RELEASE_PR_NUMBER" --remove-label "autorelease: pending"/,
+  );
+  assert.match(workflow, /gh pr list[\s\S]*?--head "\$SIGNED_RELEASE_BRANCH"/);
+  assert.doesNotMatch(workflow, /name: Append GitHub-signed release surfaces/);
+  assert.doesNotMatch(workflow, /forceUpdateRef/);
   assert.doesNotMatch(workflow, /git push/);
-  assert.doesNotMatch(workflow, /gh workflow run publish-extension\.yml/);
+  assert.match(workflow, /Signed-off-by: oaslananka <info@oaslananka\.dev>/);
   assert.match(publishWorkflow, /release:\n\s+types: \[published\]/);
 });
 
