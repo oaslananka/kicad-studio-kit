@@ -202,7 +202,8 @@ export const lm = {
 
 export const tasks = {
   registerTaskProvider: jest.fn(() => createDisposable()),
-  executeTask: jest.fn()
+  executeTask: jest.fn(),
+  onDidEndTaskProcess: jest.fn(() => createDisposable())
 };
 
 export const env = {
@@ -217,8 +218,7 @@ export const l10n = {
   t: jest.fn(
     (
       messageOrOptions:
-        | string
-        | { message: string; args?: Record<string, unknown> },
+        string | { message: string; args?: Record<string, unknown> },
       ...args: unknown[]
     ): string => {
       if (typeof messageOrOptions === 'string') {
