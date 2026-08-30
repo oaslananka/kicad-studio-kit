@@ -133,6 +133,13 @@ jobs:
         run: |
           corepack pnpm run check:mcp-2026-rc-artifact -- --version "$KICAD_MCP_PRO_VERSION"
 
+      - name: Validate published MCP profile vocabulary
+        env:
+          KICAD_MCP_PRO_VERSION: ${{ steps.pypi-check.outputs.pypi_version }}
+        run: |
+          PROFILES=$(uv run --quiet --with "kicad-mcp-pro==$KICAD_MCP_PRO_VERSION" --no-project python -c "import json; from kicad_mcp.tools.router import available_profiles; print(json.dumps(available_profiles()))")
+          KICAD_MCP_PRO_PUBLISHED_PROFILES="$PROFILES" node scripts/check-published-mcp-profiles.mjs
+
       # ── C. Published BoardReadyOps contract ───────────────────────────────
       - name: Resolve published BoardReadyOps version
         id: boardreadyops-check

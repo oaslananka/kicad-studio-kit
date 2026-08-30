@@ -263,7 +263,7 @@ describe('McpToolsProvider', () => {
         "Compatibility dashboard > Server contract > Server :: kicad-mcp-pro",
         "Compatibility dashboard > Server contract > Endpoint :: http://127.0.0.1:27185/mcp",
         "Compatibility dashboard > Server contract > Transport mode :: streamable-http, stateful",
-        "Compatibility dashboard > Server contract > Profile :: full",
+        "Compatibility dashboard > Server contract > Profile :: expert",
         "Compatibility dashboard > Server contract > Operating mode :: readonly",
         "Compatibility dashboard > Server contract > Protocol version :: 2025-11-25",
         "Compatibility dashboard > Server contract > Tool schema version :: 1.0.0",

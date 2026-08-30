@@ -351,6 +351,14 @@ describe('MCP command workspace trust guards', () => {
       expect.objectContaining({ command: 'uvx' }),
       'analysis'
     );
+    const profileChoices = (window.showQuickPick as jest.Mock).mock
+      .calls[1]?.[0];
+    expect(profileChoices.slice(0, 4)).toEqual([
+      'review',
+      'build',
+      'release',
+      'expert'
+    ]);
     expect(services.refreshMcpState).toHaveBeenCalled();
   });
 

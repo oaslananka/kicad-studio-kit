@@ -64,7 +64,7 @@ export async function createKicadMcpServerDefinition(
       // Default to a focused, read-only posture (least privilege). The profile
       // honours the user's "Pick MCP Profile" choice; write/manufacturing tools
       // require an explicit opt-in via KICAD_MCP_OPERATING_MODE.
-      KICAD_MCP_PROFILE: readConfiguredMcpProfile() ?? 'analysis',
+      KICAD_MCP_PROFILE: readConfiguredMcpProfile() ?? 'review',
       KICAD_MCP_OPERATING_MODE: 'readonly'
     },
     ...(install.version ? { version: install.version } : {})

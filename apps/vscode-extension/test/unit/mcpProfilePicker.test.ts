@@ -131,11 +131,33 @@ describe('mcpProfilePicker', () => {
       expect(readConfiguredMcpProfile()).toBe('manufacturing');
     });
 
-    it('returns the analysis (least-privilege) default when nothing is configured', () => {
+    it('migrates equivalent legacy aliases from workspace configuration', () => {
+      existsSync.mockReturnValue(true);
+      readFileSync.mockReturnValue(
+        JSON.stringify({
+          servers: { kicad: { env: { KICAD_MCP_PROFILE: 'default' } } }
+        })
+      );
+
+      expect(readConfiguredMcpProfile()).toBe('review');
+    });
+
+    it('fails closed when a workspace contains an unsupported profile', () => {
+      existsSync.mockReturnValue(true);
+      readFileSync.mockReturnValue(
+        JSON.stringify({
+          servers: { kicad: { env: { KICAD_MCP_PROFILE: 'future-unsafe' } } }
+        })
+      );
+
+      expect(readConfiguredMcpProfile()).toBe('review');
+    });
+
+    it('returns the review (least-privilege) default when nothing is configured', () => {
       existsSync.mockReturnValue(false);
       __setConfiguration({});
 
-      expect(readConfiguredMcpProfile()).toBe('analysis');
+      expect(readConfiguredMcpProfile()).toBe('review');
     });
 
     it('ignores an unparseable mcp.json and falls back to configuration', () => {

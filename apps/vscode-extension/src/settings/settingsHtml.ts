@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { DOCUMENTATION_URLS } from '../documentation/documentationUrls';
+import { KICAD_MCP_PROFILES } from '../mcp/profileCatalog';
 import { createNonce } from '../utils/nonce';
 import { injectWebviewLocalization } from '../webviewI18n';
 
@@ -25,6 +26,9 @@ export function buildSettingsHtml(options: SettingsHtmlOptions): string {
   const mcpIntegrationDocsUrlJson = JSON.stringify(
     DOCUMENTATION_URLS.mcpIntegration
   );
+  const mcpProfileOptions = KICAD_MCP_PROFILES.map(
+    (profile) => `<option value="${profile.id}">${profile.id}</option>`
+  ).join('\n            ');
 
   return injectWebviewLocalization(
     `<!DOCTYPE html>
@@ -275,16 +279,7 @@ export function buildSettingsHtml(options: SettingsHtmlOptions): string {
         <div class="field">
           <label for="kicadstudio.mcp.profile">Profile</label>
           <select id="kicadstudio.mcp.profile" data-setting="kicadstudio.mcp.profile">
-            <option value="full">full</option>
-            <option value="minimal">minimal</option>
-            <option value="schematic_only">schematic_only</option>
-            <option value="pcb_only">pcb_only</option>
-            <option value="manufacturing">manufacturing</option>
-            <option value="high_speed">high_speed</option>
-            <option value="power">power</option>
-            <option value="simulation">simulation</option>
-            <option value="analysis">analysis</option>
-            <option value="agent_full">agent_full</option>
+            ${mcpProfileOptions}
           </select>
         </div>
         <div class="field">

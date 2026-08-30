@@ -99,6 +99,11 @@ describe('settings webview', () => {
     expect(html).toContain('<option value="copilot">GitHub Copilot</option>');
     expect(html).not.toContain('<option value="codex">');
     expect(html).toContain("type: 'requestApiKeyStatus'");
+    expect(html).toContain('<option value="review">review</option>');
+    expect(html).toContain('<option value="build">build</option>');
+    expect(html.indexOf('value="review"')).toBeLessThan(
+      html.indexOf('value="analysis"')
+    );
   });
 
   it('embeds the canonical MCP integration documentation URL (#488)', () => {
