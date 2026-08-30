@@ -113,17 +113,15 @@ jobs:
       - if: ${{ steps.release.outputs.pr }}
         run: corepack pnpm run docs:generate
       - if: ${{ steps.release.outputs.pr }}
-        name: Create a single GitHub-signed release commit
+        name: Append GitHub-signed release surfaces
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           RELEASE_BRANCH: ${{ steps.release-pr.outputs.branch }}
-          RELEASE_BASE_SHA: ${{ github.sha }}
           RELEASE_TITLE: ${{ steps.release-pr.outputs.title }}
         run: |
           node scripts/create-github-signed-commit.mjs \
             --repository "$GITHUB_REPOSITORY" \
             --branch "$RELEASE_BRANCH" \
-            --base "$RELEASE_BASE_SHA" \
             --message "${RELEASE_TITLE}"$'\n\nSigned-off-by: oaslananka <info@oaslananka.dev>'
 
       # Regenerate changelog docs after a release PR is merged
