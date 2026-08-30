@@ -32,12 +32,10 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      # When Release Please has an OPEN release PR, sync the version surfaces it
-      # does not bump itself (compatibility metadata + the generated docs tables)
-      # onto its branch. Release Please only updates package.json, the manifest,
-      # and the changelog, so without this the release PR's own CI fails on
-      # compatibility.yaml / compatibilityMatrix.ts / generated-docs version
-      # drift and the release can never be merged.
+      # Release Please's generated commit is not GitHub-signed, while main requires
+      # signed commits. Keep the canonical PR as Release Please's draft generator,
+      # while a parseable shadow PR carries only GitHub-signed commits. Repeated
+      # Release Please updates append signed commits to the same shadow branch.
       - if: ${{ steps.release.outputs.pr }}
         id: release-pr
         name: Resolve the Release Please branch
@@ -50,6 +48,7 @@ jobs:
           const releasePr = JSON.parse(process.env.RELEASE_PR_JSON ?? "");
           const branch = releasePr.headBranchName;
           const title = releasePr.title;
+          const number = releasePr.number;
           const invalidBranchCharacter =
             typeof branch === "string" &&
             [...branch].some((character) => {
@@ -82,15 +81,21 @@ jobs:
           ) {
             throw new Error("Release Please returned an unsafe release PR title");
           }
-          process.stdout.write(`${branch}\n${title}\n`);
+          if (!Number.isSafeInteger(number) || number <= 0) {
+            throw new Error("Release Please returned an invalid PR number");
+          }
+          process.stdout.write(`${branch}\n${title}\n${number}\n`);
           NODE
           )
-          if [[ "${#release_metadata[@]}" -ne 2 ]]; then
+          if [[ "${#release_metadata[@]}" -ne 3 ]]; then
             echo "Release Please returned incomplete PR metadata" >&2
             exit 1
           fi
-          printf 'branch=%s\n' "${release_metadata[0]}" >> "$GITHUB_OUTPUT"
-          printf 'title=%s\n' "${release_metadata[1]}" >> "$GITHUB_OUTPUT"
+          {
+            printf 'branch=%s\n' "${release_metadata[0]}"
+            printf 'title=%s\n' "${release_metadata[1]}"
+            printf 'number=%s\n' "${release_metadata[2]}"
+          } >> "$GITHUB_OUTPUT"
       - if: ${{ steps.release.outputs.pr }}
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
@@ -113,16 +118,99 @@ jobs:
       - if: ${{ steps.release.outputs.pr }}
         run: corepack pnpm run docs:generate
       - if: ${{ steps.release.outputs.pr }}
-        name: Append GitHub-signed release surfaces
+        name: Sync signed Release Please shadow PR
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-          RELEASE_BRANCH: ${{ steps.release-pr.outputs.branch }}
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          RELEASE_PR_NUMBER: ${{ steps.release-pr.outputs.number }}
           RELEASE_TITLE: ${{ steps.release-pr.outputs.title }}
+          SIGNED_RELEASE_BRANCH: release-please/branches/main/components/vscode-extension
+        shell: bash
         run: |
-          node scripts/create-github-signed-commit.mjs \
-            --repository "$GITHUB_REPOSITORY" \
-            --branch "$RELEASE_BRANCH" \
-            --message "${RELEASE_TITLE}"$'\n\nSigned-off-by: oaslananka <info@oaslananka.dev>'
+          set -euo pipefail
+          RELEASE_BASE_SHA="$(git rev-parse origin/main)"
+          RELEASE_BODY_FILE="$RUNNER_TEMP/release-pr-body.md"
+          SIGNED_RELEASE_PR=""
+
+          gh pr view "$RELEASE_PR_NUMBER" --json body --jq '.body // ""' \
+            > "$RELEASE_BODY_FILE"
+
+          if SIGNED_RELEASE_HEAD="$(gh api \
+            "repos/$GITHUB_REPOSITORY/git/ref/heads/$SIGNED_RELEASE_BRANCH" \
+            --jq '.object.sha' 2>/dev/null)"; then
+            mapfile -t signed_release_prs < <(
+              gh pr list \
+                --state open \
+                --head "$SIGNED_RELEASE_BRANCH" \
+                --json number \
+                --jq '.[].number'
+            )
+            if [[ "${#signed_release_prs[@]}" -ne 1 ]]; then
+              echo "Expected exactly one open signed release PR for existing shadow branch" >&2
+              exit 1
+            fi
+            SIGNED_RELEASE_PR="${signed_release_prs[0]}"
+            gh pr update-branch "$SIGNED_RELEASE_PR"
+            SIGNED_RELEASE_HEAD="$(gh pr view "$SIGNED_RELEASE_PR" \
+              --json headRefOid \
+              --jq '.headRefOid')"
+            SIGNED_RELEASE_VERIFIED="$(gh api \
+              "repos/$GITHUB_REPOSITORY/commits/$SIGNED_RELEASE_HEAD" \
+              --jq '.commit.verification.verified')"
+            if [[ "$SIGNED_RELEASE_VERIFIED" != "true" ]]; then
+              echo "Signed release shadow head is not GitHub-verified" >&2
+              exit 1
+            fi
+            git fetch --no-tags origin \
+              "refs/heads/main:refs/remotes/origin/main" \
+              "refs/heads/$SIGNED_RELEASE_BRANCH:refs/remotes/origin/$SIGNED_RELEASE_BRANCH"
+            if ! git merge-base --is-ancestor \
+              refs/remotes/origin/main \
+              "refs/remotes/origin/$SIGNED_RELEASE_BRANCH"; then
+              echo "Signed release shadow is not up to date with main" >&2
+              exit 1
+            fi
+            node scripts/create-github-signed-commit.mjs \
+              --repository "$GITHUB_REPOSITORY" \
+              --branch "$SIGNED_RELEASE_BRANCH" \
+              --message "chore(kicad-studio): sync signed release surfaces"$'\n\nSigned-off-by: oaslananka <info@oaslananka.dev>' \
+              --onto-head "$SIGNED_RELEASE_HEAD"
+            gh pr edit "$SIGNED_RELEASE_PR" \
+              --title "$RELEASE_TITLE" \
+              --body-file "$RELEASE_BODY_FILE"
+          else
+            node scripts/create-github-signed-commit.mjs \
+              --repository "$GITHUB_REPOSITORY" \
+              --branch "$SIGNED_RELEASE_BRANCH" \
+              --message "chore(kicad-studio): prepare signed release surfaces"$'\n\nSigned-off-by: oaslananka <info@oaslananka.dev>' \
+              --create-from-base "$RELEASE_BASE_SHA"
+
+            cleanup_new_shadow() {
+              set +e
+              if [[ -n "$SIGNED_RELEASE_PR" ]]; then
+                gh pr close "$SIGNED_RELEASE_PR" >/dev/null 2>&1 || true
+              fi
+              gh api --method DELETE \
+                "repos/$GITHUB_REPOSITORY/git/refs/heads/$SIGNED_RELEASE_BRANCH" \
+                >/dev/null 2>&1 || true
+            }
+            trap cleanup_new_shadow ERR
+
+            SIGNED_RELEASE_URL="$(gh pr create \
+              --base main \
+              --head "$SIGNED_RELEASE_BRANCH" \
+              --title "$RELEASE_TITLE" \
+              --body-file "$RELEASE_BODY_FILE")"
+            SIGNED_RELEASE_PR="${SIGNED_RELEASE_URL##*/}"
+            gh pr edit "$SIGNED_RELEASE_PR" --add-label "autorelease: pending"
+            gh pr comment "$RELEASE_PR_NUMBER" \
+              --body "Merge #$SIGNED_RELEASE_PR for signature-compliant release history; this PR remains the Release Please generator."
+            trap - ERR
+          fi
+
+          if [[ "$(gh pr view "$RELEASE_PR_NUMBER" --json isDraft --jq '.isDraft')" != "true" ]]; then
+            gh pr ready --undo "$RELEASE_PR_NUMBER"
+          fi
 
       # Regenerate changelog docs after a release PR is merged
       - if: ${{ steps.release.outputs.releases_created == 'true' }}
