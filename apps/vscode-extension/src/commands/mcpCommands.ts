@@ -4,6 +4,7 @@ import { McpDetector } from '../mcp/mcpDetector';
 import { DesignIntentPanel } from '../mcp/designIntentPanel';
 import { DrcRuleEditorPanel } from '../drc/drcRuleEditorPanel';
 import { registerTrustedCommand } from '../utils/workspaceTrust';
+import { DOCUMENTATION_URLS } from '../documentation/documentationUrls';
 import {
   showStructuredError,
   structuredErrorFromUnknown,
@@ -11,6 +12,26 @@ import {
 } from '../utils/notifications';
 import type { CommandServices } from './types';
 import type { FixItem } from '../types';
+
+function createTaskProcessCompletion(task: vscode.Task): {
+  promise: Promise<number | undefined>;
+  dispose(): void;
+} {
+  let disposable: vscode.Disposable | undefined;
+  const promise = new Promise<number | undefined>((resolve) => {
+    disposable = vscode.tasks.onDidEndTaskProcess((event) => {
+      if (event.execution.task !== task) {
+        return;
+      }
+      disposable?.dispose();
+      resolve(event.exitCode);
+    });
+  });
+  return {
+    promise,
+    dispose: () => disposable?.dispose()
+  };
+}
 
 /**
  * Register MCP integration commands.
@@ -163,6 +184,19 @@ export function registerMcpCommands(
       async () => {
         const detector = new McpDetector();
         const candidates = await detector.detectInstallers();
+        if (candidates.length === 0) {
+          const action = await vscode.window.showWarningMessage(
+            'kicad-mcp-pro requires Python 3.13 or newer. Install Python 3.13+ or uv, then retry.',
+            'Open install docs'
+          );
+          if (action === 'Open install docs') {
+            await vscode.env.openExternal(
+              vscode.Uri.parse(DOCUMENTATION_URLS.mcpServerInstallation)
+            );
+          }
+          return;
+        }
+
         const choice = await vscode.window.showQuickPick(
           [
             ...candidates.map((candidate) => ({
@@ -203,15 +237,25 @@ export function registerMcpCommands(
             choice.candidate.args
           )
         );
-        await vscode.tasks.executeTask(task);
-        const followUp = await vscode.window.showInformationMessage(
-          'Install task started. Re-run MCP detection when it finishes?',
-          'Detect',
-          'Later'
-        );
-        if (followUp === 'Detect') {
-          await services.refreshMcpState();
+        const completion = createTaskProcessCompletion(task);
+        let exitCode: number | undefined;
+        try {
+          await vscode.tasks.executeTask(task);
+          exitCode = await completion.promise;
+        } finally {
+          completion.dispose();
         }
+        if (exitCode === 0) {
+          await services.refreshMcpState();
+          void vscode.window.showInformationMessage(
+            'kicad-mcp-pro installation completed. MCP detection refreshed.'
+          );
+          return;
+        }
+
+        void vscode.window.showErrorMessage(
+          'kicad-mcp-pro installation failed. Review the install task output and retry after resolving the prerequisite.'
+        );
       },
       'Install kicad-mcp-pro'
     ),
@@ -223,9 +267,7 @@ export function registerMcpCommands(
 
     vscode.commands.registerCommand(COMMANDS.openMcpUpgradeGuide, () =>
       vscode.env.openExternal(
-        vscode.Uri.parse(
-          'https://github.com/oaslananka/kicad-studio-kit#installation'
-        )
+        vscode.Uri.parse(DOCUMENTATION_URLS.mcpServerInstallation)
       )
     ),
 

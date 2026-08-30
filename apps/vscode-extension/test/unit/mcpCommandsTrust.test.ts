@@ -5,6 +5,7 @@ import {
   commands,
   createExtensionContextMock,
   env,
+  tasks,
   window,
   workspace
 } from './vscodeMock';
@@ -56,6 +57,48 @@ describe('MCP command workspace trust guards', () => {
       throw new Error(`Command was not registered: ${commandId}`);
     }
     return entry[1] as (...args: unknown[]) => unknown;
+  }
+
+  const pipxInstallCandidate = {
+    id: 'pipx' as const,
+    label: 'pipx install kicad-mcp-pro',
+    description: 'Install with Python 3.13',
+    command: 'pipx',
+    args: ['install', '--python', '/usr/bin/python3.13', 'kicad-mcp-pro']
+  };
+
+  function mockInstallerSelection(): void {
+    jest
+      .spyOn(McpDetector.prototype, 'detectInstallers')
+      .mockResolvedValue([pipxInstallCandidate]);
+    (window.showQuickPick as jest.Mock).mockResolvedValue({
+      label: pipxInstallCandidate.label,
+      description: pipxInstallCandidate.description,
+      candidate: pipxInstallCandidate
+    });
+  }
+
+  function mockInstallerTaskExit(
+    exitCode: number,
+    timing: 'microtask' | 'immediate' = 'microtask'
+  ): void {
+    let endListener:
+      | ((event: { execution: { task: unknown }; exitCode: number }) => void)
+      | undefined;
+    (tasks.onDidEndTaskProcess as jest.Mock).mockImplementation((listener) => {
+      endListener = listener;
+      return { dispose: jest.fn() };
+    });
+    (tasks.executeTask as jest.Mock).mockImplementation(async (task) => {
+      const execution = { task };
+      const emit = () => endListener?.({ execution, exitCode });
+      if (timing === 'immediate') {
+        emit();
+      } else {
+        queueMicrotask(emit);
+      }
+      return execution;
+    });
   }
 
   it('blocks mutating fix queue commands in untrusted workspaces', async () => {
@@ -124,6 +167,74 @@ describe('MCP command workspace trust guards', () => {
     await registeredHandler(COMMANDS.setupMcpIntegration)();
 
     expect(commands.executeCommand).toHaveBeenCalledWith(COMMANDS.installMcp);
+  });
+
+  it('#620 shows Python prerequisite guidance when no safe installer exists', async () => {
+    registerWithServices();
+    jest.spyOn(McpDetector.prototype, 'detectInstallers').mockResolvedValue([]);
+    (window.showWarningMessage as jest.Mock).mockResolvedValue(undefined);
+
+    await registeredHandler(COMMANDS.installMcp)();
+
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Python 3.13'),
+      'Open install docs'
+    );
+    expect(tasks.executeTask).not.toHaveBeenCalled();
+  });
+
+  it('#620 opens the current MCP server getting-started guide from prerequisite guidance', async () => {
+    registerWithServices();
+    jest.spyOn(McpDetector.prototype, 'detectInstallers').mockResolvedValue([]);
+    (window.showWarningMessage as jest.Mock).mockResolvedValue(
+      'Open install docs'
+    );
+
+    await registeredHandler(COMMANDS.installMcp)();
+
+    expect(env.openExternal).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fsPath:
+          'https://oaslananka.github.io/kicad-mcp-pro/tutorials/getting-started/'
+      })
+    );
+  });
+
+  it('#620 refreshes MCP state automatically after a successful install task', async () => {
+    const services = registerWithServices();
+    mockInstallerSelection();
+    mockInstallerTaskExit(0);
+
+    await registeredHandler(COMMANDS.installMcp)();
+
+    expect(tasks.onDidEndTaskProcess).toHaveBeenCalled();
+    expect(services.refreshMcpState).toHaveBeenCalledTimes(1);
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining('installation completed')
+    );
+  });
+
+  it('#620 reports a failed install task without refreshing MCP state', async () => {
+    const services = registerWithServices();
+    mockInstallerSelection();
+    mockInstallerTaskExit(1);
+
+    await registeredHandler(COMMANDS.installMcp)();
+
+    expect(services.refreshMcpState).not.toHaveBeenCalled();
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining('installation failed')
+    );
+  });
+
+  it('#620 observes installer completion even when the task exits before executeTask resolves', async () => {
+    const services = registerWithServices();
+    mockInstallerSelection();
+    mockInstallerTaskExit(0, 'immediate');
+
+    await registeredHandler(COMMANDS.installMcp)();
+
+    expect(services.refreshMcpState).toHaveBeenCalledTimes(1);
   });
 
   it('stops MCP setup when no workspace folder is open', async () => {

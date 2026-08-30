@@ -35,6 +35,25 @@ describe('McpDetector.generateMcpJson', () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
+  function mockExecResponses(responses: Record<string, string>): void {
+    execFileMock.mockImplementation(
+      (
+        command: string,
+        args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string, stderr: string) => void
+      ) => {
+        const key = `${command} ${args[0] ?? ''}`;
+        const stdout = responses[key];
+        if (stdout === undefined) {
+          callback(new Error('missing'), '', 'missing');
+          return;
+        }
+        callback(null, stdout, '');
+      }
+    );
+  }
+
   it('creates a stdio MCP configuration for uvx installs', async () => {
     const detector = new McpDetector();
 
@@ -300,21 +319,13 @@ describe('McpDetector.generateMcpJson', () => {
     );
   });
 
-  it('discovers installer candidates in uvx, pipx, then pip order', async () => {
-    execFileMock.mockImplementation(
-      (
-        command: string,
-        _args: string[],
-        _opts: unknown,
-        callback: (err: Error | null, stdout: string, stderr: string) => void
-      ) => {
-        if (['uvx', 'pipx', 'pip'].includes(command)) {
-          callback(null, `${command} version`, '');
-        } else {
-          callback(new Error('missing'), '', 'missing');
-        }
-      }
-    );
+  it('#620 discovers installer candidates in uv, pipx, then pip order', async () => {
+    mockExecResponses({
+      'uv --version': 'uv 0.8.0',
+      'pipx --version': 'pipx 1.8.0',
+      'python3.13 -c': '3.13\n/usr/bin/python3.13\n',
+      '/usr/bin/python3.13 -m': 'pip 25.2'
+    });
 
     const candidates = await new McpDetector().detectInstallers();
 
@@ -323,24 +334,48 @@ describe('McpDetector.generateMcpJson', () => {
       'pipx',
       'pip'
     ]);
-    expect(candidates[0]?.args).toEqual(['tool', 'install', 'kicad-mcp-pro']);
+    expect(candidates[0]?.args).toEqual([
+      'tool',
+      'install',
+      '--python',
+      '3.13',
+      'kicad-mcp-pro'
+    ]);
   });
 
-  it('discovers python -m pip as installer fallback', async () => {
-    execFileMock.mockImplementation(
-      (
-        command: string,
-        _args: string[],
-        _opts: unknown,
-        callback: (err: Error | null, stdout: string, stderr: string) => void
-      ) => {
-        if (command === 'python') {
-          callback(null, 'pip 25', '');
-        } else {
-          callback(new Error('missing'), '', 'missing');
-        }
-      }
+  it('#620 pins pipx to a compatible Python interpreter', async () => {
+    mockExecResponses({
+      'pipx --version': '1.8.0',
+      'python3.13 -c': '3.13\n/usr/bin/python3.13\n'
+    });
+
+    const candidates = await new McpDetector().detectInstallers();
+
+    expect(candidates).toContainEqual(
+      expect.objectContaining({
+        id: 'pipx',
+        command: 'pipx',
+        args: ['install', '--python', '/usr/bin/python3.13', 'kicad-mcp-pro']
+      })
     );
+  });
+
+  it('#620 does not offer pipx when only an incompatible Python is available', async () => {
+    mockExecResponses({
+      'pipx --version': '1.8.0',
+      'python3 -c': '3.12\n/usr/bin/python3\n'
+    });
+
+    const candidates = await new McpDetector().detectInstallers();
+
+    expect(candidates.some((candidate) => candidate.id === 'pipx')).toBe(false);
+  });
+
+  it('#620 discovers a compatible python -m pip as installer fallback', async () => {
+    mockExecResponses({
+      'python -c': '3.13\npython\n',
+      'python -m': 'pip 25'
+    });
 
     const candidates = await new McpDetector().detectInstallers();
 
