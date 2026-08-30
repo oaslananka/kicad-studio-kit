@@ -45,7 +45,7 @@ test("release workflow promotes a GitHub-signed parseable shadow PR without rewr
   assert.equal(
     (workflow.match(/node scripts\/create-github-signed-commit\.mjs/g) ?? [])
       .length,
-    2,
+    3,
   );
   assert.match(workflow, /token: \${{ secrets\.RELEASE_PLEASE_TOKEN }}/);
   assert.doesNotMatch(
@@ -54,7 +54,7 @@ test("release workflow promotes a GitHub-signed parseable shadow PR without rewr
   );
   assert.match(
     workflow,
-    /name: Create signed Release Please shadow PR[\s\S]*?GITHUB_TOKEN: \${{ secrets\.RELEASE_PLEASE_TOKEN }}/,
+    /name: Sync signed Release Please shadow PR[\s\S]*?GITHUB_TOKEN: \${{ secrets\.RELEASE_PLEASE_TOKEN }}/,
   );
   assert.match(
     workflow,
@@ -70,7 +70,12 @@ test("release workflow promotes a GitHub-signed parseable shadow PR without rewr
     /SIGNED_RELEASE_BRANCH: release-please\/branches\/main\/components\/vscode-extension/,
   );
   assert.match(workflow, /--create-from-base "\$RELEASE_BASE_SHA"/);
+  assert.match(workflow, /--onto-head "\$SIGNED_RELEASE_HEAD"/);
   assert.match(
+    workflow,
+    /gh pr create[\s\S]*?--head "\$SIGNED_RELEASE_BRANCH"/,
+  );
+  assert.doesNotMatch(
     workflow,
     /gh pr create[\s\S]*?--draft[\s\S]*?--head "\$SIGNED_RELEASE_BRANCH"/,
   );
@@ -78,7 +83,16 @@ test("release workflow promotes a GitHub-signed parseable shadow PR without rewr
     workflow,
     /gh pr edit "\$SIGNED_RELEASE_PR" --add-label "autorelease: pending"/,
   );
-  assert.match(workflow, /gh pr close "\$RELEASE_PR_NUMBER"/);
+  assert.match(
+    workflow,
+    /gh pr view "\$RELEASE_PR_NUMBER" --json isDraft[\s\S]*?gh pr ready --undo "\$RELEASE_PR_NUMBER"/,
+  );
+  assert.doesNotMatch(workflow, /gh pr close "\$RELEASE_PR_NUMBER"/);
+  assert.doesNotMatch(
+    workflow,
+    /gh pr edit "\$RELEASE_PR_NUMBER" --remove-label "autorelease: pending"/,
+  );
+  assert.match(workflow, /gh pr list[\s\S]*?--head "\$SIGNED_RELEASE_BRANCH"/);
   assert.doesNotMatch(workflow, /name: Append GitHub-signed release surfaces/);
   assert.doesNotMatch(workflow, /forceUpdateRef/);
   assert.doesNotMatch(workflow, /git push/);

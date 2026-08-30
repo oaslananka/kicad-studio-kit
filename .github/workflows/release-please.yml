@@ -33,9 +33,9 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       # Release Please's generated commit is not GitHub-signed, while main requires
-      # signed commits. Build the complete release tree from the canonical PR, then
-      # promote it to a parseable Release Please shadow PR with one GitHub-signed
-      # commit. The canonical PR is closed only after the shadow PR is ready.
+      # signed commits. Keep the canonical PR as Release Please's draft generator,
+      # while a parseable shadow PR carries only GitHub-signed commits. Repeated
+      # Release Please updates append signed commits to the same shadow branch.
       - if: ${{ steps.release.outputs.pr }}
         id: release-pr
         name: Resolve the Release Please branch
@@ -118,7 +118,7 @@ jobs:
       - if: ${{ steps.release.outputs.pr }}
         run: corepack pnpm run docs:generate
       - if: ${{ steps.release.outputs.pr }}
-        name: Create signed Release Please shadow PR
+        name: Sync signed Release Please shadow PR
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
@@ -132,38 +132,67 @@ jobs:
           RELEASE_BODY_FILE="$RUNNER_TEMP/release-pr-body.md"
           SIGNED_RELEASE_PR=""
 
-          cleanup_shadow() {
-            set +e
-            if [[ -n "$SIGNED_RELEASE_PR" ]]; then
-              gh pr close "$SIGNED_RELEASE_PR" >/dev/null 2>&1 || true
-            fi
-            gh api --method DELETE \
-              "repos/$GITHUB_REPOSITORY/git/refs/heads/$SIGNED_RELEASE_BRANCH" \
-              >/dev/null 2>&1 || true
-          }
-
           gh pr view "$RELEASE_PR_NUMBER" --json body --jq '.body // ""' \
             > "$RELEASE_BODY_FILE"
-          node scripts/create-github-signed-commit.mjs \
-            --repository "$GITHUB_REPOSITORY" \
-            --branch "$SIGNED_RELEASE_BRANCH" \
-            --message "chore(kicad-studio): prepare signed release surfaces"$'\n\nSigned-off-by: oaslananka <info@oaslananka.dev>' \
-            --create-from-base "$RELEASE_BASE_SHA"
 
-          trap cleanup_shadow ERR
-          SIGNED_RELEASE_URL="$(gh pr create \
-            --draft \
-            --base main \
-            --head "$SIGNED_RELEASE_BRANCH" \
-            --title "$RELEASE_TITLE" \
-            --body-file "$RELEASE_BODY_FILE")"
-          SIGNED_RELEASE_PR="${SIGNED_RELEASE_URL##*/}"
-          gh pr edit "$SIGNED_RELEASE_PR" --add-label "autorelease: pending"
-          gh pr comment "$RELEASE_PR_NUMBER" \
-            --body "Superseded by #$SIGNED_RELEASE_PR, the GitHub-signed release PR required by branch protection."
-          gh pr close "$RELEASE_PR_NUMBER"
-          gh pr edit "$RELEASE_PR_NUMBER" --remove-label "autorelease: pending" || true
-          trap - ERR
+          if SIGNED_RELEASE_HEAD="$(gh api \
+            "repos/$GITHUB_REPOSITORY/git/ref/heads/$SIGNED_RELEASE_BRANCH" \
+            --jq '.object.sha' 2>/dev/null)"; then
+            mapfile -t signed_release_prs < <(
+              gh pr list \
+                --state open \
+                --head "$SIGNED_RELEASE_BRANCH" \
+                --json number \
+                --jq '.[].number'
+            )
+            if [[ "${#signed_release_prs[@]}" -ne 1 ]]; then
+              echo "Expected exactly one open signed release PR for existing shadow branch" >&2
+              exit 1
+            fi
+            SIGNED_RELEASE_PR="${signed_release_prs[0]}"
+            git fetch --no-tags origin \
+              "refs/heads/$SIGNED_RELEASE_BRANCH:refs/remotes/origin/$SIGNED_RELEASE_BRANCH"
+            node scripts/create-github-signed-commit.mjs \
+              --repository "$GITHUB_REPOSITORY" \
+              --branch "$SIGNED_RELEASE_BRANCH" \
+              --message "chore(kicad-studio): sync signed release surfaces"$'\n\nSigned-off-by: oaslananka <info@oaslananka.dev>' \
+              --onto-head "$SIGNED_RELEASE_HEAD"
+            gh pr edit "$SIGNED_RELEASE_PR" \
+              --title "$RELEASE_TITLE" \
+              --body-file "$RELEASE_BODY_FILE"
+          else
+            node scripts/create-github-signed-commit.mjs \
+              --repository "$GITHUB_REPOSITORY" \
+              --branch "$SIGNED_RELEASE_BRANCH" \
+              --message "chore(kicad-studio): prepare signed release surfaces"$'\n\nSigned-off-by: oaslananka <info@oaslananka.dev>' \
+              --create-from-base "$RELEASE_BASE_SHA"
+
+            cleanup_new_shadow() {
+              set +e
+              if [[ -n "$SIGNED_RELEASE_PR" ]]; then
+                gh pr close "$SIGNED_RELEASE_PR" >/dev/null 2>&1 || true
+              fi
+              gh api --method DELETE \
+                "repos/$GITHUB_REPOSITORY/git/refs/heads/$SIGNED_RELEASE_BRANCH" \
+                >/dev/null 2>&1 || true
+            }
+            trap cleanup_new_shadow ERR
+
+            SIGNED_RELEASE_URL="$(gh pr create \
+              --base main \
+              --head "$SIGNED_RELEASE_BRANCH" \
+              --title "$RELEASE_TITLE" \
+              --body-file "$RELEASE_BODY_FILE")"
+            SIGNED_RELEASE_PR="${SIGNED_RELEASE_URL##*/}"
+            gh pr edit "$SIGNED_RELEASE_PR" --add-label "autorelease: pending"
+            gh pr comment "$RELEASE_PR_NUMBER" \
+              --body "Merge #$SIGNED_RELEASE_PR for signature-compliant release history; this PR remains the Release Please generator."
+            trap - ERR
+          fi
+
+          if [[ "$(gh pr view "$RELEASE_PR_NUMBER" --json isDraft --jq '.isDraft')" != "true" ]]; then
+            gh pr ready --undo "$RELEASE_PR_NUMBER"
+          fi
 
       # Regenerate changelog docs after a release PR is merged
       - if: ${{ steps.release.outputs.releases_created == 'true' }}

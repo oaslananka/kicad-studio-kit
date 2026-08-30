@@ -201,6 +201,33 @@ test("signed release shadow branch cleans up its new ref when commit creation fa
   assert.deepEqual(calls, ["createRef", "createCommit", "deleteRef"]);
 });
 
+test("signed release shadow updates append from its current verified head", async () => {
+  assert.equal(
+    typeof signedCommitHelpers.appendReleaseBranchCommit,
+    "function",
+  );
+  const calls = [];
+  const result = await signedCommitHelpers.appendReleaseBranchCommit({
+    repository: "oaslananka/kicad-studio-kit",
+    branch: "release-please/branches/main/components/vscode-extension",
+    expectedHeadOid: "2".repeat(40),
+    headline: "chore(kicad-studio): sync signed release surfaces",
+    changes: [{ path: "docs/versions.md", contents: Buffer.from("1.10.4\n") }],
+    createCommit: async (request) => {
+      calls.push(request.variables.input);
+      return { oid: "3".repeat(40) };
+    },
+  });
+
+  assert.deepEqual(result, { oid: "3".repeat(40) });
+  assert.equal(calls.length, 1);
+  assert.equal(
+    calls[0].branch.branchName,
+    "release-please/branches/main/components/vscode-extension",
+  );
+  assert.equal(calls[0].expectedHeadOid, "2".repeat(40));
+});
+
 test("release branch rewrite creates one commit from the base ref", async () => {
   assert.equal(typeof signedCommitHelpers.rewriteReleaseBranch, "function");
   const calls = [];

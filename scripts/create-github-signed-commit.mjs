@@ -5,6 +5,7 @@ import fs from "node:fs";
 import process from "node:process";
 
 import {
+  appendReleaseBranchCommit,
   buildCreateCommitRequest,
   createReleaseBranchFromBase,
   parseGitNameStatus,
@@ -18,6 +19,7 @@ const branch = options.branch;
 const headline = options.message;
 const baseOid = options.base;
 const createFromBaseOid = options["create-from-base"];
+const ontoHeadOid = options["onto-head"];
 const token = process.env.GITHUB_TOKEN;
 
 if (!repository || !branch || !headline || !token) {
@@ -26,11 +28,31 @@ if (!repository || !branch || !headline || !token) {
   );
 }
 
-if (baseOid && createFromBaseOid) {
-  throw new Error("--base and --create-from-base are mutually exclusive");
+const branchModes = [baseOid, createFromBaseOid, ontoHeadOid].filter(Boolean);
+if (branchModes.length > 1) {
+  throw new Error(
+    "--base, --create-from-base, and --onto-head are mutually exclusive",
+  );
 }
 
-if (createFromBaseOid) {
+if (ontoHeadOid) {
+  assertLocalCommit(ontoHeadOid, "--onto-head");
+  const descriptors = collectReleaseChanges(ontoHeadOid, { allowEmpty: true });
+  if (descriptors.length === 0) {
+    console.log(
+      "Signed release shadow already matches the generated release tree.",
+    );
+    process.exit(0);
+  }
+  await appendReleaseBranchCommit({
+    repository,
+    branch,
+    expectedHeadOid: ontoHeadOid,
+    headline,
+    changes: readChanges(descriptors),
+    createCommit: createGitHubCommit,
+  });
+} else if (createFromBaseOid) {
   const localHeadOid = git(["rev-parse", "HEAD"]).trim();
   ensureBaseIsAncestor(createFromBaseOid, localHeadOid);
   const descriptors = collectReleaseChanges(createFromBaseOid);
@@ -86,7 +108,7 @@ if (createFromBaseOid) {
 
 console.log("Created a verified GitHub commit on the requested branch.");
 
-function collectReleaseChanges(baseOid) {
+function collectReleaseChanges(baseOid, { allowEmpty = false } = {}) {
   const tracked = parseGitNameStatus(
     git(["diff", "--name-status", "--no-renames", "-z", baseOid, "--"]),
   );
@@ -97,7 +119,7 @@ function collectReleaseChanges(baseOid) {
   for (const filePath of untracked) {
     byPath.set(filePath, { path: filePath, deleted: false });
   }
-  if (byPath.size === 0) {
+  if (byPath.size === 0 && !allowEmpty) {
     throw new Error("release branch has no changes relative to the base SHA");
   }
   return [...byPath.values()].sort((left, right) =>
@@ -111,6 +133,17 @@ function readChanges(descriptors) {
       ? descriptor
       : { ...descriptor, contents: fs.readFileSync(descriptor.path) },
   );
+}
+
+function assertLocalCommit(oid, label) {
+  if (!/^[0-9a-f]{40}$/iu.test(oid ?? "")) {
+    throw new Error(`${label} must be a 40-character Git SHA`);
+  }
+  try {
+    git(["cat-file", "-e", `${oid}^{commit}`]);
+  } catch {
+    throw new Error(`${label} must name a local commit`);
+  }
 }
 
 function ensureBaseIsAncestor(baseOid, expectedHeadOid) {
@@ -260,6 +293,7 @@ function parseArguments(args) {
         "message",
         "base",
         "create-from-base",
+        "onto-head",
       ]).has(name)
     ) {
       throw new Error(`Unknown argument: ${flag}`);

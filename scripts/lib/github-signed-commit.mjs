@@ -174,6 +174,32 @@ export async function createReleaseBranchFromBase({
   }
 }
 
+export async function appendReleaseBranchCommit({
+  repository,
+  branch,
+  expectedHeadOid,
+  headline,
+  changes,
+  createCommit,
+}) {
+  assertRepositorySlug(repository);
+  assertBranchName(branch);
+  assertReleaseShadowBranchName(branch);
+  assertOid(expectedHeadOid, "expectedHeadOid");
+  if (typeof createCommit !== "function") {
+    throw new TypeError("createCommit must be a function");
+  }
+
+  const request = buildCreateCommitRequest({
+    repository,
+    branch,
+    expectedHeadOid,
+    headline,
+    changes,
+  });
+  return await createCommit(request);
+}
+
 export function buildCreateCommitRequest({
   repository,
   branch,
