@@ -513,7 +513,8 @@ export class McpClient {
       capabilities: normalizeCapabilities(
         initializeResult?.capabilities,
         serverInfo,
-        diagnostics
+        diagnostics,
+        metadata?.profiles
       ),
       compat,
       capturedAt: new Date().toISOString()
@@ -566,6 +567,7 @@ export class McpClient {
     | {
         version: string;
         serverInfo?: McpServerInfoContract | undefined;
+        profiles?: string[] | undefined;
       }
     | undefined
   > {
@@ -831,13 +833,15 @@ function severityFromText(value: string): FixItem['severity'] {
 function normalizeCapabilities(
   value: unknown,
   serverInfo?: McpServerInfoContract | undefined,
-  diagnostics: string[] = []
+  diagnostics: string[] = [],
+  profiles?: string[] | undefined
 ): McpCapabilityCard {
   const record = isRecord(value) ? value : {};
   return {
     tools: normalizeCapabilityNames(record['tools']),
     resources: normalizeCapabilityNames(record['resources']),
     prompts: normalizeCapabilityNames(record['prompts']),
+    ...(profiles?.length ? { profiles: [...profiles] } : {}),
     ...(serverInfo ? { serverInfo } : {}),
     ...(diagnostics.length ? { diagnostics } : {})
   };
@@ -903,6 +907,9 @@ function cloneConnectionState(state: McpConnectionState): McpConnectionState {
             tools: [...state.server.capabilities.tools],
             resources: [...state.server.capabilities.resources],
             prompts: [...state.server.capabilities.prompts],
+            ...(state.server.capabilities.profiles
+              ? { profiles: [...state.server.capabilities.profiles] }
+              : {}),
             ...(state.server.capabilities.serverInfo
               ? {
                   serverInfo: cloneServerInfoContract(

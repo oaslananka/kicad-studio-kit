@@ -6,6 +6,7 @@ import type { McpServerInfoContract } from '../types';
 export interface WellKnownMcpServerMetadata {
   version: string;
   serverInfo?: McpServerInfoContract | undefined;
+  profiles?: string[] | undefined;
 }
 
 export async function readWellKnownMcpServerVersion(
@@ -33,9 +34,11 @@ export async function readWellKnownMcpServerMetadata(
       if (getMcpCompatStatus(version) !== 'incompatible') {
         logger.debug(`Using MCP server-card version ${version} from ${path}.`);
         const serverInfo = readWellKnownServerInfoContract(payload);
+        const profiles = readWellKnownProfiles(payload);
         return {
           version,
-          ...(serverInfo ? { serverInfo } : {})
+          ...(serverInfo ? { serverInfo } : {}),
+          ...(profiles ? { profiles } : {})
         };
       }
     } catch {
@@ -70,6 +73,21 @@ function readWellKnownServerInfoContract(
   const contract = value['serverInfoContract'];
   const validation = validateMcpServerInfoContract(contract);
   return validation.valid ? validation.data : undefined;
+}
+
+function readWellKnownProfiles(value: unknown): string[] | undefined {
+  if (!isRecord(value) || !isRecord(value['capabilities'])) {
+    return undefined;
+  }
+  const profiles = value['capabilities']['profiles'];
+  if (!Array.isArray(profiles)) {
+    return undefined;
+  }
+  const normalized = profiles.filter(
+    (profile): profile is string =>
+      typeof profile === 'string' && profile.length > 0
+  );
+  return [...new Set(normalized)];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

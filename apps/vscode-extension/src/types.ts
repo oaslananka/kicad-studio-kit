@@ -342,6 +342,7 @@ export interface McpCapabilityCard {
   tools: string[];
   resources: string[];
   prompts: string[];
+  profiles?: string[] | undefined;
   serverInfo?: McpServerInfoContract | undefined;
   diagnostics?: string[] | undefined;
 }
