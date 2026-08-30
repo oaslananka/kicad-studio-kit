@@ -6,6 +6,7 @@ import test from "node:test";
 import { parse as parseYaml } from "yaml";
 
 import {
+  validateCompatibilityAxes,
   validateCompatibilityContract,
   validateEmbeddedExtensionCompatibilityMatrix,
   validateKiCadPatchBaseline,
@@ -56,8 +57,94 @@ test("embedded extension compatibility matrix rejects product-version drift", ()
   );
 });
 
+test("#621 embedded support axes reject BoardReadyOps required-range drift", () => {
+  const driftedSource = matrixSource.replace(
+    "required: '>=1.2.0 <2.0.0'",
+    "required: '>=1.3.0 <2.0.0'",
+  );
+  assert.notEqual(driftedSource, matrixSource);
+  assert.match(
+    validateEmbeddedExtensionCompatibilityMatrix({
+      compatibility,
+      extensionPackage,
+      matrixSource: driftedSource,
+    }).join("\n"),
+    /boardReadyOpsRequired/u,
+  );
+});
+
+test("#621 embedded support axes reject BoardReadyOps contract drift", () => {
+  const driftedSource = matrixSource.replace(
+    "testedAgainst: '1.35.0'",
+    "testedAgainst: '1.34.0'",
+  );
+  assert.notEqual(driftedSource, matrixSource);
+  assert.match(
+    validateEmbeddedExtensionCompatibilityMatrix({
+      compatibility,
+      extensionPackage,
+      matrixSource: driftedSource,
+    }).join("\n"),
+    /boardReadyOpsTestedAgainst/u,
+  );
+});
+
 test("repository compatibility contract validates current state", () => {
   assert.deepEqual(validateCompatibilityContract(), []);
+});
+
+test("#621 support axes are independent, complete, and internally consistent", () => {
+  assert.deepEqual(validateCompatibilityAxes({ compatibility }), []);
+});
+
+test("#621 rejects a missing product support axis", () => {
+  const drifted = structuredClone(compatibility);
+  delete drifted.supportAxes.mcpServer;
+
+  assert.match(
+    validateCompatibilityAxes({ compatibility: drifted }).join("\n"),
+    /supportAxes\.mcpServer/u,
+  );
+});
+
+test("#621 rejects contradictory Studio CLI lifecycle claims", () => {
+  const drifted = structuredClone(compatibility);
+  drifted.supportAxes.studioCli.kicad.stable = ["9.x"];
+
+  assert.match(
+    validateCompatibilityAxes({ compatibility: drifted }).join("\n"),
+    /studioCli.*stable.*kicad\.primary/iu,
+  );
+});
+
+test("#621 rejects stale published kicad-mcp-pro tested-pair evidence", () => {
+  assert.match(
+    validateCompatibilityAxes({
+      compatibility,
+      publishedArtifacts: { mcpServerVersion: "99.0.0" },
+    }).join("\n"),
+    /mcpServer.*testedAgainst.*99\.0\.0/iu,
+  );
+});
+
+test("#621 rejects stale published BoardReadyOps contract evidence", () => {
+  assert.match(
+    validateCompatibilityAxes({
+      compatibility,
+      publishedArtifacts: { boardReadyOpsVersion: "99.0.0" },
+    }).join("\n"),
+    /boardReadyOps.*testedAgainst.*99\.0\.0/iu,
+  );
+});
+
+test("#621 keeps protocol activation separate from product semver compatibility", () => {
+  const drifted = structuredClone(compatibility);
+  drifted.supportAxes.mcpProtocol.active = "2026-07-28";
+
+  assert.match(
+    validateCompatibilityAxes({ compatibility: drifted }).join("\n"),
+    /mcpProtocol\.active.*mcp\.protocolVersion/u,
+  );
 });
 
 test("#494 compatibility contract rejects malformed runtime policy metadata", () => {

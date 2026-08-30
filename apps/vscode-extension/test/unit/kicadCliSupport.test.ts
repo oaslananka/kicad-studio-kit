@@ -45,6 +45,15 @@ describe('kicadCliSupport', () => {
     );
   });
 
+  it('labels KiCad CLI support as independent from MCP support', () => {
+    const support = describeKiCadSupportLine({
+      version: '10.0.5',
+      versionLabel: 'KiCad 10.0.5'
+    });
+
+    expect(support.detail).toContain('MCP support is evaluated separately');
+  });
+
   it('reports feature availability from version line plus capability probes', () => {
     const features = buildKiCadFeatureSupport({
       cli: {

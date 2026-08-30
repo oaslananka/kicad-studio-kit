@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { execFile } from 'node:child_process';
+import semver from 'semver';
 import { COMMANDS, SETTINGS } from '../constants';
 import type {
   McpCapabilityCard,
@@ -9,6 +10,7 @@ import type {
 } from '../types';
 import type { McpConnectionAdapter } from './mcpToolAdapter';
 import { readConfiguredMcpProfile } from '../commands/mcpProfilePicker';
+import { COMPATIBILITY_MATRIX } from './compatibilityMatrix';
 
 type McpToolsNode = {
   label: string;
@@ -22,10 +24,7 @@ type McpToolsNode = {
 };
 
 type DashboardStatus =
-  | 'compatible'
-  | 'degraded'
-  | 'incompatible'
-  | 'disconnected';
+  'compatible' | 'degraded' | 'incompatible' | 'disconnected';
 
 type CompatibilityDashboard = {
   status: DashboardStatus;
@@ -1108,16 +1107,14 @@ function isVersionDegraded(version: string): boolean {
   if (version === 'unknown') {
     return false;
   }
-  const match = version.match(/^v?(\d+)\.(\d+)\.(\d+)/);
-  if (!match) {
+  const normalized = semver.coerce(version)?.version;
+  if (!normalized) {
     return false;
   }
-  const major = parseInt(match[1] ?? '0', 10);
-  const minor = parseInt(match[2] ?? '0', 10);
-  if (major < 1 || (major === 1 && minor < 2)) {
-    return true;
-  }
-  return false;
+  return !semver.satisfies(
+    normalized,
+    COMPATIBILITY_MATRIX.supportAxes.boardReadyOps.required
+  );
 }
 
 function boardReadyOpsNode(status: {
@@ -1186,7 +1183,7 @@ function boardReadyOpsNode(status: {
       statusLabel,
       status.message ||
         (isOld
-          ? 'Please upgrade BoardReadyOps to v1.2.0 or newer.'
+          ? `BoardReadyOps version ${status.version} is outside the required range ${COMPATIBILITY_MATRIX.supportAxes.boardReadyOps.required}. Install or upgrade BoardReadyOps before running readiness checks.`
           : undefined),
       statusIcon
     ),

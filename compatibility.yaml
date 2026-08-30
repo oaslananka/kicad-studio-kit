@@ -630,6 +630,40 @@ python:
     - "3.13"
     - "3.14"
 
+supportAxes:
+  studioCli:
+    kicad:
+      stable: ["10.0.x"]
+      deprecated: ["9.x", "8.x"]
+      preview: ["11.0.x"]
+      dropped: []
+    remediation: "Install/configure a KiCad CLI line supported by Studio; MCP availability is evaluated separately."
+  mcpServer:
+    package: "kicad-mcp-pro"
+    required: ">=3.5.2 <4.0.0"
+    recommended: ">=3.5.2 <4.0.0"
+    testedAgainst:
+      version: "3.33.3"
+      registry: "pypi"
+      source: "https://pypi.org/project/kicad-mcp-pro/3.33.3/"
+    remediation: "Install a published kicad-mcp-pro version inside the supported range and re-run compatibility diagnostics."
+  mcpProtocol:
+    active: "2025-11-25"
+    next: "2026-07-28"
+    activationState: "blocked"
+    remediation: "Use a server that negotiates the active protocol; protocol activation remains evidence-gated by ADR 0008."
+  boardReadyOps:
+    package: "boardreadyops"
+    required: ">=1.2.0 <2.0.0"
+    testedAgainst:
+      version: "1.35.0"
+      registry: "npm"
+      source: "https://www.npmjs.com/package/boardreadyops/v/1.35.0"
+    reports:
+      findingsSchema: 1
+      evidenceBundleSchema: 2
+    remediation: "Install or upgrade the published BoardReadyOps CLI to a compatible version before running readiness checks."
+
 runtimePolicy:
   reviewed: "2026-07-20"
   sources:
@@ -679,7 +713,7 @@ products:
     compatibleMcpPro:
       required: ">=3.5.2 <4.0.0"
       recommended: ">=3.5.2 <4.0.0"
-      testedAgainst: "3.9.2"
+      testedAgainst: "3.33.3"
 
 featureGates:
   projectDiscovery:
