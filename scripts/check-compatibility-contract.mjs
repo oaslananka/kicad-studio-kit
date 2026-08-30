@@ -179,6 +179,9 @@ export function validateEmbeddedExtensionCompatibilityMatrix({
     mcpTestedAgainst: compatibleMcpPro.testedAgainst,
     kicadMcpProVersion: compatibleMcpPro.testedAgainst,
     compatibleExtensionTestedAgainst: extensionPackage.version,
+    boardReadyOpsRequired: compatibility.supportAxes?.boardReadyOps?.required,
+    boardReadyOpsTestedAgainst:
+      compatibility.supportAxes?.boardReadyOps?.testedAgainst?.version,
   };
 
   const actualValues = {
@@ -234,6 +237,18 @@ export function validateEmbeddedExtensionCompatibilityMatrix({
       matrixSource,
       /compatibleExtension:\s*\{[\s\S]*?testedAgainst:\s*'([^']+)'/u,
       "products.kicadMcpPro.compatibleExtension.testedAgainst",
+      errors,
+    ),
+    boardReadyOpsRequired: extractTsStringLiteral(
+      matrixSource,
+      /boardReadyOps:\s*\{[\s\S]*?required:\s*'([^']+)'/u,
+      "supportAxes.boardReadyOps.required",
+      errors,
+    ),
+    boardReadyOpsTestedAgainst: extractTsStringLiteral(
+      matrixSource,
+      /boardReadyOps:\s*\{[\s\S]*?testedAgainst:\s*'([^']+)'/u,
+      "supportAxes.boardReadyOps.testedAgainst",
       errors,
     ),
   };
@@ -456,6 +471,165 @@ export function validateKiCadPatchBaseline({
   return errors;
 }
 
+function validateStudioCliAxis({ compatibility, cli }) {
+  const errors = [];
+  const stable = Array.isArray(cli?.stable) ? cli.stable : [];
+  if (stable.length !== 1 || stable[0] !== compatibility?.kicad?.primary) {
+    errors.push(
+      `supportAxes.studioCli.kicad.stable must contain only kicad.primary (${String(compatibility?.kicad?.primary)})`,
+    );
+  }
+  for (const state of ["stable", "deprecated", "preview", "dropped"]) {
+    if (!Array.isArray(cli?.[state])) {
+      errors.push(`supportAxes.studioCli.kicad.${state} must be an array`);
+    }
+  }
+  const lifecycleRanges = [
+    "stable",
+    "deprecated",
+    "preview",
+    "dropped",
+  ].flatMap((state) => (Array.isArray(cli?.[state]) ? cli[state] : []));
+  if (new Set(lifecycleRanges).size !== lifecycleRanges.length) {
+    errors.push(
+      "supportAxes.studioCli.kicad lifecycle ranges must not overlap",
+    );
+  }
+  const legacyDeprecated = (compatibility?.kicad?.supported ?? [])
+    .filter((entry) => entry?.state === "deprecated")
+    .map((entry) => entry.range);
+  if (
+    JSON.stringify(cli?.deprecated ?? []) !== JSON.stringify(legacyDeprecated)
+  ) {
+    errors.push(
+      "supportAxes.studioCli.kicad.deprecated must match deprecated kicad.supported lines",
+    );
+  }
+  return errors;
+}
+
+function validateMcpServerAxis({
+  compatibility,
+  mcpServer,
+  publishedArtifacts,
+}) {
+  const errors = [];
+  const legacyMcp =
+    compatibility?.products?.["kicad-studio"]?.compatibleMcpPro ?? {};
+  for (const key of ["required", "recommended"]) {
+    if (mcpServer[key] !== legacyMcp[key]) {
+      errors.push(
+        `supportAxes.mcpServer.${key} must match products.kicad-studio.compatibleMcpPro.${key}`,
+      );
+    }
+  }
+  if (mcpServer.testedAgainst?.version !== legacyMcp.testedAgainst) {
+    errors.push(
+      "supportAxes.mcpServer.testedAgainst.version must match products.kicad-studio.compatibleMcpPro.testedAgainst",
+    );
+  }
+  if (mcpServer.testedAgainst?.registry !== "pypi") {
+    errors.push("supportAxes.mcpServer.testedAgainst.registry must be pypi");
+  }
+  if (
+    publishedArtifacts.mcpServerVersion &&
+    mcpServer.testedAgainst?.version !== publishedArtifacts.mcpServerVersion
+  ) {
+    errors.push(
+      `supportAxes.mcpServer.testedAgainst.version must match published artifact ${publishedArtifacts.mcpServerVersion}`,
+    );
+  }
+  return errors;
+}
+
+function validateMcpProtocolAxis({ compatibility, protocol }) {
+  const errors = [];
+  if (protocol.active !== compatibility?.mcp?.protocolVersion) {
+    errors.push(
+      "supportAxes.mcpProtocol.active must match mcp.protocolVersion",
+    );
+  }
+  if (protocol.next !== compatibility?.mcp?.nextProtocolVersion) {
+    errors.push(
+      "supportAxes.mcpProtocol.next must match mcp.nextProtocolVersion",
+    );
+  }
+  if (protocol.activationState !== compatibility?.mcp?.activation?.state) {
+    errors.push(
+      "supportAxes.mcpProtocol.activationState must match mcp.activation.state",
+    );
+  }
+  return errors;
+}
+
+function validateBoardReadyOpsAxis({ boardReadyOps, publishedArtifacts }) {
+  const errors = [];
+  if (boardReadyOps.package !== "boardreadyops") {
+    errors.push("supportAxes.boardReadyOps.package must be boardreadyops");
+  }
+  if (boardReadyOps.testedAgainst?.registry !== "npm") {
+    errors.push("supportAxes.boardReadyOps.testedAgainst.registry must be npm");
+  }
+  if (boardReadyOps.reports?.findingsSchema !== 1) {
+    errors.push("supportAxes.boardReadyOps.reports.findingsSchema must be 1");
+  }
+  if (boardReadyOps.reports?.evidenceBundleSchema !== 2) {
+    errors.push(
+      "supportAxes.boardReadyOps.reports.evidenceBundleSchema must be 2",
+    );
+  }
+  if (
+    publishedArtifacts.boardReadyOpsVersion &&
+    boardReadyOps.testedAgainst?.version !==
+      publishedArtifacts.boardReadyOpsVersion
+  ) {
+    errors.push(
+      `supportAxes.boardReadyOps.testedAgainst.version must match published artifact ${publishedArtifacts.boardReadyOpsVersion}`,
+    );
+  }
+  return errors;
+}
+
+export function validateCompatibilityAxes({
+  compatibility,
+  publishedArtifacts = {},
+} = {}) {
+  const errors = [];
+  const axes = compatibility?.supportAxes;
+  for (const axis of [
+    "studioCli",
+    "mcpServer",
+    "mcpProtocol",
+    "boardReadyOps",
+  ]) {
+    if (!axes?.[axis]) {
+      errors.push(`supportAxes.${axis} is required`);
+    }
+  }
+  if (!axes) return errors;
+
+  errors.push(
+    ...validateStudioCliAxis({
+      compatibility,
+      cli: axes.studioCli?.kicad,
+    }),
+    ...validateMcpServerAxis({
+      compatibility,
+      mcpServer: axes.mcpServer ?? {},
+      publishedArtifacts,
+    }),
+    ...validateMcpProtocolAxis({
+      compatibility,
+      protocol: axes.mcpProtocol ?? {},
+    }),
+    ...validateBoardReadyOpsAxis({
+      boardReadyOps: axes.boardReadyOps ?? {},
+      publishedArtifacts,
+    }),
+  );
+  return errors;
+}
+
 function checkRuntimePolicyMetadata(errors, options = {}) {
   if (
     !fileExists("compatibility.yaml") ||
@@ -509,6 +683,13 @@ export function validateCompatibilityContract(options = {}) {
     const compatibility = parseYaml(readFile("compatibility.yaml"));
     errors.push(
       ...validateKiCadPatchBaseline({ compatibility }),
+      ...validateCompatibilityAxes({
+        compatibility,
+        publishedArtifacts: options.publishedArtifacts ?? {
+          mcpServerVersion: process.env.KICAD_MCP_PRO_PUBLISHED_VERSION,
+          boardReadyOpsVersion: process.env.BOARDREADYOPS_PUBLISHED_VERSION,
+        },
+      }),
       ...validateMcpProtocolActivation({
         compatibility,
         repoRoot: REPO_ROOT,

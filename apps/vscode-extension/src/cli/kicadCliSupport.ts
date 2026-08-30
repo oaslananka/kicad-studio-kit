@@ -70,7 +70,7 @@ export function describeKiCadSupportLine(
     return {
       state: 'primary',
       label: `${cli.versionLabel} primary`,
-      detail: `Primary release-blocking KiCad line: ${KI_CAD_PRIMARY_RANGE}.`
+      detail: `Primary release-blocking KiCad CLI line: ${KI_CAD_PRIMARY_RANGE}. MCP support is evaluated separately.`
     };
   }
   if (major >= 11) {
