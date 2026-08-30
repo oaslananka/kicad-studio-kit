@@ -32,7 +32,7 @@ function restoreEnv(name, value) {
   }
 }
 
-test("release workflow promotes a GitHub-signed parseable shadow PR without rewriting refs", () => {
+test("#645 release workflow promotes a GitHub-signed parseable shadow PR without rewriting refs", () => {
   const workflow = fs.readFileSync(
     path.join(REPO_ROOT, ".github/workflows/release-please.yml"),
     "utf8",

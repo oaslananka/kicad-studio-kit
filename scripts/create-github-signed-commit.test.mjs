@@ -128,7 +128,7 @@ test("release diff parser captures tracked additions and deletions", () => {
   );
 });
 
-test("signed release shadow branch is created from the base without rewriting refs", async () => {
+test("#645 signed release shadow branch is created from the base without rewriting refs", async () => {
   assert.equal(
     typeof signedCommitHelpers.createReleaseBranchFromBase,
     "function",
@@ -201,7 +201,7 @@ test("signed release shadow branch cleans up its new ref when commit creation fa
   assert.deepEqual(calls, ["createRef", "createCommit", "deleteRef"]);
 });
 
-test("signed release shadow updates append from its current verified head", async () => {
+test("#645 signed release shadow updates append from its current verified head", async () => {
   assert.equal(
     typeof signedCommitHelpers.appendReleaseBranchCommit,
     "function",
