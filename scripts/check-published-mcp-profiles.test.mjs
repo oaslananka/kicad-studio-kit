@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { spawnSync } from "node:child_process";
 import test from "node:test";
 import {
   parsePublishedProfiles,
@@ -61,6 +62,40 @@ test("published profile canary inspects a verified wheel without executing it", 
   );
   assert.match(section, /sha256/u);
   assert.match(section, /zipfile/u);
-  assert.match(section, /ast\.literal_eval/u);
+  const extractor = fs.readFileSync(
+    new URL("./extract_published_mcp_profiles.py", import.meta.url),
+    "utf8",
+  );
+  assert.match(extractor, /ast\.literal_eval/u);
+  assert.match(extractor, /ast\.AnnAssign/u);
   assert.doesNotMatch(section, /uv run[\s\S]*?--with[\s\S]*?kicad-mcp-pro/u);
+});
+
+function extractProfilesFromRouter(source) {
+  const result = spawnSync(
+    "python",
+    [new URL("./extract_published_mcp_profiles.py", import.meta.url).pathname],
+    { input: source, encoding: "utf8" },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  return JSON.parse(result.stdout);
+}
+
+test("extracts profiles from the published router's annotated catalog assignment", () => {
+  const source = `
+PROFILE_CATEGORIES: dict[str, tuple[str, ...]] = {
+    "default": ("project",),
+    "review": ("project",),
+    "expert": ("project",),
+}
+
+def available_profiles():
+    preferred = ["default", "review", "missing", "expert"]
+    return tuple(name for name in preferred if name in PROFILE_CATEGORIES)
+`;
+  assert.deepEqual(extractProfilesFromRouter(source), [
+    "default",
+    "review",
+    "expert",
+  ]);
 });
