@@ -32,6 +32,25 @@ const VIEWER_BASE64 = {
 
 export const VISUAL_FIXTURES: readonly VisualFixture[] = [
   viewerFixture({
+    id: 'viewer-final-renderer-failure-issue-625',
+    fileType: 'board',
+    mockOptions: { surface: 'none', failure: 'webgl-init' },
+    options: {
+      fileName: 'renderer-failure.kicad_pcb',
+      base64: VIEWER_BASE64.board
+    },
+    verify: async (page) => {
+      await expect(page.locator('#viewer-engine-badge')).toHaveText(
+        'Renderer failed'
+      );
+      await expect(page.locator('#error-overlay')).toBeVisible();
+      await expect(page.locator('#error-detail')).toContainText(
+        'Open the file in KiCad'
+      );
+      await expect(page.locator('#fit-btn')).toBeDisabled();
+    }
+  }),
+  viewerFixture({
     id: 'clean-schematic-issue-17-fallback-fit',
     fileType: 'schematic',
     fallbackSvg: schematicSvg('clean'),

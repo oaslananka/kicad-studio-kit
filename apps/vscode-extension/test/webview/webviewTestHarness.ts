@@ -21,7 +21,10 @@ let viewerHtmlFactory: ViewerHtmlFactory | undefined;
 export async function setViewerContent(
   page: Page,
   options: Partial<ViewerHtmlOptions>,
-  mockOptions: { surface: 'canvas' | 'none' } = { surface: 'canvas' }
+  mockOptions: {
+    surface: 'canvas' | 'none';
+    failure?: 'webgl-init' | 'webgl-event';
+  } = { surface: 'canvas' }
 ): Promise<void> {
   await page.goto('about:blank');
   await setWebviewContent(page, createViewerHtml(options, mockOptions));
@@ -46,7 +49,10 @@ export async function installVsCodeApiMock(
 
 export function createViewerHtml(
   options: Partial<ViewerHtmlOptions>,
-  mockOptions: { surface: 'canvas' | 'none' }
+  mockOptions: {
+    surface: 'canvas' | 'none';
+    failure?: 'webgl-init' | 'webgl-event';
+  }
 ): string {
   return loadViewerHtmlFactory()({
     title: 'Viewer',
@@ -216,18 +222,22 @@ function withVsCodeApiPrelude(html: string, fallbackSvg?: string): string {
             messages.push(message);
             if (
               message?.type === 'requestSvgFallback' &&
-              svgFallbackText &&
               message?.payload?.requestId
             ) {
               window.setTimeout(() => {
                 window.postMessage(
-                  {
-                    type: 'svgFallback',
-                    payload: {
-                      requestId: message.payload.requestId,
-                      svg: svgFallbackText
-                    }
-                  },
+                  svgFallbackText
+                    ? {
+                        type: 'svgFallback',
+                        payload: {
+                          requestId: message.payload.requestId,
+                          svg: svgFallbackText
+                        }
+                      }
+                    : {
+                        type: 'svgFallbackUnavailable',
+                        payload: { requestId: message.payload.requestId }
+                      },
                   '*'
                 );
               }, 0);
@@ -245,6 +255,7 @@ function withVsCodeApiPrelude(html: string, fallbackSvg?: string): string {
 
 function createKiCanvasMockScript(options: {
   surface: 'canvas' | 'none';
+  failure?: 'webgl-init' | 'webgl-event';
 }): string {
   return `
     (() => {
@@ -272,6 +283,23 @@ function createKiCanvasMockScript(options: {
         }
 
         connectedCallback() {
+          if (${JSON.stringify(options.failure)} === 'webgl-event') {
+            window.setTimeout(() => {
+              window.dispatchEvent(
+                new ErrorEvent('error', { message: 'Unable to create WebGL2 context' })
+              );
+            }, 0);
+            return;
+          }
+          if (${JSON.stringify(options.failure)} === 'webgl-init') {
+            Object.defineProperty(this, 'loaded', {
+              configurable: true,
+              get: () => {
+                throw new Error('Unable to create WebGL2 context');
+              }
+            });
+            return;
+          }
           this.loaded = true;
           this.setAttribute('loaded', '');
           if (${JSON.stringify(options.surface)} === 'none') {
