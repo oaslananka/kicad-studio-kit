@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
+import { parse as parseYaml } from "yaml";
 
 import {
   RELEASE_SURFACES,
@@ -9,6 +10,7 @@ import {
   applyCompatibilityMatrixStudioVersion,
   applyCompatibilityMatrixTestedAgainst,
   applyCompatibilityProductVersion,
+  applyMarketplaceReadmeMcpTestedAgainst,
   applyMarketplaceReadmeVersion,
   applyReadmeBaseline,
   collectDrift,
@@ -50,6 +52,10 @@ function marketplaceReadmeCompatVersion(content) {
   return content.match(
     /^KiCad Studio ([^\s]+) supports `kicad-mcp-pro /mu,
   )?.[1];
+}
+
+function marketplaceReadmeMcpTestedAgainst(content) {
+  return content.match(/was tested against `([^`]+)`/u)?.[1];
 }
 
 test("#395 every known release surface matches the authoritative version", () => {
@@ -110,6 +116,22 @@ test("#431 compatibility.yaml writer bumps only the kicad-studio version", () =>
     next.includes('testedAgainst: "3.33.3"'),
     "compatibility writer must not touch the kicad-mcp-pro testedAgainst version",
   );
+});
+
+test("#431 marketplace README MCP tested-against matches compatibility metadata", () => {
+  const compatibility = parseYaml(COMPATIBILITY_YAML);
+  assert.equal(
+    marketplaceReadmeMcpTestedAgainst(MARKETPLACE_README),
+    compatibility.supportAxes.mcpServer.testedAgainst.version,
+  );
+});
+
+test("#431 marketplace README writer syncs the MCP tested-against version", () => {
+  const next = applyMarketplaceReadmeMcpTestedAgainst(
+    MARKETPLACE_README,
+    "9.9.9",
+  );
+  assert.equal(marketplaceReadmeMcpTestedAgainst(next), "9.9.9");
 });
 
 test("#431 marketplace README writer bumps both visible version fields", () => {
