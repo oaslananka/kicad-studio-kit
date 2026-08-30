@@ -89,17 +89,25 @@ test("#645 release workflow promotes a GitHub-signed parseable shadow PR without
   );
   assert.match(
     workflow,
-    /gh pr edit "\$SIGNED_RELEASE_PR" --add-label "autorelease: pending"/,
+    /RELEASE_PR_BRANCH: \${{ steps\.release-pr\.outputs\.branch }}/,
   );
   assert.match(
     workflow,
-    /gh pr view "\$RELEASE_PR_NUMBER" --json isDraft[\s\S]*?gh pr ready --undo "\$RELEASE_PR_NUMBER"/,
+    /FINAL_SIGNED_RELEASE_HEAD=[\s\S]*?commit\.verification\.verified[\s\S]*?Final signed release shadow head is not GitHub-verified/,
   );
-  assert.doesNotMatch(workflow, /gh pr close "\$RELEASE_PR_NUMBER"/);
-  assert.doesNotMatch(
+  assert.match(
     workflow,
-    /gh pr edit "\$RELEASE_PR_NUMBER" --remove-label "autorelease: pending"/,
+    /FINAL_SIGNED_RELEASE_HEAD=[\s\S]*?git merge-base --is-ancestor[\s\S]*?Signed release shadow is not up to date with main/,
   );
+  assert.match(
+    workflow,
+    /gh pr edit "\$SIGNED_RELEASE_PR"[\s\S]*?--add-label "autorelease: pending"[\s\S]*?FINAL_SIGNED_RELEASE_HEAD=[\s\S]*?Final signed release shadow head is not GitHub-verified[\s\S]*?git merge-base --is-ancestor[\s\S]*?GENERATOR_PR_HEAD=[\s\S]*?headRefOid[\s\S]*?GENERATOR_BRANCH_HEAD=[\s\S]*?git\/ref\/heads\/\$RELEASE_PR_BRANCH[\s\S]*?Generator branch head changed before cleanup[\s\S]*?gh pr edit "\$RELEASE_PR_NUMBER" --remove-label "autorelease: pending"[\s\S]*?gh pr close "\$RELEASE_PR_NUMBER"[\s\S]*?git\/refs\/heads\/\$RELEASE_PR_BRANCH/,
+  );
+  assert.match(
+    workflow,
+    /SIGNED_RELEASE_URL=[\s\S]*?SIGNED_RELEASE_PR=[\s\S]*?gh pr edit "\$SIGNED_RELEASE_PR"[\s\S]*?FINAL_SIGNED_RELEASE_HEAD=[\s\S]*?git merge-base --is-ancestor[\s\S]*?trap - ERR[\s\S]*?GENERATOR_PR_BRANCH=/,
+  );
+  assert.doesNotMatch(workflow, /gh pr ready --undo "\$RELEASE_PR_NUMBER"/);
   assert.match(workflow, /gh pr list[\s\S]*?--head "\$SIGNED_RELEASE_BRANCH"/);
   assert.doesNotMatch(workflow, /name: Append GitHub-signed release surfaces/);
   assert.doesNotMatch(workflow, /forceUpdateRef/);
