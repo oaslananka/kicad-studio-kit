@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { CONTEXT_KEYS, SETTINGS } from '../constants';
+import { COMMANDS, CONTEXT_KEYS, SETTINGS } from '../constants';
 import type { McpClient } from '../mcp/mcpClient';
 import type { McpDetector } from '../mcp/mcpDetector';
 import type { McpStateStore } from '../state/stateStores';
@@ -20,6 +20,8 @@ export interface McpActivationControllerDeps {
  * unchanged from `activate()` as part of the #397 composition-root split.
  */
 export class McpActivationController {
+  private mcpBootstrapOffered = false;
+
   constructor(private readonly deps: McpActivationControllerDeps) {}
 
   async refreshMcpState(): Promise<void> {
@@ -166,6 +168,10 @@ export class McpActivationController {
     if (fs.existsSync(mcpJsonPath)) {
       return;
     }
+    if (this.mcpBootstrapOffered) {
+      return;
+    }
+    this.mcpBootstrapOffered = true;
 
     const choice = await vscode.window.showInformationMessage(
       'kicad-mcp-pro was detected. Create .vscode/mcp.json for this project?',
@@ -173,8 +179,7 @@ export class McpActivationController {
       'Later'
     );
     if (choice === 'Setup MCP') {
-      await this.deps.mcpDetector.generateMcpJson(root, installStatus);
-      await this.refreshMcpState();
+      await vscode.commands.executeCommand(COMMANDS.setupMcpIntegration);
     }
   }
 }
