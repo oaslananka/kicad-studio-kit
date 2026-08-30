@@ -80,6 +80,18 @@ export function createViewerControllerScript(): string {
           selection: false,
           layers: false
         }
+      },
+      failed: {
+        label: 'Renderer failed',
+        capabilities: {
+          interactive: false,
+          fit: false,
+          zoom: false,
+          exportPng: false,
+          exportSvg: false,
+          selection: false,
+          layers: false
+        }
       }
     };
     let keydownHandler = null;
@@ -91,6 +103,11 @@ export function createViewerControllerScript(): string {
     let fallbackSvgFitScale = 1;
     let fallbackSvgScale = 1;
     let fallbackResizeHandler = null;
+    let viewerGeneration = 0;
+    let rendererInitializing = false;
+    let rendererFallbackAttempt = null;
+    let rendererFallbackGeneration = 0;
+    let rendererFallbackFailureDetail = '';
     let localState = {
       zoom: 1,
       grid: false,
@@ -222,15 +239,20 @@ export function createViewerControllerScript(): string {
     });
 
     window.addEventListener('error', (ev) => {
-      showError('Script error', ev.message || 'Unknown error', '');
+      handleRendererRuntimeFailure('Script error', ev.message || 'Unknown error');
     });
     window.addEventListener('unhandledrejection', (ev) => {
       const reason = ev.reason instanceof Error ? ev.reason.message : String(ev.reason || 'Unknown');
-      showError('Runtime error', reason, '');
+      handleRendererRuntimeFailure('Runtime error', reason);
     });
 
     void initViewer();
     async function initViewer() {
+      const generation = ++viewerGeneration;
+      rendererInitializing = true;
+      rendererFallbackAttempt = null;
+      rendererFallbackGeneration = generation;
+      rendererFallbackFailureDetail = '';
       clearKeyboardShortcuts();
       clearFallbackResizeHandler();
       fallbackSvgDataUrl = '';
@@ -309,8 +331,9 @@ export function createViewerControllerScript(): string {
 
         const renderSurface = await waitForRenderableSurface(viewerMount, 2000);
         if (!renderSurface) {
-          const fallbackLoaded = await trySvgFallback(
-            'KiCanvas reported success but did not create a drawable render surface.'
+          const fallbackLoaded = await recoverRendererFailure(
+            'KiCanvas reported success but did not create a drawable render surface.',
+            generation
           );
           if (fallbackLoaded) {
             return;
@@ -334,8 +357,9 @@ export function createViewerControllerScript(): string {
         if (renderSurface.tagName.toLowerCase() === 'canvas') {
           const blankCanvas = await isCanvasEffectivelyBlank(renderSurface);
           if (blankCanvas) {
-            const fallbackLoaded = await trySvgFallback(
-              'KiCanvas created a blank render surface for this file.'
+            const fallbackLoaded = await recoverRendererFailure(
+              'KiCanvas created a blank render surface for this file.',
+              generation
             );
             if (fallbackLoaded) {
               return;
@@ -364,14 +388,73 @@ export function createViewerControllerScript(): string {
         renderHopOverOverlay();
         hideAll();
         installKeyboardShortcuts(viewer);
+        rendererInitializing = false;
         setEngineState('kicanvas');
         setStatus('Interactive renderer loaded: ' + payload.fileName);
         vscode.postMessage({ type: 'ready', payload: { fileName: payload.fileName } });
 
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err || 'Unknown error');
-        showError('Viewer failed to load', message, '');
+        const fallbackLoaded = await recoverRendererFailure(message, generation);
+        if (fallbackLoaded || generation !== viewerGeneration) {
+          return;
+        }
+        showFinalRendererFailure(
+          'Viewer failed to load',
+          message,
+          rendererFallbackFailureDetail
+        );
       }
+    }
+
+    function handleRendererRuntimeFailure(title, reason) {
+      if (!rendererInitializing || localState.engine?.kind !== 'kicanvas') {
+        showError(title, reason, '');
+        return;
+      }
+      const generation = viewerGeneration;
+      void recoverRendererFailure(reason, generation).then((fallbackLoaded) => {
+        if (!fallbackLoaded && generation === viewerGeneration) {
+          showFinalRendererFailure(title, reason, rendererFallbackFailureDetail);
+        }
+      });
+    }
+
+    function recoverRendererFailure(reason, generation) {
+      if (generation !== viewerGeneration) {
+        return Promise.resolve(false);
+      }
+      if (rendererFallbackAttempt && rendererFallbackGeneration === generation) {
+        return rendererFallbackAttempt;
+      }
+      rendererFallbackGeneration = generation;
+      rendererFallbackAttempt = (async () => {
+        try {
+          return await trySvgFallback(reason, generation);
+        } catch (fallbackError) {
+          if (generation === viewerGeneration) {
+            const fallbackMessage =
+              fallbackError instanceof Error
+                ? fallbackError.message
+                : String(fallbackError || 'Unknown fallback error');
+            rendererFallbackFailureDetail =
+              'CLI SVG fallback also failed: ' + fallbackMessage;
+          }
+          return false;
+        }
+      })();
+      return rendererFallbackAttempt;
+    }
+
+    function showFinalRendererFailure(title, reason, fallbackDetail) {
+      rendererInitializing = false;
+      setEngineState('failed', reason);
+      showError(
+        title,
+        reason,
+        (fallbackDetail || 'CLI SVG fallback was unavailable.') +
+          ' Open the file in KiCad to continue.'
+      );
     }
 
     function waitForDefinition(tagName, timeoutMs) {
@@ -1192,13 +1275,14 @@ export function createViewerControllerScript(): string {
       );
     }
 
-    async function trySvgFallback(reason) {
+    async function trySvgFallback(reason, generation = viewerGeneration) {
       showLoading('Interactive renderer stayed blank. Requesting SVG fallback…');
       const svgText = await requestSvgFallback(reason);
-      if (!svgText) {
+      if (!svgText || generation !== viewerGeneration) {
         return false;
       }
       showSvgFallback(svgText);
+      rendererInitializing = false;
       setEngineState('cli-svg-fallback', reason);
       setStatus('CLI SVG fallback loaded: ' + payload.fileName);
       return true;

@@ -70,7 +70,8 @@ export interface ViewerState {
 export type ViewerEngineKind =
   | 'kicanvas'
   | 'cli-svg-fallback'
-  | 'metadata-only';
+  | 'metadata-only'
+  | 'failed';
 
 export interface ViewerEngineCapabilities {
   interactive: boolean;

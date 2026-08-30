@@ -19,6 +19,7 @@ describe('extensionManifest', () => {
       mcpServerDefinitionProviders?: Array<{ id: string; label: string }>;
     };
     activationEvents?: string[];
+    scripts?: Record<string, string>;
   };
 
   it('has correct identity', () => {
@@ -100,6 +101,15 @@ describe('extensionManifest', () => {
     const viewTypes = editors.map((e) => e.viewType);
     expect(viewTypes).toContain('kicadstudio.schematicViewer');
     expect(viewTypes).toContain('kicadstudio.pcbViewer');
+  });
+
+  it('#625 builds the production bundle before Extension Host E2E tests', () => {
+    expect(packageJson.scripts?.['test:e2e']).toBe(
+      'pnpm run build && playwright test test/e2e/'
+    );
+    expect(packageJson.scripts?.['test:e2e:real']).toBe(
+      'pnpm run build && playwright test test/e2e/realPair.test.ts'
+    );
   });
 
   it('declares workspace-triggered activation events', () => {

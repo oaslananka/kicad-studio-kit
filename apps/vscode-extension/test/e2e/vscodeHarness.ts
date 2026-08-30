@@ -11,6 +11,8 @@ import {
   type Page
 } from '@playwright/test';
 
+import { installFakeKiCadCli } from './fakeKiCadCli';
+
 const VSCODE_VERSION = '1.122.0';
 
 export interface VsCodeSession {
@@ -25,6 +27,8 @@ export interface VsCodeSession {
 export interface VsCodeLaunchOptions {
   settings?: Record<string, unknown>;
   workspaceSourcePath?: string;
+  disableWebgl?: boolean;
+  mockKiCadCli?: boolean;
 }
 
 export async function launchVsCodeWithFixtures(
@@ -44,7 +48,12 @@ export async function launchVsCodeWithFixtures(
   );
   const logs: string[] = [];
   copyDirectory(fixturesDir, workspacePath);
-  writeUserSettings(userDataDir, options.settings);
+  const settings = { ...options.settings };
+  if (options.mockKiCadCli) {
+    settings['kicadstudio.kicadCliPath'] =
+      installFakeKiCadCli(workspacePath).configuredPath;
+  }
+  writeUserSettings(userDataDir, settings);
 
   const executablePath = await downloadAndUnzipVSCode(VSCODE_VERSION);
   const remoteDebuggingPort = await getFreePort();
@@ -60,6 +69,7 @@ export async function launchVsCodeWithFixtures(
       `--extensionDevelopmentPath=${rootDir}`,
       '--no-sandbox',
       '--disable-gpu-sandbox',
+      ...(options.disableWebgl ? ['--disable-webgl', '--disable-3d-apis'] : []),
       '--disable-workspace-trust',
       '--skip-welcome',
       workspacePath
