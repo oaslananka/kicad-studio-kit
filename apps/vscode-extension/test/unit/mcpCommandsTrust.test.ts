@@ -59,6 +59,48 @@ describe('MCP command workspace trust guards', () => {
     return entry[1] as (...args: unknown[]) => unknown;
   }
 
+  const pipxInstallCandidate = {
+    id: 'pipx' as const,
+    label: 'pipx install kicad-mcp-pro',
+    description: 'Install with Python 3.13',
+    command: 'pipx',
+    args: ['install', '--python', '/usr/bin/python3.13', 'kicad-mcp-pro']
+  };
+
+  function mockInstallerSelection(): void {
+    jest
+      .spyOn(McpDetector.prototype, 'detectInstallers')
+      .mockResolvedValue([pipxInstallCandidate]);
+    (window.showQuickPick as jest.Mock).mockResolvedValue({
+      label: pipxInstallCandidate.label,
+      description: pipxInstallCandidate.description,
+      candidate: pipxInstallCandidate
+    });
+  }
+
+  function mockInstallerTaskExit(
+    exitCode: number,
+    timing: 'microtask' | 'immediate' = 'microtask'
+  ): void {
+    let endListener:
+      | ((event: { execution: { task: unknown }; exitCode: number }) => void)
+      | undefined;
+    (tasks.onDidEndTaskProcess as jest.Mock).mockImplementation((listener) => {
+      endListener = listener;
+      return { dispose: jest.fn() };
+    });
+    (tasks.executeTask as jest.Mock).mockImplementation(async (task) => {
+      const execution = { task };
+      const emit = () => endListener?.({ execution, exitCode });
+      if (timing === 'immediate') {
+        emit();
+      } else {
+        queueMicrotask(emit);
+      }
+      return execution;
+    });
+  }
+
   it('blocks mutating fix queue commands in untrusted workspaces', async () => {
     workspace.isTrusted = false;
     const services = registerWithServices();
@@ -160,34 +202,8 @@ describe('MCP command workspace trust guards', () => {
 
   it('#620 refreshes MCP state automatically after a successful install task', async () => {
     const services = registerWithServices();
-    const candidate = {
-      id: 'pipx' as const,
-      label: 'pipx install kicad-mcp-pro',
-      description: 'Install with Python 3.13',
-      command: 'pipx',
-      args: ['install', '--python', '/usr/bin/python3.13', 'kicad-mcp-pro']
-    };
-    jest
-      .spyOn(McpDetector.prototype, 'detectInstallers')
-      .mockResolvedValue([candidate]);
-    (window.showQuickPick as jest.Mock).mockResolvedValue({
-      label: candidate.label,
-      description: candidate.description,
-      candidate
-    });
-
-    let endListener:
-      | ((event: { execution: { task: unknown }; exitCode: number }) => void)
-      | undefined;
-    (tasks.onDidEndTaskProcess as jest.Mock).mockImplementation((listener) => {
-      endListener = listener;
-      return { dispose: jest.fn() };
-    });
-    (tasks.executeTask as jest.Mock).mockImplementation(async (task) => {
-      const execution = { task };
-      queueMicrotask(() => endListener?.({ execution, exitCode: 0 }));
-      return execution;
-    });
+    mockInstallerSelection();
+    mockInstallerTaskExit(0);
 
     await registeredHandler(COMMANDS.installMcp)();
 
@@ -200,34 +216,8 @@ describe('MCP command workspace trust guards', () => {
 
   it('#620 reports a failed install task without refreshing MCP state', async () => {
     const services = registerWithServices();
-    const candidate = {
-      id: 'pipx' as const,
-      label: 'pipx install kicad-mcp-pro',
-      description: 'Install with Python 3.13',
-      command: 'pipx',
-      args: ['install', '--python', '/usr/bin/python3.13', 'kicad-mcp-pro']
-    };
-    jest
-      .spyOn(McpDetector.prototype, 'detectInstallers')
-      .mockResolvedValue([candidate]);
-    (window.showQuickPick as jest.Mock).mockResolvedValue({
-      label: candidate.label,
-      description: candidate.description,
-      candidate
-    });
-
-    let endListener:
-      | ((event: { execution: { task: unknown }; exitCode: number }) => void)
-      | undefined;
-    (tasks.onDidEndTaskProcess as jest.Mock).mockImplementation((listener) => {
-      endListener = listener;
-      return { dispose: jest.fn() };
-    });
-    (tasks.executeTask as jest.Mock).mockImplementation(async (task) => {
-      const execution = { task };
-      queueMicrotask(() => endListener?.({ execution, exitCode: 1 }));
-      return execution;
-    });
+    mockInstallerSelection();
+    mockInstallerTaskExit(1);
 
     await registeredHandler(COMMANDS.installMcp)();
 
@@ -239,34 +229,8 @@ describe('MCP command workspace trust guards', () => {
 
   it('#620 observes installer completion even when the task exits before executeTask resolves', async () => {
     const services = registerWithServices();
-    const candidate = {
-      id: 'pipx' as const,
-      label: 'pipx install kicad-mcp-pro',
-      description: 'Install with Python 3.13',
-      command: 'pipx',
-      args: ['install', '--python', '/usr/bin/python3.13', 'kicad-mcp-pro']
-    };
-    jest
-      .spyOn(McpDetector.prototype, 'detectInstallers')
-      .mockResolvedValue([candidate]);
-    (window.showQuickPick as jest.Mock).mockResolvedValue({
-      label: candidate.label,
-      description: candidate.description,
-      candidate
-    });
-
-    let endListener:
-      | ((event: { execution: { task: unknown }; exitCode: number }) => void)
-      | undefined;
-    (tasks.onDidEndTaskProcess as jest.Mock).mockImplementation((listener) => {
-      endListener = listener;
-      return { dispose: jest.fn() };
-    });
-    (tasks.executeTask as jest.Mock).mockImplementation(async (task) => {
-      const execution = { task };
-      endListener?.({ execution, exitCode: 0 });
-      return execution;
-    });
+    mockInstallerSelection();
+    mockInstallerTaskExit(0, 'immediate');
 
     await registeredHandler(COMMANDS.installMcp)();
 

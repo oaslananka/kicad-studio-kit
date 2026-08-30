@@ -35,6 +35,25 @@ describe('McpDetector.generateMcpJson', () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
+  function mockExecResponses(responses: Record<string, string>): void {
+    execFileMock.mockImplementation(
+      (
+        command: string,
+        args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string, stderr: string) => void
+      ) => {
+        const key = `${command} ${args[0] ?? ''}`;
+        const stdout = responses[key];
+        if (stdout === undefined) {
+          callback(new Error('missing'), '', 'missing');
+          return;
+        }
+        callback(null, stdout, '');
+      }
+    );
+  }
+
   it('creates a stdio MCP configuration for uvx installs', async () => {
     const detector = new McpDetector();
 
@@ -301,32 +320,12 @@ describe('McpDetector.generateMcpJson', () => {
   });
 
   it('#620 discovers installer candidates in uv, pipx, then pip order', async () => {
-    execFileMock.mockImplementation(
-      (
-        command: string,
-        args: string[],
-        _opts: unknown,
-        callback: (err: Error | null, stdout: string, stderr: string) => void
-      ) => {
-        if (command === 'uv' && args[0] === '--version') {
-          callback(null, 'uv 0.8.0', '');
-          return;
-        }
-        if (command === 'pipx' && args[0] === '--version') {
-          callback(null, 'pipx 1.8.0', '');
-          return;
-        }
-        if (command === 'python3.13' && args[0] === '-c') {
-          callback(null, '3.13\n/usr/bin/python3.13\n', '');
-          return;
-        }
-        if (command === '/usr/bin/python3.13' && args[0] === '-m') {
-          callback(null, 'pip 25.2', '');
-          return;
-        }
-        callback(new Error('missing'), '', 'missing');
-      }
-    );
+    mockExecResponses({
+      'uv --version': 'uv 0.8.0',
+      'pipx --version': 'pipx 1.8.0',
+      'python3.13 -c': '3.13\n/usr/bin/python3.13\n',
+      '/usr/bin/python3.13 -m': 'pip 25.2'
+    });
 
     const candidates = await new McpDetector().detectInstallers();
 
@@ -345,24 +344,10 @@ describe('McpDetector.generateMcpJson', () => {
   });
 
   it('#620 pins pipx to a compatible Python interpreter', async () => {
-    execFileMock.mockImplementation(
-      (
-        command: string,
-        args: string[],
-        _opts: unknown,
-        callback: (err: Error | null, stdout: string, stderr: string) => void
-      ) => {
-        if (command === 'pipx' && args[0] === '--version') {
-          callback(null, '1.8.0', '');
-          return;
-        }
-        if (command === 'python3.13' && args[0] === '-c') {
-          callback(null, '3.13\n/usr/bin/python3.13\n', '');
-          return;
-        }
-        callback(new Error('missing'), '', 'missing');
-      }
-    );
+    mockExecResponses({
+      'pipx --version': '1.8.0',
+      'python3.13 -c': '3.13\n/usr/bin/python3.13\n'
+    });
 
     const candidates = await new McpDetector().detectInstallers();
 
@@ -376,24 +361,10 @@ describe('McpDetector.generateMcpJson', () => {
   });
 
   it('#620 does not offer pipx when only an incompatible Python is available', async () => {
-    execFileMock.mockImplementation(
-      (
-        command: string,
-        args: string[],
-        _opts: unknown,
-        callback: (err: Error | null, stdout: string, stderr: string) => void
-      ) => {
-        if (command === 'pipx' && args[0] === '--version') {
-          callback(null, '1.8.0', '');
-          return;
-        }
-        if (command === 'python3' && args[0] === '-c') {
-          callback(null, '3.12\n/usr/bin/python3\n', '');
-          return;
-        }
-        callback(new Error('missing'), '', 'missing');
-      }
-    );
+    mockExecResponses({
+      'pipx --version': '1.8.0',
+      'python3 -c': '3.12\n/usr/bin/python3\n'
+    });
 
     const candidates = await new McpDetector().detectInstallers();
 
@@ -401,24 +372,10 @@ describe('McpDetector.generateMcpJson', () => {
   });
 
   it('#620 discovers a compatible python -m pip as installer fallback', async () => {
-    execFileMock.mockImplementation(
-      (
-        command: string,
-        args: string[],
-        _opts: unknown,
-        callback: (err: Error | null, stdout: string, stderr: string) => void
-      ) => {
-        if (command === 'python' && args[0] === '-c') {
-          callback(null, '3.13\npython\n', '');
-          return;
-        }
-        if (command === 'python' && args[0] === '-m') {
-          callback(null, 'pip 25', '');
-          return;
-        }
-        callback(new Error('missing'), '', 'missing');
-      }
-    );
+    mockExecResponses({
+      'python -c': '3.13\npython\n',
+      'python -m': 'pip 25'
+    });
 
     const candidates = await new McpDetector().detectInstallers();
 
