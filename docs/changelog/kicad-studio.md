@@ -17,6 +17,7 @@ published.
 
 ### Bug Fixes
 
+* **kicad-studio:** retry transient VS Code host downloads ([#658](https://github.com/oaslananka/kicad-studio-kit/issues/658)) ([2470061](https://github.com/oaslananka/kicad-studio-kit/commit/247006136ae1ceab8baae43c6e96e9cfba3e9b52))
 * **kicad-studio:** unify MCP bootstrap flow ([#653](https://github.com/oaslananka/kicad-studio-kit/issues/653)) ([fb91bce](https://github.com/oaslananka/kicad-studio-kit/commit/fb91bce660456dcad8eae2feed757cdf8a7e9f87))
 
 ## [1.10.4](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.3...vscode-extension-v1.10.4) (2026-08-30)
