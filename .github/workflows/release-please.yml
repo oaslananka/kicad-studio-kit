@@ -91,9 +91,11 @@ jobs:
             echo "Release Please returned incomplete PR metadata" >&2
             exit 1
           fi
-          printf 'branch=%s\n' "${release_metadata[0]}" >> "$GITHUB_OUTPUT"
-          printf 'title=%s\n' "${release_metadata[1]}" >> "$GITHUB_OUTPUT"
-          printf 'number=%s\n' "${release_metadata[2]}" >> "$GITHUB_OUTPUT"
+          {
+            printf 'branch=%s\n' "${release_metadata[0]}"
+            printf 'title=%s\n' "${release_metadata[1]}"
+            printf 'number=%s\n' "${release_metadata[2]}"
+          } >> "$GITHUB_OUTPUT"
       - if: ${{ steps.release.outputs.pr }}
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
