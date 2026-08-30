@@ -134,8 +134,23 @@ jobs:
         run: |
           corepack pnpm run check:mcp-2026-rc-artifact -- --version "$KICAD_MCP_PRO_VERSION"
 
-      # ── C. Studio compatibility checks ──────────────────────────────────
+      # ── C. Published BoardReadyOps contract ───────────────────────────────
+      - name: Resolve published BoardReadyOps version
+        id: boardreadyops-check
+        run: |
+          VERSION=$(npm view boardreadyops version --json | node -e "let s=''; process.stdin.on('data', c => s += c); process.stdin.on('end', () => { const v = JSON.parse(s); process.stdout.write(Array.isArray(v) ? v.at(-1) : v); });")
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::boardreadyops returned an invalid stable version from npm: $VERSION"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "✓ boardreadyops resolves from npm registry (v$VERSION)"
+
+      # ── D. Studio compatibility checks ──────────────────────────────────
       - name: Run check:compatibility-contract (compatibility contract validation)
+        env:
+          KICAD_MCP_PRO_PUBLISHED_VERSION: ${{ steps.pypi-check.outputs.pypi_version }}
+          BOARDREADYOPS_PUBLISHED_VERSION: ${{ steps.boardreadyops-check.outputs.version }}
         run: pnpm run check:compatibility-contract
 
       - name: Run compatibility summary script
@@ -143,10 +158,11 @@ jobs:
         run: |
           node scripts/check-cross-repo-compatibility.mjs
 
-      # ── D. Summary ──────────────────────────────────────────────────────
+      # ── E. Summary ──────────────────────────────────────────────────────
       - name: Compatibility summary
         run: |
           echo "━━━ Cross-repo Compatibility Canary ━━━"
           echo "npm  @oaslananka/kicad-protocol-schemas: v${{ steps.npm-check.outputs.version }}"
           echo "PyPI kicad-mcp-pro:                     v${{ steps.pypi-check.outputs.pypi_version }}"
+          echo "npm  boardreadyops:                      v${{ steps.boardreadyops-check.outputs.version }}"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
