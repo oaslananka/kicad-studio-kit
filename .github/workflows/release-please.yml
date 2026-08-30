@@ -164,6 +164,7 @@ jobs:
                 SIGNED_RELEASE_SETTLED=true
                 break
               fi
+              echo "Signed release shadow update not settled (attempt $attempt/15); retrying" >&2
               sleep 2
             done
             if [[ "$SIGNED_RELEASE_SETTLED" != "true" ]]; then
