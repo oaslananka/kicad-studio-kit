@@ -3,6 +3,8 @@ import { cp, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { downloadAndUnzipVSCode, runTests } from '@vscode/test-electron';
 
+import { downloadVsCodeWithRetry } from './vscodeTestRuntime';
+
 async function main(): Promise<void> {
   const extensionDevelopmentPath = path.resolve(__dirname, '..', '..');
   const extensionTestsPath = path.resolve(__dirname, 'realPairSuite', 'index');
@@ -13,7 +15,10 @@ async function main(): Promise<void> {
     'benchmark_projects',
     'pass_minimal_mcu_board'
   );
-  const vscodeExecutablePath = await downloadAndUnzipVSCode('1.122.0');
+  const vscodeExecutablePath = await downloadVsCodeWithRetry(
+    '1.122.0',
+    downloadAndUnzipVSCode
+  );
   const userDataDir = await mkdtemp(
     path.join(tmpdir(), 'kicadstudio-real-pair-user-')
   );

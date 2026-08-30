@@ -11,6 +11,7 @@ import {
   type Page
 } from '@playwright/test';
 
+import { downloadVsCodeWithRetry } from '../vscodeTestRuntime';
 import { installFakeKiCadCli } from './fakeKiCadCli';
 
 const VSCODE_VERSION = '1.122.0';
@@ -55,7 +56,10 @@ export async function launchVsCodeWithFixtures(
   }
   writeUserSettings(userDataDir, settings);
 
-  const executablePath = await downloadAndUnzipVSCode(VSCODE_VERSION);
+  const executablePath = await downloadVsCodeWithRetry(
+    VSCODE_VERSION,
+    downloadAndUnzipVSCode
+  );
   const remoteDebuggingPort = await getFreePort();
   const env = { ...process.env };
   delete env.ELECTRON_RUN_AS_NODE;
