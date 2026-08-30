@@ -51,4 +51,36 @@ describe('McpActivationController onboarding', () => {
     expect(mcpDetector.generateMcpJson).not.toHaveBeenCalled();
     expect(mcpClient.testConnection).toHaveBeenCalledTimes(1);
   });
+
+  it('#628 offers MCP bootstrap at most once per activation session', async () => {
+    const disconnected = {
+      kind: 'Disconnected' as const,
+      available: true,
+      connected: false,
+      install: {
+        found: true,
+        command: 'kicad-mcp-pro',
+        version: '3.33.3',
+        source: 'global' as const
+      }
+    };
+    const mcpClient = {
+      testConnection: jest.fn().mockResolvedValue(disconnected)
+    };
+    (window.showInformationMessage as jest.Mock).mockResolvedValue('Later');
+
+    const controller = new McpActivationController({
+      mcpClient: mcpClient as never,
+      mcpState: { update: jest.fn() } as never,
+      mcpDetector: { generateMcpJson: jest.fn() } as never
+    });
+
+    await Promise.all([
+      controller.refreshMcpState(),
+      controller.refreshMcpState()
+    ]);
+    await controller.refreshMcpState();
+
+    expect(window.showInformationMessage).toHaveBeenCalledTimes(1);
+  });
 });

@@ -20,6 +20,8 @@ export interface McpActivationControllerDeps {
  * unchanged from `activate()` as part of the #397 composition-root split.
  */
 export class McpActivationController {
+  private mcpBootstrapOffered = false;
+
   constructor(private readonly deps: McpActivationControllerDeps) {}
 
   async refreshMcpState(): Promise<void> {
@@ -166,6 +168,10 @@ export class McpActivationController {
     if (fs.existsSync(mcpJsonPath)) {
       return;
     }
+    if (this.mcpBootstrapOffered) {
+      return;
+    }
+    this.mcpBootstrapOffered = true;
 
     const choice = await vscode.window.showInformationMessage(
       'kicad-mcp-pro was detected. Create .vscode/mcp.json for this project?',
