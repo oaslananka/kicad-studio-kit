@@ -1,7 +1,12 @@
+import { McpActivationController } from '../../src/activation/mcpActivationController';
 import { COMMANDS } from '../../src/constants';
 import { registerMcpCommands } from '../../src/commands/mcpCommands';
+import { McpClient } from '../../src/mcp/mcpClient';
 import { McpDetector } from '../../src/mcp/mcpDetector';
+import { McpStateStore } from '../../src/state/stateStores';
+import { Logger } from '../../src/utils/logger';
 import {
+  __setConfiguration,
   commands,
   createExtensionContextMock,
   env,
@@ -15,12 +20,14 @@ describe('MCP command workspace trust guards', () => {
     jest.clearAllMocks();
     workspace.isTrusted = true;
     workspace.workspaceFolders = [{ uri: { fsPath: '/workspace' } }];
+    __setConfiguration({});
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
     workspace.isTrusted = true;
     workspace.workspaceFolders = [{ uri: { fsPath: '/workspace' } }];
+    __setConfiguration({});
   });
 
   function registerWithServices(overrides: Record<string, unknown> = {}) {
@@ -212,6 +219,69 @@ describe('MCP command workspace trust guards', () => {
     expect(window.showInformationMessage).toHaveBeenCalledWith(
       expect.stringContaining('installation completed')
     );
+  });
+
+  it('#628 carries a successful install through real MCP re-detection into shared state', async () => {
+    __setConfiguration({ 'kicadstudio.mcp.autoDetect': false });
+    const context = createExtensionContextMock();
+    const detector = new McpDetector();
+    const detectInstall = jest
+      .spyOn(detector, 'detectKicadMcpPro')
+      .mockResolvedValueOnce({ found: false, source: 'none' })
+      .mockResolvedValueOnce({
+        found: true,
+        command: 'kicad-mcp-pro',
+        version: '3.33.3',
+        source: 'global'
+      });
+    jest
+      .spyOn(global, 'fetch')
+      .mockRejectedValue(new Error('simulated offline MCP endpoint'));
+
+    const logger = new Logger('MCP install transition test');
+    const mcpClient = new McpClient(context as never, detector, logger, {
+      maxRetries: 0,
+      reconnectDelaysMs: []
+    });
+    const mcpState = new McpStateStore();
+    const controller = new McpActivationController({
+      mcpClient,
+      mcpState,
+      mcpDetector: detector
+    });
+
+    try {
+      await controller.refreshMcpState();
+      expect(mcpState.getState()).toEqual(
+        expect.objectContaining({ kind: 'NotInstalled', available: false })
+      );
+
+      registerWithServices({
+        mcpClient,
+        refreshMcpState: () => controller.refreshMcpState()
+      });
+      mockInstallerSelection();
+      mockInstallerTaskExit(0);
+
+      await registeredHandler(COMMANDS.installMcp)();
+
+      expect(detectInstall).toHaveBeenCalledTimes(2);
+      expect(mcpState.getState()).toEqual(
+        expect.objectContaining({
+          kind: 'Disconnected',
+          available: true,
+          connected: false,
+          install: expect.objectContaining({
+            found: true,
+            version: '3.33.3',
+            source: 'global'
+          })
+        })
+      );
+    } finally {
+      mcpState.dispose();
+      logger.dispose();
+    }
   });
 
   it('#620 reports a failed install task without refreshing MCP state', async () => {
