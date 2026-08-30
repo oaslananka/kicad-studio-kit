@@ -6,20 +6,23 @@ import * as path from 'node:path';
 import { installFakeKiCadCli } from '../e2e/fakeKiCadCli';
 
 describe('fake KiCad CLI E2E fixture', () => {
-  const itOnPosix = process.platform === 'win32' ? it.skip : it;
-
-  itOnPosix('reports a KiCad 9 version and writes the requested PCB SVG output', () => {
+  it('reports a KiCad 9 version and writes the requested PCB SVG output', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fake-kicad-cli-'));
     try {
       const cli = installFakeKiCadCli(root);
-      expect(execFileSync(cli, ['--version'], { encoding: 'utf8' })).toContain(
+      expect(
+        execFileSync(cli.executablePath, [...cli.args, '--version'], {
+          encoding: 'utf8'
+        })
+      ).toContain(
         'KiCad CLI 9.0.0'
       );
 
       const output = path.join(root, 'out', 'board-viewer.svg');
       execFileSync(
-        cli,
+        cli.executablePath,
         [
+          ...cli.args,
           'pcb',
           'export',
           'svg',

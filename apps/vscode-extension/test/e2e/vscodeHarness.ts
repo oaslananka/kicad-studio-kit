@@ -50,7 +50,8 @@ export async function launchVsCodeWithFixtures(
   copyDirectory(fixturesDir, workspacePath);
   const settings = { ...options.settings };
   if (options.mockKiCadCli) {
-    settings['kicadstudio.kicadCliPath'] = installFakeKiCadCli(workspacePath);
+    settings['kicadstudio.kicadCliPath'] =
+      installFakeKiCadCli(workspacePath).configuredPath;
   }
   writeUserSettings(userDataDir, settings);
 
