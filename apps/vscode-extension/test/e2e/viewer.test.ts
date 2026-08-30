@@ -38,7 +38,46 @@ test.describe('KiCad Studio VS Code E2E', () => {
       await session.close();
     }
   });
+
+  test('recovers the PCB viewer when WebGL is unavailable in the extension host', async () => {
+    const session = await launchVsCodeWithFixtures({ disableGpu: true });
+
+    try {
+      await openWorkspaceFile(session.page, 'sample.kicad_pcb');
+
+      await expect
+        .poll(
+          async () => {
+            for (const frame of session.page.frames()) {
+              const badge = frame.locator('#viewer-engine-badge');
+              if ((await badge.count()) > 0) {
+                return (await badge.textContent())?.trim() ?? '';
+              }
+            }
+            return '';
+          },
+          { timeout: 60000 }
+        )
+        .toMatch(/CLI SVG fallback|Renderer failed/);
+    } finally {
+      await session.close();
+    }
+  });
 });
+
+async function openWorkspaceFile(
+  page: import('@playwright/test').Page,
+  fileName: string
+) {
+  const quickInput = page.locator('.quick-input-widget');
+  await page.keyboard.press('Control+P');
+  await expect(quickInput).toBeVisible({ timeout: 5000 });
+  const input = quickInput.locator('input');
+  await input.fill(fileName);
+  await expect(quickInput).toContainText(fileName, { timeout: 5000 });
+  await page.keyboard.press('Enter');
+  await expect(quickInput).toBeHidden({ timeout: 5000 });
+}
 
 async function expectCommandPaletteEntry(
   page: import('@playwright/test').Page,
