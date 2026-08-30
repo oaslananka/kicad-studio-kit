@@ -35,6 +35,17 @@ def _profile_categories(node: ast.stmt) -> set[str] | None:
     ]
     if len(keys) != len(catalog.keys):
         raise ValueError("PROFILE_CATEGORIES has non-literal keys")
+    fingerprints = {
+        key: ast.dump(value, include_attributes=False)
+        for key, value in zip(keys, catalog.values, strict=True)
+    }
+    for aliases in (("default", "review"), ("full", "expert", "agent_full")):
+        if all(alias in fingerprints for alias in aliases) and len(
+            {fingerprints[alias] for alias in aliases}
+        ) != 1:
+            raise ValueError(
+                f"migration alias scopes diverge: {', '.join(aliases)}"
+            )
     return set(keys)
 
 

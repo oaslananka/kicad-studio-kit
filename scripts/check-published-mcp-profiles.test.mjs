@@ -99,3 +99,26 @@ def available_profiles():
     "expert",
   ]);
 });
+
+test("#628 rejects published migration aliases whose scopes diverge", () => {
+  const source = `
+PROFILE_CATEGORIES = {
+    "default": ("project",),
+    "review": ("project",),
+    "full": ("project", "write"),
+    "expert": ("project", "write", "admin"),
+    "agent_full": ("project", "write"),
+}
+
+def available_profiles():
+    preferred = ["default", "review", "full", "expert", "agent_full"]
+    return tuple(name for name in preferred if name in PROFILE_CATEGORIES)
+`;
+  const result = spawnSync(
+    "python",
+    [new URL("./extract_published_mcp_profiles.py", import.meta.url).pathname],
+    { input: source, encoding: "utf8" },
+  );
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /migration alias scopes diverge/i);
+});
