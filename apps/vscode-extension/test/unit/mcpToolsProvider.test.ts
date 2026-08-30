@@ -447,6 +447,24 @@ describe('McpToolsProvider', () => {
       expect(healthItem.tooltip).toContain('>=1.2.0 <2.0.0');
     });
 
+    it('does not mark an unparseable BoardReadyOps version as an old-version failure', () => {
+      __setConfiguration({
+        'kicadstudio.boardReadyOps.enabled': true
+      });
+      const provider = providerForState(connectedState({ tools: [] }), {
+        installed: true,
+        version: 'dev-build',
+        healthy: true,
+        tools: ['bom.missing-mpn']
+      });
+      const broNode = child(provider.getChildren(), 'BoardReadyOps');
+      const healthItem = provider.getTreeItem(
+        child(provider.getChildren(broNode), 'Health')
+      );
+
+      expect(healthItem.description).toBe('healthy');
+    });
+
     it('handles degraded state due to unhealthy doctor checks', () => {
       __setConfiguration({
         'kicadstudio.boardReadyOps.enabled': true
