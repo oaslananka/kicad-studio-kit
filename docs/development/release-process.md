@@ -6,7 +6,7 @@ KiCad Studio Kit releases the VS Code extension from this repository. The MCP se
 
 ## Release automation
 
-- `release-please.yml` keeps the canonical generated PR as Release Please's draft generator, builds the complete release tree, and mirrors it to `release-please/branches/main/components/vscode-extension`. The mergeable shadow PR contains only GitHub-signed, DCO-signed-off release commits; later generator updates first use GitHub's normal verified `update-branch` merge to make current `main` an ancestor, then append the signed release-tree delta without rewriting either live ref.
+- `release-please.yml` uses the canonical generated PR only as a short-lived generator, builds the complete release tree, and mirrors it to `release-please/branches/main/components/vscode-extension`. After the shadow head is GitHub-verified, current with `main`, and synchronized with the release title/body/label, the workflow closes the generator and deletes only its validated temporary branch. The remaining mergeable PR contains GitHub-signed, DCO-signed-off release commits; later `main` updates can recreate a generator briefly, update the same shadow with GitHub's normal verified `update-branch` merge, append the signed release-tree delta, and close the generator again without rewriting either live ref.
 - `publish-extension.yml` packages the VSIX, validates metadata, stages checksums, SBOM, provenance, and attestations, then publishes to marketplaces from the authenticated release event.
 - `release.yml` is a low-risk release-readiness workflow that validates release evidence without publishing.
 
@@ -27,7 +27,7 @@ Each release should provide:
 
 1. Confirm the release PR includes the intended changelog and version bump.
 2. Confirm CI, CodeQL, Gitleaks, and package validation pass.
-3. Confirm the canonical unsigned Release Please generator PR is draft and the parseable signed shadow PR matches its release tree, then squash-merge the signed shadow PR through GitHub so the commit entering `main` is GitHub-verified.
+3. Confirm there is exactly one open parseable signed release PR and that it matches the generated release tree; the temporary canonical generator should already be closed by the workflow. Then squash-merge the signed shadow PR through GitHub so the commit entering `main` is GitHub-verified.
 4. Confirm release evidence is generated and attached.
 5. Confirm marketplace publish jobs use protected environments and minimum secrets.
 6. Confirm post-release docs and version surfaces are updated.

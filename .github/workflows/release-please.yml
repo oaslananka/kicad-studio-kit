@@ -33,9 +33,9 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       # Release Please's generated commit is not GitHub-signed, while main requires
-      # signed commits. Keep the canonical PR as Release Please's draft generator,
-      # while a parseable shadow PR carries only GitHub-signed commits. Repeated
-      # Release Please updates append signed commits to the same shadow branch.
+      # signed commits. Use the canonical PR only as a short-lived generator: mirror
+      # its complete release tree to one parseable GitHub-signed shadow PR, verify
+      # that shadow, then close and delete the validated generator branch.
       - if: ${{ steps.release.outputs.pr }}
         id: release-pr
         name: Resolve the Release Please branch
@@ -123,6 +123,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           RELEASE_PR_NUMBER: ${{ steps.release-pr.outputs.number }}
+          RELEASE_PR_BRANCH: ${{ steps.release-pr.outputs.branch }}
           RELEASE_TITLE: ${{ steps.release-pr.outputs.title }}
           SIGNED_RELEASE_BRANCH: release-please/branches/main/components/vscode-extension
         shell: bash
@@ -175,9 +176,6 @@ jobs:
               --branch "$SIGNED_RELEASE_BRANCH" \
               --message "chore(kicad-studio): sync signed release surfaces"$'\n\nSigned-off-by: oaslananka <info@oaslananka.dev>' \
               --onto-head "$SIGNED_RELEASE_HEAD"
-            gh pr edit "$SIGNED_RELEASE_PR" \
-              --title "$RELEASE_TITLE" \
-              --body-file "$RELEASE_BODY_FILE"
           else
             node scripts/create-github-signed-commit.mjs \
               --repository "$GITHUB_REPOSITORY" \
@@ -202,15 +200,59 @@ jobs:
               --title "$RELEASE_TITLE" \
               --body-file "$RELEASE_BODY_FILE")"
             SIGNED_RELEASE_PR="${SIGNED_RELEASE_URL##*/}"
-            gh pr edit "$SIGNED_RELEASE_PR" --add-label "autorelease: pending"
-            gh pr comment "$RELEASE_PR_NUMBER" \
-              --body "Merge #$SIGNED_RELEASE_PR for signature-compliant release history; this PR remains the Release Please generator."
-            trap - ERR
           fi
 
-          if [[ "$(gh pr view "$RELEASE_PR_NUMBER" --json isDraft --jq '.isDraft')" != "true" ]]; then
-            gh pr ready --undo "$RELEASE_PR_NUMBER"
+          gh pr edit "$SIGNED_RELEASE_PR" \
+            --title "$RELEASE_TITLE" \
+            --body-file "$RELEASE_BODY_FILE" \
+            --add-label "autorelease: pending"
+
+          FINAL_SIGNED_RELEASE_HEAD="$(gh pr view "$SIGNED_RELEASE_PR" \
+            --json headRefOid \
+            --jq '.headRefOid')"
+          FINAL_SIGNED_RELEASE_VERIFIED="$(gh api \
+            "repos/$GITHUB_REPOSITORY/commits/$FINAL_SIGNED_RELEASE_HEAD" \
+            --jq '.commit.verification.verified')"
+          if [[ "$FINAL_SIGNED_RELEASE_VERIFIED" != "true" ]]; then
+            echo "Final signed release shadow head is not GitHub-verified" >&2
+            exit 1
           fi
+          git fetch --no-tags origin \
+            "refs/heads/main:refs/remotes/origin/main" \
+            "refs/heads/$SIGNED_RELEASE_BRANCH:refs/remotes/origin/$SIGNED_RELEASE_BRANCH"
+          if ! git merge-base --is-ancestor \
+            refs/remotes/origin/main \
+            "refs/remotes/origin/$SIGNED_RELEASE_BRANCH"; then
+            echo "Signed release shadow is not up to date with main" >&2
+            exit 1
+          fi
+          # A newly-created shadow remains rollback-protected until its final
+          # signature and ancestry checks succeed. Generator cleanup is a
+          # separate phase and must never delete an already-valid shadow.
+          trap - ERR
+
+          GENERATOR_PR_BRANCH="$(gh pr view "$RELEASE_PR_NUMBER" \
+            --json headRefName \
+            --jq '.headRefName')"
+          if [[ "$GENERATOR_PR_BRANCH" != "$RELEASE_PR_BRANCH" ]]; then
+            echo "Generator PR branch changed before cleanup" >&2
+            exit 1
+          fi
+          GENERATOR_PR_HEAD="$(gh pr view "$RELEASE_PR_NUMBER" \
+            --json headRefOid \
+            --jq '.headRefOid')"
+          GENERATOR_BRANCH_HEAD="$(gh api \
+            "repos/$GITHUB_REPOSITORY/git/ref/heads/$RELEASE_PR_BRANCH" \
+            --jq '.object.sha')"
+          if [[ "$GENERATOR_PR_HEAD" != "$GENERATOR_BRANCH_HEAD" ]]; then
+            echo "Generator branch head changed before cleanup" >&2
+            exit 1
+          fi
+
+          gh pr edit "$RELEASE_PR_NUMBER" --remove-label "autorelease: pending"
+          gh pr close "$RELEASE_PR_NUMBER"
+          gh api --method DELETE \
+            "repos/$GITHUB_REPOSITORY/git/refs/heads/$RELEASE_PR_BRANCH"
 
       # Regenerate changelog docs after a release PR is merged
       - if: ${{ steps.release.outputs.releases_created == 'true' }}
