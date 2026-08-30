@@ -24,10 +24,7 @@ type McpToolsNode = {
 };
 
 type DashboardStatus =
-  | 'compatible'
-  | 'degraded'
-  | 'incompatible'
-  | 'disconnected';
+  'compatible' | 'degraded' | 'incompatible' | 'disconnected';
 
 type CompatibilityDashboard = {
   status: DashboardStatus;
@@ -1186,7 +1183,7 @@ function boardReadyOpsNode(status: {
       statusLabel,
       status.message ||
         (isOld
-          ? `BoardReadyOps version ${status.version ?? 'unknown'} is outside the required range ${COMPATIBILITY_MATRIX.supportAxes.boardReadyOps.required}. Install or upgrade BoardReadyOps before running readiness checks.`
+          ? `BoardReadyOps version ${status.version} is outside the required range ${COMPATIBILITY_MATRIX.supportAxes.boardReadyOps.required}. Install or upgrade BoardReadyOps before running readiness checks.`
           : undefined),
       statusIcon
     ),
