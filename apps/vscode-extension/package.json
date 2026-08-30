@@ -2617,7 +2617,7 @@
     "test:integration": "pnpm run build && pnpm run compile-tests && node ./out/test/runTest.js",
     "test:integration:real": "pnpm run compile-tests && node ./out/test/integration/realServer/quickstart.flow.test.js && node ./out/test/integration/realServer/qualityGate.flow.test.js && node ./out/test/integration/realServer/contextBridge.flow.test.js && node ./out/test/integration/realServer/compatibility.flow.test.js",
     "test:integration:real:host": "pnpm run build && pnpm run compile-tests && node ./out/test/runRealPairHostTest.js",
-    "test:e2e": "playwright test test/e2e/",
+    "test:e2e": "pnpm run build && playwright test test/e2e/",
     "test:webview": "playwright test --config playwright.webview.config.ts",
     "test:visual": "playwright test --config playwright.visual.config.ts",
     "test:mutation": "stryker run",

@@ -7,7 +7,8 @@ import type {
 const ENGINE_LABELS: Record<ViewerEngineKind, string> = {
   kicanvas: 'KiCanvas',
   'cli-svg-fallback': 'CLI SVG fallback',
-  'metadata-only': 'Metadata only'
+  'metadata-only': 'Metadata only',
+  failed: 'Renderer failed'
 };
 
 const ENGINE_CAPABILITIES: Record<ViewerEngineKind, ViewerEngineCapabilities> =
@@ -38,6 +39,15 @@ const ENGINE_CAPABILITIES: Record<ViewerEngineKind, ViewerEngineCapabilities> =
       exportSvg: true,
       selection: false,
       layers: false
+    },
+    failed: {
+      interactive: false,
+      fit: false,
+      zoom: false,
+      exportPng: false,
+      exportSvg: false,
+      selection: false,
+      layers: false
     }
   };
 
@@ -45,7 +55,8 @@ export function isViewerEngineKind(value: unknown): value is ViewerEngineKind {
   return (
     value === 'kicanvas' ||
     value === 'cli-svg-fallback' ||
-    value === 'metadata-only'
+    value === 'metadata-only' ||
+    value === 'failed'
   );
 }
 
