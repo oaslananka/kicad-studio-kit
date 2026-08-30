@@ -32,7 +32,7 @@ function restoreEnv(name, value) {
   }
 }
 
-test("release workflow uses GitHub-signed commits for generated surfaces", () => {
+test("release workflow appends GitHub-signed generated surfaces without rewriting the PR branch", () => {
   const workflow = fs.readFileSync(
     path.join(REPO_ROOT, ".github/workflows/release-please.yml"),
     "utf8",
@@ -54,7 +54,7 @@ test("release workflow uses GitHub-signed commits for generated surfaces", () =>
   );
   assert.match(
     workflow,
-    /name: Create a single GitHub-signed release commit[\s\S]*?GITHUB_TOKEN: \${{ secrets\.RELEASE_PLEASE_TOKEN }}/,
+    /name: Append GitHub-signed release surfaces[\s\S]*?GITHUB_TOKEN: \${{ secrets\.RELEASE_PLEASE_TOKEN }}/,
   );
   assert.match(
     workflow,
@@ -69,12 +69,12 @@ test("release workflow uses GitHub-signed commits for generated surfaces", () =>
     workflow,
     /RELEASE_BRANCH: \${{ steps\.release-pr\.outputs\.branch }}/,
   );
-  assert.match(workflow, /RELEASE_BASE_SHA: \${{ github\.sha }}/);
+  assert.doesNotMatch(workflow, /RELEASE_BASE_SHA/);
   assert.match(
     workflow,
     /RELEASE_TITLE: \${{ steps\.release-pr\.outputs\.title }}/,
   );
-  assert.match(workflow, /--base "\$RELEASE_BASE_SHA"/);
+  assert.doesNotMatch(workflow, /--base /);
   assert.match(workflow, /Signed-off-by: oaslananka <info@oaslananka\.dev>/);
   assert.doesNotMatch(
     workflow,
