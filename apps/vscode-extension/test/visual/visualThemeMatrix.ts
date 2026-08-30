@@ -19,6 +19,7 @@ export type VisualFixture = {
   id: string;
   prepare: (page: Page, theme: VisualTheme) => Promise<void>;
   verify?: (page: Page, viewport: VisualViewport) => Promise<void>;
+  platformSnapshots?: readonly NodeJS.Platform[];
 };
 
 export const VISUAL_MAX_DIFF_PIXEL_RATIO = 0.002;
@@ -138,7 +139,7 @@ export async function applyThemeTokens(
         '--vscode-editor-font-family',
         'Arial, sans-serif'
       );
-      document.body.dataset.visualTheme = tokens['--visual-theme-name'];
+      document.body.dataset['visualTheme'] = tokens['--visual-theme-name'];
     },
     { ...theme.tokens, '--visual-theme-name': theme.id }
   );
@@ -147,10 +148,14 @@ export async function applyThemeTokens(
 export function snapshotPath(
   fixture: VisualFixture,
   visualCase: VisualCase,
-  testInfo: TestInfo
+  testInfo: TestInfo,
+  platform: NodeJS.Platform = process.platform
 ): string[] {
   const dpr = testInfo.project.name.endsWith('dpr2') ? 'dpr2' : 'dpr1';
-  return [fixture.id, `${visualCase.id}-${dpr}.png`];
+  const platformSuffix = fixture.platformSnapshots?.includes(platform)
+    ? `-${platform}`
+    : '';
+  return [fixture.id, `${visualCase.id}-${dpr}${platformSuffix}.png`];
 }
 
 function themeTokens(input: {

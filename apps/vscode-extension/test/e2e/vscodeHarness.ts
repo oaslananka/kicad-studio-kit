@@ -61,7 +61,7 @@ export async function launchVsCodeWithFixtures(
       `--extensionDevelopmentPath=${rootDir}`,
       '--no-sandbox',
       '--disable-gpu-sandbox',
-      ...(options.disableWebgl ? ['--disable-webgl'] : []),
+      ...(options.disableWebgl ? ['--disable-webgl', '--disable-3d-apis'] : []),
       '--disable-workspace-trust',
       '--skip-welcome',
       workspacePath

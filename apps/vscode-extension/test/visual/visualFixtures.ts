@@ -33,6 +33,7 @@ const VIEWER_BASE64 = {
 export const VISUAL_FIXTURES: readonly VisualFixture[] = [
   viewerFixture({
     id: 'viewer-final-renderer-failure-issue-625',
+    platformSnapshots: ['win32'],
     fileType: 'board',
     mockOptions: { surface: 'none', failure: 'webgl-init' },
     options: {
@@ -196,10 +197,12 @@ function viewerFixture(options: {
   mockOptions: MockOptions;
   fallbackSvg?: string;
   verify?: VisualFixture['verify'];
+  platformSnapshots?: VisualFixture['platformSnapshots'];
 }): VisualFixture {
   return {
     id: options.id,
     verify: options.verify,
+    platformSnapshots: options.platformSnapshots,
     prepare: async (page, theme) => {
       await installVsCodeApiMock(page, options.fallbackSvg);
       await setViewerContent(
