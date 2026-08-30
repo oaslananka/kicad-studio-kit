@@ -87,18 +87,20 @@ async function openWorkspaceFile(
   await page.keyboard.press('Enter');
   await expect(quickInput).toBeHidden({ timeout: 5000 });
 
-  // Ctrl+P delegates to VS Code's default-editor selection, which can race
-  // custom-editor restoration on a cold extension host. Exercise the product
-  // command explicitly so this regression test always opens the PCB through
-  // the registered KiCad Studio custom editor.
+  // Ctrl+P can race custom-editor restoration on a cold extension host.
+  // Reopen the file through VS Code's built-in editor picker after activation
+  // readiness so the test does not depend on kicadstudio.openPCB, whose
+  // Command Palette entry is intentionally hidden until pcbOpen is already set.
   await page.keyboard.press('Control+Shift+P');
   await expect(quickInput).toBeVisible({ timeout: 5000 });
   const commandInput = quickInput.locator('input');
-  await commandInput.fill('>KiCad: Open as PCB Viewer');
-  await expect(quickInput).toContainText('KiCad: Open as PCB Viewer', {
+  await commandInput.fill('>Reopen Editor With');
+  await expect(quickInput).toContainText('Reopen Editor With', {
     timeout: 5000
   });
   await page.keyboard.press('Enter');
+  await expect(quickInput).toContainText('KiCad PCB Viewer', { timeout: 5000 });
+  await quickInput.getByText('KiCad PCB Viewer', { exact: true }).click();
   await expect(quickInput).toBeHidden({ timeout: 5000 });
 }
 
