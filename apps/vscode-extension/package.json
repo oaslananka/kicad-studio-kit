@@ -2,7 +2,7 @@
   "name": "kicadstudiokit",
   "displayName": "%kicadstudio.displayName%",
   "description": "%kicadstudio.description%",
-  "version": "1.10.2",
+  "version": "1.10.3",
   "publisher": "oaslananka",
   "engines": {
     "vscode": "^1.101.0",
