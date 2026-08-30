@@ -133,6 +133,60 @@ jobs:
         run: |
           corepack pnpm run check:mcp-2026-rc-artifact -- --version "$KICAD_MCP_PRO_VERSION"
 
+      - name: Validate published MCP profile vocabulary
+        env:
+          KICAD_MCP_PRO_VERSION: ${{ steps.pypi-check.outputs.pypi_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          metadata_url="https://pypi.org/pypi/kicad-mcp-pro/${KICAD_MCP_PRO_VERSION}/json"
+          router_source="$RUNNER_TEMP/kicad-mcp-router.py"
+          python - "$metadata_url" "$router_source" <<'PY'
+          import hashlib
+          import io
+          import json
+          import pathlib
+          import sys
+          import urllib.parse
+          import urllib.request
+          import zipfile
+
+          metadata_url, output_path = sys.argv[1:3]
+          with urllib.request.urlopen(metadata_url) as response:
+              metadata = json.load(response)
+
+          wheels = [
+              item
+              for item in metadata.get("urls", [])
+              if item.get("filename", "").endswith("py3-none-any.whl")
+          ]
+          if len(wheels) != 1:
+              raise SystemExit(f"expected one universal wheel, found {len(wheels)}")
+
+          wheel = wheels[0]
+          wheel_url = wheel.get("url", "")
+          parsed_url = urllib.parse.urlparse(wheel_url)
+          if parsed_url.scheme != "https" or parsed_url.hostname != "files.pythonhosted.org":
+              raise SystemExit("PyPI returned an unexpected wheel URL")
+
+          with urllib.request.urlopen(wheel_url) as response:
+              wheel_bytes = response.read()
+          expected_sha256 = wheel.get("digests", {}).get("sha256", "")
+          actual_sha256 = hashlib.sha256(wheel_bytes).hexdigest()
+          if not expected_sha256 or actual_sha256 != expected_sha256:
+              raise SystemExit("published wheel SHA256 verification failed")
+
+          with zipfile.ZipFile(io.BytesIO(wheel_bytes)) as archive:
+              router_paths = [
+                  name for name in archive.namelist() if name.endswith("kicad_mcp/tools/router.py")
+              ]
+              if len(router_paths) != 1:
+                  raise SystemExit("published wheel has no unique MCP router source")
+              pathlib.Path(output_path).write_bytes(archive.read(router_paths[0]))
+          PY
+          PROFILES=$(python scripts/extract_published_mcp_profiles.py < "$router_source")
+          KICAD_MCP_PRO_PUBLISHED_PROFILES="$PROFILES" node scripts/check-published-mcp-profiles.mjs
+
       # ── C. Published BoardReadyOps contract ───────────────────────────────
       - name: Resolve published BoardReadyOps version
         id: boardreadyops-check

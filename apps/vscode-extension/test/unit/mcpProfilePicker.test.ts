@@ -113,15 +113,19 @@ describe('mcpProfilePicker', () => {
   });
 
   describe('readConfiguredMcpProfile', () => {
-    it('reads the profile from mcp.json when present', () => {
+    it.each([
+      ['supported profile', 'analysis', 'analysis'],
+      ['equivalent legacy alias', 'default', 'review'],
+      ['unsupported profile', 'future-unsafe', 'review']
+    ])('normalizes %s from mcp.json', (_case, configured, expected) => {
       existsSync.mockReturnValue(true);
       readFileSync.mockReturnValue(
         JSON.stringify({
-          servers: { kicad: { env: { KICAD_MCP_PROFILE: 'analysis' } } }
+          servers: { kicad: { env: { KICAD_MCP_PROFILE: configured } } }
         })
       );
 
-      expect(readConfiguredMcpProfile()).toBe('analysis');
+      expect(readConfiguredMcpProfile()).toBe(expected);
     });
 
     it('falls back to the configuration setting when mcp.json is absent', () => {
@@ -131,11 +135,11 @@ describe('mcpProfilePicker', () => {
       expect(readConfiguredMcpProfile()).toBe('manufacturing');
     });
 
-    it('returns the analysis (least-privilege) default when nothing is configured', () => {
+    it('returns the review (least-privilege) default when nothing is configured', () => {
       existsSync.mockReturnValue(false);
       __setConfiguration({});
 
-      expect(readConfiguredMcpProfile()).toBe('analysis');
+      expect(readConfiguredMcpProfile()).toBe('review');
     });
 
     it('ignores an unparseable mcp.json and falls back to configuration', () => {

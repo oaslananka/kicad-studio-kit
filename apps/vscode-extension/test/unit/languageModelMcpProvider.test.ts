@@ -32,7 +32,7 @@ describe('language model MCP server definition provider', () => {
 
     expect(definition.value.command).toBe('uvx');
     expect(definition.value.args).toEqual(['kicad-mcp-pro']);
-    expect(definition.value.env['KICAD_MCP_PROFILE']).toBe('analysis');
+    expect(definition.value.env['KICAD_MCP_PROFILE']).toBe('review');
     expect(definition.value.env['KICAD_MCP_OPERATING_MODE']).toBe('readonly');
   });
 
@@ -77,7 +77,7 @@ describe('language model MCP server definition provider', () => {
 
       expect(definition.label).toBe('KiCad MCP Pro (detected)');
       expect(definition.command).toBe('kicad-mcp-pro');
-      expect(definition.env['KICAD_MCP_PROFILE']).toBe('analysis');
+      expect(definition.env['KICAD_MCP_PROFILE']).toBe('review');
       expect(definition.env['KICAD_MCP_OPERATING_MODE']).toBe('readonly');
       expect(definition.cwd?.fsPath).toBe(
         workspace.workspaceFolders[0]?.uri.fsPath

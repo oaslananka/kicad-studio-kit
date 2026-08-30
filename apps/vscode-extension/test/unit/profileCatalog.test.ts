@@ -1,6 +1,8 @@
 import {
+  KICAD_MCP_PRIMARY_PROFILES,
   KICAD_MCP_PROFILES,
-  isKicadMcpProfile
+  isKicadMcpProfile,
+  resolveKicadMcpProfile
 } from '../../src/mcp/profileCatalog';
 
 jest.mock('vscode', () => jest.requireActual('./vscodeMock'), {
@@ -14,7 +16,10 @@ describe('profileCatalog', () => {
         (p) => p.id
       );
       expect(ids).toEqual([
-        'full',
+        'review',
+        'build',
+        'release',
+        'expert',
         'minimal',
         'schematic_only',
         'pcb_only',
@@ -22,8 +27,7 @@ describe('profileCatalog', () => {
         'high_speed',
         'power',
         'simulation',
-        'analysis',
-        'agent_full'
+        'analysis'
       ]);
     });
 
@@ -52,9 +56,45 @@ describe('profileCatalog', () => {
     });
   });
 
+  describe('primary workflow profiles', () => {
+    it('puts the published task-oriented profiles first', () => {
+      expect(KICAD_MCP_PRIMARY_PROFILES.map((profile) => profile.id)).toEqual([
+        'review',
+        'build',
+        'release',
+        'expert'
+      ]);
+      expect(KICAD_MCP_PROFILES.slice(0, 4)).toEqual(
+        KICAD_MCP_PRIMARY_PROFILES
+      );
+    });
+  });
+
+  describe('resolveKicadMcpProfile', () => {
+    it('migrates only equivalent legacy aliases', () => {
+      expect(resolveKicadMcpProfile('default')).toBe('review');
+      expect(resolveKicadMcpProfile('full')).toBe('expert');
+      expect(resolveKicadMcpProfile('agent_full')).toBe('expert');
+    });
+
+    it('preserves supported specialized profiles without widening scope', () => {
+      expect(resolveKicadMcpProfile('analysis')).toBe('analysis');
+      expect(resolveKicadMcpProfile('manufacturing')).toBe('manufacturing');
+      expect(resolveKicadMcpProfile('pcb_only')).toBe('pcb_only');
+    });
+
+    it('fails closed to review for unknown or missing profile values', () => {
+      expect(resolveKicadMcpProfile('unknown')).toBe('review');
+      expect(resolveKicadMcpProfile(undefined)).toBe('review');
+    });
+  });
+
   describe('isKicadMcpProfile', () => {
     it('returns true for valid profile ids', () => {
-      expect(isKicadMcpProfile('full')).toBe(true);
+      expect(isKicadMcpProfile('review')).toBe(true);
+      expect(isKicadMcpProfile('build')).toBe(true);
+      expect(isKicadMcpProfile('release')).toBe(true);
+      expect(isKicadMcpProfile('expert')).toBe(true);
       expect(isKicadMcpProfile('minimal')).toBe(true);
       expect(isKicadMcpProfile('schematic_only')).toBe(true);
       expect(isKicadMcpProfile('pcb_only')).toBe(true);
@@ -63,7 +103,6 @@ describe('profileCatalog', () => {
       expect(isKicadMcpProfile('power')).toBe(true);
       expect(isKicadMcpProfile('simulation')).toBe(true);
       expect(isKicadMcpProfile('analysis')).toBe(true);
-      expect(isKicadMcpProfile('agent_full')).toBe(true);
     });
 
     it('returns false for invalid profile ids', () => {
@@ -72,6 +111,8 @@ describe('profileCatalog', () => {
       expect(isKicadMcpProfile('FULL')).toBe(false);
       expect(isKicadMcpProfile('full ')).toBe(false);
       expect(isKicadMcpProfile('extra')).toBe(false);
+      expect(isKicadMcpProfile('full')).toBe(false);
+      expect(isKicadMcpProfile('agent_full')).toBe(false);
     });
   });
 });

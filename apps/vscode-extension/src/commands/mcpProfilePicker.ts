@@ -5,6 +5,7 @@ import { SETTINGS } from '../constants';
 import { localize } from '../i18n';
 import {
   KICAD_MCP_PROFILES,
+  resolveKicadMcpProfile,
   type KicadMcpProfileId
 } from '../mcp/profileCatalog';
 import type { CommandServices } from './types';
@@ -41,14 +42,16 @@ export async function pickMcpProfile(
   return choice.profile.id;
 }
 
-export function readConfiguredMcpProfile(): string | undefined {
+export function readConfiguredMcpProfile(): KicadMcpProfileId {
   const fromWorkspace = readProfileFromMcpJson();
   if (fromWorkspace) {
-    return fromWorkspace;
+    return resolveKicadMcpProfile(fromWorkspace);
   }
-  return vscode.workspace
-    .getConfiguration()
-    .get<string>(SETTINGS.mcpProfile, 'analysis');
+  return resolveKicadMcpProfile(
+    vscode.workspace
+      .getConfiguration()
+      .get<string>(SETTINGS.mcpProfile, 'review')
+  );
 }
 
 async function writeProfile(profile: KicadMcpProfileId): Promise<void> {

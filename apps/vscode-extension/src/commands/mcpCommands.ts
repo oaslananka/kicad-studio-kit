@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { COMMANDS } from '../constants';
 import { McpDetector } from '../mcp/mcpDetector';
+import { KICAD_MCP_PROFILES } from '../mcp/profileCatalog';
 import { DesignIntentPanel } from '../mcp/designIntentPanel';
 import { DrcRuleEditorPanel } from '../drc/drcRuleEditorPanel';
 import { registerTrustedCommand } from '../utils/workspaceTrust';
@@ -98,18 +99,7 @@ export function registerMcpCommands(
         // ── Step 2: profile ───────────────────────────────────────────────────
         const detector = new McpDetector();
         const profile = await vscode.window.showQuickPick(
-          [
-            'analysis',
-            'pcb_only',
-            'schematic_only',
-            'minimal',
-            'manufacturing',
-            'high_speed',
-            'power',
-            'simulation',
-            'full',
-            'agent_full'
-          ],
+          KICAD_MCP_PROFILES.map((profile) => profile.id),
           {
             title: 'Select kicad-mcp-pro profile',
             placeHolder: 'Choose the MCP tool profile'
@@ -148,18 +138,7 @@ export function registerMcpCommands(
           vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
         const detector = new McpDetector();
         const profile = await vscode.window.showQuickPick(
-          [
-            'analysis',
-            'pcb_only',
-            'schematic_only',
-            'minimal',
-            'manufacturing',
-            'high_speed',
-            'power',
-            'simulation',
-            'full',
-            'agent_full'
-          ],
+          KICAD_MCP_PROFILES.map((profile) => profile.id),
           {
             title: 'Select kicad-mcp-pro profile',
             placeHolder: 'Profile for the HTTP server'

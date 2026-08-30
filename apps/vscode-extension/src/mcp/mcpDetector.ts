@@ -189,7 +189,7 @@ export class McpDetector {
   async generateMcpJson(
     projectDir: string,
     status: McpInstallStatus,
-    profile = 'analysis'
+    profile = 'review'
   ): Promise<void> {
     const root =
       vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? projectDir;

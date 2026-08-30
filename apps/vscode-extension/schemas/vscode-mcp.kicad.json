@@ -41,6 +41,10 @@
               "KICAD_MCP_PROFILE": {
                 "type": "string",
                 "enum": [
+                  "review",
+                  "build",
+                  "release",
+                  "expert",
                   "full",
                   "minimal",
                   "schematic_only",
