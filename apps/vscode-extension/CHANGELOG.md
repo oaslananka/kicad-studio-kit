@@ -10,6 +10,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.10.4](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.3...vscode-extension-v1.10.4) (2026-08-30)
+
+
+### Bug Fixes
+
+* **kicad-studio:** align MCP profile contract ([#648](https://github.com/oaslananka/kicad-studio-kit/issues/648)) ([a1111ed](https://github.com/oaslananka/kicad-studio-kit/commit/a1111ed90904040032424e42c16a074f93023357))
+
 ## [1.10.3](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.2...vscode-extension-v1.10.3) (2026-08-30)
 
 
