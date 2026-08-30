@@ -73,7 +73,7 @@ test("#645 release workflow promotes a GitHub-signed parseable shadow PR without
   assert.match(workflow, /--onto-head "\$SIGNED_RELEASE_HEAD"/);
   assert.match(
     workflow,
-    /gh pr update-branch "\$SIGNED_RELEASE_PR"[\s\S]*?SIGNED_RELEASE_HEAD=[\s\S]*?headRefOid[\s\S]*?--onto-head "\$SIGNED_RELEASE_HEAD"/,
+    /gh pr update-branch "\$SIGNED_RELEASE_PR"[\s\S]*?for attempt in[\s\S]*?git fetch --no-tags origin[\s\S]*?git merge-base --is-ancestor[\s\S]*?"\$RELEASE_BASE_SHA"[\s\S]*?"\$SIGNED_RELEASE_HEAD"[\s\S]*?sleep 2[\s\S]*?Timed out waiting for signed release shadow to include current main[\s\S]*?--onto-head "\$SIGNED_RELEASE_HEAD"/,
   );
   assert.match(
     workflow,
