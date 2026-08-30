@@ -107,6 +107,9 @@ describe('extensionManifest', () => {
     expect(packageJson.scripts?.['test:e2e']).toBe(
       'pnpm run build && playwright test test/e2e/'
     );
+    expect(packageJson.scripts?.['test:e2e:real']).toBe(
+      'pnpm run build && playwright test test/e2e/realPair.test.ts'
+    );
   });
 
   it('declares workspace-triggered activation events', () => {
