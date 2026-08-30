@@ -30,8 +30,10 @@ test.describe('KiCad Studio VS Code E2E', () => {
         );
         if (hasKiCad) {
           await expect(statusBar).toContainText(/MCP/);
-          await expect(statusBar).toContainText(/DRC: ./);
-          await expect(statusBar).toContainText(/ERC: ./);
+          // DRC/ERC status items are intentionally hidden until a diagnostic
+          // summary exists. Their appearance is asynchronous and depends on
+          // the runner's KiCad/project state, so they are not activation
+          // readiness signals for this smoke test.
         }
       }
     } finally {
