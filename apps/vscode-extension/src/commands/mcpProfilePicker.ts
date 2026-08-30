@@ -42,7 +42,7 @@ export async function pickMcpProfile(
   return choice.profile.id;
 }
 
-export function readConfiguredMcpProfile(): string | undefined {
+export function readConfiguredMcpProfile(): KicadMcpProfileId {
   const fromWorkspace = readProfileFromMcpJson();
   if (fromWorkspace) {
     return resolveKicadMcpProfile(fromWorkspace);

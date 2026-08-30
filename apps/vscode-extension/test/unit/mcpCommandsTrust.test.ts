@@ -389,6 +389,40 @@ describe('MCP command workspace trust guards', () => {
     expect(services.refreshMcpState).toHaveBeenCalled();
   });
 
+  it('#622 launches HTTP with the shared profile catalog choices', async () => {
+    const services = registerWithServices({
+      mcpClient: {
+        detectInstall: jest.fn().mockResolvedValue({
+          found: true,
+          command: 'uvx',
+          source: 'uvx'
+        })
+      }
+    });
+    const generateHttpConfig = jest
+      .spyOn(McpDetector.prototype, 'generateHttpConfig')
+      .mockResolvedValue();
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce('review');
+
+    await registeredHandler(COMMANDS.launchMcpHttp)();
+
+    const profileChoices = (window.showQuickPick as jest.Mock).mock
+      .calls[0]?.[0];
+    expect(profileChoices.slice(0, 4)).toEqual([
+      'review',
+      'build',
+      'release',
+      'expert'
+    ]);
+    expect(generateHttpConfig).toHaveBeenCalledWith(
+      '/workspace',
+      expect.objectContaining({ command: 'uvx' }),
+      'review',
+      27185
+    );
+    expect(services.refreshMcpState).toHaveBeenCalled();
+  });
+
   it('cancels MCP setup when the transport picker is dismissed', async () => {
     const services = registerWithServices({
       mcpClient: {
