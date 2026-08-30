@@ -157,6 +157,112 @@ test.describe('KiCad Studio webview DOM', () => {
     await expect(page.locator('#fit-btn')).toBeFocused();
   });
 
+  test('does not replace a healthy KiCanvas renderer after an unrelated script error', async ({
+    page
+  }) => {
+    await installVsCodeApiMock(
+      page,
+      '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"><rect width="800" height="600" fill="#ffffff"/></svg>'
+    );
+    await setViewerContent(page, {
+      fileName: 'healthy.kicad_pcb',
+      fileType: 'board',
+      base64: readFixtureBase64('sample.kicad_pcb')
+    });
+
+    await expect(page.locator('#viewer-engine-badge')).toHaveText('KiCanvas');
+    await expect(page.locator('#viewer-status')).toHaveText(
+      'Interactive renderer loaded: healthy.kicad_pcb'
+    );
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new ErrorEvent('error', { message: 'Unrelated extension script error' })
+      );
+    });
+
+    await expect.poll(() => countMessages(page, 'requestSvgFallback')).toBe(0);
+    await expect(page.locator('#viewer-engine-badge')).toHaveText('KiCanvas');
+  });
+
+  test('reports a final renderer failure when KiCanvas and CLI fallback both fail', async ({
+    page
+  }) => {
+    await installVsCodeApiMock(page);
+    await setViewerContent(
+      page,
+      {
+        fileName: 'renderer-failure.kicad_pcb',
+        fileType: 'board',
+        base64: readFixtureBase64('sample.kicad_pcb')
+      },
+      { surface: 'none', failure: 'webgl-init' }
+    );
+
+    await expect(page.locator('#error-overlay')).toBeVisible();
+    await expect(page.locator('#viewer-engine-badge')).toHaveText(
+      'Renderer failed'
+    );
+    await expect(page.locator('#error-detail')).toContainText(
+      'Open the file in KiCad'
+    );
+    await expect(page.locator('#fit-btn')).toBeDisabled();
+    await expect(page.locator('#zoom-in-btn')).toBeDisabled();
+    await expect.poll(() => countMessages(page, 'requestSvgFallback')).toBe(1);
+  });
+
+  test('recovers immediately when KiCanvas reports an asynchronous WebGL error', async ({
+    page
+  }) => {
+    await installVsCodeApiMock(
+      page,
+      '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"><rect width="800" height="600" fill="#ffffff"/></svg>'
+    );
+    await setViewerContent(
+      page,
+      {
+        fileName: 'async-webgl-failure.kicad_pcb',
+        fileType: 'board',
+        base64: readFixtureBase64('sample.kicad_pcb')
+      },
+      { surface: 'none', failure: 'webgl-event' }
+    );
+
+    await expect(page.locator('#viewer-engine-badge')).toHaveText(
+      'CLI SVG fallback',
+      { timeout: 5000 }
+    );
+    await expect(page.locator('#svg-fallback-view')).toBeVisible();
+    await expect.poll(() => countMessages(page, 'requestSvgFallback')).toBe(1);
+  });
+
+  test('falls back to CLI SVG rendering when KiCanvas WebGL initialization fails', async ({
+    page
+  }) => {
+    await installVsCodeApiMock(
+      page,
+      '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"><rect width="800" height="600" fill="#ffffff"/></svg>'
+    );
+    await setViewerContent(
+      page,
+      {
+        fileName: 'webgl-failure.kicad_pcb',
+        fileType: 'board',
+        base64: readFixtureBase64('sample.kicad_pcb')
+      },
+      { surface: 'none', failure: 'webgl-init' }
+    );
+
+    await expect(page.locator('#viewer-engine-badge')).toHaveText(
+      'CLI SVG fallback',
+      { timeout: 12000 }
+    );
+    await expect(page.locator('#svg-fallback-view')).toBeVisible();
+    await expect(page.locator('#viewer-status')).toHaveText(
+      'CLI SVG fallback loaded: webgl-failure.kicad_pcb'
+    );
+    await expect.poll(() => countMessages(page, 'requestSvgFallback')).toBe(1);
+  });
+
   test('falls back to CLI SVG rendering when KiCanvas has no drawable surface', async ({
     page
   }) => {

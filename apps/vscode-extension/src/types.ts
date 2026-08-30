@@ -68,9 +68,7 @@ export interface ViewerState {
 }
 
 export type ViewerEngineKind =
-  | 'kicanvas'
-  | 'cli-svg-fallback'
-  | 'metadata-only';
+  'kicanvas' | 'cli-svg-fallback' | 'metadata-only' | 'failed';
 
 export interface ViewerEngineCapabilities {
   interactive: boolean;
@@ -192,19 +190,10 @@ export interface AIProviderCapabilities {
 }
 
 export type DiagnosticFreshness =
-  | 'never-run'
-  | 'running'
-  | 'fresh-clean'
-  | 'fresh-dirty'
-  | 'stale'
-  | 'failed';
+  'never-run' | 'running' | 'fresh-clean' | 'fresh-dirty' | 'stale' | 'failed';
 
 export type DiagnosticOrigin =
-  | 'kicad-cli'
-  | 'mcp'
-  | 'cached-report'
-  | 'manual-import'
-  | 'syntax';
+  'kicad-cli' | 'mcp' | 'cached-report' | 'manual-import' | 'syntax';
 
 export interface DiagnosticSummary {
   file: string;
@@ -377,12 +366,7 @@ export interface McpLogEntry {
 }
 
 export type QualityGateStatus =
-  | 'PASS'
-  | 'WARN'
-  | 'FAIL'
-  | 'BLOCKED'
-  | 'PENDING'
-  | 'EMPTY';
+  'PASS' | 'WARN' | 'FAIL' | 'BLOCKED' | 'PENDING' | 'EMPTY';
 
 export interface QualityGateViolation {
   message: string;

@@ -1,3 +1,7 @@
+import {
+  createViewerEngineState,
+  isViewerEngineKind
+} from '../../src/providers/viewer/viewerEngine';
 import { createViewerPayload } from '../../src/providers/viewer/viewerPayload';
 import { resolveViewerPalette } from '../../src/providers/viewer/viewerPalette';
 
@@ -32,6 +36,26 @@ describe('viewer helper modules', () => {
         }),
         metadata: expect.objectContaining({ layers: expect.any(Array) }),
         restoreState: expect.objectContaining({ zoom: 2 })
+      })
+    );
+  });
+
+  it('models final renderer failure as a non-interactive engine state', () => {
+    expect(isViewerEngineKind('failed')).toBe(true);
+    expect(
+      createViewerEngineState('failed', 'WebGL and SVG fallback failed')
+    ).toEqual(
+      expect.objectContaining({
+        kind: 'failed',
+        label: 'Renderer failed',
+        reason: 'WebGL and SVG fallback failed',
+        capabilities: expect.objectContaining({
+          interactive: false,
+          fit: false,
+          zoom: false,
+          exportPng: false,
+          exportSvg: false
+        })
       })
     );
   });
