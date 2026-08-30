@@ -45,6 +45,13 @@ test.describe('KiCad Studio VS Code E2E', () => {
     const session = await launchVsCodeWithFixtures({ disableWebgl: true });
 
     try {
+      // This is a fresh VS Code session. Ensure the extension has activated
+      // and registered its custom editors before opening the PCB; otherwise a
+      // slow runner can race file opening against provider registration.
+      await expectCommandPaletteEntry(
+        session.page,
+        'KiCad Studio: Open Task Hub'
+      );
       await openWorkspaceFile(session.page, 'sample.kicad_pcb');
 
       await expect
