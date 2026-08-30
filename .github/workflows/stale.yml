@@ -12,7 +12,6 @@ jobs:
     permissions:
       issues: write
       pull-requests: write
-    if: github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/stale@eb5cf3af3ac0a1aa4c9c45633dd1ae542a27a899

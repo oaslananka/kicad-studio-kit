@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "repositoryOwner": "oaslananka",
+  "requiredChecks": [
+    "required",
+    "analyze (javascript-typescript)",
+    "analyze (python)",
+    "security",
+    "scan",
+    "dependency-review"
+  ],
+  "externalSignals": {
+    "sonarCloud": {
+      "checkContext": "SonarCloud Code Analysis",
+      "required": false,
+      "repositoryConfig": false,
+      "policy": "advisory-zero-new-issues"
+    },
+    "mergify": {
+      "checkContext": "Mergify Merge Queue",
+      "required": false,
+      "repositoryConfig": false,
+      "policy": "not-a-merge-authority"
+    },
+    "codecov": {
+      "required": false,
+      "repositoryConfig": true,
+      "projectStatus": "informational",
+      "patchStatus": "informational",
+      "bundleStatus": "informational"
+    }
+  }
+}

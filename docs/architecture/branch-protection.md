@@ -51,6 +51,26 @@ Generated documentation drift is validated by the `docs` workflow on every
 documentation change. Promote it to a required context here and in the ruleset
 once it reports on every pull request (today it is path-scoped to docs changes).
 
+### External quality signals
+
+`.github/quality-gates.json` records the repository-owned policy for external quality
+signals. The canonical repository owner is `oaslananka`; workflows therefore do not
+carry repository-owner aliases or owner conditionals. Event, fork, path, and permission
+guards remain in place where they enforce real security or execution boundaries.
+
+- **SonarCloud** is an advisory external-app signal, not a branch-protection context.
+  Pull requests should reach a passing quality gate with zero unresolved new issues, but
+  the service-side configuration is not treated as repository merge authority.
+- **Mergify** is not a repository merge authority. No `.mergify.yml` is owned here and
+  its app status is informational; GitHub rulesets and required checks remain canonical.
+- **Codecov** is repository-configured observability. Project, patch, and bundle statuses
+  remain informational; Jest coverage thresholds and the CI `required` aggregate are the
+  blocking coverage authorities.
+
+`corepack pnpm run check:quality-gates` fails if these dispositions drift, an external
+signal is accidentally promoted into the required-check set, Codecov stops being
+informational, or a redundant repository-owner alias returns to a workflow.
+
 ## Check tiers
 
 - **Pull-request required checks (blocking):** the required contexts listed

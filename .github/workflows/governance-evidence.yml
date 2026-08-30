@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   evidence:
-    if: (github.repository_owner == 'oaslananka' || github.repository_owner == 'oaslananka-ops') && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
