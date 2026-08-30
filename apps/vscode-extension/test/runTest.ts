@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { downloadAndUnzipVSCode } from '@vscode/test-electron';
 import {
+  downloadVsCodeWithRetry,
   resolveVsCodeTestSuite,
   resolveVsCodeTestVersion
 } from './vscodeTestRuntime';
@@ -17,8 +18,9 @@ async function main(): Promise<void> {
     'index'
   );
   const workspacePath = path.resolve(__dirname, '..', '..', 'test', 'fixtures');
-  const vscodeExecutablePath = await downloadAndUnzipVSCode(
-    resolveVsCodeTestVersion()
+  const vscodeExecutablePath = await downloadVsCodeWithRetry(
+    resolveVsCodeTestVersion(),
+    downloadAndUnzipVSCode
   );
   const userDataDir = await mkdtemp(
     path.join(tmpdir(), 'kicadstudio-vscode-user-')
