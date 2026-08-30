@@ -125,6 +125,55 @@ export async function rewriteReleaseBranch({
   }
 }
 
+export async function createReleaseBranchFromBase({
+  repository,
+  branch,
+  baseOid,
+  headline,
+  changes,
+  createRef,
+  deleteRef,
+  createCommit,
+}) {
+  assertRepositorySlug(repository);
+  assertBranchName(branch);
+  assertReleaseShadowBranchName(branch);
+  assertOid(baseOid, "baseOid");
+  if (typeof createRef !== "function") {
+    throw new TypeError("createRef must be a function");
+  }
+  if (typeof deleteRef !== "function") {
+    throw new TypeError("deleteRef must be a function");
+  }
+  if (typeof createCommit !== "function") {
+    throw new TypeError("createCommit must be a function");
+  }
+
+  const request = buildCreateCommitRequest({
+    repository,
+    branch,
+    expectedHeadOid: baseOid,
+    headline,
+    changes,
+  });
+
+  await createRef({ repository, branch, sha: baseOid });
+  try {
+    return await createCommit(request);
+  } catch (error) {
+    try {
+      await deleteRef({ repository, branch });
+    } catch (rollbackError) {
+      throw new AggregateError(
+        [error, rollbackError],
+        "signed release branch creation failed and cleanup failed",
+        { cause: error },
+      );
+    }
+    throw error;
+  }
+}
+
 export function buildCreateCommitRequest({
   repository,
   branch,
@@ -185,6 +234,14 @@ function assertReleaseBranchName(branch) {
   if (!branch.startsWith("release-please--branches--")) {
     throw new Error(
       "release history rewrites are restricted to Release Please branches",
+    );
+  }
+}
+
+function assertReleaseShadowBranchName(branch) {
+  if (!/^release-please\/branches\/[^/]+\/components\/[^/]+$/u.test(branch)) {
+    throw new Error(
+      "signed release branches must use the Release Please component branch format",
     );
   }
 }

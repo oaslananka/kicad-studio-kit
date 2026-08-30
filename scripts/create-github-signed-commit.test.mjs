@@ -128,6 +128,79 @@ test("release diff parser captures tracked additions and deletions", () => {
   );
 });
 
+test("signed release shadow branch is created from the base without rewriting refs", async () => {
+  assert.equal(
+    typeof signedCommitHelpers.createReleaseBranchFromBase,
+    "function",
+  );
+
+  const calls = [];
+  const result = await signedCommitHelpers.createReleaseBranchFromBase({
+    repository: "oaslananka/kicad-studio-kit",
+    branch: "release-please/branches/main/components/vscode-extension",
+    baseOid: "1111111111111111111111111111111111111111",
+    headline: "chore(kicad-studio): release vscode-extension 1.10.3",
+    changes: [
+      {
+        path: "apps/vscode-extension/package.json",
+        contents: Buffer.from("{}"),
+      },
+    ],
+    createRef: async (input) => calls.push(["createRef", input]),
+    deleteRef: async (input) => calls.push(["deleteRef", input]),
+    createCommit: async (request) => {
+      calls.push(["createCommit", request]);
+      return { oid: "2222222222222222222222222222222222222222" };
+    },
+  });
+
+  assert.equal(result.oid, "2222222222222222222222222222222222222222");
+  assert.equal(calls[0][0], "createRef");
+  assert.deepEqual(calls[0][1], {
+    repository: "oaslananka/kicad-studio-kit",
+    branch: "release-please/branches/main/components/vscode-extension",
+    sha: "1111111111111111111111111111111111111111",
+  });
+  assert.equal(calls[1][0], "createCommit");
+  assert.equal(
+    calls[1][1].variables.input.expectedHeadOid,
+    "1111111111111111111111111111111111111111",
+  );
+  assert.equal(
+    calls.some(([name]) => name === "deleteRef"),
+    false,
+  );
+});
+
+test("signed release shadow branch cleans up its new ref when commit creation fails", async () => {
+  const calls = [];
+  const failure = new Error("commit failed");
+
+  await assert.rejects(
+    signedCommitHelpers.createReleaseBranchFromBase({
+      repository: "oaslananka/kicad-studio-kit",
+      branch: "release-please/branches/main/components/vscode-extension",
+      baseOid: "1111111111111111111111111111111111111111",
+      headline: "chore(kicad-studio): release vscode-extension 1.10.3",
+      changes: [
+        {
+          path: "apps/vscode-extension/package.json",
+          contents: Buffer.from("{}"),
+        },
+      ],
+      createRef: async () => calls.push("createRef"),
+      deleteRef: async () => calls.push("deleteRef"),
+      createCommit: async () => {
+        calls.push("createCommit");
+        throw failure;
+      },
+    }),
+    (error) => error === failure,
+  );
+
+  assert.deepEqual(calls, ["createRef", "createCommit", "deleteRef"]);
+});
+
 test("release branch rewrite creates one commit from the base ref", async () => {
   assert.equal(typeof signedCommitHelpers.rewriteReleaseBranch, "function");
   const calls = [];

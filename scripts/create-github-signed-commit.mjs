@@ -6,6 +6,7 @@ import process from "node:process";
 
 import {
   buildCreateCommitRequest,
+  createReleaseBranchFromBase,
   parseGitNameStatus,
   parseGitStatus,
   rewriteReleaseBranch,
@@ -16,6 +17,7 @@ const repository = options.repository ?? process.env.GITHUB_REPOSITORY;
 const branch = options.branch;
 const headline = options.message;
 const baseOid = options.base;
+const createFromBaseOid = options["create-from-base"];
 const token = process.env.GITHUB_TOKEN;
 
 if (!repository || !branch || !headline || !token) {
@@ -24,7 +26,25 @@ if (!repository || !branch || !headline || !token) {
   );
 }
 
-if (baseOid) {
+if (baseOid && createFromBaseOid) {
+  throw new Error("--base and --create-from-base are mutually exclusive");
+}
+
+if (createFromBaseOid) {
+  const localHeadOid = git(["rev-parse", "HEAD"]).trim();
+  ensureBaseIsAncestor(createFromBaseOid, localHeadOid);
+  const descriptors = collectReleaseChanges(createFromBaseOid);
+  await createReleaseBranchFromBase({
+    repository,
+    branch,
+    baseOid: createFromBaseOid,
+    headline,
+    changes: readChanges(descriptors),
+    createRef,
+    deleteRef,
+    createCommit: createGitHubCommit,
+  });
+} else if (baseOid) {
   const expectedHeadOid = git(["rev-parse", "HEAD"]).trim();
   ensureBaseIsAncestor(baseOid, expectedHeadOid);
   const descriptors = collectReleaseChanges(baseOid);
@@ -105,6 +125,24 @@ function ensureBaseIsAncestor(baseOid, expectedHeadOid) {
   } catch {
     throw new Error("--base must be an ancestor of the release branch HEAD");
   }
+}
+
+async function createRef({
+  repository: repositorySlug,
+  branch: branchName,
+  sha,
+}) {
+  await githubRestRequest(`/repos/${repositorySlug}/git/refs`, {
+    method: "POST",
+    body: JSON.stringify({ ref: `refs/heads/${branchName}`, sha }),
+  });
+}
+
+async function deleteRef({ repository: repositorySlug, branch: branchName }) {
+  await githubRestRequest(
+    `/repos/${repositorySlug}/git/refs/heads/${encodeBranchPath(branchName)}`,
+    { method: "DELETE" },
+  );
 }
 
 async function getRemoteHead({
@@ -192,7 +230,8 @@ async function githubApiRequest(url, init) {
       ...init.headers,
     },
   });
-  const payload = await response.json();
+  const responseText = await response.text();
+  const payload = responseText ? JSON.parse(responseText) : null;
   if (!response.ok) {
     throw new Error(
       `GitHub API ${response.status} ${response.statusText}: ${JSON.stringify(payload)}`,
@@ -214,7 +253,15 @@ function parseArguments(args) {
       throw new Error(`Invalid argument sequence near ${flag ?? "(end)"}`);
     }
     const name = flag.slice(2);
-    if (!new Set(["repository", "branch", "message", "base"]).has(name)) {
+    if (
+      !new Set([
+        "repository",
+        "branch",
+        "message",
+        "base",
+        "create-from-base",
+      ]).has(name)
+    ) {
       throw new Error(`Unknown argument: ${flag}`);
     }
     parsed[name] = value;
