@@ -6,7 +6,7 @@ KiCad Studio Kit releases the VS Code extension from this repository. The MCP se
 
 ## Release automation
 
-- `release-please.yml` keeps the canonical generated PR as Release Please's draft generator, builds the complete release tree, and mirrors it to `release-please/branches/main/components/vscode-extension`. The mergeable shadow PR contains only GitHub-signed, DCO-signed-off commits; later generator updates append signed commits without rewriting either live ref.
+- `release-please.yml` keeps the canonical generated PR as Release Please's draft generator, builds the complete release tree, and mirrors it to `release-please/branches/main/components/vscode-extension`. The mergeable shadow PR contains only GitHub-signed, DCO-signed-off release commits; later generator updates first use GitHub's normal verified `update-branch` merge to make current `main` an ancestor, then append the signed release-tree delta without rewriting either live ref.
 - `publish-extension.yml` packages the VSIX, validates metadata, stages checksums, SBOM, provenance, and attestations, then publishes to marketplaces from the authenticated release event.
 - `release.yml` is a low-risk release-readiness workflow that validates release evidence without publishing.
 

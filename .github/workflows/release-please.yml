@@ -150,8 +150,26 @@ jobs:
               exit 1
             fi
             SIGNED_RELEASE_PR="${signed_release_prs[0]}"
+            gh pr update-branch "$SIGNED_RELEASE_PR"
+            SIGNED_RELEASE_HEAD="$(gh pr view "$SIGNED_RELEASE_PR" \
+              --json headRefOid \
+              --jq '.headRefOid')"
+            SIGNED_RELEASE_VERIFIED="$(gh api \
+              "repos/$GITHUB_REPOSITORY/commits/$SIGNED_RELEASE_HEAD" \
+              --jq '.commit.verification.verified')"
+            if [[ "$SIGNED_RELEASE_VERIFIED" != "true" ]]; then
+              echo "Signed release shadow head is not GitHub-verified" >&2
+              exit 1
+            fi
             git fetch --no-tags origin \
+              "refs/heads/main:refs/remotes/origin/main" \
               "refs/heads/$SIGNED_RELEASE_BRANCH:refs/remotes/origin/$SIGNED_RELEASE_BRANCH"
+            if ! git merge-base --is-ancestor \
+              refs/remotes/origin/main \
+              "refs/remotes/origin/$SIGNED_RELEASE_BRANCH"; then
+              echo "Signed release shadow is not up to date with main" >&2
+              exit 1
+            fi
             node scripts/create-github-signed-commit.mjs \
               --repository "$GITHUB_REPOSITORY" \
               --branch "$SIGNED_RELEASE_BRANCH" \
