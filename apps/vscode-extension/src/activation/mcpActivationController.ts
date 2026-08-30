@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { CONTEXT_KEYS, SETTINGS } from '../constants';
+import { COMMANDS, CONTEXT_KEYS, SETTINGS } from '../constants';
 import type { McpClient } from '../mcp/mcpClient';
 import type { McpDetector } from '../mcp/mcpDetector';
 import type { McpStateStore } from '../state/stateStores';
@@ -173,8 +173,7 @@ export class McpActivationController {
       'Later'
     );
     if (choice === 'Setup MCP') {
-      await this.deps.mcpDetector.generateMcpJson(root, installStatus);
-      await this.refreshMcpState();
+      await vscode.commands.executeCommand(COMMANDS.setupMcpIntegration);
     }
   }
 }
