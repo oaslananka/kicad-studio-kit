@@ -12,6 +12,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.10.3](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.2...vscode-extension-v1.10.3) (2026-08-30)
+
+
+### Bug Fixes
+
+* **kicad-studio:** recover viewer renderer failures automatically ([#640](https://github.com/oaslananka/kicad-studio-kit/issues/640)) ([b2198ed](https://github.com/oaslananka/kicad-studio-kit/commit/b2198ed5be53adff0ff6965ddd2948e8dfca11db))
+
 ## [1.10.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.1...vscode-extension-v1.10.2) (2026-08-30)
 
 
