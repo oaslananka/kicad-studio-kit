@@ -94,8 +94,8 @@ async function openWorkspaceFile(
   await page.keyboard.press('Control+Shift+P');
   await expect(quickInput).toBeVisible({ timeout: 5000 });
   const commandInput = quickInput.locator('input');
-  await commandInput.fill('>KiCad Studio: Open PCB');
-  await expect(quickInput).toContainText('KiCad Studio: Open PCB', {
+  await commandInput.fill('>KiCad: Open as PCB Viewer');
+  await expect(quickInput).toContainText('KiCad: Open as PCB Viewer', {
     timeout: 5000
   });
   await page.keyboard.press('Enter');
