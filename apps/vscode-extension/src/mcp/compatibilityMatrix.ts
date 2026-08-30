@@ -26,7 +26,7 @@ export const COMPATIBILITY_MATRIX = {
     },
     boardReadyOps: {
       required: '>=1.2.0 <2.0.0',
-      testedAgainst: '1.36.0',
+      testedAgainst: '1.37.0',
       findingsSchema: 1,
       evidenceBundleSchema: 2
     }
