@@ -83,6 +83,22 @@ function extractMarketplaceReadmeVersion(content) {
   return match ? match[1] : undefined;
 }
 
+function extractMarketplaceReadmeMcpTestedAgainst(content) {
+  const match = content.match(/was tested against `([^`]+)`/u);
+  return match ? match[1] : undefined;
+}
+
+export function readMcpServerTestedAgainst(root = repoRoot) {
+  const version = parseYaml(readText("compatibility.yaml", root))?.supportAxes
+    ?.mcpServer?.testedAgainst?.version;
+  if (typeof version !== "string" || version.length === 0) {
+    throw new Error(
+      "compatibility.yaml supportAxes.mcpServer.testedAgainst.version is missing",
+    );
+  }
+  return version;
+}
+
 function extractChangelogTopVersion(content) {
   const match = content.match(/^##\s*\[([^\]]+)\]/mu);
   return match ? match[1] : undefined;
@@ -195,6 +211,29 @@ export function collectDrift(root = repoRoot, version = undefined) {
     });
   }
 
+  try {
+    const expectedMcp = readMcpServerTestedAgainst(root);
+    const actualMcp = extractMarketplaceReadmeMcpTestedAgainst(
+      readText("apps/vscode-extension/README.md", root),
+    );
+    if (actualMcp !== expectedMcp) {
+      drift.push({
+        file: "apps/vscode-extension/README.md",
+        label: "Marketplace README MCP tested-against version",
+        expected: expectedMcp,
+        actual:
+          actualMcp ?? "<unreadable: MCP tested-against version not found>",
+      });
+    }
+  } catch (error) {
+    drift.push({
+      file: "apps/vscode-extension/README.md",
+      label: "Marketplace README MCP tested-against version",
+      expected: "<from compatibility.yaml>",
+      actual: `<unreadable: ${error.message}>`,
+    });
+  }
+
   return drift;
 }
 
@@ -269,6 +308,16 @@ export function applyCompatibilityMatrixTestedAgainst(content, version) {
   );
 }
 
+export function applyMarketplaceReadmeMcpTestedAgainst(content, testedAgainst) {
+  return replaceAnchored(
+    content,
+    /(was tested against `)([^`]+)(`)/u,
+    testedAgainst,
+    "apps/vscode-extension/README.md",
+    "marketplace README MCP tested-against version",
+  );
+}
+
 export function applyMarketplaceReadmeVersion(content, version) {
   let next = replaceAnchored(
     content,
@@ -331,11 +380,12 @@ export function writeMarketplaceReadmeVersion(
   const expected = version ?? readAuthoritativeVersion(root);
   const filePath = path.join(root, "apps/vscode-extension/README.md");
   const current = fs.readFileSync(filePath, "utf8");
-  return writeFileIfChanged(
-    filePath,
-    current,
-    applyMarketplaceReadmeVersion(current, expected),
+  let next = applyMarketplaceReadmeVersion(current, expected);
+  next = applyMarketplaceReadmeMcpTestedAgainst(
+    next,
+    readMcpServerTestedAgainst(root),
   );
+  return writeFileIfChanged(filePath, current, next);
 }
 
 // Rewrites every version surface this module owns directly (root README,

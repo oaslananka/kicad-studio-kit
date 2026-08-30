@@ -95,7 +95,7 @@ Open **KiCad Studio: Open Task Hub** from the Command Palette or use the task bu
 
 ## MCP Compatibility
 
-KiCad Studio 1.10.1 supports `kicad-mcp-pro >=3.5.2 <4.0.0` and was tested against `3.9.2`. If a connected server reports a version outside the required range, MCP-dependent commands are disabled while KiCad-only features continue to work.
+KiCad Studio 1.10.1 supports `kicad-mcp-pro >=3.5.2 <4.0.0` and was tested against `3.33.3`. If a connected server reports a version outside the required range, MCP-dependent commands are disabled while KiCad-only features continue to work.
 
 ## Marketplace Listing Copy
 
