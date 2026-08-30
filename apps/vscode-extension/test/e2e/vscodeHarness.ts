@@ -25,7 +25,7 @@ export interface VsCodeSession {
 export interface VsCodeLaunchOptions {
   settings?: Record<string, unknown>;
   workspaceSourcePath?: string;
-  disableGpu?: boolean;
+  disableWebgl?: boolean;
 }
 
 export async function launchVsCodeWithFixtures(
@@ -61,9 +61,7 @@ export async function launchVsCodeWithFixtures(
       `--extensionDevelopmentPath=${rootDir}`,
       '--no-sandbox',
       '--disable-gpu-sandbox',
-      ...(options.disableGpu
-        ? ['--disable-gpu', '--disable-software-rasterizer']
-        : []),
+      ...(options.disableWebgl ? ['--disable-webgl'] : []),
       '--disable-workspace-trust',
       '--skip-welcome',
       workspacePath

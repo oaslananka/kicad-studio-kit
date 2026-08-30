@@ -134,6 +134,10 @@ export async function applyThemeTokens(
         root.style.setProperty(name, value);
       }
       root.style.setProperty('--vscode-font-family', 'Arial, sans-serif');
+      root.style.setProperty(
+        '--vscode-editor-font-family',
+        'Arial, sans-serif'
+      );
       document.body.dataset.visualTheme = tokens['--visual-theme-name'];
     },
     { ...theme.tokens, '--visual-theme-name': theme.id }

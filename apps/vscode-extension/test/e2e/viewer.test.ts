@@ -40,7 +40,7 @@ test.describe('KiCad Studio VS Code E2E', () => {
   });
 
   test('recovers the PCB viewer when WebGL is unavailable in the extension host', async () => {
-    const session = await launchVsCodeWithFixtures({ disableGpu: true });
+    const session = await launchVsCodeWithFixtures({ disableWebgl: true });
 
     try {
       await openWorkspaceFile(session.page, 'sample.kicad_pcb');
