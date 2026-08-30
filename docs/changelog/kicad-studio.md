@@ -12,6 +12,14 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.10.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.1...vscode-extension-v1.10.2) (2026-08-30)
+
+
+### Bug Fixes
+
+* **kicad-studio:** make MCP installer Python-aware ([#630](https://github.com/oaslananka/kicad-studio-kit/issues/630)) ([4c373f6](https://github.com/oaslananka/kicad-studio-kit/commit/4c373f6496ae5d7dc01dc3f506e48413e8c4490c))
+* **kicad-studio:** sync Marketplace MCP compatibility ([#638](https://github.com/oaslananka/kicad-studio-kit/issues/638)) ([0917e9f](https://github.com/oaslananka/kicad-studio-kit/commit/0917e9fd7be4f37368227fa8b1962cb8113a423f))
+
 ## [1.10.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.0...vscode-extension-v1.10.1) (2026-08-02)
 
 
