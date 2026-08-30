@@ -107,7 +107,7 @@ test("#431 compatibility.yaml writer bumps only the kicad-studio version", () =>
   assert.equal(compatibilityProductVersion(next), "9.9.9");
   // The kicad-mcp-pro testedAgainst field shares the block but must be left alone.
   assert.ok(
-    next.includes('testedAgainst: "3.9.2"'),
+    next.includes('testedAgainst: "3.33.3"'),
     "compatibility writer must not touch the kicad-mcp-pro testedAgainst version",
   );
 });
@@ -127,7 +127,7 @@ test("#431 compatibilityMatrix.ts writer bumps both extension version fields onl
   assert.equal(matrixStudioVersion(next), "9.9.9");
   assert.equal(matrixTestedAgainst(next), "9.9.9");
   // kicadMcpPro.version must remain the MCP server version, not the extension's.
-  assert.match(next, /kicadMcpPro: \{\s*\n\s*version: '3\.9\.2'/u);
+  assert.match(next, /kicadMcpPro: \{\s*\n\s*version: '3\.33\.3'/u);
 });
 
 test("#431 version writers are idempotent at the authoritative version", () => {
