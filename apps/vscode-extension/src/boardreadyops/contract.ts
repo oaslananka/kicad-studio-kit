@@ -163,6 +163,38 @@ function isNonNegativeInteger(value: unknown): value is number {
   return Number.isInteger(value) && Number(value) >= 0;
 }
 
+function isPositiveInteger(value: unknown): value is number {
+  return Number.isInteger(value) && Number(value) >= 1;
+}
+
+function isLocation(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+
+  if (value['region'] !== undefined) {
+    const region = value['region'];
+    if (!isRecord(region)) return false;
+    if (
+      !isPositiveInteger(region['startLine']) ||
+      !isPositiveInteger(region['endLine']) ||
+      (region['startColumn'] !== undefined &&
+        !isPositiveInteger(region['startColumn'])) ||
+      (region['endColumn'] !== undefined &&
+        !isPositiveInteger(region['endColumn']))
+    ) {
+      return false;
+    }
+  }
+
+  if (value['line'] !== undefined && !isPositiveInteger(value['line'])) {
+    return false;
+  }
+  if (value['column'] !== undefined && !isPositiveInteger(value['column'])) {
+    return false;
+  }
+
+  return value['region'] !== undefined || value['line'] !== undefined;
+}
+
 function isFinding(value: unknown): value is BoardReadyOpsFinding {
   if (!isRecord(value) || !isRecord(value['resource'])) {
     return false;
@@ -178,7 +210,8 @@ function isFinding(value: unknown): value is BoardReadyOpsFinding {
     typeof value['resource']['path'] === 'string' &&
     value['resource']['path'].length > 0 &&
     typeof value['resource']['kind'] === 'string' &&
-    value['resource']['kind'].length > 0
+    value['resource']['kind'].length > 0 &&
+    (value['location'] === undefined || isLocation(value['location']))
   );
 }
 

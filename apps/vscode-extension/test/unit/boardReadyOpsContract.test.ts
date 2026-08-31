@@ -152,6 +152,24 @@ describe('BoardReadyOps readiness result contract', () => {
     );
   });
 
+  it('fails closed when a finding contains malformed location data', () => {
+    const malformed = {
+      ...supportedResult,
+      findings: [
+        {
+          ...supportedResult.findings[0],
+          location: { region: { startLine: 1, endLine: '2' } }
+        }
+      ]
+    };
+
+    expect(() =>
+      parseBoardReadyOpsRunResult(JSON.stringify(malformed))
+    ).toThrow(
+      'BoardReadyOps returned an unsupported or incomplete readiness result.'
+    );
+  });
+
   it('fails closed when findings payload uses an unsupported schema', () => {
     expect(() =>
       parseBoardReadyOpsRunResult(
