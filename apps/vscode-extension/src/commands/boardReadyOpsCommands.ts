@@ -4,6 +4,7 @@ import * as path from 'node:path';
 import { COMMANDS, SETTINGS } from '../constants';
 import { localize } from '../i18n';
 import type { CommandServices } from './types';
+import { discoverBoardReadyOpsContract } from '../boardreadyops/contract';
 
 /** URL for BoardReadyOps documentation. */
 export const BOARDREADYOPS_DOCS_URL =
@@ -45,20 +46,15 @@ interface BoardReadyOpsRunResult {
 let latestReport: BoardReadyOpsRunResult | undefined = undefined;
 const previousDiagnosticUris = new Set<string>();
 
-function runBoardReadyOps(
+function runBoardReadyOpsCommand(
   projectPath: string,
-  specFile: string | undefined,
+  args: string[],
   token: vscode.CancellationToken
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   return new Promise((resolve, reject) => {
     const cmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-    const args = ['boardreadyops', 'run', '--format', 'json'];
-    if (specFile) {
-      args.push('--config', specFile);
-    }
-    args.push(projectPath);
 
-    const child = spawn(cmd, args, {
+    const child = spawn(cmd, ['boardreadyops', ...args], {
       cwd: projectPath,
       env: { ...process.env },
       shell: false
@@ -89,6 +85,42 @@ function runBoardReadyOps(
       resolve({ stdout, stderr, exitCode: code ?? 0 });
     });
   });
+}
+
+function runBoardReadyOps(
+  projectPath: string,
+  specFile: string | undefined,
+  token: vscode.CancellationToken
+): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+  const args = ['run', '--format', 'json'];
+  if (specFile) {
+    args.push('--config', specFile);
+  }
+  args.push(projectPath);
+  return runBoardReadyOpsCommand(projectPath, args, token);
+}
+
+async function assertCompatibleBoardReadyOps(
+  projectPath: string,
+  token: vscode.CancellationToken
+): Promise<void> {
+  const { stdout, exitCode } = await runBoardReadyOpsCommand(
+    projectPath,
+    ['doctor', '--format', 'json'],
+    token
+  );
+  if (token.isCancellationRequested) {
+    return;
+  }
+  if (exitCode !== 0) {
+    throw new Error(`BoardReadyOps doctor exited with code ${exitCode}.`);
+  }
+  const contract = discoverBoardReadyOpsContract(stdout);
+  if (!contract.compatible) {
+    throw new Error(
+      `BoardReadyOps is not contract-compatible: ${contract.reason} (version ${contract.version}, doctor schema ${contract.schemaVersion ?? 'missing'}).`
+    );
+  }
 }
 
 /**
@@ -136,7 +168,12 @@ export function registerBoardReadyOpsCommands(
         },
         async (progress, token) => {
           try {
-            const { stdout, stderr } = await runBoardReadyOps(
+            await assertCompatibleBoardReadyOps(projectPath, token);
+            if (token.isCancellationRequested) {
+              return;
+            }
+
+            const { stdout } = await runBoardReadyOps(
               projectPath,
               specFile || undefined,
               token
@@ -150,10 +187,9 @@ export function registerBoardReadyOpsCommands(
             try {
               result = JSON.parse(stdout.trim());
             } catch (err) {
-              throw new Error(
-                `BoardReadyOps returned invalid output: ${stdout || '(no output)'}. Stderr: ${stderr}`,
-                { cause: err }
-              );
+              throw new Error('BoardReadyOps returned invalid JSON output.', {
+                cause: err
+              });
             }
 
             latestReport = result;

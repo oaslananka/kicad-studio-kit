@@ -1,6 +1,28 @@
+jest.mock('node:child_process', () => ({
+  spawn: jest.fn()
+}));
+
+import { EventEmitter } from 'node:events';
+import * as childProcess from 'node:child_process';
 import { COMMANDS } from '../../src/constants';
 import { registerBoardReadyOpsCommands } from '../../src/commands/boardReadyOpsCommands';
 import { commands, window, env, __setConfiguration } from './vscodeMock';
+
+function boardReadyOpsChild(stdout: string, exitCode = 0) {
+  const child = new EventEmitter() as EventEmitter & {
+    stdout: EventEmitter;
+    stderr: EventEmitter;
+    kill: jest.Mock;
+  };
+  child.stdout = new EventEmitter();
+  child.stderr = new EventEmitter();
+  child.kill = jest.fn();
+  queueMicrotask(() => {
+    child.stdout.emit('data', Buffer.from(stdout));
+    child.emit('close', exitCode);
+  });
+  return child;
+}
 
 describe('BoardReadyOps commands', () => {
   let servicesMock: any;
@@ -10,6 +32,16 @@ describe('BoardReadyOps commands', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (window.withProgress as jest.Mock).mockImplementation(
+      async (_options, task) =>
+        task(
+          { report: jest.fn() },
+          {
+            isCancellationRequested: false,
+            onCancellationRequested: jest.fn(() => ({ dispose: jest.fn() }))
+          }
+        )
+    );
     mockProjectState = {
       getActiveProject: jest.fn()
     };
@@ -91,6 +123,147 @@ describe('BoardReadyOps commands', () => {
     expect(window.showInformationMessage).toHaveBeenCalledWith(
       expect.stringContaining('No BoardReadyOps report')
     );
+  });
+
+  it('discovers the BoardReadyOps doctor contract before running readiness', async () => {
+    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
+    mockProjectState.getActiveProject.mockReturnValue({ rootPath: '/project' });
+    const spawnMock = childProcess.spawn as unknown as jest.Mock;
+    spawnMock
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(
+          JSON.stringify({
+            schemaVersion: 1,
+            tool: { name: 'boardreadyops', version: '1.37.0' },
+            checks: []
+          })
+        )
+      )
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(
+          JSON.stringify({
+            status: 'passed',
+            summary: {
+              total: 0,
+              critical: 0,
+              high: 0,
+              medium: 0,
+              low: 0,
+              info: 0
+            },
+            findings: []
+          })
+        )
+      );
+
+    registerBoardReadyOpsCommands(servicesMock);
+    const registration = (commands.registerCommand as jest.Mock).mock.calls.find(
+      ([command]: [string]) => command === COMMANDS.boardReadyOpsCheck
+    );
+    await (registration?.[1] as () => Promise<void>)();
+
+    expect(spawnMock).toHaveBeenCalledTimes(2);
+    expect(spawnMock.mock.calls[0]?.[1]).toEqual([
+      'boardreadyops',
+      'doctor',
+      '--format',
+      'json'
+    ]);
+    expect(spawnMock.mock.calls[1]?.[1]).toEqual([
+      'boardreadyops',
+      'run',
+      '--format',
+      'json',
+      '/project'
+    ]);
+  });
+
+  it('does not expose raw BoardReadyOps output when readiness JSON is malformed', async () => {
+    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
+    mockProjectState.getActiveProject.mockReturnValue({ rootPath: '/project' });
+    const spawnMock = childProcess.spawn as unknown as jest.Mock;
+    spawnMock
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(
+          JSON.stringify({
+            schemaVersion: 1,
+            tool: { name: 'boardreadyops', version: '1.37.0' },
+            checks: []
+          })
+        )
+      )
+      .mockImplementationOnce(() => boardReadyOpsChild('PRIVATE_EVIDENCE_SENTINEL'));
+
+    registerBoardReadyOpsCommands(servicesMock);
+    const registration = (commands.registerCommand as jest.Mock).mock.calls.find(
+      ([command]: [string]) => command === COMMANDS.boardReadyOpsCheck
+    );
+    await (registration?.[1] as () => Promise<void>)();
+
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining('invalid JSON output')
+    );
+    expect(window.showErrorMessage).not.toHaveBeenCalledWith(
+      expect.stringContaining('PRIVATE_EVIDENCE_SENTINEL')
+    );
+    expect(mockLogger.error).toHaveBeenCalled();
+    expect(JSON.stringify(mockLogger.error.mock.calls)).not.toContain(
+      'PRIVATE_EVIDENCE_SENTINEL'
+    );
+  });
+
+  it('fails closed when BoardReadyOps doctor exits non-zero', async () => {
+    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
+    mockProjectState.getActiveProject.mockReturnValue({ rootPath: '/project' });
+    const spawnMock = childProcess.spawn as unknown as jest.Mock;
+    spawnMock.mockImplementationOnce(() =>
+      boardReadyOpsChild(
+        JSON.stringify({
+          schemaVersion: 1,
+          tool: { name: 'boardreadyops', version: '1.37.0' },
+          checks: []
+        }),
+        2
+      )
+    );
+
+    registerBoardReadyOpsCommands(servicesMock);
+    const registration = (commands.registerCommand as jest.Mock).mock.calls.find(
+      ([command]: [string]) => command === COMMANDS.boardReadyOpsCheck
+    );
+    await (registration?.[1] as () => Promise<void>)();
+
+    expect(spawnMock).toHaveBeenCalledTimes(1);
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining('doctor exited with code 2')
+    );
+  });
+
+  it('fails closed before readiness when the doctor contract is incompatible', async () => {
+    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
+    mockProjectState.getActiveProject.mockReturnValue({ rootPath: '/project' });
+    const spawnMock = childProcess.spawn as unknown as jest.Mock;
+    spawnMock.mockImplementationOnce(() =>
+      boardReadyOpsChild(
+        JSON.stringify({
+          schemaVersion: 2,
+          tool: { name: 'boardreadyops', version: '1.37.0' },
+          checks: []
+        })
+      )
+    );
+
+    registerBoardReadyOpsCommands(servicesMock);
+    const registration = (commands.registerCommand as jest.Mock).mock.calls.find(
+      ([command]: [string]) => command === COMMANDS.boardReadyOpsCheck
+    );
+    await (registration?.[1] as () => Promise<void>)();
+
+    expect(spawnMock).toHaveBeenCalledTimes(1);
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining('not contract-compatible')
+    );
+    expect(mockLogger.error).toHaveBeenCalled();
   });
 
   it('opens BoardReadyOps docs via env.openExternal', async () => {
