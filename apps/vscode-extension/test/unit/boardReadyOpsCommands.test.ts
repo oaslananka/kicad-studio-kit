@@ -100,6 +100,42 @@ describe('BoardReadyOps commands', () => {
     return spawnMock;
   }
 
+  function mockReadinessAndEvidence(
+    evidence: unknown,
+    evidenceExitCode = 0
+  ): jest.Mock {
+    const readiness = {
+      schemaVersion: 1,
+      tool: { name: 'boardreadyops', version: '1.37.0' },
+      status: 'passed',
+      exitCode: 0,
+      summary: {
+        total: 0,
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0,
+        info: 0
+      },
+      findings: []
+    };
+    const spawnMock = childProcess.spawn as unknown as jest.Mock;
+    spawnMock
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()))
+      )
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(readiness))
+      )
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()))
+      )
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(evidence), evidenceExitCode)
+      );
+    return spawnMock;
+  }
+
   async function runCommand(command: string): Promise<void> {
     registerBoardReadyOpsCommands(servicesMock);
     await registeredHandler(command)();
@@ -173,36 +209,13 @@ describe('BoardReadyOps commands', () => {
 
   it('verifies local release evidence from the report without exposing manifest paths', async () => {
     enableBoardReadyOpsProject();
-    const spawnMock = childProcess.spawn as unknown as jest.Mock;
-    const readiness = {
-      schemaVersion: 1,
-      tool: { name: 'boardreadyops', version: '1.37.0' },
-      status: 'passed',
-      exitCode: 0,
-      summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 },
-      findings: []
-    };
-    spawnMock
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()))
-      )
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(JSON.stringify(readiness))
-      )
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()))
-      )
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(
-          JSON.stringify({
-            ok: true,
-            manifestPath: '/private/evidence/manifest.json',
-            checked: 4,
-            errors: [],
-            signature: { present: true, ok: true, errors: [] }
-          })
-        )
-      );
+    const spawnMock = mockReadinessAndEvidence({
+      ok: true,
+      manifestPath: '/private/evidence/manifest.json',
+      checked: 4,
+      errors: [],
+      signature: { present: true, ok: true, errors: [] }
+    });
 
     await runCommand(COMMANDS.boardReadyOpsCheck);
     (window.showInformationMessage as jest.Mock).mockResolvedValueOnce(
@@ -228,37 +241,16 @@ describe('BoardReadyOps commands', () => {
 
   it('summarizes failed evidence verification without exposing CLI error details', async () => {
     enableBoardReadyOpsProject();
-    const spawnMock = childProcess.spawn as unknown as jest.Mock;
-    const readiness = {
-      schemaVersion: 1,
-      tool: { name: 'boardreadyops', version: '1.37.0' },
-      status: 'passed',
-      exitCode: 0,
-      summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 },
-      findings: []
-    };
-    spawnMock
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()))
-      )
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(JSON.stringify(readiness))
-      )
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()))
-      )
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(
-          JSON.stringify({
-            ok: false,
-            manifestPath: '/private/evidence/manifest.json',
-            checked: 2,
-            errors: ['PRIVATE_EVIDENCE_SENTINEL: checksum mismatch'],
-            signature: { present: false, ok: true, errors: [] }
-          }),
-          1
-        )
-      );
+    mockReadinessAndEvidence(
+      {
+        ok: false,
+        manifestPath: '/private/evidence/manifest.json',
+        checked: 2,
+        errors: ['PRIVATE_EVIDENCE_SENTINEL: checksum mismatch'],
+        signature: { present: false, ok: true, errors: [] }
+      },
+      1
+    );
 
     await runCommand(COMMANDS.boardReadyOpsCheck);
     (window.showInformationMessage as jest.Mock).mockResolvedValueOnce(
