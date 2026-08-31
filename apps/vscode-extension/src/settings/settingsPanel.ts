@@ -227,13 +227,14 @@ export class KiCadSettingsPanel implements vscode.Disposable {
     const viewers =
       this.services.viewerState.getDiagnosticBundleSnapshot().viewers;
     const failedViewer = viewers.find((viewer) => viewer.status === 'error');
-    const viewerStatus = failedViewer
-      ? 'error'
-      : viewers.some((viewer) => viewer.status === 'loading')
-        ? 'loading'
-        : viewers.some((viewer) => viewer.status === 'ready')
-          ? 'ready'
-          : 'idle';
+    let viewerStatus: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
+    if (failedViewer) {
+      viewerStatus = 'error';
+    } else if (viewers.some((viewer) => viewer.status === 'loading')) {
+      viewerStatus = 'loading';
+    } else if (viewers.some((viewer) => viewer.status === 'ready')) {
+      viewerStatus = 'ready';
+    }
     const viewerEngines = [
       ...new Set(
         viewers.flatMap((viewer) =>

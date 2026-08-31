@@ -165,6 +165,63 @@ describe('settings webview', () => {
     );
   });
 
+  it('derives viewer health states and redacts BoardReadyOps diagnostics', () => {
+    const context = createExtensionContextMock();
+    const panelMock = createPanelMock();
+    const services = createServices();
+    (vscode.window.createWebviewPanel as jest.Mock).mockReturnValue(panelMock.panel);
+
+    services.mcpToolsProvider.broStatus.message = 'token=super-secret';
+    services.viewerState.getDiagnosticBundleSnapshot.mockReturnValue({
+      viewers: [
+        { uri: 'file:///workspace/loading.kicad_pcb', status: 'loading' },
+        { uri: 'file:///workspace/idle.kicad_sch', status: 'idle' }
+      ]
+    } as never);
+    const instance = KiCadSettingsPanel.createOrShow(
+      context as never,
+      services as never
+    );
+    const loadingState = (instance as any).collectState();
+    expect(loadingState.viewer).toEqual({
+      status: 'loading',
+      error: undefined,
+      engines: [],
+      openCount: 2
+    });
+    expect(loadingState.boardReadyOps.message).not.toContain('super-secret');
+
+    services.viewerState.getDiagnosticBundleSnapshot.mockReturnValue({
+      viewers: [
+        {
+          uri: 'file:///workspace/error.kicad_pcb',
+          status: 'error',
+          error: 'viewer failed'
+        },
+        { uri: 'file:///workspace/ready.kicad_pcb', status: 'ready' }
+      ]
+    } as never);
+    expect((instance as any).collectState().viewer).toEqual({
+      status: 'error',
+      error: 'viewer failed',
+      engines: [],
+      openCount: 2
+    });
+
+    services.mcpToolsProvider.broStatus.message = undefined as never;
+    services.viewerState.getDiagnosticBundleSnapshot.mockReturnValue({
+      viewers: []
+    } as never);
+    const idleState = (instance as any).collectState();
+    expect(idleState.viewer).toEqual({
+      status: 'idle',
+      error: undefined,
+      engines: [],
+      openCount: 0
+    });
+    expect(idleState.boardReadyOps.message).toBeUndefined();
+  });
+
   it('handles native-settings navigation, API key actions, CLI detection, and allowed external links', async () => {
     const context = createExtensionContextMock();
     const panelMock = createPanelMock();
