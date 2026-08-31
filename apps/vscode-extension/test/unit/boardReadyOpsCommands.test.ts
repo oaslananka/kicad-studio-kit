@@ -174,7 +174,10 @@ describe('BoardReadyOps commands', () => {
   it('discovers the BoardReadyOps doctor contract before running readiness', async () => {
     enableBoardReadyOpsProject();
     const spawnMock = mockCompatibleBoardReadyOpsResponse({
+      schemaVersion: 1,
+      tool: { name: 'boardreadyops', version: '1.37.0' },
       status: 'passed',
+      exitCode: 0,
       summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 },
       findings: []
     });
@@ -193,6 +196,33 @@ describe('BoardReadyOps commands', () => {
       'json',
       '/project'
     ]);
+  });
+
+  it('fails closed when readiness JSON is structurally incomplete', async () => {
+    enableBoardReadyOpsProject();
+    mockCompatibleBoardReadyOpsResponse(
+      {
+        schemaVersion: 1,
+        tool: { name: 'boardreadyops', version: '1.37.0' },
+        status: 'failed',
+        summary: {
+          total: 1,
+          critical: 0,
+          high: 1,
+          medium: 0,
+          low: 0,
+          info: 0
+        }
+      },
+      1
+    );
+
+    await runCommand(COMMANDS.boardReadyOpsCheck);
+
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining('unsupported or incomplete readiness result')
+    );
+    expect(mockDiagnosticsCollection.setForSource).not.toHaveBeenCalled();
   });
 
   it('does not run the BoardReadyOps plan while integration is disabled', async () => {

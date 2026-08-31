@@ -1,4 +1,7 @@
-import { discoverBoardReadyOpsContract } from '../../src/boardreadyops/contract';
+import {
+  discoverBoardReadyOpsContract,
+  parseBoardReadyOpsRunResult
+} from '../../src/boardreadyops/contract';
 
 describe('BoardReadyOps contract discovery', () => {
   it('accepts the supported versioned doctor contract', () => {
@@ -101,5 +104,61 @@ describe('BoardReadyOps contract discovery', () => {
       schemaVersion: 1,
       version: '2.0.0'
     });
+  });
+});
+
+describe('BoardReadyOps readiness result contract', () => {
+  const supportedResult = {
+    schemaVersion: 1,
+    tool: { name: 'boardreadyops', version: '1.37.0' },
+    status: 'failed' as const,
+    exitCode: 2,
+    summary: {
+      total: 1,
+      critical: 0,
+      high: 1,
+      medium: 0,
+      low: 0,
+      info: 0
+    },
+    findings: [
+      {
+        ruleId: 'fab.test',
+        severity: 'high' as const,
+        message: 'Blocking fabrication issue',
+        resource: { path: 'board.kicad_pcb', kind: 'pcb' }
+      }
+    ]
+  };
+
+  it('accepts the supported findings schema', () => {
+    expect(
+      parseBoardReadyOpsRunResult(JSON.stringify(supportedResult))
+    ).toEqual(supportedResult);
+  });
+
+  it('fails closed when findings payload is partial', () => {
+    expect(() =>
+      parseBoardReadyOpsRunResult(
+        JSON.stringify({
+          schemaVersion: 1,
+          tool: { name: 'boardreadyops', version: '1.37.0' },
+          status: 'failed',
+          summary: supportedResult.summary
+        })
+      )
+    ).toThrow(
+      'BoardReadyOps returned an unsupported or incomplete readiness result.'
+    );
+  });
+
+  it('fails closed when findings payload uses an unsupported schema', () => {
+    expect(() =>
+      parseBoardReadyOpsRunResult(
+        JSON.stringify({ ...supportedResult, schemaVersion: 2 })
+      )
+    ).toThrow(
+      'BoardReadyOps returned an unsupported or incomplete readiness result.'
+    );
   });
 });

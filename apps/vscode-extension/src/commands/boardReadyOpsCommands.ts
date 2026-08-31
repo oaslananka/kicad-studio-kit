@@ -4,45 +4,17 @@ import * as path from 'node:path';
 import { COMMANDS, SETTINGS } from '../constants';
 import { localize } from '../i18n';
 import type { CommandServices } from './types';
-import { discoverBoardReadyOpsContract } from '../boardreadyops/contract';
+import {
+  discoverBoardReadyOpsContract,
+  parseBoardReadyOpsRunResult,
+  type BoardReadyOpsFinding,
+  type BoardReadyOpsRunResult
+} from '../boardreadyops/contract';
 import { parseBoardReadyOpsPlan } from '../boardreadyops/plan';
 
 /** URL for BoardReadyOps documentation. */
 export const BOARDREADYOPS_DOCS_URL =
   'https://github.com/oaslananka/kicad-studio-kit/blob/main/docs/board-ready-ops.md';
-
-interface BoardReadyOpsFinding {
-  ruleId: string;
-  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
-  message: string;
-  resource: {
-    path: string;
-    kind: string;
-  };
-  location?: {
-    line?: number;
-    column?: number;
-    region?: {
-      startLine: number;
-      endLine: number;
-      startColumn?: number;
-      endColumn?: number;
-    };
-  };
-}
-
-interface BoardReadyOpsRunResult {
-  status?: 'passed' | 'failed';
-  summary: {
-    total: number;
-    critical: number;
-    high: number;
-    medium: number;
-    low: number;
-    info: number;
-  };
-  findings: BoardReadyOpsFinding[];
-}
 
 let latestReport: BoardReadyOpsRunResult | undefined = undefined;
 const previousDiagnosticUris = new Set<string>();
@@ -184,14 +156,7 @@ export function registerBoardReadyOpsCommands(
               return;
             }
 
-            let result: BoardReadyOpsRunResult;
-            try {
-              result = JSON.parse(stdout.trim());
-            } catch (err) {
-              throw new Error('BoardReadyOps returned invalid JSON output.', {
-                cause: err
-              });
-            }
+            const result = parseBoardReadyOpsRunResult(stdout);
 
             latestReport = result;
 
