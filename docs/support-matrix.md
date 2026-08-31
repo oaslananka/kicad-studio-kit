@@ -60,7 +60,7 @@ artifacts.
 | Studio CLI / KiCad | stable `10.0.x`; deprecated `9.x`, `8.x`; preview `11.0.x`; no dropped lines | CLI support is capability-probed. If unsupported, install/configure a supported `kicad-cli`. MCP is evaluated separately. |
 | MCP server product | required/recommended `>=3.5.2 <4.0.0`; tested against published `kicad-mcp-pro` `3.33.3` | PyPI is the published-artifact source. Install a server inside the supported range and re-run diagnostics. |
 | MCP protocol | active `2025-11-25`; next `2026-07-28`; activation `blocked` | Protocol activation is independent from server semver and remains gated by ADR 0008 evidence. |
-| BoardReadyOps | required `>=1.2.0 <2.0.0`; tested against npm `1.35.0`; findings schema `1`; evidence bundle schema `2` | npm is the published-artifact source. Upgrade the CLI when the detected version is outside the supported range. |
+| BoardReadyOps | required `>=1.2.0 <2.0.0`; tested against npm `1.37.0`; findings schema `1`; evidence bundle schema `2` | npm is the published-artifact source. Upgrade the CLI when the detected version is outside the supported range. |
 
 This split is deliberate: Studio can continue to offer CLI/viewer workflows for a
 KiCad line even when the installed MCP server is unsupported, and an MCP server
