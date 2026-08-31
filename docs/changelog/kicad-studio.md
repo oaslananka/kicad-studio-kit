@@ -12,6 +12,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.15.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.14.0...vscode-extension-v1.15.0) (2026-08-31)
+
+
+### Features
+
+* **kicad-studio:** gate manufacturing release on BoardReadyOps ([#682](https://github.com/oaslananka/kicad-studio-kit/issues/682)) ([b1b086d](https://github.com/oaslananka/kicad-studio-kit/commit/b1b086d8d77d67318f9cce6ee9598f75b24ea01f))
+
 ## [1.14.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.13.1...vscode-extension-v1.14.0) (2026-08-31)
 
 
