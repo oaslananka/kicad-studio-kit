@@ -119,7 +119,14 @@ export interface BoardReadyOpsFinding {
   message: string;
   resource: {
     path: string;
-    kind: string;
+    kind:
+      | 'project'
+      | 'schematic'
+      | 'pcb'
+      | 'bom'
+      | 'pinmap'
+      | 'firmware'
+      | 'manifest';
   };
   location?: {
     line?: number;
@@ -130,7 +137,14 @@ export interface BoardReadyOpsFinding {
       startColumn?: number;
       endColumn?: number;
     };
+    boardCoordinates?: {
+      x: number;
+      y: number;
+      layer?: string;
+      units: 'mm' | 'in';
+    };
   };
+  fingerprint: string;
 }
 
 export interface BoardReadyOpsRunResult {
@@ -192,8 +206,35 @@ function isLocation(value: unknown): boolean {
     return false;
   }
 
-  return value['region'] !== undefined || value['line'] !== undefined;
+  if (value['boardCoordinates'] !== undefined) {
+    const coordinates = value['boardCoordinates'];
+    if (!isRecord(coordinates)) return false;
+    if (
+      typeof coordinates['x'] !== 'number' ||
+      !Number.isFinite(coordinates['x']) ||
+      typeof coordinates['y'] !== 'number' ||
+      !Number.isFinite(coordinates['y']) ||
+      (coordinates['layer'] !== undefined &&
+        typeof coordinates['layer'] !== 'string') ||
+      (coordinates['units'] !== 'mm' && coordinates['units'] !== 'in')
+    ) {
+      return false;
+    }
+  }
+
+  return true;
 }
+
+const findingResourceKinds = new Set([
+  'project',
+  'schematic',
+  'pcb',
+  'bom',
+  'pinmap',
+  'firmware',
+  'manifest'
+]);
+const findingFingerprintPattern = /^[a-f0-9]{64}$/;
 
 function isFinding(value: unknown): value is BoardReadyOpsFinding {
   if (!isRecord(value) || !isRecord(value['resource'])) {
@@ -206,11 +247,10 @@ function isFinding(value: unknown): value is BoardReadyOpsFinding {
       String(value['severity'])
     ) &&
     typeof value['message'] === 'string' &&
-    value['message'].length > 0 &&
     typeof value['resource']['path'] === 'string' &&
-    value['resource']['path'].length > 0 &&
-    typeof value['resource']['kind'] === 'string' &&
-    value['resource']['kind'].length > 0 &&
+    findingResourceKinds.has(String(value['resource']['kind'])) &&
+    typeof value['fingerprint'] === 'string' &&
+    findingFingerprintPattern.test(value['fingerprint']) &&
     (value['location'] === undefined || isLocation(value['location']))
   );
 }
