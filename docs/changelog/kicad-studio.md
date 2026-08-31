@@ -12,6 +12,14 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.11.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.11.0...vscode-extension-v1.11.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* **kicad-studio:** harden empty-state actions ([b8ad5c7](https://github.com/oaslananka/kicad-studio-kit/commit/b8ad5c770794218a8b702ec35c91e15f03e8c033))
+* **kicad-studio:** preserve netlist loading state ([62b93b9](https://github.com/oaslananka/kicad-studio-kit/commit/62b93b9519ea3e87e7f48c58edd0814d652c856d))
+
 ## [1.11.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.5...vscode-extension-v1.11.0) (2026-08-31)
 
 
