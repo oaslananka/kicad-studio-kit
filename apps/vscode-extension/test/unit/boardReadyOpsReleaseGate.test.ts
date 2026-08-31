@@ -43,6 +43,18 @@ describe('BoardReadyOps manufacturing release gate', () => {
     });
   });
 
+  it('blocks a passing status when a high-severity finding remains', () => {
+    const result = readiness({
+      status: 'passed',
+      findings: [{ ruleId: 'manufacturing.blocker', severity: 'high' }]
+    });
+
+    expect(evaluateBoardReadyOpsReleaseGate(result, evidence())).toEqual({
+      ok: false,
+      reason: 'BoardReadyOps readiness has blocking findings.'
+    });
+  });
+
   it('blocks when release evidence is not verified', () => {
     expect(
       evaluateBoardReadyOpsReleaseGate(readiness(), evidence({ ok: false }))
@@ -99,5 +111,121 @@ describe('BoardReadyOps manufacturing release gate', () => {
       reason: 'BoardReadyOps readiness has blocking findings.'
     });
     expect(runner).toHaveBeenCalledTimes(2);
+  });
+
+  it('verifies compatible readiness and release evidence end to end', async () => {
+    const runner = jest
+      .fn()
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify({
+          schemaVersion: 1,
+          tool: { name: 'boardreadyops', version: '1.37.0' },
+          checks: []
+        }),
+        stderr: '',
+        exitCode: 0
+      })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify(readiness()),
+        stderr: '',
+        exitCode: 0
+      })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify(evidence()),
+        stderr: '',
+        exitCode: 0
+      });
+
+    await expect(
+      verifyBoardReadyOpsManufacturingRelease(
+        '/project',
+        'boardreadyops.yml',
+        runner
+      )
+    ).resolves.toEqual({
+      ok: true,
+      checkedArtifacts: 3,
+      signatureVerified: true
+    });
+    expect(runner).toHaveBeenNthCalledWith(2, '/project', [
+      'run',
+      '--format',
+      'json',
+      '--config',
+      'boardreadyops.yml',
+      '/project'
+    ]);
+    expect(runner).toHaveBeenNthCalledWith(3, '/project', [
+      'release',
+      'verify',
+      '--format',
+      'json',
+      '/project/build/boardreadyops-release'
+    ]);
+  });
+
+  it('fails closed when doctor exits unsuccessfully', async () => {
+    const runner = jest
+      .fn()
+      .mockResolvedValue({ stdout: '', stderr: 'private', exitCode: 2 });
+    await expect(
+      verifyBoardReadyOpsManufacturingRelease('/project', undefined, runner)
+    ).rejects.toThrow('BoardReadyOps doctor exited with code 2.');
+  });
+
+  it('fails closed when the discovered contract is incompatible', async () => {
+    const runner = jest.fn().mockResolvedValue({
+      stdout: JSON.stringify({
+        schemaVersion: 99,
+        tool: { name: 'boardreadyops', version: '1.37.0' },
+        checks: []
+      }),
+      stderr: '',
+      exitCode: 0
+    });
+    await expect(
+      verifyBoardReadyOpsManufacturingRelease('/project', undefined, runner)
+    ).rejects.toThrow('BoardReadyOps is not contract-compatible:');
+  });
+
+  it('fails closed when readiness exits outside the documented verdict codes', async () => {
+    const runner = jest
+      .fn()
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify({
+          schemaVersion: 1,
+          tool: { name: 'boardreadyops', version: '1.37.0' },
+          checks: []
+        }),
+        stderr: '',
+        exitCode: 0
+      })
+      .mockResolvedValueOnce({ stdout: '', stderr: 'private', exitCode: 2 });
+    await expect(
+      verifyBoardReadyOpsManufacturingRelease('/project', undefined, runner)
+    ).rejects.toThrow('BoardReadyOps run exited with code 2.');
+  });
+
+  it('fails closed when release verification exits outside the documented verdict codes', async () => {
+    const runner = jest
+      .fn()
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify({
+          schemaVersion: 1,
+          tool: { name: 'boardreadyops', version: '1.37.0' },
+          checks: []
+        }),
+        stderr: '',
+        exitCode: 0
+      })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify(readiness()),
+        stderr: '',
+        exitCode: 0
+      })
+      .mockResolvedValueOnce({ stdout: '', stderr: 'private', exitCode: 2 });
+    await expect(
+      verifyBoardReadyOpsManufacturingRelease('/project', undefined, runner)
+    ).rejects.toThrow('BoardReadyOps release verify exited with code 2.');
   });
 });

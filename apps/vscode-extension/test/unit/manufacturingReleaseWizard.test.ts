@@ -112,6 +112,31 @@ describe('runManufacturingReleaseWizard', () => {
     ).not.toHaveBeenCalled();
   });
 
+  it('includes verified BoardReadyOps evidence in the dry-run gate summary', async () => {
+    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
+    const services = createServices();
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce({
+      label: 'Preview (dry run)',
+      dryRun: true
+    });
+    (window.showInputBox as jest.Mock).mockResolvedValueOnce(process.cwd());
+
+    await runManufacturingReleaseWizard(services as never);
+
+    expect(verifyBoardReadyOpsManufacturingRelease).toHaveBeenCalledWith(
+      process.cwd(),
+      undefined
+    );
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      'Manufacturing release preview',
+      expect.objectContaining({
+        modal: true,
+        detail: expect.stringContaining('BoardReadyOps=PASS')
+      }),
+      'OK'
+    );
+  });
+
   it('keeps BoardReadyOps optional for manufacturing release', async () => {
     const services = createServices();
     (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
