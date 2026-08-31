@@ -16,6 +16,10 @@
     return ERROR_PREFIXES.some((prefix) => status.startsWith(prefix));
   }
 
+  function isLoadingStatus(status) {
+    return status.startsWith('Loading ');
+  }
+
   emptyAction.addEventListener('click', () => {
     if (canOpenReviewTasks) {
       vscode.postMessage({ type: 'openReviewTasks' });
@@ -42,6 +46,15 @@
       }
 
       errorCard.classList.remove('visible');
+      if (nets.length === 0 && isLoadingStatus(status)) {
+        summaryText.textContent = status;
+        canOpenReviewTasks = false;
+        emptyState.hidden = true;
+        emptyAction.hidden = true;
+        tableWrapper.classList.remove('hidden');
+        rowsEl.replaceChildren();
+        return;
+      }
       if (nets.length === 0) {
         summaryText.textContent = 'Netlist unavailable';
         emptyMessage.textContent =

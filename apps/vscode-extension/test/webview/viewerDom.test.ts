@@ -500,6 +500,32 @@ test.describe('KiCad Studio webview DOM', () => {
     await expect(action).toBeHidden();
   });
 
+  test('keeps netlist loading distinct from a guided empty state', async ({
+    page
+  }) => {
+    await installVsCodeApiMock(page);
+    await setWebviewContent(page, createNetlistHtml());
+
+    await page.evaluate(() => {
+      window.postMessage(
+        {
+          type: 'setNetlist',
+          payload: {
+            nets: [],
+            status: 'Loading netlist from active schematic...'
+          }
+        },
+        '*'
+      );
+    });
+
+    await expect(page.locator('#summary-text')).toHaveText(
+      'Loading netlist from active schematic...'
+    );
+    await expect(page.locator('#netlist-empty')).toBeHidden();
+    await expect(page.locator('#table-wrapper')).not.toHaveClass(/hidden/);
+  });
+
   test('renders a guided empty netlist state instead of an empty table', async ({
     page
   }) => {
