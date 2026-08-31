@@ -9,6 +9,9 @@ const packageJson = JSON.parse(
 const policy = JSON.parse(
   readFileSync(new URL('./command-surface.json', import.meta.url), 'utf8')
 );
+const packageNls = JSON.parse(
+  readFileSync(new URL('../package.nls.json', import.meta.url), 'utf8')
+);
 
 const TASKS = new Set([
   'review',
@@ -94,4 +97,45 @@ test('limits empty-workspace palette entries to the main hub and maintenance', (
     [...unconditional].sort(),
     [...EMPTY_WORKSPACE_COMMANDS].sort()
   );
+});
+
+test('routes disconnected MCP onboarding through the Automate task hub', () => {
+  for (const index of [8, 11, 14]) {
+    const disconnectedWelcome =
+      packageNls[`kicadstudio.contributes.viewsWelcome.${index}.contents`];
+    assert.match(
+      disconnectedWelcome,
+      /command:kicadstudio\.tasks\.automate/,
+      `MCP-dependent welcome ${index} must use the canonical Automate task entry point`
+    );
+    assert.doesNotMatch(
+      disconnectedWelcome,
+      /command:kicadstudio\.(?:setupMcpIntegration|mcp\.(?:install|retry|launchHttp|pickProfile))/,
+      `MCP-dependent welcome ${index} must not compete with Task Hub onboarding`
+    );
+  }
+});
+
+test('keeps advanced sidebar surfaces progressively disclosed', () => {
+  const sidebarViews = new Map(
+    (packageJson.contributes?.views?.['kicadstudio-sidebar'] ?? []).map(
+      (view) => [view.id, view]
+    )
+  );
+  for (const id of [
+    'kicadstudio.bomView',
+    'kicadstudio.netlistView',
+    'kicadstudio.variants',
+    'kicadstudio.library',
+    'kicadstudio.drcRules',
+    'kicadstudio.fixQueue',
+    'kicadstudio.componentSearch',
+    'kicadstudio.mcpTools'
+  ]) {
+    assert.equal(
+      sidebarViews.get(id)?.visibility,
+      'collapsed',
+      `${id} must default to collapsed progressive disclosure`
+    );
+  }
 });

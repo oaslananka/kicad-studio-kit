@@ -6,6 +6,8 @@
   const summaryText = document.getElementById('summary-text');
   const loadingRow = document.getElementById('loading-row');
   const emptyState = document.getElementById('bom-empty');
+  const emptyMessage = document.getElementById('bom-empty-message');
+  const emptyAction = document.getElementById('bom-empty-action');
   const tableWrapper = document.getElementById('table-wrapper');
   const exportCsv = document.getElementById('btn-export-csv');
   const exportXlsx = document.getElementById('btn-export-xlsx');
@@ -25,6 +27,7 @@
   let sortKey = 'references';
   let sortDir = 1;
   let isLoading = false;
+  let canOpenReviewTasks = false;
 
   function syncExportState(loading = isLoading) {
     const disabled = loading || entries.length === 0;
@@ -43,15 +46,19 @@
     }
   }
 
-  function showEmpty(message) {
+  function showEmpty(message, action) {
     rowsEl.replaceChildren();
-    emptyState.textContent = message;
+    emptyMessage.textContent = message;
+    canOpenReviewTasks = action === 'openReviewTasks';
+    emptyAction.hidden = !canOpenReviewTasks;
     emptyState.classList.add('visible');
     tableWrapper.classList.add('hidden');
     syncExportState(false);
   }
 
   function showTable() {
+    canOpenReviewTasks = false;
+    emptyAction.hidden = true;
     emptyState.classList.remove('visible');
     tableWrapper.classList.remove('hidden');
     syncExportState(false);
@@ -189,6 +196,11 @@
     if (exportXlsx.disabled) return;
     vscode.postMessage({ type: 'exportXlsx' });
   });
+  emptyAction.addEventListener('click', () => {
+    if (canOpenReviewTasks) {
+      vscode.postMessage({ type: 'openReviewTasks' });
+    }
+  });
 
   window.addEventListener('message', (event) => {
     const message = event.data;
@@ -202,7 +214,7 @@
         setLoading(false);
         const text = payload.text || 'No schematic opened.';
         summaryText.textContent = text;
-        showEmpty(text);
+        showEmpty(text, payload.action);
       }
     }
     if (message.type === 'setData') {

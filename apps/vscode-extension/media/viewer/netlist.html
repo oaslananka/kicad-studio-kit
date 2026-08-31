@@ -35,6 +35,18 @@
         display: block;
         margin-bottom: 4px;
       }
+      #netlist-empty {
+        margin: 18px 10px;
+        padding: 16px;
+        color: var(--muted);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--panel);
+      }
+      #netlist-empty-action {
+        display: block;
+        margin-top: 10px;
+      }
 
       /* Netlist-specific column widths */
       th:nth-child(1),
@@ -56,6 +68,12 @@
         <strong>Could not load netlist</strong>
         <span id="error-message"></span>
       </div>
+      <output id="netlist-empty" aria-live="polite" hidden>
+        <span id="netlist-empty-message"></span>
+        <button id="netlist-empty-action" type="button" hidden>
+          Open Review Tasks
+        </button>
+      </output>
       <div id="table-wrapper" tabindex="0" aria-label="Netlist table">
         <table>
           <thead>

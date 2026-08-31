@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
+import { COMMANDS } from '../constants';
 import type { NetlistNode } from '../types';
 import { SExpressionParser, type SNode } from '../language/sExpressionParser';
 import { KiCadCliRunner } from '../cli/kicadCliRunner';
@@ -74,6 +75,16 @@ export class NetlistViewProvider
       ]
     };
     webviewView.webview.html = this.getHtml(webviewView.webview);
+    webviewView.webview.onDidReceiveMessage(async (message: unknown) => {
+      if (
+        typeof message === 'object' &&
+        message !== null &&
+        'type' in message &&
+        message.type === 'openReviewTasks'
+      ) {
+        await vscode.commands.executeCommand(COMMANDS.openReviewTasks);
+      }
+    });
     void this.refresh();
   }
 
@@ -89,7 +100,7 @@ export class NetlistViewProvider
         resolution.status ??
         'No schematic file could be resolved. Active file: none. Project file: none. Discovered schematic candidates: none. Suggested command: open a .kicad_sch file or select a KiCad project.';
       this.exportState?.complete('netlist', undefined, status);
-      await this.postNetlist([], status);
+      await this.postNetlist([], status, 'openReviewTasks');
       return;
     }
     if (!force && this._lastFile !== undefined && file === this._lastFile) {
@@ -137,11 +148,12 @@ export class NetlistViewProvider
 
   private async postNetlist(
     nets: NetlistNode[],
-    status: string
+    status: string,
+    action?: 'openReviewTasks'
   ): Promise<void> {
     await this.view?.webview.postMessage({
       type: 'setNetlist',
-      payload: { nets, status }
+      payload: { nets, status, ...(action ? { action } : {}) }
     });
   }
 

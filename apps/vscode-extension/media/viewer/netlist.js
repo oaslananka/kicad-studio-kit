@@ -1,30 +1,76 @@
 (function () {
+  const vscode = acquireVsCodeApi();
   const rowsEl = document.getElementById('netlist-rows');
   const summaryText = document.getElementById('summary-text');
   const errorCard = document.getElementById('error-card');
   const errorMessage = document.getElementById('error-message');
+  const emptyState = document.getElementById('netlist-empty');
+  const emptyMessage = document.getElementById('netlist-empty-message');
+  const emptyAction = document.getElementById('netlist-empty-action');
+  const tableWrapper = document.getElementById('table-wrapper');
 
   const ERROR_PREFIXES = ['Could not', 'kicad-cli is not'];
+  let canOpenReviewTasks = false;
 
   function isErrorStatus(status) {
     return ERROR_PREFIXES.some((prefix) => status.startsWith(prefix));
   }
+
+  function isLoadingStatus(status) {
+    return status.startsWith('Loading ');
+  }
+
+  emptyAction.addEventListener('click', () => {
+    if (canOpenReviewTasks) {
+      vscode.postMessage({ type: 'openReviewTasks' });
+    }
+  });
 
   window.addEventListener('message', (event) => {
     const message = event.data;
     if (message.type === 'setNetlist') {
       const nets = message.payload.nets || [];
       const status = message.payload.status || '';
+      const canOpenReview = message.payload.action === 'openReviewTasks';
 
       if (nets.length === 0 && status && isErrorStatus(status)) {
         summaryText.textContent = '';
         errorMessage.textContent = status;
         errorCard.classList.add('visible');
+        canOpenReviewTasks = false;
+        emptyAction.hidden = true;
+        emptyState.hidden = true;
+        tableWrapper.classList.add('hidden');
         rowsEl.replaceChildren();
         return;
       }
 
       errorCard.classList.remove('visible');
+      if (nets.length === 0 && isLoadingStatus(status)) {
+        summaryText.textContent = status;
+        canOpenReviewTasks = false;
+        emptyState.hidden = true;
+        emptyAction.hidden = true;
+        tableWrapper.classList.remove('hidden');
+        rowsEl.replaceChildren();
+        return;
+      }
+      if (nets.length === 0) {
+        summaryText.textContent = 'Netlist unavailable';
+        emptyMessage.textContent =
+          status || 'Open a schematic before inspecting the netlist.';
+        canOpenReviewTasks = canOpenReview;
+        emptyAction.hidden = !canOpenReviewTasks;
+        emptyState.hidden = false;
+        tableWrapper.classList.add('hidden');
+        rowsEl.replaceChildren();
+        return;
+      }
+
+      canOpenReviewTasks = false;
+      emptyState.hidden = true;
+      emptyAction.hidden = true;
+      tableWrapper.classList.remove('hidden');
       summaryText.textContent = status || `${nets.length} net entries`;
 
       const fragment = document.createDocumentFragment();
