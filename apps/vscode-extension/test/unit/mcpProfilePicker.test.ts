@@ -3,7 +3,11 @@ import {
   pickMcpProfile,
   readConfiguredMcpProfile
 } from '../../src/commands/mcpProfilePicker';
-import { KICAD_MCP_PROFILES } from '../../src/mcp/profileCatalog';
+import {
+  KICAD_MCP_ADVANCED_PROFILES,
+  KICAD_MCP_PRIMARY_PROFILES,
+  KICAD_MCP_PROFILES
+} from '../../src/mcp/profileCatalog';
 import { __setConfiguration, window, workspace } from './vscodeMock';
 
 jest.mock('node:fs', () => ({
@@ -30,14 +34,84 @@ describe('mcpProfilePicker', () => {
     ];
   });
 
-  function services() {
+  function services(advertisedProfiles?: string[]) {
     return {
-      mcpClient: { retryNow: jest.fn().mockResolvedValue(undefined) },
+      mcpClient: {
+        retryNow: jest.fn().mockResolvedValue(undefined),
+        getState: jest.fn().mockReturnValue({
+          server: advertisedProfiles
+            ? { capabilities: { profiles: advertisedProfiles } }
+            : undefined
+        })
+      },
       refreshMcpState: jest.fn().mockResolvedValue(undefined)
     };
   }
 
   describe('pickMcpProfile', () => {
+    it('#622 uses server profile evidence and keeps specialized choices behind Advanced', async () => {
+      const svc = services(['review', 'build', 'expert', 'pcb_only']);
+      (window.showQuickPick as jest.Mock)
+        .mockResolvedValueOnce({ advanced: true })
+        .mockResolvedValueOnce({
+          profile: KICAD_MCP_ADVANCED_PROFILES.find(
+            (profile) => profile.id === 'pcb_only'
+          )
+        });
+      (window.showInformationMessage as jest.Mock).mockResolvedValue(undefined);
+
+      const result = await pickMcpProfile(svc as never);
+
+      expect(result).toBe('pcb_only');
+      const primaryItems = (window.showQuickPick as jest.Mock).mock
+        .calls[0]?.[0] as Array<{
+        profile?: { id: string };
+        advanced?: boolean;
+      }>;
+      expect(
+        primaryItems
+          .filter((item) => item.profile)
+          .map((item) => item.profile?.id)
+      ).toEqual(['review', 'build', 'expert']);
+      expect(primaryItems.some((item) => item.advanced)).toBe(true);
+
+      const advancedItems = (window.showQuickPick as jest.Mock).mock
+        .calls[1]?.[0] as Array<{
+        profile: { id: string };
+      }>;
+      expect(advancedItems.map((item) => item.profile.id)).toEqual([
+        'pcb_only'
+      ]);
+      expect(KICAD_MCP_PRIMARY_PROFILES.map((profile) => profile.id)).toContain(
+        'release'
+      );
+    });
+
+    it('#622 does not widen an explicit empty server profile advertisement', async () => {
+      (window.showQuickPick as jest.Mock).mockResolvedValue(undefined);
+
+      await pickMcpProfile(services([]) as never);
+
+      const primaryItems = (window.showQuickPick as jest.Mock).mock
+        .calls[0]?.[0] as Array<{ profile?: { id: string } }>;
+      expect(primaryItems).toEqual([]);
+    });
+
+    it('#622 falls back to the checked-in catalog when runtime profile evidence is unavailable', async () => {
+      (window.showQuickPick as jest.Mock).mockResolvedValue(undefined);
+
+      await pickMcpProfile(services() as never);
+
+      const primaryItems = (window.showQuickPick as jest.Mock).mock
+        .calls[0]?.[0] as Array<{
+        profile?: { id: string };
+      }>;
+      expect(
+        primaryItems
+          .filter((item) => item.profile)
+          .map((item) => item.profile?.id)
+      ).toEqual(KICAD_MCP_PRIMARY_PROFILES.map((profile) => profile.id));
+    });
     it('returns undefined and writes nothing when the quick pick is dismissed', async () => {
       (window.showQuickPick as jest.Mock).mockResolvedValue(undefined);
       const svc = services();

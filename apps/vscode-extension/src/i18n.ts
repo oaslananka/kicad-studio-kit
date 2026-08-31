@@ -3,6 +3,10 @@ export const SOURCE_MESSAGES = {
     '{feature} requires a trusted workspace. Trust this workspace to run KiCad CLI, external KiCad, import, or export tooling.',
   selectMcpProfile: 'Select kicad-mcp-pro profile',
   chooseMcpProfile: 'Choose the MCP profile to use for this workspace',
+  advancedMcpProfiles: 'Advanced profiles…',
+  advancedMcpProfilesDetail:
+    'Specialized profiles for focused or legacy workflows',
+  chooseAdvancedMcpProfile: 'Choose a specialized MCP profile',
   mcpProfileDetail: '{blurb} (as of MCP 1.0.0)',
   mcpProfileSetRestart:
     'MCP profile set to {profile}. Restart the MCP connection now?',
@@ -99,6 +103,9 @@ const TR_MESSAGES: Partial<Record<keyof typeof SOURCE_MESSAGES, string>> = {
     '{feature} güvenilir bir çalışma alanı gerektirir. KiCad CLI, harici KiCad, içe veya dışa aktarma araçlarını çalıştırmak için bu çalışma alanına güvenin.',
   selectMcpProfile: 'kicad-mcp-pro profili seçin',
   chooseMcpProfile: 'Bu çalışma alanı için kullanılacak MCP profilini seçin',
+  advancedMcpProfiles: 'Gelişmiş profiller…',
+  advancedMcpProfilesDetail: 'Odaklı veya eski iş akışları için özel profiller',
+  chooseAdvancedMcpProfile: 'Özel bir MCP profili seçin',
   mcpProfileDetail: '{blurb} (MCP 1.0.0 itibarıyla)',
   mcpProfileSetRestart:
     'MCP profili {profile} olarak ayarlandı. MCP bağlantısı şimdi yeniden başlatılsın mı?',

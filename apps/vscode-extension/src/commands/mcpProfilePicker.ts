@@ -4,7 +4,8 @@ import * as vscode from 'vscode';
 import { SETTINGS } from '../constants';
 import { localize } from '../i18n';
 import {
-  KICAD_MCP_PROFILES,
+  KICAD_MCP_ADVANCED_PROFILES,
+  KICAD_MCP_PRIMARY_PROFILES,
   resolveKicadMcpProfile,
   type KicadMcpProfileId
 } from '../mcp/profileCatalog';
@@ -13,13 +14,25 @@ import type { CommandServices } from './types';
 export async function pickMcpProfile(
   services: Pick<CommandServices, 'refreshMcpState' | 'mcpClient'>
 ): Promise<KicadMcpProfileId | undefined> {
+  const advertisedProfiles =
+    services.mcpClient.getState().server?.capabilities.profiles;
+  const supports = (profile: { id: string }): boolean =>
+    advertisedProfiles === undefined || advertisedProfiles.includes(profile.id);
+  const primary = KICAD_MCP_PRIMARY_PROFILES.filter(supports);
+  const advanced = KICAD_MCP_ADVANCED_PROFILES.filter(supports);
   const choice = await vscode.window.showQuickPick(
-    KICAD_MCP_PROFILES.map((profile) => ({
-      label: profile.label,
-      description: profile.id,
-      detail: localize('mcpProfileDetail', { blurb: profile.blurb }),
-      profile
-    })),
+    [
+      ...primary.map((profile) => profileItem(profile)),
+      ...(advanced.length
+        ? [
+            {
+              label: localize('advancedMcpProfiles'),
+              detail: localize('advancedMcpProfilesDetail'),
+              advanced: true as const
+            }
+          ]
+        : [])
+    ],
     {
       title: localize('selectMcpProfile'),
       placeHolder: localize('chooseMcpProfile')
@@ -29,9 +42,23 @@ export async function pickMcpProfile(
     return undefined;
   }
 
-  await writeProfile(choice.profile.id);
+  const profileChoice =
+    'advanced' in choice
+      ? await vscode.window.showQuickPick(
+          advanced.map((profile) => profileItem(profile)),
+          {
+            title: localize('selectMcpProfile'),
+            placeHolder: localize('chooseAdvancedMcpProfile')
+          }
+        )
+      : choice;
+  if (!profileChoice || !('profile' in profileChoice)) {
+    return undefined;
+  }
+
+  await writeProfile(profileChoice.profile.id);
   const restart = await vscode.window.showInformationMessage(
-    localize('mcpProfileSetRestart', { profile: choice.profile.id }),
+    localize('mcpProfileSetRestart', { profile: profileChoice.profile.id }),
     localize('restart'),
     localize('later')
   );
@@ -39,7 +66,20 @@ export async function pickMcpProfile(
     await services.mcpClient.retryNow();
     await services.refreshMcpState();
   }
-  return choice.profile.id;
+  return profileChoice.profile.id;
+}
+
+function profileItem(
+  profile:
+    | (typeof KICAD_MCP_PRIMARY_PROFILES)[number]
+    | (typeof KICAD_MCP_ADVANCED_PROFILES)[number]
+) {
+  return {
+    label: profile.label,
+    description: profile.id,
+    detail: localize('mcpProfileDetail', { blurb: profile.blurb }),
+    profile
+  };
 }
 
 export function readConfiguredMcpProfile(): KicadMcpProfileId {
