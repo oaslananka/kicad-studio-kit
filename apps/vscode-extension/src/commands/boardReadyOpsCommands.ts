@@ -143,11 +143,12 @@ async function showBoardReadyOpsEvidenceState(
           );
         }
         const verification = parseBoardReadyOpsEvidenceVerification(stdout);
-        const signatureText = verification.signature.present
-          ? verification.signature.ok
+        let signatureText = ' Bundle is unsigned.';
+        if (verification.signature.present) {
+          signatureText = verification.signature.ok
             ? ' Signature verified.'
-            : ' Signature verification failed.'
-          : ' Bundle is unsigned.';
+            : ' Signature verification failed.';
+        }
         if (verification.ok) {
           void vscode.window.showInformationMessage(
             `BoardReadyOps release evidence verified: ${verification.checked} artifact(s).${signatureText}`
