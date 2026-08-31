@@ -13,7 +13,7 @@ import { buildSettingsHtml, type SettingsViewState } from './settingsHtml';
 
 const SETTINGS_PANEL_MESSAGE_TYPES = [
   'ready',
-  'updateSetting',
+  'openNativeSettings',
   'setAiKey',
   'clearAiKey',
   'testAiKey',
@@ -69,7 +69,7 @@ export class KiCadSettingsPanel implements vscode.Disposable {
 
     const panel = vscode.window.createWebviewPanel(
       KiCadSettingsPanel.viewType,
-      'KiCad Studio Settings',
+      'KiCad Studio Health',
       vscode.ViewColumn.Active,
       {
         enableScripts: true,
@@ -116,8 +116,11 @@ export class KiCadSettingsPanel implements vscode.Disposable {
       return;
     }
 
-    if (message.type === 'updateSetting') {
-      await this.updateSetting(asString(record['key']), record['value']);
+    if (message.type === 'openNativeSettings') {
+      await vscode.commands.executeCommand(
+        'workbench.action.openSettings',
+        '@ext:oaslananka.kicadstudiokit'
+      );
       return;
     }
 
@@ -180,55 +183,6 @@ export class KiCadSettingsPanel implements vscode.Disposable {
     }
   }
 
-  private async updateSetting(
-    key: string | undefined,
-    value: unknown
-  ): Promise<void> {
-    if (!key || !this.isAllowedSetting(key)) {
-      await this.postStatus('Setting update was ignored.');
-      return;
-    }
-
-    await vscode.workspace
-      .getConfiguration()
-      .update(
-        key,
-        this.normalizeSettingValue(key, value),
-        vscode.ConfigurationTarget.Global
-      );
-    await this.postStatus('Setting saved.');
-  }
-
-  private normalizeSettingValue(key: string, value: unknown): unknown {
-    if (
-      key === SETTINGS.aiAllowTools ||
-      key === SETTINGS.aiStreamingEnabled ||
-      key === SETTINGS.mcpAutoDetect ||
-      key === SETTINGS.mcpAllowLegacySse ||
-      key === SETTINGS.mcpPushContext ||
-      key === SETTINGS.viewerAutoRefresh ||
-      key === SETTINGS.viewerSyncTheme ||
-      key === SETTINGS.viewerEnableLayerPanel ||
-      key === SETTINGS.viewerEnableSnapshotExport
-    ) {
-      return value === true;
-    }
-    if (
-      key === SETTINGS.viewerLargeFileThresholdBytes ||
-      key === SETTINGS.aiMaxTokens ||
-      key === SETTINGS.aiTimeout ||
-      key === SETTINGS.mcpTimeout
-    ) {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-    }
-    return typeof value === 'string' ? value.trim() : value;
-  }
-
-  private isAllowedSetting(key: string): boolean {
-    return (SETTINGS_KEYS as readonly string[]).includes(key);
-  }
-
   private isAllowedExternalLink(href: string): boolean {
     return (
       href.startsWith('https://github.com/oaslananka/kicad-studio-kit/') ||
@@ -242,10 +196,24 @@ export class KiCadSettingsPanel implements vscode.Disposable {
       SETTINGS_KEYS.map((key) => [key, config.get(key)])
     );
     const snapshot = this.services.statusBar.getSnapshot();
+    const aiSelection = this.services.aiProviders.getSelection();
     const state: SettingsViewState = {
       settings,
       aiKeyStored: false,
-      octopartKeyStored: false
+      octopartKeyStored: false,
+      ai: {
+        provider: aiSelection.provider,
+        configured: snapshot.aiConfigured,
+        healthy: snapshot.aiHealthy
+      },
+      mcp: {
+        available: snapshot.mcpAvailable,
+        connected: snapshot.mcpConnected,
+        kind: snapshot.mcpKind,
+        compat: snapshot.mcpCompat,
+        version: snapshot.mcpVersion,
+        profile: snapshot.mcpProfile
+      }
     };
     if (snapshot.cli) {
       state.cli = {
