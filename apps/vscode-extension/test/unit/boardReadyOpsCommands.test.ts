@@ -7,6 +7,10 @@ import * as childProcess from 'node:child_process';
 import { COMMANDS } from '../../src/constants';
 import { registerBoardReadyOpsCommands } from '../../src/commands/boardReadyOpsCommands';
 import { commands, window, env, __setConfiguration } from './vscodeMock';
+import {
+  boardReadyOpsAgentPlan,
+  boardReadyOpsDoctorContract
+} from './boardReadyOpsFixtures';
 
 function registeredHandler(command: string): () => Promise<void> {
   const registration = (commands.registerCommand as jest.Mock).mock.calls.find(
@@ -67,6 +71,34 @@ describe('BoardReadyOps commands', () => {
       logger: mockLogger
     };
   });
+
+  function enableBoardReadyOpsProject(): void {
+    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
+    mockProjectState.getActiveProject.mockReturnValue({ rootPath: '/project' });
+  }
+
+  function mockCompatibleBoardReadyOpsResponse(
+    response: unknown,
+    exitCode = 0
+  ): jest.Mock {
+    const spawnMock = childProcess.spawn as unknown as jest.Mock;
+    spawnMock
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()))
+      )
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(
+          typeof response === 'string' ? response : JSON.stringify(response),
+          exitCode
+        )
+      );
+    return spawnMock;
+  }
+
+  async function runCommand(command: string): Promise<void> {
+    registerBoardReadyOpsCommands(servicesMock);
+    await registeredHandler(command)();
+  }
 
   it('registers five boardReadyOps commands', () => {
     const disposables = registerBoardReadyOpsCommands(servicesMock);
@@ -135,39 +167,13 @@ describe('BoardReadyOps commands', () => {
   });
 
   it('discovers the BoardReadyOps doctor contract before running readiness', async () => {
-    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
-    mockProjectState.getActiveProject.mockReturnValue({ rootPath: '/project' });
-    const spawnMock = childProcess.spawn as unknown as jest.Mock;
-    spawnMock
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(
-          JSON.stringify({
-            schemaVersion: 1,
-            tool: { name: 'boardreadyops', version: '1.37.0' },
-            checks: []
-          })
-        )
-      )
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(
-          JSON.stringify({
-            status: 'passed',
-            summary: {
-              total: 0,
-              critical: 0,
-              high: 0,
-              medium: 0,
-              low: 0,
-              info: 0
-            },
-            findings: []
-          })
-        )
-      );
-
-    registerBoardReadyOpsCommands(servicesMock);
-    await registeredHandler(COMMANDS.boardReadyOpsCheck)();
-
+    enableBoardReadyOpsProject();
+    const spawnMock = mockCompatibleBoardReadyOpsResponse({
+      status: 'passed',
+      summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+      findings: []
+    });
+    await runCommand(COMMANDS.boardReadyOpsCheck);
     expect(spawnMock).toHaveBeenCalledTimes(2);
     expect(spawnMock.mock.calls[0]?.[1]).toEqual([
       'boardreadyops',
@@ -185,66 +191,12 @@ describe('BoardReadyOps commands', () => {
   });
 
   it('shows the structured BoardReadyOps remediation plan after contract discovery', async () => {
-    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
-    mockProjectState.getActiveProject.mockReturnValue({ rootPath: '/project' });
-    const spawnMock = childProcess.spawn as unknown as jest.Mock;
-    spawnMock
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(
-          JSON.stringify({
-            schemaVersion: 1,
-            tool: { name: 'boardreadyops', version: '1.37.0' },
-            checks: []
-          })
-        )
-      )
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(
-          JSON.stringify({
-            schemaVersion: 1,
-            tool: { name: 'boardreadyops', version: '1.37.0' },
-            generatedAt: '2026-08-31T00:00:00.000Z',
-            status: 'failed',
-            exitCode: 1,
-            summary: {
-              total: 1,
-              critical: 0,
-              high: 1,
-              medium: 0,
-              low: 0,
-              info: 0,
-              maxSeverity: 'high',
-              failed: true
-            },
-            projectRoot: '/project',
-            nextActions: [
-              {
-                id: 'finding-1',
-                ruleId: 'manufacturing.outputs-present',
-                severity: 'high',
-                title: 'Generate missing manufacturing outputs.',
-                resource: { path: 'board.kicad_pcb', kind: 'pcb' },
-                evidence: { message: 'Manufacturing outputs are missing.' },
-                whyItMatters: 'Fabrication requires current outputs.',
-                fixStrategy: {
-                  description: 'Generate current outputs.',
-                  steps: ['Run the KiCad jobset.', 'Re-run BoardReadyOps.']
-                },
-                safeAutoFixPossible: false,
-                commandsToVerify: [
-                  'boardreadyops check --rule manufacturing.outputs-present /project'
-                ]
-              }
-            ],
-            releaseActions: []
-          }),
-          1
-        )
-      );
-
-    registerBoardReadyOpsCommands(servicesMock);
-    await registeredHandler(COMMANDS.boardReadyOpsPlan)();
-
+    enableBoardReadyOpsProject();
+    const spawnMock = mockCompatibleBoardReadyOpsResponse(
+      boardReadyOpsAgentPlan(),
+      1
+    );
+    await runCommand(COMMANDS.boardReadyOpsPlan);
     expect(spawnMock.mock.calls[0]?.[1]).toEqual([
       'boardreadyops',
       'doctor',
@@ -271,26 +223,9 @@ describe('BoardReadyOps commands', () => {
   });
 
   it('does not expose raw BoardReadyOps plan output when the plan is malformed', async () => {
-    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
-    mockProjectState.getActiveProject.mockReturnValue({ rootPath: '/project' });
-    const spawnMock = childProcess.spawn as unknown as jest.Mock;
-    spawnMock
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(
-          JSON.stringify({
-            schemaVersion: 1,
-            tool: { name: 'boardreadyops', version: '1.37.0' },
-            checks: []
-          })
-        )
-      )
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild('PRIVATE_PLAN_EVIDENCE_SENTINEL')
-      );
-
-    registerBoardReadyOpsCommands(servicesMock);
-    await registeredHandler(COMMANDS.boardReadyOpsPlan)();
-
+    enableBoardReadyOpsProject();
+    mockCompatibleBoardReadyOpsResponse('PRIVATE_PLAN_EVIDENCE_SENTINEL');
+    await runCommand(COMMANDS.boardReadyOpsPlan);
     expect(window.showErrorMessage).toHaveBeenCalledWith(
       expect.stringContaining('invalid JSON')
     );
@@ -304,41 +239,24 @@ describe('BoardReadyOps commands', () => {
   });
 
   it('fails closed on a partial BoardReadyOps plan contract without exposing its payload', async () => {
-    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
-    mockProjectState.getActiveProject.mockReturnValue({ rootPath: '/project' });
-    const spawnMock = childProcess.spawn as unknown as jest.Mock;
-    spawnMock
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(
-          JSON.stringify({
-            schemaVersion: 1,
-            tool: { name: 'boardreadyops', version: '1.37.0' },
-            checks: []
-          })
-        )
-      )
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(
-          JSON.stringify({
-            schemaVersion: 1,
-            tool: { name: 'boardreadyops', version: '1.37.0' },
-            status: 'failed',
-            nextActions: [
-              {
-                id: 'PRIVATE_PARTIAL_SENTINEL',
-                ruleId: 'config.invalid',
-                title: 'private action'
-              }
-            ],
-            releaseActions: []
-          }),
-          1
-        )
-      );
-
-    registerBoardReadyOpsCommands(servicesMock);
-    await registeredHandler(COMMANDS.boardReadyOpsPlan)();
-
+    enableBoardReadyOpsProject();
+    mockCompatibleBoardReadyOpsResponse(
+      {
+        schemaVersion: 1,
+        tool: { name: 'boardreadyops', version: '1.37.0' },
+        status: 'failed',
+        nextActions: [
+          {
+            id: 'PRIVATE_PARTIAL_SENTINEL',
+            ruleId: 'config.invalid',
+            title: 'private action'
+          }
+        ],
+        releaseActions: []
+      },
+      1
+    );
+    await runCommand(COMMANDS.boardReadyOpsPlan);
     expect(window.showErrorMessage).toHaveBeenCalledWith(
       'BoardReadyOps plan failed: BoardReadyOps plan returned an invalid contract.'
     );
@@ -348,26 +266,9 @@ describe('BoardReadyOps commands', () => {
   });
 
   it('does not expose raw BoardReadyOps output when readiness JSON is malformed', async () => {
-    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
-    mockProjectState.getActiveProject.mockReturnValue({ rootPath: '/project' });
-    const spawnMock = childProcess.spawn as unknown as jest.Mock;
-    spawnMock
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild(
-          JSON.stringify({
-            schemaVersion: 1,
-            tool: { name: 'boardreadyops', version: '1.37.0' },
-            checks: []
-          })
-        )
-      )
-      .mockImplementationOnce(() =>
-        boardReadyOpsChild('PRIVATE_EVIDENCE_SENTINEL')
-      );
-
-    registerBoardReadyOpsCommands(servicesMock);
-    await registeredHandler(COMMANDS.boardReadyOpsCheck)();
-
+    enableBoardReadyOpsProject();
+    mockCompatibleBoardReadyOpsResponse('PRIVATE_EVIDENCE_SENTINEL');
+    await runCommand(COMMANDS.boardReadyOpsCheck);
     expect(window.showErrorMessage).toHaveBeenCalledWith(
       expect.stringContaining('invalid JSON output')
     );
@@ -381,22 +282,13 @@ describe('BoardReadyOps commands', () => {
   });
 
   it('fails closed when BoardReadyOps doctor exits non-zero', async () => {
-    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
-    mockProjectState.getActiveProject.mockReturnValue({ rootPath: '/project' });
+    enableBoardReadyOpsProject();
     const spawnMock = childProcess.spawn as unknown as jest.Mock;
     spawnMock.mockImplementationOnce(() =>
-      boardReadyOpsChild(
-        JSON.stringify({
-          schemaVersion: 1,
-          tool: { name: 'boardreadyops', version: '1.37.0' },
-          checks: []
-        }),
-        2
-      )
+      boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()), 2)
     );
 
-    registerBoardReadyOpsCommands(servicesMock);
-    await registeredHandler(COMMANDS.boardReadyOpsCheck)();
+    await runCommand(COMMANDS.boardReadyOpsCheck);
 
     expect(spawnMock).toHaveBeenCalledTimes(1);
     expect(window.showErrorMessage).toHaveBeenCalledWith(
