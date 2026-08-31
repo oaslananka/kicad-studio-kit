@@ -112,3 +112,190 @@ export function discoverBoardReadyOpsContract(
 
   return { compatible: true, schemaVersion, version };
 }
+
+export interface BoardReadyOpsFinding {
+  ruleId: string;
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
+  message: string;
+  resource: {
+    path: string;
+    kind:
+      | 'project'
+      | 'schematic'
+      | 'pcb'
+      | 'bom'
+      | 'pinmap'
+      | 'firmware'
+      | 'manifest';
+  };
+  location?: {
+    line?: number;
+    column?: number;
+    region?: {
+      startLine: number;
+      endLine: number;
+      startColumn?: number;
+      endColumn?: number;
+    };
+    boardCoordinates?: {
+      x: number;
+      y: number;
+      layer?: string;
+      units: 'mm' | 'in';
+    };
+  };
+  fingerprint: string;
+}
+
+export interface BoardReadyOpsRunResult {
+  schemaVersion: number;
+  tool: {
+    name: 'boardreadyops';
+    version: string;
+  };
+  status?: 'passed' | 'failed';
+  exitCode?: number;
+  summary: {
+    total: number;
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+    info: number;
+  };
+  findings: BoardReadyOpsFinding[];
+}
+
+const READINESS_CONTRACT_ERROR =
+  'BoardReadyOps returned an unsupported or incomplete readiness result.';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return Number.isInteger(value) && Number(value) >= 0;
+}
+
+function isPositiveInteger(value: unknown): value is number {
+  return Number.isInteger(value) && Number(value) >= 1;
+}
+
+function isRegion(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    isPositiveInteger(value['startLine']) &&
+    isPositiveInteger(value['endLine']) &&
+    (value['startColumn'] === undefined ||
+      isPositiveInteger(value['startColumn'])) &&
+    (value['endColumn'] === undefined || isPositiveInteger(value['endColumn']))
+  );
+}
+
+function isBoardCoordinates(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value['x'] === 'number' &&
+    Number.isFinite(value['x']) &&
+    typeof value['y'] === 'number' &&
+    Number.isFinite(value['y']) &&
+    (value['layer'] === undefined || typeof value['layer'] === 'string') &&
+    (value['units'] === 'mm' || value['units'] === 'in')
+  );
+}
+
+function isLocation(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    (value['region'] === undefined || isRegion(value['region'])) &&
+    (value['line'] === undefined || isPositiveInteger(value['line'])) &&
+    (value['column'] === undefined || isPositiveInteger(value['column'])) &&
+    (value['boardCoordinates'] === undefined ||
+      isBoardCoordinates(value['boardCoordinates']))
+  );
+}
+
+const findingResourceKinds = new Set([
+  'project',
+  'schematic',
+  'pcb',
+  'bom',
+  'pinmap',
+  'firmware',
+  'manifest'
+]);
+const findingFingerprintPattern = /^[a-f0-9]{64}$/;
+
+function isFinding(value: unknown): value is BoardReadyOpsFinding {
+  if (!isRecord(value) || !isRecord(value['resource'])) {
+    return false;
+  }
+  return (
+    typeof value['ruleId'] === 'string' &&
+    value['ruleId'].length > 0 &&
+    ['critical', 'high', 'medium', 'low', 'info'].includes(
+      String(value['severity'])
+    ) &&
+    typeof value['message'] === 'string' &&
+    typeof value['resource']['path'] === 'string' &&
+    findingResourceKinds.has(String(value['resource']['kind'])) &&
+    typeof value['fingerprint'] === 'string' &&
+    findingFingerprintPattern.test(value['fingerprint']) &&
+    (value['location'] === undefined || isLocation(value['location']))
+  );
+}
+
+export function parseBoardReadyOpsRunResult(
+  input: unknown
+): BoardReadyOpsRunResult {
+  const value = parseDoctorValue(input);
+  if (value === undefined && typeof input === 'string') {
+    throw new Error('BoardReadyOps returned invalid JSON output.');
+  }
+  if (!isRecord(value)) {
+    throw new Error(READINESS_CONTRACT_ERROR);
+  }
+
+  const tool = value['tool'];
+  const summary = value['summary'];
+  const findings = value['findings'];
+  if (
+    value['schemaVersion'] !==
+      COMPATIBILITY_MATRIX.supportAxes.boardReadyOps.findingsSchema ||
+    !isRecord(tool) ||
+    tool['name'] !== 'boardreadyops' ||
+    typeof tool['version'] !== 'string' ||
+    !semver.valid(tool['version']) ||
+    !semver.satisfies(
+      tool['version'],
+      COMPATIBILITY_MATRIX.supportAxes.boardReadyOps.required
+    ) ||
+    !isRecord(summary) ||
+    !isNonNegativeInteger(summary['total']) ||
+    !isNonNegativeInteger(summary['critical']) ||
+    !isNonNegativeInteger(summary['high']) ||
+    !isNonNegativeInteger(summary['medium']) ||
+    !isNonNegativeInteger(summary['low']) ||
+    !isNonNegativeInteger(summary['info']) ||
+    !Array.isArray(findings) ||
+    !findings.every(isFinding)
+  ) {
+    throw new Error(READINESS_CONTRACT_ERROR);
+  }
+
+  if (
+    value['status'] !== undefined &&
+    value['status'] !== 'passed' &&
+    value['status'] !== 'failed'
+  ) {
+    throw new Error(READINESS_CONTRACT_ERROR);
+  }
+  if (
+    value['exitCode'] !== undefined &&
+    !isNonNegativeInteger(value['exitCode'])
+  ) {
+    throw new Error(READINESS_CONTRACT_ERROR);
+  }
+
+  return value as unknown as BoardReadyOpsRunResult;
+}
