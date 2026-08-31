@@ -171,6 +171,109 @@ describe('BoardReadyOps commands', () => {
     );
   });
 
+  it('verifies local release evidence from the report without exposing manifest paths', async () => {
+    enableBoardReadyOpsProject();
+    const spawnMock = childProcess.spawn as unknown as jest.Mock;
+    const readiness = {
+      schemaVersion: 1,
+      tool: { name: 'boardreadyops', version: '1.37.0' },
+      status: 'passed',
+      exitCode: 0,
+      summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+      findings: []
+    };
+    spawnMock
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()))
+      )
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(readiness))
+      )
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()))
+      )
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(
+          JSON.stringify({
+            ok: true,
+            manifestPath: '/private/evidence/manifest.json',
+            checked: 4,
+            errors: [],
+            signature: { present: true, ok: true, errors: [] }
+          })
+        )
+      );
+
+    await runCommand(COMMANDS.boardReadyOpsCheck);
+    (window.showInformationMessage as jest.Mock).mockResolvedValueOnce(
+      'Verify Release Evidence'
+    );
+    await runCommand(COMMANDS.boardReadyOpsShowReport);
+
+    expect(spawnMock.mock.calls[3]?.[1]).toEqual([
+      'boardreadyops',
+      'release',
+      'verify',
+      '--format',
+      'json',
+      '/project/build/boardreadyops-release'
+    ]);
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      'BoardReadyOps release evidence verified: 4 artifact(s). Signature verified.'
+    );
+    expect(
+      JSON.stringify((window.showInformationMessage as jest.Mock).mock.calls)
+    ).not.toContain('/private/evidence/manifest.json');
+  });
+
+  it('summarizes failed evidence verification without exposing CLI error details', async () => {
+    enableBoardReadyOpsProject();
+    const spawnMock = childProcess.spawn as unknown as jest.Mock;
+    const readiness = {
+      schemaVersion: 1,
+      tool: { name: 'boardreadyops', version: '1.37.0' },
+      status: 'passed',
+      exitCode: 0,
+      summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+      findings: []
+    };
+    spawnMock
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()))
+      )
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(readiness))
+      )
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()))
+      )
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(
+          JSON.stringify({
+            ok: false,
+            manifestPath: '/private/evidence/manifest.json',
+            checked: 2,
+            errors: ['PRIVATE_EVIDENCE_SENTINEL: checksum mismatch'],
+            signature: { present: false, ok: true, errors: [] }
+          }),
+          1
+        )
+      );
+
+    await runCommand(COMMANDS.boardReadyOpsCheck);
+    (window.showInformationMessage as jest.Mock).mockResolvedValueOnce(
+      'Verify Release Evidence'
+    );
+    await runCommand(COMMANDS.boardReadyOpsShowReport);
+
+    const warningCalls = JSON.stringify(
+      (window.showWarningMessage as jest.Mock).mock.calls
+    );
+    expect(warningCalls).toContain('release evidence is not verified');
+    expect(warningCalls).not.toContain('PRIVATE_EVIDENCE_SENTINEL');
+    expect(warningCalls).not.toContain('/private/evidence/manifest.json');
+  });
+
   it('discovers the BoardReadyOps doctor contract before running readiness', async () => {
     enableBoardReadyOpsProject();
     const spawnMock = mockCompatibleBoardReadyOpsResponse({
