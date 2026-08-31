@@ -1,3 +1,4 @@
+import * as path from 'node:path';
 import {
   evaluateBoardReadyOpsReleaseGate,
   verifyBoardReadyOpsManufacturingRelease
@@ -160,7 +161,7 @@ describe('BoardReadyOps manufacturing release gate', () => {
       'verify',
       '--format',
       'json',
-      '/project/build/boardreadyops-release'
+      path.join('/project', 'build', 'boardreadyops-release')
     ]);
   });
 
