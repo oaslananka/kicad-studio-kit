@@ -12,6 +12,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.13.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.12.0...vscode-extension-v1.13.0) (2026-08-31)
+
+
+### Features
+
+* **kicad-studio:** surface BoardReadyOps remediation plan ([#671](https://github.com/oaslananka/kicad-studio-kit/issues/671)) ([0697858](https://github.com/oaslananka/kicad-studio-kit/commit/06978580abf0e647314eef1134a8c105c1fa7fde))
+
 ## [1.12.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.11.1...vscode-extension-v1.12.0) (2026-08-31)
 
 
