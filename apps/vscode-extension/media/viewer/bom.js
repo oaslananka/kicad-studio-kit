@@ -27,6 +27,7 @@
   let sortKey = 'references';
   let sortDir = 1;
   let isLoading = false;
+  let canOpenReviewTasks = false;
 
   function syncExportState(loading = isLoading) {
     const disabled = loading || entries.length === 0;
@@ -48,16 +49,16 @@
   function showEmpty(message, action) {
     rowsEl.replaceChildren();
     emptyMessage.textContent = message;
-    emptyAction.hidden = !action;
-    emptyAction.dataset.action = action || '';
+    canOpenReviewTasks = action === 'openReviewTasks';
+    emptyAction.hidden = !canOpenReviewTasks;
     emptyState.classList.add('visible');
     tableWrapper.classList.add('hidden');
     syncExportState(false);
   }
 
   function showTable() {
+    canOpenReviewTasks = false;
     emptyAction.hidden = true;
-    emptyAction.dataset.action = '';
     emptyState.classList.remove('visible');
     tableWrapper.classList.remove('hidden');
     syncExportState(false);
@@ -196,7 +197,7 @@
     vscode.postMessage({ type: 'exportXlsx' });
   });
   emptyAction.addEventListener('click', () => {
-    if (emptyAction.dataset.action === 'openReviewTasks') {
+    if (canOpenReviewTasks) {
       vscode.postMessage({ type: 'openReviewTasks' });
     }
   });

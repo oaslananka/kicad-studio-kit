@@ -10,13 +10,14 @@
   const tableWrapper = document.getElementById('table-wrapper');
 
   const ERROR_PREFIXES = ['Could not', 'kicad-cli is not'];
+  let canOpenReviewTasks = false;
 
   function isErrorStatus(status) {
     return ERROR_PREFIXES.some((prefix) => status.startsWith(prefix));
   }
 
   emptyAction.addEventListener('click', () => {
-    if (emptyAction.dataset.action === 'openReviewTasks') {
+    if (canOpenReviewTasks) {
       vscode.postMessage({ type: 'openReviewTasks' });
     }
   });
@@ -26,12 +27,14 @@
     if (message.type === 'setNetlist') {
       const nets = message.payload.nets || [];
       const status = message.payload.status || '';
-      const action = message.payload.action || '';
+      const canOpenReview = message.payload.action === 'openReviewTasks';
 
       if (nets.length === 0 && status && isErrorStatus(status)) {
         summaryText.textContent = '';
         errorMessage.textContent = status;
         errorCard.classList.add('visible');
+        canOpenReviewTasks = false;
+        emptyAction.hidden = true;
         emptyState.hidden = true;
         tableWrapper.classList.add('hidden');
         rowsEl.replaceChildren();
@@ -43,17 +46,17 @@
         summaryText.textContent = 'Netlist unavailable';
         emptyMessage.textContent =
           status || 'Open a schematic before inspecting the netlist.';
-        emptyAction.hidden = action !== 'openReviewTasks';
-        emptyAction.dataset.action = action;
+        canOpenReviewTasks = canOpenReview;
+        emptyAction.hidden = !canOpenReviewTasks;
         emptyState.hidden = false;
         tableWrapper.classList.add('hidden');
         rowsEl.replaceChildren();
         return;
       }
 
+      canOpenReviewTasks = false;
       emptyState.hidden = true;
       emptyAction.hidden = true;
-      emptyAction.dataset.action = '';
       tableWrapper.classList.remove('hidden');
       summaryText.textContent = status || `${nets.length} net entries`;
 
