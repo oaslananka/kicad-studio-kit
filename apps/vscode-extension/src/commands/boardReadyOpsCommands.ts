@@ -11,6 +11,7 @@ import {
   type BoardReadyOpsRunResult
 } from '../boardreadyops/contract';
 import { parseBoardReadyOpsPlan } from '../boardreadyops/plan';
+import { parseBoardReadyOpsEvidenceVerification } from '../boardreadyops/evidence';
 
 /** URL for BoardReadyOps documentation. */
 export const BOARDREADYOPS_DOCS_URL =
@@ -94,6 +95,84 @@ async function assertCompatibleBoardReadyOps(
       `BoardReadyOps is not contract-compatible: ${contract.reason} (version ${contract.version}, doctor schema ${contract.schemaVersion ?? 'missing'}).`
     );
   }
+}
+
+async function showBoardReadyOpsEvidenceState(
+  services: CommandServices
+): Promise<void> {
+  const enabled = vscode.workspace
+    .getConfiguration()
+    .get<boolean>(SETTINGS.boardReadyOpsEnabled, false);
+  if (!enabled) {
+    void vscode.window.showWarningMessage(
+      localize('boardReadyOpsNotConfigured')
+    );
+    return;
+  }
+  const projectPath = services.projectState.getActiveProject()?.rootPath;
+  if (!projectPath) {
+    void vscode.window.showErrorMessage(
+      'No active KiCad project found. Open a project to verify BoardReadyOps release evidence.'
+    );
+    return;
+  }
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: 'Verifying BoardReadyOps release evidence...',
+      cancellable: true
+    },
+    async (_progress, token) => {
+      try {
+        await assertCompatibleBoardReadyOps(projectPath, token);
+        if (token.isCancellationRequested) return;
+        const bundlePath = path.join(
+          projectPath,
+          'build',
+          'boardreadyops-release'
+        );
+        const { stdout, exitCode } = await runBoardReadyOpsCommand(
+          projectPath,
+          ['release', 'verify', '--format', 'json', bundlePath],
+          token
+        );
+        if (token.isCancellationRequested) return;
+        if (exitCode !== 0 && exitCode !== 1) {
+          throw new Error(
+            `BoardReadyOps release verify exited with code ${exitCode}.`
+          );
+        }
+        const verification = parseBoardReadyOpsEvidenceVerification(stdout);
+        let signatureText = ' Bundle is unsigned.';
+        if (verification.signature.present) {
+          signatureText = verification.signature.ok
+            ? ' Signature verified.'
+            : ' Signature verification failed.';
+        }
+        if (verification.ok) {
+          void vscode.window.showInformationMessage(
+            `BoardReadyOps release evidence verified: ${verification.checked} artifact(s).${signatureText}`
+          );
+        } else {
+          void vscode.window.showWarningMessage(
+            `BoardReadyOps release evidence is not verified (${verification.checked} artifact(s) checked).${signatureText} Run BoardReadyOps release prepare/verify to refresh the bundle.`
+          );
+        }
+      } catch (err) {
+        const safeError =
+          err instanceof Error
+            ? err.message
+            : 'Unknown BoardReadyOps release verification error.';
+        services.logger.error(
+          'BoardReadyOps release verification failed',
+          safeError
+        );
+        void vscode.window.showErrorMessage(
+          `BoardReadyOps release verification failed: ${safeError}`
+        );
+      }
+    }
+  );
 }
 
 /**
@@ -379,15 +458,24 @@ export function registerBoardReadyOpsCommands(
         if (summary.total > 0) {
           const choice = await vscode.window.showInformationMessage(
             summaryText,
-            'Show Problems'
+            'Show Problems',
+            'Verify Release Evidence'
           );
           if (choice === 'Show Problems') {
             await vscode.commands.executeCommand(
               'workbench.actions.view.problems'
             );
+          } else if (choice === 'Verify Release Evidence') {
+            await showBoardReadyOpsEvidenceState(services);
           }
         } else {
-          await vscode.window.showInformationMessage(summaryText);
+          const choice = await vscode.window.showInformationMessage(
+            summaryText,
+            'Verify Release Evidence'
+          );
+          if (choice === 'Verify Release Evidence') {
+            await showBoardReadyOpsEvidenceState(services);
+          }
         }
       }
     ),
