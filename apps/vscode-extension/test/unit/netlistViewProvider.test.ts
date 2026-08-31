@@ -13,6 +13,7 @@ import { CliExitError, KiCadCliNotFoundError } from '../../src/errors';
 
 function makeWebview() {
   const messages: unknown[] = [];
+  let receiveMessage: ((message: unknown) => unknown) | undefined;
   return {
     options: {} as Record<string, unknown>,
     html: '',
@@ -20,6 +21,11 @@ function makeWebview() {
       messages.push(msg);
       return Promise.resolve(true);
     }),
+    onDidReceiveMessage: jest.fn((callback: (message: unknown) => unknown) => {
+      receiveMessage = callback;
+      return { dispose: jest.fn() };
+    }),
+    receiveMessage: (message: unknown) => receiveMessage?.(message),
     cspSource: 'vscode-webview:',
     asWebviewUri: jest.fn((uri: { fsPath: string }) => ({
       toString: () => `webview://${uri.fsPath}`
@@ -110,6 +116,65 @@ describe('NetlistViewProvider', () => {
     ) as Array<{ payload: { nets: unknown[]; status: string } }>;
     return msgs[msgs.length - 1];
   }
+
+  describe('webview actions', () => {
+    it('routes the guided empty-state action to the canonical Review task', async () => {
+      const vscode =
+        jest.requireActual<typeof import('./vscodeMock')>('./vscodeMock');
+      jest
+        .spyOn(vscode.workspace, 'findFiles')
+        .mockResolvedValueOnce([] as never);
+
+      const provider = new NetlistViewProvider(
+        {
+          extensionUri: {
+            fsPath: path.resolve(__dirname, '../..'),
+            toString: () => path.resolve(__dirname, '../..')
+          },
+          workspaceState: { get: jest.fn(), update: jest.fn() }
+        } as never,
+        new SExpressionParser(),
+        makeRunner('success', MINIMAL_NETLIST) as never
+      );
+      const webview = makeWebview();
+
+      provider.resolveWebviewView({ webview } as never);
+      await webview.receiveMessage({ type: 'openReviewTasks' });
+
+      expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
+        'kicadstudio.tasks.review'
+      );
+      provider.dispose();
+    });
+
+    it.each([undefined, null, {}, { type: 'other' }])(
+      'ignores unrelated webview messages: %p',
+      async (message) => {
+        const vscode =
+          jest.requireActual<typeof import('./vscodeMock')>('./vscodeMock');
+        jest
+          .spyOn(vscode.workspace, 'findFiles')
+          .mockResolvedValueOnce([] as never);
+        const provider = new NetlistViewProvider(
+          {
+            extensionUri: {
+              fsPath: path.resolve(__dirname, '../..'),
+              toString: () => path.resolve(__dirname, '../..')
+            },
+            workspaceState: { get: jest.fn(), update: jest.fn() }
+          } as never,
+          new SExpressionParser()
+        );
+        const webview = makeWebview();
+
+        provider.resolveWebviewView({ webview } as never);
+        await webview.receiveMessage(message);
+
+        expect(vscode.commands.executeCommand).not.toHaveBeenCalled();
+        provider.dispose();
+      }
+    );
+  });
 
   describe('no runner configured', () => {
     it('posts kicad-cli-not-configured message', async () => {
