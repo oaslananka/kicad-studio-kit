@@ -10,6 +10,15 @@ describe('BoardReadyOps agent plan contract', () => {
     expect(parsed.nextActions[0]?.id).toBe('finding-1');
   });
 
+  it.each([null, [], 42, 'text'])(
+    'rejects non-object plan payloads',
+    (payload) => {
+      expect(() => parseBoardReadyOpsPlan(JSON.stringify(payload))).toThrow(
+        'BoardReadyOps plan returned an invalid contract.'
+      );
+    }
+  );
+
   it('rejects malformed JSON without echoing the payload', () => {
     expect(() => parseBoardReadyOpsPlan('PRIVATE_PLAN_SENTINEL')).toThrow(
       'BoardReadyOps plan returned invalid JSON output.'

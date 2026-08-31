@@ -72,8 +72,13 @@ describe('BoardReadyOps commands', () => {
     };
   });
 
-  function enableBoardReadyOpsProject(): void {
-    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
+  function enableBoardReadyOpsProject(
+    extraConfiguration: Record<string, unknown> = {}
+  ): void {
+    __setConfiguration({
+      'kicadstudio.boardReadyOps.enabled': true,
+      ...extraConfiguration
+    });
     mockProjectState.getActiveProject.mockReturnValue({ rootPath: '/project' });
   }
 
@@ -190,6 +195,49 @@ describe('BoardReadyOps commands', () => {
     ]);
   });
 
+  it('does not run the BoardReadyOps plan while integration is disabled', async () => {
+    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': false });
+
+    await runCommand(COMMANDS.boardReadyOpsPlan);
+
+    expect(childProcess.spawn).not.toHaveBeenCalled();
+    expect(window.showWarningMessage).toHaveBeenCalled();
+  });
+
+  it('does not run the BoardReadyOps plan without an active project', async () => {
+    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
+    mockProjectState.getActiveProject.mockReturnValue(undefined);
+
+    await runCommand(COMMANDS.boardReadyOpsPlan);
+
+    expect(childProcess.spawn).not.toHaveBeenCalled();
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining('No active KiCad project')
+    );
+  });
+
+  it('passes the configured BoardReadyOps spec file to the plan command', async () => {
+    enableBoardReadyOpsProject({
+      'kicadstudio.boardReadyOps.specFile': 'boardreadyops.yaml'
+    });
+    const spawnMock = mockCompatibleBoardReadyOpsResponse(
+      boardReadyOpsAgentPlan(),
+      1
+    );
+
+    await runCommand(COMMANDS.boardReadyOpsPlan);
+
+    expect(spawnMock.mock.calls[1]?.[1]).toEqual([
+      'boardreadyops',
+      'plan',
+      '--format',
+      'json',
+      '--config',
+      'boardreadyops.yaml',
+      '/project'
+    ]);
+  });
+
   it('shows the structured BoardReadyOps remediation plan after contract discovery', async () => {
     enableBoardReadyOpsProject();
     const spawnMock = mockCompatibleBoardReadyOpsResponse(
@@ -219,6 +267,57 @@ describe('BoardReadyOps commands', () => {
         })
       ],
       expect.objectContaining({ title: 'BoardReadyOps Remediation Plan' })
+    );
+  });
+
+  it('shows release actions when the remediation plan has no next actions', async () => {
+    enableBoardReadyOpsProject();
+    const plan = boardReadyOpsAgentPlan();
+    const nextActions = plan['nextActions'] as unknown[];
+    const action = nextActions[0];
+    expect(action).toBeDefined();
+    plan['nextActions'] = [];
+    plan['releaseActions'] = [action];
+    mockCompatibleBoardReadyOpsResponse(plan);
+
+    await runCommand(COMMANDS.boardReadyOpsPlan);
+
+    expect(window.showQuickPick).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          label: 'Generate missing manufacturing outputs.'
+        })
+      ],
+      expect.any(Object)
+    );
+  });
+
+  it('reports when the BoardReadyOps plan has no actions', async () => {
+    enableBoardReadyOpsProject();
+    const plan = boardReadyOpsAgentPlan();
+    plan['nextActions'] = [];
+    plan['releaseActions'] = [];
+    mockCompatibleBoardReadyOpsResponse(plan);
+
+    await runCommand(COMMANDS.boardReadyOpsPlan);
+
+    expect(window.showQuickPick).not.toHaveBeenCalled();
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'did not report any remediation or release actions'
+      )
+    );
+  });
+
+  it('fails closed when the BoardReadyOps plan exits unexpectedly', async () => {
+    enableBoardReadyOpsProject();
+    mockCompatibleBoardReadyOpsResponse(boardReadyOpsAgentPlan(), 2);
+
+    await runCommand(COMMANDS.boardReadyOpsPlan);
+
+    expect(window.showQuickPick).not.toHaveBeenCalled();
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'BoardReadyOps plan failed: BoardReadyOps plan exited with code 2.'
     );
   });
 
