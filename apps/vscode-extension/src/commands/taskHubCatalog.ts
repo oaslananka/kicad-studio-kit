@@ -1,11 +1,7 @@
 import { COMMANDS } from '../constants';
 
 export type TaskGroupId =
-  | 'review'
-  | 'validate'
-  | 'release'
-  | 'automate'
-  | 'maintain';
+  'review' | 'validate' | 'release' | 'automate' | 'maintain';
 
 type CommandId = (typeof COMMANDS)[keyof typeof COMMANDS];
 
@@ -31,10 +27,7 @@ export interface TaskRequirements {
 }
 
 export type TaskAvailability =
-  | 'always'
-  | 'project'
-  | 'trusted'
-  | 'trustedProject';
+  'always' | 'project' | 'trusted' | 'trustedProject';
 
 export interface TaskAction {
   readonly label: string;
@@ -140,6 +133,12 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
         label: 'Check board readiness',
         description: 'Run BoardReadyOps checks for manufacturing readiness',
         command: COMMANDS.boardReadyOpsCheck,
+        requirements: { all: ['workspaceTrusted'] }
+      },
+      {
+        label: 'Show BoardReadyOps remediation plan',
+        description: 'Review deterministic next actions without AI',
+        command: COMMANDS.boardReadyOpsPlan,
         requirements: { all: ['workspaceTrusted'] }
       },
       {

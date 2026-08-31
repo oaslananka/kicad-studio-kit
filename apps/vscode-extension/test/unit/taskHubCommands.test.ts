@@ -162,6 +162,7 @@ describe('task-oriented command hub', () => {
     expect(items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ command: COMMANDS.boardReadyOpsCheck }),
+        expect.objectContaining({ command: COMMANDS.boardReadyOpsPlan }),
         expect.objectContaining({ command: COMMANDS.qualityGateOpenDocs })
       ])
     );
