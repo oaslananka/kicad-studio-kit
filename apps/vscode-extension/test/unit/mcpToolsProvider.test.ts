@@ -1,9 +1,12 @@
+import * as childProcess from 'node:child_process';
 import { McpToolsProvider } from '../../src/mcp/mcpToolsProvider';
 import type {
   McpConnectionState,
   McpServerInfoContract
 } from '../../src/types';
 import { __setConfiguration } from './vscodeMock';
+
+jest.mock('node:child_process', () => ({ execFile: jest.fn() }));
 
 jest.mock('vscode', () => jest.requireActual('./vscodeMock'), {
   virtual: true
@@ -486,6 +489,41 @@ describe('McpToolsProvider', () => {
       expect(healthItem.description).toBe('degraded');
       expect(healthItem.tooltip).toBe('Doctor failed');
     });
+
+    it('fails closed in the live provider when the doctor contract is incompatible', async () => {
+      const execFileMock = childProcess.execFile as unknown as jest.Mock;
+      execFileMock.mockImplementation(
+        (
+          _command: string,
+          _args: string[],
+          _options: unknown,
+          callback: (err: Error | null, stdout: string, stderr: string) => void
+        ) => {
+          callback(
+            null,
+            JSON.stringify({
+              schemaVersion: 2,
+              tool: { name: 'boardreadyops', version: '1.37.0' },
+              checks: []
+            }),
+            ''
+          );
+        }
+      );
+      const provider = providerForState(connectedState({ tools: [] }));
+
+      await runBoardReadyOpsStatusCheck(provider);
+
+      expect(execFileMock).toHaveBeenCalledTimes(1);
+      expect(provider.broStatus).toEqual({
+        installed: true,
+        version: '1.37.0',
+        healthy: false,
+        message:
+          'BoardReadyOps compatibility check failed: unsupported doctor schema.',
+        tools: []
+      });
+    });
   });
 });
 
@@ -678,4 +716,12 @@ function flattenTree(
       ? [current, ...flattenTree(provider, childNode, `${label} > `)]
       : [current];
   });
+}
+
+async function runBoardReadyOpsStatusCheck(
+  provider: McpToolsProvider
+): Promise<void> {
+  await (
+    provider as unknown as { checkBoardReadyOps(): Promise<void> }
+  ).checkBoardReadyOps();
 }
