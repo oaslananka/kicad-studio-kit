@@ -19,6 +19,7 @@ import type { PcmService } from '../library/pcmService';
 import type { VariantProvider } from '../variants/variantProvider';
 import type { DrcRulesProvider } from '../drc/drcRulesProvider';
 import type { McpLogger } from '../mcp/mcpLogger';
+import type { McpToolsProvider } from '../mcp/mcpToolsProvider';
 import type { QualityGateProvider } from '../providers/qualityGateProvider';
 import type { KiCadProjectTreeProvider } from '../providers/projectTreeProvider';
 import type { Logger } from '../utils/logger';
@@ -27,6 +28,7 @@ import type {
   DiagnosticStateStore,
   ProjectStateStore
 } from '../state/stateStores';
+import type { ViewerStateStore } from '../state/viewerStateStore';
 
 /**
  * Shared service dependencies that are passed to all command registration
@@ -51,6 +53,8 @@ export interface CommandServices {
   mcpClient: McpClient;
   mcpAdapter: StudioMcpAdapter;
   mcpLogger: McpLogger;
+  mcpToolsProvider: McpToolsProvider;
+  viewerState: ViewerStateStore;
   qualityGateProvider: QualityGateProvider;
   libraryIndexer: KiCadLibraryIndexer;
   librarySearch: LibrarySearchProvider;
