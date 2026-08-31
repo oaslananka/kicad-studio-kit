@@ -246,6 +246,56 @@ describe('BoardReadyOps commands', () => {
     );
   });
 
+  it('stops after contract discovery when plan execution is cancelled', async () => {
+    enableBoardReadyOpsProject();
+    (window.withProgress as jest.Mock).mockImplementation(
+      async (_options, task) =>
+        task(
+          { report: jest.fn() },
+          {
+            isCancellationRequested: true,
+            onCancellationRequested: jest.fn(() => ({ dispose: jest.fn() }))
+          }
+        )
+    );
+    const spawnMock = childProcess.spawn as unknown as jest.Mock;
+    spawnMock.mockImplementationOnce(() =>
+      boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()))
+    );
+
+    await runCommand(COMMANDS.boardReadyOpsPlan);
+
+    expect(spawnMock).toHaveBeenCalledTimes(1);
+    expect(window.showQuickPick).not.toHaveBeenCalled();
+  });
+
+  it('stops after plan execution when cancellation arrives during the plan', async () => {
+    enableBoardReadyOpsProject();
+    let cancellationRead = 0;
+    (window.withProgress as jest.Mock).mockImplementation(
+      async (_options, task) =>
+        task(
+          { report: jest.fn() },
+          {
+            get isCancellationRequested() {
+              cancellationRead += 1;
+              return cancellationRead >= 3;
+            },
+            onCancellationRequested: jest.fn(() => ({ dispose: jest.fn() }))
+          }
+        )
+    );
+    const spawnMock = mockCompatibleBoardReadyOpsResponse(
+      boardReadyOpsAgentPlan(),
+      1
+    );
+
+    await runCommand(COMMANDS.boardReadyOpsPlan);
+
+    expect(spawnMock).toHaveBeenCalledTimes(2);
+    expect(window.showQuickPick).not.toHaveBeenCalled();
+  });
+
   it('passes the configured BoardReadyOps spec file to the plan command', async () => {
     enableBoardReadyOpsProject({
       'kicadstudio.boardReadyOps.specFile': 'boardreadyops.yaml'
@@ -336,6 +386,27 @@ describe('BoardReadyOps commands', () => {
       expect.stringContaining(
         'did not report any remediation or release actions'
       )
+    );
+  });
+
+  it('uses a sanitized fallback for non-Error plan failures', async () => {
+    enableBoardReadyOpsProject();
+    const spawnMock = childProcess.spawn as unknown as jest.Mock;
+    spawnMock
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()))
+      )
+      .mockImplementationOnce(() => {
+        throw 'PRIVATE_NON_ERROR_SENTINEL';
+      });
+
+    await runCommand(COMMANDS.boardReadyOpsPlan);
+
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'BoardReadyOps plan failed: Unknown BoardReadyOps plan error.'
+    );
+    expect(JSON.stringify(mockLogger.error.mock.calls)).not.toContain(
+      'PRIVATE_NON_ERROR_SENTINEL'
     );
   });
 
