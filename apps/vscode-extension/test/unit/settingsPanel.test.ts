@@ -165,11 +165,48 @@ describe('settings webview', () => {
     );
   });
 
+  it('refreshes capability health when BoardReadyOps or viewer state changes', async () => {
+    const context = createExtensionContextMock();
+    const panelMock = createPanelMock();
+    const services = createServices();
+    (vscode.window.createWebviewPanel as jest.Mock).mockReturnValue(
+      panelMock.panel
+    );
+
+    KiCadSettingsPanel.createOrShow(context as never, services as never);
+    panelMock.panel.webview.postMessage.mockClear();
+
+    const boardReadyOpsChanged = (
+      services.mcpToolsProvider.onDidChangeTreeData as jest.Mock
+    ).mock.calls[0]?.[0] as (() => void) | undefined;
+    const viewerChanged = (services.viewerState.onDidChange as jest.Mock).mock
+      .calls[0]?.[0] as (() => void) | undefined;
+
+    expect(boardReadyOpsChanged).toBeDefined();
+    expect(viewerChanged).toBeDefined();
+
+    boardReadyOpsChanged?.();
+    viewerChanged?.();
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(panelMock.panel.webview.postMessage).toHaveBeenCalledTimes(2);
+    expect(panelMock.panel.webview.postMessage).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ type: 'state' })
+    );
+    expect(panelMock.panel.webview.postMessage).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ type: 'state' })
+    );
+  });
+
   it('derives viewer health states and redacts BoardReadyOps diagnostics', () => {
     const context = createExtensionContextMock();
     const panelMock = createPanelMock();
     const services = createServices();
-    (vscode.window.createWebviewPanel as jest.Mock).mockReturnValue(panelMock.panel);
+    (vscode.window.createWebviewPanel as jest.Mock).mockReturnValue(
+      panelMock.panel
+    );
 
     services.mcpToolsProvider.broStatus.message = 'token=super-secret';
     services.viewerState.getDiagnosticBundleSnapshot.mockReturnValue({
