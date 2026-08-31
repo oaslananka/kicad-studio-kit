@@ -181,48 +181,38 @@ function isPositiveInteger(value: unknown): value is number {
   return Number.isInteger(value) && Number(value) >= 1;
 }
 
+function isRegion(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    isPositiveInteger(value['startLine']) &&
+    isPositiveInteger(value['endLine']) &&
+    (value['startColumn'] === undefined ||
+      isPositiveInteger(value['startColumn'])) &&
+    (value['endColumn'] === undefined || isPositiveInteger(value['endColumn']))
+  );
+}
+
+function isBoardCoordinates(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value['x'] === 'number' &&
+    Number.isFinite(value['x']) &&
+    typeof value['y'] === 'number' &&
+    Number.isFinite(value['y']) &&
+    (value['layer'] === undefined || typeof value['layer'] === 'string') &&
+    (value['units'] === 'mm' || value['units'] === 'in')
+  );
+}
+
 function isLocation(value: unknown): boolean {
   if (!isRecord(value)) return false;
-
-  if (value['region'] !== undefined) {
-    const region = value['region'];
-    if (!isRecord(region)) return false;
-    if (
-      !isPositiveInteger(region['startLine']) ||
-      !isPositiveInteger(region['endLine']) ||
-      (region['startColumn'] !== undefined &&
-        !isPositiveInteger(region['startColumn'])) ||
-      (region['endColumn'] !== undefined &&
-        !isPositiveInteger(region['endColumn']))
-    ) {
-      return false;
-    }
-  }
-
-  if (value['line'] !== undefined && !isPositiveInteger(value['line'])) {
-    return false;
-  }
-  if (value['column'] !== undefined && !isPositiveInteger(value['column'])) {
-    return false;
-  }
-
-  if (value['boardCoordinates'] !== undefined) {
-    const coordinates = value['boardCoordinates'];
-    if (!isRecord(coordinates)) return false;
-    if (
-      typeof coordinates['x'] !== 'number' ||
-      !Number.isFinite(coordinates['x']) ||
-      typeof coordinates['y'] !== 'number' ||
-      !Number.isFinite(coordinates['y']) ||
-      (coordinates['layer'] !== undefined &&
-        typeof coordinates['layer'] !== 'string') ||
-      (coordinates['units'] !== 'mm' && coordinates['units'] !== 'in')
-    ) {
-      return false;
-    }
-  }
-
-  return true;
+  return (
+    (value['region'] === undefined || isRegion(value['region'])) &&
+    (value['line'] === undefined || isPositiveInteger(value['line'])) &&
+    (value['column'] === undefined || isPositiveInteger(value['column'])) &&
+    (value['boardCoordinates'] === undefined ||
+      isBoardCoordinates(value['boardCoordinates']))
+  );
 }
 
 const findingResourceKinds = new Set([
