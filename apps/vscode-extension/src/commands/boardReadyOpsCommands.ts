@@ -5,6 +5,7 @@ import { COMMANDS, SETTINGS } from '../constants';
 import { localize } from '../i18n';
 import type { CommandServices } from './types';
 import { discoverBoardReadyOpsContract } from '../boardreadyops/contract';
+import { parseBoardReadyOpsPlan } from '../boardreadyops/plan';
 
 /** URL for BoardReadyOps documentation. */
 export const BOARDREADYOPS_DOCS_URL =
@@ -301,6 +302,86 @@ export function registerBoardReadyOpsCommands(
             services.logger.error('BoardReadyOps check failed', err);
             void vscode.window.showErrorMessage(
               `BoardReadyOps check failed: ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
+        }
+      );
+    }),
+
+    vscode.commands.registerCommand(COMMANDS.boardReadyOpsPlan, async () => {
+      const enabled = vscode.workspace
+        .getConfiguration()
+        .get<boolean>(SETTINGS.boardReadyOpsEnabled, false);
+      if (!enabled) {
+        void vscode.window.showWarningMessage(
+          localize('boardReadyOpsNotConfigured')
+        );
+        return;
+      }
+      const projectPath = services.projectState.getActiveProject()?.rootPath;
+      if (!projectPath) {
+        void vscode.window.showErrorMessage(
+          'No active KiCad project found. Open a project to plan BoardReadyOps remediation.'
+        );
+        return;
+      }
+      const specFile = vscode.workspace
+        .getConfiguration()
+        .get<string>(SETTINGS.boardReadyOpsSpecFile, '')
+        .trim();
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: 'Building BoardReadyOps remediation plan...',
+          cancellable: true
+        },
+        async (_progress, token) => {
+          try {
+            await assertCompatibleBoardReadyOps(projectPath, token);
+            if (token.isCancellationRequested) return;
+            const args = ['plan', '--format', 'json'];
+            if (specFile) args.push('--config', specFile);
+            args.push(projectPath);
+            const { stdout, exitCode } = await runBoardReadyOpsCommand(
+              projectPath,
+              args,
+              token
+            );
+            if (token.isCancellationRequested) return;
+            if (exitCode !== 0 && exitCode !== 1) {
+              throw new Error(
+                `BoardReadyOps plan exited with code ${exitCode}.`
+              );
+            }
+            const plan = parseBoardReadyOpsPlan(stdout);
+            const actions = plan.nextActions.length
+              ? plan.nextActions
+              : plan.releaseActions;
+            if (actions.length === 0) {
+              void vscode.window.showInformationMessage(
+                'BoardReadyOps did not report any remediation or release actions.'
+              );
+              return;
+            }
+            await vscode.window.showQuickPick(
+              actions.map((action) => ({
+                label: action.title,
+                description: action.ruleId,
+                detail: action.fixStrategy.steps.join(' → ')
+              })),
+              {
+                title: 'BoardReadyOps Remediation Plan',
+                placeHolder: 'Review the shortest deterministic next actions'
+              }
+            );
+          } catch (err) {
+            const safeError =
+              err instanceof Error
+                ? err.message
+                : 'Unknown BoardReadyOps plan error.';
+            services.logger.error('BoardReadyOps plan failed', safeError);
+            void vscode.window.showErrorMessage(
+              `BoardReadyOps plan failed: ${safeError}`
             );
           }
         }

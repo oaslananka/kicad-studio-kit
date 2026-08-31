@@ -179,6 +179,7 @@ export const COMMANDS = {
   exportTo: 'kicadstudio.exportTo',
   importFrom: 'kicadstudio.importFrom',
   boardReadyOpsCheck: 'kicadstudio.boardReadyOps.check',
+  boardReadyOpsPlan: 'kicadstudio.boardReadyOps.plan',
   boardReadyOpsConfigure: 'kicadstudio.boardReadyOps.configure',
   boardReadyOpsShowReport: 'kicadstudio.boardReadyOps.showReport',
   boardReadyOpsOpenDocs: 'kicadstudio.boardReadyOps.openDocs'
