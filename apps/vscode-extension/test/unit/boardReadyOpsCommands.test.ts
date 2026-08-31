@@ -4,6 +4,7 @@ jest.mock('node:child_process', () => ({
 
 import { EventEmitter } from 'node:events';
 import * as childProcess from 'node:child_process';
+import * as path from 'node:path';
 import { COMMANDS } from '../../src/constants';
 import { registerBoardReadyOpsCommands } from '../../src/commands/boardReadyOpsCommands';
 import { commands, window, env, __setConfiguration } from './vscodeMock';
@@ -229,7 +230,7 @@ describe('BoardReadyOps commands', () => {
       'verify',
       '--format',
       'json',
-      '/project/build/boardreadyops-release'
+      path.join('/project', 'build', 'boardreadyops-release')
     ]);
     expect(window.showInformationMessage).toHaveBeenCalledWith(
       'BoardReadyOps release evidence verified: 4 artifact(s). Signature verified.'
