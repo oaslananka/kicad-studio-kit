@@ -25,6 +25,15 @@ describe('BoardReadyOps agent plan contract', () => {
     );
   });
 
+  it('rejects non-object actions in the plan', () => {
+    const plan = boardReadyOpsAgentPlan();
+    plan['nextActions'] = [null];
+
+    expect(() => parseBoardReadyOpsPlan(JSON.stringify(plan))).toThrow(
+      'BoardReadyOps plan returned an invalid contract.'
+    );
+  });
+
   it.each([
     [
       'schema version',
