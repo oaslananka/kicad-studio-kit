@@ -483,6 +483,21 @@ test.describe('KiCad Studio webview DOM', () => {
     await action.focus();
     await action.press('Enter');
     await expect.poll(() => readLastMessageType(page)).toBe('openReviewTasks');
+
+    await page.evaluate(() => {
+      window.postMessage(
+        {
+          type: 'setStatus',
+          payload: {
+            status: 'message',
+            text: 'Untrusted action must not become a DOM action.',
+            action: 'javascript:alert(1)'
+          }
+        },
+        '*'
+      );
+    });
+    await expect(action).toBeHidden();
   });
 
   test('renders a guided empty netlist state instead of an empty table', async ({
@@ -518,7 +533,8 @@ test.describe('KiCad Studio webview DOM', () => {
           type: 'setNetlist',
           payload: {
             nets: [],
-            status: 'No nets found in the active schematic.'
+            status: 'No nets found in the active schematic.',
+            action: 'javascript:alert(1)'
           }
         },
         '*'
