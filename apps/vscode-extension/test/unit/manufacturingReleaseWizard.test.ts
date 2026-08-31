@@ -1,10 +1,21 @@
+jest.mock('../../src/boardreadyops/releaseGate', () => ({
+  verifyBoardReadyOpsManufacturingRelease: jest.fn()
+}));
+
 import * as vscode from 'vscode';
 import { runManufacturingReleaseWizard } from '../../src/commands/manufacturingReleaseWizard';
-import { window } from './vscodeMock';
+import { verifyBoardReadyOpsManufacturingRelease } from '../../src/boardreadyops/releaseGate';
+import { window, __setConfiguration } from './vscodeMock';
 
 describe('runManufacturingReleaseWizard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': false });
+    (verifyBoardReadyOpsManufacturingRelease as jest.Mock).mockResolvedValue({
+      ok: true,
+      checkedArtifacts: 2,
+      signatureVerified: true
+    });
   });
 
   function createServices(overrides?: {
@@ -79,6 +90,60 @@ describe('runManufacturingReleaseWizard', () => {
     expect(
       services.mcpAdapter.exportManufacturingPackage
     ).not.toHaveBeenCalled();
+  });
+
+  it('blocks manufacturing release when BoardReadyOps readiness has blockers', async () => {
+    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
+    (
+      verifyBoardReadyOpsManufacturingRelease as jest.Mock
+    ).mockResolvedValueOnce({
+      ok: false,
+      reason: 'BoardReadyOps readiness has blocking findings.'
+    });
+    const services = createServices();
+
+    await runManufacturingReleaseWizard(services as never);
+
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      'BoardReadyOps readiness has blocking findings.'
+    );
+    expect(
+      services.mcpAdapter.exportManufacturingPackage
+    ).not.toHaveBeenCalled();
+  });
+
+  it('includes verified BoardReadyOps evidence in the dry-run gate summary', async () => {
+    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': true });
+    const services = createServices();
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce({
+      label: 'Preview (dry run)',
+      dryRun: true
+    });
+    (window.showInputBox as jest.Mock).mockResolvedValueOnce(process.cwd());
+
+    await runManufacturingReleaseWizard(services as never);
+
+    expect(verifyBoardReadyOpsManufacturingRelease).toHaveBeenCalledWith(
+      process.cwd(),
+      undefined
+    );
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      'Manufacturing release preview',
+      expect.objectContaining({
+        modal: true,
+        detail: expect.stringContaining('BoardReadyOps=PASS')
+      }),
+      'OK'
+    );
+  });
+
+  it('keeps BoardReadyOps optional for manufacturing release', async () => {
+    const services = createServices();
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
+
+    await runManufacturingReleaseWizard(services as never);
+
+    expect(verifyBoardReadyOpsManufacturingRelease).not.toHaveBeenCalled();
   });
 
   it('blocks the release when a quality gate fails', async () => {

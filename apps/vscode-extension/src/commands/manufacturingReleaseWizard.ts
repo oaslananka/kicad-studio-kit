@@ -3,6 +3,8 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import type { QualityGateResult } from '../types';
+import { SETTINGS } from '../constants';
+import { verifyBoardReadyOpsManufacturingRelease } from '../boardreadyops/releaseGate';
 import {
   showStructuredError,
   structuredErrorFromUnknown,
@@ -41,6 +43,7 @@ export async function runManufacturingReleaseWizard(
     // A manufacturing release writes a bundle to disk; gate it on workspace
     // trust through the centralized guard rather than menu visibility alone.
     assertWorkspaceTrusted('Manufacturing release');
+    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     const gates = await services.mcpAdapter.runProjectQualityGate();
     const blocking = gates.filter((gate) =>
       ['FAIL', 'BLOCKED'].includes(gate.status)
@@ -56,6 +59,35 @@ export async function runManufacturingReleaseWizard(
       status: gate.status,
       summary: gate.summary
     }));
+
+    const boardReadyOpsEnabled = vscode.workspace
+      .getConfiguration()
+      .get<boolean>(SETTINGS.boardReadyOpsEnabled, false);
+    if (boardReadyOpsEnabled) {
+      if (!root) {
+        throw new Error(
+          'BoardReadyOps release verification requires an open workspace.'
+        );
+      }
+      const specFile = vscode.workspace
+        .getConfiguration()
+        .get<string>(SETTINGS.boardReadyOpsSpecFile, '')
+        .trim();
+      const boardReadyOpsGate = await verifyBoardReadyOpsManufacturingRelease(
+        root,
+        specFile || undefined
+      );
+      if (!boardReadyOpsGate.ok) {
+        telemetry.trackEvent('wizard.blocked');
+        void vscode.window.showWarningMessage(boardReadyOpsGate.reason);
+        return;
+      }
+      gateSummaries.push({
+        label: 'BoardReadyOps',
+        status: 'PASS',
+        summary: `Verified ${boardReadyOpsGate.checkedArtifacts} release evidence artifact(s).`
+      });
+    }
 
     const mode = await vscode.window.showQuickPick(
       [
@@ -77,7 +109,6 @@ export async function runManufacturingReleaseWizard(
       return;
     }
 
-    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     const defaultOutput = root
       ? path.join(
           root,
@@ -316,8 +347,7 @@ async function writeReleaseEvidence(
   }
 
   const mcpServerVersion = options.mcpResult?.['serverVersion'] as
-    | string
-    | undefined;
+    string | undefined;
 
   const manifest = buildReleaseManifest({
     extensionVersion,

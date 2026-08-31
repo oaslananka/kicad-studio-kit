@@ -22,12 +22,13 @@ Open VS Code Settings (`Ctrl+,`) and search for `boardreadyops`.
 
 All commands are available from the Command Palette (`Ctrl+Shift+P`) or the KiCad Studio panel.
 
-| Command ID                             | Title                                | Action                            |
-| -------------------------------------- | ------------------------------------ | --------------------------------- |
-| `kicadstudio.boardReadyOps.check`      | BoardReadyOps: Check Board Readiness | Run checks on the active project. |
-| `kicadstudio.boardReadyOps.configure`  | BoardReadyOps: Configure Checks      | Open BoardReadyOps settings.      |
-| `kicadstudio.boardReadyOps.showReport` | BoardReadyOps: Show Readiness Report | Display the last check report.    |
-| `kicadstudio.boardReadyOps.openDocs`   | BoardReadyOps: Open Documentation    | Open this page in a browser.      |
+| Command ID                             | Title                                | Action                                                     |
+| -------------------------------------- | ------------------------------------ | ---------------------------------------------------------- |
+| `kicadstudio.boardReadyOps.check`      | BoardReadyOps: Check Board Readiness | Run checks on the active project.                          |
+| `kicadstudio.boardReadyOps.plan`       | BoardReadyOps: Plan Remediation      | Build a structured remediation plan from current findings. |
+| `kicadstudio.boardReadyOps.configure`  | BoardReadyOps: Configure Checks      | Open BoardReadyOps settings.                               |
+| `kicadstudio.boardReadyOps.showReport` | BoardReadyOps: Show Readiness Report | Display the last check report.                             |
+| `kicadstudio.boardReadyOps.openDocs`   | BoardReadyOps: Open Documentation    | Open this page in a browser.                               |
 
 ## Usage
 
@@ -88,3 +89,26 @@ The score never hides a hard failure: any failed dimension or any
 numeric score is high. Each dimension and finding carries a remediation hint, and
 reports export to both Markdown and HTML so CI can publish the scorecard as an
 artifact. Any AI-generated remediation plan must be grounded in these findings.
+
+## Manufacturing release gate
+
+When `kicadstudio.boardReadyOps.enabled` is `true`, the Manufacturing Release
+Wizard treats BoardReadyOps as a release gate in addition to the existing
+project quality gates. Before any manufacturing package is exported, KiCad
+Studio:
+
+1. runs `boardreadyops doctor --format json` and rejects unsupported or
+   malformed contracts;
+2. runs the structured readiness check and blocks on a failed readiness result
+   or any `critical`/`high` finding; and
+3. verifies the project's `build/boardreadyops-release` evidence bundle.
+
+A numeric readiness score cannot override a blocking finding. Missing, stale,
+malformed, or unverified evidence fails closed while BoardReadyOps is enabled.
+If BoardReadyOps is disabled, the Manufacturing Release Wizard keeps its
+existing behavior and does not require BoardReadyOps.
+
+A successful verification is recorded as a `BoardReadyOps` quality-gate entry
+in the generated release manifest and summary. The release UI reports counts
+and verification state only; it does not surface raw CLI payloads or private
+artifact paths.
