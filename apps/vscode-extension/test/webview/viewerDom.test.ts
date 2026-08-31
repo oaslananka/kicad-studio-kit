@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import {
   countMessages,
   createBomHtml,
+  createNetlistHtml,
   hasMessageType,
   installVsCodeApiMock,
   readFixtureBase64,
@@ -454,5 +455,75 @@ test.describe('KiCad Studio webview DOM', () => {
     await expect(page.locator('#table-wrapper')).not.toHaveClass(/hidden/);
     await expect(page.locator('#bom-rows tr')).toHaveCount(1);
     await expect(page.locator('#btn-export-csv')).toBeEnabled();
+  });
+
+  test('offers a keyboard-accessible Review action for BOM prerequisites', async ({
+    page
+  }) => {
+    await installVsCodeApiMock(page);
+    await setWebviewContent(page, createBomHtml());
+
+    await page.evaluate(() => {
+      window.postMessage(
+        {
+          type: 'setStatus',
+          payload: {
+            status: 'message',
+            text: 'Open a .kicad_sch schematic file to load the Bill of Materials.',
+            action: 'openReviewTasks'
+          }
+        },
+        '*'
+      );
+    });
+
+    const action = page.locator('#bom-empty-action');
+    await expect(page.locator('#bom-empty')).toContainText('Open a .kicad_sch');
+    await expect(action).toBeVisible();
+    await action.focus();
+    await action.press('Enter');
+    await expect.poll(() => readLastMessageType(page)).toBe('openReviewTasks');
+  });
+
+  test('renders a guided empty netlist state instead of an empty table', async ({
+    page
+  }) => {
+    await installVsCodeApiMock(page);
+    await setWebviewContent(page, createNetlistHtml());
+
+    await page.evaluate(() => {
+      window.postMessage(
+        {
+          type: 'setNetlist',
+          payload: {
+            nets: [],
+            status: 'Open a .kicad_sch file or select a KiCad project.',
+            action: 'openReviewTasks'
+          }
+        },
+        '*'
+      );
+    });
+
+    await expect(page.locator('#netlist-empty')).toBeVisible();
+    await expect(page.locator('#table-wrapper')).toHaveClass(/hidden/);
+    const action = page.locator('#netlist-empty-action');
+    await expect(action).toBeVisible();
+    await action.press('Enter');
+    await expect.poll(() => readLastMessageType(page)).toBe('openReviewTasks');
+
+    await page.evaluate(() => {
+      window.postMessage(
+        {
+          type: 'setNetlist',
+          payload: {
+            nets: [],
+            status: 'No nets found in the active schematic.'
+          }
+        },
+        '*'
+      );
+    });
+    await expect(action).toBeHidden();
   });
 });

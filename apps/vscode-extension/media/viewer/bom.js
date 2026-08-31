@@ -6,6 +6,8 @@
   const summaryText = document.getElementById('summary-text');
   const loadingRow = document.getElementById('loading-row');
   const emptyState = document.getElementById('bom-empty');
+  const emptyMessage = document.getElementById('bom-empty-message');
+  const emptyAction = document.getElementById('bom-empty-action');
   const tableWrapper = document.getElementById('table-wrapper');
   const exportCsv = document.getElementById('btn-export-csv');
   const exportXlsx = document.getElementById('btn-export-xlsx');
@@ -43,15 +45,19 @@
     }
   }
 
-  function showEmpty(message) {
+  function showEmpty(message, action) {
     rowsEl.replaceChildren();
-    emptyState.textContent = message;
+    emptyMessage.textContent = message;
+    emptyAction.hidden = !action;
+    emptyAction.dataset.action = action || '';
     emptyState.classList.add('visible');
     tableWrapper.classList.add('hidden');
     syncExportState(false);
   }
 
   function showTable() {
+    emptyAction.hidden = true;
+    emptyAction.dataset.action = '';
     emptyState.classList.remove('visible');
     tableWrapper.classList.remove('hidden');
     syncExportState(false);
@@ -189,6 +195,11 @@
     if (exportXlsx.disabled) return;
     vscode.postMessage({ type: 'exportXlsx' });
   });
+  emptyAction.addEventListener('click', () => {
+    if (emptyAction.dataset.action === 'openReviewTasks') {
+      vscode.postMessage({ type: 'openReviewTasks' });
+    }
+  });
 
   window.addEventListener('message', (event) => {
     const message = event.data;
@@ -202,7 +213,7 @@
         setLoading(false);
         const text = payload.text || 'No schematic opened.';
         summaryText.textContent = text;
-        showEmpty(text);
+        showEmpty(text, payload.action);
       }
     }
     if (message.type === 'setData') {

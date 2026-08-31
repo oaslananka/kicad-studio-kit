@@ -78,7 +78,14 @@ export class BomViewProvider
     };
     webviewView.webview.html = this.getHtml(webviewView.webview);
     webviewView.webview.onDidReceiveMessage(async (message: unknown) => {
-      if (!hasType(message, ['exportCsv', 'exportXlsx', 'rowSelected'])) {
+      if (
+        !hasType(message, [
+          'exportCsv',
+          'exportXlsx',
+          'rowSelected',
+          'openReviewTasks'
+        ])
+      ) {
         return;
       }
       if (message.type === 'exportCsv') {
@@ -86,6 +93,9 @@ export class BomViewProvider
       }
       if (message.type === 'exportXlsx') {
         await vscode.commands.executeCommand(COMMANDS.exportBOMXLSX);
+      }
+      if (message.type === 'openReviewTasks') {
+        await vscode.commands.executeCommand(COMMANDS.openReviewTasks);
       }
       if (message.type === 'rowSelected') {
         const payload = asRecord(message.payload);
@@ -103,7 +113,8 @@ export class BomViewProvider
     if (!file) {
       this.exportState?.complete('bom', undefined, 'No schematic opened.');
       this.manager.setStatus(
-        'Open a .kicad_sch schematic file to load the Bill of Materials.'
+        'Open a .kicad_sch schematic file to load the Bill of Materials.',
+        'openReviewTasks'
       );
       return;
     }

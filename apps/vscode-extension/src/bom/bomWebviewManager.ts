@@ -16,10 +16,10 @@ export class BomWebviewManager {
     this.postMessage({ type: 'setStatus', payload: { status: 'loading' } });
   }
 
-  setStatus(text: string): void {
+  setStatus(text: string, action?: 'openReviewTasks'): void {
     this.postMessage({
       type: 'setStatus',
-      payload: { status: 'message', text }
+      payload: { status: 'message', text, ...(action ? { action } : {}) }
     });
   }
 

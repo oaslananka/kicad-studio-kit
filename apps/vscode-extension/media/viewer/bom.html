@@ -85,7 +85,12 @@
         <span>Loading BOM...</span>
       </div>
       <div id="bom-empty" role="status" aria-live="polite">
-        Open a schematic to load the Bill of Materials.
+        <span id="bom-empty-message">
+          Open a schematic to load the Bill of Materials.
+        </span>
+        <button id="bom-empty-action" type="button" hidden>
+          Open Review Tasks
+        </button>
       </div>
       <div id="table-wrapper" tabindex="0" aria-label="BOM table">
         <table>
