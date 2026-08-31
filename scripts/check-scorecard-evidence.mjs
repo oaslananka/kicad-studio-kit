@@ -89,18 +89,44 @@ function apiUrl(relativePath) {
   return `${root}${relativePath}`;
 }
 
+export async function collectDefaultBranchFirstParentCommits({
+  sampleSize,
+  fetchCommit,
+}) {
+  const commits = [];
+  let ref = "main";
+  while (ref && commits.length < sampleSize) {
+    const commit = await fetchCommit(ref);
+    if (!commit || typeof commit.sha !== "string" || commit.sha.trim() === "") {
+      throw new TypeError(
+        `default-branch commit ${ref}: expected a commit object`,
+      );
+    }
+    commits.push({ sha: commit.sha });
+    const firstParent = Array.isArray(commit.parents)
+      ? commit.parents[0]?.sha
+      : null;
+    ref =
+      typeof firstParent === "string" && firstParent.trim() !== ""
+        ? firstParent
+        : "";
+  }
+  return commits;
+}
+
 async function collectLiveEvidence(options, policy, token) {
   const repoPath = `/repos/${options.repository}`;
-  const commitsResult = await fetchJson(
-    apiUrl(`${repoPath}/commits?sha=main&per_page=${policy.sampleSize}`),
-    token,
-    "recent default-branch commits",
-  );
-  if (!Array.isArray(commitsResult.data)) {
-    throw new TypeError(
-      "recent default-branch commits: expected an array response",
-    );
-  }
+  const recentCommits = await collectDefaultBranchFirstParentCommits({
+    sampleSize: policy.sampleSize,
+    fetchCommit: async (ref) => {
+      const result = await fetchJson(
+        apiUrl(`${repoPath}/commits/${encodeURIComponent(ref)}`),
+        token,
+        `default-branch commit ${ref}`,
+      );
+      return result.data;
+    },
+  });
   const codeqlAnalyses = await fetchAll(
     apiUrl(`${repoPath}/code-scanning/analyses?tool_name=CodeQL&per_page=100`),
     token,
@@ -118,7 +144,7 @@ async function collectLiveEvidence(options, policy, token) {
     fs.readFileSync(options.governanceJson, "utf8"),
   );
   return {
-    recentCommits: commitsResult.data.map((commit) => ({ sha: commit.sha })),
+    recentCommits,
     codeqlAnalyses,
     scorecardAlerts,
     governanceReport,

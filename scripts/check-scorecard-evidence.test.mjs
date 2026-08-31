@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { collectDefaultBranchFirstParentCommits } from "./check-scorecard-evidence.mjs";
+
 import {
   buildScorecardEvidenceReport,
   buildUnavailableScorecardEvidenceReport,
@@ -48,6 +50,29 @@ const governanceReport = {
   exitCode: 0,
   ruleset: { status: "current", differences: [] },
 };
+
+test("#532 default-branch sampling follows first parents instead of merged branch commits", async () => {
+  const graph = new Map([
+    ["main", { sha: "merge", parents: [{ sha: "base" }, { sha: "feature" }] }],
+    ["base", { sha: "base", parents: [{ sha: "root" }] }],
+    ["root", { sha: "root", parents: [] }],
+    ["feature", { sha: "feature", parents: [{ sha: "base" }] }],
+  ]);
+  const requested = [];
+  const commits = await collectDefaultBranchFirstParentCommits({
+    sampleSize: 3,
+    fetchCommit: async (ref) => {
+      requested.push(ref);
+      return graph.get(ref);
+    },
+  });
+  assert.deepEqual(commits, [
+    { sha: "merge" },
+    { sha: "base" },
+    { sha: "root" },
+  ]);
+  assert.deepEqual(requested, ["main", "base", "root"]);
+});
 
 test("#532 current residual-risk policy is complete", () => {
   assert.deepEqual(validateScorecardResidualRiskPolicy(policy), []);
