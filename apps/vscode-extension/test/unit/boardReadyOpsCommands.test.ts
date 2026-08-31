@@ -8,6 +8,14 @@ import { COMMANDS } from '../../src/constants';
 import { registerBoardReadyOpsCommands } from '../../src/commands/boardReadyOpsCommands';
 import { commands, window, env, __setConfiguration } from './vscodeMock';
 
+function registeredHandler(command: string): () => Promise<void> {
+  const registration = (commands.registerCommand as jest.Mock).mock.calls.find(
+    ([id]: [string]) => id === command
+  );
+  expect(registration).toBeDefined();
+  return registration[1] as () => Promise<void>;
+}
+
 function boardReadyOpsChild(stdout: string, exitCode = 0) {
   const child = new EventEmitter() as EventEmitter & {
     stdout: EventEmitter;
@@ -157,10 +165,7 @@ describe('BoardReadyOps commands', () => {
       );
 
     registerBoardReadyOpsCommands(servicesMock);
-    const registration = (commands.registerCommand as jest.Mock).mock.calls.find(
-      ([command]: [string]) => command === COMMANDS.boardReadyOpsCheck
-    );
-    await (registration?.[1] as () => Promise<void>)();
+    await registeredHandler(COMMANDS.boardReadyOpsCheck)();
 
     expect(spawnMock).toHaveBeenCalledTimes(2);
     expect(spawnMock.mock.calls[0]?.[1]).toEqual([
@@ -195,10 +200,7 @@ describe('BoardReadyOps commands', () => {
       .mockImplementationOnce(() => boardReadyOpsChild('PRIVATE_EVIDENCE_SENTINEL'));
 
     registerBoardReadyOpsCommands(servicesMock);
-    const registration = (commands.registerCommand as jest.Mock).mock.calls.find(
-      ([command]: [string]) => command === COMMANDS.boardReadyOpsCheck
-    );
-    await (registration?.[1] as () => Promise<void>)();
+    await registeredHandler(COMMANDS.boardReadyOpsCheck)();
 
     expect(window.showErrorMessage).toHaveBeenCalledWith(
       expect.stringContaining('invalid JSON output')
@@ -228,10 +230,7 @@ describe('BoardReadyOps commands', () => {
     );
 
     registerBoardReadyOpsCommands(servicesMock);
-    const registration = (commands.registerCommand as jest.Mock).mock.calls.find(
-      ([command]: [string]) => command === COMMANDS.boardReadyOpsCheck
-    );
-    await (registration?.[1] as () => Promise<void>)();
+    await registeredHandler(COMMANDS.boardReadyOpsCheck)();
 
     expect(spawnMock).toHaveBeenCalledTimes(1);
     expect(window.showErrorMessage).toHaveBeenCalledWith(
@@ -254,10 +253,7 @@ describe('BoardReadyOps commands', () => {
     );
 
     registerBoardReadyOpsCommands(servicesMock);
-    const registration = (commands.registerCommand as jest.Mock).mock.calls.find(
-      ([command]: [string]) => command === COMMANDS.boardReadyOpsCheck
-    );
-    await (registration?.[1] as () => Promise<void>)();
+    await registeredHandler(COMMANDS.boardReadyOpsCheck)();
 
     expect(spawnMock).toHaveBeenCalledTimes(1);
     expect(window.showErrorMessage).toHaveBeenCalledWith(
