@@ -12,6 +12,14 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.13.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.13.0...vscode-extension-v1.13.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* **kicad-studio:** align readiness findings contract ([c6e5340](https://github.com/oaslananka/kicad-studio-kit/commit/c6e5340ccad4eada5a00a8446e0c52e5fdfe427f))
+* **kicad-studio:** validate BoardReadyOps readiness contract ([2b8bcba](https://github.com/oaslananka/kicad-studio-kit/commit/2b8bcbae88cf98da67677675ce73cd960c33f6f6))
+
 ## [1.13.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.12.0...vscode-extension-v1.13.0) (2026-08-31)
 
 
