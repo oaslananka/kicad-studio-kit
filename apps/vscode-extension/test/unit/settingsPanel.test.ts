@@ -95,15 +95,12 @@ describe('settings webview', () => {
     expect(html).not.toContain("'unsafe-inline'");
     expect(html).not.toContain('https://cdn');
     expect(html).not.toMatch(/\son[a-z]+=/i);
-    expect(html).toContain('data-setting="kicadstudio.ai.provider"');
-    expect(html).toContain('<option value="copilot">GitHub Copilot</option>');
-    expect(html).not.toContain('<option value="codex">');
+    expect(html).toContain('id="open-native-settings"');
+    expect(html).toContain('id="cli-health"');
+    expect(html).toContain('id="ai-health"');
+    expect(html).toContain('id="mcp-health"');
+    expect(html).not.toContain('data-setting=');
     expect(html).toContain("type: 'requestApiKeyStatus'");
-    expect(html).toContain('<option value="review">review</option>');
-    expect(html).toContain('<option value="build">build</option>');
-    expect(html.indexOf('value="review"')).toBeLessThan(
-      html.indexOf('value="analysis"')
-    );
   });
 
   it('embeds the canonical MCP integration documentation URL (#488)', () => {
@@ -124,7 +121,7 @@ describe('settings webview', () => {
     );
   });
 
-  it('handles setting updates, API key actions, CLI detection, and allowed external links', async () => {
+  it('handles native-settings navigation, API key actions, CLI detection, and allowed external links', async () => {
     const context = createExtensionContextMock();
     const panelMock = createPanelMock();
     const services = createServices();
@@ -142,11 +139,7 @@ describe('settings webview', () => {
 
     KiCadSettingsPanel.createOrShow(context as never, services as never);
 
-    await panelMock.send({
-      type: 'updateSetting',
-      key: SETTINGS.aiProvider,
-      value: 'openai'
-    });
+    await panelMock.send({ type: 'openNativeSettings' });
     await panelMock.send({ type: 'setAiKey' });
     await panelMock.send({ type: 'clearAiKey' });
     await panelMock.send({ type: 'testAiKey' });
@@ -157,10 +150,10 @@ describe('settings webview', () => {
     });
     await panelMock.send({ type: 'clearAllSecrets' });
 
-    expect(configUpdate).toHaveBeenCalledWith(
-      SETTINGS.aiProvider,
-      'openai',
-      vscode.ConfigurationTarget.Global
+    expect(configUpdate).not.toHaveBeenCalled();
+    expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
+      'workbench.action.openSettings',
+      '@ext:oaslananka.kicadstudiokit'
     );
     expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
       COMMANDS.setAiApiKey
