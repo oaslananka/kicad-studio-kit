@@ -10,6 +10,14 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.11.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.5...vscode-extension-v1.11.0) (2026-08-31)
+
+
+### Features
+
+* **kicad-studio:** negotiate advertised MCP profiles ([f697f51](https://github.com/oaslananka/kicad-studio-kit/commit/f697f51a7e611aef2a5f5bb36785e19cbde63f87))
+* **kicad-studio:** negotiate advertised MCP profiles ([348f0e8](https://github.com/oaslananka/kicad-studio-kit/commit/348f0e8cc74732ed79abf6292951700d8281e1b6))
+
 ## [1.10.5](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.4...vscode-extension-v1.10.5) (2026-08-30)
 
 
