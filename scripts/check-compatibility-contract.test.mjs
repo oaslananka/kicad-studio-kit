@@ -89,6 +89,16 @@ test("#621 embedded support axes reject BoardReadyOps contract drift", () => {
   );
 });
 
+test("#623 BoardReadyOps support-matrix evidence matches compatibility metadata", () => {
+  const supportMatrix = fs.readFileSync("docs/support-matrix.md", "utf8");
+  const testedVersion = compatibility.supportAxes.boardReadyOps.testedAgainst.version;
+  const documentedVersion = supportMatrix.match(
+    /\| BoardReadyOps \|[^\n]*tested against npm `([^`]+)`/u,
+  )?.[1];
+
+  assert.equal(documentedVersion, testedVersion);
+});
+
 test("repository compatibility contract validates current state", () => {
   assert.deepEqual(validateCompatibilityContract(), []);
 });
