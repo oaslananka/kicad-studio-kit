@@ -507,6 +507,8 @@ export async function activate(
     mcpClient,
     mcpAdapter: mcpToolAdapter,
     mcpLogger,
+    mcpToolsProvider,
+    viewerState,
     variantProvider,
     drcRulesProvider,
     treeProvider,
@@ -634,10 +636,7 @@ async function migrateDeprecatedSecretSettings(
 }
 
 function getConfiguredAiSecretProvider():
-  | 'claude'
-  | 'openai'
-  | 'openrouter'
-  | 'gemini' {
+  'claude' | 'openai' | 'openrouter' | 'gemini' {
   const provider = vscode.workspace
     .getConfiguration()
     .get<string>(SETTINGS.aiProvider, 'claude');

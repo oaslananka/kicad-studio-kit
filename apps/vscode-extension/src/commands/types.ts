@@ -27,6 +27,19 @@ import type {
   DiagnosticStateStore,
   ProjectStateStore
 } from '../state/stateStores';
+import type { ViewerStateStore } from '../state/viewerStateStore';
+
+export interface BoardReadyOpsHealthProvider {
+  readonly broStatus: {
+    installed: boolean;
+    version?: string | undefined;
+    healthy: boolean;
+    message?: string | undefined;
+    tools: string[];
+  };
+  readonly onDidChangeTreeData: vscode.Event<unknown>;
+  refresh(): void;
+}
 
 /**
  * Shared service dependencies that are passed to all command registration
@@ -51,6 +64,8 @@ export interface CommandServices {
   mcpClient: McpClient;
   mcpAdapter: StudioMcpAdapter;
   mcpLogger: McpLogger;
+  mcpToolsProvider: BoardReadyOpsHealthProvider;
+  viewerState: ViewerStateStore;
   qualityGateProvider: QualityGateProvider;
   libraryIndexer: KiCadLibraryIndexer;
   librarySearch: LibrarySearchProvider;
