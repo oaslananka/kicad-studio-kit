@@ -139,7 +139,7 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
         label: 'Show BoardReadyOps remediation plan',
         description: 'Review deterministic next actions without AI',
         command: COMMANDS.boardReadyOpsPlan,
-        requirements: { all: ['workspaceTrusted'] }
+        requirements: { all: ['workspaceTrusted', 'hasProject'] }
       },
       {
         label: 'Analyze latest DRC results with AI',
