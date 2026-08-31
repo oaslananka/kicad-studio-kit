@@ -393,6 +393,10 @@
       "task": "validate",
       "surface": "contextual"
     },
+    "kicadstudio.boardReadyOps.plan": {
+      "task": "validate",
+      "surface": "contextual"
+    },
     "kicadstudio.export3DStep": {
       "task": "release",
       "surface": "contextual"
