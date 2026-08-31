@@ -11,6 +11,7 @@ import type {
 import type { McpConnectionAdapter } from './mcpToolAdapter';
 import { readConfiguredMcpProfile } from '../commands/mcpProfilePicker';
 import { COMPATIBILITY_MATRIX } from './compatibilityMatrix';
+import { discoverBoardReadyOpsContract } from '../boardreadyops/contract';
 
 type McpToolsNode = {
   label: string;
@@ -176,9 +177,20 @@ export class McpToolsProvider implements vscode.TreeDataProvider<McpToolsNode> {
 
     try {
       const { stdout: docStdout } = await runDoctor();
-      const doc = JSON.parse(docStdout.trim());
-      const version = doc.tool?.version ?? 'unknown';
+      const contract = discoverBoardReadyOpsContract(docStdout);
+      const version = contract.version;
+      if (!contract.compatible) {
+        this.broStatus = {
+          installed: true,
+          version,
+          healthy: false,
+          message: `BoardReadyOps compatibility check failed: ${contract.reason}.`,
+          tools: []
+        };
+        return;
+      }
 
+      const doc = JSON.parse(docStdout.trim());
       let healthy = true;
       let message = 'BoardReadyOps is healthy.';
       if (Array.isArray(doc.checks)) {
