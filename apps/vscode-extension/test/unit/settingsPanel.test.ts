@@ -67,6 +67,48 @@ function createServices() {
       clearApiKey: jest.fn(async () => undefined)
     },
     setAiHealthy: jest.fn(),
+    mcpToolsProvider: {
+      broStatus: {
+        installed: true,
+        version: '1.37.0',
+        healthy: true,
+        message: 'BoardReadyOps is healthy.',
+        tools: ['bom.missing-mpn']
+      },
+      refresh: jest.fn(),
+      onDidChangeTreeData: jest.fn(() => ({ dispose: jest.fn() }))
+    },
+    viewerState: {
+      getDiagnosticBundleSnapshot: jest.fn(() => ({
+        viewers: [
+          {
+            uri: 'file:///workspace/board.kicad_pcb',
+            status: 'ready',
+            error: undefined,
+            project: undefined,
+            state: {
+              zoom: 1,
+              grid: true,
+              theme: 'kicad',
+              engine: {
+                kind: 'kicanvas',
+                label: 'KiCanvas',
+                capabilities: {
+                  interactive: true,
+                  fit: true,
+                  zoom: true,
+                  exportPng: true,
+                  exportSvg: true,
+                  selection: true,
+                  layers: true
+                }
+              }
+            }
+          }
+        ]
+      })),
+      onDidChange: jest.fn(() => ({ dispose: jest.fn() }))
+    },
     logger: { error: jest.fn() }
   };
 }
@@ -99,6 +141,8 @@ describe('settings webview', () => {
     expect(html).toContain('id="cli-health"');
     expect(html).toContain('id="ai-health"');
     expect(html).toContain('id="mcp-health"');
+    expect(html).toContain('id="boardreadyops-health"');
+    expect(html).toContain('id="viewer-health"');
     expect(html).not.toContain('data-setting=');
     expect(html).toContain("type: 'requestApiKeyStatus'");
   });
@@ -144,6 +188,9 @@ describe('settings webview', () => {
     await panelMock.send({ type: 'clearAiKey' });
     await panelMock.send({ type: 'testAiKey' });
     await panelMock.send({ type: 'detectCli' });
+    await panelMock.send({ type: 'refreshBoardReadyOps' });
+    await panelMock.send({ type: 'runBoardReadyOpsCheck' });
+    await panelMock.send({ type: 'openBoardReadyOpsDocs' });
     await panelMock.send({
       type: 'openExternalLink',
       href: 'https://github.com/oaslananka/kicad-studio-kit/blob/main/apps/vscode-extension/docs/INTEGRATION.md'
@@ -166,6 +213,13 @@ describe('settings webview', () => {
     expect(services.statusBar.update).toHaveBeenCalledWith({
       cli: expect.objectContaining({ versionLabel: 'KiCad 10.0.0' })
     });
+    expect(services.mcpToolsProvider.refresh).toHaveBeenCalled();
+    expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
+      COMMANDS.boardReadyOpsCheck
+    );
+    expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
+      COMMANDS.boardReadyOpsOpenDocs
+    );
     const openedDocumentationUrl = (
       vscode.env.openExternal as jest.Mock
     ).mock.calls.at(-1)?.[0] as vscode.Uri | undefined;

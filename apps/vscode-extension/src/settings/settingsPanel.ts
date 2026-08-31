@@ -6,7 +6,7 @@ import {
   SETTINGS
 } from '../constants';
 import { asRecord, asString, hasType } from '../utils/webviewMessages';
-import { isAiSecretProvider } from '../utils/secrets';
+import { isAiSecretProvider, redactSensitiveText } from '../utils/secrets';
 import { requireWorkspaceTrust } from '../utils/workspaceTrust';
 import type { CommandServices } from '../commands/types';
 import { buildSettingsHtml, type SettingsViewState } from './settingsHtml';
@@ -18,6 +18,9 @@ const SETTINGS_PANEL_MESSAGE_TYPES = [
   'clearAiKey',
   'testAiKey',
   'detectCli',
+  'refreshBoardReadyOps',
+  'runBoardReadyOpsCheck',
+  'openBoardReadyOpsDocs',
   'openExternalLink',
   'requestApiKeyStatus',
   'clearAllSecrets'
@@ -101,6 +104,12 @@ export class KiCadSettingsPanel implements vscode.Disposable {
         if (SETTINGS_KEYS.some((key) => event.affectsConfiguration(key))) {
           void this.postState();
         }
+      }),
+      this.services.mcpToolsProvider.onDidChangeTreeData(() => {
+        void this.postState();
+      }),
+      this.services.viewerState.onDidChange(() => {
+        void this.postState();
       })
     );
   }
@@ -164,6 +173,23 @@ export class KiCadSettingsPanel implements vscode.Disposable {
       return;
     }
 
+    if (message.type === 'refreshBoardReadyOps') {
+      this.services.mcpToolsProvider.refresh();
+      await this.postState('BoardReadyOps health refresh started.');
+      return;
+    }
+
+    if (message.type === 'runBoardReadyOpsCheck') {
+      await vscode.commands.executeCommand(COMMANDS.boardReadyOpsCheck);
+      this.services.mcpToolsProvider.refresh();
+      return;
+    }
+
+    if (message.type === 'openBoardReadyOpsDocs') {
+      await vscode.commands.executeCommand(COMMANDS.boardReadyOpsOpenDocs);
+      return;
+    }
+
     if (message.type === 'openExternalLink') {
       const href = asString(record['href']);
       if (href && this.isAllowedExternalLink(href)) {
@@ -197,6 +223,26 @@ export class KiCadSettingsPanel implements vscode.Disposable {
     );
     const snapshot = this.services.statusBar.getSnapshot();
     const aiSelection = this.services.aiProviders.getSelection();
+    const boardReadyOps = this.services.mcpToolsProvider.broStatus;
+    const viewers =
+      this.services.viewerState.getDiagnosticBundleSnapshot().viewers;
+    const failedViewer = viewers.find((viewer) => viewer.status === 'error');
+    const viewerStatus = failedViewer
+      ? 'error'
+      : viewers.some((viewer) => viewer.status === 'loading')
+        ? 'loading'
+        : viewers.some((viewer) => viewer.status === 'ready')
+          ? 'ready'
+          : 'idle';
+    const viewerEngines = [
+      ...new Set(
+        viewers.flatMap((viewer) =>
+          viewer.state?.engine
+            ? [`${viewer.state.engine.label} (${viewer.state.engine.kind})`]
+            : []
+        )
+      )
+    ];
     const state: SettingsViewState = {
       settings,
       aiKeyStored: false,
@@ -213,6 +259,21 @@ export class KiCadSettingsPanel implements vscode.Disposable {
         compat: snapshot.mcpCompat,
         version: snapshot.mcpVersion,
         profile: snapshot.mcpProfile
+      },
+      boardReadyOps: {
+        installed: boardReadyOps.installed,
+        healthy: boardReadyOps.healthy,
+        version: boardReadyOps.version,
+        message: boardReadyOps.message
+          ? redactSensitiveText(boardReadyOps.message)
+          : undefined,
+        toolCount: boardReadyOps.tools.length
+      },
+      viewer: {
+        status: viewerStatus,
+        error: failedViewer?.error,
+        engines: viewerEngines,
+        openCount: viewers.length
       }
     };
     if (snapshot.cli) {
