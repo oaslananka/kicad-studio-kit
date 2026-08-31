@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { spawn } from 'node:child_process';
 import * as path from 'node:path';
 import { COMMANDS, SETTINGS } from '../constants';
 import { localize } from '../i18n';
@@ -12,6 +11,7 @@ import {
 } from '../boardreadyops/contract';
 import { parseBoardReadyOpsPlan } from '../boardreadyops/plan';
 import { parseBoardReadyOpsEvidenceVerification } from '../boardreadyops/evidence';
+import { runBoardReadyOpsCommand } from '../boardreadyops/cli';
 
 /** URL for BoardReadyOps documentation. */
 export const BOARDREADYOPS_DOCS_URL =
@@ -19,47 +19,6 @@ export const BOARDREADYOPS_DOCS_URL =
 
 let latestReport: BoardReadyOpsRunResult | undefined = undefined;
 const previousDiagnosticUris = new Set<string>();
-
-function runBoardReadyOpsCommand(
-  projectPath: string,
-  args: string[],
-  token: vscode.CancellationToken
-): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  return new Promise((resolve, reject) => {
-    const cmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-
-    const child = spawn(cmd, ['boardreadyops', ...args], {
-      cwd: projectPath,
-      env: { ...process.env },
-      shell: false
-    });
-
-    let stdout = '';
-    let stderr = '';
-
-    const disposable = token.onCancellationRequested(() => {
-      child.kill();
-    });
-
-    child.stdout?.on('data', (chunk) => {
-      stdout += chunk.toString();
-    });
-
-    child.stderr?.on('data', (chunk) => {
-      stderr += chunk.toString();
-    });
-
-    child.on('error', (err) => {
-      disposable.dispose();
-      reject(err);
-    });
-
-    child.on('close', (code) => {
-      disposable.dispose();
-      resolve({ stdout, stderr, exitCode: code ?? 0 });
-    });
-  });
-}
 
 function runBoardReadyOps(
   projectPath: string,
