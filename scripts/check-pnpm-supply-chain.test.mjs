@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   readdirSync,
   rmSync,
   writeFileSync,
@@ -13,20 +14,33 @@ import test from "node:test";
 
 import { validatePnpmSupplyChain } from "./check-pnpm-supply-chain.mjs";
 
+function withOsvSecurityPins(workspace) {
+  if (workspace.includes('"@xmldom/xmldom": 0.8.15')) {
+    return workspace;
+  }
+  return workspace.replace(
+    /(^\s*fast-uri:\s*[^\n]+$)/mu,
+    '  "@xmldom/xmldom": 0.8.15\n  qs: 6.16.0\n$1',
+  );
+}
+
 function createFixture(overrides = {}) {
+  const workspaceOverride = overrides.workspace
+    ? withOsvSecurityPins(overrides.workspace)
+    : undefined;
   const repoRoot = mkdtempSync(path.join(os.tmpdir(), "pnpm-supply-chain-"));
   mkdirSync(path.join(repoRoot, ".github/workflows"), { recursive: true });
 
   writeFileSync(
     path.join(repoRoot, "pnpm-workspace.yaml"),
-    overrides.workspace ??
+    workspaceOverride ??
       [
         "packages:",
         "minimumReleaseAge: 10080",
         "trustPolicy: no-downgrade",
         "minimumReleaseAgeExclude:",
         "  - tmp@0.2.7",
-        "  - fast-uri@3.1.5",
+        "  - qs@6.16.0",
         "  - js-yaml@4.3.1",
         "  - brace-expansion@2.1.4",
         "  - brace-expansion@5.0.9",
@@ -43,9 +57,11 @@ function createFixture(overrides = {}) {
         '  "postcss@8.5.15": "8.5.24"',
         '  "nanoid@3.3.16": "3.3.18"',
         '  "nanoid@3.3.17": "3.3.18"',
+        '  "@xmldom/xmldom": 0.8.15',
         "  js-yaml: 4.3.1",
+        "  qs: 6.16.0",
         "  tar: 7.5.22",
-        "  fast-uri: 3.1.5",
+        "  fast-uri: 3.1.6",
         "  linkify-it: 5.0.2",
         "",
       ].join("\n"),
@@ -111,6 +127,23 @@ test("fixture with expected supply-chain settings passes", () => {
   }
 });
 
+test("OSV-disclosed qs and xmldom fixes stay pinned", () => {
+  const repoRoot = createFixture();
+  const workspacePath = path.join(repoRoot, "pnpm-workspace.yaml");
+  try {
+    const staleWorkspace = readFileSync(workspacePath, "utf8")
+      .replace('  "@xmldom/xmldom": 0.8.15\n', "")
+      .replace("  qs: 6.16.0\n", "  qs: 6.15.3\n");
+    writeFileSync(workspacePath, staleWorkspace);
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      "pnpm-workspace.yaml overrides must pin @xmldom/xmldom to 0.8.15",
+      "pnpm-workspace.yaml overrides must pin qs to 6.16.0",
+    ]);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
 test("mature PostCSS and tar releases cannot remain age exceptions", () => {
   const repoRoot = createFixture({
     workspace: [
@@ -119,7 +152,7 @@ test("mature PostCSS and tar releases cannot remain age exceptions", () => {
       "trustPolicy: no-downgrade",
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
-      "  - fast-uri@3.1.5",
+      "  - qs@6.16.0",
       "  - js-yaml@4.3.1",
       "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.9",
@@ -137,7 +170,7 @@ test("mature PostCSS and tar releases cannot remain age exceptions", () => {
       '  "postcss@8.5.15": "8.5.24"',
       "  js-yaml: 4.3.1",
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.5",
+      "  fast-uri: 3.1.6",
       "  linkify-it: 5.0.2",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
@@ -146,7 +179,7 @@ test("mature PostCSS and tar releases cannot remain age exceptions", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.5, js-yaml@4.3.1, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18",
+      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, qs@6.16.0, js-yaml@4.3.1, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -172,7 +205,7 @@ test("disabled pnpm supply-chain controls fail validation", () => {
       '  "postcss@8.5.15": "8.5.24"',
       "  js-yaml: 4.3.1",
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.5",
+      "  fast-uri: 3.1.6",
       "  linkify-it: 5.0.2",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
@@ -185,7 +218,7 @@ test("disabled pnpm supply-chain controls fail validation", () => {
       "pnpm-workspace.yaml must set trustPolicy: no-downgrade",
       "pnpm-workspace.yaml must set blockExoticSubdeps: true",
       "pnpm-workspace.yaml must not enable trustLockfile for public PR CI",
-      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.5, js-yaml@4.3.1, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18",
+      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, qs@6.16.0, js-yaml@4.3.1, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18",
       "pnpm-workspace.yaml trustPolicyExclude must be limited to reviewed version-scoped exceptions: @octokit/endpoint@9.0.6, chokidar@4.0.3, semver@5.7.2 || 6.3.1",
     ]);
   } finally {
@@ -255,7 +288,7 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
       "trustPolicy: no-downgrade",
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
-      "  - fast-uri@3.1.5",
+      "  - qs@6.16.0",
       "  - js-yaml@4.3.1",
       "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.9",
@@ -268,7 +301,7 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
       "overrides:",
       "  js-yaml: 4.3.1",
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.5",
+      "  fast-uri: 3.1.6",
       "  linkify-it: 5.0.2",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
@@ -295,7 +328,7 @@ test("#506 stale js-yaml security override fails validation", () => {
       "trustPolicy: no-downgrade",
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
-      "  - fast-uri@3.1.5",
+      "  - qs@6.16.0",
       "  - js-yaml@4.3.1",
       "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.9",
@@ -312,7 +345,7 @@ test("#506 stale js-yaml security override fails validation", () => {
       '  "postcss@8.5.15": "8.5.24"',
       "  js-yaml: 4.2.0",
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.5",
+      "  fast-uri: 3.1.6",
       "  linkify-it: 5.0.2",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
@@ -336,7 +369,7 @@ test("#506 stale tar security override fails validation", () => {
       "trustPolicy: no-downgrade",
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
-      "  - fast-uri@3.1.5",
+      "  - qs@6.16.0",
       "  - js-yaml@4.3.1",
       "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.9",
@@ -353,7 +386,7 @@ test("#506 stale tar security override fails validation", () => {
       '  "postcss@8.5.15": "8.5.24"',
       "  js-yaml: 4.3.1",
       "  tar: 7.5.18",
-      "  fast-uri: 3.1.5",
+      "  fast-uri: 3.1.6",
       "  linkify-it: 5.0.2",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
@@ -377,7 +410,7 @@ test("#508 newly disclosed transitive security fixes stay pinned", () => {
       "trustPolicy: no-downgrade",
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
-      "  - fast-uri@3.1.5",
+      "  - qs@6.16.0",
       "  - js-yaml@4.3.1",
       "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.9",
@@ -403,7 +436,7 @@ test("#508 newly disclosed transitive security fixes stay pinned", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml overrides must pin fast-uri to 3.1.5",
+      "pnpm-workspace.yaml overrides must pin fast-uri to 3.1.6",
       "pnpm-workspace.yaml overrides must pin linkify-it to 5.0.2",
     ]);
   } finally {
@@ -419,7 +452,7 @@ test("GHSA-2v37-7h3g-55p8 nanoid fix stays pinned", () => {
       "trustPolicy: no-downgrade",
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
-      "  - fast-uri@3.1.5",
+      "  - qs@6.16.0",
       "  - js-yaml@4.3.1",
       "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.9",
@@ -435,14 +468,14 @@ test("GHSA-2v37-7h3g-55p8 nanoid fix stays pinned", () => {
       '  "postcss@8.5.15": "8.5.24"',
       "  js-yaml: 4.3.1",
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.5",
+      "  fast-uri: 3.1.6",
       "  linkify-it: 5.0.2",
       "",
     ].join("\n"),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.5, js-yaml@4.3.1, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18",
+      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, qs@6.16.0, js-yaml@4.3.1, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18",
       "pnpm-workspace.yaml overrides must pin nanoid@3.3.16 to 3.3.18",
       "pnpm-workspace.yaml overrides must pin nanoid@3.3.17 to 3.3.18",
     ]);
@@ -459,7 +492,7 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
       "trustPolicy: no-downgrade",
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
-      "  - fast-uri@3.1.5",
+      "  - qs@6.16.0",
       "  - js-yaml@4.3.1",
       "trustPolicyExclude:",
       '  - "@octokit/endpoint@9.0.6"',
@@ -471,7 +504,7 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
       '  "brace-expansion@5.0.6": "5.0.7"',
       "  js-yaml: 4.3.1",
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.5",
+      "  fast-uri: 3.1.6",
       "  linkify-it: 5.0.2",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
@@ -480,7 +513,7 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.5, js-yaml@4.3.1, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18",
+      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, qs@6.16.0, js-yaml@4.3.1, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18",
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.9",
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.9",
       "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.24",
@@ -498,7 +531,7 @@ test("#554 active advisory suppressions fail validation", () => {
       "trustPolicy: no-downgrade",
       "minimumReleaseAgeExclude:",
       "  - tmp@0.2.7",
-      "  - fast-uri@3.1.5",
+      "  - qs@6.16.0",
       "  - js-yaml@4.3.1",
       "  - brace-expansion@2.1.4",
       "  - brace-expansion@5.0.9",
@@ -518,7 +551,7 @@ test("#554 active advisory suppressions fail validation", () => {
       '  "postcss@8.5.15": "8.5.24"',
       "  js-yaml: 4.3.1",
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.5",
+      "  fast-uri: 3.1.6",
       "  linkify-it: 5.0.2",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
