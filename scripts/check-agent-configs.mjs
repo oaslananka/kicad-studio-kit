@@ -122,6 +122,11 @@ const requiredReferences = {
     "client-configs.md",
     "codex-support.md",
   ],
+  "docs/maintainers/agent-pr-review-runbook.md": [
+    "KiCad MCP Pro",
+    "external repository",
+    "corepack pnpm run check:compatibility-contract",
+  ],
   "docs/agents/client-configs.md": [
     ".vscode/mcp.example.json",
     "vscode.mcp.example.json",
@@ -201,6 +206,16 @@ const forbiddenContent = [
   {
     pattern: /client_secret\s*=\s*["'][^"']+["']/iu,
     message: "must not include client secrets",
+  },
+  {
+    paths: new Set(["docs/agents/index.md"]),
+    pattern: /Claude-specific guide:\s*`CLAUDE\.md`/u,
+    message: "must keep AGENTS.md canonical instead of routing to nonexistent CLAUDE.md",
+  },
+  {
+    paths: new Set(["docs/maintainers/agent-pr-review-runbook.md"]),
+    pattern: /(?:MCP server feature or bug fix|MCP-only changes should|Npm-wrapper-only changes should)/u,
+    message: "must route MCP server and npm-wrapper work to the external owner KiCad MCP Pro",
   },
 ];
 
@@ -302,7 +317,9 @@ export function parseTomlSubset(text, sourceName = "config.toml") {
 
 export function collectForbiddenContentErrors(relativePath, text) {
   return forbiddenContent
-    .filter(({ pattern }) => pattern.test(text))
+    .filter(({ paths, pattern }) =>
+      (!paths || paths.has(relativePath)) && pattern.test(text),
+    )
     .map(({ message }) => `${relativePath}: ${message}`);
 }
 

@@ -232,6 +232,60 @@ test("#491 requires reviewable stable canary evidence", () => {
   );
 });
 
+test("#492 blocked MCP activation must refresh after the target release date", () => {
+  const stale = structuredClone(compatibility);
+  stale.mcp.activation.reviewed = "2026-07-27";
+  stale.mcp.activation.finalSpecification = null;
+
+  const errors = validateMcpProtocolActivation({
+    compatibility: stale,
+    repoRoot: process.cwd(),
+    today: "2026-09-04",
+    registrySource: fs.readFileSync(
+      "apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts",
+      "utf8",
+    ),
+    adrSource: fs.readFileSync(
+      "docs/adr/0008-mcp-2026-07-28-protocol-upgrade.md",
+      "utf8",
+    ),
+    adrIndexSource: fs.readFileSync("docs/adr/README.md", "utf8"),
+  }).join("\n");
+
+  assert.match(errors, /reviewed.*target protocol release date/iu);
+  assert.match(errors, /finalSpecification.*required.*target release date/iu);
+});
+
+test("#492 pre-release MCP review may remain blocked without final-spec evidence", () => {
+  assert.deepEqual(
+    validateMcpProtocolActivation({
+      compatibility,
+      repoRoot: process.cwd(),
+      today: "2026-07-27",
+      registrySource: fs.readFileSync(
+        "apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts",
+        "utf8",
+      ),
+      adrSource: fs.readFileSync(
+        "docs/adr/0008-mcp-2026-07-28-protocol-upgrade.md",
+        "utf8",
+      ),
+      adrIndexSource: fs.readFileSync("docs/adr/README.md", "utf8"),
+    }),
+    [],
+  );
+});
+
+test("#492 current MCP evidence note counts as a compatibility docs update", () => {
+  const errors = validateCompatibilityContract({
+    changedFiles: [
+      "compatibility.yaml",
+      "docs/evidence/mcp-2026-07-28/2026-09-04-review.md",
+    ],
+  });
+  assert.doesNotMatch(errors.join("\n"), /no matching docs update found/u);
+});
+
 test("#492 current MCP final-activation record remains blocked and valid", () => {
   assert.deepEqual(
     validateMcpProtocolActivation({
