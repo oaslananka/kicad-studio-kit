@@ -10,7 +10,7 @@ const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
 const MINIMUM_RELEASE_AGE_MINUTES = 10080;
 const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = [
   "tmp@0.2.7",
-  "fast-uri@3.1.5",
+  "qs@6.16.0",
   "js-yaml@4.3.1",
   "brace-expansion@2.1.4",
   "brace-expansion@5.0.9",
@@ -30,7 +30,9 @@ const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   "nanoid@3.3.17": "3.3.18",
   "js-yaml": "4.3.1",
   tar: "7.5.22",
-  "fast-uri": "3.1.5",
+  "@xmldom/xmldom": "0.8.15",
+  qs: "6.16.0",
+  "fast-uri": "3.1.6",
   "linkify-it": "5.0.2",
 });
 const FORBIDDEN_PNPM_SETTINGS = [
@@ -114,7 +116,7 @@ function validateWorkspace(errors, workspace) {
       workspace?.minimumReleaseAgeExclude,
       ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES,
     ),
-    "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, fast-uri@3.1.5, js-yaml@4.3.1, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18",
+    "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, qs@6.16.0, js-yaml@4.3.1, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18",
   );
   assertCondition(
     errors,

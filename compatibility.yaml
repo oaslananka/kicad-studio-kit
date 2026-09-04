@@ -1,5 +1,5 @@
 schemaVersion: 1
-updated: "2026-07-26"
+updated: "2026-09-04"
 source: "https://github.com/oaslananka/kicad-studio-kit"
 
 kicad:
@@ -656,9 +656,9 @@ supportAxes:
     package: "boardreadyops"
     required: ">=1.2.0 <2.0.0"
     testedAgainst:
-      version: "1.37.0"
+      version: "1.38.0"
       registry: "npm"
-      source: "https://www.npmjs.com/package/boardreadyops/v/1.37.0"
+      source: "https://www.npmjs.com/package/boardreadyops/v/1.38.0"
     reports:
       findingsSchema: 1
       evidenceBundleSchema: 2
@@ -694,9 +694,11 @@ mcp:
   activation:
     targetProtocolVersion: "2026-07-28"
     state: "blocked"
-    reviewed: "2026-07-27"
-    evidenceNote: "docs/evidence/mcp-2026-07-28/2026-07-27-preflight.md"
-    finalSpecification: null
+    reviewed: "2026-09-04"
+    evidenceNote: "docs/evidence/mcp-2026-07-28/2026-09-04-review.md"
+    finalSpecification:
+      version: "2026-07-28"
+      source: "https://modelcontextprotocol.io/specification/2026-07-28"
     pythonSdk: null
     protocolSchemas: null
     serverArtifact: null

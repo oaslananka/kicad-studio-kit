@@ -11,6 +11,12 @@ function isStableSemver(value) {
   return typeof value === "string" && /^\d+\.\d+\.\d+$/u.test(value);
 }
 
+function isIsoDate(value) {
+  return (
+    typeof value === "string" && /^(?:19|20)\d{2}-\d{2}-\d{2}$/u.test(value)
+  );
+}
+
 function sourceLines(source) {
   if (typeof source !== "string") return [];
   return source
@@ -154,9 +160,7 @@ function validateActivationHeader(errors, activation, root) {
   if (typeof target !== "string" || !target) {
     errors.push("mcp.activation.targetProtocolVersion is required");
   }
-  if (
-    !/^(?:19|20)\d{2}-\d{2}-\d{2}$/u.test(String(activation.reviewed ?? ""))
-  ) {
+  if (!isIsoDate(activation.reviewed)) {
     errors.push("mcp.activation.reviewed must be an ISO date");
   }
   resolveRepositoryPath(
@@ -207,6 +211,25 @@ function resolveRegistrySource(root, registrySource) {
   return fs.existsSync(registryPath)
     ? fs.readFileSync(registryPath, "utf8")
     : "";
+}
+
+function validateBlockedFreshness(errors, activation, target, today) {
+  if (!isIsoDate(target) || !isIsoDate(today) || today < target) {
+    return;
+  }
+  if (!isIsoDate(activation.reviewed) || activation.reviewed < target) {
+    errors.push(
+      "mcp.activation.reviewed must be on or after the target protocol release date once that date is reached",
+    );
+  }
+  if (
+    activation.finalSpecification === null ||
+    activation.finalSpecification === undefined
+  ) {
+    errors.push(
+      "mcp.activation.finalSpecification is required after the target release date even while activation remains blocked",
+    );
+  }
 }
 
 function validateBlockedState(errors, context) {
@@ -337,6 +360,7 @@ export function validateMcpProtocolActivation({
   registrySource = "",
   adrSource,
   adrIndexSource,
+  today = new Date().toISOString().slice(0, 10),
 } = {}) {
   const mcp = compatibility?.mcp;
   const activation = mcp?.activation;
@@ -364,6 +388,7 @@ export function validateMcpProtocolActivation({
 
   if (activation.state === "blocked") {
     validateBlockedState(errors, stateContext);
+    validateBlockedFreshness(errors, activation, target, today);
   } else if (activation.state === "active") {
     validateActiveState(errors, stateContext);
   }
