@@ -7,6 +7,11 @@ import { fileURLToPath } from "node:url";
 const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
 const PROJECT_PLACEHOLDER = "/absolute/path/to/your/kicad-project";
+const reviewRunbookRequiredReferences = [
+  "KiCad MCP Pro",
+  "external repository",
+  "corepack pnpm run check:compatibility-contract",
+];
 
 const requiredMarkdownFiles = [
   "AGENTS.md",
@@ -122,11 +127,7 @@ const requiredReferences = {
     "client-configs.md",
     "codex-support.md",
   ],
-  "docs/maintainers/agent-pr-review-runbook.md": [
-    "KiCad MCP Pro",
-    "external repository",
-    "corepack pnpm run check:compatibility-contract",
-  ],
+  "docs/maintainers/agent-pr-review-runbook.md": reviewRunbookRequiredReferences,
   "docs/agents/client-configs.md": [
     ".vscode/mcp.example.json",
     "vscode.mcp.example.json",
