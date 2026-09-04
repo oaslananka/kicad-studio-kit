@@ -656,9 +656,9 @@ supportAxes:
     package: "boardreadyops"
     required: ">=1.2.0 <2.0.0"
     testedAgainst:
-      version: "1.37.0"
+      version: "1.38.0"
       registry: "npm"
-      source: "https://www.npmjs.com/package/boardreadyops/v/1.37.0"
+      source: "https://www.npmjs.com/package/boardreadyops/v/1.38.0"
     reports:
       findingsSchema: 1
       evidenceBundleSchema: 2

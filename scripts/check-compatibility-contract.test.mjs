@@ -95,8 +95,8 @@ test("#621 embedded support axes reject BoardReadyOps required-range drift", () 
 
 test("#621 embedded support axes reject BoardReadyOps contract drift", () => {
   const driftedSource = matrixSource.replace(
+    "testedAgainst: '1.38.0'",
     "testedAgainst: '1.37.0'",
-    "testedAgainst: '1.36.0'",
   );
   assert.notEqual(driftedSource, matrixSource);
   assert.match(
