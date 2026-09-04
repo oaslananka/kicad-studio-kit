@@ -21,6 +21,26 @@ const matrixSource = fs.readFileSync(
   "apps/vscode-extension/src/mcp/compatibilityMatrix.ts",
   "utf8",
 );
+const protocolRegistrySource = fs.readFileSync(
+  "apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts",
+  "utf8",
+);
+const protocolUpgradeAdrSource = fs.readFileSync(
+  "docs/adr/0008-mcp-2026-07-28-protocol-upgrade.md",
+  "utf8",
+);
+const adrIndexSource = fs.readFileSync("docs/adr/README.md", "utf8");
+
+function validateRepositoryMcpActivation(overrides = {}) {
+  return validateMcpProtocolActivation({
+    compatibility,
+    repoRoot: process.cwd(),
+    registrySource: protocolRegistrySource,
+    adrSource: protocolUpgradeAdrSource,
+    adrIndexSource,
+    ...overrides,
+  });
+}
 
 test("embedded extension compatibility matrix matches compatibility metadata", () => {
   assert.deepEqual(
@@ -237,19 +257,9 @@ test("#492 blocked MCP activation must refresh after the target release date", (
   stale.mcp.activation.reviewed = "2026-07-27";
   stale.mcp.activation.finalSpecification = null;
 
-  const errors = validateMcpProtocolActivation({
+  const errors = validateRepositoryMcpActivation({
     compatibility: stale,
-    repoRoot: process.cwd(),
     today: "2026-09-04",
-    registrySource: fs.readFileSync(
-      "apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts",
-      "utf8",
-    ),
-    adrSource: fs.readFileSync(
-      "docs/adr/0008-mcp-2026-07-28-protocol-upgrade.md",
-      "utf8",
-    ),
-    adrIndexSource: fs.readFileSync("docs/adr/README.md", "utf8"),
   }).join("\n");
 
   assert.match(errors, /reviewed.*target protocol release date/iu);
@@ -258,20 +268,7 @@ test("#492 blocked MCP activation must refresh after the target release date", (
 
 test("#492 pre-release MCP review may remain blocked without final-spec evidence", () => {
   assert.deepEqual(
-    validateMcpProtocolActivation({
-      compatibility,
-      repoRoot: process.cwd(),
-      today: "2026-07-27",
-      registrySource: fs.readFileSync(
-        "apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts",
-        "utf8",
-      ),
-      adrSource: fs.readFileSync(
-        "docs/adr/0008-mcp-2026-07-28-protocol-upgrade.md",
-        "utf8",
-      ),
-      adrIndexSource: fs.readFileSync("docs/adr/README.md", "utf8"),
-    }),
+    validateRepositoryMcpActivation({ today: "2026-07-27" }),
     [],
   );
 });
@@ -287,22 +284,7 @@ test("#492 current MCP evidence note counts as a compatibility docs update", () 
 });
 
 test("#492 current MCP final-activation record remains blocked and valid", () => {
-  assert.deepEqual(
-    validateMcpProtocolActivation({
-      compatibility,
-      repoRoot: process.cwd(),
-      registrySource: fs.readFileSync(
-        "apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts",
-        "utf8",
-      ),
-      adrSource: fs.readFileSync(
-        "docs/adr/0008-mcp-2026-07-28-protocol-upgrade.md",
-        "utf8",
-      ),
-      adrIndexSource: fs.readFileSync("docs/adr/README.md", "utf8"),
-    }),
-    [],
-  );
+  assert.deepEqual(validateRepositoryMcpActivation(), []);
 });
 
 test("#492 rejects selecting the target protocol while final evidence is incomplete", () => {
