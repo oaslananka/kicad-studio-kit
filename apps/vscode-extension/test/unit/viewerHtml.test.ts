@@ -63,7 +63,7 @@ describe('createKiCanvasViewerHtml', () => {
     });
 
     expect(html).toContain(
-      'await waitForRenderableSurface(viewerMount, 2000);'
+      'await waitForRenderableSurface(viewerMount, 5000);'
     );
     expect(html).toContain(
       'Interactive renderer stayed blank. Requesting SVG fallback…'
@@ -75,6 +75,46 @@ describe('createKiCanvasViewerHtml', () => {
     expect(html).toContain(
       "setStatus('CLI SVG fallback loaded: ' + payload.fileName);"
     );
+  });
+
+  it('finds the KiCanvas render surface across shadow roots and keeps it sized', () => {
+    const html = createKiCanvasViewerHtml({
+      title: 'Viewer',
+      fileName: 'sample.kicad_sch',
+      fileType: 'schematic',
+      status: 'Opening interactive renderer...',
+      cspSource: 'vscode-resource:',
+      kicanvasUri: 'vscode-resource:/media/kicanvas/kicanvas.js',
+      base64: 'Zm9v',
+      disabledReason: ''
+    });
+
+    // KiCanvas renders <canvas> inside shadow roots, so the surface probe has to
+    // walk shadow trees instead of a plain light-DOM querySelectorAll.
+    expect(html).toContain('function deepQueryAll(root, selector)');
+    expect(html).toContain("const canvases = deepQueryAll(container, 'canvas');");
+    expect(html).toContain("const canvas = deepQueryAll(viewerMount, 'canvas')[0];");
+    expect(html).not.toContain(
+      "Array.from(container.querySelectorAll('canvas'))"
+    );
+
+    // A collapsed KiCanvas element chain would leave the canvas at 0x0.
+    expect(html).toContain('function ensureKicadLayout(container)');
+    expect(html).toContain('function watchKicadViewer(container)');
+    expect(html).toContain('ensureKicadLayout(viewerMount);');
+    expect(html).toContain('watchKicadViewer(viewerMount);');
+    expect(html).toContain('describeSurfaces(viewerMount)');
+
+    // The same guard has to cover the board viewer, otherwise the PCB canvas keeps
+    // its default 300x150 backing store while the host area stays empty.
+    expect(html).toContain("deepQueryAll(container, 'kc-schematic-app, kc-board-app')[0]");
+    expect(html).toContain(
+      "deepQueryAll(container, 'kc-schematic-viewer, kc-board-viewer')[0]"
+    );
+    expect(html).toContain('function kicadViewerHasContent(inner)');
+    expect(html).toContain('function fitKicadViewer(inner)');
+    expect(html).toContain('inner.zoom_to_board?.()');
+    expect(html).toContain('inner.zoom_to_page?.()');
   });
 
   it('models KiCanvas, CLI SVG fallback, and metadata-only engines in the viewer bootstrap', () => {
