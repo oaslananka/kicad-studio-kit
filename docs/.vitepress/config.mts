@@ -192,6 +192,10 @@ export default defineConfig({
             text: "ADR 09: Split kicad-mcp-pro into Separate Repo",
             link: "/adr/0009-split-kicad-mcp-pro-into-separate-repository",
           },
+          {
+            text: "ADR 10: Source-Available Commercial Licensing",
+            link: "/adr/0010-source-available-commercial-licensing",
+          },
         ],
       },
       {
@@ -238,7 +242,7 @@ export default defineConfig({
       text: "Edit this page on GitHub",
     },
     footer: {
-      message: "Released under the MIT License.",
+      message: "Project-authored code: PolyForm Noncommercial 1.0.0.",
       copyright: "Copyright 2026 Osman Aslan and contributors.",
     },
     outline: {

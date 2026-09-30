@@ -106,11 +106,34 @@ export function validateBestPracticesEvidence(root = repoRoot) {
   const rootPackage = JSON.parse(readFromRoot("package.json"));
   const coverageThreshold = validateCoveragePolicy(root);
 
+  assert.equal(rootPackage.license, "PolyForm-Noncommercial-1.0.0");
+  assert.equal(extensionPackage.license, "PolyForm-Noncommercial-1.0.0");
+
   requireIncludes(
     "README.md",
     readme,
-    "https://www.bestpractices.dev/projects/13405/badge",
+    "Historical OpenSSF Best Practices Silver (MIT-licensed period)",
   );
+  const hasCurrentBestPracticesBadge = Array.from(
+    readme.matchAll(/https?:\/\/[^\s)"'<>]+/g),
+  ).some((match) => {
+    try {
+      const parsed = new URL(match[0]);
+      return (
+        parsed.protocol === "https:" &&
+        parsed.hostname === "www.bestpractices.dev" &&
+        (parsed.pathname === "/projects/13405/badge" ||
+          parsed.pathname === "/projects/13405/badge/")
+      );
+    } catch {
+      return false;
+    }
+  });
+  if (hasCurrentBestPracticesBadge) {
+    fail(
+      "README.md: historical Best Practices evidence must not be presented as a current live badge",
+    );
+  }
   requireIncludes("README.md", readme, "docs/best-practices-evidence.md");
   requireIncludes("README.md", readme, "GOVERNANCE.md");
   requireIncludes(
@@ -153,6 +176,11 @@ export function validateBestPracticesEvidence(root = repoRoot) {
     ".github/PULL_REQUEST_TEMPLATE.md",
     prTemplate,
     "Developer Certificate of Origin sign-off",
+  );
+  requireIncludes(
+    ".github/PULL_REQUEST_TEMPLATE.md",
+    prTemplate,
+    "reviewed CLA on record",
   );
   assert.equal(
     extensionPackage.scripts?.["test:dynamic-analysis"],
@@ -294,6 +322,7 @@ export function validateBestPracticesEvidence(root = repoRoot) {
 
   return {
     projectId: 13405,
+    currentLicense: rootPackage.license,
     requiredStatusChecks: contexts,
     coverageThreshold,
     scorecard: {

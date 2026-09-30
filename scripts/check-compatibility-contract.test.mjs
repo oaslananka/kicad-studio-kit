@@ -113,7 +113,7 @@ test("#623 BoardReadyOps support-matrix evidence matches compatibility metadata"
   const supportMatrix = fs.readFileSync("docs/support-matrix.md", "utf8");
   const testedVersion = compatibility.supportAxes.boardReadyOps.testedAgainst.version;
   const documentedVersion = supportMatrix.match(
-    /\| BoardReadyOps \|[^\n]*tested against npm `([^`]+)`/u,
+    /\|\s*BoardReadyOps\s*\|[^\n]*tested against npm `([^`]+)`/u,
   )?.[1];
 
   assert.equal(documentedVersion, testedVersion);

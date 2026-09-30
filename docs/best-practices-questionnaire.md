@@ -1,6 +1,6 @@
 # Best Practices Questionnaire Fill Guide
 
-This file is a maintainer-facing guide for completing the OpenSSF Best Practices questionnaire for project `13405`.
+This file preserves the maintainer-facing OpenSSF Best Practices questionnaire evidence for project `13405` from the MIT-licensed period.
 
 Use these answers as evidence-backed starting points. Do not mark an item as Met in the web form unless the referenced repository evidence is already merged on the default branch.
 
@@ -15,7 +15,7 @@ The first command prints a dry-run report. The second writes `docs/best-practice
 
 ## Badge milestone
 
-Passing and Silver were achieved on 2026-06-30. Future edits should preserve evidence for those achieved tiers. Gold is not a repository target, so Gold-only questionnaire fields are informational and must not create roadmap work.
+Passing and Silver were achieved on 2026-06-30 while the repository was MIT-licensed. Since the 2026-09-14 transition to PolyForm Noncommercial 1.0.0, these questionnaire answers are historical evidence rather than a current FLOSS badge claim. Gold remains outside the roadmap.
 
 ## High-impact Passing fields
 

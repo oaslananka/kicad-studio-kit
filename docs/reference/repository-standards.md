@@ -16,7 +16,7 @@ This reference summarizes the repository standards that contributors and maintai
 | File                 | Purpose                                                    |
 | -------------------- | ---------------------------------------------------------- |
 | `README.md`          | Project overview, install, validation, product boundaries. |
-| `LICENSE`            | MIT license.                                               |
+| `LICENSE`            | Current PolyForm Noncommercial 1.0.0 license.              |
 | `CONTRIBUTING.md`    | Contribution process, DCO, ADR expectations.               |
 | `CODE_OF_CONDUCT.md` | Contributor behavior standards.                            |
 | `SECURITY.md`        | Private vulnerability reporting.                           |
