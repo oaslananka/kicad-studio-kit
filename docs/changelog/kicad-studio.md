@@ -12,6 +12,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.15.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.0...vscode-extension-v1.15.1) (2026-09-30)
+
+
+### Bug Fixes
+
+* **repo:** repair security and compatibility baselines ([#695](https://github.com/oaslananka/kicad-studio-kit/issues/695)) ([67954b0](https://github.com/oaslananka/kicad-studio-kit/commit/67954b0429cf95434d9aa20e44678aacab3ecd1d))
+
 ## [1.15.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.14.0...vscode-extension-v1.15.0) (2026-08-31)
 
 
