@@ -303,7 +303,7 @@ test.describe('KiCad Studio webview DOM', () => {
 
     await expect(page.locator('#viewer-engine-badge')).toHaveText(
       'Renderer failed',
-      { timeout: 5000 }
+      { timeout: 10000 }
     );
     await expect.poll(() => countMessages(page, 'requestSvgFallback')).toBe(1);
   });

@@ -103,6 +103,8 @@ export function createViewerControllerScript(): string {
     let fallbackSvgFitScale = 1;
     let fallbackSvgScale = 1;
     let fallbackResizeHandler = null;
+    let kicadLayoutObserver = null;
+    let kicadWatchTimer = null;
     let viewerGeneration = 0;
     let rendererInitializing = false;
     let rendererFallbackAttempt = null;
@@ -255,6 +257,7 @@ export function createViewerControllerScript(): string {
       rendererFallbackFailureDetail = '';
       clearKeyboardShortcuts();
       clearFallbackResizeHandler();
+      clearKicadLayoutWatch();
       fallbackSvgDataUrl = '';
       fallbackSvgElement = null;
       fallbackSvgWrapper = null;
@@ -329,7 +332,7 @@ export function createViewerControllerScript(): string {
         showLoading('Rendering ' + escapeHtml(payload.fileName) + '…');
         await waitForViewerLoaded(viewer, 15000);
 
-        const renderSurface = await waitForRenderableSurface(viewerMount, 2000);
+        const renderSurface = await waitForRenderableSurface(viewerMount, 5000);
         if (!renderSurface) {
           const fallbackLoaded = await recoverRendererFailure(
             'KiCanvas reported success but did not create a drawable render surface.',
@@ -338,23 +341,23 @@ export function createViewerControllerScript(): string {
           if (fallbackLoaded) {
             return;
           }
-          if (probablyEmpty) {
-            setEngineState('metadata-only', 'No drawable objects were detected.');
-            showEmpty(
-              payload.fileType === 'board'
-                ? 'This PCB file is structurally valid but currently only contains the board document skeleton.'
-                : 'This schematic file is structurally valid but currently only contains the document skeleton.',
-              text.slice(0, 3000),
-              'No drawable objects yet'
-            );
+          if (showProbablyEmptyDocument(probablyEmpty, text)) {
             return;
           }
           throw new Error(
-            'KiCanvas reported success but did not create a canvas or SVG render surface.'
+            'KiCanvas reported success but did not create a canvas or SVG render surface.' +
+              describeSurfaces(viewerMount)
           );
         }
 
-        if (renderSurface.tagName.toLowerCase() === 'canvas') {
+        ensureKicadLayout(viewerMount);
+        watchKicadViewer(viewerMount, generation);
+
+        if (
+          renderSurface.tagName.toLowerCase() === 'canvas' &&
+          renderSurface.width > 0 &&
+          renderSurface.height > 0
+        ) {
           const blankCanvas = await isCanvasEffectivelyBlank(renderSurface);
           if (blankCanvas) {
             const fallbackLoaded = await recoverRendererFailure(
@@ -364,15 +367,7 @@ export function createViewerControllerScript(): string {
             if (fallbackLoaded) {
               return;
             }
-            if (probablyEmpty) {
-              setEngineState('metadata-only', 'No drawable objects were detected.');
-              showEmpty(
-                payload.fileType === 'board'
-                  ? 'This PCB file is structurally valid but currently only contains the board document skeleton.'
-                  : 'This schematic file is structurally valid but currently only contains the document skeleton.',
-                text.slice(0, 3000),
-                'No drawable objects yet'
-              );
+            if (showProbablyEmptyDocument(probablyEmpty, text)) {
               return;
             }
             throw new Error('KiCanvas created a blank render surface for this file.');
@@ -380,7 +375,6 @@ export function createViewerControllerScript(): string {
         }
 
         // ── 6. Success ────────────────────────────────────────────────────────
-        viewer.fitToScreen?.();
         applyLayerVisibility(viewer);
         applyViewerState(viewer);
         installSelectionTracking(viewer);
@@ -407,8 +401,35 @@ export function createViewerControllerScript(): string {
       }
     }
 
+    function showProbablyEmptyDocument(probablyEmpty, text) {
+      if (!probablyEmpty) {
+        return false;
+      }
+      setEngineState('metadata-only', 'No drawable objects were detected.');
+      showEmpty(
+        payload.fileType === 'board'
+          ? 'This PCB file is structurally valid but currently only contains the board document skeleton.'
+          : 'This schematic file is structurally valid but currently only contains the document skeleton.',
+        text.slice(0, 3000),
+        'No drawable objects yet'
+      );
+      return true;
+    }
+
+    function isRendererRuntimeFailure(reason) {
+      const message = String(reason || '');
+      return new RegExp(
+        '(?:webgl|webgpu|gpu process|context[_ -]?lost|unable to create .*context|failed to create .*context|canvas.*(?:context|render)|render.*(?:context|surface))',
+        'i'
+      ).test(message);
+    }
+
     function handleRendererRuntimeFailure(title, reason) {
-      if (!rendererInitializing || localState.engine?.kind !== 'kicanvas') {
+      const engineIsKiCanvas = localState.engine?.kind === 'kicanvas';
+      if (
+        !engineIsKiCanvas ||
+        (!rendererInitializing && !isRendererRuntimeFailure(reason))
+      ) {
         showError(title, reason, '');
         return;
       }
@@ -498,17 +519,272 @@ export function createViewerControllerScript(): string {
       });
     }
 
+    // KiCanvas renders its drawing surface inside nested open shadow roots.
+    function walkDeepElements(root, visit) {
+      const roots = [root];
+      while (roots.length) {
+        const current = roots.pop();
+        if (!current || typeof current.querySelectorAll !== 'function') {
+          continue;
+        }
+        for (const element of Array.from(current.querySelectorAll('*'))) {
+          visit(element);
+          if (element.shadowRoot) {
+            roots.push(element.shadowRoot);
+          }
+        }
+      }
+    }
+
+    function deepQueryAll(root, selector) {
+      const found = [];
+      walkDeepElements(root, (element) => {
+        if (element.matches?.(selector)) {
+          found.push(element);
+        }
+      });
+      return found;
+    }
+
+    function collectKicadViews(container) {
+      const result = {
+        embed: container.querySelector('kicanvas-embed'),
+        app: null,
+        split: null,
+        view: null,
+        viewer: null
+      };
+      walkDeepElements(container, (element) => {
+        if (!result.app && element.matches?.('kc-schematic-app, kc-board-app')) {
+          result.app = element;
+        }
+        if (!result.split && element.matches?.('kc-ui-split-view')) {
+          result.split = element;
+        }
+        if (!result.view && element.matches?.('kc-ui-view')) {
+          result.view = element;
+        }
+        if (!result.viewer && element.matches?.('kc-schematic-viewer, kc-board-viewer')) {
+          result.viewer = element;
+        }
+      });
+      result.chain = [result.embed, result.app, result.split, result.view, result.viewer].filter(Boolean);
+      return result;
+    }
+
+    function kicadViewerHasContent(inner) {
+      return Boolean(inner && (inner.schematic || inner.board));
+    }
+
+    function fitKicadViewer(inner) {
+      if (!inner) {
+        return;
+      }
+      try {
+        if (payload.fileType === 'board') {
+          inner.zoom_to_board?.();
+        } else {
+          inner.zoom_to_page?.();
+        }
+      } catch {}
+    }
+
+    function ensureKicadLayout(container) {
+      try {
+        const views = collectKicadViews(container);
+        const targetHeight = Math.max(
+          1,
+          Math.round(
+            views.embed
+              ? views.embed.getBoundingClientRect().height
+              : container.getBoundingClientRect().height
+          )
+        );
+        for (const element of views.chain) {
+          element.hidden = false;
+          element.style.setProperty('width', '100%', 'important');
+          element.style.setProperty('height', targetHeight + 'px', 'important');
+          element.style.setProperty('min-height', '0', 'important');
+          element.style.setProperty('max-height', 'none', 'important');
+          if (window.getComputedStyle(element).display === 'none') {
+            element.style.setProperty('display', 'flex', 'important');
+          }
+        }
+        const viewerRect = views.viewer?.getBoundingClientRect();
+        if (viewerRect && viewerRect.width > 0 && viewerRect.height > 0) {
+          for (const canvas of deepQueryAll(container, 'canvas')) {
+            canvas.style.setProperty('width', Math.round(viewerRect.width) + 'px', 'important');
+            canvas.style.setProperty('height', Math.round(viewerRect.height) + 'px', 'important');
+            canvas.style.setProperty('display', 'block', 'important');
+          }
+        }
+        const inner = views.viewer?.viewer;
+        if (inner) {
+          try { inner.resize?.(); } catch {}
+          try { inner.draw?.(); } catch {}
+          fitKicadViewer(inner);
+        }
+      } catch (error) {
+        console.error('[kicanvas-fix] layout enforcement failed', error);
+      }
+    }
+
+    function clearKicadReloadTimer() {
+      if (kicadWatchTimer !== null) {
+        window.clearInterval(kicadWatchTimer);
+        kicadWatchTimer = null;
+      }
+    }
+
+    function clearKicadLayoutWatch() {
+      clearKicadReloadTimer();
+      if (kicadLayoutObserver) {
+        kicadLayoutObserver.disconnect();
+        kicadLayoutObserver = null;
+      }
+    }
+
+    function watchKicadViewer(container, generation) {
+      clearKicadLayoutWatch();
+      const startedAt = Date.now();
+      let reloadAttempts = 0;
+      let reloadInFlight = false;
+      let recoveryFinished = false;
+      let nextReloadAt = startedAt + 1200;
+
+      const failRecovery = (reason) => {
+        if (recoveryFinished || generation !== viewerGeneration) {
+          return;
+        }
+        recoveryFinished = true;
+        clearKicadLayoutWatch();
+        void recoverRendererFailure(reason, generation).then((fallbackLoaded) => {
+          if (!fallbackLoaded && generation === viewerGeneration) {
+            showFinalRendererFailure(
+              'Viewer failed to load',
+              reason,
+              rendererFallbackFailureDetail
+            );
+          }
+        });
+      };
+
+      const finishIfLoaded = () => {
+        const inner = collectKicadViews(container).viewer?.viewer;
+        if (!kicadViewerHasContent(inner)) {
+          return false;
+        }
+        recoveryFinished = true;
+        clearKicadReloadTimer();
+        return true;
+      };
+
+      const recoveryFailureReason = () =>
+        'KiCanvas remained non-drawable after layout recovery.' +
+        describeSurfaces(container);
+
+      const checkViewer = () => {
+        if (generation !== viewerGeneration || recoveryFinished) {
+          clearKicadReloadTimer();
+          return;
+        }
+        if (Date.now() - startedAt > 20000) {
+          failRecovery(recoveryFailureReason());
+          return;
+        }
+        try {
+          ensureKicadLayout(container);
+          if (finishIfLoaded()) {
+            return;
+          }
+
+          const now = Date.now();
+          if (reloadAttempts >= 3 || reloadInFlight || now < nextReloadAt) {
+            return;
+          }
+          const views = collectKicadViews(container);
+          const project = views.app?.project;
+          const page =
+            project &&
+            (project.active_page || project.root_schematic_page || project.first_page);
+          if (!views.viewer || !page) {
+            return;
+          }
+
+          reloadAttempts += 1;
+          reloadInFlight = true;
+          Promise.resolve()
+            .then(() => views.viewer.load(page))
+            .catch((error) => {
+              console.error(
+                '[kicanvas-fix] viewer reload attempt ' + reloadAttempts + ' failed',
+                error
+              );
+            })
+            .finally(() => {
+              reloadInFlight = false;
+              if (generation !== viewerGeneration || recoveryFinished) {
+                return;
+              }
+              ensureKicadLayout(container);
+              if (finishIfLoaded()) {
+                return;
+              }
+              if (reloadAttempts >= 3) {
+                failRecovery(recoveryFailureReason());
+                return;
+              }
+              nextReloadAt = Date.now() + 1500;
+            });
+        } catch (error) {
+          console.error('[kicanvas-fix] watcher failed', error);
+        }
+      };
+
+      if (typeof ResizeObserver === 'function') {
+        kicadLayoutObserver = new ResizeObserver(() => ensureKicadLayout(container));
+        kicadLayoutObserver.observe(container);
+      }
+      kicadWatchTimer = window.setInterval(checkViewer, 600);
+      checkViewer();
+    }
+
+    function describeSurfaces(container) {
+      const canvases = deepQueryAll(container, 'canvas');
+      const svgs = deepQueryAll(container, 'svg');
+      const embed = container.querySelector('kicanvas-embed');
+      const mountRect = container.getBoundingClientRect();
+      const embedRect =
+        embed && embed.getBoundingClientRect
+          ? embed.getBoundingClientRect()
+          : { width: 0, height: 0 };
+      const sizes = canvases.length
+        ? canvases.map((entry) => entry.width + 'x' + entry.height).join(',')
+        : 'none';
+      return (
+        ' [kicanvas-fix diag: canvases=' + canvases.length + ' (' + sizes + ')' +
+        ', svgs=' + svgs.length +
+        ', mount=' + Math.round(mountRect.width) + 'x' + Math.round(mountRect.height) +
+        ', embed=' + Math.round(embedRect.width) + 'x' + Math.round(embedRect.height) +
+        ', embedLoaded=' + (embed ? String(embed.loaded) : 'no-embed') + ']'
+      );
+    }
+
     function waitForRenderableSurface(container, timeoutMs) {
       return new Promise((resolve) => {
         const startedAt = Date.now();
         const pickSurface = () => {
-          const canvases = Array.from(container.querySelectorAll('canvas'))
+          const canvases = deepQueryAll(container, 'canvas');
+          const sizedCanvases = canvases
             .filter((entry) => entry.width > 0 && entry.height > 0)
             .sort((left, right) => (right.width * right.height) - (left.width * left.height));
+          if (sizedCanvases[0]) {
+            return sizedCanvases[0];
+          }
           if (canvases[0]) {
             return canvases[0];
           }
-          return Array.from(container.querySelectorAll('svg')).find(
+          return deepQueryAll(container, 'svg').find(
             (entry) => entry.clientWidth > 0 && entry.clientHeight > 0
           );
         };
@@ -577,8 +853,9 @@ export function createViewerControllerScript(): string {
         const dominantBucket = Math.max(...buckets.values());
         const nonDominantPixels = opaquePixels - dominantBucket;
         return buckets.size <= 2 && nonDominantPixels < 24;
-      } catch {
-        return false;
+      } catch (error) {
+        console.error('[kicanvas-fix] canvas readback probe failed', error);
+        return true;
       }
     }
 
@@ -1218,7 +1495,7 @@ export function createViewerControllerScript(): string {
     }
 
     function exportPng() {
-      const canvas = viewerMount.querySelector('canvas');
+      const canvas = deepQueryAll(viewerMount, 'canvas')[0];
       if (!canvas && fallbackSvgDataUrl) {
         void exportFallbackSvgAsPng();
         return;
@@ -1238,7 +1515,8 @@ export function createViewerControllerScript(): string {
     function fitCurrentViewer() {
       const viewer = viewerMount.querySelector('kicanvas-embed');
       if (viewer) {
-        viewer.fitToScreen?.();
+        ensureKicadLayout(viewerMount);
+        fitKicadViewer(collectKicadViews(viewerMount).viewer?.viewer);
         localState = { ...localState, zoom: 1 };
         updateZoomLevel();
         postViewerState();
@@ -1761,10 +2039,7 @@ export function createViewerControllerScript(): string {
           return;
         }
         if (ev.key === 'f' || ev.key === 'F') {
-          viewer.fitToScreen?.();
-          localState = { ...localState, zoom: 1 };
-          updateZoomLevel();
-          postViewerState();
+          fitCurrentViewer();
         }
         if (ev.key === '+' || ev.key === '=') {
           viewer.zoomIn?.();

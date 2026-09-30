@@ -24,7 +24,7 @@ describe('createKiCanvasViewerHtml', () => {
     );
   });
 
-  it('fits to screen before showing the success status', () => {
+  it('lays out and fits KiCanvas before showing the success status', () => {
     const html = createKiCanvasViewerHtml({
       title: 'Viewer',
       fileName: 'sample.kicad_pcb',
@@ -36,18 +36,17 @@ describe('createKiCanvasViewerHtml', () => {
       disabledReason: ''
     });
 
-    const successSection = html.slice(html.indexOf('// ── 6. Success'));
-    expect(successSection.indexOf('viewer.fitToScreen?.();')).toBeGreaterThan(
-      -1
+    const layoutIndex = html.indexOf('ensureKicadLayout(viewerMount);');
+    const watchIndex = html.indexOf('watchKicadViewer(viewerMount, generation);');
+    const readyIndex = html.indexOf(
+      "setStatus('Interactive renderer loaded: ' + payload.fileName);"
     );
-    expect(successSection.indexOf('viewer.fitToScreen?.();')).toBeLessThan(
-      successSection.indexOf('hideAll();')
-    );
-    expect(successSection.indexOf('viewer.fitToScreen?.();')).toBeLessThan(
-      successSection.indexOf(
-        "setStatus('Interactive renderer loaded: ' + payload.fileName);"
-      )
-    );
+
+    expect(layoutIndex).toBeGreaterThan(-1);
+    expect(watchIndex).toBeGreaterThan(layoutIndex);
+    expect(readyIndex).toBeGreaterThan(watchIndex);
+    expect(html).toContain('fitKicadViewer(inner);');
+    expect(html).not.toContain('viewer.fitToScreen?.();');
   });
 
   it('requests an SVG fallback when KiCanvas reports success without a drawable surface', () => {
@@ -63,7 +62,7 @@ describe('createKiCanvasViewerHtml', () => {
     });
 
     expect(html).toContain(
-      'await waitForRenderableSurface(viewerMount, 2000);'
+      'await waitForRenderableSurface(viewerMount, 5000);'
     );
     expect(html).toContain(
       'Interactive renderer stayed blank. Requesting SVG fallback…'
@@ -75,6 +74,48 @@ describe('createKiCanvasViewerHtml', () => {
     expect(html).toContain(
       "setStatus('CLI SVG fallback loaded: ' + payload.fileName);"
     );
+  });
+
+  it('hardens shadow-root KiCanvas rendering for remote layouts', () => {
+    const html = createKiCanvasViewerHtml({
+      title: 'Viewer',
+      fileName: 'sample.kicad_sch',
+      fileType: 'schematic',
+      status: 'Opening interactive renderer...',
+      cspSource: 'vscode-resource:',
+      kicanvasUri: 'vscode-resource:/media/kicanvas/kicanvas.js',
+      base64: 'Zm9v',
+      disabledReason: ''
+    });
+
+    for (const snippet of [
+      'function walkDeepElements(root, visit)',
+      "const canvases = deepQueryAll(container, 'canvas');",
+      'function ensureKicadLayout(container)',
+      'function watchKicadViewer(container, generation)',
+      'new ResizeObserver(() => ensureKicadLayout(container))',
+      'reloadInFlight',
+      'nextReloadAt = Date.now() + 1500',
+      'if (reloadAttempts >= 3)',
+      'recoverRendererFailure(reason, generation)',
+      'describeSurfaces(viewerMount)',
+      'fitKicadViewer(collectKicadViews(viewerMount).viewer?.viewer)',
+      'inner.zoom_to_page?.()',
+      'renderSurface.width > 0',
+      'function isRendererRuntimeFailure(reason)',
+      "console.error('[kicanvas-fix] canvas readback probe failed', error);"
+    ]) {
+      expect(html).toContain(snippet);
+    }
+    expect(html).toContain(
+      "(!rendererInitializing && !isRendererRuntimeFailure(reason))"
+    );
+    expect(html).toContain(
+      "(?:webgl|webgpu|gpu process|context[_ -]?lost"
+    );
+    expect(html).not.toContain('__kicanvasFixResizeHooked');
+    expect(html).not.toContain('viewer.fitToScreen?.()');
+    expect(html).not.toContain("Array.from(container.querySelectorAll('canvas'))");
   });
 
   it('models KiCanvas, CLI SVG fallback, and metadata-only engines in the viewer bootstrap', () => {
