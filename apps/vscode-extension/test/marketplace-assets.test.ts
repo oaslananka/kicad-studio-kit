@@ -1,13 +1,15 @@
+import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 const EXTENSION_ROOT = path.resolve(__dirname, '..');
 const PACKAGE_JSON_PATH = path.join(EXTENSION_ROOT, 'package.json');
-const README_PATH = path.join(EXTENSION_ROOT, 'README.md');
-const LISTING_DOC_PATH = path.join(
+const MARKETPLACE_PATH = path.join(EXTENSION_ROOT, 'MARKETPLACE.md');
+const CAPTURE_MANIFEST_PATH = path.join(
   EXTENSION_ROOT,
-  'docs',
-  'marketplace-listing.md'
+  'assets',
+  'screenshots',
+  'capture-manifest.json'
 );
 
 type PackageJson = {
@@ -20,70 +22,61 @@ type PackageJson = {
   scripts?: Record<string, string>;
 };
 
-type PngSize = {
-  width: number;
-  height: number;
+type CaptureManifest = {
+  schemaVersion?: number;
+  captureMode?: string;
+  viewport?: { width?: number; height?: number };
+  theme?: string;
+  fixture?: string;
+  sourceContractVersion?: number;
+  sourceFingerprint?: string;
+  kicadVersion?: string;
+  screenshots?: Record<string, string>;
 };
 
 function readText(relativePath: string): string {
   return fs.readFileSync(path.join(EXTENSION_ROOT, relativePath), 'utf8');
 }
-
-function fileSize(relativePath: string): number {
-  return fs.statSync(path.join(EXTENSION_ROOT, relativePath)).size;
+function readJson<T>(relativePath: string): T {
+  return JSON.parse(readText(relativePath)) as T;
 }
-
 function expectFile(relativePath: string): string {
   const absolutePath = path.join(EXTENSION_ROOT, relativePath);
   expect(fs.existsSync(absolutePath)).toBe(true);
   expect(fs.statSync(absolutePath).isFile()).toBe(true);
   return absolutePath;
 }
-
-function readPngSize(relativePath: string): PngSize {
-  const absolutePath = expectFile(relativePath);
-  const buffer = fs.readFileSync(absolutePath);
+function readPngSize(relativePath: string): { width: number; height: number } {
+  const buffer = fs.readFileSync(expectFile(relativePath));
   expect(buffer.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
   expect(buffer.subarray(12, 16).toString('ascii')).toBe('IHDR');
-
   return {
     width: buffer.readUInt32BE(16),
     height: buffer.readUInt32BE(20)
   };
 }
-
-function readGifDurationSeconds(relativePath: string): number {
-  const absolutePath = expectFile(relativePath);
-  const buffer = fs.readFileSync(absolutePath);
-  const signature = buffer.subarray(0, 6).toString('ascii');
-  expect(['GIF87a', 'GIF89a']).toContain(signature);
-
-  let totalCentiseconds = 0;
-  for (let index = 0; index < buffer.length - 7; index += 1) {
-    if (
-      buffer[index] === 0x21 &&
-      buffer[index + 1] === 0xf9 &&
-      buffer[index + 2] === 0x04
-    ) {
-      totalCentiseconds += buffer.readUInt16LE(index + 4);
-    }
-  }
-
-  return totalCentiseconds / 100;
+function sha256(relativePath: string): string {
+  return crypto
+    .createHash('sha256')
+    .update(fs.readFileSync(expectFile(relativePath)))
+    .digest('hex');
 }
-
-function expectMarkdownSection(markdown: string, heading: string): void {
-  expect(markdown).toMatch(
-    new RegExp(`^## ${heading.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}$`, 'mu')
-  );
+function sourceFingerprint(sources: string[]): string {
+  const hash = crypto.createHash('sha256');
+  for (const source of [...sources].sort()) {
+    hash.update(source);
+    hash.update('\0');
+    hash.update(fs.readFileSync(expectFile(source)));
+    hash.update('\0');
+  }
+  return hash.digest('hex');
 }
 
 describe('marketplace listing assets', () => {
-  it('declares marketplace-ready extension gallery metadata', () => {
+  it('declares the real-host capture workflow and gallery metadata', () => {
     const packageJson = JSON.parse(
       fs.readFileSync(PACKAGE_JSON_PATH, 'utf8')
     ) as PackageJson;
-
     expect(packageJson.icon).toBe('assets/icon.png');
     expect(packageJson.galleryBanner).toEqual({
       color: '#1a1a2e',
@@ -92,81 +85,103 @@ describe('marketplace listing assets', () => {
     expect(packageJson.scripts?.['marketplace:check']).toBe(
       'node scripts/check-marketplace-assets.js'
     );
-    expect(packageJson.baseImagesUrl).toBe(
-      'https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension'
+    expect(packageJson.scripts?.['marketplace:capture']).toBe(
+      'pnpm run build && playwright test --config playwright.marketplace.config.ts'
     );
   });
 
-  it('ships required banner, icon, animated workflow, and screenshot files', () => {
-    const requiredSvgAssets = [
-      'assets/marketplace/gallery-banner-background.svg',
-      'assets/marketplace/gallery-banner-foreground.svg',
-      'assets/marketplace/hero.svg'
+  it('tracks authentic captures with source and screenshot hashes', () => {
+    const screenshots = [
+      'project-tree.png',
+      'schematic-viewer.png',
+      'pcb-viewer.png',
+      'drc-results.png',
+      'bom-table.png',
+      'mcp-tools-dashboard.png'
     ];
-    const requiredScreenshots = [
-      'assets/screenshots/project-tree.png',
-      'assets/screenshots/schematic-viewer.png',
-      'assets/screenshots/pcb-viewer.png',
-      'assets/screenshots/drc-results.png',
-      'assets/screenshots/mcp-tools-dashboard.png'
-    ];
-
-    for (const svgAsset of requiredSvgAssets) {
-      const svg = readText(svgAsset);
-      expect(svg).toContain('<svg');
-      expect(svg).toMatch(/\bwidth="[^"]+"/u);
-      expect(svg).toMatch(/\bheight="[^"]+"/u);
-      expect(svg).not.toMatch(/\b(?:href|src)="https?:\/\//u);
-    }
-
-    expect(readPngSize('assets/marketplace/icon-128.png')).toEqual({
-      width: 128,
-      height: 128
-    });
-    expect(readPngSize('assets/marketplace/icon-256.png')).toEqual({
-      width: 256,
-      height: 256
-    });
-    expect(readPngSize('assets/marketplace/hero.png')).toEqual({
-      width: 1280,
-      height: 520
-    });
-
-    for (const screenshot of requiredScreenshots) {
-      expect(readPngSize(screenshot)).toEqual({ width: 1280, height: 720 });
-      expect(fileSize(screenshot)).toBeLessThan(2 * 1024 * 1024);
-    }
-
-    expect(fileSize('assets/marketplace/core-workflow.gif')).toBeLessThan(
-      5 * 1024 * 1024
+    const contract = readJson<{ version: number; sources: string[] }>(
+      'scripts/marketplace-capture-sources.json'
     );
+    const manifest = JSON.parse(
+      fs.readFileSync(CAPTURE_MANIFEST_PATH, 'utf8')
+    ) as CaptureManifest;
+
+    expect(manifest.schemaVersion).toBe(1);
+    expect(manifest.captureMode).toBe('real-vscode-extension-host');
+    expect(manifest.viewport).toEqual({ width: 1280, height: 720 });
+    expect(manifest.theme).toBe('Default Dark Modern');
+    expect(manifest.fixture).toBe(
+      'test/fixtures/benchmark_projects/pass_i2c_sensor_hub'
+    );
+    expect(manifest.sourceContractVersion).toBe(contract.version);
+    expect(manifest.sourceFingerprint).toBe(
+      sourceFingerprint(contract.sources)
+    );
+    expect(manifest.kicadVersion).toMatch(/10\.0\.6/u);
+
+    for (const fileName of screenshots) {
+      const relativePath = 'assets/screenshots/' + fileName;
+      expect(readPngSize(relativePath)).toEqual({ width: 1280, height: 720 });
+      expect(manifest.screenshots?.[fileName]).toBe(sha256(relativePath));
+    }
+  });
+
+  it('uses focused Marketplace copy and removes synthetic product media', () => {
+    const packageJson = JSON.parse(
+      fs.readFileSync(PACKAGE_JSON_PATH, 'utf8')
+    ) as PackageJson;
+    const marketplace = fs.readFileSync(MARKETPLACE_PATH, 'utf8');
+    const packageScript = readText('scripts/package-extension.js');
+
+    for (const heading of [
+      '## Quick Start',
+      '## What You Get',
+      '## Real Product Captures',
+      '## Requirements and Compatibility',
+      '## Privacy and Network Access',
+      '## License and Support'
+    ]) {
+      expect(marketplace).toContain(heading);
+    }
+
+    for (const screenshot of [
+      'project-tree.png',
+      'schematic-viewer.png',
+      'pcb-viewer.png',
+      'drc-results.png',
+      'bom-table.png'
+    ]) {
+      expect(marketplace).toContain(
+        packageJson.baseImagesUrl + '/assets/screenshots/' + screenshot
+      );
+    }
+
+    expect(marketplace).not.toMatch(
+      /img\.shields\.io|actions\/workflows|Local Development|Marketplace Dry Run/iu
+    );
+    expect(packageScript).toContain("'--readme-path'");
+    expect(packageScript).toContain("'MARKETPLACE.md'");
+
     expect(
-      readGifDurationSeconds('assets/marketplace/core-workflow.gif')
-    ).toBeLessThanOrEqual(30);
-  });
+      fs.existsSync(
+        path.join(EXTENSION_ROOT, 'scripts/generate_screenshots.py')
+      )
+    ).toBe(false);
+    for (const relativePath of [
+      'assets/marketplace/core-workflow.gif',
+      'assets/screenshots/ai-assistant.png',
+      'assets/screenshots/component-search.png',
+      'assets/screenshots/git-diff.png',
+      'assets/screenshots/quality-gates.png'
+    ]) {
+      expect(fs.existsSync(path.join(EXTENSION_ROOT, relativePath))).toBe(
+        false
+      );
+    }
 
-  it('documents Marketplace copy, review checklist, and Markdown-safe README polish', () => {
-    const readme = fs.readFileSync(README_PATH, 'utf8');
-    const listingDoc = fs.readFileSync(LISTING_DOC_PATH, 'utf8');
-
-    expect(readme.split('\n').slice(0, 5).join('\n')).toContain(
-      'assets/marketplace/hero.png'
+    const iconGenerator = readText('scripts/generate-icon.js');
+    expect(iconGenerator).not.toMatch(
+      /screenshotsDir|createScreenshot|createQualityGatesScreenshot/iu
     );
-    expectMarkdownSection(readme, 'Quick Start');
-    expectMarkdownSection(readme, 'Feature Matrix');
-    expectMarkdownSection(readme, 'KiCad CLI-Only Comparison');
-    expectMarkdownSection(readme, 'Release Notes');
-    expectMarkdownSection(readme, 'Support and Sponsorship');
-    expect(readme).toContain('assets/screenshots/project-tree.png');
-    expect(readme).toContain('assets/screenshots/mcp-tools-dashboard.png');
-    expect(readme).toContain(
-      'https://open-vsx.org/extension/oaslananka/kicadstudiokit'
-    );
-    expect(readme).toContain('[CHANGELOG.md](CHANGELOG.md)');
-    expect(readme).not.toMatch(/<details|<summary|<script|<style/iu);
-
-    expectMarkdownSection(listingDoc, 'Manual Review Checklist');
-    expectMarkdownSection(listingDoc, 'English Listing Copy');
-    expect(listingDoc).toContain('OASLANA-115');
   });
 });

@@ -1,3 +1,5 @@
+import * as crypto from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
@@ -14,6 +16,14 @@ const CAPTURE_DIR = path.resolve(
   'screenshots'
 );
 const VIEWPORT = { width: 1280, height: 720 };
+const CAPTURE_FILES = [
+  'project-tree.png',
+  'schematic-viewer.png',
+  'pcb-viewer.png',
+  'drc-results.png',
+  'bom-table.png',
+  'mcp-tools-dashboard.png'
+] as const;
 const DEMO_WORKSPACE = path.resolve(
   __dirname,
   '..',
@@ -34,7 +44,9 @@ test.describe('KiCad Studio marketplace captures', () => {
         'workbench.colorTheme': 'Default Dark Modern',
         'window.zoomLevel': 0,
         'editor.minimap.enabled': false,
-        'workbench.tips.enabled': false
+        'workbench.tips.enabled': false,
+        'extensions.autoUpdate': false,
+        'update.mode': 'none'
       }
     });
 
@@ -86,6 +98,8 @@ test.describe('KiCad Studio marketplace captures', () => {
         timeout: 10000
       });
       await capture(session, 'mcp-tools-dashboard.png');
+
+      writeCaptureManifest();
     } finally {
       await session.close();
     }
@@ -292,4 +306,69 @@ async function hideTransientUi(page: Page): Promise<void> {
       .forEach((node) => ((node as HTMLElement).style.visibility = 'hidden'));
   });
   await page.waitForTimeout(350);
+}
+
+function writeCaptureManifest(): void {
+  const extensionRoot = path.resolve(__dirname, '..', '..');
+  const sourceContract = JSON.parse(
+    fs.readFileSync(
+      path.join(extensionRoot, 'scripts', 'marketplace-capture-sources.json'),
+      'utf8'
+    )
+  ) as { version: number; sources: string[] };
+
+  const sourceFingerprint = hashFiles(extensionRoot, sourceContract.sources);
+  const screenshots = Object.fromEntries(
+    CAPTURE_FILES.map((fileName) => [
+      fileName,
+      sha256(fs.readFileSync(path.join(CAPTURE_DIR, fileName)))
+    ])
+  );
+
+  const kicadCli =
+    process.env.KICADSTUDIO_MARKETPLACE_KICAD_CLI || '/usr/bin/kicad-cli';
+  let kicadVersion = 'unknown';
+  try {
+    kicadVersion = execFileSync(kicadCli, ['--version'], {
+      encoding: 'utf8'
+    }).trim();
+  } catch {
+    // DRC capture already verifies that the configured CLI is usable.
+  }
+
+  fs.writeFileSync(
+    path.join(CAPTURE_DIR, 'capture-manifest.json'),
+    JSON.stringify(
+      {
+        schemaVersion: 1,
+        captureMode: 'real-vscode-extension-host',
+        viewport: VIEWPORT,
+        theme: 'Default Dark Modern',
+        fixture: 'test/fixtures/benchmark_projects/pass_i2c_sensor_hub',
+        vscodeVersion: '1.122.0',
+        kicadVersion,
+        sourceContractVersion: sourceContract.version,
+        sourceFingerprint,
+        screenshots
+      },
+      null,
+      2
+    ) + '\n',
+    'utf8'
+  );
+}
+
+function hashFiles(root: string, relativePaths: string[]): string {
+  const hash = crypto.createHash('sha256');
+  for (const relativePath of [...relativePaths].sort()) {
+    hash.update(relativePath);
+    hash.update('\0');
+    hash.update(fs.readFileSync(path.join(root, relativePath)));
+    hash.update('\0');
+  }
+  return hash.digest('hex');
+}
+
+function sha256(value: Buffer): string {
+  return crypto.createHash('sha256').update(value).digest('hex');
 }

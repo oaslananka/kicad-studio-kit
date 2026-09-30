@@ -25,6 +25,8 @@ const result = spawnSync(
     path.join(root, 'node_modules', '@vscode', 'vsce', 'vsce'),
     'package',
     '--no-dependencies',
+    '--readme-path',
+    'MARKETPLACE.md',
     '--out',
     vsixName,
     ...(isPreRelease ? ['--pre-release'] : [])

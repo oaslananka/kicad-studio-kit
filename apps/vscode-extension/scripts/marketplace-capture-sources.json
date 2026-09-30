@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "sources": [
+    "package.json",
+    "src/providers/projectTreeProvider.ts",
+    "src/providers/validationViewProvider.ts",
+    "src/providers/bomViewProvider.ts",
+    "src/providers/viewerHtml.ts",
+    "src/providers/viewer/viewerControllerScript.ts",
+    "media/kicanvas/viewer.css",
+    "media/viewer/bom.html",
+    "media/viewer/bom.js",
+    "test/e2e/vscodeHarness.ts",
+    "test/marketplace/marketplaceCapture.test.ts",
+    "test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_pro",
+    "test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_sch",
+    "test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_pcb"
+  ]
+}

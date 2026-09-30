@@ -3,7 +3,7 @@
 ## Release Backlog
 
 - MCP fix queue Code Actions stay limited to fix items that include `path` and `line` metadata. Text-only queue items should remain visible until `kicad-mcp-pro` exposes universal source locations for all fixes.
-- Replace `assets/screenshots/quality-gates.png` with a fresh development-host capture once a real project/server pair is available in the screenshot environment.
+- Marketplace screenshots are regenerated from the real extension host and validated by the capture provenance contract.
 - Revisit MCP-side progress notification plumbing in the manufacturing release wizard after `notifications/progress` support is consistently exposed by the supported server range.
 - Track post-release feedback for the `v2.6.x` patch line separately from KiCad Studio-only fixes and MCP-side schema requests.
 

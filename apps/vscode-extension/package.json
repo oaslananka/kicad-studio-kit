@@ -2234,7 +2234,7 @@
             "description": "%kicadstudio.contributes.walkthroughs.0.steps.4.description%",
             "media": {
               "altText": "%kicadstudio.contributes.walkthroughs.0.steps.4.media.altText%",
-              "image": "assets/screenshots/ai-assistant.png"
+              "image": "assets/screenshots/project-tree.png"
             },
             "completionEvents": [
               "onCommand:kicadstudio.setupMcpIntegration"
@@ -2246,7 +2246,7 @@
             "description": "%kicadstudio.contributes.walkthroughs.0.steps.5.description%",
             "media": {
               "altText": "%kicadstudio.contributes.walkthroughs.0.steps.5.media.altText%",
-              "image": "assets/screenshots/ai-assistant.png"
+              "image": "assets/screenshots/project-tree.png"
             },
             "completionEvents": [
               "onCommand:kicadstudio.openSettings"
@@ -2258,7 +2258,7 @@
             "description": "%kicadstudio.contributes.walkthroughs.0.steps.6.description%",
             "media": {
               "altText": "%kicadstudio.contributes.walkthroughs.0.steps.6.media.altText%",
-              "image": "assets/screenshots/ai-assistant.png"
+              "image": "assets/screenshots/project-tree.png"
             },
             "completionEvents": [
               "onCommand:kicadstudio.openAiChat"
