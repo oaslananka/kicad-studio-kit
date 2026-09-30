@@ -47,10 +47,6 @@ Open **KiCad Studio: Open Task Hub** from the Command Palette or use the task bu
 | Automate            | **KiCad Studio: Automate Project**    | Configure MCP, AI chat, design intent, profiles, and fix queues                            |
 | Maintain            | **KiCad Studio: Maintain Workspace**  | Manage KiCad CLI detection, settings, libraries, packages, credentials, logs, and feedback |
 
-## Core Workflow
-
-![Open a project, inspect the PCB, and run DRC](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/marketplace/core-workflow.gif)
-
 ## Feature Matrix
 
 | Workflow                 | KiCad Studio                                                                                         | Engineering value                                                              |
@@ -80,9 +76,13 @@ Open **KiCad Studio: Open Task Hub** from the Command Palette or use the task bu
 
 ![KiCad Studio DRC results](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/screenshots/drc-results.png)
 
-### MCP Tools Dashboard
+### Bill of Materials
 
-![KiCad Studio MCP tools dashboard](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/screenshots/mcp-tools-dashboard.png)
+![KiCad Studio Bill of Materials](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/screenshots/bom-table.png)
+
+### MCP & Tools
+
+![KiCad Studio MCP tools status](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/screenshots/mcp-tools-dashboard.png)
 
 ## KiCad CLI-Only Comparison
 

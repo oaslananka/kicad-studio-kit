@@ -30,6 +30,8 @@ export interface VsCodeLaunchOptions {
   workspaceSourcePath?: string;
   disableWebgl?: boolean;
   mockKiCadCli?: boolean;
+  workspaceName?: string;
+  softwareWebgl?: boolean;
 }
 
 export async function launchVsCodeWithFixtures(
@@ -38,9 +40,15 @@ export async function launchVsCodeWithFixtures(
   const rootDir = path.resolve(__dirname, '..', '..');
   const fixturesDir =
     options.workspaceSourcePath ?? path.join(rootDir, 'test', 'fixtures');
-  const workspacePath = fs.mkdtempSync(
+  const workspaceRoot = fs.mkdtempSync(
     path.join(os.tmpdir(), 'kicadstudio-e2e-workspace-')
   );
+  const workspacePath = options.workspaceName
+    ? path.join(workspaceRoot, options.workspaceName)
+    : workspaceRoot;
+  if (workspacePath !== workspaceRoot) {
+    fs.mkdirSync(workspacePath, { recursive: true });
+  }
   const userDataDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'kicadstudio-e2e-user-')
   );
@@ -73,6 +81,9 @@ export async function launchVsCodeWithFixtures(
       `--extensionDevelopmentPath=${rootDir}`,
       '--no-sandbox',
       '--disable-gpu-sandbox',
+      ...(options.softwareWebgl
+        ? ['--use-gl=swiftshader', '--enable-unsafe-swiftshader']
+        : []),
       ...(options.disableWebgl ? ['--disable-webgl', '--disable-3d-apis'] : []),
       '--disable-workspace-trust',
       '--skip-welcome',
@@ -119,7 +130,7 @@ export async function launchVsCodeWithFixtures(
       workspacePath,
       async close() {
         await closeSession(browser, child, [
-          workspacePath,
+          workspaceRoot,
           userDataDir,
           extensionsDir
         ]);
@@ -130,7 +141,7 @@ export async function launchVsCodeWithFixtures(
       await browser.close().catch(() => undefined);
     }
     await killProcess(child);
-    await cleanupDirectories([workspacePath, userDataDir, extensionsDir]);
+    await cleanupDirectories([workspaceRoot, userDataDir, extensionsDir]);
     throw error;
   }
 }

@@ -139,6 +139,7 @@ function validateRequiredRuntimeFiles({ root, fail }) {
     'dist/extension.js',
     'package.json',
     'README.md',
+    'MARKETPLACE.md',
     'LICENSE',
     'CHANGELOG.md',
     'assets/icon.png',
@@ -268,19 +269,20 @@ function validateContributionManifest({ root, pkg, fail }) {
 }
 
 function validateReadmeAndMarketplaceAssets({ root, fail }) {
-  const readme = readText(path.join(root, 'README.md'));
-  const readmeAssetPattern = /!\[[^\]]*]\((assets\/[^)#]+)(?:#[^)]+)?\)/g;
-  for (const match of readme.matchAll(readmeAssetPattern)) {
-    checkFileExists(
-      root,
-      match[1],
-      `README asset is missing: ${match[1]}`,
-      fail
-    );
+  for (const document of ['README.md', 'MARKETPLACE.md']) {
+    const markdown = readText(path.join(root, document));
+    const localAssetPattern = /!\[[^\]]*]\((assets\/[^)#]+)(?:#[^)]+)?\)/g;
+    for (const match of markdown.matchAll(localAssetPattern)) {
+      checkFileExists(
+        root,
+        match[1],
+        `${document} asset is missing: ${match[1]}`,
+        fail
+      );
+    }
   }
 
   for (const file of [
-    'assets/marketplace/core-workflow.gif',
     'assets/marketplace/gallery-banner-background.svg',
     'assets/marketplace/gallery-banner-foreground.svg',
     'assets/marketplace/hero.png',
@@ -291,7 +293,9 @@ function validateReadmeAndMarketplaceAssets({ root, fail }) {
     'assets/screenshots/schematic-viewer.png',
     'assets/screenshots/pcb-viewer.png',
     'assets/screenshots/drc-results.png',
-    'assets/screenshots/mcp-tools-dashboard.png'
+    'assets/screenshots/bom-table.png',
+    'assets/screenshots/mcp-tools-dashboard.png',
+    'assets/screenshots/capture-manifest.json'
   ]) {
     checkFileExists(root, file, `marketplace asset is missing: ${file}`, fail);
   }
@@ -300,8 +304,8 @@ function validateReadmeAndMarketplaceAssets({ root, fail }) {
     path.join(root, 'assets', 'screenshots')
   ).filter((file) => file.endsWith('.png')).length;
   check(
-    screenshotCount >= 5,
-    `README screenshot set must include at least 5 PNG screenshots; found ${screenshotCount}`,
+    screenshotCount >= 6,
+    `authentic screenshot set must include at least 6 PNG screenshots; found ${screenshotCount}`,
     fail
   );
 }
@@ -569,9 +573,17 @@ function runVsceList(root) {
     process.platform === 'win32'
       ? {
           command: process.env.ComSpec ?? 'cmd.exe',
-          args: ['/d', '/s', '/c', 'vsce ls --no-dependencies']
+          args: [
+            '/d',
+            '/s',
+            '/c',
+            'vsce ls --readme-path MARKETPLACE.md --no-dependencies'
+          ]
         }
-      : { command: 'vsce', args: ['ls', '--no-dependencies'] };
+      : {
+          command: 'vsce',
+          args: ['ls', '--readme-path', 'MARKETPLACE.md', '--no-dependencies']
+        };
   const result = spawnSync(invocation.command, invocation.args, {
     cwd: root,
     encoding: 'utf8',

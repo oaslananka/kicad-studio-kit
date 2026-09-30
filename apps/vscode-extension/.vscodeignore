@@ -51,3 +51,5 @@ stryker.config.json
 mutation-baseline.json
 coverage-scope.json
 jest.coverage-ratchet.config.js
+
+README.md

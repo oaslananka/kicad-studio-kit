@@ -1,33 +1,28 @@
 #!/usr/bin/env node
 'use strict';
 
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const maxScreenshotBytes = 2 * 1024 * 1024;
-const maxGifBytes = 5 * 1024 * 1024;
-const maxGifSeconds = 30;
-const marketplaceImageHost = 'https://raw.githubusercontent.com/';
-const trustedBadgePrefixes = [
-  'https://img.shields.io/',
-  'https://github.com/oaslananka/kicad-studio-kit/actions/workflows/',
-  'https://api.scorecard.dev/projects/github.com/oaslananka/kicad-studio-kit/badge',
-  'https://www.bestpractices.dev/projects/13405/badge'
-];
-
-const requiredSvgAssets = [
-  'assets/marketplace/gallery-banner-background.svg',
-  'assets/marketplace/gallery-banner-foreground.svg',
-  'assets/marketplace/hero.svg'
-];
-
-const requiredScreenshots = [
+const baseImageHost = 'https://raw.githubusercontent.com/';
+const listingScreenshots = [
   'assets/screenshots/project-tree.png',
   'assets/screenshots/schematic-viewer.png',
   'assets/screenshots/pcb-viewer.png',
   'assets/screenshots/drc-results.png',
+  'assets/screenshots/bom-table.png'
+];
+const capturedScreenshots = [
+  ...listingScreenshots,
   'assets/screenshots/mcp-tools-dashboard.png'
+];
+const requiredSvgAssets = [
+  'assets/marketplace/gallery-banner-background.svg',
+  'assets/marketplace/gallery-banner-foreground.svg',
+  'assets/marketplace/hero.svg'
 ];
 
 function fail(message) {
@@ -77,208 +72,364 @@ function readPngSize(relativePath) {
   };
 }
 
-function readGifDurationSeconds(relativePath) {
-  const { filePath } = assertFile(relativePath);
-  const buffer = fs.readFileSync(filePath);
-  const signature = buffer.subarray(0, 6).toString('ascii');
-  if (signature !== 'GIF87a' && signature !== 'GIF89a') {
-    fail(`${relativePath} is not a GIF file`);
-  }
-
-  let totalCentiseconds = 0;
-  for (let index = 0; index < buffer.length - 7; index += 1) {
-    if (
-      buffer[index] === 0x21 &&
-      buffer[index + 1] === 0xf9 &&
-      buffer[index + 2] === 0x04
-    ) {
-      totalCentiseconds += buffer.readUInt16LE(index + 4);
-    }
-  }
-
-  return totalCentiseconds / 100;
-}
-
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-}
-
-function assertMarkdownSection(markdown, file, heading) {
-  const pattern = new RegExp(`^## ${escapeRegExp(heading)}$`, 'mu');
-  if (!pattern.test(markdown)) {
-    fail(`${file} is missing "## ${heading}"`);
-  }
-}
-
-function assertSvg(relativePath) {
-  const svg = readText(relativePath);
-  if (!svg.includes('<svg')) {
-    fail(`${relativePath} is missing an <svg> root`);
-  }
-  if (!/\bwidth="[^"]+"/u.test(svg) || !/\bheight="[^"]+"/u.test(svg)) {
-    fail(`${relativePath} must declare width and height`);
-  }
-  if (/\b(?:href|src)="https?:\/\//u.test(svg)) {
-    fail(`${relativePath} must not depend on remote assets`);
-  }
-}
-
-function assertPng(relativePath, expectedWidth, expectedHeight, maxBytes) {
-  const { stat } = assertFile(relativePath);
+function assertPng(relativePath, expectedWidth, expectedHeight) {
+  const result = assertFile(relativePath);
   const size = readPngSize(relativePath);
   if (size.width !== expectedWidth || size.height !== expectedHeight) {
     fail(
-      `${relativePath} is ${size.width}x${size.height}; expected ${expectedWidth}x${expectedHeight}`
+      relativePath +
+        ' is ' +
+        size.width +
+        'x' +
+        size.height +
+        '; expected ' +
+        expectedWidth +
+        'x' +
+        expectedHeight
     );
   }
-  if (stat.size >= maxBytes) {
-    fail(`${relativePath} is too large: ${stat.size} bytes`);
+  if (result.stat.size >= maxScreenshotBytes) {
+    fail(relativePath + ' is too large: ' + result.stat.size + ' bytes');
   }
 }
-
-function assertReadmeImageReferences(readme, packageJson) {
-  const imagePattern = /!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/gu;
-  const baseImagesUrl = packageJson.baseImagesUrl.replace(/\/$/u, '');
-  let marketplaceAssetCount = 0;
-  for (const match of readme.matchAll(imagePattern)) {
-    const target = match[1];
-    if (!target) {
-      fail('README.md contains an empty image target');
-    }
-    if (trustedBadgePrefixes.some((prefix) => target.startsWith(prefix))) {
-      continue;
-    }
-    if (!target.startsWith(`${baseImagesUrl}/`)) {
-      fail(
-        `README.md marketplace asset images must use absolute baseImagesUrl links; found ${target}`
-      );
-    }
-    if (!target.startsWith(marketplaceImageHost)) {
-      fail(`README.md image must use raw.githubusercontent.com: ${target}`);
-    }
-    const relativeAsset = target.slice(`${baseImagesUrl}/`.length);
-    assertFile(relativeAsset);
-    marketplaceAssetCount += 1;
+function assertSvg(relativePath) {
+  const svg = readText(relativePath);
+  if (!svg.includes('<svg')) fail(relativePath + ' is missing an <svg> root');
+  if (!/\bwidth="[^"]+"/u.test(svg) || !/\bheight="[^"]+"/u.test(svg)) {
+    fail(relativePath + ' must declare width and height');
   }
-  if (marketplaceAssetCount < requiredScreenshots.length + 2) {
+  if (/\b(?:href|src)="https?:\/\//u.test(svg)) {
+    fail(relativePath + ' must not depend on remote assets');
+  }
+}
+function sha256(buffer) {
+  return crypto.createHash('sha256').update(buffer).digest('hex');
+}
+
+function captureSourceContents() {
+  return new Map([
+    ['package.json', fs.readFileSync('package.json')],
+    [
+      'src/providers/projectTreeProvider.ts',
+      fs.readFileSync('src/providers/projectTreeProvider.ts')
+    ],
+    [
+      'src/providers/validationViewProvider.ts',
+      fs.readFileSync('src/providers/validationViewProvider.ts')
+    ],
+    [
+      'src/providers/bomViewProvider.ts',
+      fs.readFileSync('src/providers/bomViewProvider.ts')
+    ],
+    [
+      'src/providers/viewerHtml.ts',
+      fs.readFileSync('src/providers/viewerHtml.ts')
+    ],
+    [
+      'src/providers/viewer/viewerControllerScript.ts',
+      fs.readFileSync('src/providers/viewer/viewerControllerScript.ts')
+    ],
+    ['media/kicanvas/viewer.css', fs.readFileSync('media/kicanvas/viewer.css')],
+    ['media/viewer/bom.html', fs.readFileSync('media/viewer/bom.html')],
+    ['media/viewer/bom.js', fs.readFileSync('media/viewer/bom.js')],
+    ['test/e2e/vscodeHarness.ts', fs.readFileSync('test/e2e/vscodeHarness.ts')],
+    [
+      'test/marketplace/marketplaceCapture.test.ts',
+      fs.readFileSync('test/marketplace/marketplaceCapture.test.ts')
+    ],
+    [
+      'test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_pro',
+      fs.readFileSync(
+        'test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_pro'
+      )
+    ],
+    [
+      'test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_sch',
+      fs.readFileSync(
+        'test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_sch'
+      )
+    ],
+    [
+      'test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_pcb',
+      fs.readFileSync(
+        'test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_pcb'
+      )
+    ]
+  ]);
+}
+
+function screenshotFingerprints() {
+  return {
+    'project-tree.png': sha256(
+      fs.readFileSync('assets/screenshots/project-tree.png')
+    ),
+    'schematic-viewer.png': sha256(
+      fs.readFileSync('assets/screenshots/schematic-viewer.png')
+    ),
+    'pcb-viewer.png': sha256(
+      fs.readFileSync('assets/screenshots/pcb-viewer.png')
+    ),
+    'drc-results.png': sha256(
+      fs.readFileSync('assets/screenshots/drc-results.png')
+    ),
+    'bom-table.png': sha256(
+      fs.readFileSync('assets/screenshots/bom-table.png')
+    ),
+    'mcp-tools-dashboard.png': sha256(
+      fs.readFileSync('assets/screenshots/mcp-tools-dashboard.png')
+    )
+  };
+}
+
+function hashFiles(relativePaths) {
+  const sourceContents = captureSourceContents();
+  const expectedPaths = [...sourceContents.keys()].sort((left, right) =>
+    left.localeCompare(right)
+  );
+  const actualPaths = [...relativePaths].sort((left, right) =>
+    left.localeCompare(right)
+  );
+  if (JSON.stringify(actualPaths) !== JSON.stringify(expectedPaths)) {
     fail(
-      `README.md must include hero, workflow GIF, and ${requiredScreenshots.length} screenshot images`
+      'marketplace capture source contract drifted from the checker allowlist'
     );
   }
+  const hash = crypto.createHash('sha256');
+  for (const relativePath of expectedPaths) {
+    hash.update(relativePath);
+    hash.update('\0');
+    hash.update(sourceContents.get(relativePath));
+    hash.update('\0');
+  }
+  return hash.digest('hex');
 }
 
+function assertSection(markdown, heading) {
+  if (!markdown.includes('\n## ' + heading + '\n')) {
+    fail('MARKETPLACE.md is missing "## ' + heading + '"');
+  }
+}
 function assertPackageMetadata() {
   const packageJson = readJson('package.json');
-  if (packageJson.icon !== 'assets/icon.png') {
+  if (packageJson.icon !== 'assets/icon.png')
     fail('package.json icon must point to assets/icon.png');
-  }
-  if (packageJson.galleryBanner?.color !== '#1a1a2e') {
+  if (packageJson.galleryBanner?.color !== '#1a1a2e')
     fail('package.json galleryBanner.color must stay #1a1a2e');
-  }
-  if (packageJson.galleryBanner?.theme !== 'dark') {
+  if (packageJson.galleryBanner?.theme !== 'dark')
     fail('package.json galleryBanner.theme must stay dark');
-  }
   if (
     packageJson.scripts?.['marketplace:check'] !==
     'node scripts/check-marketplace-assets.js'
   ) {
     fail('package.json must expose marketplace:check');
   }
-  if (!packageJson.baseImagesUrl) {
-    fail('package.json must set baseImagesUrl for marketplace image rendering');
+  if (
+    packageJson.scripts?.['marketplace:capture'] !==
+    'pnpm run build && playwright test --config playwright.marketplace.config.ts'
+  ) {
+    fail('package.json must expose the real-host marketplace:capture flow');
   }
   if (
-    !packageJson.baseImagesUrl.startsWith('https://raw.githubusercontent.com/')
+    typeof packageJson.baseImagesUrl !== 'string' ||
+    !packageJson.baseImagesUrl.startsWith(baseImageHost)
   ) {
     fail('package.json baseImagesUrl must point to raw.githubusercontent.com');
   }
+  const packageScript = readText('scripts/package-extension.js');
+  if (
+    !packageScript.includes("'--readme-path'") ||
+    !packageScript.includes("'MARKETPLACE.md'")
+  ) {
+    fail('extension packaging must use MARKETPLACE.md through --readme-path');
+  }
 }
-
-function assertMarketplaceAssets() {
-  for (const svgAsset of requiredSvgAssets) {
-    assertSvg(svgAsset);
+function assertCaptureProvenance() {
+  const contract = readJson('scripts/marketplace-capture-sources.json');
+  const manifest = readJson('assets/screenshots/capture-manifest.json');
+  if (contract.version !== 1 || !Array.isArray(contract.sources)) {
+    fail('marketplace capture source contract is invalid');
   }
-
-  assertPng('assets/marketplace/icon-128.png', 128, 128, maxScreenshotBytes);
-  assertPng('assets/marketplace/icon-256.png', 256, 256, maxScreenshotBytes);
-  assertPng('assets/marketplace/hero.png', 1280, 520, maxScreenshotBytes);
-
-  for (const screenshot of requiredScreenshots) {
-    assertPng(screenshot, 1280, 720, maxScreenshotBytes);
-  }
-
-  const gif = assertFile('assets/marketplace/core-workflow.gif');
-  if (gif.stat.size >= maxGifBytes) {
-    fail(`assets/marketplace/core-workflow.gif is too large: ${gif.stat.size}`);
-  }
-  const duration = readGifDurationSeconds(
-    'assets/marketplace/core-workflow.gif'
-  );
-  if (duration > maxGifSeconds) {
+  for (const source of contract.sources) assertFile(source);
+  if (manifest.schemaVersion !== 1)
+    fail('capture manifest schemaVersion must be 1');
+  if (manifest.captureMode !== 'real-vscode-extension-host') {
     fail(
-      `assets/marketplace/core-workflow.gif is ${duration}s; expected <= ${maxGifSeconds}s`
+      'marketplace screenshots must come from the real VS Code extension host'
     );
   }
-}
-
-function assertMarketplaceMarkdown() {
-  const packageJson = readJson('package.json');
-  const readme = readText('README.md');
-  const listing = readText('docs/marketplace-listing.md');
-  const firstLines = readme.split('\n').slice(0, 5).join('\n');
-  const expectedVersion = packageJson.version;
-
+  if (manifest.viewport?.width !== 1280 || manifest.viewport?.height !== 720) {
+    fail('capture manifest viewport must be 1280x720');
+  }
+  if (manifest.theme !== 'Default Dark Modern')
+    fail('capture manifest theme drifted');
   if (
-    !firstLines.includes(
-      `${packageJson.baseImagesUrl}/assets/marketplace/hero.png`
+    manifest.fixture !== 'test/fixtures/benchmark_projects/pass_i2c_sensor_hub'
+  ) {
+    fail('capture manifest must use the sanitized marketplace fixture');
+  }
+  if (manifest.sourceContractVersion !== contract.version)
+    fail('capture manifest source contract version is stale');
+  if (manifest.sourceFingerprint !== hashFiles(contract.sources)) {
+    fail(
+      'marketplace screenshots are stale: capture source fingerprint changed; rerun marketplace:capture'
+    );
+  }
+  if (
+    typeof manifest.kicadVersion !== 'string' ||
+    manifest.kicadVersion === 'unknown'
+  ) {
+    fail('capture manifest must record the KiCad CLI version');
+  }
+  const currentFingerprints = screenshotFingerprints();
+  for (const screenshot of capturedScreenshots) {
+    assertPng(screenshot, 1280, 720);
+    const fileName = path.basename(screenshot);
+    const expected = manifest.screenshots?.[fileName];
+    const actual = currentFingerprints[fileName];
+    if (expected !== actual) {
+      fail(
+        screenshot +
+          ' does not match capture-manifest.json; rerun marketplace:capture'
+      );
+    }
+  }
+}
+function assertNoSyntheticProductAssets() {
+  if (fs.existsSync('scripts/generate_screenshots.py')) {
+    fail('legacy synthetic screenshot generator must not exist');
+  }
+  const obsoletePresence = new Map([
+    [
+      'assets/marketplace/core-workflow.gif',
+      fs.existsSync('assets/marketplace/core-workflow.gif')
+    ],
+    [
+      'assets/screenshots/ai-assistant.png',
+      fs.existsSync('assets/screenshots/ai-assistant.png')
+    ],
+    [
+      'assets/screenshots/component-search.png',
+      fs.existsSync('assets/screenshots/component-search.png')
+    ],
+    [
+      'assets/screenshots/git-diff.png',
+      fs.existsSync('assets/screenshots/git-diff.png')
+    ],
+    [
+      'assets/screenshots/quality-gates.png',
+      fs.existsSync('assets/screenshots/quality-gates.png')
+    ]
+  ]);
+  for (const [relativePath, exists] of obsoletePresence) {
+    if (exists) {
+      fail(
+        'obsolete synthetic marketplace asset must be removed: ' + relativePath
+      );
+    }
+  }
+  const iconGenerator = readText('scripts/generate-icon.js');
+  if (
+    /screenshotsDir|createScreenshot|createQualityGatesScreenshot|assets\/screenshots/u.test(
+      iconGenerator
     )
   ) {
-    fail('README.md must place the absolute hero image at the top');
+    fail('generate-icon.js must not generate product screenshots');
   }
-
-  // Version text in README must match package.json
-  const versionPattern = new RegExp(
-    `Version:\\s*\`${escapeRegExp(expectedVersion)}\``
-  );
-  if (!versionPattern.test(readme)) {
-    fail(
-      `README.md must declare Version: \`${expectedVersion}\` matching package.json`
-    );
-  }
-
-  // MCP Compatibility section version
-  const mcpCompatPattern = new RegExp(
-    `KiCad Studio ${escapeRegExp(expectedVersion)}\\s+supports`
-  );
-  if (!mcpCompatPattern.test(readme)) {
-    fail(
-      `README.md MCP Compatibility section must reference KiCad Studio ${expectedVersion}`
-    );
-  }
-
+}
+function assertMarketplaceMarkdown() {
+  const packageJson = readJson('package.json');
+  const marketplace = readText('MARKETPLACE.md');
+  const repoReadme = readText('README.md');
+  const baseImagesUrl = packageJson.baseImagesUrl.replace(/\/$/u, '');
   for (const heading of [
     'Quick Start',
-    'Feature Matrix',
-    'KiCad CLI-Only Comparison',
-    'Support and Sponsorship'
+    'What You Get',
+    'Real Product Captures',
+    'Requirements and Compatibility',
+    'Privacy and Network Access',
+    'License and Support'
   ]) {
-    assertMarkdownSection(readme, 'README.md', heading);
+    assertSection(marketplace, heading);
   }
-  for (const heading of ['Manual Review Checklist', 'English Listing Copy']) {
-    assertMarkdownSection(listing, 'docs/marketplace-listing.md', heading);
+  for (const forbidden of [
+    'core-workflow.gif',
+    'ai-assistant.png',
+    'quality-gates.png',
+    'component-search.png',
+    'git-diff.png',
+    'Marketplace Dry Run',
+    'Local Development',
+    'img.shields.io',
+    '/actions/workflows/'
+  ]) {
+    if (marketplace.includes(forbidden)) {
+      fail(
+        'MARKETPLACE.md contains repo-maintainer or synthetic content: ' +
+          forbidden
+      );
+    }
   }
-  if (/<details|<summary|<script|<style|<iframe/iu.test(readme)) {
+  for (const screenshot of listingScreenshots) {
+    const target = baseImagesUrl + '/' + screenshot;
+    if (!marketplace.includes(target)) {
+      fail('MARKETPLACE.md is missing real screenshot: ' + screenshot);
+    }
+  }
+  const imagePattern = /!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/gu;
+  let productImageCount = 0;
+  for (const match of marketplace.matchAll(imagePattern)) {
+    const target = match[1];
+    if (!target?.startsWith(baseImagesUrl + '/')) {
+      fail(
+        'MARKETPLACE.md images must use package.json baseImagesUrl: ' + target
+      );
+    }
+    const relative = target.slice((baseImagesUrl + '/').length);
+    assertFile(relative);
+    productImageCount += 1;
+  }
+  if (productImageCount !== listingScreenshots.length) {
     fail(
-      'README.md uses Markdown/HTML that Marketplace renderers commonly strip'
+      'MARKETPLACE.md must contain exactly ' +
+        listingScreenshots.length +
+        ' authentic product screenshots; found ' +
+        productImageCount
     );
   }
-  assertReadmeImageReferences(readme, packageJson);
+  if (/<details|<summary|<script|<style|<iframe/iu.test(marketplace)) {
+    fail('MARKETPLACE.md uses unsupported Marketplace HTML');
+  }
+  if (
+    repoReadme.includes('core-workflow.gif') ||
+    repoReadme.includes('ai-assistant.png') ||
+    repoReadme.includes('quality-gates.png')
+  ) {
+    fail('README.md still references removed synthetic marketplace media');
+  }
+}
+function assertBrandAssets() {
+  for (const asset of requiredSvgAssets) assertSvg(asset);
+  assertPng('assets/marketplace/icon-128.png', 128, 128);
+  assertPng('assets/marketplace/icon-256.png', 256, 256);
+  assertPng('assets/marketplace/hero.png', 1280, 520);
+}
+function runMarketplaceCheck() {
+  const previousCwd = process.cwd();
+  process.chdir(root);
+  try {
+    assertPackageMetadata();
+    assertBrandAssets();
+    assertCaptureProvenance();
+    assertNoSyntheticProductAssets();
+    assertMarketplaceMarkdown();
+    return 'Marketplace check passed: 5 listing screenshots, 6 provenance-tracked captures, dedicated Marketplace copy, and no synthetic product UI.';
+  } finally {
+    process.chdir(previousCwd);
+  }
 }
 
-assertPackageMetadata();
-assertMarketplaceAssets();
-assertMarketplaceMarkdown();
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+  console.log(runMarketplaceCheck());
+}
 
-console.log(
-  `Marketplace asset check passed: ${requiredScreenshots.length} screenshots, 2 icon sizes, and one workflow GIF.`
-);
+module.exports = { runMarketplaceCheck };

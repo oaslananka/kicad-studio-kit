@@ -214,17 +214,36 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
         command.includes("require.resolve('c8/bin/c8.js')") &&
         command.includes('node "$c8_cli"') &&
         command.includes("--include='scripts/**/*.mjs'") &&
+        command.includes(
+          "--include='apps/vscode-extension/scripts/check-marketplace-assets.js'",
+        ) &&
         command.includes("scripts/check-compatibility-contract.test.mjs") &&
         command.includes("scripts/create-github-signed-commit.test.mjs") &&
         command.includes("scripts/check-release-surface.test.mjs") &&
-        command.includes("scripts/prepare-sonar-lcov.test.mjs")
+        command.includes("scripts/prepare-sonar-lcov.test.mjs") &&
+        command.includes("--test-concurrency=1") &&
+        command.includes(
+          "apps/vscode-extension/scripts/check-marketplace-assets.test.mjs",
+        )
       );
     })
   ) {
     errors.push(
-      "SonarCloud must discover the pnpm-pinned c8 CLI and instrument repository scripts",
+      "SonarCloud must discover the pnpm-pinned c8 CLI and instrument repository and marketplace scripts",
     );
   }
+  const lcovEvidence = steps.some((step) => {
+    const command = String(step.run ?? "");
+    return command.includes(
+      "SF:apps/vscode-extension/scripts/check-marketplace-assets.js",
+    );
+  });
+  if (!lcovEvidence) {
+    errors.push(
+      "SonarCloud must verify marketplace checker LCOV before upload",
+    );
+  }
+
   const scanner = steps.find((step) =>
     String(step.uses ?? "").startsWith("SonarSource/sonarqube-scan-action@"),
   );

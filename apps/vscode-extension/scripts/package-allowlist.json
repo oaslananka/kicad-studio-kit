@@ -3,7 +3,6 @@
   "bundleSizeLimitBytes": 5242880,
   "requiredFiles": [
     "package.json",
-    "README.md",
     "CHANGELOG.md",
     "LICENSE",
     "SECURITY.md",
@@ -18,7 +17,6 @@
     "assets/icon.png",
     "assets/icon-light.png",
     "assets/icon-dark.png",
-    "assets/marketplace/core-workflow.gif",
     "assets/marketplace/icon-128.png",
     "assets/marketplace/icon-256.png",
     "assets/screenshots/project-tree.png",
@@ -29,9 +27,13 @@
     "schemas/kicad-project.schema.json",
     "schemas/vscode-mcp.kicad.json",
     "syntaxes/kicad-schematic.tmLanguage.json",
-    "syntaxes/kicad-pcb.tmLanguage.json"
+    "syntaxes/kicad-pcb.tmLanguage.json",
+    "assets/screenshots/bom-table.png",
+    "MARKETPLACE.md",
+    "assets/screenshots/capture-manifest.json"
   ],
   "allowedFiles": [
+    "MARKETPLACE.md",
     "CHANGELOG.md",
     "LICENSE",
     "README.md",

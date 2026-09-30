@@ -573,9 +573,9 @@ function copyStaticAssets() {
     "project-tree.png",
     "schematic-viewer.png",
     "pcb-viewer.png",
-    "quality-gates.png",
+    "drc-results.png",
+    "bom-table.png",
     "mcp-tools-dashboard.png",
-    "component-search.png",
   ];
   for (const screenshot of screenshots) {
     copyFile(
