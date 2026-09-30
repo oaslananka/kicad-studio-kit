@@ -1,5 +1,5 @@
 schemaVersion: 1
-updated: "2026-07-26"
+updated: "2026-09-30"
 source: "https://github.com/oaslananka/kicad-studio-kit"
 
 kicad:
@@ -631,6 +631,7 @@ python:
     - "3.14"
 
 supportAxes:
+  # testedAgainst values track the live published artifacts verified by the cross-repo canary.
   studioCli:
     kicad:
       stable: ["10.0.x"]
@@ -643,9 +644,9 @@ supportAxes:
     required: ">=3.5.2 <4.0.0"
     recommended: ">=3.5.2 <4.0.0"
     testedAgainst:
-      version: "3.33.3"
+      version: "3.35.2"
       registry: "pypi"
-      source: "https://pypi.org/project/kicad-mcp-pro/3.33.3/"
+      source: "https://pypi.org/project/kicad-mcp-pro/3.35.2/"
     remediation: "Install a published kicad-mcp-pro version inside the supported range and re-run compatibility diagnostics."
   mcpProtocol:
     active: "2025-11-25"
@@ -656,9 +657,9 @@ supportAxes:
     package: "boardreadyops"
     required: ">=1.2.0 <2.0.0"
     testedAgainst:
-      version: "1.37.0"
+      version: "1.68.2"
       registry: "npm"
-      source: "https://www.npmjs.com/package/boardreadyops/v/1.37.0"
+      source: "https://www.npmjs.com/package/boardreadyops/v/1.68.2"
     reports:
       findingsSchema: 1
       evidenceBundleSchema: 2
@@ -713,7 +714,7 @@ products:
     compatibleMcpPro:
       required: ">=3.5.2 <4.0.0"
       recommended: ">=3.5.2 <4.0.0"
-      testedAgainst: "3.33.3"
+      testedAgainst: "3.35.2"
 
 featureGates:
   projectDiscovery:
