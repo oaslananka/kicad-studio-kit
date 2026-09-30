@@ -171,6 +171,10 @@ test.describe('KiCad Studio webview DOM', () => {
       base64: readFixtureBase64('sample.kicad_pcb')
     });
 
+    await expect(page.locator('#viewer-status')).toHaveText(
+      'Interactive renderer loaded: invalid-geometry.kicad_pcb',
+      { timeout: 30000 }
+    );
     await expect(page.locator('#viewer-engine-badge')).toHaveText('KiCanvas');
     await page.evaluate(() => {
       window.dispatchEvent(
