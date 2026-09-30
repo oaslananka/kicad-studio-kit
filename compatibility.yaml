@@ -631,6 +631,7 @@ python:
     - "3.14"
 
 supportAxes:
+  # testedAgainst values track the live published artifacts verified by the cross-repo canary.
   studioCli:
     kicad:
       stable: ["10.0.x"]
