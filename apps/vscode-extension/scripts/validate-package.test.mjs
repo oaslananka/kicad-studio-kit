@@ -52,6 +52,22 @@ test('validatePackage rejects contributed commands without registered implementa
   );
 });
 
+test('validatePackage rejects stale project license metadata', () => {
+  const packageJson = readPackageJson();
+  packageJson.license = 'MIT';
+
+  assert.throws(
+    () =>
+      validatePackage({
+        root: extensionRoot,
+        repoRoot,
+        packageJson,
+        runVsce: false,
+        validatePackageFiles: false
+      }),
+    /extension license must be PolyForm-Noncommercial-1\.0\.0/
+  );
+});
 test('validatePackage rejects the deleted Marketplace package name', () => {
   const packageJson = readPackageJson();
   packageJson.name = 'kicadstudio';

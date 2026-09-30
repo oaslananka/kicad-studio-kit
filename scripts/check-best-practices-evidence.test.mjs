@@ -6,6 +6,7 @@ import { validateBestPracticesEvidence } from "./check-best-practices-evidence.m
 test("Best Practices evidence has the repository-controlled scorecard hardening anchors", () => {
   const result = validateBestPracticesEvidence();
   assert.equal(result.projectId, 13405);
+  assert.equal(result.currentLicense, "PolyForm-Noncommercial-1.0.0");
   assert.deepEqual(result.requiredStatusChecks, [
     "required",
     "analyze (javascript-typescript)",

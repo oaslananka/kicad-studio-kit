@@ -8,14 +8,14 @@
 [![CodeQL](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/codeql.yml)
 [![Security](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml/badge.svg)](https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/oaslananka/kicad-studio-kit/badge)](https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13405/badge)](https://www.bestpractices.dev/projects/13405)
+**Historical OpenSSF Best Practices Silver (MIT-licensed period)**
 
 [![Open VSX](https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX)](https://open-vsx.org/extension/oaslananka/kicadstudiokit)
 [![Open VSX Downloads](https://img.shields.io/open-vsx/dt/oaslananka/kicadstudiokit?label=Open%20VSX%20downloads)](https://open-vsx.org/extension/oaslananka/kicadstudiokit)
 [![VS Marketplace](https://img.shields.io/badge/VS%20Marketplace-install-blue)](https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit)
 [![VS Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/oaslananka.kicadstudiokit?label=VS%20installs)](https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit)
 [![VS Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/oaslananka.kicadstudiokit?label=VS%20rating)](https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit&ssr=false#review-details)
-[![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)](https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE)
 [![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=000000&labelColor=FFDD00&color=111111)](https://www.buymeacoffee.com/oaslananka)
 
 KiCad Studio turns VS Code into a KiCad-aware engineering cockpit: project navigation, schematic and PCB inspection, DRC/ERC review, repeatable release outputs, and MCP readiness for AI-assisted workflows.
@@ -126,6 +126,17 @@ corepack pnpm --filter kicadstudiokit run build
 corepack pnpm --filter kicadstudiokit run package
 corepack pnpm --filter kicadstudiokit exec vsce ls --tree --no-dependencies
 ```
+
+## License
+
+Current project-authored source is licensed under PolyForm Noncommercial 1.0.0.
+Commercial use requires a separate written license. Earlier revisions already
+published under MIT retain the MIT rights granted for those versions. See the
+repository licensing guide for details:
+https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSING.md
+
+Third-party bundled material keeps its own license; the KiCanvas notice remains
+under `media/kicanvas/NOTICE.txt`.
 
 ## Support and Sponsorship
 

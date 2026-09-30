@@ -56,7 +56,7 @@ that was not recorded.
 - ADRs are numbered sequentially: `0001`, `0002`, ..., `NNNN`.
 - File name: `NNNN-kebab-case-title.md`.
 - Numbers are never reused. A superseded ADR keeps its original number.
-- The next ADR number is `0009` (the first unused number as of this
+- The next ADR number is `0011` (the first unused number as of this
   writing).
 
 ## How Superseding Works
@@ -78,16 +78,18 @@ that was not recorded.
 
 ## Index
 
-| #    | Title                                                                        | Status   |
-| ---- | ---------------------------------------------------------------------------- | -------- |
-| 0001 | [Monorepo Two Products](0001-monorepo-two-products.md)                       | Accepted |
-| 0002 | [MCP Contract-First Integration](0002-mcp-contract-first-integration.md)     | Accepted |
-| 0003 | [Independent Release Model](0003-independent-release-model.md)               | Accepted |
-| 0004 | [No Direct Cross-Product Imports](0004-no-direct-cross-product-imports.md)   | Accepted |
-| 0005 | [KiCad Version Support Policy](0005-kicad-version-support-policy.md)         | Accepted |
-| 0006 | [VS Code Web Compatibility](0006-vscode-web-compatibility.md)                | Accepted |
-| 0007 | [Agent Onboarding and MCP Config Pack](0007-agent-onboarding-config-pack.md) | Accepted |
-| 0008 | [MCP 2026-07-28 Protocol Upgrade](0008-mcp-2026-07-28-protocol-upgrade.md)   | Proposed |
+| #    | Title                                                                                          | Status   |
+| ---- | ---------------------------------------------------------------------------------------------- | -------- |
+| 0001 | [Monorepo Two Products](0001-monorepo-two-products.md)                                         | Accepted |
+| 0002 | [MCP Contract-First Integration](0002-mcp-contract-first-integration.md)                       | Accepted |
+| 0003 | [Independent Release Model](0003-independent-release-model.md)                                 | Accepted |
+| 0004 | [No Direct Cross-Product Imports](0004-no-direct-cross-product-imports.md)                     | Accepted |
+| 0005 | [KiCad Version Support Policy](0005-kicad-version-support-policy.md)                           | Accepted |
+| 0006 | [VS Code Web Compatibility](0006-vscode-web-compatibility.md)                                  | Accepted |
+| 0007 | [Agent Onboarding and MCP Config Pack](0007-agent-onboarding-config-pack.md)                   | Accepted |
+| 0008 | [MCP 2026-07-28 Protocol Upgrade](0008-mcp-2026-07-28-protocol-upgrade.md)                     | Proposed |
+| 0009 | [Split kicad-mcp-pro into Separate Repo](0009-split-kicad-mcp-pro-into-separate-repository.md) | Accepted |
+| 0010 | [Source-Available and Commercial Licensing](0010-source-available-commercial-licensing.md)     | Accepted |
 
 ## Creating a New ADR
 

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import {
   parsePublishedProfiles,
@@ -74,7 +75,11 @@ test("published profile canary inspects a verified wheel without executing it", 
 function extractProfilesFromRouter(source) {
   const result = spawnSync(
     "python",
-    [new URL("./extract_published_mcp_profiles.py", import.meta.url).pathname],
+    [
+      fileURLToPath(
+        new URL("./extract_published_mcp_profiles.py", import.meta.url),
+      ),
+    ],
     { input: source, encoding: "utf8" },
   );
   assert.equal(result.status, 0, result.stderr);
@@ -116,7 +121,11 @@ def available_profiles():
 `;
   const result = spawnSync(
     "python",
-    [new URL("./extract_published_mcp_profiles.py", import.meta.url).pathname],
+    [
+      fileURLToPath(
+        new URL("./extract_published_mcp_profiles.py", import.meta.url),
+      ),
+    ],
     { input: source, encoding: "utf8" },
   );
   assert.notEqual(result.status, 0);

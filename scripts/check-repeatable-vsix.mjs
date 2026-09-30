@@ -18,6 +18,16 @@ const repoRoot = path.resolve(
 );
 const extensionRoot = path.join(repoRoot, "apps", "vscode-extension");
 
+export function buildCorepackInvocation(platform, comspec, args) {
+  if (platform === "win32") {
+    return {
+      command: comspec ?? "cmd.exe",
+      args: ["/d", "/s", "/c", "corepack", ...args],
+    };
+  }
+  return { command: "corepack", args };
+}
+
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     cwd: options.cwd ?? repoRoot,
@@ -38,7 +48,12 @@ function run(command, args, options = {}) {
 }
 
 function packageOnce(targetPath) {
-  run("corepack", ["pnpm", "--filter", "kicadstudiokit", "run", "package"]);
+  const invocation = buildCorepackInvocation(
+    process.platform,
+    process.env.ComSpec,
+    ["pnpm", "--filter", "kicadstudiokit", "run", "package"],
+  );
+  run(invocation.command, invocation.args);
   const pkg = JSON.parse(
     fs.readFileSync(path.join(extensionRoot, "package.json"), "utf8"),
   );

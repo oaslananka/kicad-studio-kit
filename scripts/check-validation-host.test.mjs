@@ -203,49 +203,61 @@ test("root package exposes bootstrap, workspace, doctor, check, and package entr
   assert.match(scripts.check, /pnpm run check:validation-host/u);
 });
 
-test("runner isolates mise and runtime paths under the executing HOME (#490)", (t) => {
-  const home = mkdtempSync(path.join(os.tmpdir(), "kicad-validation-home-"));
-  t.after(() => rmSync(home, { recursive: true, force: true }));
+test(
+  "runner isolates mise and runtime paths under the executing HOME (#490)",
+  {
+    skip:
+      process.platform === "win32"
+        ? "requires Linux validation-host semantics"
+        : false,
+  },
+  (t) => {
+    const home = mkdtempSync(path.join(os.tmpdir(), "kicad-validation-home-"));
+    t.after(() => rmSync(home, { recursive: true, force: true }));
 
-  const result = spawnSync(
-    "bash",
-    [
-      path.join(repoRoot, "scripts/run-validation-host.sh"),
-      "--print-environment",
-    ],
-    {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        HOME: home,
-        MISE_CONFIG_FILE: "/home/opsrunner/leaked.toml",
-        KICAD_STUDIO_MISE_DATA_DIR: "/tmp/leaked-mise",
-        KICAD_STUDIO_VALIDATION_CACHE_ROOT: "/tmp/leaked-validation",
-        PLAYWRIGHT_BROWSERS_PATH: "/tmp/leaked-playwright",
+    const result = spawnSync(
+      "bash",
+      [
+        path.join(repoRoot, "scripts/run-validation-host.sh"),
+        "--print-environment",
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          HOME: home,
+          MISE_CONFIG_FILE: "/home/opsrunner/leaked.toml",
+          KICAD_STUDIO_MISE_DATA_DIR: "/tmp/leaked-mise",
+          KICAD_STUDIO_VALIDATION_CACHE_ROOT: "/tmp/leaked-validation",
+          PLAYWRIGHT_BROWSERS_PATH: "/tmp/leaked-playwright",
+        },
+        encoding: "utf8",
       },
-      encoding: "utf8",
-    },
-  );
+    );
 
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(
-    result.stdout,
-    new RegExp(`MISE_DATA_DIR=${home}/\\.local/share/mise`, "u"),
-  );
-  assert.match(
-    result.stdout,
-    new RegExp(`MISE_CONFIG_FILE=${home}/\\.config/mise/config\\.toml`, "u"),
-  );
-  assert.match(
-    result.stdout,
-    new RegExp(
-      `KICAD_STUDIO_VALIDATION_CACHE_ROOT=${home}/\\.cache/kicad-studio-kit`,
-      "u",
-    ),
-  );
-  assert.match(
-    result.stdout,
-    new RegExp(`PLAYWRIGHT_BROWSERS_PATH=${home}/\\.cache/ms-playwright`, "u"),
-  );
-  assert.doesNotMatch(result.stdout, /\/home\/opsrunner|\/tmp\/leaked/u);
-});
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(
+      result.stdout,
+      new RegExp(`MISE_DATA_DIR=${home}/\\.local/share/mise`, "u"),
+    );
+    assert.match(
+      result.stdout,
+      new RegExp(`MISE_CONFIG_FILE=${home}/\\.config/mise/config\\.toml`, "u"),
+    );
+    assert.match(
+      result.stdout,
+      new RegExp(
+        `KICAD_STUDIO_VALIDATION_CACHE_ROOT=${home}/\\.cache/kicad-studio-kit`,
+        "u",
+      ),
+    );
+    assert.match(
+      result.stdout,
+      new RegExp(
+        `PLAYWRIGHT_BROWSERS_PATH=${home}/\\.cache/ms-playwright`,
+        "u",
+      ),
+    );
+    assert.doesNotMatch(result.stdout, /\/home\/opsrunner|\/tmp\/leaked/u);
+  },
+);

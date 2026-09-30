@@ -1,10 +1,10 @@
-# OpenSSF Silver Maintenance Analysis
+# Historical OpenSSF Silver Evidence Analysis
 
 Review date: 2026-08-02
 
 ## Summary
 
-Passing and Silver are achieved and form the repository's declared OpenSSF Best Practices target. Gold/foundation-grade is not a planned maturity target for the current solo-maintainer operating model.
+Passing and Silver were achieved during the MIT-licensed period. Since 2026-09-14, current project-authored source is PolyForm Noncommercial 1.0.0 and source-available rather than OSI-approved open source. This document now preserves the earlier Silver evidence and the quality controls that remain useful.
 
 ## Passing readiness
 

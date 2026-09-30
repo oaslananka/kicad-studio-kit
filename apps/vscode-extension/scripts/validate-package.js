@@ -83,6 +83,11 @@ function validateStaticMetadata({ root, repoRoot, pkg, fail }) {
     fail
   );
   check(
+    pkg.license === 'PolyForm-Noncommercial-1.0.0',
+    'extension license must be PolyForm-Noncommercial-1.0.0',
+    fail
+  );
+  check(
     pkg.engines?.vscode === '^1.101.0',
     'VS Code engine drifted unexpectedly',
     fail
