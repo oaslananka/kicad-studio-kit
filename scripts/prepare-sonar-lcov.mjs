@@ -19,7 +19,7 @@ export function normalizeSonarLcov(root = REPO_ROOT, reportPath = LCOV_PATH) {
   const lcovFile = path.resolve(root, reportPath);
   const content = readFileSync(lcovFile, "utf8");
   let sources = 0;
-  const normalized = content.split("\n").map((line) => {
+  const normalized = content.split(/\r?\n/u).map((line) => {
     if (!line.startsWith("SF:")) return line;
 
     const original = line.slice(3);

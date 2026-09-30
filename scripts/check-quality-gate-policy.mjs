@@ -203,13 +203,15 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
       const command = String(step.run ?? "");
       return (
         command.includes("node --test") &&
-        command.includes("c8") &&
+        command.includes("corepack pnpm --filter kicadstudiokit exec node") &&
+        command.includes("require.resolve('c8/bin/c8.js')") &&
+        command.includes('node "$c8_cli"') &&
         command.includes("scripts/prepare-sonar-lcov.test.mjs")
       );
     })
   ) {
     errors.push(
-      "SonarCloud must instrument real repository script tests using c8",
+      "SonarCloud must discover the pnpm-pinned c8 CLI and instrument repository scripts",
     );
   }
   const scanner = steps.find((step) =>

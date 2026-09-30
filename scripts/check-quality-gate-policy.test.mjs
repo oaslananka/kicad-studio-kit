@@ -254,13 +254,13 @@ test("#706 Sonar must generate actual script LCOV through c8", () => {
     writeFileSync(
       filePath,
       readFileSync(filePath, "utf8").replace(
-        "apps/vscode-extension/node_modules/.bin/c8",
-        "echo fake-coverage",
+        "require.resolve('c8/bin/c8.js')",
+        "undefined",
       ),
     );
     assert.match(
       validateQualityGatePolicy(root).join("\n"),
-      /SonarCloud must instrument real repository script tests using c8/iu,
+      /SonarCloud must discover the pnpm-pinned c8 CLI/iu,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });

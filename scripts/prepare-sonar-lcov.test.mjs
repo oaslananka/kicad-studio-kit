@@ -39,6 +39,25 @@ test("#706 maps relative Jest SF paths to repository-root files", () => {
   }
 });
 
+test("#707 rebases CRLF LCOV records without corrupting source paths", () => {
+  const { root, report } = fixture(
+    "TN:\r\nSF:src/viewer.ts\r\nDA:1,1\r\nend_of_record\r\n",
+  );
+  try {
+    assert.equal(normalizeSonarLcov(root), 1);
+    const result = readFileSync(report, "utf8");
+    assert.match(result, /^SF:apps\/vscode-extension\/src\/viewer\.ts$/mu);
+    assert.equal(result.includes("\r"), false);
+    assert.equal(
+      normalizeSonarLcov(root),
+      1,
+      "CRLF normalization is idempotent",
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("#706 missing source fails closed before writing the report", () => {
   const input = "SF:src/untracked.ts\nDA:1,1\n";
   const { root, report } = fixture(input);

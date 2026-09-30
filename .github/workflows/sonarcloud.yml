@@ -38,7 +38,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          apps/vscode-extension/node_modules/.bin/c8 \
+          # Resolve the workspace-pinned CLI through pnpm rather than
+          # assuming the location of node_modules or pnpm's symlink layout.
+          c8_cli="$(corepack pnpm --filter kicadstudiokit exec node -p "require.resolve('c8/bin/c8.js')")"
+          node "$c8_cli" \
             --reporter=lcov \
             --report-dir=apps/vscode-extension/coverage/sonar-scripts \
             --include='scripts/check-quality-gate-policy.mjs' \
