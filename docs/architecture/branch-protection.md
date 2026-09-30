@@ -58,9 +58,25 @@ signals. The canonical repository owner is `oaslananka`; workflows therefore do 
 carry repository-owner aliases or owner conditionals. Event, fork, path, and permission
 guards remain in place where they enforce real security or execution boundaries.
 
-- **SonarCloud** is an advisory external-app signal, not a branch-protection context.
-  Pull requests should reach a passing quality gate with zero unresolved new issues, but
-  the service-side configuration is not treated as repository merge authority.
+- **SonarCloud** is advisory, not a required branch-protection context.
+  CI-based analysis is configured in `.github/workflows/sonarcloud.yml` and
+  `sonar-project.properties`, with full Git history and **actual Jest LCOV**
+  (`apps/vscode-extension/coverage/lcov.info`) generated before scanning.
+  `scripts/prepare-sonar-lcov.mjs` validates and rewrites Jest's app-relative
+  `SF:src/...` source paths to repository-root-relative paths; missing
+  source records fail the job before SonarCloud can display misleading zero coverage.
+  The job also exercises repository-owned scripts with the existing, pinned
+  `c8` dependency and imports their real Node test LCOV report. Sonar test
+  inclusions distinguish JS/TS tests in `scripts/` from production scripts
+  and exclude binary screenshot goldens from text parsing.
+  Automatic Analysis must remain **off** in SonarQube Cloud
+  (Project > Administration > Analysis Method) so the two analysis modes do
+  not conflict. A scoped `SONAR_TOKEN` GitHub Actions secret is required;
+  the scanner job skips fork pull requests rather than exposing the token.
+  The analysis is independent of Codecov and does not alter the required
+  branch checks. Sonar coverage represents the instrumented Jest sources,
+  not a fabricated 100% metric. Monitor its source and new-code scope on
+  the first completed scans before considering any future gate promotion.
 - **Mergify** is not a repository merge authority. No `.mergify.yml` is owned here and
   its app status is informational; GitHub rulesets and required checks remain canonical.
 - **Codecov** is repository-configured observability. Project, patch, and bundle statuses

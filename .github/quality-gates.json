@@ -13,8 +13,11 @@
     "sonarCloud": {
       "checkContext": "SonarCloud Code Analysis",
       "required": false,
-      "repositoryConfig": false,
-      "policy": "advisory-zero-new-issues"
+      "repositoryConfig": true,
+      "policy": "advisory-zero-new-issues",
+      "analysisMethod": "github-actions-lcov",
+      "workflow": ".github/workflows/sonarcloud.yml",
+      "coverageReport": "apps/vscode-extension/coverage/lcov.info,apps/vscode-extension/coverage/sonar-scripts/lcov.info"
     },
     "mergify": {
       "checkContext": "Mergify Merge Queue",

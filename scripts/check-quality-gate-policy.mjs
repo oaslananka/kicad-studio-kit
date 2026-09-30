@@ -53,12 +53,16 @@ function validateExternalSignals(repoRoot, policy, required, errors) {
   const sonar = signals.sonarCloud ?? {};
   if (
     sonar.required !== false ||
-    sonar.repositoryConfig !== false ||
+    sonar.repositoryConfig !== true ||
+    sonar.analysisMethod !== "github-actions-lcov" ||
+    sonar.workflow !== ".github/workflows/sonarcloud.yml" ||
+    sonar.coverageReport !==
+      "apps/vscode-extension/coverage/lcov.info,apps/vscode-extension/coverage/sonar-scripts/lcov.info" ||
     sonar.policy !== "advisory-zero-new-issues" ||
     required.includes(sonar.checkContext)
   ) {
     errors.push(
-      "SonarCloud must be advisory, externally configured, and outside branch protection",
+      "SonarCloud must remain advisory with repository-owned CI LCOV analysis and outside branch protection",
     );
   }
 
@@ -96,6 +100,130 @@ function validateExternalSignals(repoRoot, policy, required, errors) {
     errors.push(
       "Codecov project, patch, and bundle statuses must stay explicitly informational",
     );
+  }
+}
+
+function readSonarProperties(repoRoot, errors) {
+  const filename = "sonar-project.properties";
+  const fullPath = path.join(repoRoot, filename);
+  if (!existsSync(fullPath)) {
+    errors.push(`SonarCloud is missing ${filename}`);
+    return new Map();
+  }
+  const result = new Map();
+  for (const line of readFileSync(fullPath, "utf8").split(/\r?\n/u)) {
+    const text = line.trim();
+    if (!text || text.startsWith("#")) continue;
+    const separator = text.indexOf("=");
+    if (separator < 1) {
+      errors.push(`SonarCloud has malformed ${filename} entry`);
+      continue;
+    }
+    const key = text.slice(0, separator).trim();
+    if (result.has(key)) errors.push(`SonarCloud has duplicate ${key}`);
+    result.set(key, text.slice(separator + 1).trim());
+  }
+  return result;
+}
+
+function validateSonarCiCoverage(repoRoot, sonar, errors) {
+  const properties = readSonarProperties(repoRoot, errors);
+  for (const [key, expected] of [
+    ["sonar.organization", "oaslananka"],
+    ["sonar.projectKey", "oaslananka_kicad-studio-kit"],
+    ["sonar.javascript.lcov.reportPaths", sonar.coverageReport],
+  ]) {
+    if (properties.get(key) !== expected) {
+      errors.push(`SonarCloud ${key} must equal ${expected}`);
+    }
+  }
+  const sources = (properties.get("sonar.sources") ?? "").split(",");
+  if (!sources.includes("apps/vscode-extension/src")) {
+    errors.push("SonarCloud must analyze VS Code extension production sources");
+  }
+  if (
+    !(properties.get("sonar.tests") ?? "")
+      .split(",")
+      .includes("apps/vscode-extension/test") ||
+    !(properties.get("sonar.tests") ?? "").split(",").includes("scripts") ||
+    !(properties.get("sonar.test.inclusions") ?? "")
+      .split(",")
+      .includes("scripts/**/*.test.mjs")
+  ) {
+    errors.push("SonarCloud must classify VS Code and script tests separately");
+  }
+
+  const workflowPath = path.join(repoRoot, ".github/workflows/sonarcloud.yml");
+  if (!existsSync(workflowPath)) {
+    errors.push("SonarCloud CI coverage workflow is missing");
+    return;
+  }
+  const workflow = parseYaml(readFileSync(workflowPath, "utf8"));
+  const job = workflow?.jobs?.sonarcloud;
+  const steps = job?.steps ?? [];
+  if (
+    workflow?.permissions?.contents !== "read" ||
+    !Object.hasOwn(workflow?.on ?? {}, "pull_request") ||
+    !Object.hasOwn(workflow?.on ?? {}, "push") ||
+    !job ||
+    !String(job.if ?? "").includes(
+      "github.event.pull_request.head.repo.full_name == github.repository",
+    )
+  ) {
+    errors.push("SonarCloud CI coverage must be read-only and fork guarded");
+  }
+  const checkout = steps.find((step) =>
+    String(step.uses ?? "").startsWith("actions/checkout@"),
+  );
+  if (
+    checkout?.with?.["fetch-depth"] !== 0 ||
+    checkout?.with?.["persist-credentials"] !== false
+  ) {
+    errors.push("SonarCloud checkout must be full-history and uncredentialed");
+  }
+  if (
+    !steps.some((step) => String(step.run ?? "").includes("test:unit:coverage"))
+  ) {
+    errors.push("SonarCloud must generate actual Jest unit LCOV");
+  }
+  if (
+    !steps.some((step) =>
+      String(step.run ?? "").includes("node scripts/prepare-sonar-lcov.mjs"),
+    )
+  ) {
+    errors.push("SonarCloud must normalize real Jest LCOV source paths");
+  }
+  if (
+    !steps.some((step) => String(step.run ?? "").includes('test -s "$lcov"'))
+  ) {
+    errors.push("SonarCloud must verify LCOV exists and is nonempty");
+  }
+  if (
+    !steps.some((step) => {
+      const command = String(step.run ?? "");
+      return (
+        command.includes("node --test") &&
+        command.includes("corepack pnpm --filter kicadstudiokit exec node") &&
+        command.includes("require.resolve('c8/bin/c8.js')") &&
+        command.includes('node "$c8_cli"') &&
+        command.includes("scripts/prepare-sonar-lcov.test.mjs")
+      );
+    })
+  ) {
+    errors.push(
+      "SonarCloud must discover the pnpm-pinned c8 CLI and instrument repository scripts",
+    );
+  }
+  const scanner = steps.find((step) =>
+    String(step.uses ?? "").startsWith("SonarSource/sonarqube-scan-action@"),
+  );
+  if (
+    !/^SonarSource\/sonarqube-scan-action@[a-f0-9]{40}$/u.test(
+      String(scanner?.uses ?? ""),
+    ) ||
+    scanner?.env?.SONAR_TOKEN !== "${{ secrets.SONAR_TOKEN }}"
+  ) {
+    errors.push("SonarCloud scanner must pin a commit and use SONAR_TOKEN");
   }
 }
 
@@ -146,6 +274,11 @@ export function validateQualityGatePolicy(repoRoot = DEFAULT_REPO_ROOT) {
 
   validateOwnerGuards(repoRoot, errors);
   validateExternalSignals(repoRoot, policy, required, errors);
+  validateSonarCiCoverage(
+    repoRoot,
+    policy.externalSignals?.sonarCloud ?? {},
+    errors,
+  );
   validateDocumentation(repoRoot, errors);
   return [...new Set(errors)];
 }
