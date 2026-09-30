@@ -113,7 +113,7 @@ test("#431 compatibility.yaml writer bumps only the kicad-studio version", () =>
   assert.equal(compatibilityProductVersion(next), "9.9.9");
   // The kicad-mcp-pro testedAgainst field shares the block but must be left alone.
   assert.ok(
-    next.includes('testedAgainst: "3.33.3"'),
+    next.includes('testedAgainst: "3.35.2"'),
     "compatibility writer must not touch the kicad-mcp-pro testedAgainst version",
   );
 });
