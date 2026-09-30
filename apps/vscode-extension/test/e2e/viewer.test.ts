@@ -52,20 +52,50 @@ test.describe('KiCad Studio VS Code E2E', () => {
       );
       await openWorkspaceFile(session.page, 'sample.kicad_pcb');
 
-      await expect
-        .poll(
-          async () => {
-            for (const frame of session.page.frames()) {
-              const badge = frame.locator('#viewer-engine-badge');
-              if ((await badge.count()) > 0) {
-                return (await badge.textContent())?.trim() ?? '';
+      try {
+        await expect
+          .poll(
+            async () => {
+              for (const frame of session.page.frames()) {
+                const badge = frame.locator('#viewer-engine-badge');
+                if ((await badge.count()) > 0) {
+                  return (await badge.textContent())?.trim() ?? '';
+                }
               }
-            }
-            return '';
-          },
-          { timeout: 60000 }
-        )
-        .toBe('CLI SVG fallback');
+              return '';
+            },
+            { timeout: 60000 }
+          )
+          .toBe('CLI SVG fallback');
+      } catch (error) {
+        const diagnostics = [];
+        for (const frame of session.page.frames()) {
+          if ((await frame.locator('#viewer-engine-badge').count()) === 0) {
+            continue;
+          }
+          diagnostics.push(
+            await frame.evaluate(() => {
+              const probe = document.createElement('canvas');
+              const context = probe.getContext('webgl2') || probe.getContext('webgl');
+              return {
+                url: location.href,
+                badge: document.getElementById('viewer-engine-badge')?.textContent,
+                status: document.getElementById('viewer-status')?.textContent,
+                webglAvailable: Boolean(context),
+                contextLost: context?.isContextLost?.() ?? null,
+                canvasCount: document.querySelectorAll('canvas').length,
+                embedCount: document.querySelectorAll('kicanvas-embed').length,
+                error: document.getElementById('error-message')?.textContent
+              };
+            })
+          );
+        }
+        console.error(
+          'Graphics-disabled viewer E2E diagnostics:',
+          JSON.stringify(diagnostics)
+        );
+        throw error;
+      }
     } finally {
       await session.close();
     }
