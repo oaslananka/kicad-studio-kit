@@ -102,6 +102,9 @@ describe('createKiCanvasViewerHtml', () => {
       'fitKicadViewer(collectKicadViews(viewerMount).viewer?.viewer)',
       'inner.zoom_to_page?.()',
       'renderSurface.width > 0',
+      'function hasWebGlContext()',
+      "payload.fileType === 'board' && !hasWebGlContext()",
+      "KiCanvas WebGL context is unavailable in this webview.",
       'function isRendererRuntimeFailure(reason)',
       "console.error('[kicanvas-fix] canvas readback probe failed', error);"
     ]) {
