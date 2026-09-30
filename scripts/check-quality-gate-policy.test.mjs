@@ -17,6 +17,7 @@ const FILES = [
   ".github/quality-gates.json",
   ".github/rulesets/main.json",
   "codecov.yml",
+  "sonar-project.properties",
   "docs/architecture/branch-protection.md",
   "package.json",
 ];
@@ -30,7 +31,7 @@ function fixture() {
   }
   const workflowRoot = path.join(root, ".github/workflows");
   mkdirSync(workflowRoot, { recursive: true });
-  for (const name of ["ci.yml", "security.yml"]) {
+  for (const name of ["ci.yml", "security.yml", "sonarcloud.yml"]) {
     cpSync(path.join(".github/workflows", name), path.join(workflowRoot, name));
   }
   return root;
@@ -123,6 +124,143 @@ test("#627 root quality-gate check cannot silently disappear", () => {
     assert.match(
       validateQualityGatePolicy(root).join("\n"),
       /package\.json.*check:quality-gates/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#706 CI-based Sonar coverage settings cannot drift", () => {
+  const root = fixture();
+  try {
+    const filePath = path.join(root, "sonar-project.properties");
+    writeFileSync(
+      filePath,
+      readFileSync(filePath, "utf8").replace(
+        "sonar.javascript.lcov.reportPaths=apps/vscode-extension/coverage/lcov.info",
+        "sonar.javascript.lcov.reportPaths=missing/lcov.info",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud sonar.javascript.lcov.reportPaths/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#706 Sonar workflow refuses unguarded token use on fork PRs", () => {
+  const root = fixture();
+  try {
+    const filePath = path.join(root, ".github/workflows/sonarcloud.yml");
+    writeFileSync(
+      filePath,
+      readFileSync(filePath, "utf8").replace(
+        "github.event.pull_request.head.repo.full_name == github.repository",
+        "true",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud CI coverage must be read-only and fork guarded/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#706 Sonar scanner pins an immutable action SHA", () => {
+  const root = fixture();
+  try {
+    const filePath = path.join(root, ".github/workflows/sonarcloud.yml");
+    writeFileSync(
+      filePath,
+      readFileSync(filePath, "utf8").replace(
+        /sonarqube-scan-action@[a-f0-9]{40}/u,
+        "sonarqube-scan-action@v8",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud scanner must pin a commit/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#706 Sonar requires generated Jest coverage", () => {
+  const root = fixture();
+  try {
+    const filePath = path.join(root, ".github/workflows/sonarcloud.yml");
+    writeFileSync(
+      filePath,
+      readFileSync(filePath, "utf8").replace("test:unit:coverage", "test:unit"),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud must generate actual Jest unit LCOV/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#706 Sonar workflow must normalize Jest's app-relative LCOV paths", () => {
+  const root = fixture();
+  try {
+    const filePath = path.join(root, ".github/workflows/sonarcloud.yml");
+    writeFileSync(
+      filePath,
+      readFileSync(filePath, "utf8").replace(
+        "node scripts/prepare-sonar-lcov.mjs",
+        "echo skip",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud must normalize real Jest LCOV source paths/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#706 Sonar must classify script tests outside production sources", () => {
+  const root = fixture();
+  try {
+    const filename = path.join(root, "sonar-project.properties");
+    writeFileSync(
+      filename,
+      readFileSync(filename, "utf8").replace(
+        "sonar.test.inclusions=",
+        "sonar.missing.test.inclusions=",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud must classify VS Code and script tests separately/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#706 Sonar must generate actual script LCOV through c8", () => {
+  const root = fixture();
+  try {
+    const filePath = path.join(root, ".github/workflows/sonarcloud.yml");
+    writeFileSync(
+      filePath,
+      readFileSync(filePath, "utf8").replace(
+        "apps/vscode-extension/node_modules/.bin/c8",
+        "echo fake-coverage",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud must instrument real repository script tests using c8/iu,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });
