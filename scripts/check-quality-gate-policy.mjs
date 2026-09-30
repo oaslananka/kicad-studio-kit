@@ -145,12 +145,20 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
     !(properties.get("sonar.tests") ?? "")
       .split(",")
       .includes("apps/vscode-extension/test") ||
+    !(properties.get("sonar.tests") ?? "")
+      .split(",")
+      .includes("apps/vscode-extension/scripts") ||
     !(properties.get("sonar.tests") ?? "").split(",").includes("scripts") ||
+    !(properties.get("sonar.test.inclusions") ?? "")
+      .split(",")
+      .includes("apps/vscode-extension/scripts/**/*.test.mjs") ||
     !(properties.get("sonar.test.inclusions") ?? "")
       .split(",")
       .includes("scripts/**/*.test.mjs")
   ) {
-    errors.push("SonarCloud must classify VS Code and script tests separately");
+    errors.push(
+      "SonarCloud must classify VS Code, extension-script, and repository-script tests separately",
+    );
   }
 
   const workflowPath = path.join(repoRoot, ".github/workflows/sonarcloud.yml");

@@ -240,7 +240,7 @@ test("#706 Sonar must classify script tests outside production sources", () => {
     );
     assert.match(
       validateQualityGatePolicy(root).join("\n"),
-      /SonarCloud must classify VS Code and script tests separately/iu,
+      /SonarCloud must classify VS Code, extension-script, and repository-script tests separately/iu,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -261,6 +261,26 @@ test("#706 Sonar must generate actual script LCOV through c8", () => {
     assert.match(
       validateQualityGatePolicy(root).join("\n"),
       /SonarCloud must discover the pnpm-pinned c8 CLI/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#706 Sonar must classify extension script tests outside production sources", () => {
+  const root = fixture();
+  try {
+    const filename = path.join(root, "sonar-project.properties");
+    writeFileSync(
+      filename,
+      readFileSync(filename, "utf8").replace(
+        "apps/vscode-extension/scripts/**/*.test.mjs,",
+        "",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /extension-script, and repository-script tests separately/iu,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });
