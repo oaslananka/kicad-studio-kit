@@ -66,9 +66,15 @@ guards remain in place where they enforce real security or execution boundaries.
   `SF:src/...` source paths to repository-root-relative paths; missing
   source records fail the job before SonarCloud can display misleading zero coverage.
   The job also exercises repository-owned scripts with the existing, pinned
-  `c8` dependency and imports their real Node test LCOV report. Sonar test
-  inclusions distinguish JS/TS tests in `scripts/` from production scripts
-  and exclude binary screenshot goldens from text parsing.
+  `c8` dependency and imports their real Node test LCOV report. The
+  script coverage run uses existing compatibility, release, provenance, and
+  quality-policy tests rather than inventing uncovered-line exclusions; the
+  source-file list is derived from actual executed modules. Sonar test
+  inclusions distinguish JS/TS tests in both `scripts/` and
+  `apps/vscode-extension/scripts/` from production scripts and exclude
+  binary screenshot goldens from text parsing. The main-branch new-code
+  window may span multiple releases, so PR and main percentages need not
+  match even with the same LCOV evidence.
   Automatic Analysis must remain **off** in SonarQube Cloud
   (Project > Administration > Analysis Method) so the two analysis modes do
   not conflict. A scoped `SONAR_TOKEN` GitHub Actions secret is required;

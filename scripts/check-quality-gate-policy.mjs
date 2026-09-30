@@ -145,10 +145,16 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
     !(properties.get("sonar.tests") ?? "")
       .split(",")
       .includes("apps/vscode-extension/test") ||
+    !(properties.get("sonar.tests") ?? "")
+      .split(",")
+      .includes("apps/vscode-extension/scripts") ||
     !(properties.get("sonar.tests") ?? "").split(",").includes("scripts") ||
     !(properties.get("sonar.test.inclusions") ?? "")
       .split(",")
-      .includes("scripts/**/*.test.mjs")
+      .includes("scripts/**/*.test.mjs") ||
+    !(properties.get("sonar.test.inclusions") ?? "")
+      .split(",")
+      .includes("apps/vscode-extension/scripts/**/*.test.mjs")
   ) {
     errors.push("SonarCloud must classify VS Code and script tests separately");
   }
@@ -206,6 +212,10 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
         command.includes("corepack pnpm --filter kicadstudiokit exec node") &&
         command.includes("require.resolve('c8/bin/c8.js')") &&
         command.includes('node "$c8_cli"') &&
+        command.includes("--include='scripts/**/*.mjs'") &&
+        command.includes("scripts/check-compatibility-contract.test.mjs") &&
+        command.includes("scripts/create-github-signed-commit.test.mjs") &&
+        command.includes("scripts/check-release-surface.test.mjs") &&
         command.includes("scripts/prepare-sonar-lcov.test.mjs")
       );
     })
