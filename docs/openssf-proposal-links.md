@@ -1,6 +1,6 @@
 # OpenSSF Proposal Links
 
-Use these links when updating OpenSSF Best Practices BadgeApp evidence or filing Scorecard remediation issues.
+These links preserve evidence from the MIT-licensed OpenSSF Best Practices period and remain useful for Scorecard/security maintenance. Do not present the BadgeApp status as a current FLOSS licensing claim after the 2026-09-14 PolyForm transition.
 
 ## BadgeApp
 

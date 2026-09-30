@@ -109,11 +109,13 @@ test("#395 drift is detected when a surface goes stale", () => {
 });
 
 test("#431 compatibility.yaml writer bumps only the kicad-studio version", () => {
+  const before = parseYaml(COMPATIBILITY_YAML);
   const next = applyCompatibilityProductVersion(COMPATIBILITY_YAML, "9.9.9");
+  const after = parseYaml(next);
   assert.equal(compatibilityProductVersion(next), "9.9.9");
-  // The kicad-mcp-pro testedAgainst field shares the block but must be left alone.
-  assert.ok(
-    next.includes('testedAgainst: "3.35.2"'),
+  assert.equal(
+    after.supportAxes.mcpServer.testedAgainst.version,
+    before.supportAxes.mcpServer.testedAgainst.version,
     "compatibility writer must not touch the kicad-mcp-pro testedAgainst version",
   );
 });
@@ -149,7 +151,13 @@ test("#431 compatibilityMatrix.ts writer bumps both extension version fields onl
   assert.equal(matrixStudioVersion(next), "9.9.9");
   assert.equal(matrixTestedAgainst(next), "9.9.9");
   // kicadMcpPro.version must remain the MCP server version, not the extension's.
-  assert.match(next, /kicadMcpPro: \{\s*\n\s*version: '3\.35\.2'/u);
+  const beforeMcpVersion = COMPATIBILITY_MATRIX_TS.match(
+    /kicadMcpPro: \{\s*\n\s*version: '([^']+)'/u,
+  )?.[1];
+  const afterMcpVersion = next.match(
+    /kicadMcpPro: \{\s*\n\s*version: '([^']+)'/u,
+  )?.[1];
+  assert.equal(afterMcpVersion, beforeMcpVersion);
 });
 
 test("#431 version writers are idempotent at the authoritative version", () => {

@@ -11,13 +11,13 @@
     "openssf_gap_analysis": "docs/openssf-gap-analysis.md",
     "proposal_links": "docs/openssf-proposal-links.md"
   },
-  "declared_target": "OpenSSF Best Practices Silver / Solo-maintainer Professional OSS",
+  "declared_target": "historical-mit-period",
   "gold_claim": "not_targeted",
   "gold_blockers": [],
-  "last_reviewed": "2026-08-02",
+  "last_reviewed": "2026-09-14",
   "target_notes": [
-    "Silver is the repository's final OpenSSF Best Practices badge target.",
-    "Gold-only governance requirements are not roadmap items for the solo-maintainer operating model.",
-    "Existing security, release, provenance, and governance controls remain in force even when they exceed Silver requirements."
+    "OpenSSF Best Practices Silver was achieved during the MIT-licensed period.",
+    "Current project-authored source is PolyForm Noncommercial 1.0.0 and source-available, not OSI-approved open source.",
+    "Historical badge evidence is retained for traceability and must not be presented as a current FLOSS licensing claim."
   ]
 }

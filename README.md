@@ -11,13 +11,13 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
   <a href="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml"><img src="https://github.com/oaslananka/kicad-studio-kit/actions/workflows/security.yml/badge.svg" alt="Security status"></a>
   <a href="https://codecov.io/gh/oaslananka/kicad-studio-kit"><img src="https://codecov.io/gh/oaslananka/kicad-studio-kit/branch/main/graph/badge.svg" alt="Codecov coverage"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit"><img src="https://api.scorecard.dev/projects/github.com/oaslananka/kicad-studio-kit/badge" alt="OpenSSF Scorecard"></a>
-  <a href="https://www.bestpractices.dev/projects/13405"><img src="https://www.bestpractices.dev/projects/13405/badge" alt="OpenSSF Best Practices"></a>
+  <span>Historical OpenSSF Best Practices Silver (MIT-licensed period)</span>
 </p>
 
 <p>
   <a href="https://open-vsx.org/extension/oaslananka/kicadstudiokit"><img src="https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX" alt="Open VSX version"></a>
   <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/badge/VS%20Marketplace-install-blue" alt="Install from Visual Studio Marketplace"></a>
-  <a href="https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+  <a href="https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="PolyForm Noncommercial 1.0.0"></a>
   <a href="https://oaslananka.github.io/kicad-studio-kit/"><img src="https://img.shields.io/badge/docs-site-blue" alt="Documentation site"></a>
   <a href="https://deepwiki.com/oaslananka/kicad-studio-kit"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
@@ -57,7 +57,7 @@ container image, and MCP Registry listing — lives in
 
 ## Repository maturity and standards
 
-This repository tracks Solo-maintainer Professional OSS / Mature OSS readiness through [the repository maturity report](docs/repo-maturity-report.md), [OpenSSF evidence](docs/openssf-evidence.md), and [OpenSSF gap analysis](docs/openssf-gap-analysis.md). Gold/foundation-grade maturity is intentionally not claimed for the current solo-maintainer model; branch protection and release evidence remain the practical Professional OSS focus.
+This repository retains its OpenSSF and maturity evidence from the earlier MIT-licensed period for historical traceability. Current project-authored source is source-available under PolyForm Noncommercial 1.0.0; the existing security, release, provenance, and governance controls remain quality targets rather than current FLOSS badge claims.
 
 ## Version Baseline
 
@@ -173,4 +173,4 @@ opening a pull request.
 
 ## License
 
-KiCad Studio Kit is available under the [MIT License](LICENSE).
+Current KiCad Studio Kit project-authored source is available under the [PolyForm Noncommercial License 1.0.0](LICENSE). Commercial use requires a separate written license; see [LICENSING.md](LICENSING.md) and [COMMERCIAL-LICENSING.md](COMMERCIAL-LICENSING.md). Earlier revisions already published under MIT remain available under the MIT terms that applied when they were published.

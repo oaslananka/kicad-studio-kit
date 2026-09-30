@@ -5,26 +5,26 @@ This page is the evidence register for the OpenSSF Best Practices project at
 
 Last reviewed: 2026-08-02.
 
-## Current badge status
+## Historical MIT-period badge status
 
-Silver badge achieved on 2026-06-30. The live badge is embedded in the README and resolves through the OpenSSF Best Practices project page.
+Silver was achieved on 2026-06-30 while the project was MIT-licensed. That status is retained here as historical evidence; it is no longer presented in the README as a current FLOSS licensing claim after the 2026-09-14 move to PolyForm Noncommercial 1.0.0.
 
-| Field                    | Value                                            |
-| ------------------------ | ------------------------------------------------ |
-| Best Practices project   | `13405`                                          |
-| Repository URL           | `https://github.com/oaslananka/kicad-studio-kit` |
-| Product represented here | VS Code extension: `oaslananka.kicadstudiokit`   |
-| Current badge status     | Passing and Silver achieved                      |
-| Next priority            | Preserve Silver evidence and detect policy drift |
+| Field                    | Value                                             |
+| ------------------------ | ------------------------------------------------- |
+| Best Practices project   | `13405`                                           |
+| Repository URL           | `https://github.com/oaslananka/kicad-studio-kit`  |
+| Product represented here | VS Code extension: `oaslananka.kicadstudiokit`    |
+| Historical badge status  | Passing and Silver achieved during MIT period     |
+| Next priority            | Preserve historical evidence and quality controls |
 
-Silver is the final declared badge target. Gold-only review, maintainer-count, and coverage requirements are not repository gaps. Existing controls that exceed Silver remain product-quality and security controls and must not be weakened.
+Silver was the final badge target during the MIT-licensed period. Current project-authored source is source-available rather than OSI-approved open source, so the prior badge evidence is historical. Existing controls that exceed Silver remain product-quality and security controls and must not be weakened.
 
 ## Evidence matrix
 
 | Area                  | Claim                                                                                                                            | Repository evidence                                                                                                                                                             | Follow-up                                                                                                                                                                     |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Project identity      | The repository has a clear product boundary and canonical URL.                                                                   | `README.md`, `CANONICAL.md`, `docs/architecture/repo-structure.md`, `docs/architecture/product-boundaries.md`                                                                   | Keep this repo scoped to the VS Code extension.                                                                                                                               |
-| License               | The project uses a recognized FLOSS license.                                                                                     | `LICENSE`, `README.md`                                                                                                                                                          | Keep release artifacts carrying the MIT license file.                                                                                                                         |
+| License               | Historical MIT releases used a recognized FLOSS license; current project-authored source is PolyForm Noncommercial 1.0.0.        | `LICENSE`, `LICENSING.md`, `README.md`                                                                                                                                          | Preserve prior MIT grants while keeping current release artifacts aligned with the source-available license.                                                                  |
 | Contribution process  | Contributors have documented contribution requirements.                                                                          | `CONTRIBUTING.md`, `.github/pull_request_template.md`, `.github/CODEOWNERS`, `GOVERNANCE.md`, `SUPPORT.md`                                                                      | Reference these files in the badge form.                                                                                                                                      |
 | Code of conduct       | Contributor behavior is documented.                                                                                              | `CODE_OF_CONDUCT.md`                                                                                                                                                            | Link the file in the badge form.                                                                                                                                              |
 | Security policy       | Vulnerability reporting is documented.                                                                                           | `SECURITY.md`, `docs/security.md`, `docs/security/threat-model.md`                                                                                                              | Keep reporting instructions current.                                                                                                                                          |
