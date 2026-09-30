@@ -36,7 +36,23 @@ function fail(message) {
   throw new Error(message);
 }
 function absolute(relativePath) {
-  return path.join(root, relativePath);
+  if (typeof relativePath !== 'string' || relativePath.length === 0) {
+    fail('repository asset path must be a non-empty string');
+  }
+  const normalized = path.posix.normalize(relativePath.replaceAll('\\', '/'));
+  if (
+    normalized === '..' ||
+    normalized.startsWith('../') ||
+    path.posix.isAbsolute(normalized)
+  ) {
+    fail(`repository asset path escapes the extension root: ${relativePath}`);
+  }
+  const resolved = path.resolve(root, normalized);
+  const rootPrefix = root.endsWith(path.sep) ? root : root + path.sep;
+  if (resolved !== root && !resolved.startsWith(rootPrefix)) {
+    fail(`repository asset path escapes the extension root: ${relativePath}`);
+  }
+  return resolved;
 }
 function assertFile(relativePath) {
   const filePath = absolute(relativePath);
@@ -48,6 +64,7 @@ function assertFile(relativePath) {
 }
 function readText(relativePath) {
   const result = assertFile(relativePath);
+  // nosemgrep: eslint.detect-non-literal-fs-filename -- assertFile() root-confines the repository-owned path.
   return fs.readFileSync(result.filePath, 'utf8');
 }
 function readJson(relativePath) {
@@ -105,6 +122,7 @@ function hashFiles(relativePaths) {
   for (const relativePath of [...relativePaths].sort()) {
     hash.update(relativePath);
     hash.update('\0');
+    // nosemgrep: eslint.detect-non-literal-fs-filename -- absolute() rejects traversal outside the extension root.
     hash.update(fs.readFileSync(absolute(relativePath)));
     hash.update('\0');
   }
@@ -190,6 +208,7 @@ function assertCaptureProvenance() {
     assertPng(screenshot, 1280, 720);
     const fileName = path.basename(screenshot);
     const expected = manifest.screenshots?.[fileName];
+    // nosemgrep: eslint.detect-non-literal-fs-filename -- screenshot names come from the fixed in-repo allowlist above.
     const actual = sha256(fs.readFileSync(absolute(screenshot)));
     if (expected !== actual) {
       fail(
@@ -200,10 +219,12 @@ function assertCaptureProvenance() {
   }
 }
 function assertNoSyntheticProductAssets() {
+  // nosemgrep: eslint.detect-non-literal-fs-filename -- literal repository path is root-confined by absolute().
   if (fs.existsSync(absolute('scripts/generate_screenshots.py'))) {
     fail('legacy synthetic screenshot generator must not exist');
   }
   for (const relativePath of obsoleteSyntheticAssets) {
+    // nosemgrep: eslint.detect-non-literal-fs-filename -- entries come from obsoleteSyntheticAssets, a fixed repository allowlist.
     if (fs.existsSync(absolute(relativePath))) {
       fail(
         'obsolete synthetic marketplace asset must be removed: ' + relativePath
