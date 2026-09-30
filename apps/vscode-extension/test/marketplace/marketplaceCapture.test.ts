@@ -121,8 +121,11 @@ async function waitForCommand(page: Page, query: string): Promise<void> {
 }
 
 async function dismissWelcomeNotification(page: Page): Promise<void> {
-  await page.waitForTimeout(750);
   const maybeLater = page.getByText('Maybe Later', { exact: true });
+  await maybeLater
+    .first()
+    .waitFor({ state: 'visible', timeout: 1200 })
+    .catch(() => undefined);
   if (
     (await maybeLater.count()) > 0 &&
     (await maybeLater.first().isVisible())
@@ -267,7 +270,6 @@ async function waitForViewerReady(page: Page): Promise<void> {
       { timeout: 90000 }
     )
     .toMatchObject({ ready: true });
-  await page.waitForTimeout(500);
 }
 
 async function capture(
@@ -305,7 +307,6 @@ async function hideTransientUi(page: Page): Promise<void> {
       .querySelectorAll('.notifications-center, .notifications-toasts')
       .forEach((node) => ((node as HTMLElement).style.visibility = 'hidden'));
   });
-  await page.waitForTimeout(350);
 }
 
 function writeCaptureManifest(): void {
@@ -321,7 +322,7 @@ function writeCaptureManifest(): void {
   const screenshots = Object.fromEntries(
     CAPTURE_FILES.map((fileName) => [
       fileName,
-      contentFingerprint(extensionRoot, `assets/screenshots/${fileName}`)
+      sha256(fs.readFileSync(path.join(CAPTURE_DIR, fileName)))
     ])
   );
 
@@ -340,8 +341,7 @@ function writeCaptureManifest(): void {
     path.join(CAPTURE_DIR, 'capture-manifest.json'),
     JSON.stringify(
       {
-        schemaVersion: 2,
-        fingerprintAlgorithm: 'sha256(git-blob-id)',
+        schemaVersion: 1,
         captureMode: 'real-vscode-extension-host',
         viewport: VIEWPORT,
         theme: 'Default Dark Modern',
@@ -359,29 +359,19 @@ function writeCaptureManifest(): void {
   );
 }
 
-function gitBlobHash(root: string, relativePath: string): string {
-  return execFileSync('git', ['hash-object', '--', relativePath], {
-    cwd: root,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim();
-}
-
-function contentFingerprint(root: string, relativePath: string): string {
-  return crypto
-    .createHash('sha256')
-    .update('git-blob:')
-    .update(gitBlobHash(root, relativePath))
-    .digest('hex');
-}
-
 function hashFiles(root: string, relativePaths: string[]): string {
   const hash = crypto.createHash('sha256');
-  for (const relativePath of [...relativePaths].sort()) {
+  for (const relativePath of [...relativePaths].sort((left, right) =>
+    left.localeCompare(right)
+  )) {
     hash.update(relativePath);
     hash.update('\0');
-    hash.update(gitBlobHash(root, relativePath));
+    hash.update(fs.readFileSync(path.join(root, relativePath)));
     hash.update('\0');
   }
   return hash.digest('hex');
+}
+
+function sha256(value: Buffer): string {
+  return crypto.createHash('sha256').update(value).digest('hex');
 }

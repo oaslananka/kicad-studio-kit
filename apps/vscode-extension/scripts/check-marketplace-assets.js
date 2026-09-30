@@ -2,7 +2,6 @@
 'use strict';
 
 const crypto = require('node:crypto');
-const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -24,13 +23,6 @@ const requiredSvgAssets = [
   'assets/marketplace/gallery-banner-background.svg',
   'assets/marketplace/gallery-banner-foreground.svg',
   'assets/marketplace/hero.svg'
-];
-const obsoleteSyntheticAssets = [
-  'assets/marketplace/core-workflow.gif',
-  'assets/screenshots/ai-assistant.png',
-  'assets/screenshots/component-search.png',
-  'assets/screenshots/git-diff.png',
-  'assets/screenshots/quality-gates.png'
 ];
 
 function fail(message) {
@@ -110,37 +102,103 @@ function assertSvg(relativePath) {
     fail(relativePath + ' must not depend on remote assets');
   }
 }
-function gitBlobHash(relativePath) {
-  return execFileSync('git', ['hash-object', '--', relativePath], {
-    cwd: root,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim();
+function sha256(buffer) {
+  return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
-function fileExistsInWorkingTree(relativePath) {
-  try {
-    gitBlobHash(relativePath);
-    return true;
-  } catch {
-    return false;
-  }
+function captureSourceContents() {
+  return new Map([
+    ['package.json', fs.readFileSync('package.json')],
+    [
+      'src/providers/projectTreeProvider.ts',
+      fs.readFileSync('src/providers/projectTreeProvider.ts')
+    ],
+    [
+      'src/providers/validationViewProvider.ts',
+      fs.readFileSync('src/providers/validationViewProvider.ts')
+    ],
+    [
+      'src/providers/bomViewProvider.ts',
+      fs.readFileSync('src/providers/bomViewProvider.ts')
+    ],
+    [
+      'src/providers/viewerHtml.ts',
+      fs.readFileSync('src/providers/viewerHtml.ts')
+    ],
+    [
+      'src/providers/viewer/viewerControllerScript.ts',
+      fs.readFileSync('src/providers/viewer/viewerControllerScript.ts')
+    ],
+    ['media/kicanvas/viewer.css', fs.readFileSync('media/kicanvas/viewer.css')],
+    ['media/viewer/bom.html', fs.readFileSync('media/viewer/bom.html')],
+    ['media/viewer/bom.js', fs.readFileSync('media/viewer/bom.js')],
+    ['test/e2e/vscodeHarness.ts', fs.readFileSync('test/e2e/vscodeHarness.ts')],
+    [
+      'test/marketplace/marketplaceCapture.test.ts',
+      fs.readFileSync('test/marketplace/marketplaceCapture.test.ts')
+    ],
+    [
+      'test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_pro',
+      fs.readFileSync(
+        'test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_pro'
+      )
+    ],
+    [
+      'test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_sch',
+      fs.readFileSync(
+        'test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_sch'
+      )
+    ],
+    [
+      'test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_pcb',
+      fs.readFileSync(
+        'test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_pcb'
+      )
+    ]
+  ]);
 }
 
-function contentFingerprint(relativePath) {
-  return crypto
-    .createHash('sha256')
-    .update('git-blob:')
-    .update(gitBlobHash(relativePath))
-    .digest('hex');
+function screenshotFingerprints() {
+  return {
+    'project-tree.png': sha256(
+      fs.readFileSync('assets/screenshots/project-tree.png')
+    ),
+    'schematic-viewer.png': sha256(
+      fs.readFileSync('assets/screenshots/schematic-viewer.png')
+    ),
+    'pcb-viewer.png': sha256(
+      fs.readFileSync('assets/screenshots/pcb-viewer.png')
+    ),
+    'drc-results.png': sha256(
+      fs.readFileSync('assets/screenshots/drc-results.png')
+    ),
+    'bom-table.png': sha256(
+      fs.readFileSync('assets/screenshots/bom-table.png')
+    ),
+    'mcp-tools-dashboard.png': sha256(
+      fs.readFileSync('assets/screenshots/mcp-tools-dashboard.png')
+    )
+  };
 }
 
 function hashFiles(relativePaths) {
+  const sourceContents = captureSourceContents();
+  const expectedPaths = [...sourceContents.keys()].sort((left, right) =>
+    left.localeCompare(right)
+  );
+  const actualPaths = [...relativePaths].sort((left, right) =>
+    left.localeCompare(right)
+  );
+  if (JSON.stringify(actualPaths) !== JSON.stringify(expectedPaths)) {
+    fail(
+      'marketplace capture source contract drifted from the checker allowlist'
+    );
+  }
   const hash = crypto.createHash('sha256');
-  for (const relativePath of [...relativePaths].sort()) {
+  for (const relativePath of expectedPaths) {
     hash.update(relativePath);
     hash.update('\0');
-    hash.update(gitBlobHash(relativePath));
+    hash.update(sourceContents.get(relativePath));
     hash.update('\0');
   }
   return hash.digest('hex');
@@ -192,11 +250,8 @@ function assertCaptureProvenance() {
     fail('marketplace capture source contract is invalid');
   }
   for (const source of contract.sources) assertFile(source);
-  if (manifest.schemaVersion !== 2)
-    fail('capture manifest schemaVersion must be 2');
-  if (manifest.fingerprintAlgorithm !== 'sha256(git-blob-id)') {
-    fail('capture manifest fingerprint algorithm drifted');
-  }
+  if (manifest.schemaVersion !== 1)
+    fail('capture manifest schemaVersion must be 1');
   if (manifest.captureMode !== 'real-vscode-extension-host') {
     fail(
       'marketplace screenshots must come from the real VS Code extension host'
@@ -225,11 +280,12 @@ function assertCaptureProvenance() {
   ) {
     fail('capture manifest must record the KiCad CLI version');
   }
+  const currentFingerprints = screenshotFingerprints();
   for (const screenshot of capturedScreenshots) {
     assertPng(screenshot, 1280, 720);
     const fileName = path.basename(screenshot);
     const expected = manifest.screenshots?.[fileName];
-    const actual = contentFingerprint(screenshot);
+    const actual = currentFingerprints[fileName];
     if (expected !== actual) {
       fail(
         screenshot +
@@ -239,11 +295,33 @@ function assertCaptureProvenance() {
   }
 }
 function assertNoSyntheticProductAssets() {
-  if (fileExistsInWorkingTree('scripts/generate_screenshots.py')) {
+  if (fs.existsSync('scripts/generate_screenshots.py')) {
     fail('legacy synthetic screenshot generator must not exist');
   }
-  for (const relativePath of obsoleteSyntheticAssets) {
-    if (fileExistsInWorkingTree(relativePath)) {
+  const obsoletePresence = new Map([
+    [
+      'assets/marketplace/core-workflow.gif',
+      fs.existsSync('assets/marketplace/core-workflow.gif')
+    ],
+    [
+      'assets/screenshots/ai-assistant.png',
+      fs.existsSync('assets/screenshots/ai-assistant.png')
+    ],
+    [
+      'assets/screenshots/component-search.png',
+      fs.existsSync('assets/screenshots/component-search.png')
+    ],
+    [
+      'assets/screenshots/git-diff.png',
+      fs.existsSync('assets/screenshots/git-diff.png')
+    ],
+    [
+      'assets/screenshots/quality-gates.png',
+      fs.existsSync('assets/screenshots/quality-gates.png')
+    ]
+  ]);
+  for (const [relativePath, exists] of obsoletePresence) {
+    if (exists) {
       fail(
         'obsolete synthetic marketplace asset must be removed: ' + relativePath
       );
@@ -301,7 +379,7 @@ function assertMarketplaceMarkdown() {
   let productImageCount = 0;
   for (const match of marketplace.matchAll(imagePattern)) {
     const target = match[1];
-    if (!target || !target.startsWith(baseImagesUrl + '/')) {
+    if (!target?.startsWith(baseImagesUrl + '/')) {
       fail(
         'MARKETPLACE.md images must use package.json baseImagesUrl: ' + target
       );
@@ -335,11 +413,23 @@ function assertBrandAssets() {
   assertPng('assets/marketplace/icon-256.png', 256, 256);
   assertPng('assets/marketplace/hero.png', 1280, 520);
 }
-assertPackageMetadata();
-assertBrandAssets();
-assertCaptureProvenance();
-assertNoSyntheticProductAssets();
-assertMarketplaceMarkdown();
-console.log(
-  'Marketplace check passed: 5 listing screenshots, 6 provenance-tracked captures, dedicated Marketplace copy, and no synthetic product UI.'
-);
+function runMarketplaceCheck() {
+  const previousCwd = process.cwd();
+  process.chdir(root);
+  try {
+    assertPackageMetadata();
+    assertBrandAssets();
+    assertCaptureProvenance();
+    assertNoSyntheticProductAssets();
+    assertMarketplaceMarkdown();
+    return 'Marketplace check passed: 5 listing screenshots, 6 provenance-tracked captures, dedicated Marketplace copy, and no synthetic product UI.';
+  } finally {
+    process.chdir(previousCwd);
+  }
+}
+
+if (require.main === module) {
+  console.log(runMarketplaceCheck());
+}
+
+module.exports = { runMarketplaceCheck };

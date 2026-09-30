@@ -334,3 +334,63 @@ test("#706 Sonar CSV properties tolerate insignificant whitespace", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("#710 Sonar must execute the marketplace checker test for extension-script coverage", () => {
+  const root = fixture();
+  try {
+    const file = path.join(root, ".github/workflows/sonarcloud.yml");
+    writeFileSync(
+      file,
+      readFileSync(file, "utf8").replace(
+        "apps/vscode-extension/scripts/check-marketplace-assets.test.mjs",
+        "apps/vscode-extension/scripts/skip-marketplace.test.mjs",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /instrument repository and marketplace scripts/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#710 Sonar must verify marketplace checker LCOV before upload", () => {
+  const root = fixture();
+  try {
+    const file = path.join(root, ".github/workflows/sonarcloud.yml");
+    writeFileSync(
+      file,
+      readFileSync(file, "utf8").replace(
+        "SF:apps/vscode-extension/scripts/check-marketplace-assets.js",
+        "SF:apps/vscode-extension/scripts/missing-marketplace-checker.js",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /verify marketplace checker LCOV/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#710 Sonar marketplace checker coverage must run mutation tests serially", () => {
+  const root = fixture();
+  try {
+    const file = path.join(root, ".github/workflows/sonarcloud.yml");
+    writeFileSync(
+      file,
+      readFileSync(file, "utf8").replace(
+        "--test-concurrency=1",
+        "--test-concurrency=4",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /instrument repository and marketplace scripts/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
