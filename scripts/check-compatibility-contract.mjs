@@ -25,7 +25,7 @@ const DOCS_FILES = [
   "docs/compatibility/runtime-policy.md",
   "docs/compatibility/kicad-11-readiness-dashboard.md",
   "docs/adr/0008-mcp-2026-07-28-protocol-upgrade.md",
-  "docs/evidence/mcp-2026-07-28/2026-07-27-preflight.md",
+  "docs/evidence/mcp-2026-07-28/2026-09-04-review.md",
 ];
 
 const REQUIRED_FILES = [
