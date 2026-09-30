@@ -6,7 +6,7 @@ coding agents and MCP-capable clients that work with KiCad Studio Kit.
 ## Start Here
 
 - Repository agent rules: `AGENTS.md`
-- Claude-specific guide: `CLAUDE.md`
+- Claude Code MCP example: `examples/mcp-clients/claude-code.mcp.example.json`
 - GitHub Copilot instructions: `.github/copilot-instructions.md`
 - MCP client setup matrix: [Client Configurations](client-configs.md)
 - Codex support model: [Codex Support](codex-support.md)

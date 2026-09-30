@@ -78,3 +78,25 @@ test("forbidden content scanner catches fixture defaults and secrets", () => {
   assert.match(errors[1], /workspace fixture/u);
   assert.match(errors[2], /bearer tokens/u);
 });
+
+test("agent guidance rejects nonexistent root CLAUDE.md routing", () => {
+  const errors = collectForbiddenContentErrors(
+    "docs/agents/index.md",
+    "- Claude-specific guide: `CLAUDE.md`",
+  );
+
+  assert.match(errors.join("\\n"), /AGENTS\.md.*canonical|CLAUDE\.md/u);
+});
+
+test("agent review guidance rejects external MCP and npm-wrapper work as local", () => {
+  const errors = collectForbiddenContentErrors(
+    "docs/maintainers/agent-pr-review-runbook.md",
+    [
+      "- MCP server feature or bug fix",
+      "MCP-only changes should run MCP tests, command help/version checks, and package build.",
+      "Npm-wrapper-only changes should run wrapper install checks, `npm pack --dry-run`, and CLI help/version checks.",
+    ].join("\\n"),
+  );
+
+  assert.match(errors.join("\\n"), /KiCad MCP Pro|external owner/u);
+});
