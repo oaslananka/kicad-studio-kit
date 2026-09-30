@@ -17,7 +17,7 @@ export const COMPATIBILITY_MATRIX = {
     mcpServer: {
       required: '>=3.5.2 <4.0.0',
       recommended: '>=3.5.2 <4.0.0',
-      testedAgainst: '3.33.3'
+      testedAgainst: '3.35.2'
     },
     mcpProtocol: {
       active: '2025-11-25',
@@ -26,7 +26,7 @@ export const COMPATIBILITY_MATRIX = {
     },
     boardReadyOps: {
       required: '>=1.2.0 <2.0.0',
-      testedAgainst: '1.37.0',
+      testedAgainst: '1.68.2',
       doctorSchema: 1,
       findingsSchema: 1,
       evidenceBundleSchema: 2
@@ -42,11 +42,11 @@ export const COMPATIBILITY_MATRIX = {
       compatibleMcpPro: {
         required: '>=3.5.2 <4.0.0',
         recommended: '>=3.5.2 <4.0.0',
-        testedAgainst: '3.33.3'
+        testedAgainst: '3.35.2'
       }
     },
     kicadMcpPro: {
-      version: '3.33.3',
+      version: '3.35.2',
       compatibleExtension: {
         required: '>=1.0.0 <2.0.0',
         testedAgainst: '1.15.0'
