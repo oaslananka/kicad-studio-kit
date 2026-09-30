@@ -29,7 +29,7 @@ const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   "js-yaml": "4.3.2",
   "@xmldom/xmldom": "0.8.15",
   tar: "7.5.22",
-  "fast-uri": "3.1.6",
+  "fast-uri": "3.1.8",
   "linkify-it": "5.0.2",
 });
 const FORBIDDEN_PNPM_SETTINGS = [
