@@ -149,7 +149,7 @@ test("#431 compatibilityMatrix.ts writer bumps both extension version fields onl
   assert.equal(matrixStudioVersion(next), "9.9.9");
   assert.equal(matrixTestedAgainst(next), "9.9.9");
   // kicadMcpPro.version must remain the MCP server version, not the extension's.
-  assert.match(next, /kicadMcpPro: \{\s*\n\s*version: '3\.33\.3'/u);
+  assert.match(next, /kicadMcpPro: \{\s*\n\s*version: '3\.35\.2'/u);
 });
 
 test("#431 version writers are idempotent at the authoritative version", () => {
