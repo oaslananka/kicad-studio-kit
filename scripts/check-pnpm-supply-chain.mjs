@@ -10,8 +10,6 @@ const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
 const MINIMUM_RELEASE_AGE_MINUTES = 10080;
 const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = [
   "tmp@0.2.7",
-  "brace-expansion@2.1.4",
-  "brace-expansion@5.0.9",
   "nanoid@3.3.18",
 ];
 const ALLOWED_TRUST_POLICY_EXCLUDES = [
@@ -20,9 +18,9 @@ const ALLOWED_TRUST_POLICY_EXCLUDES = [
   "semver@5.7.2 || 6.3.1",
 ];
 const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
-  "brace-expansion@2.1.1": "2.1.4",
-  "brace-expansion@5.0.6": "5.0.9",
-  "brace-expansion@5.0.7": "5.0.9",
+  "brace-expansion@2.1.1": "2.1.7",
+  "brace-expansion@5.0.6": "5.0.12",
+  "brace-expansion@5.0.7": "5.0.12",
   "postcss@8.5.15": "8.5.24",
   "nanoid@3.3.16": "3.3.18",
   "nanoid@3.3.17": "3.3.18",
