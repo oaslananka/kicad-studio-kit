@@ -1,5 +1,6 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "fingerprintAlgorithm": "sha256(git-blob-id)",
   "captureMode": "real-vscode-extension-host",
   "viewport": {
     "width": 1280,
@@ -10,13 +11,13 @@
   "vscodeVersion": "1.122.0",
   "kicadVersion": "10.0.6",
   "sourceContractVersion": 1,
-  "sourceFingerprint": "670713828440070e8a7d88f685e59dd4f52ac98f9846cfab98f6608872db3bd5",
+  "sourceFingerprint": "74c5d73ed3757d3b1a635af047b1a28520e5eda1e4d5d0851f04fd6c0e265047",
   "screenshots": {
-    "project-tree.png": "028ec2c8b5e766306f19216fba80f67390b80b33e5793f947239f74f1ebd773e",
-    "schematic-viewer.png": "1d960024a82de522dfe7f664fcfb9e3f2ac268c334d2f92a6c6302dc4c5c54fa",
-    "pcb-viewer.png": "a4e3225426c86fa26b5cf14f4bf1d30fb226b2aa6e16417c6d82478f67b6fa40",
-    "drc-results.png": "7d55a31c0a44fc63dcff674505a9a5be771acc0e3678586e18ef617ed9466e25",
-    "bom-table.png": "6b8bdc59890a5976b2e0caea93f732e7ca5445fea98b09369c8a57814a5f91ec",
-    "mcp-tools-dashboard.png": "f89798172f1a6e971c6221f991d357b77530aa8e6533097b4e174f3d11cd71aa"
+    "project-tree.png": "a6b4de270cac5a04899fba99065d7202ec6b1638f888c67d5cf2adc4d32dc49d",
+    "schematic-viewer.png": "33eaf198969eaba134275b8f63b6d425e66ba653328fe9befc76012b4e91496a",
+    "pcb-viewer.png": "a2da2717d3f514c80c6637fc1a30b48df05e99d534d2c31e40578fbe2dfe56c3",
+    "drc-results.png": "159b2e9d92f5abea413d4dd45928268f5ff42e92d2daba8ae4e785bf98598d39",
+    "bom-table.png": "9c6de8d61a620addf24f48b29ca2a839dc65347986ae5cf0f0dc5956c6845492",
+    "mcp-tools-dashboard.png": "20b29a4216e1c70c433d99f2663efa087c2c1c945627e95100e4e449fe470494"
   }
 }

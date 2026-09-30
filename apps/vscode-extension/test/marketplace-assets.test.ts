@@ -1,4 +1,5 @@
 import * as crypto from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -24,6 +25,7 @@ type PackageJson = {
 
 type CaptureManifest = {
   schemaVersion?: number;
+  fingerprintAlgorithm?: string;
   captureMode?: string;
   viewport?: { width?: number; height?: number };
   theme?: string;
@@ -55,10 +57,18 @@ function readPngSize(relativePath: string): { width: number; height: number } {
     height: buffer.readUInt32BE(20)
   };
 }
-function sha256(relativePath: string): string {
+function gitBlobHash(relativePath: string): string {
+  return execFileSync('git', ['hash-object', '--', relativePath], {
+    cwd: EXTENSION_ROOT,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
+  }).trim();
+}
+function contentFingerprint(relativePath: string): string {
   return crypto
     .createHash('sha256')
-    .update(fs.readFileSync(expectFile(relativePath)))
+    .update('git-blob:')
+    .update(gitBlobHash(relativePath))
     .digest('hex');
 }
 function sourceFingerprint(sources: string[]): string {
@@ -66,7 +76,7 @@ function sourceFingerprint(sources: string[]): string {
   for (const source of [...sources].sort()) {
     hash.update(source);
     hash.update('\0');
-    hash.update(fs.readFileSync(expectFile(source)));
+    hash.update(gitBlobHash(source));
     hash.update('\0');
   }
   return hash.digest('hex');
@@ -106,7 +116,8 @@ describe('marketplace listing assets', () => {
       fs.readFileSync(CAPTURE_MANIFEST_PATH, 'utf8')
     ) as CaptureManifest;
 
-    expect(manifest.schemaVersion).toBe(1);
+    expect(manifest.schemaVersion).toBe(2);
+    expect(manifest.fingerprintAlgorithm).toBe('sha256(git-blob-id)');
     expect(manifest.captureMode).toBe('real-vscode-extension-host');
     expect(manifest.viewport).toEqual({ width: 1280, height: 720 });
     expect(manifest.theme).toBe('Default Dark Modern');
@@ -122,7 +133,9 @@ describe('marketplace listing assets', () => {
     for (const fileName of screenshots) {
       const relativePath = 'assets/screenshots/' + fileName;
       expect(readPngSize(relativePath)).toEqual({ width: 1280, height: 720 });
-      expect(manifest.screenshots?.[fileName]).toBe(sha256(relativePath));
+      expect(manifest.screenshots?.[fileName]).toBe(
+        contentFingerprint(relativePath)
+      );
     }
   });
 

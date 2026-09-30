@@ -321,7 +321,7 @@ function writeCaptureManifest(): void {
   const screenshots = Object.fromEntries(
     CAPTURE_FILES.map((fileName) => [
       fileName,
-      sha256(fs.readFileSync(path.join(CAPTURE_DIR, fileName)))
+      contentFingerprint(extensionRoot, `assets/screenshots/${fileName}`)
     ])
   );
 
@@ -340,7 +340,8 @@ function writeCaptureManifest(): void {
     path.join(CAPTURE_DIR, 'capture-manifest.json'),
     JSON.stringify(
       {
-        schemaVersion: 1,
+        schemaVersion: 2,
+        fingerprintAlgorithm: 'sha256(git-blob-id)',
         captureMode: 'real-vscode-extension-host',
         viewport: VIEWPORT,
         theme: 'Default Dark Modern',
@@ -358,17 +359,29 @@ function writeCaptureManifest(): void {
   );
 }
 
+function gitBlobHash(root: string, relativePath: string): string {
+  return execFileSync('git', ['hash-object', '--', relativePath], {
+    cwd: root,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
+  }).trim();
+}
+
+function contentFingerprint(root: string, relativePath: string): string {
+  return crypto
+    .createHash('sha256')
+    .update('git-blob:')
+    .update(gitBlobHash(root, relativePath))
+    .digest('hex');
+}
+
 function hashFiles(root: string, relativePaths: string[]): string {
   const hash = crypto.createHash('sha256');
   for (const relativePath of [...relativePaths].sort()) {
     hash.update(relativePath);
     hash.update('\0');
-    hash.update(fs.readFileSync(path.join(root, relativePath)));
+    hash.update(gitBlobHash(root, relativePath));
     hash.update('\0');
   }
   return hash.digest('hex');
-}
-
-function sha256(value: Buffer): string {
-  return crypto.createHash('sha256').update(value).digest('hex');
 }

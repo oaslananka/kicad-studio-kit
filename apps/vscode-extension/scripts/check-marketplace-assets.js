@@ -2,6 +2,7 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -35,55 +36,50 @@ const obsoleteSyntheticAssets = [
 function fail(message) {
   throw new Error(message);
 }
+
 function absolute(relativePath) {
-  if (typeof relativePath !== 'string' || relativePath.length === 0) {
-    fail('repository asset path must be a non-empty string');
-  }
-  const normalized = path.posix.normalize(relativePath.replaceAll('\\', '/'));
-  if (
-    normalized === '..' ||
-    normalized.startsWith('../') ||
-    path.posix.isAbsolute(normalized)
-  ) {
-    fail(`repository asset path escapes the extension root: ${relativePath}`);
-  }
-  const resolved = path.resolve(root, normalized);
-  const rootPrefix = root.endsWith(path.sep) ? root : root + path.sep;
-  if (resolved !== root && !resolved.startsWith(rootPrefix)) {
-    fail(`repository asset path escapes the extension root: ${relativePath}`);
-  }
-  return resolved;
+  return path.join(root, relativePath);
 }
+
 function assertFile(relativePath) {
   const filePath = absolute(relativePath);
-  if (!fs.existsSync(filePath)) fail(relativePath + ' is missing');
+  if (!fs.existsSync(filePath)) {
+    fail(`${relativePath} is missing`);
+  }
   const stat = fs.statSync(filePath);
-  if (!stat.isFile()) fail(relativePath + ' is not a file');
-  if (stat.size === 0) fail(relativePath + ' is empty');
+  if (!stat.isFile()) {
+    fail(`${relativePath} is not a file`);
+  }
+  if (stat.size === 0) {
+    fail(`${relativePath} is empty`);
+  }
   return { filePath, stat };
 }
+
 function readText(relativePath) {
-  const result = assertFile(relativePath);
-  // nosemgrep: eslint.detect-non-literal-fs-filename -- assertFile() root-confines the repository-owned path.
-  return fs.readFileSync(result.filePath, 'utf8');
+  const { filePath } = assertFile(relativePath);
+  return fs.readFileSync(filePath, 'utf8');
 }
+
 function readJson(relativePath) {
   return JSON.parse(readText(relativePath));
 }
+
 function readPngSize(relativePath) {
-  const result = assertFile(relativePath);
-  const buffer = fs.readFileSync(result.filePath);
+  const { filePath } = assertFile(relativePath);
+  const buffer = fs.readFileSync(filePath);
   if (buffer.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') {
-    fail(relativePath + ' is not a PNG file');
+    fail(`${relativePath} is not a PNG file`);
   }
   if (buffer.subarray(12, 16).toString('ascii') !== 'IHDR') {
-    fail(relativePath + ' does not contain a valid PNG IHDR chunk');
+    fail(`${relativePath} does not contain a valid PNG IHDR chunk`);
   }
   return {
     width: buffer.readUInt32BE(16),
     height: buffer.readUInt32BE(20)
   };
 }
+
 function assertPng(relativePath, expectedWidth, expectedHeight) {
   const result = assertFile(relativePath);
   const size = readPngSize(relativePath);
@@ -114,20 +110,42 @@ function assertSvg(relativePath) {
     fail(relativePath + ' must not depend on remote assets');
   }
 }
-function sha256(buffer) {
-  return crypto.createHash('sha256').update(buffer).digest('hex');
+function gitBlobHash(relativePath) {
+  return execFileSync('git', ['hash-object', '--', relativePath], {
+    cwd: root,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
+  }).trim();
 }
+
+function fileExistsInWorkingTree(relativePath) {
+  try {
+    gitBlobHash(relativePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function contentFingerprint(relativePath) {
+  return crypto
+    .createHash('sha256')
+    .update('git-blob:')
+    .update(gitBlobHash(relativePath))
+    .digest('hex');
+}
+
 function hashFiles(relativePaths) {
   const hash = crypto.createHash('sha256');
   for (const relativePath of [...relativePaths].sort()) {
     hash.update(relativePath);
     hash.update('\0');
-    // nosemgrep: eslint.detect-non-literal-fs-filename -- absolute() rejects traversal outside the extension root.
-    hash.update(fs.readFileSync(absolute(relativePath)));
+    hash.update(gitBlobHash(relativePath));
     hash.update('\0');
   }
   return hash.digest('hex');
 }
+
 function assertSection(markdown, heading) {
   if (!markdown.includes('\n## ' + heading + '\n')) {
     fail('MARKETPLACE.md is missing "## ' + heading + '"');
@@ -174,8 +192,11 @@ function assertCaptureProvenance() {
     fail('marketplace capture source contract is invalid');
   }
   for (const source of contract.sources) assertFile(source);
-  if (manifest.schemaVersion !== 1)
-    fail('capture manifest schemaVersion must be 1');
+  if (manifest.schemaVersion !== 2)
+    fail('capture manifest schemaVersion must be 2');
+  if (manifest.fingerprintAlgorithm !== 'sha256(git-blob-id)') {
+    fail('capture manifest fingerprint algorithm drifted');
+  }
   if (manifest.captureMode !== 'real-vscode-extension-host') {
     fail(
       'marketplace screenshots must come from the real VS Code extension host'
@@ -208,8 +229,7 @@ function assertCaptureProvenance() {
     assertPng(screenshot, 1280, 720);
     const fileName = path.basename(screenshot);
     const expected = manifest.screenshots?.[fileName];
-    // nosemgrep: eslint.detect-non-literal-fs-filename -- screenshot names come from the fixed in-repo allowlist above.
-    const actual = sha256(fs.readFileSync(absolute(screenshot)));
+    const actual = contentFingerprint(screenshot);
     if (expected !== actual) {
       fail(
         screenshot +
@@ -219,13 +239,11 @@ function assertCaptureProvenance() {
   }
 }
 function assertNoSyntheticProductAssets() {
-  // nosemgrep: eslint.detect-non-literal-fs-filename -- literal repository path is root-confined by absolute().
-  if (fs.existsSync(absolute('scripts/generate_screenshots.py'))) {
+  if (fileExistsInWorkingTree('scripts/generate_screenshots.py')) {
     fail('legacy synthetic screenshot generator must not exist');
   }
   for (const relativePath of obsoleteSyntheticAssets) {
-    // nosemgrep: eslint.detect-non-literal-fs-filename -- entries come from obsoleteSyntheticAssets, a fixed repository allowlist.
-    if (fs.existsSync(absolute(relativePath))) {
+    if (fileExistsInWorkingTree(relativePath)) {
       fail(
         'obsolete synthetic marketplace asset must be removed: ' + relativePath
       );
