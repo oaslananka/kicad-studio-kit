@@ -433,7 +433,7 @@ export function createViewerControllerScript(): string {
     function isRendererRuntimeFailure(reason) {
       const message = String(reason || '');
       return new RegExp(
-        '(?:webgl|webgpu|gpu process|context[_ -]?lost|unable to create .*context|failed to create .*context|canvas.*(?:context|render)|render.*(?:context|surface))',
+        '(?:webgl|webgpu|gpu process|context[_ -]?lost|unable to create .*context|failed to create .*context|canvas.*(?:context|render)|render.*(?:context|surface)|invalid parameters x: *NaN, *y: *NaN)',
         'i'
       ).test(message);
     }
