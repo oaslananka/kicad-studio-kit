@@ -306,3 +306,31 @@ test("#706 Sonar must execute existing compatibility and release tests for real 
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("#706 Sonar CSV properties tolerate insignificant whitespace", () => {
+  const root = fixture();
+  try {
+    const filename = path.join(root, "sonar-project.properties");
+    const original = readFileSync(filename, "utf8");
+    writeFileSync(
+      filename,
+      original
+        .replace(
+          "sonar.tests=apps/vscode-extension/test,apps/vscode-extension/scripts,packages/kicad-fixtures/test,packages/test-harness/test,scripts",
+          "sonar.tests=apps/vscode-extension/test, apps/vscode-extension/scripts, packages/kicad-fixtures/test, packages/test-harness/test, scripts",
+        )
+        .replace(
+          "sonar.test.inclusions=apps/vscode-extension/test/**/*.ts,apps/vscode-extension/test/**/*.js,apps/vscode-extension/test/**/*.mjs,apps/vscode-extension/test/**/*.tsx,packages/kicad-fixtures/test/**/*.ts,packages/kicad-fixtures/test/**/*.js,packages/test-harness/test/**/*.ts,packages/test-harness/test/**/*.js,scripts/**/*.test.mjs,apps/vscode-extension/scripts/**/*.test.mjs",
+          "sonar.test.inclusions=apps/vscode-extension/test/**/*.ts, apps/vscode-extension/test/**/*.js, apps/vscode-extension/test/**/*.mjs, apps/vscode-extension/test/**/*.tsx, packages/kicad-fixtures/test/**/*.ts, packages/kicad-fixtures/test/**/*.js, packages/test-harness/test/**/*.ts, packages/test-harness/test/**/*.js, scripts/**/*.test.mjs, apps/vscode-extension/scripts/**/*.test.mjs",
+        ),
+    );
+    assert.equal(
+      validateQualityGatePolicy(root).filter((error) =>
+        error.includes("classify VS Code and script tests separately"),
+      ).length,
+      0,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
