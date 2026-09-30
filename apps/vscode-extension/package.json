@@ -2654,7 +2654,8 @@
     "coverage:inventory": "node scripts/coverage-scope.cjs --write",
     "test:coverage:ratchet": "jest --config jest.coverage-ratchet.config.js --runInBand --coverage",
     "check:mutation-policy": "node --test scripts/mutation-baseline.test.mjs && node scripts/mutation-baseline.cjs",
-    "mutation:summary": "node scripts/mutation-baseline.cjs --report reports/mutation/mutation.json --write-summary"
+    "mutation:summary": "node scripts/mutation-baseline.cjs --report reports/mutation/mutation.json --write-summary",
+    "marketplace:capture": "pnpm run build && playwright test --config playwright.marketplace.config.ts"
   },
   "c8": {
     "reporter": [
