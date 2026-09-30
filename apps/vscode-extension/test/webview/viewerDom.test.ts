@@ -158,6 +158,36 @@ test.describe('KiCad Studio webview DOM', () => {
     await expect(page.locator('#fit-btn')).toBeFocused();
   });
 
+  test('falls back once on KiCanvas non-finite rendering geometry', async ({
+    page
+  }) => {
+    await installVsCodeApiMock(
+      page,
+      '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"><rect width="800" height="600" fill="#ffffff"/></svg>'
+    );
+    await setViewerContent(page, {
+      fileName: 'invalid-geometry.kicad_pcb',
+      fileType: 'board',
+      base64: readFixtureBase64('sample.kicad_pcb')
+    });
+
+    await expect(page.locator('#viewer-engine-badge')).toHaveText('KiCanvas');
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new ErrorEvent('error', {
+          message: 'Uncaught Error: Invalid parameters x: NaN, y: NaN.'
+        })
+      );
+    });
+
+    await expect(page.locator('#viewer-engine-badge')).toHaveText(
+      'CLI SVG fallback',
+      { timeout: 12000 }
+    );
+    await expect(page.locator('#svg-fallback-view')).toBeVisible();
+    await expect.poll(() => countMessages(page, 'requestSvgFallback')).toBe(1);
+  });
+
   test('does not replace a healthy KiCanvas renderer after an unrelated script error', async ({
     page
   }) => {
