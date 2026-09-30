@@ -78,7 +78,7 @@ test.describe('KiCad Studio VS Code E2E', () => {
               const probe = document.createElement('canvas');
               const context = probe.getContext('webgl2') || probe.getContext('webgl');
               return {
-                url: location.href,
+                scheme: location.protocol,
                 badge: document.getElementById('viewer-engine-badge')?.textContent,
                 status: document.getElementById('viewer-status')?.textContent,
                 webglAvailable: Boolean(context),
