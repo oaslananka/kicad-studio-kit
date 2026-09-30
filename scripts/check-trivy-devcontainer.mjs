@@ -130,11 +130,13 @@ export function validateTrivyDevcontainerPolicy(root = REPO_ROOT) {
     "Trivy must not duplicate vulnerability, dependency, license, or secret scanning",
   );
 
-  if (/^\s*skip-version-check:/mu.test(workflow)) {
-    errors.push(
-      "Trivy GitHub Action must not receive unsupported skip-version-check input",
-    );
-  }
+  addErrorWhen(
+    errors,
+    workflow.split("\n").some((line) =>
+      line.trimStart().startsWith("skip-version-check:"),
+    ),
+    "Trivy GitHub Action must not receive unsupported skip-version-check input",
+  );
 
   const localCommand = packageJson.scripts?.["security:trivy-devcontainer"];
   if (
