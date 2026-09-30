@@ -31,6 +31,7 @@ const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   tar: "7.5.22",
   "fast-uri": "3.1.8",
   "linkify-it": "5.0.2",
+  undici: "7.29.1",
 });
 const FORBIDDEN_PNPM_SETTINGS = [
   "minimumReleaseAge",
