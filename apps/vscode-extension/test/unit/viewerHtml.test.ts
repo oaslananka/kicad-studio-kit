@@ -106,6 +106,7 @@ describe('createKiCanvasViewerHtml', () => {
       "payload.fileType === 'board' && !hasWebGlContext()",
       "KiCanvas WebGL context is unavailable in this webview.",
       'function isRendererRuntimeFailure(reason)',
+      'invalid parameters x: *NaN, *y: *NaN',
       "console.error('[kicanvas-fix] canvas readback probe failed', error);"
     ]) {
       expect(html).toContain(snippet);
