@@ -45,7 +45,7 @@ jobs:
           package-manager-cache: false
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
         with:
-          enable-cache: true
+          enable-cache: false
           version: 0.11.32
 
       - run: corepack enable
@@ -86,7 +86,6 @@ jobs:
           severity: HIGH,CRITICAL
           limit-severities-for-sarif: true
           hide-progress: true
-          skip-version-check: true
           version: ${{ env.TRIVY_VERSION }}
       - name: Upload development container SARIF
         if: ${{ always() && hashFiles('trivy-devcontainer.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
