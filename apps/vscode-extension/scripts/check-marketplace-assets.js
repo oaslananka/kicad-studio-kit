@@ -428,7 +428,7 @@ function runMarketplaceCheck() {
   }
 }
 
-if (require.main === module) {
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
   console.log(runMarketplaceCheck());
 }
 
