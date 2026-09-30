@@ -1,14 +1,12 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 const require = createRequire(import.meta.url);
 const { runMarketplaceCheck } = require('./check-marketplace-assets.js');
-const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-const extensionRoot = path.resolve(scriptDir, '..');
+const originalReadFileSync = fs.readFileSync.bind(fs);
+const originalExistsSync = fs.existsSync.bind(fs);
 
 test('#710 marketplace checker validates the live repository contract', () => {
   assert.match(
@@ -17,114 +15,96 @@ test('#710 marketplace checker validates the live repository contract', () => {
   );
 });
 
-test('#710 marketplace checker rejects package metadata drift', () => {
-  withJsonMutation(
-    'package.json',
-    (value) => {
-      value.icon = 'assets/wrong-icon.png';
-    },
-    () => {
-      assert.throws(
-        runMarketplaceCheck,
-        /icon must point to assets\/icon\.png/iu
-      );
-    }
-  );
+test('#710 marketplace checker rejects package metadata drift', (context) => {
+  mockTextFile(context, 'package.json', (original) => {
+    const value = JSON.parse(original);
+    value.icon = 'assets/wrong-icon.png';
+    return JSON.stringify(value, null, 2) + '\n';
+  });
+  assert.throws(runMarketplaceCheck, /icon must point to assets\/icon\.png/iu);
 });
 
-test('#710 marketplace checker rejects stale capture schema', () => {
-  withJsonMutation(
+test('#710 marketplace checker rejects stale capture schema', (context) => {
+  mockTextFile(
+    context,
     'assets/screenshots/capture-manifest.json',
-    (value) => {
-      value.schemaVersion = 99;
-    },
-    () => {
-      assert.throws(runMarketplaceCheck, /schemaVersion must be 1/iu);
-    }
-  );
-});
-
-test('#710 marketplace checker rejects source-contract drift', () => {
-  withJsonMutation(
-    'scripts/marketplace-capture-sources.json',
-    (value) => {
-      value.sources = value.sources.slice(1);
-    },
-    () => {
-      assert.throws(runMarketplaceCheck, /source contract drifted/iu);
-    }
-  );
-});
-
-test('#710 marketplace checker rejects screenshot fingerprint drift', () => {
-  withJsonMutation(
-    'assets/screenshots/capture-manifest.json',
-    (value) => {
-      value.screenshots['project-tree.png'] = '0'.repeat(64);
-    },
-    () => {
-      assert.throws(runMarketplaceCheck, /does not match capture-manifest/iu);
-    }
-  );
-});
-
-test('#710 marketplace checker rejects missing listing sections', () => {
-  withTextMutation(
-    'MARKETPLACE.md',
-    (value) => value.replace('## Quick Start', '## Start Here'),
-    () => {
-      assert.throws(runMarketplaceCheck, /missing "## Quick Start"/iu);
-    }
-  );
-});
-
-test('#710 marketplace checker rejects repository-maintainer listing content', () => {
-  withTextMutation(
-    'MARKETPLACE.md',
-    (value) => value + '\n![build](https://img.shields.io/example.svg)\n',
-    () => {
-      assert.throws(
-        runMarketplaceCheck,
-        /repo-maintainer or synthetic content/iu
-      );
-    }
-  );
-});
-
-test('#710 marketplace checker rejects obsolete synthetic assets', () => {
-  const relativePath = 'assets/screenshots/quality-gates.png';
-  const filePath = path.join(extensionRoot, relativePath);
-  assert.equal(fs.existsSync(filePath), false);
-  try {
-    fs.writeFileSync(filePath, 'synthetic fixture', 'utf8');
-    assert.throws(
-      runMarketplaceCheck,
-      /obsolete synthetic marketplace asset/iu
-    );
-  } finally {
-    fs.rmSync(filePath, { force: true });
-  }
-});
-
-function withJsonMutation(relativePath, mutate, assertion) {
-  withTextMutation(
-    relativePath,
     (original) => {
       const value = JSON.parse(original);
-      mutate(value);
+      value.schemaVersion = 99;
       return JSON.stringify(value, null, 2) + '\n';
-    },
-    assertion
+    }
   );
-}
+  assert.throws(runMarketplaceCheck, /schemaVersion must be 1/iu);
+});
 
-function withTextMutation(relativePath, mutate, assertion) {
-  const filePath = path.join(extensionRoot, relativePath);
-  const original = fs.readFileSync(filePath, 'utf8');
-  try {
-    fs.writeFileSync(filePath, mutate(original), 'utf8');
-    assertion();
-  } finally {
-    fs.writeFileSync(filePath, original, 'utf8');
-  }
+test('#710 marketplace checker rejects source-contract drift', (context) => {
+  mockTextFile(
+    context,
+    'scripts/marketplace-capture-sources.json',
+    (original) => {
+      const value = JSON.parse(original);
+      value.sources = value.sources.slice(1);
+      return JSON.stringify(value, null, 2) + '\n';
+    }
+  );
+  assert.throws(runMarketplaceCheck, /source contract drifted/iu);
+});
+
+test('#710 marketplace checker rejects screenshot fingerprint drift', (context) => {
+  mockTextFile(
+    context,
+    'assets/screenshots/capture-manifest.json',
+    (original) => {
+      const value = JSON.parse(original);
+      value.screenshots['project-tree.png'] = '0'.repeat(64);
+      return JSON.stringify(value, null, 2) + '\n';
+    }
+  );
+  assert.throws(runMarketplaceCheck, /does not match capture-manifest/iu);
+});
+
+test('#710 marketplace checker rejects missing listing sections', (context) => {
+  mockTextFile(context, 'MARKETPLACE.md', (original) =>
+    original.replace('## Quick Start', '## Start Here')
+  );
+  assert.throws(runMarketplaceCheck, /missing "## Quick Start"/iu);
+});
+
+test('#710 marketplace checker rejects repository-maintainer listing content', (context) => {
+  mockTextFile(
+    context,
+    'MARKETPLACE.md',
+    (original) => original + '\n![build](https://img.shields.io/example.svg)\n'
+  );
+  assert.throws(runMarketplaceCheck, /repo-maintainer or synthetic content/iu);
+});
+
+test('#710 marketplace checker rejects obsolete synthetic assets', (context) => {
+  context.mock.method(fs, 'existsSync', (file) =>
+    String(file)
+      .replaceAll('\\', '/')
+      .endsWith('assets/screenshots/quality-gates.png')
+      ? true
+      : originalExistsSync(file)
+  );
+  assert.throws(runMarketplaceCheck, /obsolete synthetic marketplace asset/iu);
+});
+
+function mockTextFile(context, relativePath, mutate) {
+  context.mock.method(fs, 'readFileSync', (file, options) => {
+    const current = originalReadFileSync(file, options);
+    const normalized = String(file).replaceAll('\\', '/');
+    if (
+      normalized !== relativePath &&
+      !normalized.endsWith('/' + relativePath)
+    ) {
+      return current;
+    }
+
+    const text = Buffer.isBuffer(current)
+      ? current.toString('utf8')
+      : String(current);
+    const next = mutate(text);
+    return Buffer.isBuffer(current) ? Buffer.from(next) : next;
+  });
 }

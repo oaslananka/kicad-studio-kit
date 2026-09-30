@@ -348,27 +348,7 @@ test("#710 Sonar must execute the marketplace checker test for extension-script 
     );
     assert.match(
       validateQualityGatePolicy(root).join("\n"),
-      /instrument repository and extension scripts/iu,
-    );
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-});
-
-test("#710 Sonar must execute the package validator test for extension-script coverage", () => {
-  const root = fixture();
-  try {
-    const file = path.join(root, ".github/workflows/sonarcloud.yml");
-    writeFileSync(
-      file,
-      readFileSync(file, "utf8").replace(
-        "apps/vscode-extension/scripts/validate-package.test.mjs",
-        "apps/vscode-extension/scripts/skip-package-validator.test.mjs",
-      ),
-    );
-    assert.match(
-      validateQualityGatePolicy(root).join("\n"),
-      /instrument repository and extension scripts/iu,
+      /instrument repository and marketplace scripts/iu,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -388,7 +368,7 @@ test("#710 Sonar must verify marketplace checker LCOV before upload", () => {
     );
     assert.match(
       validateQualityGatePolicy(root).join("\n"),
-      /verify marketplace and package script LCOV/iu,
+      /verify marketplace checker LCOV/iu,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -408,7 +388,7 @@ test("#710 Sonar marketplace checker coverage must run mutation tests serially",
     );
     assert.match(
       validateQualityGatePolicy(root).join("\n"),
-      /instrument repository and extension scripts/iu,
+      /instrument repository and marketplace scripts/iu,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });

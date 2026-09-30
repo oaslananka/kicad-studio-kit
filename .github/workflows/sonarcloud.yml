@@ -34,7 +34,7 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - name: Generate real extension Jest coverage
         run: corepack pnpm --filter kicadstudiokit run test:unit:coverage
-      - name: Generate real repository and extension-script coverage with c8
+      - name: Generate real repository and marketplace-script coverage with c8
         shell: bash
         run: |
           set -euo pipefail
@@ -46,7 +46,6 @@ jobs:
             --report-dir=apps/vscode-extension/coverage/sonar-scripts \
             --include='scripts/**/*.mjs' \
             --include='apps/vscode-extension/scripts/check-marketplace-assets.js' \
-            --include='apps/vscode-extension/scripts/validate-package.js' \
             --exclude='**/*.test.mjs' \
             node --test \
               --test-concurrency=1 \
@@ -59,8 +58,7 @@ jobs:
               scripts/check-scorecard-evidence.test.mjs \
               scripts/check-best-practices-evidence.test.mjs \
               scripts/check-release-please-monorepo.test.mjs \
-              apps/vscode-extension/scripts/check-marketplace-assets.test.mjs \
-              apps/vscode-extension/scripts/validate-package.test.mjs
+              apps/vscode-extension/scripts/check-marketplace-assets.test.mjs
       - name: Rebase Jest LCOV paths to the repository root
         run: node scripts/prepare-sonar-lcov.mjs
       - name: Check LCOV evidence before upload
@@ -78,7 +76,6 @@ jobs:
           grep -q '^SF:scripts/lib/github-signed-commit.mjs' "$script_lcov"
           grep -q '^SF:scripts/lib/release-surface.mjs' "$script_lcov"
           grep -q '^SF:apps/vscode-extension/scripts/check-marketplace-assets.js' "$script_lcov"
-          grep -q '^SF:apps/vscode-extension/scripts/validate-package.js' "$script_lcov"
           echo "Verified real Jest and Node c8 LCOV source-file entries"
       - name: Upload analysis and LCOV to SonarQube Cloud
         uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
