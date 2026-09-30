@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   readdirSync,
   rmSync,
   writeFileSync,
@@ -10,29 +11,20 @@ import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
 import test from "node:test";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 import { validatePnpmSupplyChain } from "./check-pnpm-supply-chain.mjs";
 
-const PATCHED_TRANSITIVE_OVERRIDE_VERSIONS = Object.freeze({
-  "js-yaml": "4.3.2",
-  "@xmldom/xmldom": "0.8.15",
-  "fast-uri": "3.1.8",
-  undici: "7.29.1",
-});
+const CANONICAL_WORKSPACE = parseYaml(
+  readFileSync(new URL("../pnpm-workspace.yaml", import.meta.url), "utf8"),
+);
 const MINIMUM_RELEASE_AGE_EXCLUDE_ERROR =
   "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18";
 
-function patchedTransitiveOverrideLines(overrides = {}) {
-  const versions = {
-    ...PATCHED_TRANSITIVE_OVERRIDE_VERSIONS,
-    ...overrides,
-  };
-  return [
-    `  js-yaml: ${versions["js-yaml"]}`,
-    `  "@xmldom/xmldom": ${versions["@xmldom/xmldom"]}`,
-    `  fast-uri: ${versions["fast-uri"]}`,
-    `  undici: ${versions.undici}`,
-  ];
+function workspaceFixture(mutate = () => {}) {
+  const workspace = structuredClone(CANONICAL_WORKSPACE);
+  mutate(workspace);
+  return stringifyYaml(workspace);
 }
 
 function createFixture(overrides = {}) {
@@ -41,33 +33,7 @@ function createFixture(overrides = {}) {
 
   writeFileSync(
     path.join(repoRoot, "pnpm-workspace.yaml"),
-    overrides.workspace ??
-      [
-        "packages:",
-        "minimumReleaseAge: 10080",
-        "trustPolicy: no-downgrade",
-        "minimumReleaseAgeExclude:",
-        "  - tmp@0.2.7",
-        "  - brace-expansion@2.1.4",
-        "  - brace-expansion@5.0.9",
-        "  - nanoid@3.3.18",
-        "trustPolicyExclude:",
-        '  - "@octokit/endpoint@9.0.6"',
-        "  - chokidar@4.0.3",
-        '  - "semver@5.7.2 || 6.3.1"',
-        "blockExoticSubdeps: true",
-        "overrides:",
-        '  "brace-expansion@2.1.1": "2.1.4"',
-        '  "brace-expansion@5.0.6": "5.0.9"',
-        '  "brace-expansion@5.0.7": "5.0.9"',
-        '  "postcss@8.5.15": "8.5.24"',
-        '  "nanoid@3.3.16": "3.3.18"',
-        '  "nanoid@3.3.17": "3.3.18"',
-        ...patchedTransitiveOverrideLines(),
-        "  tar: 7.5.22",
-        "  linkify-it: 5.0.2",
-        "",
-      ].join("\n"),
+    overrides.workspace ?? workspaceFixture(),
   );
   writeFileSync(
     path.join(repoRoot, "package.json"),
@@ -132,33 +98,9 @@ test("fixture with expected supply-chain settings passes", () => {
 
 test("mature PostCSS and tar releases cannot remain age exceptions", () => {
   const repoRoot = createFixture({
-    workspace: [
-      "packages:",
-      "minimumReleaseAge: 10080",
-      "trustPolicy: no-downgrade",
-      "minimumReleaseAgeExclude:",
-      "  - tmp@0.2.7",
-      "  - brace-expansion@2.1.4",
-      "  - brace-expansion@5.0.9",
-      "  - postcss@8.5.24",
-      "  - tar@7.5.22",
-      "trustPolicyExclude:",
-      '  - "@octokit/endpoint@9.0.6"',
-      "  - chokidar@4.0.3",
-      '  - "semver@5.7.2 || 6.3.1"',
-      "blockExoticSubdeps: true",
-      "overrides:",
-      '  "brace-expansion@2.1.1": "2.1.4"',
-      '  "brace-expansion@5.0.6": "5.0.9"',
-      '  "brace-expansion@5.0.7": "5.0.9"',
-      '  "postcss@8.5.15": "8.5.24"',
-      ...patchedTransitiveOverrideLines(),
-      "  tar: 7.5.22",
-      "  linkify-it: 5.0.2",
-      '  "nanoid@3.3.16": "3.3.18"',
-      '  "nanoid@3.3.17": "3.3.18"',
-      "",
-    ].join("\n"),
+    workspace: workspaceFixture((workspace) => {
+      workspace.minimumReleaseAgeExclude.push("postcss@8.5.24", "tar@7.5.22");
+    }),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
@@ -171,28 +113,14 @@ test("mature PostCSS and tar releases cannot remain age exceptions", () => {
 
 test("disabled pnpm supply-chain controls fail validation", () => {
   const repoRoot = createFixture({
-    workspace: [
-      "packages:",
-      "minimumReleaseAge: 0",
-      "trustPolicy: off",
-      "minimumReleaseAgeExclude:",
-      "  - tmp",
-      "trustPolicyExclude:",
-      "  - chokidar",
-      "blockExoticSubdeps: false",
-      "trustLockfile: true",
-      "overrides:",
-      '  "brace-expansion@2.1.1": "2.1.4"',
-      '  "brace-expansion@5.0.6": "5.0.9"',
-      '  "brace-expansion@5.0.7": "5.0.9"',
-      '  "postcss@8.5.15": "8.5.24"',
-      ...patchedTransitiveOverrideLines(),
-      "  tar: 7.5.22",
-      "  linkify-it: 5.0.2",
-      '  "nanoid@3.3.16": "3.3.18"',
-      '  "nanoid@3.3.17": "3.3.18"',
-      "",
-    ].join("\n"),
+    workspace: workspaceFixture((workspace) => {
+      workspace.minimumReleaseAge = 0;
+      workspace.trustPolicy = "off";
+      workspace.minimumReleaseAgeExclude = ["tmp"];
+      workspace.trustPolicyExclude = ["chokidar"];
+      workspace.blockExoticSubdeps = false;
+      workspace.trustLockfile = true;
+    }),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
@@ -264,28 +192,12 @@ test(".npmrc and package.json cannot carry ignored pnpm supply-chain settings", 
 
 test("#506 missing brace-expansion security overrides fail validation", () => {
   const repoRoot = createFixture({
-    workspace: [
-      "packages:",
-      "minimumReleaseAge: 10080",
-      "trustPolicy: no-downgrade",
-      "minimumReleaseAgeExclude:",
-      "  - tmp@0.2.7",
-      "  - brace-expansion@2.1.4",
-      "  - brace-expansion@5.0.9",
-      "  - nanoid@3.3.18",
-      "trustPolicyExclude:",
-      '  - "@octokit/endpoint@9.0.6"',
-      "  - chokidar@4.0.3",
-      '  - "semver@5.7.2 || 6.3.1"',
-      "blockExoticSubdeps: true",
-      "overrides:",
-      ...patchedTransitiveOverrideLines(),
-      "  tar: 7.5.22",
-      "  linkify-it: 5.0.2",
-      '  "nanoid@3.3.16": "3.3.18"',
-      '  "nanoid@3.3.17": "3.3.18"',
-      "",
-    ].join("\n"),
+    workspace: workspaceFixture((workspace) => {
+      delete workspace.overrides["brace-expansion@2.1.1"];
+      delete workspace.overrides["brace-expansion@5.0.6"];
+      delete workspace.overrides["brace-expansion@5.0.7"];
+      delete workspace.overrides["postcss@8.5.15"];
+    }),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
@@ -301,32 +213,9 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
 
 test("#506 stale js-yaml security override fails validation", () => {
   const repoRoot = createFixture({
-    workspace: [
-      "packages:",
-      "minimumReleaseAge: 10080",
-      "trustPolicy: no-downgrade",
-      "minimumReleaseAgeExclude:",
-      "  - tmp@0.2.7",
-      "  - brace-expansion@2.1.4",
-      "  - brace-expansion@5.0.9",
-      "  - nanoid@3.3.18",
-      "trustPolicyExclude:",
-      '  - "@octokit/endpoint@9.0.6"',
-      "  - chokidar@4.0.3",
-      '  - "semver@5.7.2 || 6.3.1"',
-      "blockExoticSubdeps: true",
-      "overrides:",
-      '  "brace-expansion@2.1.1": "2.1.4"',
-      '  "brace-expansion@5.0.6": "5.0.9"',
-      '  "brace-expansion@5.0.7": "5.0.9"',
-      '  "postcss@8.5.15": "8.5.24"',
-      ...patchedTransitiveOverrideLines({ "js-yaml": "4.2.0" }),
-      "  tar: 7.5.22",
-      "  linkify-it: 5.0.2",
-      '  "nanoid@3.3.16": "3.3.18"',
-      '  "nanoid@3.3.17": "3.3.18"',
-      "",
-    ].join("\n"),
+    workspace: workspaceFixture((workspace) => {
+      workspace.overrides["js-yaml"] = "4.2.0";
+    }),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
@@ -339,32 +228,9 @@ test("#506 stale js-yaml security override fails validation", () => {
 
 test("#506 stale tar security override fails validation", () => {
   const repoRoot = createFixture({
-    workspace: [
-      "packages:",
-      "minimumReleaseAge: 10080",
-      "trustPolicy: no-downgrade",
-      "minimumReleaseAgeExclude:",
-      "  - tmp@0.2.7",
-      "  - brace-expansion@2.1.4",
-      "  - brace-expansion@5.0.9",
-      "  - nanoid@3.3.18",
-      "trustPolicyExclude:",
-      '  - "@octokit/endpoint@9.0.6"',
-      "  - chokidar@4.0.3",
-      '  - "semver@5.7.2 || 6.3.1"',
-      "blockExoticSubdeps: true",
-      "overrides:",
-      '  "brace-expansion@2.1.1": "2.1.4"',
-      '  "brace-expansion@5.0.6": "5.0.9"',
-      '  "brace-expansion@5.0.7": "5.0.9"',
-      '  "postcss@8.5.15": "8.5.24"',
-      ...patchedTransitiveOverrideLines(),
-      "  tar: 7.5.18",
-      "  linkify-it: 5.0.2",
-      '  "nanoid@3.3.16": "3.3.18"',
-      '  "nanoid@3.3.17": "3.3.18"',
-      "",
-    ].join("\n"),
+    workspace: workspaceFixture((workspace) => {
+      workspace.overrides.tar = "7.5.18";
+    }),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
@@ -377,32 +243,10 @@ test("#506 stale tar security override fails validation", () => {
 
 test("#508 newly disclosed transitive security fixes stay pinned", () => {
   const repoRoot = createFixture({
-    workspace: [
-      "packages:",
-      "minimumReleaseAge: 10080",
-      "trustPolicy: no-downgrade",
-      "minimumReleaseAgeExclude:",
-      "  - tmp@0.2.7",
-      "  - brace-expansion@2.1.4",
-      "  - brace-expansion@5.0.9",
-      "  - nanoid@3.3.18",
-      "trustPolicyExclude:",
-      '  - "@octokit/endpoint@9.0.6"',
-      "  - chokidar@4.0.3",
-      '  - "semver@5.7.2 || 6.3.1"',
-      "blockExoticSubdeps: true",
-      "overrides:",
-      '  "brace-expansion@2.1.1": "2.1.4"',
-      '  "brace-expansion@5.0.6": "5.0.9"',
-      '  "brace-expansion@5.0.7": "5.0.9"',
-      '  "postcss@8.5.15": "8.5.24"',
-      ...patchedTransitiveOverrideLines({ "fast-uri": "3.1.2" }),
-      "  tar: 7.5.22",
-      "  linkify-it: 5.0.1",
-      '  "nanoid@3.3.16": "3.3.18"',
-      '  "nanoid@3.3.17": "3.3.18"',
-      "",
-    ].join("\n"),
+    workspace: workspaceFixture((workspace) => {
+      workspace.overrides["fast-uri"] = "3.1.2";
+      workspace.overrides["linkify-it"] = "5.0.1";
+    }),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
@@ -416,29 +260,14 @@ test("#508 newly disclosed transitive security fixes stay pinned", () => {
 
 test("GHSA-2v37-7h3g-55p8 nanoid fix stays pinned", () => {
   const repoRoot = createFixture({
-    workspace: [
-      "packages:",
-      "minimumReleaseAge: 10080",
-      "trustPolicy: no-downgrade",
-      "minimumReleaseAgeExclude:",
-      "  - tmp@0.2.7",
-      "  - brace-expansion@2.1.4",
-      "  - brace-expansion@5.0.9",
-      "trustPolicyExclude:",
-      '  - "@octokit/endpoint@9.0.6"',
-      "  - chokidar@4.0.3",
-      '  - "semver@5.7.2 || 6.3.1"',
-      "blockExoticSubdeps: true",
-      "overrides:",
-      '  "brace-expansion@2.1.1": "2.1.4"',
-      '  "brace-expansion@5.0.6": "5.0.9"',
-      '  "brace-expansion@5.0.7": "5.0.9"',
-      '  "postcss@8.5.15": "8.5.24"',
-      ...patchedTransitiveOverrideLines(),
-      "  tar: 7.5.22",
-      "  linkify-it: 5.0.2",
-      "",
-    ].join("\n"),
+    workspace: workspaceFixture((workspace) => {
+      workspace.minimumReleaseAgeExclude =
+        workspace.minimumReleaseAgeExclude.filter(
+          (entry) => entry !== "nanoid@3.3.18",
+        );
+      delete workspace.overrides["nanoid@3.3.16"];
+      delete workspace.overrides["nanoid@3.3.17"];
+    }),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
@@ -453,27 +282,12 @@ test("GHSA-2v37-7h3g-55p8 nanoid fix stays pinned", () => {
 
 test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () => {
   const repoRoot = createFixture({
-    workspace: [
-      "packages:",
-      "minimumReleaseAge: 10080",
-      "trustPolicy: no-downgrade",
-      "minimumReleaseAgeExclude:",
-      "  - tmp@0.2.7",
-      "trustPolicyExclude:",
-      '  - "@octokit/endpoint@9.0.6"',
-      "  - chokidar@4.0.3",
-      '  - "semver@5.7.2 || 6.3.1"',
-      "blockExoticSubdeps: true",
-      "overrides:",
-      '  "brace-expansion@2.1.1": "2.1.4"',
-      '  "brace-expansion@5.0.6": "5.0.7"',
-      ...patchedTransitiveOverrideLines(),
-      "  tar: 7.5.22",
-      "  linkify-it: 5.0.2",
-      '  "nanoid@3.3.16": "3.3.18"',
-      '  "nanoid@3.3.17": "3.3.18"',
-      "",
-    ].join("\n"),
+    workspace: workspaceFixture((workspace) => {
+      workspace.minimumReleaseAgeExclude = ["tmp@0.2.7"];
+      workspace.overrides["brace-expansion@5.0.6"] = "5.0.7";
+      delete workspace.overrides["brace-expansion@5.0.7"];
+      delete workspace.overrides["postcss@8.5.15"];
+    }),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
@@ -489,35 +303,11 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
 
 test("#554 active advisory suppressions fail validation", () => {
   const repoRoot = createFixture({
-    workspace: [
-      "packages:",
-      "minimumReleaseAge: 10080",
-      "trustPolicy: no-downgrade",
-      "minimumReleaseAgeExclude:",
-      "  - tmp@0.2.7",
-      "  - brace-expansion@2.1.4",
-      "  - brace-expansion@5.0.9",
-      "  - nanoid@3.3.18",
-      "trustPolicyExclude:",
-      '  - "@octokit/endpoint@9.0.6"',
-      "  - chokidar@4.0.3",
-      '  - "semver@5.7.2 || 6.3.1"',
-      "blockExoticSubdeps: true",
-      "auditConfig:",
-      "  ignoreGhsas:",
-      "    - GHSA-mh99-v99m-4gvg",
-      "overrides:",
-      '  "brace-expansion@2.1.1": "2.1.4"',
-      '  "brace-expansion@5.0.6": "5.0.9"',
-      '  "brace-expansion@5.0.7": "5.0.9"',
-      '  "postcss@8.5.15": "8.5.24"',
-      ...patchedTransitiveOverrideLines(),
-      "  tar: 7.5.22",
-      "  linkify-it: 5.0.2",
-      '  "nanoid@3.3.16": "3.3.18"',
-      '  "nanoid@3.3.17": "3.3.18"',
-      "",
-    ].join("\n"),
+    workspace: workspaceFixture((workspace) => {
+      workspace.auditConfig = {
+        ignoreGhsas: ["GHSA-mh99-v99m-4gvg"],
+      };
+    }),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
