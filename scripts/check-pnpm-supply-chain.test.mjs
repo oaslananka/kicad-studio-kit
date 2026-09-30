@@ -13,6 +13,28 @@ import test from "node:test";
 
 import { validatePnpmSupplyChain } from "./check-pnpm-supply-chain.mjs";
 
+const PATCHED_TRANSITIVE_OVERRIDE_VERSIONS = Object.freeze({
+  "js-yaml": "4.3.2",
+  "@xmldom/xmldom": "0.8.15",
+  "fast-uri": "3.1.8",
+  undici: "7.29.1",
+});
+const MINIMUM_RELEASE_AGE_EXCLUDE_ERROR =
+  "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18";
+
+function patchedTransitiveOverrideLines(overrides = {}) {
+  const versions = {
+    ...PATCHED_TRANSITIVE_OVERRIDE_VERSIONS,
+    ...overrides,
+  };
+  return [
+    `  js-yaml: ${versions["js-yaml"]}`,
+    `  "@xmldom/xmldom": ${versions["@xmldom/xmldom"]}`,
+    `  fast-uri: ${versions["fast-uri"]}`,
+    `  undici: ${versions.undici}`,
+  ];
+}
+
 function createFixture(overrides = {}) {
   const repoRoot = mkdtempSync(path.join(os.tmpdir(), "pnpm-supply-chain-"));
   mkdirSync(path.join(repoRoot, ".github/workflows"), { recursive: true });
@@ -41,11 +63,8 @@ function createFixture(overrides = {}) {
         '  "postcss@8.5.15": "8.5.24"',
         '  "nanoid@3.3.16": "3.3.18"',
         '  "nanoid@3.3.17": "3.3.18"',
-        "  js-yaml: 4.3.2",
-        '  "@xmldom/xmldom": 0.8.15',
+        ...patchedTransitiveOverrideLines(),
         "  tar: 7.5.22",
-        "  fast-uri: 3.1.8",
-        "  undici: 7.29.1",
         "  linkify-it: 5.0.2",
         "",
       ].join("\n"),
@@ -133,11 +152,8 @@ test("mature PostCSS and tar releases cannot remain age exceptions", () => {
       '  "brace-expansion@5.0.6": "5.0.9"',
       '  "brace-expansion@5.0.7": "5.0.9"',
       '  "postcss@8.5.15": "8.5.24"',
-      "  js-yaml: 4.3.2",
-      '  "@xmldom/xmldom": 0.8.15',
+      ...patchedTransitiveOverrideLines(),
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.8",
-      "  undici: 7.29.1",
       "  linkify-it: 5.0.2",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
@@ -146,7 +162,7 @@ test("mature PostCSS and tar releases cannot remain age exceptions", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18",
+      MINIMUM_RELEASE_AGE_EXCLUDE_ERROR,
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -170,11 +186,8 @@ test("disabled pnpm supply-chain controls fail validation", () => {
       '  "brace-expansion@5.0.6": "5.0.9"',
       '  "brace-expansion@5.0.7": "5.0.9"',
       '  "postcss@8.5.15": "8.5.24"',
-      "  js-yaml: 4.3.2",
-      '  "@xmldom/xmldom": 0.8.15',
+      ...patchedTransitiveOverrideLines(),
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.8",
-      "  undici: 7.29.1",
       "  linkify-it: 5.0.2",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
@@ -187,7 +200,7 @@ test("disabled pnpm supply-chain controls fail validation", () => {
       "pnpm-workspace.yaml must set trustPolicy: no-downgrade",
       "pnpm-workspace.yaml must set blockExoticSubdeps: true",
       "pnpm-workspace.yaml must not enable trustLockfile for public PR CI",
-      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18",
+      MINIMUM_RELEASE_AGE_EXCLUDE_ERROR,
       "pnpm-workspace.yaml trustPolicyExclude must be limited to reviewed version-scoped exceptions: @octokit/endpoint@9.0.6, chokidar@4.0.3, semver@5.7.2 || 6.3.1",
     ]);
   } finally {
@@ -266,11 +279,8 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
       '  - "semver@5.7.2 || 6.3.1"',
       "blockExoticSubdeps: true",
       "overrides:",
-      "  js-yaml: 4.3.2",
-      '  "@xmldom/xmldom": 0.8.15',
+      ...patchedTransitiveOverrideLines(),
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.8",
-      "  undici: 7.29.1",
       "  linkify-it: 5.0.2",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
@@ -310,11 +320,8 @@ test("#506 stale js-yaml security override fails validation", () => {
       '  "brace-expansion@5.0.6": "5.0.9"',
       '  "brace-expansion@5.0.7": "5.0.9"',
       '  "postcss@8.5.15": "8.5.24"',
-      "  js-yaml: 4.2.0",
-      '  "@xmldom/xmldom": 0.8.15',
+      ...patchedTransitiveOverrideLines({ "js-yaml": "4.2.0" }),
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.8",
-      "  undici: 7.29.1",
       "  linkify-it: 5.0.2",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
@@ -351,11 +358,8 @@ test("#506 stale tar security override fails validation", () => {
       '  "brace-expansion@5.0.6": "5.0.9"',
       '  "brace-expansion@5.0.7": "5.0.9"',
       '  "postcss@8.5.15": "8.5.24"',
-      "  js-yaml: 4.3.2",
-      '  "@xmldom/xmldom": 0.8.15',
+      ...patchedTransitiveOverrideLines(),
       "  tar: 7.5.18",
-      "  fast-uri: 3.1.8",
-      "  undici: 7.29.1",
       "  linkify-it: 5.0.2",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
@@ -392,11 +396,8 @@ test("#508 newly disclosed transitive security fixes stay pinned", () => {
       '  "brace-expansion@5.0.6": "5.0.9"',
       '  "brace-expansion@5.0.7": "5.0.9"',
       '  "postcss@8.5.15": "8.5.24"',
-      "  js-yaml: 4.3.2",
-      '  "@xmldom/xmldom": 0.8.15',
+      ...patchedTransitiveOverrideLines({ "fast-uri": "3.1.2" }),
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.2",
-      "  undici: 7.29.1",
       "  linkify-it: 5.0.1",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
@@ -433,18 +434,15 @@ test("GHSA-2v37-7h3g-55p8 nanoid fix stays pinned", () => {
       '  "brace-expansion@5.0.6": "5.0.9"',
       '  "brace-expansion@5.0.7": "5.0.9"',
       '  "postcss@8.5.15": "8.5.24"',
-      "  js-yaml: 4.3.2",
-      '  "@xmldom/xmldom": 0.8.15',
+      ...patchedTransitiveOverrideLines(),
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.8",
-      "  undici: 7.29.1",
       "  linkify-it: 5.0.2",
       "",
     ].join("\n"),
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18",
+      MINIMUM_RELEASE_AGE_EXCLUDE_ERROR,
       "pnpm-workspace.yaml overrides must pin nanoid@3.3.16 to 3.3.18",
       "pnpm-workspace.yaml overrides must pin nanoid@3.3.17 to 3.3.18",
     ]);
@@ -469,11 +467,8 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
       "overrides:",
       '  "brace-expansion@2.1.1": "2.1.4"',
       '  "brace-expansion@5.0.6": "5.0.7"',
-      "  js-yaml: 4.3.2",
-      '  "@xmldom/xmldom": 0.8.15',
+      ...patchedTransitiveOverrideLines(),
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.8",
-      "  undici: 7.29.1",
       "  linkify-it: 5.0.2",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
@@ -482,7 +477,7 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18",
+      MINIMUM_RELEASE_AGE_EXCLUDE_ERROR,
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.9",
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.9",
       "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.24",
@@ -516,11 +511,8 @@ test("#554 active advisory suppressions fail validation", () => {
       '  "brace-expansion@5.0.6": "5.0.9"',
       '  "brace-expansion@5.0.7": "5.0.9"',
       '  "postcss@8.5.15": "8.5.24"',
-      "  js-yaml: 4.3.2",
-      '  "@xmldom/xmldom": 0.8.15',
+      ...patchedTransitiveOverrideLines(),
       "  tar: 7.5.22",
-      "  fast-uri: 3.1.8",
-      "  undici: 7.29.1",
       "  linkify-it: 5.0.2",
       '  "nanoid@3.3.16": "3.3.18"',
       '  "nanoid@3.3.17": "3.3.18"',
