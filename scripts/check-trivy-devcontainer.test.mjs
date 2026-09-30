@@ -152,6 +152,23 @@ test("#512 Trivy cannot duplicate vulnerability, dependency, license, or secret 
   });
 });
 
+test("#512 Trivy action rejects unsupported skip-version-check input", () => {
+  withFixture((root) => {
+    replaceInFixture(
+      root,
+      ".github/workflows/security.yml",
+      "version: ${{ env.TRIVY_VERSION }}",
+      "skip-version-check: true\n          version: ${{ env.TRIVY_VERSION }}",
+    );
+    const errors = validateTrivyDevcontainerPolicy(root);
+    assert.ok(
+      errors.some((error) =>
+        error.includes("unsupported skip-version-check input"),
+      ),
+    );
+  });
+});
+
 test("#512 local command, documentation, root check, and Renovate ownership remain wired", () => {
   withFixture((root) => {
     const packagePath = path.join(root, "package.json");
