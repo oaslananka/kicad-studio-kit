@@ -15,6 +15,10 @@ published.
 ## [1.15.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.0...vscode-extension-v1.15.1) (2026-09-30)
 
 
+### Licensing
+
+* **repo:** transition current project-authored source from MIT to PolyForm Noncommercial 1.0.0 ([#693](https://github.com/oaslananka/kicad-studio-kit/issues/693)); revisions already published under MIT retain their MIT grants, and commercial use of current source requires a separate written license (see [LICENSING.md](https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSING.md) and [COMMERCIAL-LICENSING.md](https://github.com/oaslananka/kicad-studio-kit/blob/main/COMMERCIAL-LICENSING.md)).
+
 ### Bug Fixes
 
 * **repo:** repair security and compatibility baselines ([#695](https://github.com/oaslananka/kicad-studio-kit/issues/695)) ([67954b0](https://github.com/oaslananka/kicad-studio-kit/commit/67954b0429cf95434d9aa20e44678aacab3ecd1d))
