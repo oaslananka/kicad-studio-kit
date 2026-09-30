@@ -19,7 +19,7 @@ const CANONICAL_WORKSPACE = parseYaml(
   readFileSync(new URL("../pnpm-workspace.yaml", import.meta.url), "utf8"),
 );
 const MINIMUM_RELEASE_AGE_EXCLUDE_ERROR =
-  "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, brace-expansion@2.1.4, brace-expansion@5.0.9, nanoid@3.3.18";
+  "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, nanoid@3.3.18";
 
 function workspaceFixture(mutate = () => {}) {
   const workspace = structuredClone(CANONICAL_WORKSPACE);
@@ -190,6 +190,25 @@ test(".npmrc and package.json cannot carry ignored pnpm supply-chain settings", 
   }
 });
 
+test("September brace-expansion recursion fixes stay pinned", () => {
+  const repoRoot = createFixture({
+    workspace: workspaceFixture((workspace) => {
+      workspace.overrides["brace-expansion@2.1.1"] = "2.1.4";
+      workspace.overrides["brace-expansion@5.0.6"] = "5.0.9";
+      workspace.overrides["brace-expansion@5.0.7"] = "5.0.9";
+    }),
+  });
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      "pnpm-workspace.yaml overrides must pin brace-expansion@2.1.1 to 2.1.7",
+      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.12",
+      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.12",
+    ]);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
 test("#506 missing brace-expansion security overrides fail validation", () => {
   const repoRoot = createFixture({
     workspace: workspaceFixture((workspace) => {
@@ -201,9 +220,9 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml overrides must pin brace-expansion@2.1.1 to 2.1.4",
-      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.9",
-      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.9",
+      "pnpm-workspace.yaml overrides must pin brace-expansion@2.1.1 to 2.1.7",
+      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.12",
+      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.12",
       "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.24",
     ]);
   } finally {
@@ -292,8 +311,8 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
       MINIMUM_RELEASE_AGE_EXCLUDE_ERROR,
-      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.9",
-      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.9",
+      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.12",
+      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.12",
       "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.24",
     ]);
   } finally {
@@ -321,11 +340,11 @@ test("#554 active advisory suppressions fail validation", () => {
 test("#554 official brace-expansion release preserves minimatch API and bounds output", () => {
   const pnpmRoot = path.resolve("node_modules/.pnpm");
   const officialDirectory = readdirSync(pnpmRoot).find((entry) =>
-    entry.startsWith("brace-expansion@2.1.4"),
+    entry.startsWith("brace-expansion@2.1.7"),
   );
   assert.ok(
     officialDirectory,
-    "expected official brace-expansion 2.1.4 installation",
+    "expected official brace-expansion 2.1.7 installation",
   );
 
   const packageRoot = path.join(
