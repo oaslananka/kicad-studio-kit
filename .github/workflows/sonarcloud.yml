@@ -44,12 +44,18 @@ jobs:
           node "$c8_cli" \
             --reporter=lcov \
             --report-dir=apps/vscode-extension/coverage/sonar-scripts \
-            --include='scripts/check-quality-gate-policy.mjs' \
-            --include='scripts/prepare-sonar-lcov.mjs' \
+            --include='scripts/**/*.mjs' \
             --exclude='**/*.test.mjs' \
             node --test \
               scripts/check-quality-gate-policy.test.mjs \
-              scripts/prepare-sonar-lcov.test.mjs
+              scripts/prepare-sonar-lcov.test.mjs \
+              scripts/check-compatibility-contract.test.mjs \
+              scripts/check-published-mcp-profiles.test.mjs \
+              scripts/create-github-signed-commit.test.mjs \
+              scripts/check-release-surface.test.mjs \
+              scripts/check-scorecard-evidence.test.mjs \
+              scripts/check-best-practices-evidence.test.mjs \
+              scripts/check-release-please-monorepo.test.mjs
       - name: Rebase Jest LCOV paths to the repository root
         run: node scripts/prepare-sonar-lcov.mjs
       - name: Check LCOV evidence before upload
@@ -63,6 +69,9 @@ jobs:
           test -s "$script_lcov"
           grep -q '^SF:scripts/check-quality-gate-policy.mjs' "$script_lcov"
           grep -q '^SF:scripts/prepare-sonar-lcov.mjs' "$script_lcov"
+          grep -q '^SF:scripts/check-compatibility-contract.mjs' "$script_lcov"
+          grep -q '^SF:scripts/lib/github-signed-commit.mjs' "$script_lcov"
+          grep -q '^SF:scripts/lib/release-surface.mjs' "$script_lcov"
           echo "Verified real Jest and Node c8 LCOV source-file entries"
       - name: Upload analysis and LCOV to SonarQube Cloud
         uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2

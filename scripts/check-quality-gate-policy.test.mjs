@@ -266,3 +266,71 @@ test("#706 Sonar must generate actual script LCOV through c8", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("#706 Sonar must classify extension script test files, not production code", () => {
+  const root = fixture();
+  try {
+    const filename = path.join(root, "sonar-project.properties");
+    writeFileSync(
+      filename,
+      readFileSync(filename, "utf8").replace(
+        "apps/vscode-extension/scripts/**/*.test.mjs",
+        "apps/vscode-extension/scripts/**/*.test.invalid",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud must classify VS Code and script tests separately/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#706 Sonar must execute existing compatibility and release tests for real script coverage", () => {
+  const root = fixture();
+  try {
+    const file = path.join(root, ".github/workflows/sonarcloud.yml");
+    writeFileSync(
+      file,
+      readFileSync(file, "utf8").replace(
+        "scripts/check-compatibility-contract.test.mjs",
+        "scripts/skip-compatibility.test.mjs",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud must discover the pnpm-pinned c8 CLI/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#706 Sonar CSV properties tolerate insignificant whitespace", () => {
+  const root = fixture();
+  try {
+    const filename = path.join(root, "sonar-project.properties");
+    const original = readFileSync(filename, "utf8");
+    writeFileSync(
+      filename,
+      original
+        .replace(
+          "sonar.tests=apps/vscode-extension/test,apps/vscode-extension/scripts,packages/kicad-fixtures/test,packages/test-harness/test,scripts",
+          "sonar.tests=apps/vscode-extension/test, apps/vscode-extension/scripts, packages/kicad-fixtures/test, packages/test-harness/test, scripts",
+        )
+        .replace(
+          "sonar.test.inclusions=apps/vscode-extension/test/**/*.ts,apps/vscode-extension/test/**/*.js,apps/vscode-extension/test/**/*.mjs,apps/vscode-extension/test/**/*.tsx,packages/kicad-fixtures/test/**/*.ts,packages/kicad-fixtures/test/**/*.js,packages/test-harness/test/**/*.ts,packages/test-harness/test/**/*.js,scripts/**/*.test.mjs,apps/vscode-extension/scripts/**/*.test.mjs",
+          "sonar.test.inclusions=apps/vscode-extension/test/**/*.ts, apps/vscode-extension/test/**/*.js, apps/vscode-extension/test/**/*.mjs, apps/vscode-extension/test/**/*.tsx, packages/kicad-fixtures/test/**/*.ts, packages/kicad-fixtures/test/**/*.js, packages/test-harness/test/**/*.ts, packages/test-harness/test/**/*.js, scripts/**/*.test.mjs, apps/vscode-extension/scripts/**/*.test.mjs",
+        ),
+    );
+    assert.equal(
+      validateQualityGatePolicy(root).filter((error) =>
+        error.includes("classify VS Code and script tests separately"),
+      ).length,
+      0,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
