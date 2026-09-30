@@ -313,6 +313,10 @@ export function createViewerControllerScript(): string {
         await waitForDefinition('kicanvas-embed', 8000);
         await waitForDefinition('kicanvas-source', 8000);
 
+        if (payload.fileType === 'board' && !hasWebGlContext()) {
+          throw new Error('KiCanvas WebGL context is unavailable in this webview.');
+        }
+
         showLoading('Mounting viewer…');
         const renderText = prepared.renderText;
 
@@ -414,6 +418,16 @@ export function createViewerControllerScript(): string {
         'No drawable objects yet'
       );
       return true;
+    }
+
+    function hasWebGlContext() {
+      try {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('webgl2') || canvas.getContext('webgl');
+        return Boolean(context && !context.isContextLost?.());
+      } catch {
+        return false;
+      }
     }
 
     function isRendererRuntimeFailure(reason) {
