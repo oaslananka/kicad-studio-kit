@@ -6,12 +6,10 @@ Use this runbook to review coding-agent pull requests consistently.
 
 Identify the PR type:
 
-- Monorepo structure
-- Shared package or protocol schema
+- Repository structure or shared test infrastructure
 - VS Code extension feature or bug fix
-- MCP server feature or bug fix
-- npm launcher wrapper feature or bug fix
-- Cross-product compatibility
+- MCP client, protocol-adapter, or cross-product compatibility
+- Published protocol-schema consumption
 - CI, release, security, or docs
 
 Request a split if the PR combines unrelated categories.
@@ -30,9 +28,10 @@ Verify that:
 
 Not allowed:
 
-- The extension app importing MCP server implementation internals.
-- The MCP server package importing extension implementation internals.
+- The extension app importing KiCad MCP Pro implementation internals.
+- Production source importing the private shared test harness.
 - Shared packages importing from product apps.
+- Copied or relative source imports from the external KiCad MCP Pro repository.
 - Generic shared packages without a domain-specific purpose.
 
 Allowed integration paths:
@@ -45,8 +44,10 @@ Allowed integration paths:
 
 ## Review checklist
 
-- Independent build and test workflows still work for the extension, MCP server, and npm wrapper.
-- Old paths are removed from docs, scripts, workflows, release config, and tests.
+- Independent build and test workflows still work for the extension and local shared packages.
+- Cross-repository compatibility gates still consume published KiCad MCP Pro artifacts when protocol or compatibility surfaces change.
+- Server, npm-wrapper, and protocol-schema source changes are assigned to the KiCad MCP Pro external repository rather than this checkout.
+- Old local MCP paths are removed from docs, scripts, workflows, release config, and tests.
 - Compatibility metadata and support docs are updated when version support changes.
 - Protocol changes are covered by contract tests.
 - Bug fixes are covered by regression tests.
@@ -58,13 +59,11 @@ Allowed integration paths:
 
 Repository-wide changes should run the root check.
 
-Extension-only changes should run extension lint, typecheck, tests, and build.
+Extension-only changes should run the extension lint, typecheck, relevant tests, build, and package validation.
 
-MCP-only changes should run MCP tests, command help/version checks, and package build.
+MCP client, protocol-adapter, or cross-repository compatibility changes should run `corepack pnpm run check:compatibility-contract`, protocol-schema validation, and the relevant contract or real-pair canary.
 
-Npm-wrapper-only changes should run wrapper install checks, `npm pack --dry-run`, and CLI help/version checks.
-
-Protocol or integration changes should run contract and fixture tests.
+Changes to the MCP server, npm wrapper, or protocol-schema source must be made and validated in the KiCad MCP Pro external repository, then consumed here only through published artifacts and compatibility metadata.
 
 These commands may evolve as the restructure lands. PRs should use the current equivalent commands and document them.
 

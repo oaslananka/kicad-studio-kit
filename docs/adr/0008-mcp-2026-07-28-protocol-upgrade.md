@@ -4,16 +4,22 @@ Status: Proposed
 
 Date: 2026-05-30
 
-Last reviewed: 2026-07-27
+Last reviewed: 2026-09-04
 
 ## Context
 
-The active MCP protocol for KiCad Studio and KiCad MCP Pro is
-`2025-11-25`. The MCP maintainers published a release candidate for the
-breaking `2026-07-28` specification and scheduled the final specification for
-July 28, 2026.
+The active MCP protocol for KiCad Studio and the current KiCad MCP Pro GA
+surface remains `2025-11-25`. The final breaking `2026-07-28` specification
+was published on July 28, 2026, and the Python MCP SDK 2.x stable line supports
+that revision. Current published KiCad MCP Pro documentation still describes
+the `2025-11-25` initialize/session-era wire contract, so final protocol
+availability does not authorize KiCad Studio production activation by itself.
 
-Reference: <https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate/>
+References:
+
+- <https://modelcontextprotocol.io/specification/2026-07-28>
+- <https://blog.modelcontextprotocol.io/posts/2026-07-28/>
+- <https://pypi.org/project/mcp/2.0.0/>
 
 Since [ADR 0009](0009-split-kicad-mcp-pro-into-separate-repository.md), the
 upgrade spans two repositories and published artifacts:
@@ -39,7 +45,7 @@ repository or published artifact rather than to removed local paths.
 | Active MCP protocol                        | `2025-11-25`                             | Both repositories' compatibility metadata                            |
 | Tracked next protocol                      | `2026-07-28`                             | This repository's `compatibility.yaml` and the KiCad MCP Pro roadmap |
 | Extension protocol adapter                 | `2025-11-25` initialize/session behavior | This repository, `apps/vscode-extension/src/mcp/`                    |
-| Server protocol implementation             | `2025-11-25`                             | KiCad MCP Pro                                                        |
+| Server protocol implementation             | `2025-11-25` GA; final target pending       | KiCad MCP Pro                                                        |
 | Protocol schemas consumed by the extension | `@oaslananka/kicad-protocol-schemas`     | Published npm artifact                                               |
 | Protocol schema source and publishing      | Current published schema package         | KiCad MCP Pro                                                        |
 | Extension compatibility range              | `products.kicad-studio.compatibleMcpPro` | This repository's `compatibility.yaml`                               |
@@ -48,8 +54,8 @@ repository or published artifact rather than to removed local paths.
 
 The versioned extension adapter/transport boundary is tracked by issue #492.
 Its preparation phase must preserve `2025-11-25` and keep any `2026-07-28`
-envelope fixture non-selectable until the final specification and compatible
-published server artifacts exist.
+envelope fixture non-selectable until compatible published server/schema
+artifacts, a production adapter, and final real-pair evidence exist.
 
 ## Key 2026-07-28 changes
 
@@ -151,7 +157,8 @@ fails the compatibility contract.
 
 ### KiCad MCP Pro: server and schema source
 
-1. Track the Python MCP SDK release that implements the final specification.
+1. Adopt a stable Python MCP SDK 2.x release in the owning repository when the
+   GA server is ready to implement the final protocol.
 2. Audit server transport, discovery, manifest, well-known metadata, and
    compatibility surfaces against the final specification.
 3. Review long-running tools for optional Tasks adoption without coupling that
@@ -164,14 +171,16 @@ fails the compatibility contract.
 
 1. Validate the current published schema package from this repository.
 2. Validate the current published `kicad-mcp-pro` artifact with real-pair flows.
-3. Record final conformance fixtures only after the specification is final.
+3. Record final conformance fixtures from stable published artifacts before activation.
 4. Keep each repository's CI independent; exchange only published artifacts and
    explicit compatibility metadata.
 
 ## Phase 1: Final protocol and server/schema publication
 
-This phase starts only after the final specification and supported Python SDK
-are available.
+The final specification and stable Python SDK are now available upstream. This
+phase remains incomplete until KiCad MCP Pro adopts the final protocol in a
+stable published server/schema pair and KiCad Studio proves the corresponding
+client adapter against those artifacts.
 
 ### KiCad MCP Pro publishes first
 
@@ -284,10 +293,10 @@ checklist in both owning repositories.
 
 ## Future revisit
 
-Revisit this ADR when the final specification and supported Python SDK are
-published. At that point, replace RC assumptions with final normative behavior,
-record the selected package/server versions, and move the ADR from Draft to
-Accepted only after the cross-repository release sequence is proven.
+Revisit this ADR when KiCad MCP Pro publishes a stable server/schema pair that
+advertises `2026-07-28` and KiCad Studio has final adapter plus real-pair
+evidence. Record the selected package/server versions and move the ADR from
+Proposed to Accepted only after the cross-repository release sequence is proven.
 
 ## References
 
