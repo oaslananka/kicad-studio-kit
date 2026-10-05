@@ -13,17 +13,91 @@ const reviewRunbookRequiredReferences = [
   "corepack pnpm run check:compatibility-contract",
 ];
 
+const nestedAgentInstructions = [
+  {
+    file: ".github/AGENTS.md",
+    references: [
+      "required status checks",
+      "full commit SHAs",
+      "protected environments",
+      "does not claim a specific SLSA level",
+    ],
+  },
+  {
+    file: "scripts/AGENTS.md",
+    references: [
+      "policy-as-code",
+      "fail closed",
+      "regression test",
+      "extending an existing checker",
+    ],
+  },
+  {
+    file: "apps/vscode-extension/AGENTS.md",
+    references: [
+      "Workspace trust is a code-level security boundary",
+      "SecretStorage",
+      "check:vscode-architecture",
+      "@oaslananka/kicad-test-harness",
+      "authentic extension-host evidence",
+    ],
+  },
+  {
+    file: "apps/vscode-extension/src/cli/AGENTS.md",
+    references: [
+      "argument-array process execution",
+      "10 MiB",
+      "Redact sensitive paths",
+      "kicadCliCapabilities.ts",
+    ],
+  },
+  {
+    file: "apps/vscode-extension/src/mcp/AGENTS.md",
+    references: [
+      "external repository and published-artifact dependency",
+      "compatibility.yaml",
+      "fail closed or",
+      "Remote endpoints require explicit opt-in",
+      "protocol-change-checklist.md",
+    ],
+  },
+  {
+    file: "apps/vscode-extension/src/boardreadyops/AGENTS.md",
+    references: [
+      "boardreadyops doctor --format json",
+      "numeric readiness score never overrides",
+      "fail closed",
+      "release evidence",
+    ],
+  },
+  {
+    file: "packages/test-harness/AGENTS.md",
+    references: [
+      "private, test-only infrastructure",
+      "Production source must not import",
+      "must not import product internals",
+      "check:boundaries",
+    ],
+  },
+  {
+    file: "packages/kicad-fixtures/AGENTS.md",
+    references: [
+      "manifest.json",
+      "Do not hand-edit generated fixture files or golden outputs",
+      "fixtures:kicad:generate",
+      "test:fixtures",
+    ],
+  },
+];
+
+const nestedAgentInstructionFiles = nestedAgentInstructions.map(
+  ({ file }) => file,
+);
+
 const requiredMarkdownFiles = [
   "AGENTS.md",
-  ".github/AGENTS.md",
+  ...nestedAgentInstructionFiles,
   ".github/copilot-instructions.md",
-  "scripts/AGENTS.md",
-  "apps/vscode-extension/AGENTS.md",
-  "apps/vscode-extension/src/cli/AGENTS.md",
-  "apps/vscode-extension/src/mcp/AGENTS.md",
-  "apps/vscode-extension/src/boardreadyops/AGENTS.md",
-  "packages/test-harness/AGENTS.md",
-  "packages/kicad-fixtures/AGENTS.md",
   "docs/agents/index.md",
   "docs/agents/client-configs.md",
   "docs/agents/codex-support.md",
@@ -100,15 +174,7 @@ const requiredReferences = {
   "AGENTS.md": [
     "apps/vscode-extension",
     "closest applicable `AGENTS.md` wins",
-    ".github/AGENTS.md",
-    "scripts/AGENTS.md",
-    "apps/vscode-extension/AGENTS.md",
-    "apps/vscode-extension/src/cli/AGENTS.md",
-    "apps/vscode-extension/src/mcp/AGENTS.md",
-    "apps/vscode-extension/src/boardreadyops/AGENTS.md",
-    "packages/test-harness/AGENTS.md",
-    "packages/kicad-fixtures/AGENTS.md",
-
+    ...nestedAgentInstructionFiles,
     "docs/support-matrix.md",
     "docs/release.md",
     "docs/architecture/protocol-change-checklist.md",
@@ -124,56 +190,9 @@ const requiredReferences = {
     "remote MCP endpoints by default",
     "unsafe webview",
   ],
-  ".github/AGENTS.md": [
-    "required status checks",
-    "full commit SHAs",
-    "protected environments",
-    "does not claim a specific SLSA level",
-  ],
-  "scripts/AGENTS.md": [
-    "policy-as-code",
-    "fail closed",
-    "regression test",
-    "extending an existing checker",
-  ],
-  "apps/vscode-extension/AGENTS.md": [
-    "Workspace trust is a code-level security boundary",
-    "SecretStorage",
-    "check:vscode-architecture",
-    "@oaslananka/kicad-test-harness",
-    "authentic extension-host evidence",
-  ],
-  "apps/vscode-extension/src/cli/AGENTS.md": [
-    "argument-array process execution",
-    "10 MiB",
-    "Redact sensitive paths",
-    "kicadCliCapabilities.ts",
-  ],
-  "apps/vscode-extension/src/mcp/AGENTS.md": [
-    "external repository and published-artifact dependency",
-    "compatibility.yaml",
-    "fail closed or",
-    "Remote endpoints require explicit opt-in",
-    "protocol-change-checklist.md",
-  ],
-  "apps/vscode-extension/src/boardreadyops/AGENTS.md": [
-    "boardreadyops doctor --format json",
-    "numeric readiness score never overrides",
-    "fail closed",
-    "release evidence",
-  ],
-  "packages/test-harness/AGENTS.md": [
-    "private, test-only infrastructure",
-    "Production source must not import",
-    "must not import product internals",
-    "check:boundaries",
-  ],
-  "packages/kicad-fixtures/AGENTS.md": [
-    "manifest.json",
-    "Do not hand-edit generated fixture files or golden outputs",
-    "fixtures:kicad:generate",
-    "test:fixtures",
-  ],
+  ...Object.fromEntries(
+    nestedAgentInstructions.map(({ file, references }) => [file, references]),
+  ),
   ".github/copilot-instructions.md": [
     "AGENTS.md",
     "closest applicable nested `AGENTS.md`",
