@@ -29,6 +29,14 @@ describe('MCP compatibility helpers', () => {
     expect(isMcpVersionSupported('4.0.0')).toBe(true);
   });
 
+  it('reports unsupported for versions below required range, above range, and missing', () => {
+    expect(isMcpVersionSupported('3.5.1')).toBe(false);
+    expect(isMcpVersionSupported('3.0.0')).toBe(false);
+    expect(isMcpVersionSupported('5.0.0')).toBe(false);
+    expect(isMcpVersionSupported(undefined)).toBe(false);
+    expect(isMcpVersionSupported('')).toBe(false);
+  });
+
   it('describes unknown, incompatible, warning, and supported versions', () => {
     expect(describeMcpCompatibility(undefined)).toBe(
       `Unable to determine kicad-mcp-pro version. Required range: ${MCP_COMPAT.required}.`
