@@ -53,7 +53,7 @@ describe('mcp/compat', () => {
     });
 
     it('is incompatible at the upper bound', () => {
-      expect(getMcpCompatStatus('4.0.0')).toBe('incompatible');
+      expect(getMcpCompatStatus('5.0.0')).toBe('incompatible');
     });
   });
 

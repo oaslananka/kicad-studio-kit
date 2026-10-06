@@ -7,11 +7,11 @@ import {
 } from '../../src/mcp/compat';
 
 describe('MCP compatibility helpers', () => {
-  it('declares the supported MCP 3.x contract', () => {
+  it('declares the supported MCP 3.x/4.x contract', () => {
     expect(MCP_COMPAT).toEqual({
-      required: '>=3.5.2 <4.0.0',
-      recommended: '>=3.5.2 <4.0.0',
-      testedAgainst: '3.35.2'
+      required: '>=3.5.2 <5.0.0',
+      recommended: '>=3.5.2 <5.0.0',
+      testedAgainst: '4.0.1'
     });
   });
 
@@ -23,10 +23,10 @@ describe('MCP compatibility helpers', () => {
     expect(getMcpCompatStatus('3.5.2')).toBe('ok');
     expect(getMcpCompatStatus('3.6.0')).toBe('ok');
     expect(getMcpCompatStatus('3.5.1')).toBe('incompatible');
-    expect(getMcpCompatStatus('4.0.0')).toBe('incompatible');
+    expect(getMcpCompatStatus('4.0.0')).toBe('ok');
     expect(getMcpCompatStatus(undefined)).toBe('incompatible');
     expect(isMcpVersionSupported('3.5.2')).toBe(true);
-    expect(isMcpVersionSupported('4.0.0')).toBe(false);
+    expect(isMcpVersionSupported('4.0.0')).toBe(true);
   });
 
   it('describes unknown, incompatible, warning, and supported versions', () => {

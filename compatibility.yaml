@@ -641,12 +641,12 @@ supportAxes:
     remediation: "Install/configure a KiCad CLI line supported by Studio; MCP availability is evaluated separately."
   mcpServer:
     package: "kicad-mcp-pro"
-    required: ">=3.5.2 <4.0.0"
-    recommended: ">=3.5.2 <4.0.0"
+    required: ">=3.5.2 <5.0.0"
+    recommended: ">=3.5.2 <5.0.0"
     testedAgainst:
-      version: "3.35.2"
+      version: "4.0.1"
       registry: "pypi"
-      source: "https://pypi.org/project/kicad-mcp-pro/3.35.2/"
+      source: "https://pypi.org/project/kicad-mcp-pro/4.0.1/"
     remediation: "Install a published kicad-mcp-pro version inside the supported range and re-run compatibility diagnostics."
   mcpProtocol:
     active: "2025-11-25"
@@ -657,9 +657,9 @@ supportAxes:
     package: "boardreadyops"
     required: ">=1.2.0 <2.0.0"
     testedAgainst:
-      version: "1.68.2"
+      version: "1.68.3"
       registry: "npm"
-      source: "https://www.npmjs.com/package/boardreadyops/v/1.68.2"
+      source: "https://www.npmjs.com/package/boardreadyops/v/1.68.3"
     reports:
       findingsSchema: 1
       evidenceBundleSchema: 2
@@ -714,9 +714,9 @@ products:
     packagePath: "apps/vscode-extension/package.json"
     version: "1.15.1"
     compatibleMcpPro:
-      required: ">=3.5.2 <4.0.0"
-      recommended: ">=3.5.2 <4.0.0"
-      testedAgainst: "3.35.2"
+      required: ">=3.5.2 <5.0.0"
+      recommended: ">=3.5.2 <5.0.0"
+      testedAgainst: "4.0.1"
 
 featureGates:
   projectDiscovery:
