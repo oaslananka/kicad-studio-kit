@@ -23,7 +23,7 @@ const MINIMUM_RELEASE_AGE_EXCLUDE_ERROR =
 
 function workspaceFixture(mutate = () => {}) {
   const workspace = structuredClone(CANONICAL_WORKSPACE);
-  mutate(workspace.pnpm);
+  mutate(workspace);
   return stringifyYaml(workspace);
 }
 
@@ -99,7 +99,7 @@ test("fixture with expected supply-chain settings passes", () => {
 test("mature PostCSS and tar releases cannot remain age exceptions", () => {
   const repoRoot = createFixture({
     workspace: workspaceFixture((workspace) => {
-      workspace.minimumReleaseAgeExclude.push("postcss@8.5.24", "tar@7.5.22");
+      workspace.pnpm.minimumReleaseAgeExclude.push("postcss@8.5.24", "tar@7.5.22");
     }),
   });
   try {
@@ -114,12 +114,12 @@ test("mature PostCSS and tar releases cannot remain age exceptions", () => {
 test("disabled pnpm supply-chain controls fail validation", () => {
   const repoRoot = createFixture({
     workspace: workspaceFixture((workspace) => {
-      workspace.minimumReleaseAge = 0;
-      workspace.trustPolicy = "off";
-      workspace.minimumReleaseAgeExclude = ["tmp"];
-      workspace.trustPolicyExclude = ["chokidar"];
-      workspace.blockExoticSubdeps = false;
-      workspace.trustLockfile = true;
+      workspace.pnpm.minimumReleaseAge = 0;
+      workspace.pnpm.trustPolicy = "off";
+      workspace.pnpm.minimumReleaseAgeExclude = ["tmp"];
+      workspace.pnpm.trustPolicyExclude = ["chokidar"];
+      workspace.pnpm.blockExoticSubdeps = false;
+      workspace.pnpm.trustLockfile = true;
     }),
   });
   try {
@@ -201,10 +201,10 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml pnpm.overrides must pin brace-expansion@2.1.1 to 2.1.7",
-      "pnpm-workspace.yaml pnpm.overrides must pin brace-expansion@5.0.6 to 5.0.12",
-      "pnpm-workspace.yaml pnpm.overrides must pin brace-expansion@5.0.7 to 5.0.12",
-      "pnpm-workspace.yaml pnpm.overrides must pin postcss@8.5.15 to 8.5.24",
+      "pnpm-workspace.yaml overrides must pin brace-expansion@2.1.1 to 2.1.7",
+      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.12",
+      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.12",
+      "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.24",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -219,7 +219,7 @@ test("#506 stale js-yaml security override fails validation", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml pnpm.overrides must pin js-yaml to 4.3.2",
+      "pnpm-workspace.yaml overrides must pin js-yaml to 4.3.2",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -234,7 +234,7 @@ test("#506 stale tar security override fails validation", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml pnpm.overrides must pin tar to 7.5.22",
+      "pnpm-workspace.yaml overrides must pin tar to 7.5.22",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -250,8 +250,8 @@ test("#508 newly disclosed transitive security fixes stay pinned", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml pnpm.overrides must pin fast-uri to 3.1.8",
-      "pnpm-workspace.yaml pnpm.overrides must pin linkify-it to 5.0.2",
+      "pnpm-workspace.yaml overrides must pin fast-uri to 3.1.8",
+      "pnpm-workspace.yaml overrides must pin linkify-it to 5.0.2",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -261,8 +261,8 @@ test("#508 newly disclosed transitive security fixes stay pinned", () => {
 test("GHSA-2v37-7h3g-55p8 nanoid fix stays pinned", () => {
   const repoRoot = createFixture({
     workspace: workspaceFixture((workspace) => {
-      workspace.minimumReleaseAgeExclude =
-        workspace.minimumReleaseAgeExclude.filter(
+      workspace.pnpm.minimumReleaseAgeExclude =
+        workspace.pnpm.minimumReleaseAgeExclude.filter(
           (entry) => entry !== "nanoid@3.3.18",
         );
       delete workspace.overrides["nanoid@3.3.16"];
@@ -272,8 +272,8 @@ test("GHSA-2v37-7h3g-55p8 nanoid fix stays pinned", () => {
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
       MINIMUM_RELEASE_AGE_EXCLUDE_ERROR,
-      "pnpm-workspace.yaml pnpm.overrides must pin nanoid@3.3.16 to 3.3.18",
-      "pnpm-workspace.yaml pnpm.overrides must pin nanoid@3.3.17 to 3.3.18",
+      "pnpm-workspace.yaml overrides must pin nanoid@3.3.16 to 3.3.18",
+      "pnpm-workspace.yaml overrides must pin nanoid@3.3.17 to 3.3.18",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -283,7 +283,7 @@ test("GHSA-2v37-7h3g-55p8 nanoid fix stays pinned", () => {
 test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () => {
   const repoRoot = createFixture({
     workspace: workspaceFixture((workspace) => {
-      workspace.minimumReleaseAgeExclude = ["tmp@0.2.7"];
+      workspace.pnpm.minimumReleaseAgeExclude = ["tmp@0.2.7"];
       workspace.overrides["brace-expansion@5.0.6"] = "5.0.7";
       delete workspace.overrides["brace-expansion@5.0.7"];
       delete workspace.overrides["postcss@8.5.15"];
@@ -292,9 +292,9 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
       MINIMUM_RELEASE_AGE_EXCLUDE_ERROR,
-      "pnpm-workspace.yaml pnpm.overrides must pin brace-expansion@5.0.6 to 5.0.12",
-      "pnpm-workspace.yaml pnpm.overrides must pin brace-expansion@5.0.7 to 5.0.12",
-      "pnpm-workspace.yaml pnpm.overrides must pin postcss@8.5.15 to 8.5.24",
+      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.12",
+      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.12",
+      "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.24",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -304,7 +304,7 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
 test("#554 active advisory suppressions fail validation", () => {
   const repoRoot = createFixture({
     workspace: workspaceFixture((workspace) => {
-      workspace.auditConfig = {
+      workspace.pnpm.auditConfig = {
         ignoreGhsas: ["GHSA-mh99-v99m-4gvg"],
       };
     }),

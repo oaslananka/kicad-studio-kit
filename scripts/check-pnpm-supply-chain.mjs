@@ -30,6 +30,9 @@ const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   "fast-uri": "3.1.8",
   "linkify-it": "5.0.2",
   undici: "7.29.1",
+  uuid: "11.1.1",
+  "exceljs>uuid": "11.1.1",
+  "@vscode/vsce>keytar": "-",
 });
 const FORBIDDEN_PNPM_SETTINGS = [
   "minimumReleaseAge",
@@ -81,6 +84,7 @@ function assertCondition(errors, condition, message) {
 
 function validateWorkspace(errors, workspace) {
   const pnpmConfig = workspace?.pnpm;
+  const overrides = workspace?.overrides ?? {};
   assertCondition(
     errors,
     pnpmConfig?.minimumReleaseAge === MINIMUM_RELEASE_AGE_MINUTES,
@@ -128,8 +132,8 @@ function validateWorkspace(errors, workspace) {
   )) {
     assertCondition(
       errors,
-      pnpmConfig?.overrides?.[selector] === version,
-      `pnpm-workspace.yaml pnpm.overrides must pin ${selector} to ${version}`,
+      overrides[selector] === version,
+      `pnpm-workspace.yaml overrides must pin ${selector} to ${version}`,
     );
   }
 }
