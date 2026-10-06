@@ -19,11 +19,11 @@ const CANONICAL_WORKSPACE = parseYaml(
   readFileSync(new URL("../pnpm-workspace.yaml", import.meta.url), "utf8"),
 );
 const MINIMUM_RELEASE_AGE_EXCLUDE_ERROR =
-  "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, nanoid@3.3.18";
+  "pnpm-workspace.yaml pnpm.minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, nanoid@3.3.18";
 
 function workspaceFixture(mutate = () => {}) {
   const workspace = structuredClone(CANONICAL_WORKSPACE);
-  mutate(workspace);
+  mutate(workspace.pnpm);
   return stringifyYaml(workspace);
 }
 
@@ -124,12 +124,12 @@ test("disabled pnpm supply-chain controls fail validation", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml must set minimumReleaseAge: 10080",
-      "pnpm-workspace.yaml must set trustPolicy: no-downgrade",
-      "pnpm-workspace.yaml must set blockExoticSubdeps: true",
-      "pnpm-workspace.yaml must not enable trustLockfile for public PR CI",
+      "pnpm-workspace.yaml must set pnpm.minimumReleaseAge: 10080",
+      "pnpm-workspace.yaml must set pnpm.trustPolicy: no-downgrade",
+      "pnpm-workspace.yaml must set pnpm.blockExoticSubdeps: true",
+      "pnpm-workspace.yaml must not enable pnpm.trustLockfile for public PR CI",
       MINIMUM_RELEASE_AGE_EXCLUDE_ERROR,
-      "pnpm-workspace.yaml trustPolicyExclude must be limited to reviewed version-scoped exceptions: @octokit/endpoint@9.0.6, chokidar@4.0.3, semver@5.7.2 || 6.3.1",
+      "pnpm-workspace.yaml pnpm.trustPolicyExclude must be limited to reviewed version-scoped exceptions: @octokit/endpoint@9.0.6, chokidar@4.0.3, semver@5.7.2 || 6.3.1",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -201,10 +201,10 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml overrides must pin brace-expansion@2.1.1 to 2.1.7",
-      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.12",
-      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.12",
-      "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.24",
+      "pnpm-workspace.yaml pnpm.overrides must pin brace-expansion@2.1.1 to 2.1.7",
+      "pnpm-workspace.yaml pnpm.overrides must pin brace-expansion@5.0.6 to 5.0.12",
+      "pnpm-workspace.yaml pnpm.overrides must pin brace-expansion@5.0.7 to 5.0.12",
+      "pnpm-workspace.yaml pnpm.overrides must pin postcss@8.5.15 to 8.5.24",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -219,7 +219,7 @@ test("#506 stale js-yaml security override fails validation", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml overrides must pin js-yaml to 4.3.2",
+      "pnpm-workspace.yaml pnpm.overrides must pin js-yaml to 4.3.2",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -234,7 +234,7 @@ test("#506 stale tar security override fails validation", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml overrides must pin tar to 7.5.22",
+      "pnpm-workspace.yaml pnpm.overrides must pin tar to 7.5.22",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -250,8 +250,8 @@ test("#508 newly disclosed transitive security fixes stay pinned", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml overrides must pin fast-uri to 3.1.8",
-      "pnpm-workspace.yaml overrides must pin linkify-it to 5.0.2",
+      "pnpm-workspace.yaml pnpm.overrides must pin fast-uri to 3.1.8",
+      "pnpm-workspace.yaml pnpm.overrides must pin linkify-it to 5.0.2",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -272,8 +272,8 @@ test("GHSA-2v37-7h3g-55p8 nanoid fix stays pinned", () => {
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
       MINIMUM_RELEASE_AGE_EXCLUDE_ERROR,
-      "pnpm-workspace.yaml overrides must pin nanoid@3.3.16 to 3.3.18",
-      "pnpm-workspace.yaml overrides must pin nanoid@3.3.17 to 3.3.18",
+      "pnpm-workspace.yaml pnpm.overrides must pin nanoid@3.3.16 to 3.3.18",
+      "pnpm-workspace.yaml pnpm.overrides must pin nanoid@3.3.17 to 3.3.18",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -292,9 +292,9 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
       MINIMUM_RELEASE_AGE_EXCLUDE_ERROR,
-      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.12",
-      "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.12",
-      "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.24",
+      "pnpm-workspace.yaml pnpm.overrides must pin brace-expansion@5.0.6 to 5.0.12",
+      "pnpm-workspace.yaml pnpm.overrides must pin brace-expansion@5.0.7 to 5.0.12",
+      "pnpm-workspace.yaml pnpm.overrides must pin postcss@8.5.15 to 8.5.24",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -311,7 +311,7 @@ test("#554 active advisory suppressions fail validation", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml auditConfig.ignoreGhsas must be empty; use patched upstream releases instead of suppressing active advisories",
+      "pnpm-workspace.yaml pnpm.auditConfig.ignoreGhsas must be empty; use patched upstream releases instead of suppressing active advisories",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });

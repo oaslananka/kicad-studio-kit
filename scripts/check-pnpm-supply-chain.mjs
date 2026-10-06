@@ -80,55 +80,56 @@ function assertCondition(errors, condition, message) {
 }
 
 function validateWorkspace(errors, workspace) {
+  const pnpmConfig = workspace?.pnpm;
   assertCondition(
     errors,
-    workspace?.minimumReleaseAge === MINIMUM_RELEASE_AGE_MINUTES,
-    "pnpm-workspace.yaml must set minimumReleaseAge: 10080",
+    pnpmConfig?.minimumReleaseAge === MINIMUM_RELEASE_AGE_MINUTES,
+    "pnpm-workspace.yaml must set pnpm.minimumReleaseAge: 10080",
   );
   assertCondition(
     errors,
-    workspace?.trustPolicy === "no-downgrade",
-    "pnpm-workspace.yaml must set trustPolicy: no-downgrade",
+    pnpmConfig?.trustPolicy === "no-downgrade",
+    "pnpm-workspace.yaml must set pnpm.trustPolicy: no-downgrade",
   );
   assertCondition(
     errors,
-    workspace?.blockExoticSubdeps === true,
-    "pnpm-workspace.yaml must set blockExoticSubdeps: true",
+    pnpmConfig?.blockExoticSubdeps === true,
+    "pnpm-workspace.yaml must set pnpm.blockExoticSubdeps: true",
   );
   assertCondition(
     errors,
-    workspace?.trustLockfile !== true,
-    "pnpm-workspace.yaml must not enable trustLockfile for public PR CI",
+    pnpmConfig?.trustLockfile !== true,
+    "pnpm-workspace.yaml must not enable pnpm.trustLockfile for public PR CI",
   );
-  const auditIgnores = workspace?.auditConfig?.ignoreGhsas;
+  const auditIgnores = pnpmConfig?.auditConfig?.ignoreGhsas;
   assertCondition(
     errors,
     auditIgnores === undefined || sameStringList(auditIgnores, []),
-    "pnpm-workspace.yaml auditConfig.ignoreGhsas must be empty; use patched upstream releases instead of suppressing active advisories",
+    "pnpm-workspace.yaml pnpm.auditConfig.ignoreGhsas must be empty; use patched upstream releases instead of suppressing active advisories",
   );
   assertCondition(
     errors,
     sameStringList(
-      workspace?.minimumReleaseAgeExclude,
+      pnpmConfig?.minimumReleaseAgeExclude,
       ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES,
     ),
-    `pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: ${ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES.join(", ")}`,
+    `pnpm-workspace.yaml pnpm.minimumReleaseAgeExclude must be limited to version-scoped security exceptions: ${ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES.join(", ")}`,
   );
   assertCondition(
     errors,
     sameStringList(
-      workspace?.trustPolicyExclude,
+      pnpmConfig?.trustPolicyExclude,
       ALLOWED_TRUST_POLICY_EXCLUDES,
     ),
-    "pnpm-workspace.yaml trustPolicyExclude must be limited to reviewed version-scoped exceptions: @octokit/endpoint@9.0.6, chokidar@4.0.3, semver@5.7.2 || 6.3.1",
+    "pnpm-workspace.yaml pnpm.trustPolicyExclude must be limited to reviewed version-scoped exceptions: @octokit/endpoint@9.0.6, chokidar@4.0.3, semver@5.7.2 || 6.3.1",
   );
   for (const [selector, version] of Object.entries(
     REQUIRED_SECURITY_OVERRIDES,
   )) {
     assertCondition(
       errors,
-      workspace?.overrides?.[selector] === version,
-      `pnpm-workspace.yaml overrides must pin ${selector} to ${version}`,
+      pnpmConfig?.overrides?.[selector] === version,
+      `pnpm-workspace.yaml pnpm.overrides must pin ${selector} to ${version}`,
     );
   }
 }
