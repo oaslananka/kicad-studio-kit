@@ -1,39 +1,35 @@
 packages:
-  - "apps/vscode-extension"
-  - "packages/kicad-fixtures"
-  - "packages/test-harness"
-
+- apps/vscode-extension
+- packages/kicad-fixtures
+- packages/test-harness
 minimumReleaseAge: 10080
 trustPolicy: no-downgrade
 minimumReleaseAgeExclude:
-  - tmp@0.2.7
-  - nanoid@3.3.18
+- tmp@0.2.7
+- nanoid@3.3.18
 trustPolicyExclude:
-  - "@octokit/endpoint@9.0.6"
-  - chokidar@4.0.3
-  - "semver@5.7.2 || 6.3.1"
+- '@octokit/endpoint@9.0.6'
+- chokidar@4.0.3
+- semver@5.7.2 || 6.3.1
 blockExoticSubdeps: true
-
 allowBuilds:
-  "@go-task/cli": true
-  "@vscode/vsce-sign": true
+  '@go-task/cli': true
+  '@vscode/vsce-sign': true
   esbuild: true
   unrs-resolver: true
-
 ignoredOptionalDependencies:
-  - keytar
-
+- keytar
 overrides:
-  "brace-expansion@2.1.1": 2.1.7
-  "brace-expansion@5.0.6": 5.0.12
-  "brace-expansion@5.0.7": 5.0.12
-  "postcss@8.5.15": 8.5.24
-  "nanoid@3.3.16": 3.3.18
-  "nanoid@3.3.17": 3.3.18
-  "@vscode/vsce>keytar": "-"
+  brace-expansion@2.1.1: 2.1.7
+  brace-expansion@5.0.6: 5.0.12
+  brace-expansion@5.0.7: 5.0.12
+  postcss@8.5.15: 8.5.24
+  nanoid@3.3.16: 3.3.18
+  nanoid@3.3.17: 3.3.18
+  '@vscode/vsce>keytar': '-'
   encoding-sniffer: 1.0.2
   js-yaml: 4.3.2
-  "@xmldom/xmldom": 0.8.15
+  '@xmldom/xmldom': 0.8.15
   exceljs>archiver: 8.0.0
   exceljs>fast-csv: 5.0.7
   exceljs>unzipper: 0.12.5
@@ -53,3 +49,4 @@ overrides:
   uuid: 14.0.1
   vite: 6.4.3
   undici: 7.29.1
+  basic-ftp: 6.2.1
