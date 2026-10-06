@@ -7,6 +7,7 @@ trustPolicy: no-downgrade
 minimumReleaseAgeExclude:
 - tmp@0.2.7
 - nanoid@3.3.18
+- source-map-js@1.2.2
 trustPolicyExclude:
 - '@octokit/endpoint@9.0.6'
 - chokidar@4.0.3
@@ -50,3 +51,7 @@ overrides:
   vite: 6.4.3
   undici: 7.29.1
   basic-ftp: 6.2.1
+  source-map-js: ">=1.2.2"
+  "@vue/server-renderer": ">=3.5.42"
+  vue: ">=3.5.42"
+  "ovsx>@vscode/vsce": "4.0.0"
