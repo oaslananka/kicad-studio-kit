@@ -1,3 +1,7 @@
+---
+search: false
+---
+
 # History-Safe Pull Request Metadata Policy Design
 
 ## Status
