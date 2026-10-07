@@ -92,12 +92,12 @@ test("#514 immutable Codecov action pins cannot drift", () => {
     replaceInFixture(
       root,
       ".github/workflows/ci.yml",
-      "codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f",
+      "codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5",
       "codecov/codecov-action@0000000000000000000000000000000000000000",
     );
     assert.ok(
       validateCodecovPolicy(root).includes(
-        "ci.yml must pin both coverage and test-result uploads to codecov/codecov-action v7.0.0 commit fb8b3582c8e4def4969c97caa2f19720cb33a72f",
+        "ci.yml must pin both coverage and test-result uploads to codecov/codecov-action v7.1.1 commit 303a32d7a59b442fa8d48b6a1cc6825c09c847a5",
       ),
     );
   } finally {
