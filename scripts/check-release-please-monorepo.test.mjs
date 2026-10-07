@@ -239,6 +239,48 @@ test("commit scope gate ignores normal merge commit subjects", () => {
   );
 });
 
+test("squash-only PR metadata accepts legacy intermediate commit subjects", () => {
+  assert.deepEqual(
+    validatePrTitle("chore(repo): converge dependency automation with Mergify"),
+    [],
+  );
+  assert.deepEqual(
+    validateCommitScopeCoverage(
+      [
+        {
+          sha: "abcdef1",
+          subject: "chore: converge dependency automation with Mergify",
+          files: ["renovate.json"],
+        },
+      ],
+      { validateSubjects: false },
+    ),
+    [],
+  );
+});
+
+test("default-branch commit subject validation remains strict", () => {
+  assert.deepEqual(
+    validateCommitScopeCoverage([
+      {
+        sha: "abcdef2",
+        subject: "chore: missing durable scope",
+        files: ["renovate.json"],
+      },
+    ]),
+    ["abcdef2 subject must include a scope: kicad-studio, kicad-mcp-pro, repo, deps, docs, superpowers, .gitignore"],
+  );
+});
+
+test("Release Please generated PR title exemption remains unchanged", () => {
+  assert.deepEqual(
+    validatePrTitle("chore(main): release vscode-extension", {
+      headRefName: "release-please--branches--main--components--vscode-extension",
+    }),
+    [],
+  );
+});
+
 test("conventional subject parser supports multiple scopes", () => {
   assert.deepEqual(parseConventionalSubject("feat(kicad-studio): add tree"), {
     type: "feat",

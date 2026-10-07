@@ -197,16 +197,20 @@ export function validateCommitScopeCoverage(commits, options = {}) {
   if (isReleasePlease(options.headRefName)) {
     return [];
   }
+  const validateSubjects = options.validateSubjects !== false;
   const errors = [];
   for (const commit of commits) {
     const parsed = parseConventionalSubject(commit.subject);
     if (!parsed) {
-      if (isMergeCommitSubject(commit.subject)) {
+      if (isMergeCommitSubject(commit.subject) || !validateSubjects) {
         continue;
       }
       errors.push(
         `${shortSha(commit.sha)} subject must use Conventional Commits format`,
       );
+      continue;
+    }
+    if (!validateSubjects) {
       continue;
     }
     errors.push(
@@ -405,7 +409,12 @@ function main() {
       pullRequest.head?.ref ?? process.env.GITHUB_HEAD_REF ?? "";
     errors.push(...validatePrTitle(pullRequest.title ?? "", { headRefName }));
     const commits = listCommitsForPullRequest(REPO_ROOT, pullRequest);
-    errors.push(...validateCommitScopeCoverage(commits, { headRefName }));
+    errors.push(
+      ...validateCommitScopeCoverage(commits, {
+        headRefName,
+        validateSubjects: false,
+      }),
+    );
   } else {
     const commits = listLocalBranchCommits(REPO_ROOT);
     errors.push(...validateCommitScopeCoverage(commits));

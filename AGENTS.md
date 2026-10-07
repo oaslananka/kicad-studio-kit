@@ -96,6 +96,7 @@ corepack pnpm run docs:links
   in `docs/architecture/protocol-change-checklist.md`.
 - Do not tag, publish, or run release workflows unless the task is explicitly a release.
 - After pushing a PR branch, watch required checks to a terminal state and fix failures.
+- When repairing an existing PR, do not amend, rebase, or force-push published history solely to satisfy metadata checks; prefer a valid PR title and normal non-destructive branch updates.
 
 ## Documentation Rules
 

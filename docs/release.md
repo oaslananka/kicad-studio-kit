@@ -102,7 +102,7 @@ Update [docs/support-matrix.md](support-matrix.md) and release notes whenever Ki
 
 ## Conventional Commit Scopes
 
-Release Please derives product changelogs from Conventional Commits, so pull request titles and product-changing commits must use one of these scopes:
+Release Please derives product changelogs from Conventional Commits. Because the protected default branch is squash-only, ordinary pull requests use the validated PR title as the authoritative Conventional Commit subject for the durable squash commit on `main`. The PR title must use one of these scopes:
 
 - `kicad-studio` for `apps/vscode-extension`.
 - `kicad-mcp-pro` for KiCad MCP Pro (source in separate repository).
@@ -111,7 +111,8 @@ Release Please derives product changelogs from Conventional Commits, so pull req
 - `superpowers` for cross-cutting capability or spec-design documentation.
 - `.gitignore` for `.gitignore` file changes (single-file repo governance).
 - `deps` for dependency and tooling updates.
-- `deps` for dependency-only updates.
+
+Intermediate PR commits should remain readable and well formed, but CI does not require their published subjects to be rewritten solely to satisfy release metadata policy. Existing PRs with legacy subjects should repair the PR title instead of amend/rebase/force-push history. Durable/default-branch commit validation remains strict.
 
 Release Please generated PRs retain their upstream `chore(main): release ...` title format and are exempt from the human PR title scope gate.
 
