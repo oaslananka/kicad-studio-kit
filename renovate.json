@@ -303,7 +303,7 @@
     "dependencyDashboardApproval": false,
     "vulnerabilityFixStrategy": "lowest"
   },
-  "osvVulnerabilityAlerts": false,
+  "osvVulnerabilityAlerts": true,
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": [
