@@ -218,6 +218,9 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
           "--include='apps/vscode-extension/scripts/check-marketplace-assets.js'",
         ) &&
         command.includes("scripts/check-compatibility-contract.test.mjs") &&
+        command.includes("scripts/check-branch-protection-gates.test.mjs") &&
+        command.includes("scripts/check-codecov-policy.test.mjs") &&
+        command.includes("scripts/check-pnpm-supply-chain.test.mjs") &&
         command.includes("scripts/create-github-signed-commit.test.mjs") &&
         command.includes("scripts/check-release-surface.test.mjs") &&
         command.includes("scripts/prepare-sonar-lcov.test.mjs") &&
@@ -234,13 +237,18 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
   }
   const lcovEvidence = steps.some((step) => {
     const command = String(step.run ?? "");
-    return command.includes(
-      "SF:apps/vscode-extension/scripts/check-marketplace-assets.js",
+    return (
+      command.includes(
+        "SF:apps/vscode-extension/scripts/check-marketplace-assets.js",
+      ) &&
+      command.includes("SF:scripts/check-branch-protection-gates.mjs") &&
+      command.includes("SF:scripts/check-codecov-policy.mjs") &&
+      command.includes("SF:scripts/check-pnpm-supply-chain.mjs")
     );
   });
   if (!lcovEvidence) {
     errors.push(
-      "SonarCloud must verify marketplace checker LCOV before upload",
+      "SonarCloud must verify marketplace and changed repository-policy LCOV before upload",
     );
   }
 

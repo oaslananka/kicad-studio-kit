@@ -19,7 +19,7 @@ const CANONICAL_WORKSPACE = parseYaml(
   readFileSync(new URL("../pnpm-workspace.yaml", import.meta.url), "utf8"),
 );
 const MINIMUM_RELEASE_AGE_EXCLUDE_ERROR =
-  "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, nanoid@3.3.18";
+  "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, nanoid@3.3.18, pnpm@11.11.0, source-map-js@1.2.2";
 
 function workspaceFixture(mutate = () => {}) {
   const workspace = structuredClone(CANONICAL_WORKSPACE);
@@ -39,8 +39,8 @@ function createFixture(overrides = {}) {
     path.join(repoRoot, "package.json"),
     JSON.stringify(
       overrides.rootPackage ?? {
-        packageManager: "pnpm@11.3.0",
-        engines: { pnpm: ">=11.0.0 <12" },
+        packageManager: "pnpm@11.11.0",
+        engines: { pnpm: ">=11.11.0 <12" },
       },
     ),
   );
@@ -167,8 +167,8 @@ test(".npmrc and package.json cannot carry ignored pnpm supply-chain settings", 
     npmrc:
       "minimumReleaseAge=0\ntrustPolicy=off\ntrustPolicyExclude=chokidar\n",
     rootPackage: {
-      packageManager: "pnpm@11.3.0",
-      engines: { pnpm: ">=11.0.0 <12" },
+      packageManager: "pnpm@11.11.0",
+      engines: { pnpm: ">=11.11.0 <12" },
       pnpm: {
         blockExoticSubdeps: false,
         trustPolicy: "off",

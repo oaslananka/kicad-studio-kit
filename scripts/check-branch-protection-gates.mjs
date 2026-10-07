@@ -1,27 +1,24 @@
 #!/usr/bin/env node
 
-// Keeps the documented branch-protection policy and the enforced ruleset in
-// sync (#414). The required status checks listed in
-// docs/architecture/branch-protection.md must exactly match the contexts in
-// .github/rulesets/main.json, so the policy doc can never silently drift from
-// what is actually enforced on `main`.
+// Keeps the documented branch-protection policy and checked-in ruleset in
+// sync with the repository-owned default-branch governance contract. In
+// addition to exact required-check contexts, the static policy stays fail-closed
+// on squash-only merges, strict checks, conversation resolution, linear history,
+// and deletion/non-fast-forward protection.
 
 import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
-export const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "..",
-);
+import { normalizeRuleset } from "./lib/github-governance-evidence.mjs";
 
 const RULESET_PATH = ".github/rulesets/main.json";
 const DOC_PATH = "docs/architecture/branch-protection.md";
 
-export function rulesetRequiredChecks(root = repoRoot) {
-  const ruleset = JSON.parse(
-    fs.readFileSync(path.join(root, RULESET_PATH), "utf8"),
-  );
+function readRuleset() {
+  return JSON.parse(fs.readFileSync(".github/rulesets/main.json", "utf8"));
+}
+
+export function rulesetRequiredChecks(ruleset = readRuleset()) {
   const rule = (ruleset.rules ?? []).find(
     (entry) => entry.type === "required_status_checks",
   );
@@ -31,8 +28,8 @@ export function rulesetRequiredChecks(root = repoRoot) {
     .filter((context) => typeof context === "string");
 }
 
-export function documentedRequiredChecks(root = repoRoot) {
-  const doc = fs.readFileSync(path.join(root, DOC_PATH), "utf8");
+export function documentedRequiredChecks() {
+  const doc = fs.readFileSync("docs/architecture/branch-protection.md", "utf8");
   const lines = doc.split(/\r?\n/u);
   const start = lines.findIndex((line) =>
     /^##\s+Required status checks/u.test(line),
@@ -56,12 +53,55 @@ export function documentedRequiredChecks(root = repoRoot) {
   return checks;
 }
 
-export function diffChecks(root = repoRoot) {
-  const ruleset = new Set(rulesetRequiredChecks(root));
-  const documented = new Set(documentedRequiredChecks(root));
-  const missingFromDoc = [...ruleset].filter((c) => !documented.has(c));
-  const missingFromRuleset = [...documented].filter((c) => !ruleset.has(c));
-  return { missingFromDoc, missingFromRuleset };
+function governanceContractDifferences(ruleset = readRuleset()) {
+  const normalized = normalizeRuleset(ruleset);
+  const differences = [];
+  const exact = (condition, message) => {
+    if (!condition) differences.push(message);
+  };
+
+  exact(
+    normalized.pullRequest.allowedMergeMethods.length === 1 &&
+      normalized.pullRequest.allowedMergeMethods[0] === "squash",
+    "default-branch allowed merge methods must remain squash-only",
+  );
+  exact(
+    normalized.requiredStatusChecks.strict === true,
+    "required status checks must remain strict",
+  );
+  exact(
+    normalized.pullRequest.requiredReviewThreadResolution === true,
+    "pull requests must require conversation resolution",
+  );
+  exact(
+    normalized.protections.requiredLinearHistory === true,
+    "default branch must require linear history",
+  );
+  exact(
+    normalized.protections.deletion === true,
+    "default branch deletion protection must remain enabled",
+  );
+  exact(
+    normalized.protections.nonFastForward === true,
+    "default branch non-fast-forward protection must remain enabled",
+  );
+  exact(
+    normalized.pullRequest.requireExtraApprovalForUnattributedChanges === true,
+    "pull requests must require extra approval for unattributed changes",
+  );
+  return differences;
+}
+
+export function diffChecks({
+  ruleset = readRuleset(),
+  documentedChecks = documentedRequiredChecks(),
+} = {}) {
+  const required = new Set(rulesetRequiredChecks(ruleset));
+  const documented = new Set(documentedChecks);
+  const missingFromDoc = [...required].filter((c) => !documented.has(c));
+  const missingFromRuleset = [...documented].filter((c) => !required.has(c));
+  const governanceDifferences = governanceContractDifferences(ruleset);
+  return { missingFromDoc, missingFromRuleset, governanceDifferences };
 }
 
 function main() {
@@ -72,8 +112,13 @@ function main() {
     );
     process.exit(1);
   }
-  const { missingFromDoc, missingFromRuleset } = diffChecks();
-  if (missingFromDoc.length > 0 || missingFromRuleset.length > 0) {
+  const { missingFromDoc, missingFromRuleset, governanceDifferences } =
+    diffChecks();
+  if (
+    missingFromDoc.length > 0 ||
+    missingFromRuleset.length > 0 ||
+    governanceDifferences.length > 0
+  ) {
     console.error(
       "Branch-protection policy is out of sync with the enforced ruleset:",
     );
@@ -86,6 +131,9 @@ function main() {
       console.error(
         `- ${context}: documented in ${DOC_PATH} but not required by ${RULESET_PATH}`,
       );
+    }
+    for (const difference of governanceDifferences) {
+      console.error(`- ${difference}`);
     }
     process.exit(1);
   }

@@ -50,6 +50,9 @@ jobs:
             node --test \
               --test-concurrency=1 \
               scripts/check-quality-gate-policy.test.mjs \
+              scripts/check-branch-protection-gates.test.mjs \
+              scripts/check-codecov-policy.test.mjs \
+              scripts/check-pnpm-supply-chain.test.mjs \
               scripts/prepare-sonar-lcov.test.mjs \
               scripts/check-compatibility-contract.test.mjs \
               scripts/check-published-mcp-profiles.test.mjs \
@@ -71,6 +74,9 @@ jobs:
           script_lcov=apps/vscode-extension/coverage/sonar-scripts/lcov.info
           test -s "$script_lcov"
           grep -q '^SF:scripts/check-quality-gate-policy.mjs' "$script_lcov"
+          grep -q '^SF:scripts/check-branch-protection-gates.mjs' "$script_lcov"
+          grep -q '^SF:scripts/check-codecov-policy.mjs' "$script_lcov"
+          grep -q '^SF:scripts/check-pnpm-supply-chain.mjs' "$script_lcov"
           grep -q '^SF:scripts/prepare-sonar-lcov.mjs' "$script_lcov"
           grep -q '^SF:scripts/check-compatibility-contract.mjs' "$script_lcov"
           grep -q '^SF:scripts/lib/github-signed-commit.mjs' "$script_lcov"

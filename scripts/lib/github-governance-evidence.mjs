@@ -52,6 +52,9 @@ export function normalizeRuleset(ruleset) {
       deletion: Boolean(ruleByType(ruleset, "deletion")),
       nonFastForward: Boolean(ruleByType(ruleset, "non_fast_forward")),
       requiredSignatures: Boolean(ruleByType(ruleset, "required_signatures")),
+      requiredLinearHistory: Boolean(
+        ruleByType(ruleset, "required_linear_history"),
+      ),
     },
     pullRequest: {
       allowedMergeMethods: sortedStrings(pullRequest.allowed_merge_methods),
@@ -67,6 +70,9 @@ export function normalizeRuleset(ruleset) {
           : null,
       requiredReviewThreadResolution: Boolean(
         pullRequest.required_review_thread_resolution,
+      ),
+      requireExtraApprovalForUnattributedChanges: Boolean(
+        pullRequest.require_extra_approval_for_unattributed_changes,
       ),
     },
     requiredStatusChecks: {
@@ -124,7 +130,12 @@ export function compareRulesets(expected, live) {
     live.bypassActors,
   );
 
-  for (const key of ["deletion", "nonFastForward", "requiredSignatures"]) {
+  for (const key of [
+    "deletion",
+    "nonFastForward",
+    "requiredSignatures",
+    "requiredLinearHistory",
+  ]) {
     compareScalar(
       differences,
       `protections.${key}`,
@@ -145,6 +156,7 @@ export function compareRulesets(expected, live) {
     "requireLastPushApproval",
     "requiredApprovingReviewCount",
     "requiredReviewThreadResolution",
+    "requireExtraApprovalForUnattributedChanges",
   ]) {
     compareScalar(
       differences,
