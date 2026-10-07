@@ -1,9 +1,9 @@
 # Branch Protection Policy
 
-This policy is active on `main`. The importable source of truth lives in
-`.github/rulesets/main.json`; the live GitHub ruleset is named `main-protection`.
-The 2026-07-20 audit confirmed that the active ruleset matches the checked-in
-policy.
+This policy is active on `main`. The importable repository policy lives in
+`.github/rulesets/main.json`; the live GitHub ruleset is named `main-standard`.
+The 2026-10-07 reconciliation aligned the checked-in policy to the verified live
+default-branch ruleset without weakening live protection.
 
 ## Required status checks
 
@@ -30,7 +30,10 @@ once the repository has stable branch protection, token permissions, and no
 new-repository grace-period alerts.
 
 The documented list above and `.github/rulesets/main.json` are kept in sync by
-`corepack pnpm run check:branch-protection`, which fails if they diverge.
+`corepack pnpm run check:branch-protection`. The same check also fails if the
+checked-in policy broadens `main` beyond squash-only merges, disables strict
+required checks or conversation resolution, drops linear history, or removes
+deletion/non-fast-forward protection.
 
 ## Quality gate coverage
 
@@ -118,13 +121,13 @@ Path ownership is declared in `.github/CODEOWNERS`:
 ## Protection settings
 
 - Require a pull request before merging.
+- Allow only squash merges on `main`; require linear history.
 - Require zero approving reviews; do not require CODEOWNERS or last-push approval.
-- Require conversation resolution.
+- Require conversation resolution and GitHub's extra approval for unattributed changes.
 - Require branches to be up to date before merge when required checks are enabled.
-- Require signed commits if the account policy supports it.
 - Disallow force pushes and branch deletion for `main`.
-- Restrict bypass to repository administrators and only for pull request merges.
-  Direct pushes to `main` remain blocked.
+- Restrict the configured owner bypass to pull request merges only. Direct pushes
+  to `main` remain blocked.
 
 The strict up-to-date rule currently favors a current green `main` integration
 point over merge throughput. Re-evaluate it with the required-check set if the
@@ -140,9 +143,9 @@ an accepted risk owned by `oaslananka` and reviewed quarterly. No finding is
 dismissed solely to improve a score.
 
 The accepted risk remains valid only while the checked-in and live rulesets match,
-pull requests stay mandatory, six strict checks remain required, signed commits
-and conversation resolution remain enforced, and force pushes/deletion remain
-blocked. `scripts/check-scorecard-evidence.mjs` fails closed for any additional
+pull requests stay mandatory, squash-only linear history and six strict checks
+remain required, conversation resolution remains enforced, and force
+pushes/deletion remain blocked. `scripts/check-scorecard-evidence.mjs` fails closed for any additional
 Scorecard warning or governance drift. Stronger approval rules become mandatory
 when another qualified maintainer is reliably available, multiple active human
 contributors emerge, bypass scope expands, required enforcement weakens, or a
