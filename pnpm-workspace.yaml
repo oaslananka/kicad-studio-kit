@@ -8,6 +8,10 @@ trustPolicy: no-downgrade
 minimumReleaseAgeExclude:
   - tmp@0.2.7
   - nanoid@3.3.18
+  # Renovate security update: pnpm@11.11.0
+  - pnpm@11.11.0
+  # Security fix: source-map-js@1.2.2 (CVE-2026-xxxx)
+  - source-map-js@1.2.2
 trustPolicyExclude:
   - "@octokit/endpoint@9.0.6"
   - chokidar@4.0.3
@@ -53,3 +57,7 @@ overrides:
   uuid: 14.0.1
   vite: 6.4.3
   undici: 7.29.1
+  basic-ftp: ">=6.2.1"
+  source-map-js: ">=1.2.2"
+  "@vue/server-renderer": ">=3.5.42"
+  "@vscode/vsce": "4.0.0"

@@ -15,9 +15,9 @@ export const COMPATIBILITY_MATRIX = {
       }
     },
     mcpServer: {
-      required: '>=3.5.2 <4.0.0',
-      recommended: '>=3.5.2 <4.0.0',
-      testedAgainst: '3.35.2'
+      required: '>=3.5.2 <5.0.0',
+      recommended: '>=3.5.2 <5.0.0',
+      testedAgainst: '4.0.1'
     },
     mcpProtocol: {
       active: '2025-11-25',
@@ -26,7 +26,7 @@ export const COMPATIBILITY_MATRIX = {
     },
     boardReadyOps: {
       required: '>=1.2.0 <2.0.0',
-      testedAgainst: '1.68.2',
+      testedAgainst: '1.68.3',
       doctorSchema: 1,
       findingsSchema: 1,
       evidenceBundleSchema: 2
@@ -40,13 +40,13 @@ export const COMPATIBILITY_MATRIX = {
     kicadStudio: {
       version: '1.15.1',
       compatibleMcpPro: {
-        required: '>=3.5.2 <4.0.0',
-        recommended: '>=3.5.2 <4.0.0',
-        testedAgainst: '3.35.2'
+        required: '>=3.5.2 <5.0.0',
+        recommended: '>=3.5.2 <5.0.0',
+        testedAgainst: '4.0.1'
       }
     },
     kicadMcpPro: {
-      version: '3.35.2',
+      version: '4.0.1',
       compatibleExtension: {
         required: '>=1.0.0 <2.0.0',
         testedAgainst: '1.15.1'

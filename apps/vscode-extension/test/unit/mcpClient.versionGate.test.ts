@@ -273,7 +273,7 @@ describe('McpClient version gate', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it.each(['3.5.1', '4.0.0', undefined])(
+  it.each(['3.5.1', '5.0.0', undefined])(
     'marks unsupported or missing version %s as incompatible',
     async (version) => {
       const fetchMock = jest
@@ -391,7 +391,7 @@ describe('McpClient version gate', () => {
     global.fetch = jest
       .fn()
       .mockResolvedValueOnce(
-        createJsonResponse(initializeResult('4.0.0'))
+        createJsonResponse(initializeResult('5.0.0'))
       ) as typeof fetch;
 
     await expect(createClient().callTool('project_ping', {})).rejects.toThrow(
