@@ -256,6 +256,8 @@ The design review exposed an independent current-main inconsistency that must no
 
 This is not evidence against the history-safe metadata design. It is a separate baseline policy drift and should be repaired as a narrow prerequisite change, with the policy/test expectation updated to the already-reviewed workflow pin and verified by `check:codecov`. The local pre-push hook must not be bypassed.
 
+A second current-main baseline drift was exposed by the same full pre-push run: security PR #719 raised the supported pnpm floor to `>=11.11.0 <12` and added the reviewed `pnpm@11.11.0` / `source-map-js@1.2.2` minimum-release-age exceptions, while `check-pnpm-supply-chain.mjs` still expected the older pnpm floor and exception list. That checker/test contract is likewise a narrow prerequisite repair; it does not alter the history-safe metadata design.
+
 ## Rollout sequence
 
 1. Implement tests that express the squash-title contract and ruleset parity.
