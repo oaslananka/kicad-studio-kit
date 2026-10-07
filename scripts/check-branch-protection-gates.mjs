@@ -15,12 +15,7 @@ const RULESET_PATH = ".github/rulesets/main.json";
 const DOC_PATH = "docs/architecture/branch-protection.md";
 
 function readRuleset() {
-  return JSON.parse(
-    fs.readFileSync(
-      new URL("../.github/rulesets/main.json", import.meta.url),
-      "utf8",
-    ),
-  );
+  return JSON.parse(fs.readFileSync(".github/rulesets/main.json", "utf8"));
 }
 
 export function rulesetRequiredChecks(ruleset = readRuleset()) {
@@ -34,10 +29,7 @@ export function rulesetRequiredChecks(ruleset = readRuleset()) {
 }
 
 export function documentedRequiredChecks() {
-  const doc = fs.readFileSync(
-    new URL("../docs/architecture/branch-protection.md", import.meta.url),
-    "utf8",
-  );
+  const doc = fs.readFileSync("docs/architecture/branch-protection.md", "utf8");
   const lines = doc.split(/\r?\n/u);
   const start = lines.findIndex((line) =>
     /^##\s+Required status checks/u.test(line),

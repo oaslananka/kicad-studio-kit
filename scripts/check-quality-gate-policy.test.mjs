@@ -289,13 +289,9 @@ test("#706 Sonar must classify extension script test files, not production code"
 
 test("#721 Sonar must execute governance and baseline-policy tests for changed repository scripts", () => {
   const workflow = readFileSync(".github/workflows/sonarcloud.yml", "utf8");
-  for (const testPath of [
-    "scripts/check-branch-protection-gates.test.mjs",
-    "scripts/check-codecov-policy.test.mjs",
-    "scripts/check-pnpm-supply-chain.test.mjs",
-  ]) {
-    assert.match(workflow, new RegExp(testPath.replaceAll(".", "\\."), "u"));
-  }
+  assert.match(workflow, /scripts\/check-branch-protection-gates\.test\.mjs/u);
+  assert.match(workflow, /scripts\/check-codecov-policy\.test\.mjs/u);
+  assert.match(workflow, /scripts\/check-pnpm-supply-chain\.test\.mjs/u);
 });
 
 test("#706 Sonar must execute existing compatibility and release tests for real script coverage", () => {
