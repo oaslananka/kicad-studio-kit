@@ -39,13 +39,15 @@
   "prCreation": "not-pending",
   "packageRules": [
     {
-      "description": "Delegate low-risk dependency merging to Mergify.",
+      "description": "Enable Renovate native automerge for low-risk patch, digest, and pin updates.",
       "matchUpdateTypes": [
         "patch",
         "digest",
         "pin"
       ],
-      "automerge": false,
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
       "addLabels": [
         "automerge:enabled",
         "risk:low"
@@ -164,8 +166,9 @@
       "matchUpdateTypes": [
         "patch"
       ],
-      "automerge": false,
+      "automerge": true,
       "automergeType": "pr",
+      "platformAutomerge": true,
       "addLabels": [
         "risk:low",
         "ci",
