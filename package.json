@@ -4,7 +4,7 @@
   "private": true,
   "description": "VS Code extension repository for KiCad Studio. The KiCad MCP Pro server is developed and released separately at KiCad MCP Pro.",
   "license": "PolyForm-Noncommercial-1.0.0",
-  "packageManager": "pnpm@11.11.0",
+  "packageManager": "pnpm@11.28.3",
   "engines": {
     "node": ">=24.11.0 <25",
     "pnpm": ">=11.11.0 <12"
