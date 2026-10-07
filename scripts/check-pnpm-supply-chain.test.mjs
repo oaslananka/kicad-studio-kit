@@ -375,6 +375,54 @@ test("#554 active advisory suppressions fail validation", () => {
   }
 });
 
+test("root package.json missing packageManager fails validation", () => {
+  const repoRoot = createFixture({
+    rootPackage: {
+      engines: { pnpm: ">=11.11.0 <12" },
+    },
+  });
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      "package.json packageManager must pin pnpm 11.x",
+      "Root package.json missing packageManager",
+    ]);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("workspace package missing package.json fails validation", () => {
+  const repoRoot = createFixture({
+    workspacePackages: ["packages/missing-package"],
+    workspace: workspaceFixture((ws) => {
+      ws.packages = ["packages/missing-package"];
+    }),
+  });
+  rmSync(path.join(repoRoot, "packages/missing-package/package.json"));
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      "Workspace package missing package.json: packages/missing-package",
+    ]);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("workspace package with malformed package.json fails validation", () => {
+  const repoRoot = createFixture();
+  writeFileSync(
+    path.join(repoRoot, "packages/kicad-fixtures", "package.json"),
+    "{ invalid json",
+  );
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      "packages/kicad-fixtures/package.json must be strict JSON: Expected property name or '}' in JSON at position 2 (line 1 column 3)",
+    ]);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
 test("#554 official brace-expansion release preserves minimatch API and bounds output", () => {
   const pnpmRoot = path.resolve("node_modules/.pnpm");
   const officialDirectory = readdirSync(pnpmRoot).find((entry) =>
