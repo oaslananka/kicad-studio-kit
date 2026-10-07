@@ -7,25 +7,23 @@
 // and deletion/non-fast-forward protection.
 
 import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
 import { normalizeRuleset } from "./lib/github-governance-evidence.mjs";
-
-export const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "..",
-);
 
 const RULESET_PATH = ".github/rulesets/main.json";
 const DOC_PATH = "docs/architecture/branch-protection.md";
 
-function readRuleset(root = repoRoot) {
-  return JSON.parse(fs.readFileSync(path.join(root, RULESET_PATH), "utf8"));
+function readRuleset() {
+  return JSON.parse(
+    fs.readFileSync(
+      new URL("../.github/rulesets/main.json", import.meta.url),
+      "utf8",
+    ),
+  );
 }
 
-export function rulesetRequiredChecks(root = repoRoot) {
-  const ruleset = readRuleset(root);
+export function rulesetRequiredChecks(ruleset = readRuleset()) {
   const rule = (ruleset.rules ?? []).find(
     (entry) => entry.type === "required_status_checks",
   );
@@ -35,8 +33,11 @@ export function rulesetRequiredChecks(root = repoRoot) {
     .filter((context) => typeof context === "string");
 }
 
-export function documentedRequiredChecks(root = repoRoot) {
-  const doc = fs.readFileSync(path.join(root, DOC_PATH), "utf8");
+export function documentedRequiredChecks() {
+  const doc = fs.readFileSync(
+    new URL("../docs/architecture/branch-protection.md", import.meta.url),
+    "utf8",
+  );
   const lines = doc.split(/\r?\n/u);
   const start = lines.findIndex((line) =>
     /^##\s+Required status checks/u.test(line),
@@ -60,8 +61,8 @@ export function documentedRequiredChecks(root = repoRoot) {
   return checks;
 }
 
-function governanceContractDifferences(root = repoRoot) {
-  const normalized = normalizeRuleset(readRuleset(root));
+function governanceContractDifferences(ruleset = readRuleset()) {
+  const normalized = normalizeRuleset(ruleset);
   const differences = [];
   const exact = (condition, message) => {
     if (!condition) differences.push(message);
@@ -99,12 +100,15 @@ function governanceContractDifferences(root = repoRoot) {
   return differences;
 }
 
-export function diffChecks(root = repoRoot) {
-  const ruleset = new Set(rulesetRequiredChecks(root));
-  const documented = new Set(documentedRequiredChecks(root));
-  const missingFromDoc = [...ruleset].filter((c) => !documented.has(c));
-  const missingFromRuleset = [...documented].filter((c) => !ruleset.has(c));
-  const governanceDifferences = governanceContractDifferences(root);
+export function diffChecks({
+  ruleset = readRuleset(),
+  documentedChecks = documentedRequiredChecks(),
+} = {}) {
+  const required = new Set(rulesetRequiredChecks(ruleset));
+  const documented = new Set(documentedChecks);
+  const missingFromDoc = [...required].filter((c) => !documented.has(c));
+  const missingFromRuleset = [...documented].filter((c) => !required.has(c));
+  const governanceDifferences = governanceContractDifferences(ruleset);
   return { missingFromDoc, missingFromRuleset, governanceDifferences };
 }
 

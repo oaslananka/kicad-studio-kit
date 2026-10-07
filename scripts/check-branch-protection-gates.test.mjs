@@ -1,7 +1,5 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
 import test from "node:test";
 
 import {
@@ -41,39 +39,23 @@ test("#414 documented policy matches the enforced ruleset", () => {
 });
 
 test("#720 static branch policy exposes and enforces governance-contract drift", () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "kicad-branch-policy-"));
-  try {
-    fs.mkdirSync(`${root}/.github/rulesets`, { recursive: true });
-    fs.mkdirSync(`${root}/docs/architecture`, { recursive: true });
-    const ruleset = structuredClone(expectedRulesetFixture);
-    ruleset.rules.find((rule) => rule.type === "pull_request").parameters.allowed_merge_methods = [
-      "merge",
-      "squash",
-    ];
-    ruleset.rules = ruleset.rules.filter(
-      (rule) => rule.type !== "required_linear_history",
-    );
-    fs.writeFileSync(
-      `${root}/.github/rulesets/main.json`,
-      `${JSON.stringify(ruleset, null, 2)}\n`,
-    );
-    fs.writeFileSync(
-      `${root}/docs/architecture/branch-protection.md`,
-      `# Branch Protection Policy\n\n## Required status checks\n\n${expectedRulesetFixture.rules
-        .find((rule) => rule.type === "required_status_checks")
-        .parameters.required_status_checks.map((check) => `- \`${check.context}\``)
-        .join("\n")}\n`,
-    );
-    const diff = diffChecks(root);
-    assert.ok(
-      Array.isArray(diff.governanceDifferences),
-      "diffChecks must expose governance-contract differences",
-    );
-    assert.match(diff.governanceDifferences.join("\n"), /squash-only/u);
-    assert.match(diff.governanceDifferences.join("\n"), /linear history/u);
-  } finally {
-    fs.rmSync(root, { recursive: true, force: true });
-  }
+  const ruleset = structuredClone(expectedRulesetFixture);
+  ruleset.rules.find(
+    (rule) => rule.type === "pull_request",
+  ).parameters.allowed_merge_methods = ["merge", "squash"];
+  ruleset.rules = ruleset.rules.filter(
+    (rule) => rule.type !== "required_linear_history",
+  );
+  const documentedChecks = expectedRulesetFixture.rules
+    .find((rule) => rule.type === "required_status_checks")
+    .parameters.required_status_checks.map((check) => check.context);
+  const diff = diffChecks({ ruleset, documentedChecks });
+  assert.ok(
+    Array.isArray(diff.governanceDifferences),
+    "diffChecks must expose governance-contract differences",
+  );
+  assert.match(diff.governanceDifferences.join("\n"), /squash-only/u);
+  assert.match(diff.governanceDifferences.join("\n"), /linear history/u);
 });
 
 import {
