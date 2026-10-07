@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 
 import {
@@ -38,7 +41,7 @@ test("#414 documented policy matches the enforced ruleset", () => {
 });
 
 test("#720 static branch policy exposes and enforces governance-contract drift", () => {
-  const root = fs.mkdtempSync("/tmp/kicad-branch-policy-");
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "kicad-branch-policy-"));
   try {
     fs.mkdirSync(`${root}/.github/rulesets`, { recursive: true });
     fs.mkdirSync(`${root}/docs/architecture`, { recursive: true });
@@ -208,7 +211,6 @@ test("#495 governance evidence fails closed when the live ruleset is unavailable
   assert.match(renderGovernanceEvidenceMarkdown(report), /unavailable/u);
 });
 
-import fs from "node:fs";
 import { parse as parseYaml } from "yaml";
 
 const DEPENDENCY_SECURITY_PROVIDER = ["depend", "abot"].join("");
