@@ -31,6 +31,23 @@ function createFixture(overrides = {}) {
   const repoRoot = mkdtempSync(path.join(os.tmpdir(), "pnpm-supply-chain-"));
   mkdirSync(path.join(repoRoot, ".github/workflows"), { recursive: true });
 
+  const workspacePackages = Array.isArray(overrides.workspacePackages)
+    ? overrides.workspacePackages
+    : ["apps/vscode-extension", "packages/kicad-fixtures", "packages/test-harness"];
+
+  for (const pkgPath of workspacePackages) {
+    mkdirSync(path.join(repoRoot, pkgPath), { recursive: true });
+    writeFileSync(
+      path.join(repoRoot, pkgPath, "package.json"),
+      JSON.stringify(
+        overrides.workspacePackageJson ?? {
+          packageManager: "pnpm@11.11.0",
+          engines: { pnpm: ">=11.11.0 <12" },
+        },
+      ),
+    );
+  }
+
   writeFileSync(
     path.join(repoRoot, "pnpm-workspace.yaml"),
     overrides.workspace ?? workspaceFixture(),
@@ -89,6 +106,46 @@ test("current repository keeps pnpm 11 supply-chain controls explicit", () => {
 
 test("fixture with expected supply-chain settings passes", () => {
   const repoRoot = createFixture();
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), []);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("workspace packageManager must match root packageManager", () => {
+  const repoRoot = createFixture({
+    rootPackage: {
+      packageManager: "pnpm@11.28.3",
+      engines: { pnpm: ">=11.11.0 <12" },
+    },
+    workspacePackageJson: {
+      packageManager: "pnpm@11.11.0",
+      engines: { pnpm: ">=11.11.0 <12" },
+    },
+  });
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      "Workspace package apps/vscode-extension packageManager (pnpm@11.11.0) must match root packageManager (pnpm@11.28.3)",
+      "Workspace package packages/kicad-fixtures packageManager (pnpm@11.11.0) must match root packageManager (pnpm@11.28.3)",
+      "Workspace package packages/test-harness packageManager (pnpm@11.11.0) must match root packageManager (pnpm@11.28.3)",
+    ]);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("workspace packageManager matches root passes validation", () => {
+  const repoRoot = createFixture({
+    rootPackage: {
+      packageManager: "pnpm@11.28.3",
+      engines: { pnpm: ">=11.11.0 <12" },
+    },
+    workspacePackageJson: {
+      packageManager: "pnpm@11.28.3",
+      engines: { pnpm: ">=11.11.0 <12" },
+    },
+  });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), []);
   } finally {
@@ -204,7 +261,7 @@ test("#506 missing brace-expansion security overrides fail validation", () => {
       "pnpm-workspace.yaml overrides must pin brace-expansion@2.1.1 to 2.1.7",
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.12",
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.12",
-      "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.24",
+      "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.28",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -272,8 +329,8 @@ test("GHSA-2v37-7h3g-55p8 nanoid fix stays pinned", () => {
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
       MINIMUM_RELEASE_AGE_EXCLUDE_ERROR,
-      "pnpm-workspace.yaml overrides must pin nanoid@3.3.16 to 3.3.18",
-      "pnpm-workspace.yaml overrides must pin nanoid@3.3.17 to 3.3.18",
+      "pnpm-workspace.yaml overrides must pin nanoid@3.3.16 to 3.3.19",
+      "pnpm-workspace.yaml overrides must pin nanoid@3.3.17 to 3.3.19",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
@@ -294,7 +351,7 @@ test("#554 newly disclosed PostCSS and brace-expansion fixes stay pinned", () =>
       MINIMUM_RELEASE_AGE_EXCLUDE_ERROR,
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.6 to 5.0.12",
       "pnpm-workspace.yaml overrides must pin brace-expansion@5.0.7 to 5.0.12",
-      "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.24",
+      "pnpm-workspace.yaml overrides must pin postcss@8.5.15 to 8.5.28",
     ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });

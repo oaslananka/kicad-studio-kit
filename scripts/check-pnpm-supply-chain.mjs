@@ -23,15 +23,15 @@ const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   "brace-expansion@2.1.1": "2.1.7",
   "brace-expansion@5.0.6": "5.0.12",
   "brace-expansion@5.0.7": "5.0.12",
-  "postcss@8.5.15": "8.5.24",
-  "nanoid@3.3.16": "3.3.18",
-  "nanoid@3.3.17": "3.3.18",
+  "postcss@8.5.15": "8.5.28",
+  "nanoid@3.3.16": "3.3.19",
+  "nanoid@3.3.17": "3.3.19",
   "js-yaml": "4.3.2",
-  "@xmldom/xmldom": "0.8.15",
+  "@xmldom/xmldom": "0.9.12",
   tar: "7.5.22",
   "fast-uri": "3.1.8",
   "linkify-it": "5.0.2",
-  undici: "7.29.1",
+  undici: "7.30.0",
 });
 const FORBIDDEN_PNPM_SETTINGS = [
   "minimumReleaseAge",
@@ -224,6 +224,29 @@ function sameStringList(actual, expected) {
   return expected.every((value, index) => actual[index] === value);
 }
 
+function validateWorkspacePackageManagers(errors, repoRoot, workspace, rootPackage) {
+  const expectedPackageManager = rootPackage?.packageManager;
+  if (!expectedPackageManager) {
+    errors.push("Root package.json missing packageManager");
+    return;
+  }
+  const workspacePackages = Array.isArray(workspace?.packages) ? workspace.packages : [];
+  for (const pkgPath of workspacePackages) {
+    const fullPath = path.join(repoRoot, pkgPath, "package.json");
+    if (!existsSync(fullPath)) {
+      errors.push(`Workspace package missing package.json: ${pkgPath}`);
+      continue;
+    }
+    const pkgJson = readJson(repoRoot, path.join(pkgPath, "package.json"), errors);
+    if (!pkgJson) continue;
+    if (pkgJson.packageManager !== expectedPackageManager) {
+      errors.push(
+        `Workspace package ${pkgPath} packageManager (${pkgJson.packageManager}) must match root packageManager (${expectedPackageManager})`,
+      );
+    }
+  }
+}
+
 export function validatePnpmSupplyChain(repoRoot = DEFAULT_REPO_ROOT) {
   const errors = [];
   const workspace = readYaml(repoRoot, "pnpm-workspace.yaml", errors);
@@ -237,6 +260,7 @@ export function validatePnpmSupplyChain(repoRoot = DEFAULT_REPO_ROOT) {
   );
   validateWorkspace(errors, workspace);
   validatePackageJson(errors, rootPackage);
+  validateWorkspacePackageManagers(errors, repoRoot, workspace, rootPackage);
   validateRenovate(errors, renovate);
   validateNpmrc(errors, npmrc);
   validateSecurityWorkflow(errors, securityWorkflow);
