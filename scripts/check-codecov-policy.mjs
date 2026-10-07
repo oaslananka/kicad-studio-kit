@@ -8,7 +8,7 @@ import { parse } from "yaml";
 const SCRIPT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_ROOT, "..");
 const CODECOV_ACTION =
-  "codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f";
+  "codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5";
 const CODECOV_CLI_VERSION = "v11.3.1";
 const CODECOV_BUNDLE_NAME = "kicad-studio-vscode-extension";
 const CODECOV_UPLOADED_BUNDLE_NAME = `${CODECOV_BUNDLE_NAME}-cjs`;
@@ -62,7 +62,7 @@ function validateWorkflow(errors, workflow) {
   requireCondition(
     errors,
     workflow.split(CODECOV_ACTION).length - 1 === 2,
-    "ci.yml must pin both coverage and test-result uploads to codecov/codecov-action v7.0.0 commit fb8b3582c8e4def4969c97caa2f19720cb33a72f",
+    "ci.yml must pin both coverage and test-result uploads to codecov/codecov-action v7.1.1 commit 303a32d7a59b442fa8d48b6a1cc6825c09c847a5",
   );
   requireCondition(
     errors,

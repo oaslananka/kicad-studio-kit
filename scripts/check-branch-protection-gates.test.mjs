@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
 
 import {
@@ -37,6 +38,26 @@ test("#414 documented policy matches the enforced ruleset", () => {
   );
 });
 
+test("#720 static branch policy exposes and enforces governance-contract drift", () => {
+  const ruleset = structuredClone(expectedRulesetFixture);
+  ruleset.rules.find(
+    (rule) => rule.type === "pull_request",
+  ).parameters.allowed_merge_methods = ["merge", "squash"];
+  ruleset.rules = ruleset.rules.filter(
+    (rule) => rule.type !== "required_linear_history",
+  );
+  const documentedChecks = expectedRulesetFixture.rules
+    .find((rule) => rule.type === "required_status_checks")
+    .parameters.required_status_checks.map((check) => check.context);
+  const diff = diffChecks({ ruleset, documentedChecks });
+  assert.ok(
+    Array.isArray(diff.governanceDifferences),
+    "diffChecks must expose governance-contract differences",
+  );
+  assert.match(diff.governanceDifferences.join("\n"), /squash-only/u);
+  assert.match(diff.governanceDifferences.join("\n"), /linear history/u);
+});
+
 import {
   buildGovernanceEvidenceReport,
   compareRulesets,
@@ -45,37 +66,44 @@ import {
 } from "./lib/github-governance-evidence.mjs";
 
 const expectedRulesetFixture = {
-  name: "main-protection",
+  name: "main-standard",
   target: "branch",
   enforcement: "active",
   conditions: { ref_name: { include: ["~DEFAULT_BRANCH"], exclude: [] } },
+  bypass_actors: [
+    { actor_id: 285490571, actor_type: "User", bypass_mode: "pull_request" },
+  ],
   rules: [
     { type: "deletion" },
     { type: "non_fast_forward" },
-    { type: "required_signatures" },
     {
       type: "pull_request",
       parameters: {
-        allowed_merge_methods: ["merge", "squash", "rebase"],
+        allowed_merge_methods: ["squash"],
         dismiss_stale_reviews_on_push: false,
         require_code_owner_review: false,
         require_last_push_approval: false,
         required_approving_review_count: 0,
         required_review_thread_resolution: true,
+        require_extra_approval_for_unattributed_changes: true,
       },
     },
     {
       type: "required_status_checks",
       parameters: {
         strict_required_status_checks_policy: true,
+        do_not_enforce_on_create: false,
         required_status_checks: [
           { context: "required" },
+          { context: "analyze (javascript-typescript)" },
+          { context: "analyze (python)" },
           { context: "security" },
           { context: "scan" },
           { context: "dependency-review" },
         ],
       },
     },
+    { type: "required_linear_history" },
   ],
 };
 
@@ -83,11 +111,18 @@ test("#495 live ruleset normalization matches equivalent enforcement", () => {
   const normalized = normalizeRuleset(expectedRulesetFixture);
   assert.deepEqual(compareRulesets(normalized, normalized), []);
   assert.deepEqual(normalized.requiredStatusChecks.contexts, [
+    "analyze (javascript-typescript)",
+    "analyze (python)",
     "dependency-review",
     "required",
     "scan",
     "security",
   ]);
+  assert.equal(normalized.protections.requiredLinearHistory, true);
+  assert.equal(
+    normalized.pullRequest.requireExtraApprovalForUnattributedChanges,
+    true,
+  );
 });
 
 test("#495 live ruleset comparison reports required-check drift", () => {
@@ -158,7 +193,6 @@ test("#495 governance evidence fails closed when the live ruleset is unavailable
   assert.match(renderGovernanceEvidenceMarkdown(report), /unavailable/u);
 });
 
-import fs from "node:fs";
 import { parse as parseYaml } from "yaml";
 
 const DEPENDENCY_SECURITY_PROVIDER = ["depend", "abot"].join("");
@@ -232,15 +266,13 @@ test("#495 governance evidence CLI keeps alert payloads out of reports", () => {
   assert.doesNotMatch(source, /JSON\.stringify\([^)]*alerts/u);
 });
 
-test("#495 checked-in ruleset preserves all live merge methods", () => {
+test("#495 checked-in ruleset preserves the live squash-only merge method", () => {
   const ruleset = JSON.parse(
     fs.readFileSync(".github/rulesets/main.json", "utf8"),
   );
-  assert.deepEqual(normalizeRuleset(ruleset).pullRequest.allowedMergeMethods, [
-    "merge",
-    "rebase",
-    "squash",
-  ]);
+  const normalized = normalizeRuleset(ruleset);
+  assert.deepEqual(normalized.pullRequest.allowedMergeMethods, ["squash"]);
+  assert.equal(normalized.protections.requiredLinearHistory, true);
 });
 
 test("#507 solo-maintainer ruleset avoids review deadlock", () => {
