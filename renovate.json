@@ -39,21 +39,6 @@
   "prCreation": "not-pending",
   "packageRules": [
     {
-      "description": "Enable Renovate native automerge for low-risk patch, digest, and pin updates.",
-      "matchUpdateTypes": [
-        "patch",
-        "digest",
-        "pin"
-      ],
-      "automerge": true,
-      "automergeType": "pr",
-      "platformAutomerge": true,
-      "addLabels": [
-        "automerge:enabled",
-        "risk:low"
-      ]
-    },
-    {
       "description": "Major updates require explicit dashboard approval and migration notes.",
       "matchUpdateTypes": [
         "major"
@@ -171,8 +156,7 @@
       "platformAutomerge": true,
       "addLabels": [
         "risk:low",
-        "ci",
-        "automerge:enabled"
+        "ci"
       ],
       "prPriority": 1
     },
@@ -325,11 +309,11 @@
     "schedule": [
       "before 6am on monday"
     ],
-    "automerge": false,
+    "automerge": true,
     "automergeType": "pr",
+    "platformAutomerge": true,
     "addLabels": [
-      "risk:low",
-      "automerge:enabled"
+      "risk:low"
     ]
   },
   "customManagers": [
