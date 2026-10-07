@@ -11,6 +11,8 @@ const MINIMUM_RELEASE_AGE_MINUTES = 10080;
 const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = [
   "tmp@0.2.7",
   "nanoid@3.3.18",
+  "pnpm@11.11.0",
+  "source-map-js@1.2.2",
 ];
 const ALLOWED_TRUST_POLICY_EXCLUDES = [
   "@octokit/endpoint@9.0.6",
@@ -141,7 +143,7 @@ function validatePackageJson(errors, packageJson) {
   );
   assertCondition(
     errors,
-    packageJson?.engines?.pnpm === ">=11.0.0 <12",
+    packageJson?.engines?.pnpm === ">=11.11.0 <12",
     "package.json engines.pnpm must stay on the supported pnpm 11 range",
   );
   for (const setting of FORBIDDEN_PNPM_SETTINGS) {
