@@ -545,14 +545,57 @@ describe('BoardReadyOps commands', () => {
     );
   });
 
-  it.each(['../private/secret.kicad_pcb', '/private/secret.kicad_pcb'])(
-    'rejects out-of-project BoardReadyOps plan action path %s without disclosing it',
-    async (untrustedPath) => {
+  it.each([
+    {
+      name: 'relative parent traversal',
+      secret: '../private/secret.kicad_pcb',
+      mutate: (plan: Record<string, unknown>) => {
+        const action = (
+          plan['nextActions'] as Array<Record<string, unknown>>
+        )[0]!;
+        (action['resource'] as Record<string, unknown>)['path'] =
+          '../private/secret.kicad_pcb';
+      }
+    },
+    {
+      name: 'absolute external path',
+      secret: '/private/secret.kicad_pcb',
+      mutate: (plan: Record<string, unknown>) => {
+        const action = (
+          plan['nextActions'] as Array<Record<string, unknown>>
+        )[0]!;
+        (action['resource'] as Record<string, unknown>)['path'] =
+          '/private/secret.kicad_pcb';
+      }
+    },
+    {
+      name: 'hidden release action',
+      secret: '../private/release.json',
+      mutate: (plan: Record<string, unknown>) => {
+        const action = (
+          plan['nextActions'] as Array<Record<string, unknown>>
+        )[0]!;
+        plan['releaseActions'] = [
+          {
+            ...action,
+            resource: { path: '../private/release.json', kind: 'manifest' }
+          }
+        ];
+      }
+    },
+    {
+      name: 'different claimed project root',
+      secret: '/private/another-project',
+      mutate: (plan: Record<string, unknown>) => {
+        plan['projectRoot'] = '/private/another-project';
+      }
+    }
+  ])(
+    'rejects BoardReadyOps plan $name without leaking paths',
+    async ({ secret, mutate }) => {
       enableBoardReadyOpsProject();
       const plan = boardReadyOpsAgentPlan();
-      const actions = plan['nextActions'] as Array<Record<string, unknown>>;
-      (actions[0]!['resource'] as Record<string, unknown>)['path'] =
-        untrustedPath;
+      mutate(plan);
       mockCompatibleBoardReadyOpsResponse(plan, 1);
 
       await runCommand(COMMANDS.boardReadyOpsPlan);
@@ -563,50 +606,10 @@ describe('BoardReadyOps commands', () => {
       );
       expect(
         JSON.stringify((window.showErrorMessage as jest.Mock).mock.calls)
-      ).not.toContain(untrustedPath);
-      expect(JSON.stringify(mockLogger.error.mock.calls)).not.toContain(
-        untrustedPath
-      );
+      ).not.toContain(secret);
+      expect(JSON.stringify(mockLogger.error.mock.calls)).not.toContain(secret);
     }
   );
-
-  it('rejects a hidden release action outside the active project before showing valid next actions', async () => {
-    enableBoardReadyOpsProject();
-    const plan = boardReadyOpsAgentPlan();
-    const actions = plan['nextActions'] as Array<Record<string, unknown>>;
-    const action = actions[0]!;
-    plan['releaseActions'] = [
-      {
-        ...action,
-        resource: { path: '../private/release.json', kind: 'manifest' }
-      }
-    ];
-    mockCompatibleBoardReadyOpsResponse(plan, 1);
-
-    await runCommand(COMMANDS.boardReadyOpsPlan);
-
-    expect(window.showQuickPick).not.toHaveBeenCalled();
-    expect(window.showErrorMessage).toHaveBeenCalledWith(
-      'BoardReadyOps plan failed: BoardReadyOps returned a path outside the active project.'
-    );
-  });
-
-  it('rejects BoardReadyOps plans claiming a project root outside the active project', async () => {
-    enableBoardReadyOpsProject();
-    const plan = boardReadyOpsAgentPlan();
-    plan['projectRoot'] = '/private/another-project';
-    mockCompatibleBoardReadyOpsResponse(plan, 1);
-
-    await runCommand(COMMANDS.boardReadyOpsPlan);
-
-    expect(window.showQuickPick).not.toHaveBeenCalled();
-    expect(window.showErrorMessage).toHaveBeenCalledWith(
-      'BoardReadyOps plan failed: BoardReadyOps returned a path outside the active project.'
-    );
-    expect(JSON.stringify(mockLogger.error.mock.calls)).not.toContain(
-      '/private/another-project'
-    );
-  });
 
   it('rejects BoardReadyOps plan resource paths that escape through a project symlink', async () => {
     const fixture = fs.mkdtempSync(
