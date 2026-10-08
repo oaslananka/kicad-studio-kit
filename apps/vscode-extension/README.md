@@ -23,7 +23,7 @@ KiCad Studio turns VS Code into a KiCad-aware engineering cockpit: project navig
 - Extension ID: `oaslananka.kicadstudiokit`
 - Version: `1.15.2`
 - Supported KiCad projects: KiCad 8.x, 9.x, and 10.x project, schematic, PCB, DRC, and jobset files
-- Supported MCP server: `kicad-mcp-pro >=3.5.2 <4.0.0`
+- Supported MCP server: `kicad-mcp-pro >=3.5.2 <5.0.0`
 - Canonical repository: https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension
 
 ## Quick Start
