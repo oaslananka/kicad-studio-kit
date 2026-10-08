@@ -18,6 +18,8 @@ published.
 ### Bug Fixes
 
 * **repo:** align published MCP 4.0.2 compatibility evidence ([#722](https://github.com/oaslananka/kicad-studio-kit/issues/722)) ([#723](https://github.com/oaslananka/kicad-studio-kit/issues/723)) ([55110fb](https://github.com/oaslananka/kicad-studio-kit/commit/55110fb71ee0b4b8679eca0b7699350736e3af9d))
+* **repo:** exclude release version from marketplace capture provenance ([dcd8a04](https://github.com/oaslananka/kicad-studio-kit/commit/dcd8a04013e2c479dc50180c233bc956678719de)), closes [#726](https://github.com/oaslananka/kicad-studio-kit/issues/726)
+* **repo:** keep marketplace provenance stable on release version bumps ([#726](https://github.com/oaslananka/kicad-studio-kit/issues/726)) ([#727](https://github.com/oaslananka/kicad-studio-kit/issues/727)) ([dcd8a04](https://github.com/oaslananka/kicad-studio-kit/commit/dcd8a04013e2c479dc50180c233bc956678719de))
 
 ## [1.15.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.0...vscode-extension-v1.15.1) (2026-09-30)
 
