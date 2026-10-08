@@ -366,7 +366,17 @@ function hashFiles(root: string, relativePaths: string[]): string {
   )) {
     hash.update(relativePath);
     hash.update('\0');
-    hash.update(fs.readFileSync(path.join(root, relativePath)));
+    const content = fs.readFileSync(path.join(root, relativePath));
+    if (relativePath === 'package.json') {
+      const packageMetadata = JSON.parse(content.toString('utf8')) as Record<
+        string,
+        unknown
+      >;
+      delete packageMetadata['version'];
+      hash.update(JSON.stringify(packageMetadata));
+    } else {
+      hash.update(content);
+    }
     hash.update('\0');
   }
   return hash.digest('hex');
