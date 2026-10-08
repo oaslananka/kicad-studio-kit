@@ -198,7 +198,16 @@ function hashFiles(relativePaths) {
   for (const relativePath of expectedPaths) {
     hash.update(relativePath);
     hash.update('\0');
-    hash.update(sourceContents.get(relativePath));
+    const content = sourceContents.get(relativePath);
+    if (relativePath === 'package.json') {
+      // Release Please updates the package version without changing screenshots.
+      // Every other package metadata field still participates in provenance.
+      const packageMetadata = JSON.parse(content.toString('utf8'));
+      delete packageMetadata.version;
+      hash.update(JSON.stringify(packageMetadata));
+    } else {
+      hash.update(content);
+    }
     hash.update('\0');
   }
   return hash.digest('hex');
@@ -246,7 +255,7 @@ function assertPackageMetadata() {
 function assertCaptureProvenance() {
   const contract = readJson('scripts/marketplace-capture-sources.json');
   const manifest = readJson('assets/screenshots/capture-manifest.json');
-  if (contract.version !== 1 || !Array.isArray(contract.sources)) {
+  if (contract.version !== 2 || !Array.isArray(contract.sources)) {
     fail('marketplace capture source contract is invalid');
   }
   for (const source of contract.sources) assertFile(source);

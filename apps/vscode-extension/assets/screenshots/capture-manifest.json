@@ -9,8 +9,8 @@
   "fixture": "test/fixtures/benchmark_projects/pass_i2c_sensor_hub",
   "vscodeVersion": "1.122.0",
   "kicadVersion": "10.0.6",
-  "sourceContractVersion": 1,
-  "sourceFingerprint": "f2bad78f93826f72935f75545d9e5e54b7d428caaf495780977acb86f379a9ab",
+  "sourceContractVersion": 2,
+  "sourceFingerprint": "6f82183cb60a892eed49e21cacbac227eb930b0b513e544fcddb6f83c35839a9",
   "screenshots": {
     "project-tree.png": "9a97306e8115c0989bec866dcdc8de3ffc5e79106a588bbd822e5bc63fe2e121",
     "schematic-viewer.png": "1d960024a82de522dfe7f664fcfb9e3f2ac268c334d2f92a6c6302dc4c5c54fa",
