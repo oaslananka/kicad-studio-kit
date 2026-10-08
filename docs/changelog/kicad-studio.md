@@ -12,6 +12,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.15.3](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.2...vscode-extension-v1.15.3) (2026-10-08)
+
+
+### Bug Fixes
+
+* **kicad-studio:** confine BoardReadyOps diagnostic paths to project ([#623](https://github.com/oaslananka/kicad-studio-kit/issues/623)) ([#741](https://github.com/oaslananka/kicad-studio-kit/issues/741)) ([1573b29](https://github.com/oaslananka/kicad-studio-kit/commit/1573b29742b3e59e5cb1ac1419fc0555adbb2e4a))
+
 ## [1.15.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.1...vscode-extension-v1.15.2) (2026-10-08)
 
 
