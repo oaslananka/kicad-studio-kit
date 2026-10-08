@@ -12,6 +12,7 @@ import {
 import { parseBoardReadyOpsPlan } from '../boardreadyops/plan';
 import { parseBoardReadyOpsEvidenceVerification } from '../boardreadyops/evidence';
 import { runBoardReadyOpsCommand } from '../boardreadyops/cli';
+import { resolveSafeWorkspacePath } from '../utils/pathUtils';
 
 /** URL for BoardReadyOps documentation. */
 export const BOARDREADYOPS_DOCS_URL =
@@ -196,6 +197,29 @@ export function registerBoardReadyOpsCommands(
 
             const result = parseBoardReadyOpsRunResult(stdout);
 
+            // Verify every untrusted finding path before changing any existing
+            // diagnostics. One escaped path invalidates the whole CLI response.
+            const findingsByFile = new Map<string, BoardReadyOpsFinding[]>();
+            for (const finding of result.findings) {
+              let fullPath: string;
+              try {
+                fullPath = resolveSafeWorkspacePath(
+                  projectPath,
+                  finding.resource.path,
+                  'BoardReadyOps finding must stay inside the active project.'
+                );
+              } catch {
+                // Never include an untrusted path or filesystem exception in logs/UI.
+                throw new Error(
+                  'BoardReadyOps returned a finding outside the active project.'
+                );
+              }
+              const uriStr = vscode.Uri.file(fullPath).toString();
+              const grouped = findingsByFile.get(uriStr) ?? [];
+              grouped.push(finding);
+              findingsByFile.set(uriStr, grouped);
+            }
+
             latestReport = result;
 
             // Clear previous BoardReadyOps diagnostics
@@ -215,24 +239,6 @@ export function registerBoardReadyOpsCommands(
               setDiagnostics(vscode.Uri.parse(uriStr), []);
             }
             previousDiagnosticUris.clear();
-
-            // Group findings by file URI
-            const findingsByFile = new Map<string, BoardReadyOpsFinding[]>();
-            for (const finding of result.findings) {
-              const relPath = finding.resource.path;
-              const fullPath = path.isAbsolute(relPath)
-                ? relPath
-                : path.resolve(projectPath, relPath);
-              const fileUri = vscode.Uri.file(fullPath);
-              const uriStr = fileUri.toString();
-
-              let fileFindings = findingsByFile.get(uriStr);
-              if (!fileFindings) {
-                fileFindings = [];
-                findingsByFile.set(uriStr, fileFindings);
-              }
-              fileFindings.push(finding);
-            }
 
             // Populate diagnostics
             for (const [uriStr, fileFindings] of findingsByFile.entries()) {
