@@ -545,6 +545,101 @@ describe('BoardReadyOps commands', () => {
     );
   });
 
+  it.each(['../private/secret.kicad_pcb', '/private/secret.kicad_pcb'])(
+    'rejects out-of-project BoardReadyOps plan action path %s without disclosing it',
+    async (untrustedPath) => {
+      enableBoardReadyOpsProject();
+      const plan = boardReadyOpsAgentPlan();
+      const actions = plan['nextActions'] as Array<Record<string, unknown>>;
+      (actions[0]!['resource'] as Record<string, unknown>)['path'] =
+        untrustedPath;
+      mockCompatibleBoardReadyOpsResponse(plan, 1);
+
+      await runCommand(COMMANDS.boardReadyOpsPlan);
+
+      expect(window.showQuickPick).not.toHaveBeenCalled();
+      expect(window.showErrorMessage).toHaveBeenCalledWith(
+        'BoardReadyOps plan failed: BoardReadyOps returned a path outside the active project.'
+      );
+      expect(
+        JSON.stringify((window.showErrorMessage as jest.Mock).mock.calls)
+      ).not.toContain(untrustedPath);
+      expect(JSON.stringify(mockLogger.error.mock.calls)).not.toContain(
+        untrustedPath
+      );
+    }
+  );
+
+  it('rejects a hidden release action outside the active project before showing valid next actions', async () => {
+    enableBoardReadyOpsProject();
+    const plan = boardReadyOpsAgentPlan();
+    const actions = plan['nextActions'] as Array<Record<string, unknown>>;
+    const action = actions[0]!;
+    plan['releaseActions'] = [
+      {
+        ...action,
+        resource: { path: '../private/release.json', kind: 'manifest' }
+      }
+    ];
+    mockCompatibleBoardReadyOpsResponse(plan, 1);
+
+    await runCommand(COMMANDS.boardReadyOpsPlan);
+
+    expect(window.showQuickPick).not.toHaveBeenCalled();
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'BoardReadyOps plan failed: BoardReadyOps returned a path outside the active project.'
+    );
+  });
+
+  it('rejects BoardReadyOps plans claiming a project root outside the active project', async () => {
+    enableBoardReadyOpsProject();
+    const plan = boardReadyOpsAgentPlan();
+    plan['projectRoot'] = '/private/another-project';
+    mockCompatibleBoardReadyOpsResponse(plan, 1);
+
+    await runCommand(COMMANDS.boardReadyOpsPlan);
+
+    expect(window.showQuickPick).not.toHaveBeenCalled();
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'BoardReadyOps plan failed: BoardReadyOps returned a path outside the active project.'
+    );
+    expect(JSON.stringify(mockLogger.error.mock.calls)).not.toContain(
+      '/private/another-project'
+    );
+  });
+
+  it('rejects BoardReadyOps plan resource paths that escape through a project symlink', async () => {
+    const fixture = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'boardreadyops-plan-')
+    );
+    const project = path.join(fixture, 'project');
+    const outside = path.join(fixture, 'outside');
+    fs.mkdirSync(project);
+    fs.mkdirSync(outside);
+    fs.symlinkSync(outside, path.join(project, 'linked'), 'dir');
+    try {
+      enableBoardReadyOpsProject();
+      mockProjectState.getActiveProject.mockReturnValue({ rootPath: project });
+      const plan = boardReadyOpsAgentPlan();
+      plan['projectRoot'] = project;
+      (
+        (plan['nextActions'] as Array<Record<string, unknown>>)[0]![
+          'resource'
+        ] as Record<string, unknown>
+      )['path'] = 'linked/private.json';
+      mockCompatibleBoardReadyOpsResponse(plan, 1);
+
+      await runCommand(COMMANDS.boardReadyOpsPlan);
+
+      expect(window.showQuickPick).not.toHaveBeenCalled();
+      expect(window.showErrorMessage).toHaveBeenCalledWith(
+        'BoardReadyOps plan failed: BoardReadyOps returned a path outside the active project.'
+      );
+    } finally {
+      fs.rmSync(fixture, { recursive: true, force: true });
+    }
+  });
+
   it('shows release actions when the remediation plan has no next actions', async () => {
     enableBoardReadyOpsProject();
     const plan = boardReadyOpsAgentPlan();

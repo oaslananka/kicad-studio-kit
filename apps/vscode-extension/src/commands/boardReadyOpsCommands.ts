@@ -363,6 +363,30 @@ export function registerBoardReadyOpsCommands(
               );
             }
             const plan = parseBoardReadyOpsPlan(stdout);
+            // The CLI plan is untrusted. Validate every referenced resource,
+            // including hidden release actions, before displaying any action.
+            // Never expose the rejected path or filesystem error to UI/logs.
+            try {
+              resolveSafeWorkspacePath(
+                projectPath,
+                plan.projectRoot,
+                'BoardReadyOps plan must remain inside the active project.'
+              );
+              for (const action of [
+                ...plan.nextActions,
+                ...plan.releaseActions
+              ]) {
+                resolveSafeWorkspacePath(
+                  projectPath,
+                  action.resource.path,
+                  'BoardReadyOps action must remain inside the active project.'
+                );
+              }
+            } catch {
+              throw new Error(
+                'BoardReadyOps returned a path outside the active project.'
+              );
+            }
             const actions = plan.nextActions.length
               ? plan.nextActions
               : plan.releaseActions;
