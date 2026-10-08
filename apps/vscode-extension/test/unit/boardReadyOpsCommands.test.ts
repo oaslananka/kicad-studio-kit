@@ -2,6 +2,8 @@ jest.mock('node:child_process', () => ({
   spawn: jest.fn()
 }));
 
+import * as fs from 'node:fs';
+import * as os from 'node:os';
 import { EventEmitter } from 'node:events';
 import * as childProcess from 'node:child_process';
 import * as path from 'node:path';
@@ -99,6 +101,30 @@ describe('BoardReadyOps commands', () => {
         )
       );
     return spawnMock;
+  }
+
+  function readinessWithFindings(paths: string[]) {
+    return {
+      schemaVersion: 1,
+      tool: { name: 'boardreadyops', version: '1.37.0' },
+      status: 'failed',
+      exitCode: 2,
+      summary: {
+        total: paths.length,
+        critical: 0,
+        high: paths.length,
+        medium: 0,
+        low: 0,
+        info: 0
+      },
+      findings: paths.map((resourcePath, index) => ({
+        ruleId: 'manufacturing.outputs-present',
+        severity: 'high',
+        message: 'A blocking finding',
+        resource: { path: resourcePath, kind: 'pcb' },
+        fingerprint: String(index).padStart(64, 'a')
+      }))
+    };
   }
 
   function mockReadinessAndEvidence(
@@ -292,6 +318,79 @@ describe('BoardReadyOps commands', () => {
       'json',
       '/project'
     ]);
+  });
+
+  it('renders valid project-local BoardReadyOps findings as diagnostics', async () => {
+    enableBoardReadyOpsProject();
+    mockCompatibleBoardReadyOpsResponse(
+      readinessWithFindings(['board.kicad_pcb']),
+      2
+    );
+
+    await runCommand(COMMANDS.boardReadyOpsCheck);
+
+    expect(mockDiagnosticsCollection.setForSource).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fsPath: path.resolve('/project', 'board.kicad_pcb')
+      }),
+      'other',
+      expect.arrayContaining([
+        expect.objectContaining({ source: 'boardreadyops' })
+      ])
+    );
+  });
+
+  it.each(['../private/evidence.kicad_pcb', '/private/evidence.kicad_pcb'])(
+    'rejects an untrusted BoardReadyOps path %s without leaking it into diagnostics',
+    async (badPath) => {
+      enableBoardReadyOpsProject();
+      mockCompatibleBoardReadyOpsResponse(
+        readinessWithFindings(['board.kicad_pcb', badPath]),
+        2
+      );
+
+      await runCommand(COMMANDS.boardReadyOpsCheck);
+
+      expect(mockDiagnosticsCollection.setForSource).not.toHaveBeenCalled();
+      expect(window.showErrorMessage).toHaveBeenCalledWith(
+        'BoardReadyOps check failed: BoardReadyOps returned a finding outside the active project.'
+      );
+      expect(
+        JSON.stringify((window.showErrorMessage as jest.Mock).mock.calls)
+      ).not.toContain(badPath);
+      expect(mockLogger.error).toHaveBeenCalled();
+      expect(JSON.stringify(mockLogger.error.mock.calls)).not.toContain(
+        badPath
+      );
+    }
+  );
+
+  it('rejects BoardReadyOps paths that escape via a symlink', async () => {
+    const fixture = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'boardreadyops-guard-')
+    );
+    const project = path.join(fixture, 'project');
+    const outside = path.join(fixture, 'outside');
+    fs.mkdirSync(project);
+    fs.mkdirSync(outside);
+    fs.symlinkSync(outside, path.join(project, 'linked'), 'dir');
+    try {
+      enableBoardReadyOpsProject();
+      mockProjectState.getActiveProject.mockReturnValue({ rootPath: project });
+      mockCompatibleBoardReadyOpsResponse(
+        readinessWithFindings(['linked/private.kicad_pcb']),
+        2
+      );
+
+      await runCommand(COMMANDS.boardReadyOpsCheck);
+
+      expect(mockDiagnosticsCollection.setForSource).not.toHaveBeenCalled();
+      expect(window.showErrorMessage).toHaveBeenCalledWith(
+        'BoardReadyOps check failed: BoardReadyOps returned a finding outside the active project.'
+      );
+    } finally {
+      fs.rmSync(fixture, { recursive: true, force: true });
+    }
   });
 
   it('fails closed when readiness JSON is structurally incomplete', async () => {
