@@ -517,3 +517,18 @@ test("#492 activation evidence paths cannot escape the repository", () => {
     /evidenceNote must remain inside the repository/u,
   );
 });
+
+test("#736 README MCP header and compatibility paragraph advertise the same range", () => {
+  const readme = fs.readFileSync("apps/vscode-extension/README.md", "utf8");
+  const summary = readme.match(/^- Supported MCP server: `([^`]+)`$/mu)?.[1];
+  const section = readme.match(
+    /^KiCad Studio [^\n]+ supports `([^`]+)` and was tested against/mu,
+  )?.[1];
+  assert.ok(summary, "README must retain the supported MCP server summary");
+  assert.ok(section, "README must retain the MCP compatibility paragraph");
+  assert.equal(
+    summary,
+    section,
+    "MCP support summary must match compatibility contract text",
+  );
+});
