@@ -24,6 +24,27 @@ test('#710 marketplace checker rejects package metadata drift', (context) => {
   assert.throws(runMarketplaceCheck, /icon must point to assets\/icon\.png/iu);
 });
 
+test('#726 marketplace provenance ignores release-only version bumps', (context) => {
+  mockTextFile(context, 'package.json', (original) => {
+    const metadata = JSON.parse(original);
+    metadata.version = '99.88.77';
+    return JSON.stringify(metadata, null, 2) + '\n';
+  });
+  assert.match(
+    runMarketplaceCheck(),
+    /5 listing screenshots, 6 provenance-tracked captures/iu
+  );
+});
+
+test('#726 marketplace provenance detects other package metadata drift', (context) => {
+  mockTextFile(context, 'package.json', (original) => {
+    const metadata = JSON.parse(original);
+    metadata.displayName = 'Drifted Marketplace Name';
+    return JSON.stringify(metadata, null, 2) + '\n';
+  });
+  assert.throws(runMarketplaceCheck, /capture source fingerprint changed/iu);
+});
+
 test('#710 marketplace checker rejects stale capture schema', (context) => {
   mockTextFile(
     context,
