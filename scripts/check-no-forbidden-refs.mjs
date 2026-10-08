@@ -73,8 +73,8 @@ const allowedDependabotFiles = new Set([
   "docs/security/github-security-settings.md",
   "docs/superpowers/plans/2026-07-21-dependabot-security-targets.md",
   "package.json",
-  "scripts/check-dependabot-policy.mjs",
-  "scripts/check-dependabot-policy.test.mjs",
+  "scripts/check-dependency-automation-policy.mjs",
+  "scripts/check-dependency-automation-policy.test.mjs",
   "scripts/check-retired-dependency-evidence.mjs",
   "scripts/lib/retired-dependency-evidence.mjs",
 ]);
