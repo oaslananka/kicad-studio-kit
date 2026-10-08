@@ -111,12 +111,28 @@ test("#621 embedded support axes reject BoardReadyOps contract drift", () => {
 
 test("#623 BoardReadyOps support-matrix evidence matches compatibility metadata", () => {
   const supportMatrix = fs.readFileSync("docs/support-matrix.md", "utf8");
-  const testedVersion = compatibility.supportAxes.boardReadyOps.testedAgainst.version;
+  const testedVersion =
+    compatibility.supportAxes.boardReadyOps.testedAgainst.version;
   const documentedVersion = supportMatrix.match(
     /\|\s*BoardReadyOps\s*\|[^\n]*tested against npm `([^`]+)`/u,
   )?.[1];
 
   assert.equal(documentedVersion, testedVersion);
+});
+
+test("#722 published MCP tested-pair evidence stays synchronized across docs and PyPI", () => {
+  const mcpServer = compatibility.supportAxes.mcpServer;
+  const publishedVersion = mcpServer.testedAgainst.version;
+  const supportMatrix = fs.readFileSync("docs/support-matrix.md", "utf8");
+  const documentedVersion = supportMatrix.match(
+    /\|\s*MCP server product\s*\|[^\n]*tested against published `kicad-mcp-pro` `([^`]+)`/u,
+  )?.[1];
+
+  assert.equal(documentedVersion, publishedVersion);
+  assert.equal(
+    mcpServer.testedAgainst.source,
+    `https://pypi.org/project/kicad-mcp-pro/${publishedVersion}/`,
+  );
 });
 
 test("repository compatibility contract validates current state", () => {
