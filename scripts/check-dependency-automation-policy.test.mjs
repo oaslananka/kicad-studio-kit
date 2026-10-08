@@ -10,6 +10,7 @@ import {
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { execFileSync } from "node:child_process";
 import { validateDependencyAutomationPolicy } from "./check-dependency-automation-policy.mjs";
 import { scanForbiddenReferences } from "./check-no-forbidden-refs.mjs";
 
@@ -142,4 +143,15 @@ test("#728 forbidden-reference scanner retains its unrelated protection", () => 
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("#728 CLI reports the canonical Renovate policy as passing", () => {
+  const output = execFileSync(
+    process.execPath,
+    ["scripts/check-dependency-automation-policy.mjs"],
+    {
+      encoding: "utf8",
+    },
+  );
+  assert.match(output, /Renovate-only dependency automation policy passed/);
 });
