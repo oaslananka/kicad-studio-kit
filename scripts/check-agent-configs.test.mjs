@@ -126,6 +126,18 @@ test("#717 nested agent instruction files fail closed when missing or incomplete
         error.includes("scripts/AGENTS.md: empty agent instruction file"),
       ),
     );
+
+    writeFileSync(
+      path.join(root, "scripts/AGENTS.md"),
+      "Authorization: Bearer example-leak\n",
+    );
+    const restrictedErrors = [];
+    validateNestedAgentInstructions(root, restrictedErrors);
+    assert.ok(
+      restrictedErrors.some((error) =>
+        error.includes("scripts/AGENTS.md: must not include bearer tokens"),
+      ),
+    );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

@@ -354,9 +354,11 @@ function assertFile(repoRoot, relativePath, errors) {
 export function validateNestedAgentInstructions(repoRoot, errors) {
   for (const file of nestedAgentInstructionFiles) {
     if (!assertFile(repoRoot, file, errors)) continue;
-    if (!readText(repoRoot, file).trim()) {
+    const content = readText(repoRoot, file);
+    if (!content.trim()) {
       errors.push(`${file}: empty agent instruction file`);
     }
+    errors.push(...collectForbiddenContentErrors(file, content));
   }
 }
 
