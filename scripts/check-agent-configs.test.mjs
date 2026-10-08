@@ -100,3 +100,33 @@ test("agent review guidance rejects external MCP and npm-wrapper work as local",
 
   assert.match(errors.join("\\n"), /KiCad MCP Pro|external owner/u);
 });
+
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { validateNestedAgentInstructions } from "./check-agent-configs.mjs";
+
+test("#717 nested agent instruction files fail closed when missing or incomplete", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "kicad-agent-hierarchy-"));
+  try {
+    const missingErrors = [];
+    validateNestedAgentInstructions(root, missingErrors);
+    assert.ok(
+      missingErrors.some((error) =>
+        error.includes("scripts/AGENTS.md: missing required file"),
+      ),
+    );
+
+    mkdirSync(path.join(root, "scripts"), { recursive: true });
+    writeFileSync(path.join(root, "scripts/AGENTS.md"), "   \n");
+    const incompleteErrors = [];
+    validateNestedAgentInstructions(root, incompleteErrors);
+    assert.ok(
+      incompleteErrors.some((error) =>
+        error.includes("scripts/AGENTS.md: empty agent instruction file"),
+      ),
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
