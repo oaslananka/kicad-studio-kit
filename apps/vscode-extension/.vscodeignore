@@ -52,4 +52,5 @@ mutation-baseline.json
 coverage-scope.json
 jest.coverage-ratchet.config.js
 
+AGENTS.md
 README.md

@@ -13,6 +13,17 @@ const reviewRunbookRequiredReferences = [
   "corepack pnpm run check:compatibility-contract",
 ];
 
+const nestedAgentInstructionFiles = [
+  ".github/AGENTS.md",
+  "scripts/AGENTS.md",
+  "apps/vscode-extension/AGENTS.md",
+  "apps/vscode-extension/src/cli/AGENTS.md",
+  "apps/vscode-extension/src/mcp/AGENTS.md",
+  "apps/vscode-extension/src/boardreadyops/AGENTS.md",
+  "packages/test-harness/AGENTS.md",
+  "packages/kicad-fixtures/AGENTS.md",
+];
+
 const requiredMarkdownFiles = [
   "AGENTS.md",
   ".github/copilot-instructions.md",
@@ -91,7 +102,8 @@ const requiredRootExamples = [
 const requiredReferences = {
   "AGENTS.md": [
     "apps/vscode-extension",
-
+    "closest applicable `AGENTS.md` wins",
+    ...nestedAgentInstructionFiles,
     "docs/support-matrix.md",
     "docs/release.md",
     "docs/architecture/protocol-change-checklist.md",
@@ -109,6 +121,7 @@ const requiredReferences = {
   ],
   ".github/copilot-instructions.md": [
     "AGENTS.md",
+    "closest applicable nested `AGENTS.md`",
     "Codex, Claude, Copilot, Gemini, and Cursor",
     "docs/architecture/product-boundaries.md",
     "docs/architecture/protocol-change-checklist.md",
@@ -127,7 +140,8 @@ const requiredReferences = {
     "client-configs.md",
     "codex-support.md",
   ],
-  "docs/maintainers/agent-pr-review-runbook.md": reviewRunbookRequiredReferences,
+  "docs/maintainers/agent-pr-review-runbook.md":
+    reviewRunbookRequiredReferences,
   "docs/agents/client-configs.md": [
     ".vscode/mcp.example.json",
     "vscode.mcp.example.json",
@@ -211,12 +225,15 @@ const forbiddenContent = [
   {
     paths: new Set(["docs/agents/index.md"]),
     pattern: /Claude-specific guide:\s*`CLAUDE\.md`/u,
-    message: "must keep AGENTS.md canonical instead of routing to nonexistent CLAUDE.md",
+    message:
+      "must keep AGENTS.md canonical instead of routing to nonexistent CLAUDE.md",
   },
   {
     paths: new Set(["docs/maintainers/agent-pr-review-runbook.md"]),
-    pattern: /(?:MCP server feature or bug fix|MCP-only changes should|Npm-wrapper-only changes should)/u,
-    message: "must route MCP server and npm-wrapper work to the external owner KiCad MCP Pro",
+    pattern:
+      /(?:MCP server feature or bug fix|MCP-only changes should|Npm-wrapper-only changes should)/u,
+    message:
+      "must route MCP server and npm-wrapper work to the external owner KiCad MCP Pro",
   },
 ];
 
@@ -318,8 +335,9 @@ export function parseTomlSubset(text, sourceName = "config.toml") {
 
 export function collectForbiddenContentErrors(relativePath, text) {
   return forbiddenContent
-    .filter(({ paths, pattern }) =>
-      (!paths || paths.has(relativePath)) && pattern.test(text),
+    .filter(
+      ({ paths, pattern }) =>
+        (!paths || paths.has(relativePath)) && pattern.test(text),
     )
     .map(({ message }) => `${relativePath}: ${message}`);
 }
@@ -331,6 +349,17 @@ function assertFile(repoRoot, relativePath, errors) {
     return false;
   }
   return true;
+}
+
+export function validateNestedAgentInstructions(repoRoot, errors) {
+  for (const file of nestedAgentInstructionFiles) {
+    if (!assertFile(repoRoot, file, errors)) continue;
+    const content = readText(repoRoot, file);
+    if (!content.trim()) {
+      errors.push(`${file}: empty agent instruction file`);
+    }
+    errors.push(...collectForbiddenContentErrors(file, content));
+  }
 }
 
 function validateRequiredReferences(repoRoot, errors) {
@@ -554,6 +583,7 @@ export function validateAgentConfigs(options = {}) {
   for (const file of requiredMarkdownFiles) {
     assertFile(repoRoot, file, errors);
   }
+  validateNestedAgentInstructions(repoRoot, errors);
   validateRequiredReferences(repoRoot, errors);
   for (const descriptor of requiredRootExamples) {
     validateDescriptor(repoRoot, descriptor, errors);
