@@ -68,7 +68,17 @@ function sourceFingerprint(sources: string[]): string {
   )) {
     hash.update(source);
     hash.update('\0');
-    hash.update(fs.readFileSync(expectFile(source)));
+    const content = fs.readFileSync(expectFile(source));
+    if (source === 'package.json') {
+      const packageMetadata = JSON.parse(content.toString('utf8')) as Record<
+        string,
+        unknown
+      >;
+      delete packageMetadata['version'];
+      hash.update(JSON.stringify(packageMetadata));
+    } else {
+      hash.update(content);
+    }
     hash.update('\0');
   }
   return hash.digest('hex');
