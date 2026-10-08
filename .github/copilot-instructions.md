@@ -1,14 +1,16 @@
 # GitHub Copilot Instructions
 
-Follow `AGENTS.md` for repository-wide rules. Copilot is an external coding agent and
+Follow the root `AGENTS.md` for repository-wide rules and the closest applicable nested `AGENTS.md` for the path being changed. Nested instructions may narrow implementation rules but must not weaken root security, compatibility, release, evidence, or product-truth constraints. Copilot is an external coding agent and
 MCP-capable client for this repo; do not treat Codex, Claude, Copilot, Gemini, and Cursor
 as direct KiCad Studio extension AI providers unless the touched extension code explicitly
 does that.
 
 ## Project Shape
 
-- `apps/vscode-extension` contains the VS Code extension.
+- `apps/vscode-extension` contains the shipped VS Code extension.
+- `packages/kicad-fixtures` contains the deterministic KiCad fixture/evidence corpus.
 - `packages/test-harness` contains private shared test helpers.
+- `scripts` and `.github` contain repository policy, CI, release, and governance automation.
 
 ## Coding Rules
 
