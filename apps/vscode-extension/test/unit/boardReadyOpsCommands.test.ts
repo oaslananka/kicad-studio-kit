@@ -331,7 +331,7 @@ describe('BoardReadyOps commands', () => {
 
     expect(mockDiagnosticsCollection.setForSource).toHaveBeenCalledWith(
       expect.objectContaining({
-        fsPath: path.join('/project', 'board.kicad_pcb')
+        fsPath: path.resolve('/project', 'board.kicad_pcb')
       }),
       'other',
       expect.arrayContaining([
