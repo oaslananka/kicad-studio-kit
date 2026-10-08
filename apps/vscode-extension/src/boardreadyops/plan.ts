@@ -3,6 +3,7 @@ export interface BoardReadyOpsPlanAction {
   ruleId: string;
   severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
   title: string;
+  resource: { path: string; kind: string };
   fixStrategy: {
     description: string;
     steps: string[];
@@ -13,6 +14,7 @@ export interface BoardReadyOpsPlanResult {
   schemaVersion: 1;
   tool: { name: 'boardreadyops'; version: string };
   status: 'passed' | 'failed';
+  projectRoot: string;
   nextActions: BoardReadyOpsPlanAction[];
   releaseActions: BoardReadyOpsPlanAction[];
 }
