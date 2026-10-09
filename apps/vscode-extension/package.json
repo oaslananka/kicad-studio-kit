@@ -79,7 +79,9 @@
         "kicadstudio.mcp.pushContext",
         "kicadstudio.pcm.repositoryUrls",
         "kicadstudio.pcm.configDir",
-        "kicadstudio.pcm.thirdPartyDir"
+        "kicadstudio.pcm.thirdPartyDir",
+        "kicadstudio.boardReadyOps.enabled",
+        "kicadstudio.boardReadyOps.specFile"
       ]
     }
   },

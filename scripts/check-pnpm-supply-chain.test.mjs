@@ -19,7 +19,7 @@ const CANONICAL_WORKSPACE = parseYaml(
   readFileSync(new URL("../pnpm-workspace.yaml", import.meta.url), "utf8"),
 );
 const MINIMUM_RELEASE_AGE_EXCLUDE_ERROR =
-  "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, nanoid@3.3.18, pnpm@11.11.0, source-map-js@1.2.2";
+  "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, nanoid@3.3.18, pnpm@11.11.0, source-map-js@1.2.2, handlebars@4.7.10";
 
 function workspaceFixture(mutate = () => {}) {
   const workspace = structuredClone(CANONICAL_WORKSPACE);

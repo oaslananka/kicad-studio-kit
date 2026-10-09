@@ -18,6 +18,10 @@ Open VS Code Settings (`Ctrl+,`) and search for `boardreadyops`.
 | `kicadstudio.boardReadyOps.enabled`  | boolean | `false` | Enable BoardReadyOps checks for the active board.                                                   |
 | `kicadstudio.boardReadyOps.specFile` | string  | `""`    | Path to the board specification file (JSON or YAML). Leave empty to use the project's default spec. |
 
+BoardReadyOps execution requires a trusted VS Code workspace. In Restricted Mode,
+BoardReadyOps commands cannot launch the external CLI, and workspace-defined
+BoardReadyOps settings are ignored until trust is granted.
+
 ## Commands
 
 All commands are available from the Command Palette (`Ctrl+Shift+P`) or the KiCad Studio panel.

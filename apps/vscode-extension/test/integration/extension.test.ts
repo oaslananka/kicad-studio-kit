@@ -84,7 +84,9 @@ suite('Extension Integration', () => {
       'kicadstudio.defaultOutputDir',
       'kicadstudio.cli.defineVars',
       'kicadstudio.mcp.endpoint',
-      'kicadstudio.mcp.pushContext'
+      'kicadstudio.mcp.pushContext',
+      'kicadstudio.boardReadyOps.enabled',
+      'kicadstudio.boardReadyOps.specFile'
     ]) {
       assert.ok(
         trust.restrictedConfigurations?.includes(restrictedConfiguration),
@@ -454,8 +456,7 @@ suite('Extension Integration', () => {
   test('keeps #21 #22 #29 #33 regression surfaces wired in the Extension Development Host', () => {
     const sidebarViews =
       (extension.packageJSON?.contributes?.views?.['kicadstudio-sidebar'] as
-        | ViewContribution[]
-        | undefined) ?? [];
+        ViewContribution[] | undefined) ?? [];
     for (const viewId of [
       'kicadstudio.projectTree',
       'kicadstudio.netlistView',
