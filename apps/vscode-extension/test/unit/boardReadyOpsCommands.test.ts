@@ -262,6 +262,104 @@ describe('BoardReadyOps commands', () => {
     );
   });
 
+  it('does not show a previous project report after switching active projects', async () => {
+    enableBoardReadyOpsProject();
+    const spawnMock = mockReadinessAndEvidence({
+      ok: true,
+      checked: 1,
+      errors: [],
+      signature: { present: false, ok: true, errors: [] }
+    });
+
+    await runCommand(COMMANDS.boardReadyOpsCheck);
+    expect(spawnMock).toHaveBeenCalledTimes(2);
+    (window.showInformationMessage as jest.Mock).mockClear();
+
+    // The previous project's report must not become the new project's status.
+    mockProjectState.getActiveProject.mockReturnValue({
+      rootPath: '/different-project'
+    });
+    await runCommand(COMMANDS.boardReadyOpsShowReport);
+
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining('No BoardReadyOps report')
+    );
+    expect(window.showInformationMessage).not.toHaveBeenCalledWith(
+      expect.stringContaining('BoardReadyOps Report:'),
+      expect.anything()
+    );
+    expect(spawnMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not show a cached report when BoardReadyOps has been disabled', async () => {
+    enableBoardReadyOpsProject();
+    mockReadinessAndEvidence({
+      ok: true,
+      checked: 1,
+      errors: [],
+      signature: { present: false, ok: true, errors: [] }
+    });
+    await runCommand(COMMANDS.boardReadyOpsCheck);
+    (window.showInformationMessage as jest.Mock).mockClear();
+
+    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': false });
+    await runCommand(COMMANDS.boardReadyOpsShowReport);
+
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining('No BoardReadyOps report')
+    );
+    expect(window.showInformationMessage).not.toHaveBeenCalledWith(
+      expect.stringContaining('BoardReadyOps Report:'),
+      expect.anything()
+    );
+  });
+
+  it('does not expose the previous project report without an active project', async () => {
+    enableBoardReadyOpsProject();
+    mockReadinessAndEvidence({
+      ok: true,
+      checked: 1,
+      errors: [],
+      signature: { present: false, ok: true, errors: [] }
+    });
+    await runCommand(COMMANDS.boardReadyOpsCheck);
+    (window.showInformationMessage as jest.Mock).mockClear();
+
+    mockProjectState.getActiveProject.mockReturnValue(undefined);
+    await runCommand(COMMANDS.boardReadyOpsShowReport);
+
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining('No BoardReadyOps report')
+    );
+  });
+
+  it('discards a successful cached report before a failed rerun', async () => {
+    enableBoardReadyOpsProject();
+    mockReadinessAndEvidence({
+      ok: true,
+      checked: 1,
+      errors: [],
+      signature: { present: false, ok: true, errors: [] }
+    });
+    await runCommand(COMMANDS.boardReadyOpsCheck);
+    (window.showInformationMessage as jest.Mock).mockClear();
+
+    const spawnMock = childProcess.spawn as jest.Mock;
+    spawnMock.mockReset();
+    spawnMock.mockImplementationOnce(() =>
+      boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()), 2)
+    );
+    await runCommand(COMMANDS.boardReadyOpsCheck);
+    await runCommand(COMMANDS.boardReadyOpsShowReport);
+
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining('doctor exited with code 2')
+    );
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining('No BoardReadyOps report')
+    );
+  });
+
   it('verifies local release evidence from the report without exposing manifest paths', async () => {
     enableBoardReadyOpsProject();
     const spawnMock = mockReadinessAndEvidence({
