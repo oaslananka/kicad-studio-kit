@@ -116,7 +116,7 @@ describe('BoardReadyOps commands', () => {
       schemaVersion: 1,
       tool: { name: 'boardreadyops', version: '1.37.0' },
       status: 'failed',
-      exitCode: 2,
+      exitCode: 1,
       summary: {
         total: paths.length,
         critical: 0,
@@ -348,11 +348,37 @@ describe('BoardReadyOps commands', () => {
     ]);
   });
 
+  it('never reports success when the CLI fails but JSON claims a passing board', async () => {
+    enableBoardReadyOpsProject();
+    const spawnMock = mockCompatibleBoardReadyOpsResponse(
+      {
+        schemaVersion: 1,
+        tool: { name: 'boardreadyops', version: '1.37.0' },
+        status: 'passed',
+        exitCode: 0,
+        summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+        findings: []
+      },
+      1
+    );
+
+    await runCommand(COMMANDS.boardReadyOpsCheck);
+
+    expect(spawnMock).toHaveBeenCalledTimes(2);
+    expect(mockDiagnosticsCollection.setForSource).not.toHaveBeenCalled();
+    expect(window.showInformationMessage).not.toHaveBeenCalledWith(
+      'BoardReadyOps: Board is ready! No issues found.'
+    );
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'BoardReadyOps check failed: BoardReadyOps run returned inconsistent status or exit code.'
+    );
+  });
+
   it('renders valid project-local BoardReadyOps findings as diagnostics', async () => {
     enableBoardReadyOpsProject();
     mockCompatibleBoardReadyOpsResponse(
       readinessWithFindings(['board.kicad_pcb']),
-      2
+      1
     );
 
     await runCommand(COMMANDS.boardReadyOpsCheck);
@@ -374,7 +400,7 @@ describe('BoardReadyOps commands', () => {
       enableBoardReadyOpsProject();
       mockCompatibleBoardReadyOpsResponse(
         readinessWithFindings(['board.kicad_pcb', badPath]),
-        2
+        1
       );
 
       await runCommand(COMMANDS.boardReadyOpsCheck);
@@ -407,7 +433,7 @@ describe('BoardReadyOps commands', () => {
       mockProjectState.getActiveProject.mockReturnValue({ rootPath: project });
       mockCompatibleBoardReadyOpsResponse(
         readinessWithFindings(['linked/private.kicad_pcb']),
-        2
+        1
       );
 
       await runCommand(COMMANDS.boardReadyOpsCheck);

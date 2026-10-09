@@ -103,8 +103,9 @@ Studio:
 
 1. runs `boardreadyops doctor --format json` and rejects unsupported or
    malformed contracts;
-2. runs the structured readiness check and blocks on a failed readiness result
-   or any `critical`/`high` finding; and
+2. runs the structured readiness check, rejects discrepancies between the CLI
+   process exit code and JSON status/exit code, and blocks on a failed readiness
+   result or any `critical`/`high` finding; and
 3. verifies the project's `build/boardreadyops-release` evidence bundle.
 
 A numeric readiness score cannot override a blocking finding. Missing, stale,

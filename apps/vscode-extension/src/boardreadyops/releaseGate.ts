@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 import {
+  assertBoardReadyOpsRunVerdict,
   discoverBoardReadyOpsContract,
   parseBoardReadyOpsRunResult
 } from './contract';
@@ -95,6 +96,7 @@ export async function verifyBoardReadyOpsManufacturingRelease(
     );
   }
   const readiness = parseBoardReadyOpsRunResult(readinessProcess.stdout);
+  assertBoardReadyOpsRunVerdict(readiness, readinessProcess.exitCode);
   if (hasBlockingReadiness(readiness)) {
     return {
       ok: false,

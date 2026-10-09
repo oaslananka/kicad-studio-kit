@@ -299,3 +299,26 @@ export function parseBoardReadyOpsRunResult(
 
   return value as unknown as BoardReadyOpsRunResult;
 }
+
+/**
+ * A subprocess result is authoritative for completion. A contradictory JSON
+ * verdict must not turn a failed BoardReadyOps command into a passing release.
+ *
+ * The published v1 findings schema makes status/exitCode optional, so preserve
+ * that compatibility while validating them whenever the CLI supplies them.
+ */
+export function assertBoardReadyOpsRunVerdict(
+  report: BoardReadyOpsRunResult,
+  processExitCode: number
+): void {
+  if (
+    (processExitCode !== 0 && processExitCode !== 1) ||
+    (report.exitCode !== undefined && report.exitCode !== processExitCode) ||
+    (report.status !== undefined &&
+      report.status !== (processExitCode === 0 ? 'passed' : 'failed'))
+  ) {
+    throw new Error(
+      'BoardReadyOps run returned inconsistent status or exit code.'
+    );
+  }
+}

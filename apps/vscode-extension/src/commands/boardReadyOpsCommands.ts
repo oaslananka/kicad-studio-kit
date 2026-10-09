@@ -4,6 +4,7 @@ import { COMMANDS, SETTINGS } from '../constants';
 import { localize } from '../i18n';
 import type { CommandServices } from './types';
 import {
+  assertBoardReadyOpsRunVerdict,
   discoverBoardReadyOpsContract,
   parseBoardReadyOpsRunResult,
   type BoardReadyOpsFinding,
@@ -187,7 +188,7 @@ export function registerBoardReadyOpsCommands(
               return;
             }
 
-            const { stdout } = await runBoardReadyOps(
+            const { stdout, exitCode } = await runBoardReadyOps(
               projectPath,
               specFile || undefined,
               token
@@ -198,6 +199,7 @@ export function registerBoardReadyOpsCommands(
             }
 
             const result = parseBoardReadyOpsRunResult(stdout);
+            assertBoardReadyOpsRunVerdict(result, exitCode);
 
             // Verify every untrusted finding path before changing any existing
             // diagnostics. One escaped path invalidates the whole CLI response.
