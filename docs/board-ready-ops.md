@@ -40,7 +40,10 @@ All commands are available from the Command Palette (`Ctrl+Shift+P`) or the KiCa
 2. (Optional) Set `kicadstudio.boardReadyOps.specFile` to a custom spec path.
 3. Open a KiCad project (a directory containing a `.kicad_pro` file).
 4. Run **BoardReadyOps: Check Board Readiness** from the Command Palette.
-5. Review findings in the Problems panel (`Ctrl+Shift+M`).
+5. Review findings in the Problems panel (`Ctrl+Shift+M`). The saved readiness report is scoped to the
+   project that was checked; it is not displayed after changing projects or
+   disabling BoardReadyOps. Retrying a check clears the cached report until
+   the new check succeeds.
 6. Use **BoardReadyOps: Plan Remediation** for structured next actions. The
    external plan is accepted only when its JSON status/exit code agrees with
    the CLI process result; malformed or contradictory plans are rejected.

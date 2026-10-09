@@ -26,7 +26,9 @@ import { requireWorkspaceTrust } from '../utils/workspaceTrust';
 export const BOARDREADYOPS_DOCS_URL =
   'https://github.com/oaslananka/kicad-studio-kit/blob/main/docs/board-ready-ops.md';
 
-let latestReport: BoardReadyOpsRunResult | undefined = undefined;
+let latestReport:
+  { projectRoot: string; result: BoardReadyOpsRunResult } | undefined =
+  undefined;
 const previousDiagnosticUris = new Set<string>();
 
 function runBoardReadyOps(
@@ -182,6 +184,9 @@ export function registerBoardReadyOpsCommands(
         .get<string>(SETTINGS.boardReadyOpsSpecFile, '')
         .trim();
 
+      // A cancelled or failed rerun must not leave a stale report.
+      latestReport = undefined;
+
       await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
@@ -231,7 +236,7 @@ export function registerBoardReadyOpsCommands(
               findingsByFile.set(uriStr, grouped);
             }
 
-            latestReport = result;
+            latestReport = { projectRoot: projectPath, result };
 
             // Clear previous BoardReadyOps diagnostics
             const aggregator = services.diagnosticsCollection as any;
@@ -450,15 +455,24 @@ export function registerBoardReadyOpsCommands(
       async () => {
         if (!(await requireWorkspaceTrust('BoardReadyOps release evidence')))
           return;
-        if (!latestReport) {
+        const activeProjectPath =
+          services.projectState.getActiveProject()?.rootPath;
+        const enabled = vscode.workspace
+          .getConfiguration()
+          .get<boolean>(SETTINGS.boardReadyOpsEnabled, false);
+        const report =
+          enabled && activeProjectPath === latestReport?.projectRoot
+            ? latestReport?.result
+            : undefined;
+        if (!report) {
           await vscode.window.showInformationMessage(
             localize('boardReadyOpsReportNotAvailable')
           );
           return;
         }
 
-        const summary = latestReport.summary;
-        const summaryText = `BoardReadyOps Report: ${latestReport.status === 'passed' ? 'Passed' : 'Failed'}. Total findings: ${summary.total} (${summary.critical} critical, ${summary.high} high, ${summary.medium} medium, ${summary.low} low, ${summary.info} info).`;
+        const summary = report.summary;
+        const summaryText = `BoardReadyOps Report: ${report.status === 'passed' ? 'Passed' : 'Failed'}. Total findings: ${summary.total} (${summary.critical} critical, ${summary.high} high, ${summary.medium} medium, ${summary.low} low, ${summary.info} info).`;
 
         if (summary.total > 0) {
           const choice = await vscode.window.showInformationMessage(
