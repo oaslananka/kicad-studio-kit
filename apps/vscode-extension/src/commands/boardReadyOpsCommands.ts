@@ -10,7 +10,10 @@ import {
   type BoardReadyOpsFinding,
   type BoardReadyOpsRunResult
 } from '../boardreadyops/contract';
-import { parseBoardReadyOpsPlan } from '../boardreadyops/plan';
+import {
+  assertBoardReadyOpsPlanVerdict,
+  parseBoardReadyOpsPlan
+} from '../boardreadyops/plan';
 import {
   assertBoardReadyOpsEvidenceVerdict,
   parseBoardReadyOpsEvidenceVerification
@@ -373,6 +376,7 @@ export function registerBoardReadyOpsCommands(
               );
             }
             const plan = parseBoardReadyOpsPlan(stdout);
+            assertBoardReadyOpsPlanVerdict(plan, exitCode);
             // The CLI plan is untrusted. Validate every referenced resource,
             // including hidden release actions, before displaying any action.
             // Never expose the rejected path or filesystem error to UI/logs.
