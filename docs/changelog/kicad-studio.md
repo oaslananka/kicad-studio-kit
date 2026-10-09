@@ -19,10 +19,12 @@ published.
 
 * **kicad-studio:** fail closed on contradictory BoardReadyOps evidence ([#755](https://github.com/oaslananka/kicad-studio-kit/issues/755)) ([ea8cc9b](https://github.com/oaslananka/kicad-studio-kit/commit/ea8cc9b1b4ceadaa17254efcd99e6abb2aa9dacc))
 * **kicad-studio:** fail closed on contradictory BoardReadyOps verdicts ([#752](https://github.com/oaslananka/kicad-studio-kit/issues/752)) ([5ce1880](https://github.com/oaslananka/kicad-studio-kit/commit/5ce1880948e12d4d9fbb21f1ec8d4ce9dcd731f9))
+* **kicad-studio:** prevent cross-project BoardReadyOps report leakage ([#759](https://github.com/oaslananka/kicad-studio-kit/issues/759)) ([bbd9cf6](https://github.com/oaslananka/kicad-studio-kit/commit/bbd9cf6de48435dd8bfc4fd35fd6925fa1305350))
 * **kicad-studio:** reject contradictory BoardReadyOps evidence verdicts ([ea8cc9b](https://github.com/oaslananka/kicad-studio-kit/commit/ea8cc9b1b4ceadaa17254efcd99e6abb2aa9dacc))
 * **kicad-studio:** reject contradictory BoardReadyOps plan verdicts ([16d4459](https://github.com/oaslananka/kicad-studio-kit/commit/16d44590d438d5a304a1f9bae6b696968878b152))
 * **kicad-studio:** reject contradictory BoardReadyOps plan verdicts ([#757](https://github.com/oaslananka/kicad-studio-kit/issues/757)) ([16d4459](https://github.com/oaslananka/kicad-studio-kit/commit/16d44590d438d5a304a1f9bae6b696968878b152))
 * **kicad-studio:** reject contradictory BoardReadyOps run verdicts ([5ce1880](https://github.com/oaslananka/kicad-studio-kit/commit/5ce1880948e12d4d9fbb21f1ec8d4ce9dcd731f9))
+* **kicad-studio:** scope BoardReadyOps readiness reports to active project ([bbd9cf6](https://github.com/oaslananka/kicad-studio-kit/commit/bbd9cf6de48435dd8bfc4fd35fd6925fa1305350))
 
 ## [1.15.4](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.3...vscode-extension-v1.15.4) (2026-10-09)
 
