@@ -4,7 +4,10 @@ import {
   discoverBoardReadyOpsContract,
   parseBoardReadyOpsRunResult
 } from './contract';
-import { parseBoardReadyOpsEvidenceVerification } from './evidence';
+import {
+  assertBoardReadyOpsEvidenceVerdict,
+  parseBoardReadyOpsEvidenceVerification
+} from './evidence';
 import {
   runBoardReadyOpsCommand,
   type BoardReadyOpsCommandResult
@@ -54,7 +57,7 @@ export function evaluateBoardReadyOpsReleaseGate(
     };
   }
 
-  if (!evidence.ok) {
+  if (!evidence.ok || evidence.checked === 0 || !evidence.signature.ok) {
     return {
       ok: false,
       reason: 'BoardReadyOps release evidence is not verified.'
@@ -119,5 +122,6 @@ export async function verifyBoardReadyOpsManufacturingRelease(
   const evidence = parseBoardReadyOpsEvidenceVerification(
     evidenceProcess.stdout
   );
+  assertBoardReadyOpsEvidenceVerdict(evidence, evidenceProcess.exitCode);
   return evaluateBoardReadyOpsReleaseGate(readiness, evidence);
 }

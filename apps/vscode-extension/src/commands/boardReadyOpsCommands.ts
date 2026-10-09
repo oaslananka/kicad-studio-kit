@@ -11,7 +11,10 @@ import {
   type BoardReadyOpsRunResult
 } from '../boardreadyops/contract';
 import { parseBoardReadyOpsPlan } from '../boardreadyops/plan';
-import { parseBoardReadyOpsEvidenceVerification } from '../boardreadyops/evidence';
+import {
+  assertBoardReadyOpsEvidenceVerdict,
+  parseBoardReadyOpsEvidenceVerification
+} from '../boardreadyops/evidence';
 import { runBoardReadyOpsCommand } from '../boardreadyops/cli';
 import { resolveSafeWorkspacePath } from '../utils/pathUtils';
 import { requireWorkspaceTrust } from '../utils/workspaceTrust';
@@ -105,6 +108,7 @@ async function showBoardReadyOpsEvidenceState(
           );
         }
         const verification = parseBoardReadyOpsEvidenceVerification(stdout);
+        assertBoardReadyOpsEvidenceVerdict(verification, exitCode);
         let signatureText = ' Bundle is unsigned.';
         if (verification.signature.present) {
           signatureText = verification.signature.ok
