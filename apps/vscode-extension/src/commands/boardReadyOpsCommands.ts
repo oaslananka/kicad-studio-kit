@@ -13,6 +13,7 @@ import { parseBoardReadyOpsPlan } from '../boardreadyops/plan';
 import { parseBoardReadyOpsEvidenceVerification } from '../boardreadyops/evidence';
 import { runBoardReadyOpsCommand } from '../boardreadyops/cli';
 import { resolveSafeWorkspacePath } from '../utils/pathUtils';
+import { requireWorkspaceTrust } from '../utils/workspaceTrust';
 
 /** URL for BoardReadyOps documentation. */
 export const BOARDREADYOPS_DOCS_URL =
@@ -143,6 +144,7 @@ export function registerBoardReadyOpsCommands(
 ): vscode.Disposable[] {
   return [
     vscode.commands.registerCommand(COMMANDS.boardReadyOpsCheck, async () => {
+      if (!(await requireWorkspaceTrust('BoardReadyOps check'))) return;
       const enabled = vscode.workspace
         .getConfiguration()
         .get<boolean>(SETTINGS.boardReadyOpsEnabled, false);
@@ -318,6 +320,8 @@ export function registerBoardReadyOpsCommands(
     }),
 
     vscode.commands.registerCommand(COMMANDS.boardReadyOpsPlan, async () => {
+      if (!(await requireWorkspaceTrust('BoardReadyOps remediation plan')))
+        return;
       const enabled = vscode.workspace
         .getConfiguration()
         .get<boolean>(SETTINGS.boardReadyOpsEnabled, false);
@@ -434,6 +438,8 @@ export function registerBoardReadyOpsCommands(
     vscode.commands.registerCommand(
       COMMANDS.boardReadyOpsShowReport,
       async () => {
+        if (!(await requireWorkspaceTrust('BoardReadyOps release evidence')))
+          return;
         if (!latestReport) {
           await vscode.window.showInformationMessage(
             localize('boardReadyOpsReportNotAvailable')

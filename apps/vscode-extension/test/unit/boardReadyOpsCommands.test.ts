@@ -9,7 +9,13 @@ import * as childProcess from 'node:child_process';
 import * as path from 'node:path';
 import { COMMANDS } from '../../src/constants';
 import { registerBoardReadyOpsCommands } from '../../src/commands/boardReadyOpsCommands';
-import { commands, window, env, __setConfiguration } from './vscodeMock';
+import {
+  commands,
+  window,
+  env,
+  workspace,
+  __setConfiguration
+} from './vscodeMock';
 import {
   boardReadyOpsAgentPlan,
   boardReadyOpsDoctorContract
@@ -47,6 +53,8 @@ describe('BoardReadyOps commands', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (childProcess.spawn as jest.Mock).mockReset();
+    workspace.isTrusted = true;
     (window.withProgress as jest.Mock).mockImplementation(
       async (_options, task) =>
         task(
@@ -167,6 +175,26 @@ describe('BoardReadyOps commands', () => {
     registerBoardReadyOpsCommands(servicesMock);
     await registeredHandler(command)();
   }
+
+  it.each([
+    COMMANDS.boardReadyOpsCheck,
+    COMMANDS.boardReadyOpsPlan,
+    COMMANDS.boardReadyOpsShowReport
+  ])(
+    'blocks %s in Restricted Mode before any CLI execution',
+    async (command) => {
+      enableBoardReadyOpsProject();
+      workspace.isTrusted = false;
+
+      await runCommand(command);
+
+      expect(childProcess.spawn).not.toHaveBeenCalled();
+      expect(window.withProgress).not.toHaveBeenCalled();
+      expect(window.showWarningMessage).toHaveBeenCalledWith(
+        expect.stringContaining('workspace')
+      );
+    }
+  );
 
   it('registers five boardReadyOps commands', () => {
     const disposables = registerBoardReadyOpsCommands(servicesMock);
@@ -441,7 +469,7 @@ describe('BoardReadyOps commands', () => {
     );
   });
 
-  it('stops after contract discovery when plan execution is cancelled', async () => {
+  it('does not start contract discovery when plan execution is already cancelled', async () => {
     enableBoardReadyOpsProject();
     (window.withProgress as jest.Mock).mockImplementation(
       async (_options, task) =>
@@ -460,7 +488,7 @@ describe('BoardReadyOps commands', () => {
 
     await runCommand(COMMANDS.boardReadyOpsPlan);
 
-    expect(spawnMock).toHaveBeenCalledTimes(1);
+    expect(spawnMock).not.toHaveBeenCalled();
     expect(window.showQuickPick).not.toHaveBeenCalled();
   });
 
@@ -474,7 +502,7 @@ describe('BoardReadyOps commands', () => {
           {
             get isCancellationRequested() {
               cancellationRead += 1;
-              return cancellationRead >= 3;
+              return cancellationRead >= 6;
             },
             onCancellationRequested: jest.fn(() => ({ dispose: jest.fn() }))
           }
