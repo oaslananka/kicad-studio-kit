@@ -57,3 +57,30 @@ export function parseBoardReadyOpsEvidenceVerification(
   }
   return value as BoardReadyOpsEvidenceVerification;
 }
+
+/**
+ * The published BoardReadyOps release verify CLI exits 0 for a verified bundle
+ * and 1 for an unverified bundle. A contradictory JSON response must not
+ * authorize manufacturing release or be reported as verified in the UI.
+ *
+ * Upstream permits unsigned evidence when no signing key/trust store was
+ * required: signature.present=false with signature.ok=true is still valid.
+ */
+export function assertBoardReadyOpsEvidenceVerdict(
+  verification: BoardReadyOpsEvidenceVerification,
+  processExitCode: number
+): void {
+  if (
+    processExitCode !== (verification.ok ? 0 : 1) ||
+    (verification.ok &&
+      (verification.checked === 0 ||
+        verification.errors.length > 0 ||
+        !verification.signature.ok ||
+        verification.signature.errors.length > 0))
+  ) {
+    // Do not echo upstream errors, bundle paths, or other untrusted CLI fields.
+    throw new Error(
+      'BoardReadyOps release verification returned inconsistent or incomplete evidence.'
+    );
+  }
+}

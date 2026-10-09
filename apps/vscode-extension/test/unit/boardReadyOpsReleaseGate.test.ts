@@ -252,6 +252,66 @@ describe('BoardReadyOps manufacturing release gate', () => {
     }
   );
 
+  it('rejects release evidence with success JSON but a failed CLI process', async () => {
+    const runner = jest
+      .fn()
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify({
+          schemaVersion: 1,
+          tool: { name: 'boardreadyops', version: '1.37.0' },
+          checks: []
+        }),
+        stderr: '',
+        exitCode: 0
+      })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify(readiness()),
+        stderr: '',
+        exitCode: 0
+      })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify(evidence()),
+        stderr: 'PRIVATE_SENTINEL',
+        exitCode: 1
+      });
+    await expect(
+      verifyBoardReadyOpsManufacturingRelease('/project', undefined, runner)
+    ).rejects.toThrow(
+      'BoardReadyOps release verification returned inconsistent or incomplete evidence.'
+    );
+    expect(runner).toHaveBeenCalledTimes(3);
+  });
+
+  it('rejects a verified release evidence verdict with zero checked artifacts', () => {
+    expect(
+      evaluateBoardReadyOpsReleaseGate(readiness(), evidence({ checked: 0 }))
+    ).toEqual({
+      ok: false,
+      reason: 'BoardReadyOps release evidence is not verified.'
+    });
+  });
+
+  it('rejects contradictory signature verification in the release evaluator', () => {
+    expect(
+      evaluateBoardReadyOpsReleaseGate(
+        readiness(),
+        evidence({ signature: { present: true, ok: false, errors: [] } })
+      )
+    ).toEqual({
+      ok: false,
+      reason: 'BoardReadyOps release evidence is not verified.'
+    });
+  });
+
+  it('permits upstream-valid unsigned evidence with verified checks', () => {
+    expect(
+      evaluateBoardReadyOpsReleaseGate(
+        readiness(),
+        evidence({ signature: { present: false, ok: true, errors: [] } })
+      )
+    ).toEqual({ ok: true, checkedArtifacts: 3, signatureVerified: false });
+  });
+
   it('fails closed when release verification exits outside the documented verdict codes', async () => {
     const runner = jest
       .fn()
