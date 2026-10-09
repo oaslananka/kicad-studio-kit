@@ -1,4 +1,5 @@
 import {
+  assertBoardReadyOpsRunVerdict,
   discoverBoardReadyOpsContract,
   parseBoardReadyOpsRunResult
 } from '../../src/boardreadyops/contract';
@@ -400,5 +401,61 @@ describe('BoardReadyOps readiness result contract', () => {
     ).toThrow(
       'BoardReadyOps returned an unsupported or incomplete readiness result.'
     );
+  });
+});
+
+describe('BoardReadyOps process/report verdict consistency', () => {
+  const report = {
+    schemaVersion: 1,
+    tool: { name: 'boardreadyops' as const, version: '1.68.3' },
+    status: 'passed' as const,
+    exitCode: 0,
+    summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+    findings: []
+  };
+
+  it('accepts a matching successful run', () => {
+    expect(() => assertBoardReadyOpsRunVerdict(report, 0)).not.toThrow();
+  });
+
+  it('accepts a matching failed readiness verdict without promoting it to success', () => {
+    expect(() =>
+      assertBoardReadyOpsRunVerdict(
+        { ...report, status: 'failed', exitCode: 1 },
+        1
+      )
+    ).not.toThrow();
+  });
+
+  it.each([
+    [1, 'passed' as const, 0],
+    [0, 'failed' as const, 1],
+    [0, 'passed' as const, 1],
+    [1, 'failed' as const, 0],
+    [2, 'failed' as const, 2]
+  ])(
+    'rejects process exit %i and JSON %s / %i mismatch',
+    (code, status, jsonCode) => {
+      expect(() =>
+        assertBoardReadyOpsRunVerdict(
+          { ...report, status, exitCode: jsonCode },
+          code
+        )
+      ).toThrow('BoardReadyOps run returned inconsistent status or exit code.');
+    }
+  );
+
+  it('keeps published optional fields backward compatible', () => {
+    expect(() =>
+      assertBoardReadyOpsRunVerdict(
+        {
+          schemaVersion: report.schemaVersion,
+          tool: report.tool,
+          summary: report.summary,
+          findings: report.findings
+        },
+        1
+      )
+    ).not.toThrow();
   });
 });

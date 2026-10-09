@@ -81,6 +81,7 @@ describe('BoardReadyOps manufacturing release gate', () => {
         stdout: JSON.stringify(
           readiness({
             status: 'failed',
+            exitCode: 1,
             summary: {
               total: 1,
               critical: 0,
@@ -206,6 +207,50 @@ describe('BoardReadyOps manufacturing release gate', () => {
       verifyBoardReadyOpsManufacturingRelease('/project', undefined, runner)
     ).rejects.toThrow('BoardReadyOps run exited with code 2.');
   });
+
+  it.each([
+    [
+      'process failed but JSON claims pass',
+      1,
+      { status: 'passed', exitCode: 0 }
+    ],
+    [
+      'process passed but JSON claims failure',
+      0,
+      { status: 'failed', exitCode: 1 }
+    ],
+    [
+      'JSON exit code contradicts the process',
+      0,
+      { status: 'passed', exitCode: 1 }
+    ]
+  ])(
+    'rejects a mismatched readiness verdict: %s',
+    async (_name, code, patch) => {
+      const runner = jest
+        .fn()
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            schemaVersion: 1,
+            tool: { name: 'boardreadyops', version: '1.37.0' },
+            checks: []
+          }),
+          stderr: '',
+          exitCode: 0
+        })
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify(readiness(patch)),
+          stderr: '',
+          exitCode: code
+        });
+      await expect(
+        verifyBoardReadyOpsManufacturingRelease('/project', undefined, runner)
+      ).rejects.toThrow(
+        'BoardReadyOps run returned inconsistent status or exit code.'
+      );
+      expect(runner).toHaveBeenCalledTimes(2);
+    }
+  );
 
   it('fails closed when release verification exits outside the documented verdict codes', async () => {
     const runner = jest
