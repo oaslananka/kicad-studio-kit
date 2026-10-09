@@ -575,6 +575,29 @@ describe('BoardReadyOps commands', () => {
     expect(window.showQuickPick).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['process failure but plan claims pass', 1, 0, 'passed'],
+    ['process success but plan claims failure', 0, 1, 'failed'],
+    ['plan JSON status contradicts exit code', 1, 1, 'passed']
+  ])(
+    'rejects contradictory BoardReadyOps plan verdict: %s',
+    async (_label, code, jsonCode, status) => {
+      enableBoardReadyOpsProject();
+      const plan = boardReadyOpsAgentPlan();
+      plan['exitCode'] = jsonCode;
+      plan['status'] = status;
+      const spawnMock = mockCompatibleBoardReadyOpsResponse(plan, code);
+
+      await runCommand(COMMANDS.boardReadyOpsPlan);
+
+      expect(spawnMock).toHaveBeenCalledTimes(2);
+      expect(window.showQuickPick).not.toHaveBeenCalled();
+      expect(window.showErrorMessage).toHaveBeenCalledWith(
+        'BoardReadyOps plan failed: BoardReadyOps plan returned inconsistent status or exit code.'
+      );
+    }
+  );
+
   it('passes the configured BoardReadyOps spec file to the plan command', async () => {
     enableBoardReadyOpsProject({
       'kicadstudio.boardReadyOps.specFile': 'boardreadyops.yaml'
@@ -735,7 +758,7 @@ describe('BoardReadyOps commands', () => {
     expect(action).toBeDefined();
     plan['nextActions'] = [];
     plan['releaseActions'] = [action];
-    mockCompatibleBoardReadyOpsResponse(plan);
+    mockCompatibleBoardReadyOpsResponse(plan, 1);
 
     await runCommand(COMMANDS.boardReadyOpsPlan);
 
@@ -754,7 +777,7 @@ describe('BoardReadyOps commands', () => {
     const plan = boardReadyOpsAgentPlan();
     plan['nextActions'] = [];
     plan['releaseActions'] = [];
-    mockCompatibleBoardReadyOpsResponse(plan);
+    mockCompatibleBoardReadyOpsResponse(plan, 1);
 
     await runCommand(COMMANDS.boardReadyOpsPlan);
 

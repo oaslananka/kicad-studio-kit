@@ -14,6 +14,7 @@ export interface BoardReadyOpsPlanResult {
   schemaVersion: 1;
   tool: { name: 'boardreadyops'; version: string };
   status: 'passed' | 'failed';
+  exitCode: number;
   projectRoot: string;
   nextActions: BoardReadyOpsPlanAction[];
   releaseActions: BoardReadyOpsPlanAction[];
@@ -109,6 +110,7 @@ export function parseBoardReadyOpsPlan(
     !isText(candidate.generatedAt) ||
     (candidate.status !== 'passed' && candidate.status !== 'failed') ||
     !Number.isInteger(candidate.exitCode) ||
+    (candidate.exitCode !== 0 && candidate.exitCode !== 1) ||
     !validSummary ||
     !isText(candidate.projectRoot) ||
     !Array.isArray(candidate.nextActions) ||
@@ -119,4 +121,24 @@ export function parseBoardReadyOpsPlan(
     throw new Error('BoardReadyOps plan returned an invalid contract.');
   }
   return candidate as unknown as BoardReadyOpsPlanResult;
+}
+
+/**
+ * BoardReadyOps v1 plan JSON explicitly reports its exitCode and status.
+ * The published CLI returns exactly 0 for passed and 1 for failed. A valid
+ * plan shape cannot override a contradictory subprocess result.
+ */
+export function assertBoardReadyOpsPlanVerdict(
+  plan: BoardReadyOpsPlanResult,
+  processExitCode: number
+): void {
+  if (
+    processExitCode !== plan.exitCode ||
+    plan.status !== (processExitCode === 0 ? 'passed' : 'failed') ||
+    (processExitCode !== 0 && processExitCode !== 1)
+  ) {
+    throw new Error(
+      'BoardReadyOps plan returned inconsistent status or exit code.'
+    );
+  }
 }

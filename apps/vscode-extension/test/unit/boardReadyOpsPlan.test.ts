@@ -1,4 +1,7 @@
-import { parseBoardReadyOpsPlan } from '../../src/boardreadyops/plan';
+import {
+  assertBoardReadyOpsPlanVerdict,
+  parseBoardReadyOpsPlan
+} from '../../src/boardreadyops/plan';
 import { boardReadyOpsAgentPlan } from './boardReadyOpsFixtures';
 
 describe('BoardReadyOps agent plan contract', () => {
@@ -93,5 +96,51 @@ describe('BoardReadyOps agent plan contract', () => {
     expect(() => parseBoardReadyOpsPlan(JSON.stringify(plan))).toThrow(
       'BoardReadyOps plan returned an invalid contract.'
     );
+  });
+});
+
+describe('BoardReadyOps plan process and JSON consistency', () => {
+  it('accepts a matching failed plan with deterministic next actions', () => {
+    const parsed = parseBoardReadyOpsPlan(
+      JSON.stringify(boardReadyOpsAgentPlan())
+    );
+    expect(() => assertBoardReadyOpsPlanVerdict(parsed, 1)).not.toThrow();
+  });
+
+  it('accepts a matching successful plan with release actions', () => {
+    const plan = boardReadyOpsAgentPlan();
+    plan['status'] = 'passed';
+    plan['exitCode'] = 0;
+    const parsed = parseBoardReadyOpsPlan(JSON.stringify(plan));
+    expect(() => assertBoardReadyOpsPlanVerdict(parsed, 0)).not.toThrow();
+  });
+
+  it.each([
+    ['failed process with JSON success', 1, 0, 'passed'],
+    ['successful process with JSON failure', 0, 1, 'failed'],
+    ['JSON status contradicts its own exit code', 1, 1, 'passed'],
+    ['undocumented process code', 2, 1, 'failed']
+  ])('rejects %s', (_label, processCode, jsonCode, status) => {
+    const plan = boardReadyOpsAgentPlan();
+    plan['exitCode'] = jsonCode;
+    plan['status'] = status;
+    const parsed = parseBoardReadyOpsPlan(JSON.stringify(plan));
+    expect(() => assertBoardReadyOpsPlanVerdict(parsed, processCode)).toThrow(
+      'BoardReadyOps plan returned inconsistent status or exit code.'
+    );
+  });
+
+  it('never reports an external CLI payload in an inconsistent verdict error', () => {
+    const plan = boardReadyOpsAgentPlan();
+    (plan['nextActions'] as Record<string, unknown>[])[0]!['title'] =
+      'PRIVATE_PLAN_SENTINEL';
+    const parsed = parseBoardReadyOpsPlan(JSON.stringify(plan));
+    try {
+      assertBoardReadyOpsPlanVerdict(parsed, 0);
+      throw new Error('Expected an inconsistency error.');
+    } catch (error) {
+      expect(String(error)).toContain('inconsistent status or exit code');
+      expect(String(error)).not.toContain('PRIVATE_PLAN_SENTINEL');
+    }
   });
 });
