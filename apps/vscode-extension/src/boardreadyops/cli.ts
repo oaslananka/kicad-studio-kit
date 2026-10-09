@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { StringDecoder } from 'node:string_decoder';
 import type * as vscode from 'vscode';
 import { isWorkspaceTrusted } from '../utils/workspaceTrust';
 
@@ -38,6 +39,8 @@ export function runBoardReadyOpsCommand(
     let stderr = '';
     let stdoutBytes = 0;
     let stderrBytes = 0;
+    const stdoutDecoder = new StringDecoder('utf8');
+    const stderrDecoder = new StringDecoder('utf8');
     let failure: Error | undefined;
     let settled = false;
 
@@ -75,10 +78,10 @@ export function runBoardReadyOpsCommand(
       }
       if (stream === 'stdout') {
         stdoutBytes = total;
-        stdout += chunk.toString('utf8');
+        stdout += stdoutDecoder.write(chunk);
       } else {
         stderrBytes = total;
-        stderr += chunk.toString('utf8');
+        stderr += stderrDecoder.write(chunk);
       }
     };
 
@@ -92,7 +95,11 @@ export function runBoardReadyOpsCommand(
         } else if (token?.isCancellationRequested || code === null || signal) {
           reject(new Error('BoardReadyOps command was interrupted.'));
         } else {
-          resolve({ stdout, stderr, exitCode: code });
+          resolve({
+            stdout: stdout + stdoutDecoder.end(),
+            stderr: stderr + stderrDecoder.end(),
+            exitCode: code
+          });
         }
       });
     });

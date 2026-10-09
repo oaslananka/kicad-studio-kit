@@ -50,6 +50,27 @@ describe('runBoardReadyOpsCommand', () => {
     );
   });
 
+  it('decodes UTF-8 across stdout and stderr chunk boundaries', async () => {
+    const child = createChild();
+    (childProcess.spawn as unknown as jest.Mock).mockReturnValue(child);
+    const result = runBoardReadyOpsCommand('/project', ['doctor']);
+
+    const expected = 'Şema / Ölçüm / 測試';
+    const payload = Buffer.from(expected, 'utf8');
+    // Split every byte to exercise multibyte boundaries, not just ASCII.
+    for (const byte of payload) {
+      child.stdout.emit('data', Buffer.from([byte]));
+      child.stderr.emit('data', Buffer.from([byte]));
+    }
+    child.emit('close', 0);
+
+    await expect(result).resolves.toEqual({
+      stdout: expected,
+      stderr: expected,
+      exitCode: 0
+    });
+  });
+
   it('kills the child on cancellation and disposes the listener on close', async () => {
     const child = createChild();
     (childProcess.spawn as unknown as jest.Mock).mockReturnValue(child);
