@@ -294,6 +294,36 @@ describe('BoardReadyOps commands', () => {
     ).not.toContain('/private/evidence/manifest.json');
   });
 
+  it('never displays verified release evidence when the CLI returned a failure', async () => {
+    enableBoardReadyOpsProject();
+    mockReadinessAndEvidence(
+      {
+        ok: true,
+        manifestPath: '/private/evidence/manifest.json',
+        checked: 4,
+        errors: [],
+        signature: { present: true, ok: true, errors: [] }
+      },
+      1
+    );
+
+    await runCommand(COMMANDS.boardReadyOpsCheck);
+    (window.showInformationMessage as jest.Mock).mockResolvedValueOnce(
+      'Verify Release Evidence'
+    );
+    await runCommand(COMMANDS.boardReadyOpsShowReport);
+
+    expect(window.showInformationMessage).not.toHaveBeenCalledWith(
+      expect.stringContaining('BoardReadyOps release evidence verified:')
+    );
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'BoardReadyOps release verification failed: BoardReadyOps release verification returned inconsistent or incomplete evidence.'
+    );
+    expect(
+      JSON.stringify((window.showErrorMessage as jest.Mock).mock.calls)
+    ).not.toContain('/private/evidence/manifest.json');
+  });
+
   it('summarizes failed evidence verification without exposing CLI error details', async () => {
     enableBoardReadyOpsProject();
     mockReadinessAndEvidence(

@@ -106,7 +106,11 @@ Studio:
 2. runs the structured readiness check, rejects discrepancies between the CLI
    process exit code and JSON status/exit code, and blocks on a failed readiness
    result or any `critical`/`high` finding; and
-3. verifies the project's `build/boardreadyops-release` evidence bundle.
+3. verifies the project's `build/boardreadyops-release` evidence bundle,
+   rejects disagreement between the CLI exit status and JSON `ok` verdict,
+   and requires at least one verified artifact with no reported errors.
+   Unsigned bundles remain permitted if the CLI has verified them without a
+   required signing key; an invalid or failed signature is never accepted.
 
 A numeric readiness score cannot override a blocking finding. Missing, stale,
 malformed, or unverified evidence fails closed while BoardReadyOps is enabled.
