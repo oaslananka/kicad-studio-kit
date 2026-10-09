@@ -11,7 +11,7 @@ describe('MCP compatibility helpers', () => {
     expect(MCP_COMPAT).toEqual({
       required: '>=3.5.2 <5.0.0',
       recommended: '>=3.5.2 <5.0.0',
-      testedAgainst: '4.0.2'
+      testedAgainst: '4.1.0'
     });
   });
 

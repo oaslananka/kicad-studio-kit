@@ -82,7 +82,9 @@ describe('OASLANA-45 security regression gates', () => {
         SETTINGS.mcpAllowLegacySse,
         SETTINGS.pcmRepositoryUrls,
         SETTINGS.pcmConfigDir,
-        SETTINGS.pcmThirdPartyDir
+        SETTINGS.pcmThirdPartyDir,
+        SETTINGS.boardReadyOpsEnabled,
+        SETTINGS.boardReadyOpsSpecFile
       ])
     );
   });

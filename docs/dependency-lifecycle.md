@@ -80,6 +80,9 @@ Vulnerability-fix PRs skip the weekly schedule and should be reviewed first. Kee
 - If the patched npm version is newer than `minimumReleaseAge`, use only a
   version-scoped `minimumReleaseAgeExclude` entry and document the advisory.
   Do not add broad package-name exclusions.
+- The temporary `handlebars@4.7.10` exception resolves the October 2026 critical
+  advisories GHSA-8r5x-fm3f-whwj and GHSA-p8wg-vrv2-v86f in development
+  tooling; reevaluate the exception after its seven-day maturity window.
 - If the vulnerability is not exploitable because of local usage, document the reasoning in the PR and leave the alert state consistent with repository policy.
 
 ## Deferring and pinning

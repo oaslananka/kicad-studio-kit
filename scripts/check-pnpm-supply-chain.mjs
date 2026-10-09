@@ -13,6 +13,7 @@ const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = [
   "nanoid@3.3.18",
   "pnpm@11.11.0",
   "source-map-js@1.2.2",
+  "handlebars@4.7.10",
 ];
 const ALLOWED_TRUST_POLICY_EXCLUDES = [
   "@octokit/endpoint@9.0.6",

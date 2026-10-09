@@ -5,6 +5,7 @@ jest.mock('node:child_process', () => ({
 import { EventEmitter } from 'node:events';
 import * as childProcess from 'node:child_process';
 import { runBoardReadyOpsCommand } from '../../src/boardreadyops/cli';
+import { workspace } from './vscodeMock';
 
 function createChild() {
   const child = new EventEmitter() as EventEmitter & {
@@ -19,7 +20,10 @@ function createChild() {
 }
 
 describe('runBoardReadyOpsCommand', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    workspace.isTrusted = true;
+  });
 
   it('runs BoardReadyOps without a shell and collects process output', async () => {
     const child = createChild();
@@ -46,6 +50,27 @@ describe('runBoardReadyOpsCommand', () => {
     );
   });
 
+  it('decodes UTF-8 across stdout and stderr chunk boundaries', async () => {
+    const child = createChild();
+    (childProcess.spawn as unknown as jest.Mock).mockReturnValue(child);
+    const result = runBoardReadyOpsCommand('/project', ['doctor']);
+
+    const expected = 'Şema / Ölçüm / 測試';
+    const payload = Buffer.from(expected, 'utf8');
+    // Split every byte to exercise multibyte boundaries, not just ASCII.
+    for (const byte of payload) {
+      child.stdout.emit('data', Buffer.from([byte]));
+      child.stderr.emit('data', Buffer.from([byte]));
+    }
+    child.emit('close', 0);
+
+    await expect(result).resolves.toEqual({
+      stdout: expected,
+      stderr: expected,
+      exitCode: 0
+    });
+  });
+
   it('kills the child on cancellation and disposes the listener on close', async () => {
     const child = createChild();
     (childProcess.spawn as unknown as jest.Mock).mockReturnValue(child);
@@ -63,12 +88,58 @@ describe('runBoardReadyOpsCommand', () => {
     child.emit('close', null);
 
     expect(child.kill).toHaveBeenCalledTimes(1);
-    await expect(result).resolves.toEqual({
-      stdout: '',
-      stderr: '',
-      exitCode: 0
-    });
+    await expect(result).rejects.toThrow('cancelled');
     expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('never spawns a process from an untrusted workspace', async () => {
+    workspace.isTrusted = false;
+    await expect(
+      runBoardReadyOpsCommand('/project', ['doctor'])
+    ).rejects.toThrow('trusted workspace');
+    expect(childProcess.spawn).not.toHaveBeenCalled();
+  });
+
+  it('rejects an already cancelled command before spawning', async () => {
+    await expect(
+      runBoardReadyOpsCommand('/project', ['run'], {
+        isCancellationRequested: true
+      } as never)
+    ).rejects.toThrow('cancelled');
+    expect(childProcess.spawn).not.toHaveBeenCalled();
+  });
+
+  it('rejects a process terminated without an exit code', async () => {
+    const child = createChild();
+    (childProcess.spawn as unknown as jest.Mock).mockReturnValue(child);
+    const result = runBoardReadyOpsCommand('/project', ['run']);
+    child.emit('close', null);
+    await expect(result).rejects.toThrow('interrupted');
+  });
+
+  it('limits stdout and terminates the process without consuming more output', async () => {
+    const child = createChild();
+    (childProcess.spawn as unknown as jest.Mock).mockReturnValue(child);
+    const result = runBoardReadyOpsCommand('/project', ['run']);
+    child.stdout.emit('data', Buffer.alloc(4 * 1024 * 1024 + 1));
+    expect(child.kill).toHaveBeenCalledTimes(1);
+    child.emit('close', null);
+    await expect(result).rejects.toThrow('safety limit');
+  });
+
+  it('terminates a command that exceeds its timeout', async () => {
+    jest.useFakeTimers();
+    try {
+      const child = createChild();
+      (childProcess.spawn as unknown as jest.Mock).mockReturnValue(child);
+      const result = runBoardReadyOpsCommand('/project', ['run']);
+      jest.advanceTimersByTime(5 * 60 * 1000);
+      expect(child.kill).toHaveBeenCalledTimes(1);
+      child.emit('close', null);
+      await expect(result).rejects.toThrow('timed out');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('rejects spawn errors and disposes the cancellation listener', async () => {
