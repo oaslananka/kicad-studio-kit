@@ -35,6 +35,27 @@ checked-in policy broadens `main` beyond squash-only merges, disables strict
 required checks or conversation resolution, drops linear history, or removes
 deletion/non-fast-forward protection.
 
+### Short-lived Release Please generator scope
+
+Release Please first opens an unsynchronized, temporary candidate PR from
+`release-please--branches--main--components--vscode-extension`, then creates
+the durable, GitHub-signed PR from
+`release-please/branches/main/components/vscode-extension`. On the generator
+branch the version metadata is intentionally incomplete, so running product,
+release and docs consistency validation before the signed shadow is assembled
+can only produce false CI failure notifications. The repository scopes this
+exception to PRs **authored by `oaslananka`, with that exact head branch in the
+same repository**. Generator branches are deleted and their PRs closed by the
+release workflow after signature/ancestry verification. They are never release
+or merge authorities.
+
+The aggregate `required` check still reports. Security, CodeQL, dependency
+review and Gitleaks checks are not weakened. Crucially, normal feature PRs,
+fork PRs, `main`, and the signed `release-please/branches/...` PR continue
+through the full, unchanged CI/release/docs/compatibility/Sonar quality gates.
+See `scripts/check-release-please-monorepo.test.mjs` for the exact branch,
+repository and owner regressions; this is **not** a generalized CI skip.
+
 ## Quality gate coverage
 
 Each required pull-request quality gate maps to one of the required checks above:
