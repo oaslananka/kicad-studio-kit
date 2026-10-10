@@ -1,3 +1,5 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import type { Page, TestInfo } from '@playwright/test';
 
 export type VisualTheme = {
@@ -148,10 +150,20 @@ export function snapshotPath(
   platform: NodeJS.Platform = process.platform
 ): string[] {
   const dpr = testInfo.project.name.endsWith('dpr2') ? 'dpr2' : 'dpr1';
-  const platformSuffix = fixture.platformSnapshots?.includes(platform)
-    ? `-${platform}`
-    : '';
-  return [fixture.id, `${visualCase.id}-${dpr}${platformSuffix}.png`];
+  const commonName = `${visualCase.id}-${dpr}.png`;
+  if (fixture.platformSnapshots?.includes(platform)) {
+    const platformName = `${visualCase.id}-${dpr}-${platform}.png`;
+    // A platform-specific snapshot overrides the common baseline only when
+    // genuine baseline evidence exists; other cases retain strict shared checks.
+    if (
+      fs.existsSync(
+        path.join(__dirname, '__screenshots__', fixture.id, platformName)
+      )
+    ) {
+      return [fixture.id, platformName];
+    }
+  }
+  return [fixture.id, commonName];
 }
 
 function themeTokens(input: {
