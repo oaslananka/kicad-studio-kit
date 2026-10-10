@@ -10,9 +10,10 @@ import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import test from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import { promisify } from "node:util";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { assertStablePackageVersion } from "./lib/mcp-2026-rc-artifact-canary.mjs";
 
 const require = createRequire(import.meta.url);
@@ -21,16 +22,13 @@ const execFileAsync = promisify(execFile);
 const modernProtocol = "2026-07-28";
 const logger = { debug() {}, warn() {} };
 
-function requestedVersion(rawArgs) {
-  // pnpm forwards a literal "--" before script arguments on some versions.
-  const argv = rawArgs[0] === "--" ? rawArgs.slice(1) : rawArgs;
-  const i = argv.indexOf("--version");
-  if (i < 0 || !argv[i + 1] || argv.length !== 2) {
+function requestedVersion(version) {
+  if (typeof version !== "string" || !version) {
     throw new Error(
-      "Usage: check-mcp-2026-studio-real-pair.mjs --version <stable major.minor.patch>",
+      "Set KICAD_MCP_PRO_VERSION to an exact stable PyPI version.",
     );
   }
-  return assertStablePackageVersion(argv[i + 1]);
+  return assertStablePackageVersion(version);
 }
 
 async function compileStudioProtocol(outDir) {
@@ -102,6 +100,28 @@ async function stopServer(child) {
   }
 }
 
+async function awaitServerReady(endpoint, child, remaining = 160) {
+  if (remaining === 0) {
+    throw new Error("Published server did not become ready on loopback");
+  }
+  if (
+    child.exitCode !== null ||
+    child.signalCode !== null ||
+    child.pid === undefined
+  ) {
+    throw new Error("Published server failed startup");
+  }
+  try {
+    await fetch(endpoint + "/mcp", {
+      headers: { Accept: "application/json, text/event-stream" },
+      signal: AbortSignal.timeout(750),
+    });
+  } catch {
+    await delay(500);
+    return awaitServerReady(endpoint, child, remaining - 1);
+  }
+}
+
 async function runPair({ version, modern, modules }) {
   const port = await freeLoopbackPort();
   const endpoint = "http://127.0.0.1:" + port;
@@ -133,27 +153,7 @@ async function runPair({ version, modern, modules }) {
   for (const stream of [child.stdout, child.stderr]) stream.resume();
 
   try {
-    let ready = false;
-    for (let attempt = 0; attempt < 160; attempt += 1) {
-      if (child.exitCode !== null || child.pid === undefined) {
-        throw new Error(
-          "Published server failed startup in " +
-            (modern ? "modern" : "stable") +
-            " lane",
-        );
-      }
-      try {
-        await fetch(endpoint + "/mcp", {
-          headers: { Accept: "application/json, text/event-stream" },
-          signal: AbortSignal.timeout(750),
-        });
-        ready = true;
-        break;
-      } catch {
-        await delay(500);
-      }
-    }
-    assert.ok(ready, "Published server did not become ready on loopback");
+    await awaitServerReady(endpoint, child);
 
     const adapter = modern
       ? new modules.Mcp2026ProtocolAdapter()
@@ -173,9 +173,12 @@ async function runPair({ version, modern, modules }) {
       transport: new modules.HttpJsonRpcTransport({
         logger,
         maxRetries: 1,
-        fetchFn: (url, options) => {
-          outgoing.push(new Headers(options?.headers));
-          return fetch(url, options);
+        trafficLogger: {
+          recordRequest: (_method, _payload, headers) => {
+            outgoing.push(new Headers(headers));
+          },
+          recordResponse() {},
+          recordError() {},
         },
       }),
     });
@@ -253,20 +256,24 @@ async function runPair({ version, modern, modules }) {
 }
 
 async function main() {
-  const version = requestedVersion(process.argv.slice(2));
+  const version = requestedVersion(process.env.KICAD_MCP_PRO_VERSION);
   const scratch = await mkdtemp(
     path.join(tmpdir(), "kicad-studio-mcp-real-pair-"),
   );
   try {
     await compileStudioProtocol(scratch);
-    const moduleFrom = (name) =>
-      require(path.join(scratch, "mcp/" + name + ".js"));
+    // Only fixed in-repo TypeScript modules are compiled into this directory.
+    const loadCompiled = async (name) => {
+      const moduleUrl = pathToFileURL(path.join(scratch, "mcp", name + ".js"));
+      const loaded = await import(moduleUrl.href);
+      return loaded.default ?? loaded;
+    };
     const modules = {
-      ...moduleFrom("protocol/mcp2025ProtocolAdapter"),
-      ...moduleFrom("protocol/mcp2026ProtocolAdapter"),
-      ...moduleFrom("protocol/protocolAdapterRegistry"),
-      ...moduleFrom("protocol/protocolLifecycle"),
-      ...moduleFrom("transport/httpJsonRpcTransport"),
+      ...(await loadCompiled("protocol/mcp2025ProtocolAdapter")),
+      ...(await loadCompiled("protocol/mcp2026ProtocolAdapter")),
+      ...(await loadCompiled("protocol/protocolAdapterRegistry")),
+      ...(await loadCompiled("protocol/protocolLifecycle")),
+      ...(await loadCompiled("transport/httpJsonRpcTransport")),
     };
     assert.throws(
       () => modules.resolveMcpProtocolAdapter(modernProtocol),
@@ -288,7 +295,24 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
+test("pinned published version rejects malformed or prerelease values", () => {
+  assert.equal(requestedVersion("4.1.0"), "4.1.0");
+  for (const value of [
+    undefined,
+    "",
+    "4.1.0rc1",
+    "latest",
+    "4.1.0 --unexpected",
+  ]) {
+    assert.throws(
+      () => requestedVersion(value),
+      /KICAD_MCP_PRO_VERSION|stable major\.minor\.patch/u,
+    );
+  }
 });
+
+test(
+  "published MCP Studio 2026 stateless and 2025 session real pair",
+  { timeout: 180_000 },
+  main,
+);

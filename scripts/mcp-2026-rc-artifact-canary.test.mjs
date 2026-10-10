@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 import {
@@ -310,12 +309,12 @@ test("#777 Studio published real-pair canary uses the actual runtime owners", ()
   );
   const target = resolve(
     REPO_ROOT,
-    "scripts/check-mcp-2026-studio-real-pair.mjs",
+    "scripts/check-mcp-2026-studio-real-pair.test.mjs",
   );
   assert.equal(existsSync(target), true);
   assert.equal(
     pkg.scripts["check:mcp-2026-studio-real-pair"],
-    "node scripts/check-mcp-2026-studio-real-pair.mjs",
+    "node --test scripts/check-mcp-2026-studio-real-pair.test.mjs",
   );
   const source = readFileSync(target, "utf8");
   assert.match(source, /McpProtocolLifecycle/u);
@@ -328,6 +327,7 @@ test("#777 Studio published real-pair canary uses the actual runtime owners", ()
   assert.match(source, /KICAD_MCP_OPERATING_MODE: "readonly"/u);
   assert.match(source, /resolveMcpProtocolAdapter\(modernProtocol\)/u);
   assert.match(source, /savedSessions/u);
+  assert.match(source, /process\.env\.KICAD_MCP_PRO_VERSION/u);
   assert.match(
     source,
     /await rm\(scratch, \{ recursive: true, force: true \}\)/u,
@@ -343,28 +343,5 @@ test("#777 cross-repo workflow tests Studio with the published PyPI version", ()
     workflow,
     /name: Canary Studio real-pair protocols \(published PyPI\)/u,
   );
-  assert.match(
-    workflow,
-    /corepack pnpm run check:mcp-2026-studio-real-pair -- --version "\$KICAD_MCP_PRO_VERSION"/u,
-  );
-});
-
-test("#777 refuses unpinned, prerelease, or extra PyPI arguments before starting a server", () => {
-  const program = resolve(
-    REPO_ROOT,
-    "scripts/check-mcp-2026-studio-real-pair.mjs",
-  );
-  for (const args of [
-    [],
-    ["--version", "4.1.0rc1"],
-    ["--version", "4.1.0", "--unexpected"],
-  ]) {
-    const child = spawnSync(process.execPath, [program, ...args], {
-      cwd: REPO_ROOT,
-      encoding: "utf8",
-      timeout: 5000,
-    });
-    assert.equal(child.status, 1, JSON.stringify(args));
-    assert.match(child.stderr, /Usage:|stable major\.minor\.patch/u);
-  }
+  assert.match(workflow, /corepack pnpm run check:mcp-2026-studio-real-pair/u);
 });

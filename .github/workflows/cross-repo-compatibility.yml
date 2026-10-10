@@ -139,7 +139,7 @@ jobs:
         env:
           KICAD_MCP_PRO_VERSION: ${{ steps.pypi-check.outputs.pypi_version }}
         run: |
-          corepack pnpm run check:mcp-2026-studio-real-pair -- --version "$KICAD_MCP_PRO_VERSION"
+          corepack pnpm run check:mcp-2026-studio-real-pair
 
       - name: Validate published MCP profile vocabulary
         env:
