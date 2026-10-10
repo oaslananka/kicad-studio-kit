@@ -27,6 +27,21 @@ export class Mcp2026UnsupportedResultError extends Error {
   }
 }
 
+export class Mcp2026InvalidDiscoveryError extends Error {
+  readonly code = 'MCP_2026_DISCOVERY_INVALID';
+
+  constructor() {
+    super(
+      'MCP 2026 discovery did not satisfy the required stateless contract.'
+    );
+    this.name = 'Mcp2026InvalidDiscoveryError';
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
 export class Mcp2026ProtocolAdapter implements McpProtocolAdapter {
   readonly version = MCP_2026_PROTOCOL_VERSION;
   readonly lifecycle = 'stateless-discovery' as const;
@@ -102,10 +117,10 @@ export class Mcp2026ProtocolAdapter implements McpProtocolAdapter {
 
   validateDiscoveryResult(result: McpDiscoveryResult | undefined): void {
     const versions = result?.supportedVersions;
-    const advertised =
-      Array.isArray(versions) && versions.includes(this.version);
     if (
-      !advertised ||
+      result === undefined ||
+      !Array.isArray(versions) ||
+      !versions.includes(this.version) ||
       (result?.protocolVersion && result.protocolVersion !== this.version)
     ) {
       throw new McpProtocolVersionMismatchError(
@@ -114,6 +129,36 @@ export class Mcp2026ProtocolAdapter implements McpProtocolAdapter {
           (Array.isArray(versions) ? versions.join(', ') : 'missing')
       );
     }
+
+    // These fields are mandatory in the final 2026 DiscoverResult. A
+    // matching version string by itself must never enable the staged client.
+    if (
+      !versions.every(
+        (version) => typeof version === 'string' && version.length > 0
+      ) ||
+      !isRecord(result.capabilities) ||
+      !Number.isSafeInteger(result.ttlMs) ||
+      result.ttlMs === undefined ||
+      result.ttlMs < 0 ||
+      (result.cacheScope !== 'public' && result.cacheScope !== 'private') ||
+      (result._meta !== undefined && !isRecord(result._meta))
+    ) {
+      throw new Mcp2026InvalidDiscoveryError();
+    }
+    const metadata = result._meta;
+    const serverInfo = isRecord(metadata)
+      ? metadata['io.modelcontextprotocol/serverInfo']
+      : undefined;
+    if (
+      serverInfo !== undefined &&
+      (!isRecord(serverInfo) ||
+        typeof serverInfo['name'] !== 'string' ||
+        typeof serverInfo['version'] !== 'string')
+    ) {
+      throw new Mcp2026InvalidDiscoveryError();
+    }
+    // serverInfo and cacheScope are untrusted server assertions, not
+    // authorization or permission to select an otherwise blocked adapter.
   }
 
   validateResponseResult(result: unknown): void {
