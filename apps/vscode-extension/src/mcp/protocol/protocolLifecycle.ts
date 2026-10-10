@@ -144,7 +144,11 @@ export class McpProtocolLifecycle {
           : {}),
         ...(sessionId ? { sessionId } : {})
       }),
-      allowLegacySse: runtime.allowLegacySse,
+      // Stateless 2026 calls must never fall through to the 2025-only /sse
+      // endpoint, even if a legacy user preference is still enabled.
+      allowLegacySse:
+        this.adapter.lifecycle === 'initialize-session' &&
+        runtime.allowLegacySse,
       timeoutMs: runtime.timeoutMs
     };
   }

@@ -134,7 +134,9 @@ export class HttpJsonRpcTransport implements McpRpcTransport {
       request.headers
     );
 
-    const primaryResponse = await fetchWithTimeout(
+    // Keep the deadline alive until the JSON/SSE body has been consumed.
+    // A peer can send response headers immediately and then stall the body.
+    const primary = await fetchWithTimeout(
       this.fetchFn,
       primaryEndpoint,
       {
@@ -142,11 +144,18 @@ export class HttpJsonRpcTransport implements McpRpcTransport {
         headers: request.headers,
         body: requestBody
       },
-      request.timeoutMs
+      request.timeoutMs,
+      async (response) => ({
+        status: response.status,
+        result:
+          response.status === 404 || response.status === 405
+            ? undefined
+            : await readRpcResponse<T>(response)
+      })
     );
 
     let result: HttpJsonRpcResult<T>;
-    if (primaryResponse.status === 404 || primaryResponse.status === 405) {
+    if (primary.status === 404 || primary.status === 405) {
       if (!request.allowLegacySse) {
         throw new Error(
           `The configured MCP server at ${primaryEndpoint} does not expose Streamable HTTP. Upgrade kicad-mcp-pro or explicitly enable the legacy SSE fallback.`
@@ -156,20 +165,22 @@ export class HttpJsonRpcTransport implements McpRpcTransport {
       this.logger.warn(
         'Falling back to legacy MCP /sse transport because the legacy fallback is enabled.'
       );
-      result = await readRpcResponse<T>(
-        await fetchWithTimeout(
-          this.fetchFn,
-          `${baseEndpoint}/sse`,
-          {
-            method: 'POST',
-            headers: request.headers,
-            body: requestBody
-          },
-          request.timeoutMs
-        )
+      result = await fetchWithTimeout(
+        this.fetchFn,
+        `${baseEndpoint}/sse`,
+        {
+          method: 'POST',
+          headers: request.headers,
+          body: requestBody
+        },
+        request.timeoutMs,
+        readRpcResponse<T>
       );
     } else {
-      result = await readRpcResponse<T>(primaryResponse);
+      if (!primary.result) {
+        throw new Error('MCP server response was missing a JSON-RPC result.');
+      }
+      result = primary.result;
     }
 
     this.trafficLogger?.recordResponse(request.method, result.json);
@@ -177,29 +188,39 @@ export class HttpJsonRpcTransport implements McpRpcTransport {
   }
 }
 
-async function fetchWithTimeout(
+async function fetchWithTimeout<T>(
   fetchFn: FetchFunction,
   input: RequestInfo | URL,
   init: RequestInit,
-  timeoutMs: number
-): Promise<Response> {
+  timeoutMs: number,
+  consume: (response: Response) => Promise<T>
+): Promise<T> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => {
-    controller.abort(new McpRequestTimeoutError(timeoutMs));
-  }, timeoutMs);
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_resolve, reject) => {
+    timeout = setTimeout(() => {
+      const reason = new McpRequestTimeoutError(timeoutMs);
+      controller.abort(reason);
+      reject(reason);
+    }, timeoutMs);
+  });
 
   try {
-    return await fetchFn(input, {
-      ...init,
-      signal: init.signal
-        ? AbortSignal.any([init.signal, controller.signal])
-        : controller.signal
-    });
+    return await Promise.race([
+      (async () =>
+        consume(
+          await fetchFn(input, {
+            ...init,
+            signal: init.signal
+              ? AbortSignal.any([init.signal, controller.signal])
+              : controller.signal
+          })
+        ))(),
+      deadline
+    ]);
   } catch (error) {
     if (controller.signal.aborted) {
-      throw controller.signal.reason instanceof Error
-        ? controller.signal.reason
-        : new McpRequestTimeoutError(timeoutMs);
+      throw new McpRequestTimeoutError(timeoutMs);
     }
     throw error;
   } finally {

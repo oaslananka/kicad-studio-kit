@@ -210,6 +210,43 @@ describe('HTTP JSON-RPC transport boundary (#492)', () => {
     ).rejects.toBeInstanceOf(McpRequestTimeoutError);
   });
 
+  it.each(['json', 'sse'] as const)(
+    'enforces the deadline while consuming a stalled %s response body',
+    async (encoding) => {
+      // Real fetch can resolve with headers while the body never finishes.
+      const fetchFn = jest.fn(async () => {
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers({
+            'content-type':
+              encoding === 'json' ? 'application/json' : 'text/event-stream'
+          }),
+          json: () => new Promise<never>(() => undefined),
+          text: () => new Promise<never>(() => undefined)
+        } as unknown as Response;
+      });
+      const transport = new HttpJsonRpcTransport({
+        fetchFn,
+        logger: createLogger(),
+        maxRetries: 1
+      });
+
+      await expect(
+        transport.execute({
+          baseEndpoint: 'http://127.0.0.1:27185',
+          id: 5,
+          method: 'server/discover',
+          params: {},
+          headers: { 'MCP-Protocol-Version': '2026-07-28' },
+          allowLegacySse: false,
+          timeoutMs: 15
+        })
+      ).rejects.toBeInstanceOf(McpRequestTimeoutError);
+      expect(fetchFn).toHaveBeenCalledTimes(1);
+    }
+  );
+
   it('retries transient failures with exponential backoff and traffic evidence (#492)', async () => {
     const fetchFn = jest
       .fn()

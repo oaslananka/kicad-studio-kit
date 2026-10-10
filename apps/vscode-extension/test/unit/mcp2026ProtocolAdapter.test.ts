@@ -9,6 +9,8 @@ import {
   resolveMcpProtocolAdapter
 } from '../../src/mcp/protocol/protocolAdapterRegistry';
 import { McpProtocolLifecycle } from '../../src/mcp/protocol/protocolLifecycle';
+import { Mcp2025ProtocolAdapter } from '../../src/mcp/protocol/mcp2025ProtocolAdapter';
+import { HttpJsonRpcTransport } from '../../src/mcp/transport/httpJsonRpcTransport';
 
 const clientInfo = { name: 'kicad-studio', version: '1.15.4' };
 const modernDiscovery = {
@@ -222,6 +224,161 @@ describe('staged MCP 2026-07-28 stateless adapter (#492)', () => {
     ).rejects.toThrow(Mcp2026InvalidDiscoveryError);
     expect(onDiscovery).not.toHaveBeenCalled();
     expect(write).not.toHaveBeenCalled();
+  });
+
+  it('never enables the legacy /sse fallback for 2026, even with the old preference enabled', async () => {
+    const fetchFn = jest.fn(
+      async (_input: RequestInfo | URL) => new Response(null, { status: 404 })
+    );
+    const lifecycle = new McpProtocolLifecycle({
+      adapter,
+      clientInfo,
+      sessionStore: {
+        read: () => '2025-legacy-session',
+        write: jest.fn(async () => undefined)
+      },
+      transport: new HttpJsonRpcTransport({
+        fetchFn,
+        logger: { debug: jest.fn(), warn: jest.fn() },
+        maxRetries: 1
+      })
+    });
+
+    await expect(
+      lifecycle.ensureReady(
+        {
+          baseEndpoint: 'http://127.0.0.1:3334',
+          allowLegacySse: true,
+          timeoutMs: 1000,
+          hasDiscoveryState: false
+        },
+        { onDiscovery: jest.fn() }
+      )
+    ).rejects.toThrow('does not expose Streamable HTTP');
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    expect(String(fetchFn.mock.calls[0]?.[0])).toMatch(/\/mcp$/u);
+  });
+
+  it('isolates 2026 negative MRTR and 2025 session fallback in one client process', async () => {
+    let savedSession: string | undefined = 'persisted-2025-session';
+    const writes: Array<string | undefined> = [];
+    const requests: Array<{
+      method: string;
+      version: string | null;
+      session: string | null;
+      meta: unknown;
+    }> = [];
+    const store = {
+      read: () => savedSession,
+      write: async (session: string | undefined) => {
+        savedSession = session;
+        writes.push(session);
+      }
+    };
+    const fetchFn = jest.fn(
+      async (_url: RequestInfo | URL, init?: RequestInit) => {
+        const request = JSON.parse(String(init?.body)) as {
+          method: string;
+          params: Record<string, unknown>;
+        };
+        const headers = new Headers(init?.headers);
+        const version = headers.get('MCP-Protocol-Version');
+        requests.push({
+          method: request.method,
+          version,
+          session: headers.get('MCP-Session-Id'),
+          meta: request.params['_meta']
+        });
+        const reply = (
+          body: unknown,
+          extraHeaders: Record<string, string> = {}
+        ) =>
+          new Response(JSON.stringify(body), {
+            headers: { 'Content-Type': 'application/json', ...extraHeaders }
+          });
+        if (version === '2026-07-28') {
+          if (request.method === 'server/discover') {
+            return reply(
+              { result: modernDiscovery },
+              { 'Mcp-Session-Id': 'malicious-modern-session' }
+            );
+          }
+          return reply({
+            result: {
+              resultType: 'input_required',
+              inputRequests: { confirm: { type: 'elicitation' } }
+            }
+          });
+        }
+        if (request.method === 'initialize') {
+          return reply(
+            { result: { protocolVersion: '2025-11-25' } },
+            { 'Mcp-Session-Id': 'negotiated-2025-session' }
+          );
+        }
+        return reply({ result: { tools: [] } });
+      }
+    );
+    const transport = new HttpJsonRpcTransport({
+      fetchFn,
+      logger: { debug: jest.fn(), warn: jest.fn() },
+      maxRetries: 1
+    });
+    const runtime = {
+      baseEndpoint: 'http://127.0.0.1:3334',
+      allowLegacySse: true,
+      timeoutMs: 1000,
+      hasDiscoveryState: false
+    };
+    const modern = new McpProtocolLifecycle({
+      adapter,
+      transport,
+      clientInfo,
+      sessionStore: store
+    });
+    await modern.ensureReady(runtime, { onDiscovery: jest.fn() });
+    await expect(
+      modern.execute('tools/call', { name: 'kicad_get_version' }, runtime)
+    ).rejects.toBeInstanceOf(Mcp2026UnsupportedResultError);
+    expect(savedSession).toBe('persisted-2025-session');
+    expect(writes).toEqual([]);
+
+    // Explicit fallback to the production 2025 adapter must still negotiate
+    // and persist its own session, not reuse 2026 metadata or body fields.
+    const legacy = new McpProtocolLifecycle({
+      adapter: new Mcp2025ProtocolAdapter(),
+      transport,
+      clientInfo,
+      sessionStore: store
+    });
+    await legacy.ensureReady(runtime, { onDiscovery: jest.fn() });
+    await legacy.execute('tools/list', {}, runtime);
+    expect(savedSession).toBe('negotiated-2025-session');
+    expect(writes).toEqual(['negotiated-2025-session']);
+
+    // A subsequent stateless call must neither send nor erase the 2025 session.
+    await modern.ensureReady(runtime, { onDiscovery: jest.fn() });
+    expect(savedSession).toBe('negotiated-2025-session');
+    expect(requests.map((request) => request.method)).toEqual([
+      'server/discover',
+      'tools/call',
+      'initialize',
+      'tools/list',
+      'server/discover'
+    ]);
+    for (const request of requests.filter((r) => r.version === '2026-07-28')) {
+      expect(request.session).toBeNull();
+      expect(request.meta).toMatchObject({
+        'io.modelcontextprotocol/protocolVersion': '2026-07-28'
+      });
+    }
+    const oldRequests = requests.filter((r) => r.version === '2025-11-25');
+    expect(oldRequests[0]?.session).toBe('persisted-2025-session');
+    expect(oldRequests[1]?.session).toBe('negotiated-2025-session');
+    expect(oldRequests.every((r) => r.meta === undefined)).toBe(true);
+    expect(() => resolveMcpProtocolAdapter('2026-07-28')).toThrow(
+      UnsupportedMcpProtocolVersionError
+    );
   });
 
   it('uses stateless lifecycle wire requests without changing the legacy adapter', async () => {
