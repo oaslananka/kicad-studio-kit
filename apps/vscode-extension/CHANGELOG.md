@@ -22,6 +22,8 @@ published.
 
 * **kicad-studio:** close BoardReadyOps progress before user review ([#772](https://github.com/oaslananka/kicad-studio-kit/issues/772)) ([59b9b17](https://github.com/oaslananka/kicad-studio-kit/commit/59b9b1707c406dcf519f15d9bcbd5430e47b5ff6))
 * **kicad-studio:** finish BoardReadyOps progress before user decisions ([59b9b17](https://github.com/oaslananka/kicad-studio-kit/commit/59b9b1707c406dcf519f15d9bcbd5430e47b5ff6))
+* **kicad-studio:** reject malformed MCP 2026 discovery before activation ([f9ca41b](https://github.com/oaslananka/kicad-studio-kit/commit/f9ca41b06d26d8db9333d7932a1d9a6cf7e7a9b3))
+* **kicad-studio:** validate final MCP 2026 discovery before schema v2 migration ([#786](https://github.com/oaslananka/kicad-studio-kit/issues/786)) ([f9ca41b](https://github.com/oaslananka/kicad-studio-kit/commit/f9ca41b06d26d8db9333d7932a1d9a6cf7e7a9b3))
 
 ## [1.16.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.4...vscode-extension-v1.16.0) (2026-10-10)
 
