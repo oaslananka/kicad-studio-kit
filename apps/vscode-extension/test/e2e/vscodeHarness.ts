@@ -66,7 +66,7 @@ export async function launchVsCodeWithFixtures(
 
   const executablePath = await downloadVsCodeWithRetry(
     VSCODE_VERSION,
-    downloadAndUnzipVSCode
+    (version) => downloadAndUnzipVSCode({ version, timeout: 120_000 })
   );
   const remoteDebuggingPort = await getFreePort();
   const env = { ...process.env };

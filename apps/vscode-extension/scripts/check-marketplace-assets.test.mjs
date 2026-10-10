@@ -58,6 +58,19 @@ test('#710 marketplace checker rejects stale capture schema', (context) => {
   assert.throws(runMarketplaceCheck, /schemaVersion must be 1/iu);
 });
 
+test('#710 marketplace checker requires the current capture contract version', (context) => {
+  mockTextFile(
+    context,
+    'scripts/marketplace-capture-sources.json',
+    (original) => {
+      const value = JSON.parse(original);
+      value.version = 2;
+      return JSON.stringify(value, null, 2) + '\n';
+    }
+  );
+  assert.throws(runMarketplaceCheck, /capture source contract is invalid/iu);
+});
+
 test('#710 marketplace checker rejects source-contract drift', (context) => {
   mockTextFile(
     context,

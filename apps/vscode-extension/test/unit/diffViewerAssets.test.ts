@@ -63,6 +63,7 @@ describe('diff viewer assets', () => {
         'utf8'
       );
 
+      expect(html).not.toContain('<style>');
       expect(html).not.toContain('unsafe-inline');
       expect(html).not.toContain('unsafe-eval');
       expect(html).toContain("script-src 'nonce-{{scriptNonce}}'");

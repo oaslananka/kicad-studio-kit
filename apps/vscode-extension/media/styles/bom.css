@@ -324,3 +324,76 @@ tbody tr.selected {
 #bom-empty.visible {
   display: block;
 }
+
+/* Netlist view: external stylesheet required by the restrictive webview CSP. */
+#error-card {
+  display: none;
+  margin: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid
+    var(--vscode-inputValidation-errorBorder, rgba(200, 50, 50, 0.5));
+  background: var(
+    --vscode-inputValidation-errorBackground,
+    rgba(200, 50, 50, 0.08)
+  );
+  color: var(--vscode-errorForeground, inherit);
+  font-size: 12px;
+}
+#error-card.visible {
+  display: block;
+}
+#error-card strong {
+  display: block;
+  margin-bottom: 4px;
+}
+#netlist-empty {
+  margin: 18px 10px;
+  padding: 16px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+}
+#netlist-empty-action:not([hidden]) {
+  display: block;
+  margin-top: 10px;
+}
+
+/* Netlist-specific column widths */
+.netlist-view th:nth-child(1),
+.netlist-view td:nth-child(1) {
+  width: 40%;
+}
+.netlist-view th:nth-child(2),
+.netlist-view td:nth-child(2) {
+  width: 60%;
+}
+
+/* BOM loading states: styles must be external to satisfy the webview CSP. */
+#loading-row {
+  display: none;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+#loading-row.visible {
+  display: flex;
+}
+#loading-row .spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

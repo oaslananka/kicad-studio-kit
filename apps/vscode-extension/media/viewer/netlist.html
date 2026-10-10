@@ -13,53 +13,8 @@
     />
     <title>KiCad Netlist</title>
     <link rel="stylesheet" href="{{bomCssUri}}" />
-    <style>
-      #error-card {
-        display: none;
-        margin: 10px;
-        padding: 10px 12px;
-        border-radius: 6px;
-        border: 1px solid
-          var(--vscode-inputValidation-errorBorder, rgba(200, 50, 50, 0.5));
-        background: var(
-          --vscode-inputValidation-errorBackground,
-          rgba(200, 50, 50, 0.08)
-        );
-        color: var(--vscode-errorForeground, inherit);
-        font-size: 12px;
-      }
-      #error-card.visible {
-        display: block;
-      }
-      #error-card strong {
-        display: block;
-        margin-bottom: 4px;
-      }
-      #netlist-empty {
-        margin: 18px 10px;
-        padding: 16px;
-        color: var(--muted);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        background: var(--panel);
-      }
-      #netlist-empty-action {
-        display: block;
-        margin-top: 10px;
-      }
-
-      /* Netlist-specific column widths */
-      th:nth-child(1),
-      td:nth-child(1) {
-        width: 40%;
-      }
-      th:nth-child(2),
-      td:nth-child(2) {
-        width: 60%;
-      }
-    </style>
   </head>
-  <body>
+  <body class="netlist-view">
     <div id="bom-app">
       <div id="statsbar">
         <span id="summary-text" class="muted">No schematic opened.</span>

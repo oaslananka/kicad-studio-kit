@@ -125,6 +125,7 @@ describe('marketplace listing assets', () => {
     expect(manifest.fixture).toBe(
       'test/fixtures/benchmark_projects/pass_i2c_sensor_hub'
     );
+    expect(contract.sources).toContain('media/styles/bom.css');
     expect(manifest.sourceContractVersion).toBe(contract.version);
     expect(manifest.sourceFingerprint).toBe(
       sourceFingerprint(contract.sources)
