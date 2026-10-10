@@ -70,12 +70,12 @@ export class Mcp2026ProtocolAdapter implements McpProtocolAdapter {
       'MCP-Protocol-Version': this.version,
       'Mcp-Method': context.method
     };
-    const field =
-      context.method === 'tools/call' || context.method === 'prompts/get'
-        ? 'name'
-        : context.method === 'resources/read'
-          ? 'uri'
-          : undefined;
+    let field: string | undefined;
+    if (context.method === 'tools/call' || context.method === 'prompts/get') {
+      field = 'name';
+    } else if (context.method === 'resources/read') {
+      field = 'uri';
+    }
     if (field) {
       const name = context.params?.[field];
       if (typeof name !== 'string' || !name || /[\r\n]/u.test(name)) {
