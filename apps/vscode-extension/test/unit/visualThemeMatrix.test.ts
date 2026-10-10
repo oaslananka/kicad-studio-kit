@@ -42,6 +42,31 @@ describe('visual snapshot paths', () => {
     ]);
   });
 
+  it('selects verified Windows viewer screenshots without changing shared baselines', () => {
+    const viewerFixture = {
+      ...fixture,
+      id: 'clean-pcb-issue-18-toolbar-issue-19-collapsed-panel'
+    };
+    const windowsEvidenceCase = { ...visualCase, id: 'vscode-light-1280x720' };
+    expect(
+      snapshotPath(viewerFixture, windowsEvidenceCase, testInfo, 'win32')
+    ).toEqual([
+      'clean-pcb-issue-18-toolbar-issue-19-collapsed-panel',
+      'vscode-light-1280x720-dpr2-win32.png'
+    ]);
+    // Missing Windows-specific evidence must preserve the shared strict baseline.
+    expect(snapshotPath(viewerFixture, visualCase, testInfo, 'win32')).toEqual([
+      'clean-pcb-issue-18-toolbar-issue-19-collapsed-panel',
+      'vscode-dark-1280x720-dpr2.png'
+    ]);
+    expect(
+      snapshotPath(viewerFixture, windowsEvidenceCase, testInfo, 'linux')
+    ).toEqual([
+      'clean-pcb-issue-18-toolbar-issue-19-collapsed-panel',
+      'vscode-light-1280x720-dpr2.png'
+    ]);
+  });
+
   it('keeps the shared baseline when the platform is not opted in', () => {
     expect(snapshotPath(fixture, visualCase, testInfo, 'linux')).toEqual([
       'viewer-final-renderer-failure-issue-625',

@@ -65,6 +65,7 @@ export const VISUAL_FIXTURES: readonly VisualFixture[] = [
   }),
   viewerFixture({
     id: 'clean-pcb-issue-18-toolbar-issue-19-collapsed-panel',
+    platformSnapshots: ['win32'],
     fileType: 'board',
     mockOptions: { surface: 'canvas' },
     options: {
