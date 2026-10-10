@@ -38,7 +38,7 @@ export const COMPATIBILITY_MATRIX = {
   },
   products: {
     kicadStudio: {
-      version: '1.15.4',
+      version: '1.16.0',
       compatibleMcpPro: {
         required: '>=3.5.2 <5.0.0',
         recommended: '>=3.5.2 <5.0.0',
@@ -49,7 +49,7 @@ export const COMPATIBILITY_MATRIX = {
       version: '4.1.0',
       compatibleExtension: {
         required: '>=1.0.0 <2.0.0',
-        testedAgainst: '1.15.4'
+        testedAgainst: '1.16.0'
       }
     }
   }
