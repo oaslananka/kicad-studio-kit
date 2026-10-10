@@ -58,7 +58,10 @@ mockups.
 - Visual Studio Code ^1.101.0
 - KiCad project formats from KiCad 8.x, 9.x, and 10.x
 - kicad-cli for CLI-backed validation and export workflows
-- Optional MCP integration: kicad-mcp-pro >=3.5.2 <4.0.0
+- Optional MCP integration: kicad-mcp-pro >=3.5.2 <5.0.0
+
+MCP integration currently uses protocol `2025-11-25`; the `2026-07-28`
+protocol remains disabled pending separately verified activation.
 
 KiCad remains the source of truth for design files. Viewer fallback and
 compatibility state are surfaced explicitly instead of silently substituting

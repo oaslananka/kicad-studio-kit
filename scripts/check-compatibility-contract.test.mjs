@@ -120,6 +120,19 @@ test("#623 BoardReadyOps support-matrix evidence matches compatibility metadata"
   assert.equal(documentedVersion, testedVersion);
 });
 
+test("Marketplace MCP requirement matches the canonical supported server range", () => {
+  const marketplace = fs.readFileSync(
+    "apps/vscode-extension/MARKETPLACE.md",
+    "utf8",
+  );
+  const advertised = marketplace.match(
+    /^- Optional MCP integration: kicad-mcp-pro (.+)$/mu,
+  )?.[1];
+
+  assert.equal(advertised, compatibility.supportAxes.mcpServer.required);
+  assert.equal(advertised, compatibility.supportAxes.mcpServer.recommended);
+});
+
 test("#722 published MCP tested-pair evidence stays synchronized across docs and PyPI", () => {
   const mcpServer = compatibility.supportAxes.mcpServer;
   const publishedVersion = mcpServer.testedAgainst.version;
