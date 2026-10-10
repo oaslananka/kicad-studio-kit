@@ -83,7 +83,9 @@ export class Mcp2026ProtocolAdapter implements McpProtocolAdapter {
           `MCP ${context.method} requires a safe ${field} for Mcp-Name.`
         );
       }
-      headers['Mcp-Name'] = name;
+      headers['Mcp-Name'] = /^[\x20-\x7e]+$/u.test(name)
+        ? name
+        : `=?base64?${Buffer.from(name, 'utf8').toString('base64')}?=`;
     }
     return headers;
   }
@@ -99,10 +101,17 @@ export class Mcp2026ProtocolAdapter implements McpProtocolAdapter {
   }
 
   validateDiscoveryResult(result: McpDiscoveryResult | undefined): void {
-    if (result?.protocolVersion !== this.version) {
+    const versions = result?.supportedVersions;
+    const advertised =
+      Array.isArray(versions) && versions.includes(this.version);
+    if (
+      !advertised ||
+      (result?.protocolVersion && result.protocolVersion !== this.version)
+    ) {
       throw new McpProtocolVersionMismatchError(
         this.version,
-        result?.protocolVersion ?? 'missing'
+        result?.protocolVersion ??
+          (Array.isArray(versions) ? versions.join(', ') : 'missing')
       );
     }
   }

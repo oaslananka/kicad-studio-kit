@@ -10,6 +10,7 @@ export interface McpProtocolRequest {
 
 export interface McpDiscoveryResult {
   protocolVersion?: string | undefined;
+  supportedVersions?: readonly string[] | undefined;
   serverInfo?:
     | {
         name?: string | undefined;

@@ -74,6 +74,14 @@ describe('staged MCP 2026-07-28 stateless adapter (#492)', () => {
       })['Mcp-Name']
     ).toBe('file:///example.kicad_pcb');
     expect(
+      adapter.createRequestHeaders({
+        method: 'resources/read',
+        params: { uri: 'kicad://proje/şema' }
+      })['Mcp-Name']
+    ).toBe(
+      `=?base64?${Buffer.from('kicad://proje/şema', 'utf8').toString('base64')}?=`
+    );
+    expect(
       adapter.createRequestHeaders({ method: 'server/discover' })['Mcp-Name']
     ).toBeUndefined();
     expect(() =>
@@ -102,10 +110,12 @@ describe('staged MCP 2026-07-28 stateless adapter (#492)', () => {
 
   it('requires a matching discovery result and fails closed on input_required', () => {
     expect(() =>
-      adapter.validateDiscoveryResult({ protocolVersion: '2026-07-28' })
+      adapter.validateDiscoveryResult({
+        supportedVersions: ['2026-07-28', '2025-11-25']
+      })
     ).not.toThrow();
     expect(() =>
-      adapter.validateDiscoveryResult({ protocolVersion: '2025-11-25' })
+      adapter.validateDiscoveryResult({ supportedVersions: ['2025-11-25'] })
     ).toThrow(McpProtocolVersionMismatchError);
     expect(() => adapter.validateDiscoveryResult(undefined)).toThrow(
       McpProtocolVersionMismatchError
@@ -147,7 +157,7 @@ describe('staged MCP 2026-07-28 stateless adapter (#492)', () => {
             json: {
               result: {
                 resultType: 'complete',
-                protocolVersion: '2026-07-28'
+                supportedVersions: ['2026-07-28', '2025-11-25']
               } as T
             },
             headers: new Headers({ 'Mcp-Session-Id': 'ignored' })
