@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "sources": [
     "package.json",
     "src/providers/projectTreeProvider.ts",
@@ -8,6 +8,7 @@
     "src/providers/viewerHtml.ts",
     "src/providers/viewer/viewerControllerScript.ts",
     "media/kicanvas/viewer.css",
+    "media/styles/bom.css",
     "media/viewer/bom.html",
     "media/viewer/bom.js",
     "test/e2e/vscodeHarness.ts",

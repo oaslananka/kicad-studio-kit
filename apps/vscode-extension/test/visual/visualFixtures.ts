@@ -234,6 +234,7 @@ function bomFixture(
 ): VisualFixture {
   return {
     id,
+    platformSnapshots: ['win32'],
     prepare: async (page) => {
       await installVsCodeApiMock(page);
       await setWebviewContent(page, createBomHtml());
@@ -248,6 +249,7 @@ function netlistFixture(
 ): VisualFixture {
   return {
     id,
+    platformSnapshots: ['win32'],
     prepare: async (page) => {
       await installVsCodeApiMock(page);
       await setWebviewContent(page, createNetlistHtml());

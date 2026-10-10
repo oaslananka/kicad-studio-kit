@@ -500,6 +500,59 @@ test.describe('KiCad Studio webview DOM', () => {
     await expect(action).toBeHidden();
   });
 
+  test('hides netlist error on success and loading, and shows it on failure', async ({
+    page
+  }) => {
+    await installVsCodeApiMock(page);
+    await setWebviewContent(page, createNetlistHtml());
+    const errorCard = page.locator('#error-card');
+    await expect(errorCard).toBeHidden();
+
+    await page.evaluate(() => {
+      window.postMessage(
+        {
+          type: 'setNetlist',
+          payload: {
+            nets: [
+              { netName: '/LED_A', nodes: [{ reference: 'D1', pin: '1' }] }
+            ],
+            status: 'Netlist from KICAD_TEST.kicad_sch'
+          }
+        },
+        '*'
+      );
+    });
+    await expect(page.locator('#netlist-rows tr')).toHaveCount(1);
+    await expect(errorCard).toBeHidden();
+
+    await page.evaluate(() => {
+      window.postMessage(
+        {
+          type: 'setNetlist',
+          payload: {
+            nets: [],
+            status: 'Could not export netlist: KiCad CLI failed'
+          }
+        },
+        '*'
+      );
+    });
+    await expect(errorCard).toBeVisible();
+    await expect(errorCard).toContainText('KiCad CLI failed');
+    await expect(page.locator('#table-wrapper')).toBeHidden();
+
+    await page.evaluate(() => {
+      window.postMessage(
+        {
+          type: 'setNetlist',
+          payload: { nets: [], status: 'Loading active schematic...' }
+        },
+        '*'
+      );
+    });
+    await expect(errorCard).toBeHidden();
+  });
+
   test('keeps netlist loading distinct from a guided empty state', async ({
     page
   }) => {
