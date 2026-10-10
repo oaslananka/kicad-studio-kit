@@ -133,6 +133,14 @@ jobs:
         run: |
           corepack pnpm run check:mcp-2026-rc-artifact -- --version "$KICAD_MCP_PRO_VERSION"
 
+      # Test actual Studio adapters/transport with the same published package.
+      # Modern production activation remains independently blocked.
+      - name: Canary Studio real-pair protocols (published PyPI)
+        env:
+          KICAD_MCP_PRO_VERSION: ${{ steps.pypi-check.outputs.pypi_version }}
+        run: |
+          corepack pnpm run check:mcp-2026-studio-real-pair -- --version "$KICAD_MCP_PRO_VERSION"
+
       - name: Validate published MCP profile vocabulary
         env:
           KICAD_MCP_PRO_VERSION: ${{ steps.pypi-check.outputs.pypi_version }}
