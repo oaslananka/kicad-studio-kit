@@ -95,6 +95,7 @@ describe('KiCadStatusBar', () => {
       bar.update({ cli: undefined });
       expect(item(0).text).toContain('KiCad');
       expect(item(0).text).toContain('warning');
+      expect(item(0).tooltip).toContain('kicad-cli not found');
       bar.dispose();
     });
 
