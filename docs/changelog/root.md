@@ -1,3 +1,7 @@
+---
+search: false
+---
+
 # Root Changelog
 
 Source: `CHANGELOG.md`

@@ -356,7 +356,11 @@ function copyChangelog(sourceRelativePath, targetRelativePath, title) {
   const body = readText(sourceRelativePath).trim();
   writeGenerated(
     targetRelativePath,
-    `# ${title}
+    `---
+search: false
+---
+
+# ${title}
 
 Source: \`${sourceRelativePath}\`
 

@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import test from "node:test";
+import { parse as parseYaml } from "yaml";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -268,14 +269,17 @@ test("default-branch commit subject validation remains strict", () => {
         files: ["renovate.json"],
       },
     ]),
-    ["abcdef2 subject must include a scope: kicad-studio, kicad-mcp-pro, repo, deps, docs, superpowers, .gitignore"],
+    [
+      "abcdef2 subject must include a scope: kicad-studio, kicad-mcp-pro, repo, deps, docs, superpowers, .gitignore",
+    ],
   );
 });
 
 test("Release Please generated PR title exemption remains unchanged", () => {
   assert.deepEqual(
     validatePrTitle("chore(main): release vscode-extension", {
-      headRefName: "release-please--branches--main--components--vscode-extension",
+      headRefName:
+        "release-please--branches--main--components--vscode-extension",
     }),
     [],
   );
@@ -465,4 +469,81 @@ test("release-please dry-run snapshot ignores root-only changes", async () => {
   assert.equal(snapshot.includesVsCodeExtensionRelease, false);
   assert.equal(snapshot.includesRootOnlyRelease, false);
   assert.deepEqual(snapshot.updatedPaths, []);
+});
+
+test("#784 temporary Release Please generator cannot trigger premature CI validation", () => {
+  const sourceBranch =
+    "release-please--branches--main--components--vscode-extension";
+  const ci = parseYaml(fs.readFileSync(".github/workflows/ci.yml", "utf8"));
+  const sonar = parseYaml(
+    fs.readFileSync(".github/workflows/sonarcloud.yml", "utf8"),
+  );
+  const guarded = [
+    ["ci.yml", "ci-lanes", ci],
+    [
+      "docs.yml",
+      "build",
+      parseYaml(fs.readFileSync(".github/workflows/docs.yml", "utf8")),
+    ],
+    [
+      "release.yml",
+      "release-readiness",
+      parseYaml(fs.readFileSync(".github/workflows/release.yml", "utf8")),
+    ],
+    [
+      "cross-repo-compatibility.yml",
+      "canary",
+      parseYaml(
+        fs.readFileSync(
+          ".github/workflows/cross-repo-compatibility.yml",
+          "utf8",
+        ),
+      ),
+    ],
+    ["sonarcloud.yml", "sonarcloud", sonar],
+  ];
+  for (const [workflow, job, parsed] of guarded) {
+    const expression = parsed.jobs[job]?.if;
+    assert.equal(typeof expression, "string", workflow + ":" + job);
+    assert.ok(
+      expression.includes("github.event_name != 'pull_request'"),
+      workflow,
+    );
+    assert.ok(
+      expression.includes("github.head_ref != '" + sourceBranch + "'"),
+      workflow,
+    );
+    assert.ok(
+      expression.includes(
+        "github.event.pull_request.head.repo.full_name != github.repository",
+      ),
+      workflow,
+    );
+    assert.ok(
+      expression.includes(
+        "github.event.pull_request.user.login != 'oaslananka'",
+      ),
+      workflow,
+    );
+    assert.ok(
+      !expression.includes("github.head_ref != 'release-please/branches/"),
+      workflow,
+    );
+  }
+  assert.equal(
+    ci.jobs.required.if,
+    "${{ !cancelled() }}",
+    "protected aggregate required must always report",
+  );
+  assert.ok(
+    sonar.jobs.sonarcloud.if.includes(
+      "github.event.pull_request.head.repo.full_name == github.repository",
+    ),
+    "Sonar fork secret guard remains active",
+  );
+  // The trusted transient head is NOT the independently protected signed PR.
+  assert.notEqual(
+    sourceBranch,
+    "release-please/branches/main/components/vscode-extension",
+  );
 });

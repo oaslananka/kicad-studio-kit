@@ -17,7 +17,13 @@ jobs:
   sonarcloud:
     # Secrets are unavailable on fork PRs; never execute attacker-authored
     # code with the Sonar token on an untrusted fork.
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    if: >-
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository) &&
+      (github.event_name != 'pull_request' ||
+       github.head_ref != 'release-please--branches--main--components--vscode-extension' ||
+       github.event.pull_request.head.repo.full_name != github.repository ||
+       github.event.pull_request.user.login != 'oaslananka')
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
