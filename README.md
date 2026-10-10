@@ -66,7 +66,7 @@ This repository retains its OpenSSF and maturity evidence from the earlier MIT-l
 
 This repository's local release surface is:
 
-- VS Code extension: `oaslananka.kicadstudiokit` (`1.16.0`)
+- VS Code extension: `oaslananka.kicadstudiokit` (`1.16.1`)
 
 The Python package `kicad-mcp-pro`, container image, and MCP Registry listing
 are released from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/).
