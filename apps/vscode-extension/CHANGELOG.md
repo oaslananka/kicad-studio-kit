@@ -15,6 +15,8 @@ published.
 
 ### Features
 
+* **kicad-studio:** focus schematic fallback and simplify task sidebar ([b125398](https://github.com/oaslananka/kicad-studio-kit/commit/b125398acfc9b8d636676ac2bcf9c48694773bf4))
+* **kicad-studio:** focus schematic fallback and simplify task sidebar ([#770](https://github.com/oaslananka/kicad-studio-kit/issues/770)) ([b125398](https://github.com/oaslananka/kicad-studio-kit/commit/b125398acfc9b8d636676ac2bcf9c48694773bf4))
 * **kicad-studio:** stage fail-closed 2026 stateless client wire adapter ([#762](https://github.com/oaslananka/kicad-studio-kit/issues/762)) ([ed992af](https://github.com/oaslananka/kicad-studio-kit/commit/ed992afeb34088403975c9cc861d98e0795654ec)), closes [#492](https://github.com/oaslananka/kicad-studio-kit/issues/492)
 
 
