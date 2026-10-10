@@ -58,6 +58,50 @@ test.describe('KiCad Studio webview DOM', () => {
     );
   });
 
+  test('keeps Fit, Export, and Panel accessible in a narrow editor', async ({
+    page
+  }) => {
+    await page.setViewportSize({ width: 700, height: 540 });
+    await installVsCodeApiMock(page);
+    await setViewerContent(page, {
+      fileName: 'sample.kicad_pcb',
+      fileType: 'board',
+      base64: readFixtureBase64('sample.kicad_pcb')
+    });
+    await expect(page.locator('#viewer-toolbar')).toBeVisible();
+    const dimensions = await page.evaluate(() => {
+      const header = document.querySelector('header');
+      const toolbar = document.querySelector('#viewer-toolbar');
+      if (!header || !toolbar) throw new Error('Viewer toolbar missing');
+      return {
+        headerHeight: header.getBoundingClientRect().height,
+        toolbarWidth: toolbar.getBoundingClientRect().width,
+        toolbarScrollWidth: toolbar.scrollWidth
+      };
+    });
+    expect(dimensions.headerHeight).toBeGreaterThan(44);
+    expect(dimensions.toolbarScrollWidth).toBeLessThanOrEqual(
+      Math.ceil(dimensions.toolbarWidth) + 1
+    );
+    for (const selector of [
+      '#fit-btn',
+      '#export-menu-toggle',
+      '#side-panel-toggle'
+    ]) {
+      const control = page.locator(selector);
+      await expect(control).toBeVisible();
+      await expect(control).toBeInViewport();
+    }
+    await page.locator('#export-menu-toggle').click();
+    await expect(page.locator('#export-png-btn')).toBeVisible();
+    await page.locator('#export-menu-toggle').click();
+    await page.locator('#side-panel-toggle').click();
+    await expect(page.locator('#side-panel-toggle')).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    );
+  });
+
   test('applies toolbar, sheet, reference, layer, lasso, and focus interactions to the embed', async ({
     page
   }) => {

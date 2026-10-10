@@ -7,6 +7,15 @@ header{display:flex;align-items:center;gap:8px;min-height:34px;padding:6px 10px;
 header h1{margin:0;font-size:13px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 0;min-width:0}
 .actions{display:flex;gap:6px;flex:0 0 auto}
 .viewer-toolbar{display:flex;align-items:center;gap:6px;flex:0 1 auto;min-width:0;overflow:hidden}
+/* In a split editor the toolbar must reflow, not silently clip actions. */
+@media (max-width:960px){
+  header{flex-wrap:wrap;align-content:flex-start}
+  header h1{flex:1 1 100%;max-width:100%}
+  .viewer-toolbar{flex:1 1 100%;flex-wrap:wrap;overflow:visible}
+  .toolbar-divider{display:none}
+  .engine-badge{max-width:45%;overflow:hidden;text-overflow:ellipsis}
+  #viewer-status{flex:1 1 0;min-width:0}
+}
 .toolbar-divider{width:1px;align-self:stretch;background:var(--vscode-editorWidget-border,var(--border));margin:1px 2px}
 .compact-btn{padding-inline:7px}
 .icon-btn{width:26px;min-width:26px;padding-inline:0;text-align:center}
