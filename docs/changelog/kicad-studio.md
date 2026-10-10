@@ -16,6 +16,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.17.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.17.0...vscode-extension-v1.17.1) (2026-10-10)
+
+
+### Bug Fixes
+
+* **kicad-studio:** bound MCP response-body timeouts and block 2026 SSE fallback ([#788](https://github.com/oaslananka/kicad-studio-kit/issues/788)) ([2464034](https://github.com/oaslananka/kicad-studio-kit/commit/24640340ffa37bf542379590200b444568895adb))
+
 ## [1.17.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.16.0...vscode-extension-v1.17.0) (2026-10-10)
 
 
