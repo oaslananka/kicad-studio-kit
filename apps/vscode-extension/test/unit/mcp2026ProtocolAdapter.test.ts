@@ -259,6 +259,53 @@ describe('staged MCP 2026-07-28 stateless adapter (#492)', () => {
     expect(String(fetchFn.mock.calls[0]?.[0])).toMatch(/\/mcp$/u);
   });
 
+  it('preserves explicitly enabled 2025 /sse fallback after blocking the modern path', async () => {
+    const requests: string[] = [];
+    const fetchFn = jest.fn(async (input: RequestInfo | URL) => {
+      requests.push(String(input));
+      if (String(input).endsWith('/mcp')) {
+        return new Response(null, { status: 404 });
+      }
+      return new Response(
+        'data: {"result":{"protocolVersion":"2025-11-25"}}\n\n',
+        { headers: { 'Content-Type': 'text/event-stream' } }
+      );
+    });
+    const onDiscovery = jest.fn();
+    const lifecycle = new McpProtocolLifecycle({
+      adapter: new Mcp2025ProtocolAdapter(),
+      clientInfo,
+      sessionStore: {
+        read: () => undefined,
+        write: jest.fn(async () => undefined)
+      },
+      transport: new HttpJsonRpcTransport({
+        fetchFn,
+        logger: { debug: jest.fn(), warn: jest.fn() },
+        maxRetries: 1
+      })
+    });
+
+    await expect(
+      lifecycle.ensureReady(
+        {
+          baseEndpoint: 'http://127.0.0.1:3334',
+          allowLegacySse: true,
+          timeoutMs: 1000,
+          hasDiscoveryState: false
+        },
+        { onDiscovery }
+      )
+    ).resolves.toBeUndefined();
+    expect(requests).toEqual([
+      'http://127.0.0.1:3334/mcp',
+      'http://127.0.0.1:3334/sse'
+    ]);
+    expect(onDiscovery).toHaveBeenCalledWith({
+      protocolVersion: '2025-11-25'
+    });
+  });
+
   it('isolates 2026 negative MRTR and 2025 session fallback in one client process', async () => {
     let savedSession: string | undefined = 'persisted-2025-session';
     const writes: Array<string | undefined> = [];
