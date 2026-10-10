@@ -116,7 +116,7 @@ Total contributed commands: 117.
 | `kicadstudio.exportStats` | KiCad: Export Board Statistics | KiCad Export |
 | `kicadstudio.selectActiveProject` | KiCad: Select Active Project | KiCad |
 | `kicadstudio.boardReadyOps.plan` | KiCad Studio: Show BoardReadyOps Remediation Plan | KiCad Studio |
-| `kicadstudio.boardReadyOps.reviewEvidence` | KiCad Studio: BoardReadyOps Review and Evidence | KiCad Studio |
+| `kicadstudio.boardReadyOps.reviewEvidence` | BoardReadyOps Review and Evidence | KiCad Studio |
 | `kicadstudio.generateKicadDiffReport` | KiCad: Generate Diff Report | KiCad |
 | `kicadstudio.tasks.open` | KiCad Studio: Open Task Hub | KiCad Studio |
 | `kicadstudio.tasks.review` | KiCad Studio: Review Project | KiCad Studio |
