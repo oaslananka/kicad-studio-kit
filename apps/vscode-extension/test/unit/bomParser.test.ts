@@ -51,6 +51,46 @@ describe('BomParser', () => {
     expect(entries[0]?.footprint).toBe('');
   });
 
+  it('matches native KiCad 10 BOM references for a schematic with library definitions', () => {
+    const source = fs.readFileSync(
+      path.join(
+        __dirname,
+        '..',
+        '..',
+        '..',
+        '..',
+        'examples',
+        'led-basic',
+        'KICAD_TEST.kicad_sch'
+      ),
+      'utf8'
+    );
+    const entries = new BomParser(new SExpressionParser()).parse(source, false);
+    // kicad-cli sch export bom on this fixture includes exactly D1, J1, R1.
+    expect(entries.map((entry) => entry.references[0]).sort()).toEqual([
+      'D1',
+      'J1',
+      'R1'
+    ]);
+  });
+
+  it('excludes in_bom=no without conflating exclusion, board placement and DNP', () => {
+    const source = `(kicad_sch
+      (lib_symbols (symbol "Device:R"
+        (property "Reference" "R") (property "Value" "R")))
+      (symbol (lib_id "Device:R") (in_bom yes) (on_board no) (dnp no)
+        (property "Reference" "R1") (property "Value" "10k"))
+      (symbol (lib_id "Device:R") (in_bom yes) (on_board yes) (dnp yes)
+        (property "Reference" "R2") (property "Value" "20k"))
+      (symbol (lib_id "Device:R") (in_bom no) (on_board yes) (dnp no)
+        (property "Reference" "R3") (property "Value" "30k"))
+      (symbol (lib_id "power:GND") (in_bom yes)
+        (property "Reference" "#PWR01") (property "Value" "GND")))`;
+    const entries = new BomParser(new SExpressionParser()).parse(source, false);
+    expect(entries.map((entry) => entry.references[0])).toEqual(['R1', 'R2']);
+    expect(entries.map((entry) => entry.dnp)).toEqual([false, true]);
+  });
+
   it('groups quantity by identical value and footprint', () => {
     const parser = new BomParser(new SExpressionParser());
     const entries = parser.parse(

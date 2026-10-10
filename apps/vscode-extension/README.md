@@ -78,6 +78,8 @@ Open **KiCad Studio: Open Task Hub** from the Command Palette or use the task bu
 
 ### Bill of Materials
 
+The BOM panel and its CSV/XLSX exports include only placed schematic symbols that are marked for the BOM. DNP (do-not-populate) components remain identifiable separately from symbols excluded from the BOM; a symbol excluded from board placement is not automatically DNP. KiCad remains the authority for final manufacturing exports.
+
 ![KiCad Studio Bill of Materials](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/screenshots/bom-table.png)
 
 ### MCP & Tools
