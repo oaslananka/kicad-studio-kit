@@ -18,29 +18,23 @@ test.describe('KiCad Studio VS Code E2E', () => {
       );
 
       const statusBar = session.page.locator('.statusbar');
-      const hasKiCadItem = await statusBar.evaluate((el) =>
-        /KiCad/.test(el.textContent ?? '')
-      );
-      if (hasKiCadItem) {
-        await expect(statusBar).toContainText(
-          /KiCad(?:: Not found| [0-9][0-9.]+)/
-        );
-        const hasKiCad = await statusBar.evaluate((el) =>
-          /KiCad \d/.test(el.textContent ?? '')
-        );
-        if (hasKiCad) {
-          await expect(statusBar).toContainText(/MCP/);
-          await expect(statusBar).toContainText(/DRC: ./);
-          await expect(statusBar).toContainText(/ERC: ./);
-        }
-      }
+      // These items exist after activation whether kicad-cli is installed or
+      // not. A missing CLI intentionally renders only "KiCad" with a warning
+      // icon; numeric version text is shown only when detection succeeded.
+      // DRC/ERC items are hidden until reports have actually been collected.
+      await expect(statusBar).toContainText(/\bKiCad\b/);
+      await expect(statusBar).toContainText(/\bAI\b/);
+      await expect(statusBar).toContainText(/\bMCP\b/);
     } finally {
       await session.close();
     }
   });
 
   test('recovers the PCB viewer when WebGL is unavailable in the extension host', async () => {
-    const session = await launchVsCodeWithFixtures({ disableWebgl: true, mockKiCadCli: true });
+    const session = await launchVsCodeWithFixtures({
+      disableWebgl: true,
+      mockKiCadCli: true
+    });
 
     try {
       // This is a fresh VS Code session. Ensure the extension has activated
