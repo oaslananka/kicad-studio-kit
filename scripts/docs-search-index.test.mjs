@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   renderDocsSearchContent,
   stripSearchCodeBlocks,
@@ -48,4 +51,20 @@ test("#531 search rendering preserves prose and removes rendered code blocks", (
 test("#531 malformed pre blocks preserve the unparsed remainder", () => {
   const html = "<h1>Install</h1><pre><code>unfinished";
   assert.equal(stripSearchCodeBlocks(html), html);
+});
+
+test("#784 generated changelog archives stay readable but are excluded from local search", () => {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  for (const [source, page] of [
+    ["CHANGELOG.md", "docs/changelog/root.md"],
+    ["apps/vscode-extension/CHANGELOG.md", "docs/changelog/kicad-studio.md"],
+  ]) {
+    const original = fs.readFileSync(path.join(root, source), "utf8");
+    const generated = fs.readFileSync(path.join(root, page), "utf8");
+    assert.match(generated, /^---\nsearch: false\n---\n\n# /u);
+    assert.ok(
+      generated.includes(original.trim().slice(-120)),
+      page + " must retain source changelog content",
+    );
+  }
 });

@@ -1,3 +1,7 @@
+---
+search: false
+---
+
 # KiCad Studio Changelog
 
 Source: `apps/vscode-extension/CHANGELOG.md`
