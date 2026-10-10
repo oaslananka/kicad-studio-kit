@@ -1,12 +1,15 @@
 {
-  "version": 3,
+  "version": 4,
   "sources": [
     "package.json",
+    "package.nls.json",
     "src/providers/projectTreeProvider.ts",
     "src/providers/validationViewProvider.ts",
     "src/providers/bomViewProvider.ts",
     "src/providers/viewerHtml.ts",
+    "src/providers/viewer/schematicFocusBounds.ts",
     "src/providers/viewer/viewerControllerScript.ts",
+    "src/providers/viewer/viewerPayload.ts",
     "media/kicanvas/viewer.css",
     "media/styles/bom.css",
     "media/viewer/bom.html",

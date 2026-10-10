@@ -33,7 +33,7 @@
   "kicadstudio.contributes.views.kicadstudio-sidebar.8.name": "AI Fix Queue",
   "kicadstudio.contributes.views.kicadstudio-sidebar.9.name": "Component Search",
   "kicadstudio.contributes.views.kicadstudio-sidebar.10.name": "MCP & Tools",
-  "kicadstudio.contributes.viewsWelcome.0.contents": "Open a folder containing a `.kicad_pro`, `.kicad_sch`, or `.kicad_pcb` file to start using KiCad Studio.\n[Open Folder](command:workbench.action.files.openFolder)\n[Open Settings Panel](command:kicadstudio.openSettings)",
+  "kicadstudio.contributes.viewsWelcome.0.contents": "Open a folder containing a `.kicad_pro`, `.kicad_sch`, or `.kicad_pcb` file to start using KiCad Studio.\n[Open Folder](command:workbench.action.files.openFolder)\n[Choose a KiCad Task](command:kicadstudio.tasks.open)\\n[Open Settings Panel](command:kicadstudio.openSettings)",
   "kicadstudio.contributes.viewsWelcome.1.contents": "Catch layout and electrical violations before manufacturing.\n\n[Run DRC](command:kicadstudio.runDRC)\n[Run ERC](command:kicadstudio.runERC)\n\nResults appear in the **Problems** panel below.",
   "kicadstudio.contributes.viewsWelcome.2.contents": "Workspace is in Restricted Mode — DRC/ERC are disabled.\n\n[Manage Workspace Trust](command:workbench.action.manageTrust)",
   "kicadstudio.contributes.viewsWelcome.3.contents": "Open a KiCad project to run design rule checks.\n[Open Folder](command:workbench.action.files.openFolder)",

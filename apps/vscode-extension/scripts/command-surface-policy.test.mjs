@@ -116,26 +116,32 @@ test('routes disconnected MCP onboarding through the Automate task hub', () => {
   }
 });
 
-test('keeps advanced sidebar surfaces progressively disclosed', () => {
-  const sidebarViews = new Map(
-    (packageJson.contributes?.views?.['kicadstudio-sidebar'] ?? []).map(
-      (view) => [view.id, view]
+test('keeps exactly four task-oriented primary views without removing advanced views', () => {
+  const views = packageJson.contributes?.views?.['kicadstudio-sidebar'] ?? [];
+  const visible = views.filter((view) => view.visibility !== 'hidden');
+  assert.deepEqual(
+    visible.map((view) => view.id),
+    [
+      'kicadstudio.projectTree',
+      'kicadstudio.validation',
+      'kicadstudio.qualityGate',
+      'kicadstudio.bomView'
+    ]
+  );
+  assert.equal(visible[2].visibility, 'collapsed');
+  assert.equal(visible[3].visibility, 'collapsed');
+  assert.equal(
+    views.length,
+    11,
+    'advanced views must remain available in the native Views menu'
+  );
+  assert.equal(views.filter((view) => view.visibility === 'hidden').length, 7);
+  const titleActions = packageJson.contributes?.menus?.['view/title'] ?? [];
+  assert.ok(
+    titleActions.some(
+      (item) =>
+        item.command === 'kicadstudio.tasks.open' &&
+        item.when === 'view == kicadstudio.projectTree'
     )
   );
-  for (const id of [
-    'kicadstudio.bomView',
-    'kicadstudio.netlistView',
-    'kicadstudio.variants',
-    'kicadstudio.library',
-    'kicadstudio.drcRules',
-    'kicadstudio.fixQueue',
-    'kicadstudio.componentSearch',
-    'kicadstudio.mcpTools'
-  ]) {
-    assert.equal(
-      sidebarViews.get(id)?.visibility,
-      'collapsed',
-      `${id} must default to collapsed progressive disclosure`
-    );
-  }
 });

@@ -7,6 +7,7 @@ import { createViewerPayload } from './viewer/viewerPayload';
 import { resolveViewerPalette } from './viewer/viewerPalette';
 import { compactHtmlDocument, escapeScriptJson } from './viewer/viewerTemplate';
 import { createViewerControllerScript } from './viewer/viewerControllerScript';
+import { schematicFocusBounds } from './viewer/schematicFocusBounds';
 import {
   injectWebviewLocalization,
   localizeWebviewMessage,
@@ -42,6 +43,9 @@ export function createKiCanvasViewerHtml(
     fileName: options.fileName,
     fileType: options.fileType,
     base64: options.base64,
+    ...(options.fileType === 'schematic'
+      ? { schematicFocus: schematicFocusBounds(options.base64) }
+      : {}),
     disabledReason: options.disabledReason,
     theme: themeName,
     fallbackBackground: options.fallbackBackground ?? '',

@@ -19,6 +19,7 @@ type CommandPaletteContribution = {
 type ViewContribution = {
   id?: string;
   when?: string;
+  visibility?: 'visible' | 'collapsed' | 'hidden';
 };
 
 type ViewWelcomeContribution = {
@@ -467,6 +468,25 @@ suite('Extension Integration', () => {
         `Missing sidebar view ${viewId}`
       );
     }
+
+    const primaryViews = sidebarViews.filter(
+      (view) => view.visibility !== 'hidden'
+    );
+    assert.deepStrictEqual(
+      primaryViews.map((view) => view.id),
+      [
+        'kicadstudio.projectTree',
+        'kicadstudio.validation',
+        'kicadstudio.qualityGate',
+        'kicadstudio.bomView'
+      ]
+    );
+    assert.strictEqual(sidebarViews.length, 11);
+    assert.strictEqual(
+      sidebarViews.filter((view) => view.visibility === 'hidden').length,
+      7,
+      'Seven specialist views remain registered and discoverable in the native Views menu'
+    );
 
     const commandPalette = getCommandPalettePolicies(extension);
     assertCommandPaletteWhen(commandPalette, 'kicadstudio.showStatusMenu', []);
