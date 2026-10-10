@@ -88,6 +88,9 @@ export class McpProtocolLifecycle {
     const result = await this.transport.execute<T>(
       this.createTransportRequest(method, params, runtime)
     );
+    if (!result.json.error) {
+      this.adapter.validateResponseResult?.(result.json.result);
+    }
     await this.applyResponseMetadata(result.headers);
     return result;
   }
@@ -127,13 +130,18 @@ export class McpProtocolLifecycle {
     runtime: McpProtocolRuntime
   ): HttpJsonRpcRequest {
     const sessionId = this.activeSessionId();
+    const preparedParams =
+      this.adapter.prepareRequestParams?.(params, this.clientInfo) ?? params;
     return {
       baseEndpoint: runtime.baseEndpoint,
       id: this.nextRequestId++,
       method,
-      params,
+      params: preparedParams,
       headers: this.adapter.createRequestHeaders({
         method,
+        ...(this.adapter.prepareRequestParams
+          ? { params: preparedParams }
+          : {}),
         ...(sessionId ? { sessionId } : {})
       }),
       allowLegacySse: runtime.allowLegacySse,

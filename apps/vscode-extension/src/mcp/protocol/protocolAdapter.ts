@@ -26,6 +26,7 @@ export interface McpProtocolResponseMetadata {
 
 export interface McpProtocolRequestContext {
   method: string;
+  params?: Record<string, unknown> | undefined;
   sessionId?: string | undefined;
 }
 
@@ -40,6 +41,16 @@ export interface McpProtocolAdapter {
   readonly lifecycle: 'initialize-session' | 'stateless-discovery';
 
   createDiscoveryRequest(clientInfo: McpProtocolClientInfo): McpProtocolRequest;
+
+  // Modern stateless requests carry a self-describing envelope on every call.
+  // Optional so the 2025 wire contract remains byte-for-byte unchanged.
+  prepareRequestParams?(
+    params: Record<string, unknown>,
+    clientInfo: McpProtocolClientInfo
+  ): Record<string, unknown>;
+
+  // Called before consumers can accept a successful JSON-RPC result.
+  validateResponseResult?(result: unknown): void;
 
   createRequestHeaders(
     context: McpProtocolRequestContext
