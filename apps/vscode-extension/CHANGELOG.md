@@ -10,6 +10,19 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [1.17.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.16.0...vscode-extension-v1.17.0) (2026-10-10)
+
+
+### Features
+
+* **kicad-studio:** stage fail-closed BoardReadyOps review evidence workflow ([#775](https://github.com/oaslananka/kicad-studio-kit/issues/775)) ([8be89b1](https://github.com/oaslananka/kicad-studio-kit/commit/8be89b1f50429e1da41b74bef6f5cb99e3a8110e))
+
+
+### Bug Fixes
+
+* **kicad-studio:** close BoardReadyOps progress before user review ([#772](https://github.com/oaslananka/kicad-studio-kit/issues/772)) ([59b9b17](https://github.com/oaslananka/kicad-studio-kit/commit/59b9b1707c406dcf519f15d9bcbd5430e47b5ff6))
+* **kicad-studio:** finish BoardReadyOps progress before user decisions ([59b9b17](https://github.com/oaslananka/kicad-studio-kit/commit/59b9b1707c406dcf519f15d9bcbd5430e47b5ff6))
+
 ## [1.16.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.4...vscode-extension-v1.16.0) (2026-10-10)
 
 
