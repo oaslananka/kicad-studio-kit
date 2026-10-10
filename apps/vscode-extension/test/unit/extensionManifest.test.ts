@@ -93,6 +93,24 @@ describe('extensionManifest', () => {
     expect(contributed.has(COMMANDS.boardReadyOpsPlan)).toBe(true);
   });
 
+  it('does not repeat the KiCad Studio category in BoardReadyOps review labels', () => {
+    for (const file of ['package.nls.json', 'package.nls.tr.json']) {
+      const nls = JSON.parse(
+        fs.readFileSync(path.resolve(__dirname, '..', '..', file), 'utf8')
+      ) as Record<string, string>;
+      const title =
+        nls[
+          'kicadstudio.contributes.commands.boardReadyOps.reviewEvidence.title'
+        ];
+      const category =
+        nls['kicadstudio.contributes.commands.boardReadyOps.category'];
+      if (!title || !category) {
+        throw new Error(`Missing localized review label/category in ${file}`);
+      }
+      expect(title.startsWith(`${category}:`)).toBe(false);
+    }
+  });
+
   it('registers sidebar views', () => {
     const sidebarViews = (packageJson.contributes?.views?.[
       'kicadstudio-sidebar'

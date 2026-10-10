@@ -10,13 +10,13 @@
   "vscodeVersion": "1.122.0",
   "kicadVersion": "10.0.6",
   "sourceContractVersion": 4,
-  "sourceFingerprint": "9af2e8ba4e721f6789d1ad03b7a2d2762824e0f035fec2a347c26aefa8ee0e35",
+  "sourceFingerprint": "696729676e99d3909361a12ca6f7c7d7f9af1a763cacfd3341a8dac6cc9d4f92",
   "screenshots": {
     "project-tree.png": "354563e3b217ee90e0a00fc933683426e703d455f75514dea825507a804bfb73",
     "schematic-viewer.png": "26624dd8c80157bc1e0b2333c432449aa5862abc03332e621cbe3ce36a47b538",
     "pcb-viewer.png": "4f1e4fa115153c80da06042fe44645bfefb4342fbb27cda2f6128a82b53cd12a",
     "drc-results.png": "33e25af62c8ee7131090ce7dfce2d7f2f645b800296108b62d2bc4f01b388571",
     "bom-table.png": "8772d415f0cb62fa0c5ee41c35ec4894b2008f8d83c227fd8d04f3bbb6e34582",
-    "mcp-tools-dashboard.png": "e83c462f5844f4a57da02f9df1a27bc018dfbec8c1b573a6b8d2112d4e73975f"
+    "mcp-tools-dashboard.png": "35c31cce98252fdfb2e949310e5346c0092d14f178caa10ba2213d3d785ebef6"
   }
 }

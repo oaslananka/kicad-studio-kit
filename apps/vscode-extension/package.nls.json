@@ -409,5 +409,5 @@
   "kicadstudio.contributes.commands.taskHub.release.title": "KiCad Studio: Fabrication Release",
   "kicadstudio.contributes.commands.taskHub.automate.title": "KiCad Studio: Automate Project",
   "kicadstudio.contributes.commands.taskHub.maintain.title": "KiCad Studio: Maintain Workspace",
-  "kicadstudio.contributes.commands.boardReadyOps.reviewEvidence.title": "KiCad Studio: BoardReadyOps Review and Evidence"
+  "kicadstudio.contributes.commands.boardReadyOps.reviewEvidence.title": "BoardReadyOps Review and Evidence"
 }
