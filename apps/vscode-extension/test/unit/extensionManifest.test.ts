@@ -84,6 +84,15 @@ describe('extensionManifest', () => {
     expect(unexpected).toEqual([]);
   });
 
+  it('surfaces the guarded BoardReadyOps review/evidence workflow without removing existing commands', () => {
+    const contributed = new Set(
+      (packageJson.contributes?.commands ?? []).map((c) => c.command)
+    );
+    expect(contributed.has(COMMANDS.boardReadyOpsReviewEvidence)).toBe(true);
+    expect(contributed.has(COMMANDS.boardReadyOpsCheck)).toBe(true);
+    expect(contributed.has(COMMANDS.boardReadyOpsPlan)).toBe(true);
+  });
+
   it('registers sidebar views', () => {
     const sidebarViews = (packageJson.contributes?.views?.[
       'kicadstudio-sidebar'

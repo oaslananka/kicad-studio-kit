@@ -142,6 +142,13 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
         requirements: { all: ['workspaceTrusted', 'hasProject'] }
       },
       {
+        label: 'Review and verify BoardReadyOps evidence',
+        description:
+          'Inspect verified release evidence or prepare a safe review preview',
+        command: COMMANDS.boardReadyOpsReviewEvidence,
+        requirements: { all: ['workspaceTrusted', 'hasProject'] }
+      },
+      {
         label: 'Analyze latest DRC results with AI',
         description: 'Summarize and prioritize the most recent DRC findings',
         command: COMMANDS.aiProactiveDRC,

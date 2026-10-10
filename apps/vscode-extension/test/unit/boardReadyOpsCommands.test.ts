@@ -179,6 +179,7 @@ describe('BoardReadyOps commands', () => {
   it.each([
     COMMANDS.boardReadyOpsCheck,
     COMMANDS.boardReadyOpsPlan,
+    COMMANDS.boardReadyOpsReviewEvidence,
     COMMANDS.boardReadyOpsShowReport
   ])(
     'blocks %s in Restricted Mode before any CLI execution',
@@ -196,10 +197,10 @@ describe('BoardReadyOps commands', () => {
     }
   );
 
-  it('registers five boardReadyOps commands', () => {
+  it('registers six boardReadyOps commands', () => {
     const disposables = registerBoardReadyOpsCommands(servicesMock);
 
-    expect(disposables).toHaveLength(5);
+    expect(disposables).toHaveLength(6);
 
     const registeredIds = (
       commands.registerCommand as jest.Mock
@@ -207,9 +208,193 @@ describe('BoardReadyOps commands', () => {
 
     expect(registeredIds).toContain(COMMANDS.boardReadyOpsCheck);
     expect(registeredIds).toContain(COMMANDS.boardReadyOpsPlan);
+    expect(registeredIds).toContain(COMMANDS.boardReadyOpsReviewEvidence);
     expect(registeredIds).toContain(COMMANDS.boardReadyOpsConfigure);
     expect(registeredIds).toContain(COMMANDS.boardReadyOpsShowReport);
     expect(registeredIds).toContain(COMMANDS.boardReadyOpsOpenDocs);
+  });
+
+  it('never opens review/evidence choices when disabled or missing a project', async () => {
+    __setConfiguration({ 'kicadstudio.boardReadyOps.enabled': false });
+    await runCommand(COMMANDS.boardReadyOpsReviewEvidence);
+    expect(window.showQuickPick).not.toHaveBeenCalled();
+    expect(childProcess.spawn).not.toHaveBeenCalled();
+    enableBoardReadyOpsProject();
+    mockProjectState.getActiveProject.mockReturnValue(undefined);
+    await runCommand(COMMANDS.boardReadyOpsReviewEvidence);
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining('No active KiCad project')
+    );
+    expect(childProcess.spawn).not.toHaveBeenCalled();
+  });
+
+  it('rejects published 1.68.3 review JSON without running any publish action', async () => {
+    enableBoardReadyOpsProject();
+    (window.showQuickPick as jest.Mock).mockImplementationOnce(async (items) =>
+      items.find((x: { id: string }) => x.id === 'preview')
+    );
+    const doctor = boardReadyOpsDoctorContract();
+    doctor.tool.version = '1.68.3';
+    (childProcess.spawn as jest.Mock).mockImplementationOnce(() =>
+      boardReadyOpsChild(JSON.stringify(doctor))
+    );
+    await runCommand(COMMANDS.boardReadyOpsReviewEvidence);
+    expect(childProcess.spawn).toHaveBeenCalledTimes(1);
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('1.68.3 does not provide')
+    );
+    expect(workspace.openTextDocument).not.toHaveBeenCalled();
+  });
+
+  it('generates a non-uploading structured review preview after doctor and readiness validation', async () => {
+    enableBoardReadyOpsProject();
+    (window.showQuickPick as jest.Mock).mockImplementationOnce(async (items) =>
+      items.find((x: { id: string }) => x.id === 'preview')
+    );
+    const doctor = boardReadyOpsDoctorContract();
+    doctor.tool.version = '1.69.0';
+    const readiness = readinessWithFindings(['board.kicad_pcb']);
+    readiness.tool.version = '1.69.0';
+    const preview = {
+      schemaVersion: 1,
+      tool: { name: 'boardreadyops', version: '1.69.0' },
+      success: true,
+      dryRun: true,
+      evidenceDigest: 'd'.repeat(64)
+    };
+    (childProcess.spawn as jest.Mock)
+      .mockImplementationOnce(() => boardReadyOpsChild(JSON.stringify(doctor)))
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(readiness), 1)
+      )
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(preview))
+      );
+    (workspace.openTextDocument as jest.Mock).mockResolvedValueOnce({
+      uri: { scheme: 'untitled' }
+    });
+    await runCommand(COMMANDS.boardReadyOpsReviewEvidence);
+    expect(childProcess.spawn).toHaveBeenCalledTimes(3);
+    expect((childProcess.spawn as jest.Mock).mock.calls[2][1]).toEqual([
+      'boardreadyops',
+      'review',
+      'publish',
+      '--dry-run',
+      '--upload',
+      'metadata',
+      '--format',
+      'json',
+      '/project'
+    ]);
+    const document = (workspace.openTextDocument as jest.Mock).mock.calls[0][0];
+    expect(document.language).toBe('plaintext');
+    expect(document.content).toContain('Readiness: FAILED');
+    expect(document.content).toContain('Blocking findings: 1');
+    expect(document.content).toContain('Cloud upload: NOT PERFORMED');
+    expect(document.content).toContain('Review approval: NOT GRANTED');
+    expect(document.content).toContain('Evidence digest: ' + 'd'.repeat(64));
+    expect(window.showTextDocument).toHaveBeenCalledWith(expect.anything(), {
+      preview: true
+    });
+  });
+
+  it('rejects a green readiness verdict with high-severity blockers before creating a review preview', async () => {
+    enableBoardReadyOpsProject();
+    (window.showQuickPick as jest.Mock).mockImplementationOnce(async (items) =>
+      items.find((x: { id: string }) => x.id === 'preview')
+    );
+    const doctor = boardReadyOpsDoctorContract();
+    doctor.tool.version = '1.69.0';
+    const readiness = readinessWithFindings(['board.kicad_pcb']);
+    readiness.tool.version = '1.69.0';
+    readiness.status = 'passed';
+    readiness.exitCode = 0;
+    (childProcess.spawn as jest.Mock)
+      .mockImplementationOnce(() => boardReadyOpsChild(JSON.stringify(doctor)))
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(readiness))
+      );
+    await runCommand(COMMANDS.boardReadyOpsReviewEvidence);
+    expect(childProcess.spawn).toHaveBeenCalledTimes(2);
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining('No upload was performed')
+    );
+    expect(workspace.openTextDocument).not.toHaveBeenCalled();
+  });
+
+  it('never renders malformed review JSON or executes a publish workflow', async () => {
+    enableBoardReadyOpsProject();
+    (window.showQuickPick as jest.Mock).mockImplementationOnce(async (items) =>
+      items.find((x: { id: string }) => x.id === 'preview')
+    );
+    const doctor = boardReadyOpsDoctorContract();
+    doctor.tool.version = '1.69.0';
+    const readiness = readinessWithFindings(['board.kicad_pcb']);
+    readiness.tool.version = '1.69.0';
+    (childProcess.spawn as jest.Mock)
+      .mockImplementationOnce(() => boardReadyOpsChild(JSON.stringify(doctor)))
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(readiness), 1)
+      )
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild('PRIVATE_TOKEN_SENTINEL in human output')
+      );
+    await runCommand(COMMANDS.boardReadyOpsReviewEvidence);
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining('No upload was performed')
+    );
+    expect(
+      JSON.stringify((window.showErrorMessage as jest.Mock).mock.calls)
+    ).not.toContain('PRIVATE_TOKEN_SENTINEL');
+    expect(workspace.openTextDocument).not.toHaveBeenCalled();
+  });
+
+  it('routes local evidence verification through the existing fail-closed CLI contract', async () => {
+    enableBoardReadyOpsProject();
+    (window.showQuickPick as jest.Mock).mockImplementationOnce(async (items) =>
+      items.find((x: { id: string }) => x.id === 'verify')
+    );
+    const spawnMock = (childProcess.spawn as jest.Mock)
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(JSON.stringify(boardReadyOpsDoctorContract()))
+      )
+      .mockImplementationOnce(() =>
+        boardReadyOpsChild(
+          JSON.stringify({
+            ok: true,
+            manifestPath: '/private/secret/manifest.json',
+            checked: 3,
+            errors: [],
+            signature: { present: true, ok: true, errors: [] }
+          })
+        )
+      );
+    await runCommand(COMMANDS.boardReadyOpsReviewEvidence);
+    expect(spawnMock.mock.calls[1][1]).toContain('verify');
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      'BoardReadyOps release evidence verified: 3 artifact(s). Signature verified.'
+    );
+    expect(
+      JSON.stringify((window.showInformationMessage as jest.Mock).mock.calls)
+    ).not.toContain('/private/secret');
+  });
+
+  it('opens governance only after an explicit user choice, without CLI or credentials', async () => {
+    enableBoardReadyOpsProject();
+    (window.showQuickPick as jest.Mock).mockImplementationOnce(async (items) =>
+      items.find((x: { id: string }) => x.id === 'web')
+    );
+    await runCommand(COMMANDS.boardReadyOpsReviewEvidence);
+    expect(env.openExternal).toHaveBeenCalled();
+    expect(childProcess.spawn).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when review/evidence menu is dismissed', async () => {
+    enableBoardReadyOpsProject();
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
+    await runCommand(COMMANDS.boardReadyOpsReviewEvidence);
+    expect(childProcess.spawn).not.toHaveBeenCalled();
+    expect(env.openExternal).not.toHaveBeenCalled();
   });
 
   it('shows a warning when boardReadyOps check is run while disabled', async () => {

@@ -408,5 +408,6 @@
   "kicadstudio.contributes.commands.taskHub.validate.title": "KiCad Studio: Projeyi Doğrula",
   "kicadstudio.contributes.commands.taskHub.release.title": "KiCad Studio: Üretim Yayını",
   "kicadstudio.contributes.commands.taskHub.automate.title": "KiCad Studio: Projeyi Otomatikleştir",
-  "kicadstudio.contributes.commands.taskHub.maintain.title": "KiCad Studio: Çalışma Alanını Yönet"
+  "kicadstudio.contributes.commands.taskHub.maintain.title": "KiCad Studio: Çalışma Alanını Yönet",
+  "kicadstudio.contributes.commands.boardReadyOps.reviewEvidence.title": "KiCad Studio: BoardReadyOps İnceleme ve Kanıtlar"
 }
