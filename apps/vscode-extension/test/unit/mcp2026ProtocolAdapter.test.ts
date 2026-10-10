@@ -1,4 +1,5 @@
 import {
+  Mcp2026InvalidDiscoveryError,
   Mcp2026ProtocolAdapter,
   Mcp2026UnsupportedResultError
 } from '../../src/mcp/protocol/mcp2026ProtocolAdapter';
@@ -10,6 +11,19 @@ import {
 import { McpProtocolLifecycle } from '../../src/mcp/protocol/protocolLifecycle';
 
 const clientInfo = { name: 'kicad-studio', version: '1.15.4' };
+const modernDiscovery = {
+  resultType: 'complete',
+  supportedVersions: ['2026-07-28', '2025-11-25'],
+  capabilities: { tools: {} },
+  ttlMs: 3600000,
+  cacheScope: 'private' as const,
+  _meta: {
+    'io.modelcontextprotocol/serverInfo': {
+      name: 'untrusted-server-name',
+      version: '999.999.999'
+    }
+  }
+};
 
 describe('staged MCP 2026-07-28 stateless adapter (#492)', () => {
   const adapter = new Mcp2026ProtocolAdapter();
@@ -110,9 +124,7 @@ describe('staged MCP 2026-07-28 stateless adapter (#492)', () => {
 
   it('requires a matching discovery result and fails closed on input_required', () => {
     expect(() =>
-      adapter.validateDiscoveryResult({
-        supportedVersions: ['2026-07-28', '2025-11-25']
-      })
+      adapter.validateDiscoveryResult(modernDiscovery)
     ).not.toThrow();
     expect(() =>
       adapter.validateDiscoveryResult({ supportedVersions: ['2025-11-25'] })
@@ -133,6 +145,83 @@ describe('staged MCP 2026-07-28 stateless adapter (#492)', () => {
         Mcp2026UnsupportedResultError
       );
     }
+  });
+
+  it('rejects malformed mandatory discovery fields without trusting advertised identity', () => {
+    expect(() =>
+      adapter.validateDiscoveryResult(modernDiscovery)
+    ).not.toThrow();
+    expect(() =>
+      adapter.validateDiscoveryResult({ ...modernDiscovery, ttlMs: 0 })
+    ).not.toThrow();
+    expect(() =>
+      adapter.validateDiscoveryResult({
+        ...modernDiscovery,
+        cacheScope: 'public'
+      })
+    ).not.toThrow();
+
+    const malformed = [
+      { ...modernDiscovery, capabilities: undefined },
+      { ...modernDiscovery, capabilities: [] },
+      { ...modernDiscovery, ttlMs: undefined },
+      { ...modernDiscovery, ttlMs: -1 },
+      { ...modernDiscovery, ttlMs: 0.5 },
+      { ...modernDiscovery, ttlMs: Number.MAX_SAFE_INTEGER + 1 },
+      { ...modernDiscovery, cacheScope: undefined },
+      { ...modernDiscovery, cacheScope: 'shared' },
+      { ...modernDiscovery, supportedVersions: ['2026-07-28', 5] },
+      { ...modernDiscovery, _meta: [] },
+      {
+        ...modernDiscovery,
+        _meta: { 'io.modelcontextprotocol/serverInfo': { name: 123 } }
+      }
+    ];
+    for (const result of malformed) {
+      expect(() =>
+        adapter.validateDiscoveryResult(
+          result as Parameters<typeof adapter.validateDiscoveryResult>[0]
+        )
+      ).toThrow(Mcp2026InvalidDiscoveryError);
+    }
+    // Even a plausible serverInfo version cannot bypass the production gate.
+    expect(() => resolveMcpProtocolAdapter(adapter.version)).toThrow(
+      UnsupportedMcpProtocolVersionError
+    );
+  });
+
+  it('never reports a malformed discovery as ready or forwards server metadata', async () => {
+    const onDiscovery = jest.fn();
+    const write = jest.fn();
+    const lifecycle = new McpProtocolLifecycle({
+      adapter,
+      clientInfo,
+      sessionStore: { read: () => 'legacy-secret-session', write },
+      transport: {
+        execute: async <T>() => ({
+          json: {
+            result: {
+              ...modernDiscovery,
+              cacheScope: 'invalid'
+            } as T
+          },
+          headers: new Headers({ 'Mcp-Session-Id': 'forged-session' })
+        })
+      }
+    });
+    await expect(
+      lifecycle.ensureReady(
+        {
+          baseEndpoint: 'http://127.0.0.1:3334',
+          allowLegacySse: false,
+          timeoutMs: 1000,
+          hasDiscoveryState: false
+        },
+        { onDiscovery }
+      )
+    ).rejects.toThrow(Mcp2026InvalidDiscoveryError);
+    expect(onDiscovery).not.toHaveBeenCalled();
+    expect(write).not.toHaveBeenCalled();
   });
 
   it('uses stateless lifecycle wire requests without changing the legacy adapter', async () => {
@@ -156,8 +245,7 @@ describe('staged MCP 2026-07-28 stateless adapter (#492)', () => {
           return {
             json: {
               result: {
-                resultType: 'complete',
-                supportedVersions: ['2026-07-28', '2025-11-25']
+                ...modernDiscovery
               } as T
             },
             headers: new Headers({ 'Mcp-Session-Id': 'ignored' })

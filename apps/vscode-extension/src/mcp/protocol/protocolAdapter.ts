@@ -19,6 +19,9 @@ export interface McpDiscoveryResult {
       }
     | undefined;
   capabilities?: unknown;
+  ttlMs?: number | undefined;
+  cacheScope?: 'public' | 'private' | undefined;
+  _meta?: unknown;
 }
 
 export interface McpProtocolResponseMetadata {
