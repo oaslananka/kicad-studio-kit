@@ -39,6 +39,8 @@ KiCad Studio turns VS Code into a KiCad-aware engineering cockpit: project navig
 
 Open **KiCad Studio: Open Task Hub** from the Command Palette or use the task button in the **KiCad Project** view title. Existing command IDs remain available, while the primary workflows are grouped around the engineering outcome you need.
 
+On a **new workspace**, the sidebar starts with four task-oriented areas: **KiCad Project** (navigate and select), **Validation** (DRC/ERC), **Quality Gates** (collapsed until needed), and **Bill of Materials** (collapsed until needed). The other seven specialist views remain installed and are accessible from the sidebar’s **… → Views** menu. Nothing is deleted; task commands are also available through the Task Hub. VS Code remembers each user's previous view placements and visibility, so existing workspaces retain their individual layout preferences.
+
 | Task                | Top-level command                     | Use it for                                                                                 |
 | ------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Review              | **KiCad Studio: Review Project**      | Inspect project status, schematics, PCBs, variants, and design diffs                       |
@@ -65,6 +67,8 @@ Open **KiCad Studio: Open Task Hub** from the Command Palette or use the task bu
 ![KiCad Studio project tree](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/screenshots/project-tree.png)
 
 ### Schematic Viewer
+
+When the interactive KiCanvas renderer is unavailable, the KiCad CLI SVG fallback initially frames the placed schematic symbols and connected wire geometry on supported KiCad 10 files rather than opening on an empty full sheet. **Fit** restores the full page, while zoom buttons and pointer zoom remain available. Manually selected zoom is retained when resizing or splitting the editor; missing or unsafe coordinates retain the original full-page view. The interactive PCB viewer keeps KiCanvas's supported fit-to-screen behavior (the proposed upstream `zoom=objects` API is not yet supported).
 
 ![KiCad Studio schematic viewer](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/screenshots/schematic-viewer.png)
 

@@ -1,3 +1,4 @@
+import type { SchematicFocusBounds } from './schematicFocusBounds';
 import type {
   ViewerEngineState,
   ViewerMetadata,
@@ -9,6 +10,7 @@ export interface ViewerPayload {
   fileName: string;
   fileType: string;
   base64: string;
+  schematicFocus?: SchematicFocusBounds | undefined;
   disabledReason: string;
   theme: string;
   fallbackBackground: string;
@@ -34,6 +36,9 @@ export function createViewerPayload(
     fileName: options.fileName,
     fileType: options.fileType,
     base64: options.base64,
+    ...(options.schematicFocus
+      ? { schematicFocus: options.schematicFocus }
+      : {}),
     disabledReason: options.disabledReason,
     theme: options.theme,
     fallbackBackground: options.fallbackBackground,

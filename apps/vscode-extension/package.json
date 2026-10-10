@@ -414,7 +414,8 @@
           "id": "kicadstudio.qualityGate",
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.2.name%",
           "when": "kicadstudio.hasProject",
-          "icon": "assets/views/quality-gates.svg"
+          "icon": "assets/views/quality-gates.svg",
+          "visibility": "collapsed"
         },
         {
           "id": "kicadstudio.bomView",
@@ -430,47 +431,47 @@
           "type": "webview",
           "when": "kicadstudio.hasProject",
           "icon": "assets/views/netlist.svg",
-          "visibility": "collapsed"
+          "visibility": "hidden"
         },
         {
           "id": "kicadstudio.variants",
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.5.name%",
           "when": "kicadstudio.hasProject && kicadstudio.kicad10Plus",
           "icon": "assets/views/variants.svg",
-          "visibility": "collapsed"
+          "visibility": "hidden"
         },
         {
           "id": "kicadstudio.library",
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.6.name%",
           "icon": "assets/views/library.svg",
-          "visibility": "collapsed"
+          "visibility": "hidden"
         },
         {
           "id": "kicadstudio.drcRules",
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.7.name%",
           "when": "kicadstudio.hasProject",
           "icon": "assets/views/drc-rules.svg",
-          "visibility": "collapsed"
+          "visibility": "hidden"
         },
         {
           "id": "kicadstudio.fixQueue",
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.8.name%",
           "when": "kicadstudio.mcpConnected",
           "icon": "assets/views/fix-queue.svg",
-          "visibility": "collapsed"
+          "visibility": "hidden"
         },
         {
           "id": "kicadstudio.componentSearch",
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.9.name%",
           "icon": "assets/views/component-search.svg",
-          "visibility": "collapsed"
+          "visibility": "hidden"
         },
         {
           "id": "kicadstudio.mcpTools",
           "name": "%kicadstudio.contributes.views.kicadstudio-sidebar.10.name%",
           "icon": "assets/views/mcp-tools.svg",
           "when": "kicadstudio.hasProject",
-          "visibility": "collapsed"
+          "visibility": "hidden"
         }
       ]
     },

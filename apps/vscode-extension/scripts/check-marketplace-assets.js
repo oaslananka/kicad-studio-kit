@@ -131,6 +131,15 @@ function captureSourceContents() {
     ],
     ['media/kicanvas/viewer.css', fs.readFileSync('media/kicanvas/viewer.css')],
     ['media/styles/bom.css', fs.readFileSync('media/styles/bom.css')],
+    [
+      'src/providers/viewer/schematicFocusBounds.ts',
+      fs.readFileSync('src/providers/viewer/schematicFocusBounds.ts')
+    ],
+    [
+      'src/providers/viewer/viewerPayload.ts',
+      fs.readFileSync('src/providers/viewer/viewerPayload.ts')
+    ],
+    ['package.nls.json', fs.readFileSync('package.nls.json')],
     ['media/viewer/bom.html', fs.readFileSync('media/viewer/bom.html')],
     ['media/viewer/bom.js', fs.readFileSync('media/viewer/bom.js')],
     ['test/e2e/vscodeHarness.ts', fs.readFileSync('test/e2e/vscodeHarness.ts')],
@@ -256,7 +265,7 @@ function assertPackageMetadata() {
 function assertCaptureProvenance() {
   const contract = readJson('scripts/marketplace-capture-sources.json');
   const manifest = readJson('assets/screenshots/capture-manifest.json');
-  if (contract.version !== 3 || !Array.isArray(contract.sources)) {
+  if (contract.version !== 4 || !Array.isArray(contract.sources)) {
     fail('marketplace capture source contract is invalid');
   }
   for (const source of contract.sources) assertFile(source);
