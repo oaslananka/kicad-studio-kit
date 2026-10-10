@@ -8,6 +8,9 @@ export interface BoardReadyOpsPlanAction {
     description: string;
     steps: string[];
   };
+  whyItMatters: string;
+  commandsToVerify: string[];
+  safeAutoFixPossible: boolean;
 }
 
 export interface BoardReadyOpsPlanResult {
