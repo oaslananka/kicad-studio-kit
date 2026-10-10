@@ -86,9 +86,19 @@ export class BomParser {
   }
 
   private extractSymbols(root: SNode): SNode[] {
-    return this.parser.findAllNodes(root, 'symbol').filter((node) => {
+    // Only placed schematic symbols may enter a manufacturing BOM. A recursive
+    // search also matches definitions under (lib_symbols ...) in real KiCad
+    // schematics, creating phantom purchasable parts.
+    const schematic = this.parser.findNode(root, 'kicad_sch') ?? root;
+    return (schematic.children ?? []).filter((node) => {
+      if (this.getTag(node) !== 'symbol') {
+        return false;
+      }
       const libId = this.parser.getAtomValue(node, 'lib_id') ?? '';
-      return !libId.startsWith('power:');
+      return (
+        !libId.startsWith('power:') &&
+        (this.parser.getAtomValue(node, 'in_bom') ?? 'yes') !== 'no'
+      );
     });
   }
 
@@ -105,9 +115,7 @@ export class BomParser {
     const dnp =
       ['yes', 'true', '1'].includes(
         (propertyMap.get('DNP') ?? '').toLowerCase()
-      ) ||
-      (this.parser.getAtomValue(symbol, 'in_bom') ?? 'yes') === 'no' ||
-      (this.parser.getAtomValue(symbol, 'on_board') ?? 'yes') === 'no';
+      ) || (this.parser.getAtomValue(symbol, 'dnp') ?? 'no') === 'yes';
 
     return {
       reference,
