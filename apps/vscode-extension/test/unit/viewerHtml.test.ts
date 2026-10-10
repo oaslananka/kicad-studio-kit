@@ -138,8 +138,10 @@ describe('createKiCanvasViewerHtml', () => {
     expect(html).toContain('if (!canvas && fallbackSvgDataUrl) {');
     expect(html).toContain('void exportFallbackSvgAsPng();');
     expect(html).toContain('const preparedSvg = prepareSvgFallback(svgText);');
-    expect(html).toContain('fallbackSvgFitScale = Math.min(');
-    expect(html).toContain('fallbackSvgScale = fallbackSvgFitScale;');
+    expect(html).toContain('fallbackSvgFitScale = pageFallbackFitScale();');
+    expect(html).toContain(
+      'fallbackSvgScale = fallbackAutoFocus ? focusedScale : fallbackSvgFitScale;'
+    );
     expect(html).toContain("stage.id = 'svg-fallback-stage';");
     expect(html).toContain(
       "fallbackSvgElement.style.width = renderedWidth + 'px';"
@@ -359,11 +361,11 @@ describe('createKiCanvasViewerHtml', () => {
     });
 
     const fitSection = html.slice(
-      html.indexOf('function fitSvgFallback'),
+      html.indexOf('function pageFallbackFitScale'),
       html.indexOf('function applyFallbackPresentation')
     );
 
-    expect(fitSection).toContain('fallbackSvgFitScale = Math.min(');
+    expect(fitSection).toContain('return Math.min(');
     expect(fitSection).not.toMatch(
       /availableHeight \/ fallbackSvgSize\.height,\s*1\s*\)/
     );

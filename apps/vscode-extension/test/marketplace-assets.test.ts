@@ -126,6 +126,10 @@ describe('marketplace listing assets', () => {
       'test/fixtures/benchmark_projects/pass_i2c_sensor_hub'
     );
     expect(contract.sources).toContain('media/styles/bom.css');
+    expect(contract.sources).toContain(
+      'src/providers/viewer/schematicFocusBounds.ts'
+    );
+    expect(contract.sources).toContain('package.nls.json');
     expect(manifest.sourceContractVersion).toBe(contract.version);
     expect(manifest.sourceFingerprint).toBe(
       sourceFingerprint(contract.sources)

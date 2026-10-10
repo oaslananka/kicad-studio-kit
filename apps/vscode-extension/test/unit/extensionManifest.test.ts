@@ -85,9 +85,16 @@ describe('extensionManifest', () => {
   });
 
   it('registers sidebar views', () => {
-    const sidebarViews =
-      packageJson.contributes?.views?.['kicadstudio-sidebar'] ?? [];
-    expect(sidebarViews.length).toBeGreaterThanOrEqual(6);
+    const sidebarViews = (packageJson.contributes?.views?.[
+      'kicadstudio-sidebar'
+    ] ?? []) as Array<{ id: string; visibility?: string }>;
+    expect(sidebarViews).toHaveLength(11);
+    expect(
+      sidebarViews.filter((view) => view.visibility !== 'hidden')
+    ).toHaveLength(4);
+    expect(
+      sidebarViews.filter((view) => view.visibility === 'hidden')
+    ).toHaveLength(7);
   });
 
   it('registers an activitybar viewsContainer', () => {
