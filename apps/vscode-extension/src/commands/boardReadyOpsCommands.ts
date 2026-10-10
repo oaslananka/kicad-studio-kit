@@ -8,7 +8,8 @@ import {
   discoverBoardReadyOpsContract,
   parseBoardReadyOpsRunResult,
   type BoardReadyOpsFinding,
-  type BoardReadyOpsRunResult
+  type BoardReadyOpsRunResult,
+  type BoardReadyOpsContractDiscovery
 } from '../boardreadyops/contract';
 import {
   assertBoardReadyOpsPlanVerdict,
@@ -20,6 +21,10 @@ import {
   parseBoardReadyOpsEvidenceVerification
 } from '../boardreadyops/evidence';
 import { runBoardReadyOpsCommand } from '../boardreadyops/cli';
+import {
+  parseBoardReadyOpsReviewPreview,
+  supportsBoardReadyOpsReviewJson
+} from '../boardreadyops/review';
 import { resolveSafeWorkspacePath } from '../utils/pathUtils';
 import { requireWorkspaceTrust } from '../utils/workspaceTrust';
 
@@ -48,7 +53,7 @@ function runBoardReadyOps(
 async function assertCompatibleBoardReadyOps(
   projectPath: string,
   token: vscode.CancellationToken
-): Promise<void> {
+): Promise<BoardReadyOpsContractDiscovery | undefined> {
   const { stdout, exitCode } = await runBoardReadyOpsCommand(
     projectPath,
     ['doctor', '--format', 'json'],
@@ -66,6 +71,7 @@ async function assertCompatibleBoardReadyOps(
       `BoardReadyOps is not contract-compatible: ${contract.reason} (version ${contract.version}, doctor schema ${contract.schemaVersion ?? 'missing'}).`
     );
   }
+  return contract;
 }
 
 async function showBoardReadyOpsEvidenceState(
@@ -145,6 +151,123 @@ async function showBoardReadyOpsEvidenceState(
       }
     }
   );
+}
+
+/** Dry-run only. Preview metadata is NOT verified manufacturing evidence. */
+async function previewBoardReadyOpsReview(
+  projectPath: string,
+  services: CommandServices
+): Promise<void> {
+  let summary: string | undefined;
+  let unsupportedVersion: string | undefined;
+  let failed = false;
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: 'Preparing BoardReadyOps structured review preview...',
+      cancellable: true
+    },
+    async (_progress, token) => {
+      try {
+        const contract = await assertCompatibleBoardReadyOps(
+          projectPath,
+          token
+        );
+        if (token.isCancellationRequested || !contract) return;
+        if (!supportsBoardReadyOpsReviewJson(contract.version)) {
+          unsupportedVersion = contract.version;
+          return;
+        }
+        const config = vscode.workspace
+          .getConfiguration()
+          .get<string>(SETTINGS.boardReadyOpsSpecFile, '')
+          .trim();
+        const runArgs = ['run', '--format', 'json'];
+        if (config) runArgs.push('--config', config);
+        runArgs.push(projectPath);
+        const readinessProcess = await runBoardReadyOpsCommand(
+          projectPath,
+          runArgs,
+          token
+        );
+        if (token.isCancellationRequested) return;
+        if (![0, 1].includes(readinessProcess.exitCode)) {
+          throw new Error('BoardReadyOps readiness process failed.');
+        }
+        const readiness = parseBoardReadyOpsRunResult(readinessProcess.stdout);
+        assertBoardReadyOpsRunVerdict(readiness, readinessProcess.exitCode);
+        if (readiness.tool.version !== contract.version) {
+          throw new Error(
+            'BoardReadyOps readiness version changed during discovery.'
+          );
+        }
+        const counts = readiness.summary;
+        const blockers = counts.critical + counts.high;
+        // A zero process exit or numeric score cannot override blocking
+        // manufacturing findings, including inconsistent external data.
+        if (blockers > 0 && readinessProcess.exitCode === 0) {
+          throw new Error(
+            'BoardReadyOps readiness claims success with blocking findings.'
+          );
+        }
+        const args = [
+          'review',
+          'publish',
+          '--dry-run',
+          '--upload',
+          'metadata',
+          '--format',
+          'json'
+        ];
+        if (config) args.push('--config', config);
+        args.push(projectPath);
+        const reviewProcess = await runBoardReadyOpsCommand(
+          projectPath,
+          args,
+          token
+        );
+        if (token.isCancellationRequested) return;
+        const preview = parseBoardReadyOpsReviewPreview(
+          reviewProcess.stdout,
+          contract.version,
+          reviewProcess.exitCode
+        );
+        summary = [
+          'BoardReadyOps structured review preview (DRY RUN ONLY)',
+          '',
+          `Readiness: ${readiness.status === 'passed' ? 'PASSED' : 'FAILED'}`,
+          `Findings: ${counts.total} (${counts.critical} critical, ${counts.high} high, ${counts.medium} medium, ${counts.low} low, ${counts.info} info)`,
+          `Blocking findings: ${blockers}`,
+          `Evidence digest: ${preview.evidenceDigest}`,
+          'Cloud upload: NOT PERFORMED',
+          'Review approval: NOT GRANTED',
+          'Release evidence verification: NOT PERFORMED',
+          '',
+          'A dry-run digest is not a published review, approved handoff, or manufacturing release gate.',
+          'Use Verify Local Release Evidence to inspect the separate release bundle.'
+        ].join('\n');
+      } catch {
+        // Treat CLI output as untrusted and do not expose stderr, paths or tokens.
+        services.logger.error('BoardReadyOps structured review preview failed');
+        failed = true;
+      }
+    }
+  );
+  if (unsupportedVersion) {
+    void vscode.window.showWarningMessage(
+      `BoardReadyOps ${unsupportedVersion} does not provide the supported structured review JSON contract. Review preview is unavailable; local release evidence verification is still supported.`
+    );
+  } else if (failed) {
+    void vscode.window.showErrorMessage(
+      'BoardReadyOps did not return compatible structured review evidence. No upload was performed.'
+    );
+  } else if (summary) {
+    const document = await vscode.workspace.openTextDocument({
+      language: 'plaintext',
+      content: summary
+    });
+    await vscode.window.showTextDocument(document, { preview: true });
+  }
 }
 
 /**
@@ -345,6 +468,54 @@ export function registerBoardReadyOpsCommands(
         }
       }
     }),
+
+    vscode.commands.registerCommand(
+      COMMANDS.boardReadyOpsReviewEvidence,
+      async () => {
+        if (!(await requireWorkspaceTrust('BoardReadyOps review evidence')))
+          return;
+        const enabled = vscode.workspace
+          .getConfiguration()
+          .get<boolean>(SETTINGS.boardReadyOpsEnabled, false);
+        if (!enabled) {
+          void vscode.window.showWarningMessage(
+            localize('boardReadyOpsNotConfigured')
+          );
+          return;
+        }
+        const projectPath = services.projectState.getActiveProject()?.rootPath;
+        if (!projectPath) {
+          void vscode.window.showErrorMessage(
+            'No active KiCad project found. Open a project to review BoardReadyOps evidence.'
+          );
+          return;
+        }
+        const choice = await vscode.window.showQuickPick(
+          [
+            { label: 'Verify local release evidence', id: 'verify' },
+            {
+              label: 'Preview cloud review metadata (dry run, no upload)',
+              id: 'preview'
+            },
+            { label: 'Open BoardReadyOps web governance dashboard', id: 'web' }
+          ],
+          {
+            title: 'BoardReadyOps — Review and Evidence',
+            placeHolder:
+              'Choose a safe evidence workflow; cloud publishing is never automatic'
+          }
+        );
+        if (choice?.id === 'verify') {
+          await showBoardReadyOpsEvidenceState(services);
+        } else if (choice?.id === 'preview') {
+          await previewBoardReadyOpsReview(projectPath, services);
+        } else if (choice?.id === 'web') {
+          await vscode.env.openExternal(
+            vscode.Uri.parse('https://app.boardreadyops.com/')
+          );
+        }
+      }
+    ),
 
     vscode.commands.registerCommand(COMMANDS.boardReadyOpsPlan, async () => {
       if (!(await requireWorkspaceTrust('BoardReadyOps remediation plan')))

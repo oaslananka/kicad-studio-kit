@@ -1133,6 +1133,11 @@
         "category": "%kicadstudio.contributes.commands.boardReadyOps.category%"
       },
       {
+        "command": "kicadstudio.boardReadyOps.reviewEvidence",
+        "title": "%kicadstudio.contributes.commands.boardReadyOps.reviewEvidence.title%",
+        "category": "%kicadstudio.contributes.commands.boardReadyOps.category%"
+      },
+      {
         "command": "kicadstudio.generateKicadDiffReport",
         "title": "%kicadstudio.contributes.commands.diffReport.title%",
         "category": "%kicadstudio.contributes.commands.diffReport.category%",
@@ -1741,6 +1746,10 @@
         },
         {
           "command": "kicadstudio.boardReadyOps.plan",
+          "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject"
+        },
+        {
+          "command": "kicadstudio.boardReadyOps.reviewEvidence",
           "when": "kicadstudio.workspaceTrusted && kicadstudio.hasProject"
         },
         {

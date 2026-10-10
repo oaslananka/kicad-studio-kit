@@ -464,6 +464,10 @@
     "kicadstudio.tasks.maintain": {
       "task": "maintain",
       "surface": "top-level"
+    },
+    "kicadstudio.boardReadyOps.reviewEvidence": {
+      "task": "review",
+      "surface": "contextual"
     }
   }
 }
