@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import {
   renderDocsSearchContent,
   stripSearchCodeBlocks,
@@ -54,13 +52,27 @@ test("#531 malformed pre blocks preserve the unparsed remainder", () => {
 });
 
 test("#784 generated changelog archives stay readable but are excluded from local search", () => {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-  for (const [source, page] of [
-    ["CHANGELOG.md", "docs/changelog/root.md"],
-    ["apps/vscode-extension/CHANGELOG.md", "docs/changelog/kicad-studio.md"],
+  for (const [original, generated, page] of [
+    [
+      fs.readFileSync(new URL("../CHANGELOG.md", import.meta.url), "utf8"),
+      fs.readFileSync(
+        new URL("../docs/changelog/root.md", import.meta.url),
+        "utf8",
+      ),
+      "docs/changelog/root.md",
+    ],
+    [
+      fs.readFileSync(
+        new URL("../apps/vscode-extension/CHANGELOG.md", import.meta.url),
+        "utf8",
+      ),
+      fs.readFileSync(
+        new URL("../docs/changelog/kicad-studio.md", import.meta.url),
+        "utf8",
+      ),
+      "docs/changelog/kicad-studio.md",
+    ],
   ]) {
-    const original = fs.readFileSync(path.join(root, source), "utf8");
-    const generated = fs.readFileSync(path.join(root, page), "utf8");
     assert.match(generated, /^---\nsearch: false\n---\n\n# /u);
     assert.ok(
       generated.includes(original.trim().slice(-120)),

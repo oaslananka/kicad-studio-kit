@@ -474,19 +474,56 @@ test("release-please dry-run snapshot ignores root-only changes", async () => {
 test("#784 temporary Release Please generator cannot trigger premature CI validation", () => {
   const sourceBranch =
     "release-please--branches--main--components--vscode-extension";
-  const guarded = [
-    ["ci.yml", "ci-lanes"],
-    ["docs.yml", "build"],
-    ["release.yml", "release-readiness"],
-    ["cross-repo-compatibility.yml", "canary"],
-    ["sonarcloud.yml", "sonarcloud"],
-  ];
-  for (const [workflow, job] of guarded) {
-    const content = fs.readFileSync(
-      path.join(REPO_ROOT, ".github/workflows", workflow),
+  const ci = parseYaml(
+    fs.readFileSync(
+      new URL("../.github/workflows/ci.yml", import.meta.url),
       "utf8",
-    );
-    const parsed = parseYaml(content);
+    ),
+  );
+  const sonar = parseYaml(
+    fs.readFileSync(
+      new URL("../.github/workflows/sonarcloud.yml", import.meta.url),
+      "utf8",
+    ),
+  );
+  const guarded = [
+    ["ci.yml", "ci-lanes", ci],
+    [
+      "docs.yml",
+      "build",
+      parseYaml(
+        fs.readFileSync(
+          new URL("../.github/workflows/docs.yml", import.meta.url),
+          "utf8",
+        ),
+      ),
+    ],
+    [
+      "release.yml",
+      "release-readiness",
+      parseYaml(
+        fs.readFileSync(
+          new URL("../.github/workflows/release.yml", import.meta.url),
+          "utf8",
+        ),
+      ),
+    ],
+    [
+      "cross-repo-compatibility.yml",
+      "canary",
+      parseYaml(
+        fs.readFileSync(
+          new URL(
+            "../.github/workflows/cross-repo-compatibility.yml",
+            import.meta.url,
+          ),
+          "utf8",
+        ),
+      ),
+    ],
+    ["sonarcloud.yml", "sonarcloud", sonar],
+  ];
+  for (const [workflow, job, parsed] of guarded) {
     const expression = parsed.jobs[job]?.if;
     assert.equal(typeof expression, "string", workflow + ":" + job);
     assert.ok(
@@ -514,19 +551,10 @@ test("#784 temporary Release Please generator cannot trigger premature CI valida
       workflow,
     );
   }
-  const ci = parseYaml(
-    fs.readFileSync(path.join(REPO_ROOT, ".github/workflows/ci.yml"), "utf8"),
-  );
   assert.equal(
     ci.jobs.required.if,
     "${{ !cancelled() }}",
     "protected aggregate required must always report",
-  );
-  const sonar = parseYaml(
-    fs.readFileSync(
-      path.join(REPO_ROOT, ".github/workflows/sonarcloud.yml"),
-      "utf8",
-    ),
   );
   assert.ok(
     sonar.jobs.sonarcloud.if.includes(
