@@ -28,6 +28,7 @@ published.
 * **kicad-studio:** reject contradictory BoardReadyOps plan verdicts ([16d4459](https://github.com/oaslananka/kicad-studio-kit/commit/16d44590d438d5a304a1f9bae6b696968878b152))
 * **kicad-studio:** reject contradictory BoardReadyOps plan verdicts ([#757](https://github.com/oaslananka/kicad-studio-kit/issues/757)) ([16d4459](https://github.com/oaslananka/kicad-studio-kit/commit/16d44590d438d5a304a1f9bae6b696968878b152))
 * **kicad-studio:** reject contradictory BoardReadyOps run verdicts ([5ce1880](https://github.com/oaslananka/kicad-studio-kit/commit/5ce1880948e12d4d9fbb21f1ec8d4ce9dcd731f9))
+* **kicad-studio:** restore CSP-safe BOM and netlist webview states ([#766](https://github.com/oaslananka/kicad-studio-kit/issues/766)) ([ca59c7e](https://github.com/oaslananka/kicad-studio-kit/commit/ca59c7ece54c193dfb97adba03bd2212d234e0a5))
 * **kicad-studio:** restore KiCad-native BOM parity ([#764](https://github.com/oaslananka/kicad-studio-kit/issues/764)) ([b614985](https://github.com/oaslananka/kicad-studio-kit/commit/b614985f8b36f9a496fc756cd3795cfec8a429b8))
 * **kicad-studio:** scope BoardReadyOps readiness reports to active project ([bbd9cf6](https://github.com/oaslananka/kicad-studio-kit/commit/bbd9cf6de48435dd8bfc4fd35fd6925fa1305350))
 
