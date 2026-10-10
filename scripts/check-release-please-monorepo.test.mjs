@@ -474,49 +474,28 @@ test("release-please dry-run snapshot ignores root-only changes", async () => {
 test("#784 temporary Release Please generator cannot trigger premature CI validation", () => {
   const sourceBranch =
     "release-please--branches--main--components--vscode-extension";
-  const ci = parseYaml(
-    fs.readFileSync(
-      new URL("../.github/workflows/ci.yml", import.meta.url),
-      "utf8",
-    ),
-  );
+  const ci = parseYaml(fs.readFileSync(".github/workflows/ci.yml", "utf8"));
   const sonar = parseYaml(
-    fs.readFileSync(
-      new URL("../.github/workflows/sonarcloud.yml", import.meta.url),
-      "utf8",
-    ),
+    fs.readFileSync(".github/workflows/sonarcloud.yml", "utf8"),
   );
   const guarded = [
     ["ci.yml", "ci-lanes", ci],
     [
       "docs.yml",
       "build",
-      parseYaml(
-        fs.readFileSync(
-          new URL("../.github/workflows/docs.yml", import.meta.url),
-          "utf8",
-        ),
-      ),
+      parseYaml(fs.readFileSync(".github/workflows/docs.yml", "utf8")),
     ],
     [
       "release.yml",
       "release-readiness",
-      parseYaml(
-        fs.readFileSync(
-          new URL("../.github/workflows/release.yml", import.meta.url),
-          "utf8",
-        ),
-      ),
+      parseYaml(fs.readFileSync(".github/workflows/release.yml", "utf8")),
     ],
     [
       "cross-repo-compatibility.yml",
       "canary",
       parseYaml(
         fs.readFileSync(
-          new URL(
-            "../.github/workflows/cross-repo-compatibility.yml",
-            import.meta.url,
-          ),
+          ".github/workflows/cross-repo-compatibility.yml",
           "utf8",
         ),
       ),

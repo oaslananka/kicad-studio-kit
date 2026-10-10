@@ -54,22 +54,13 @@ test("#531 malformed pre blocks preserve the unparsed remainder", () => {
 test("#784 generated changelog archives stay readable but are excluded from local search", () => {
   for (const [original, generated, page] of [
     [
-      fs.readFileSync(new URL("../CHANGELOG.md", import.meta.url), "utf8"),
-      fs.readFileSync(
-        new URL("../docs/changelog/root.md", import.meta.url),
-        "utf8",
-      ),
+      fs.readFileSync("CHANGELOG.md", "utf8"),
+      fs.readFileSync("docs/changelog/root.md", "utf8"),
       "docs/changelog/root.md",
     ],
     [
-      fs.readFileSync(
-        new URL("../apps/vscode-extension/CHANGELOG.md", import.meta.url),
-        "utf8",
-      ),
-      fs.readFileSync(
-        new URL("../docs/changelog/kicad-studio.md", import.meta.url),
-        "utf8",
-      ),
+      fs.readFileSync("apps/vscode-extension/CHANGELOG.md", "utf8"),
+      fs.readFileSync("docs/changelog/kicad-studio.md", "utf8"),
       "docs/changelog/kicad-studio.md",
     ],
   ]) {
