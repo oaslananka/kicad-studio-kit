@@ -7,7 +7,7 @@ import { execFile, spawn } from "node:child_process";
 import { once } from "node:events";
 import { mkdtemp, rm } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { createServer } from "node:net";
+import { createConnection, createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -100,7 +100,22 @@ async function stopServer(child) {
   }
 }
 
-async function awaitServerReady(endpoint, child, remaining = 160) {
+function probeLoopbackListener(port) {
+  return new Promise((resolve, reject) => {
+    const socket = createConnection({ host: "127.0.0.1", port });
+    socket.setTimeout(750);
+    socket.once("connect", () => {
+      socket.destroy();
+      resolve();
+    });
+    socket.once("error", reject);
+    socket.once("timeout", () =>
+      socket.destroy(new Error("loopback startup timeout")),
+    );
+  });
+}
+
+async function awaitServerReady(port, child, remaining = 160) {
   if (remaining === 0) {
     throw new Error("Published server did not become ready on loopback");
   }
@@ -112,13 +127,10 @@ async function awaitServerReady(endpoint, child, remaining = 160) {
     throw new Error("Published server failed startup");
   }
   try {
-    await fetch(endpoint + "/mcp", {
-      headers: { Accept: "application/json, text/event-stream" },
-      signal: AbortSignal.timeout(750),
-    });
+    await probeLoopbackListener(port);
   } catch {
     await delay(500);
-    return awaitServerReady(endpoint, child, remaining - 1);
+    return awaitServerReady(port, child, remaining - 1);
   }
 }
 
@@ -153,7 +165,7 @@ async function runPair({ version, modern, modules }) {
   for (const stream of [child.stdout, child.stderr]) stream.resume();
 
   try {
-    await awaitServerReady(endpoint, child);
+    await awaitServerReady(port, child);
 
     const adapter = modern
       ? new modules.Mcp2026ProtocolAdapter()
