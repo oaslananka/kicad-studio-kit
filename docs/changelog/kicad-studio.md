@@ -12,7 +12,12 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
-## [1.15.5](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.4...vscode-extension-v1.15.5) (2026-10-09)
+## [1.16.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.4...vscode-extension-v1.16.0) (2026-10-10)
+
+
+### Features
+
+* **kicad-studio:** stage fail-closed 2026 stateless client wire adapter ([#762](https://github.com/oaslananka/kicad-studio-kit/issues/762)) ([ed992af](https://github.com/oaslananka/kicad-studio-kit/commit/ed992afeb34088403975c9cc861d98e0795654ec)), closes [#492](https://github.com/oaslananka/kicad-studio-kit/issues/492)
 
 
 ### Bug Fixes
