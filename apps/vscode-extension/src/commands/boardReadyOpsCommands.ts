@@ -12,7 +12,8 @@ import {
 } from '../boardreadyops/contract';
 import {
   assertBoardReadyOpsPlanVerdict,
-  parseBoardReadyOpsPlan
+  parseBoardReadyOpsPlan,
+  type BoardReadyOpsPlanAction
 } from '../boardreadyops/plan';
 import {
   assertBoardReadyOpsEvidenceVerdict,
@@ -187,6 +188,11 @@ export function registerBoardReadyOpsCommands(
       // A cancelled or failed rerun must not leave a stale report.
       latestReport = undefined;
 
+      // Close the cancellable progress notification before asking the user to
+      // review diagnostics. A modal/notification can wait indefinitely for a
+      // selection and must not keep an already completed CLI run "running".
+      let completion: { summaryText: string; findings: number } | undefined;
+      let failure: Error | undefined;
       await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
@@ -308,29 +314,36 @@ export function registerBoardReadyOpsCommands(
             const summary = result.summary;
             const summaryText = `BoardReadyOps: ${result.status === 'passed' ? 'Passed' : 'Failed'} with ${summary.total} findings (${summary.critical} critical, ${summary.high} high, ${summary.medium} medium, ${summary.low} low, ${summary.info} info).`;
 
-            if (summary.total > 0) {
-              const choice = await vscode.window.showWarningMessage(
-                summaryText,
-                'Show Problems'
-              );
-              if (choice === 'Show Problems') {
-                await vscode.commands.executeCommand(
-                  'workbench.actions.view.problems'
-                );
-              }
-            } else {
-              void vscode.window.showInformationMessage(
-                'BoardReadyOps: Board is ready! No issues found.'
-              );
-            }
+            completion = { summaryText, findings: summary.total };
           } catch (err) {
             services.logger.error('BoardReadyOps check failed', err);
-            void vscode.window.showErrorMessage(
-              `BoardReadyOps check failed: ${err instanceof Error ? err.message : String(err)}`
-            );
+            failure = err instanceof Error ? err : new Error(String(err));
           }
         }
       );
+      if (failure) {
+        void vscode.window.showErrorMessage(
+          `BoardReadyOps check failed: ${(failure as Error).message}`
+        );
+        return;
+      }
+      if (completion) {
+        if (completion.findings > 0) {
+          const choice = await vscode.window.showWarningMessage(
+            completion.summaryText,
+            'Show Problems'
+          );
+          if (choice === 'Show Problems') {
+            await vscode.commands.executeCommand(
+              'workbench.actions.view.problems'
+            );
+          }
+        } else {
+          void vscode.window.showInformationMessage(
+            'BoardReadyOps: Board is ready! No issues found.'
+          );
+        }
+      }
     }),
 
     vscode.commands.registerCommand(COMMANDS.boardReadyOpsPlan, async () => {
@@ -356,6 +369,11 @@ export function registerBoardReadyOpsCommands(
         .getConfiguration()
         .get<string>(SETTINGS.boardReadyOpsSpecFile, '')
         .trim();
+      let planOptions:
+        | Array<vscode.QuickPickItem & { action: BoardReadyOpsPlanAction }>
+        | undefined;
+      let noActions = false;
+      let failure: string | undefined;
       await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
@@ -410,34 +428,73 @@ export function registerBoardReadyOpsCommands(
               ? plan.nextActions
               : plan.releaseActions;
             if (actions.length === 0) {
-              void vscode.window.showInformationMessage(
-                'BoardReadyOps did not report any remediation or release actions.'
-              );
+              noActions = true;
               return;
             }
-            await vscode.window.showQuickPick(
-              actions.map((action) => ({
-                label: action.title,
-                description: action.ruleId,
-                detail: action.fixStrategy.steps.join(' → ')
-              })),
-              {
-                title: 'BoardReadyOps Remediation Plan',
-                placeHolder: 'Review the shortest deterministic next actions'
-              }
-            );
+            planOptions = actions.map((action) => ({
+              label: action.title,
+              description: action.ruleId,
+              // Long step lists truncate in VS Code QuickPick; show the first
+              // step here and the complete advisory plan after selection.
+              detail:
+                action.fixStrategy.steps[0] ?? action.fixStrategy.description,
+              action
+            }));
           } catch (err) {
             const safeError =
               err instanceof Error
                 ? err.message
                 : 'Unknown BoardReadyOps plan error.';
             services.logger.error('BoardReadyOps plan failed', safeError);
-            void vscode.window.showErrorMessage(
-              `BoardReadyOps plan failed: ${safeError}`
-            );
+            failure = safeError;
           }
         }
       );
+      if (failure) {
+        void vscode.window.showErrorMessage(
+          `BoardReadyOps plan failed: ${failure}`
+        );
+      } else if (noActions) {
+        void vscode.window.showInformationMessage(
+          'BoardReadyOps did not report any remediation or release actions.'
+        );
+      } else if (planOptions) {
+        const selected = await vscode.window.showQuickPick(planOptions, {
+          title: 'BoardReadyOps Remediation Plan',
+          placeHolder:
+            'Select an action to read its steps (no automatic changes)'
+        });
+        if (selected) {
+          const action = selected.action;
+          // CLI-provided content is untrusted. Show it only as inert plaintext;
+          // never treat suggested commands as executable links or shell input.
+          const content = [
+            'BoardReadyOps remediation action',
+            '',
+            `Action: ${action.title}`,
+            `Rule: ${action.ruleId}`,
+            `Severity: ${action.severity}`,
+            `Affected file: ${action.resource.path}`,
+            '',
+            `Why it matters: ${action.whyItMatters}`,
+            '',
+            'Recommended steps:',
+            ...action.fixStrategy.steps.map(
+              (step, index) => `${index + 1}. ${step}`
+            ),
+            '',
+            'Verification commands (not executed):',
+            ...action.commandsToVerify.map((command) => `  ${command}`),
+            '',
+            'Advisory only: KiCad Studio has not changed any files or run these commands.'
+          ].join('\n');
+          const document = await vscode.workspace.openTextDocument({
+            language: 'plaintext',
+            content
+          });
+          await vscode.window.showTextDocument(document, { preview: true });
+        }
+      }
     }),
 
     vscode.commands.registerCommand(

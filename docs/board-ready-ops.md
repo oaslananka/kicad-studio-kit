@@ -6,7 +6,7 @@ BoardReadyOps runs as an external CLI tool (`npx boardreadyops`) and reports fin
 
 ## Prerequisites
 
-- **Node.js** 20+ (to run the `boardreadyops` CLI via `npx`)
+- **Node.js** 22.14+ or 24.x (the supported engines of published BoardReadyOps 1.68.3)
 - The CLI is resolved automatically — no separate install step required.
 
 ## Configuration
@@ -26,13 +26,13 @@ BoardReadyOps settings are ignored until trust is granted.
 
 All commands are available from the Command Palette (`Ctrl+Shift+P`) or the KiCad Studio panel.
 
-| Command ID                             | Title                                | Action                                                     |
-| -------------------------------------- | ------------------------------------ | ---------------------------------------------------------- |
-| `kicadstudio.boardReadyOps.check`      | BoardReadyOps: Check Board Readiness | Run checks on the active project.                          |
-| `kicadstudio.boardReadyOps.plan`       | BoardReadyOps: Plan Remediation      | Build a structured remediation plan from current findings. |
-| `kicadstudio.boardReadyOps.configure`  | BoardReadyOps: Configure Checks      | Open BoardReadyOps settings.                               |
-| `kicadstudio.boardReadyOps.showReport` | BoardReadyOps: Show Readiness Report | Display the last check report.                             |
-| `kicadstudio.boardReadyOps.openDocs`   | BoardReadyOps: Open Documentation    | Open this page in a browser.                               |
+| Command ID                             | Title                                             | Action                                                     |
+| -------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------- |
+| `kicadstudio.boardReadyOps.check`      | BoardReadyOps: Check Board Readiness              | Run checks on the active project.                          |
+| `kicadstudio.boardReadyOps.plan`       | KiCad Studio: Show BoardReadyOps Remediation Plan | Build a structured remediation plan from current findings. |
+| `kicadstudio.boardReadyOps.configure`  | BoardReadyOps: Configure Checks                   | Open BoardReadyOps settings.                               |
+| `kicadstudio.boardReadyOps.showReport` | BoardReadyOps: Show Readiness Report              | Display the last check report.                             |
+| `kicadstudio.boardReadyOps.openDocs`   | BoardReadyOps: Open Documentation                 | Open this page in a browser.                               |
 
 ## Usage
 
@@ -44,9 +44,17 @@ All commands are available from the Command Palette (`Ctrl+Shift+P`) or the KiCa
    project that was checked; it is not displayed after changing projects or
    disabling BoardReadyOps. Retrying a check clears the cached report until
    the new check succeeds.
-6. Use **BoardReadyOps: Plan Remediation** for structured next actions. The
-   external plan is accepted only when its JSON status/exit code agrees with
-   the CLI process result; malformed or contradictory plans are rejected.
+6. Use **KiCad Studio: Show BoardReadyOps Remediation Plan** for structured next actions.
+   The cancellable CLI progress indicator closes before the action picker appears.
+   Select an action to open its **complete fix steps and verification commands in an
+   unsaved plaintext preview**; suggested commands are never executed automatically.
+   The external plan is accepted only when its JSON status/exit code agrees with the
+   CLI process result; malformed or contradictory plans are rejected.
+
+The same applies to readiness checking: the CLI progress indicator finishes before
+its **Show Problems** notification asks for user input. DRC/ERC findings remain
+separate from BoardReadyOps findings. An opt-in BoardReadyOps failure cannot be
+presented as a passing manufacturing release gate.
 
 ## Results
 

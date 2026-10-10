@@ -718,6 +718,151 @@ describe('BoardReadyOps commands', () => {
     ]);
   });
 
+  it('closes progress before asking the user to review BoardReadyOps findings', async () => {
+    enableBoardReadyOpsProject();
+    mockCompatibleBoardReadyOpsResponse(
+      readinessWithFindings(['board.kicad_pcb']),
+      1
+    );
+    let progressActive = false;
+    (window.withProgress as jest.Mock).mockImplementation(
+      async (_options, task) => {
+        progressActive = true;
+        try {
+          return await task(
+            { report: jest.fn() },
+            {
+              isCancellationRequested: false,
+              onCancellationRequested: jest.fn(() => ({ dispose: jest.fn() }))
+            }
+          );
+        } finally {
+          progressActive = false;
+        }
+      }
+    );
+    (window.showWarningMessage as jest.Mock).mockImplementationOnce(
+      async () => {
+        expect(progressActive).toBe(false);
+        return 'Show Problems';
+      }
+    );
+    await runCommand(COMMANDS.boardReadyOpsCheck);
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Failed with 1 findings'),
+      'Show Problems'
+    );
+    expect(commands.executeCommand).toHaveBeenCalledWith(
+      'workbench.actions.view.problems'
+    );
+  });
+
+  it('closes progress before showing the remediation QuickPick', async () => {
+    enableBoardReadyOpsProject();
+    mockCompatibleBoardReadyOpsResponse(boardReadyOpsAgentPlan(), 1);
+    let progressActive = false;
+    (window.withProgress as jest.Mock).mockImplementation(
+      async (_options, task) => {
+        progressActive = true;
+        try {
+          return await task(
+            { report: jest.fn() },
+            {
+              isCancellationRequested: false,
+              onCancellationRequested: jest.fn(() => ({ dispose: jest.fn() }))
+            }
+          );
+        } finally {
+          progressActive = false;
+        }
+      }
+    );
+    (window.showQuickPick as jest.Mock).mockImplementationOnce(async () => {
+      expect(progressActive).toBe(false);
+      return undefined;
+    });
+    await runCommand(COMMANDS.boardReadyOpsPlan);
+    expect(window.showQuickPick).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: 'Generate missing manufacturing outputs.'
+        })
+      ]),
+      expect.objectContaining({ title: 'BoardReadyOps Remediation Plan' })
+    );
+  });
+
+  it('closes progress before displaying BoardReadyOps errors', async () => {
+    enableBoardReadyOpsProject();
+    mockCompatibleBoardReadyOpsResponse('invalid json', 1);
+    let progressActive = false;
+    (window.withProgress as jest.Mock).mockImplementation(
+      async (_options, task) => {
+        progressActive = true;
+        try {
+          return await task(
+            { report: jest.fn() },
+            {
+              isCancellationRequested: false,
+              onCancellationRequested: jest.fn(() => ({ dispose: jest.fn() }))
+            }
+          );
+        } finally {
+          progressActive = false;
+        }
+      }
+    );
+    (window.showErrorMessage as jest.Mock).mockImplementationOnce(async () => {
+      expect(progressActive).toBe(false);
+      return undefined;
+    });
+    await runCommand(COMMANDS.boardReadyOpsCheck);
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining('BoardReadyOps returned invalid JSON')
+    );
+  });
+
+  it('shows the full selected remediation action in an inert plaintext preview', async () => {
+    enableBoardReadyOpsProject();
+    mockCompatibleBoardReadyOpsResponse(boardReadyOpsAgentPlan(), 1);
+    (window.showQuickPick as jest.Mock).mockImplementationOnce(
+      async (items) => items[0]
+    );
+    const temporaryDocument = { uri: { scheme: 'untitled' } };
+    (workspace.openTextDocument as jest.Mock).mockResolvedValueOnce(
+      temporaryDocument
+    );
+
+    await runCommand(COMMANDS.boardReadyOpsPlan);
+
+    expect(workspace.openTextDocument).toHaveBeenCalledWith({
+      language: 'plaintext',
+      content: expect.stringContaining('Recommended steps:')
+    });
+    const args = (workspace.openTextDocument as jest.Mock).mock.calls[0][0];
+    expect(args.content).toContain('Rule: manufacturing.outputs-present');
+    expect(args.content).toContain('Run the KiCad jobset.');
+    expect(args.content).toContain('Verification commands (not executed):');
+    expect(args.content).toContain(
+      'Advisory only: KiCad Studio has not changed any files'
+    );
+    expect(window.showTextDocument).toHaveBeenCalledWith(temporaryDocument, {
+      preview: true
+    });
+    expect(commands.executeCommand).not.toHaveBeenCalled();
+  });
+
+  it('keeps the remediation selection inert when the user dismisses QuickPick', async () => {
+    enableBoardReadyOpsProject();
+    mockCompatibleBoardReadyOpsResponse(boardReadyOpsAgentPlan(), 1);
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
+
+    await runCommand(COMMANDS.boardReadyOpsPlan);
+
+    expect(workspace.openTextDocument).not.toHaveBeenCalled();
+    expect(window.showTextDocument).not.toHaveBeenCalled();
+  });
+
   it('shows the structured BoardReadyOps remediation plan after contract discovery', async () => {
     enableBoardReadyOpsProject();
     const spawnMock = mockCompatibleBoardReadyOpsResponse(
@@ -743,7 +888,7 @@ describe('BoardReadyOps commands', () => {
         expect.objectContaining({
           label: 'Generate missing manufacturing outputs.',
           description: 'manufacturing.outputs-present',
-          detail: 'Run the KiCad jobset. → Re-run BoardReadyOps.'
+          detail: 'Run the KiCad jobset.'
         })
       ],
       expect.objectContaining({ title: 'BoardReadyOps Remediation Plan' })
