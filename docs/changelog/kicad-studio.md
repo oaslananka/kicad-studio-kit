@@ -16,7 +16,7 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
-## [1.17.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.17.0...vscode-extension-v1.17.1) (2026-10-10)
+## [1.17.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.17.0...vscode-extension-v1.17.1) (2026-10-16)
 
 
 ### Bug Fixes
