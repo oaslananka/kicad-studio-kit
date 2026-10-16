@@ -9,6 +9,7 @@
   "writeJobs": {
     "ci.yml#coverage-report": ["pull-requests"],
     "codeql.yml#analyze": ["security-events"],
+    "codspeed.yml#benchmarks": ["id-token"],
     "docs.yml#deploy": ["id-token", "pages"],
     "publish-extension.yml#package": [
       "artifact-metadata",
@@ -31,6 +32,7 @@
   "pullRequestWriteJobs": {
     "ci.yml#coverage-report": "same-repository-head-only",
     "codeql.yml#analyze": "github-fork-token-read-only",
+    "codspeed.yml#benchmarks": "github-fork-token-read-only",
     "docs.yml#deploy": "non-pull-request-job",
     "security.yml#security": "github-fork-token-read-only"
   }
