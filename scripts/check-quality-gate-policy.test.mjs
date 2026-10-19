@@ -401,3 +401,35 @@ test("#710 Sonar marketplace checker coverage must run mutation tests serially",
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("#793 Sonar requires real retired-dependency evidence test coverage", () => {
+  const root = fixture();
+  try {
+    const filename = path.join(root, ".github/workflows/sonarcloud.yml");
+    const original = readFileSync(filename, "utf8");
+    writeFileSync(
+      filename,
+      original.replace(
+        "scripts/check-retired-dependency-evidence.test.mjs",
+        "scripts/nonexistent-evidence.test.mjs",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud must discover the pnpm-pinned c8 CLI/iu,
+    );
+    writeFileSync(
+      filename,
+      original.replace(
+        "SF:scripts/check-retired-dependency-evidence.mjs",
+        "SF:scripts/unrelated-file.mjs",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud must verify marketplace and changed repository-policy LCOV/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

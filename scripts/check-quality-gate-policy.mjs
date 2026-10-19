@@ -218,6 +218,9 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
           "--include='apps/vscode-extension/scripts/check-marketplace-assets.js'",
         ) &&
         command.includes("scripts/check-compatibility-contract.test.mjs") &&
+        command.includes(
+          "scripts/check-retired-dependency-evidence.test.mjs",
+        ) &&
         command.includes("scripts/check-branch-protection-gates.test.mjs") &&
         command.includes("scripts/check-codecov-policy.test.mjs") &&
         command.includes("scripts/check-pnpm-supply-chain.test.mjs") &&
@@ -243,7 +246,8 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
       ) &&
       command.includes("SF:scripts/check-branch-protection-gates.mjs") &&
       command.includes("SF:scripts/check-codecov-policy.mjs") &&
-      command.includes("SF:scripts/check-pnpm-supply-chain.mjs")
+      command.includes("SF:scripts/check-pnpm-supply-chain.mjs") &&
+      command.includes("SF:scripts/check-retired-dependency-evidence.mjs")
     );
   });
   if (!lcovEvidence) {
