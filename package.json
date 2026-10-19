@@ -113,7 +113,7 @@
   "devDependencies": {
     "@commitlint/cli": "21.2.3",
     "@commitlint/config-conventional": "21.2.3",
-    "@oaslananka/kicad-protocol-schemas": "1.1.1",
+    "@oaslananka/kicad-protocol-schemas": "2.0.0",
     "husky": "9.1.7",
     "prettier": "3.9.9",
     "typescript": "6.0.3",

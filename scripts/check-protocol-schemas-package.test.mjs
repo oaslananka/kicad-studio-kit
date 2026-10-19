@@ -15,6 +15,7 @@ const requiredSchemaFiles = [
   "mcp-tool-capability.schema.json",
   "mcp-tool-discovery.schema.json",
   "normalized-diagnostic.schema.json",
+  "tool-effect-manifest.schema.json",
 ];
 
 function npmPackageRoot() {
@@ -71,6 +72,64 @@ test("#342 published protocol schema package exposes the validator API used by c
 
   assert.equal(typeof pkg.validateProtocolPayload, "function");
   assert.equal(typeof pkg.protocolSchemaPath, "function");
+  assert.equal(typeof pkg.validateToolEffectManifest, "function");
+});
+
+test("#777 published schema v2 validates reviewed tool effects and rejects malformed metadata", async () => {
+  const { validateToolEffectManifest } =
+    await import("@oaslananka/kicad-protocol-schemas");
+  const toolEffectSchema = readJson(
+    path.join(npmPackageRoot(), "schemas", "tool-effect-manifest.schema.json"),
+  );
+  const repository =
+    toolEffectSchema.properties.source.properties.repository.const;
+  assert.equal(typeof repository, "string");
+  const manifest = {
+    schemaVersion: "2.0.0",
+    source: {
+      repository,
+      version: "4.3.0",
+      reviewed_source_sha: "a".repeat(40),
+    },
+    tools: [
+      {
+        name: "kicad_get_version",
+        arguments: [],
+        effects: ["read"],
+        path_arguments: [],
+        argument_shapes: [],
+        destructive: false,
+        idempotent: true,
+        supports_dry_run: false,
+        supports_rollback: false,
+        transaction_support: "none",
+        verification_requirements: ["source_review"],
+        reviewed_source_paths: ["src/tools/version.py"],
+      },
+    ],
+  };
+  assert.equal(validateToolEffectManifest(manifest).valid, true);
+  assert.equal(
+    validateToolEffectManifest({
+      ...manifest,
+      source: { ...manifest.source, reviewed_source_sha: "not-a-sha" },
+    }).valid,
+    false,
+  );
+  assert.equal(
+    validateToolEffectManifest({
+      ...manifest,
+      tools: [{ ...manifest.tools[0], unsafe_extra_field: true }],
+    }).valid,
+    false,
+  );
+  assert.equal(
+    validateToolEffectManifest({
+      ...manifest,
+      tools: [{ ...manifest.tools[0], effects: ["arbitrary_effect"] }],
+    }).valid,
+    false,
+  );
 });
 
 test("OASLANA-52 npm-installed package owns every required compatibility schema", () => {
@@ -91,7 +150,7 @@ test("OASLANA-52 npm-installed package owns every required compatibility schema"
     assert.match(
       schema.$id,
       new RegExp(
-        `^https://oaslananka.github.io/(kicad-studio-kit|kicad-mcp)/schemas/${escapeRegExp(schemaFile)}$`,
+        `^https://oaslananka.github.io/(kicad-studio-kit|kicad-mcp|kicad-mcp-pro)/schemas/${escapeRegExp(schemaFile)}$`,
         "u",
       ),
     );

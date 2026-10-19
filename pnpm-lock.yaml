@@ -50,8 +50,8 @@ importers:
         specifier: 21.2.3
         version: 21.2.3
       '@oaslananka/kicad-protocol-schemas':
-        specifier: 1.1.1
-        version: 1.1.1
+        specifier: 2.0.0
+        version: 2.0.0
       husky:
         specifier: 9.1.7
         version: 9.1.7
@@ -71,8 +71,8 @@ importers:
   apps/vscode-extension:
     dependencies:
       '@oaslananka/kicad-protocol-schemas':
-        specifier: 1.1.1
-        version: 1.1.1
+        specifier: 2.0.0
+        version: 2.0.0
       exceljs:
         specifier: 4.4.0
         version: 4.4.0
@@ -1576,8 +1576,8 @@ packages:
     resolution: {integrity: sha512-gOYKFwkojSdWrSmreCcGocRcAXSpRkNZYxv6nscmtddSWBKVGypdMbfLxu5qgmymdaCNApajuwZblYEfs7HswA==}
     engines: {node: '>= 10'}
 
-  '@oaslananka/kicad-protocol-schemas@1.1.1':
-    resolution: {integrity: sha512-OgzuEv0ViM8LHEQqoOgqtTYkZgU5FrCABrbbs+fSXJu4v0pQ5lkU4Hvq3Bw4HB4cXyd3DMBiqFhHO5nQCzMxcA==}
+  '@oaslananka/kicad-protocol-schemas@2.0.0':
+    resolution: {integrity: sha512-EKgOeAwMsyx/murvs3gVWZNY1lhsTeDdeIrBf/lkrys3UOWZ/eaQr7Dg0CD0VrwJW1D//3Z/zXmAx0qo3ZLTJA==}
     engines: {node: '>=24.11.0 <25', pnpm: '>=11.0.0 <12'}
 
   '@octokit/auth-token@4.0.0':
@@ -7078,7 +7078,7 @@ snapshots:
       '@node-rs/crc32-win32-ia32-msvc': 1.10.8
       '@node-rs/crc32-win32-x64-msvc': 1.10.8
 
-  '@oaslananka/kicad-protocol-schemas@1.1.1':
+  '@oaslananka/kicad-protocol-schemas@2.0.0':
     dependencies:
       ajv: 8.20.0
 

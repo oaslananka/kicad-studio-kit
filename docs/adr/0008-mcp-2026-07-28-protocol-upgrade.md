@@ -4,7 +4,7 @@ Status: Proposed
 
 Date: 2026-05-30
 
-Last reviewed: 2026-09-04
+Last reviewed: 2026-10-20
 
 ## Context
 
@@ -37,6 +37,28 @@ upgrade spans two repositories and published artifacts:
 No local MCP server or protocol-schema source package exists in this
 repository. Upgrade instructions must therefore assign work to the owning
 repository or published artifact rather than to removed local paths.
+
+## 2026-10-20 published-schema checkpoint (production still blocked)
+
+The published `@oaslananka/kicad-protocol-schemas@2.0.0` artifact was
+released on 2026-10-05T04:22:46Z, so the unchanged
+`minimumReleaseAge: 10080` policy is satisfied. The Studio consumer
+upgrade is tracked under [#777](https://github.com/oaslananka/kicad-studio-kit/issues/777);
+the package now includes a source-reviewed `tool-effect-manifest` schema.
+The Studio schema contract verifies its published validation API and rejects
+malformed source identities, unexpected fields, and unsupported effects.
+
+Using the actual compiled Studio protocol adapter and published
+`kicad-mcp-pro==4.3.0`, an isolated real-pair canary verified
+`2026-07-28` stateless and `2025-11-25` session peers, each with 24 tools
+and a successful read-only tool call. A separate 2026 artifact canary
+confirmed stateless private-cache responses. These are **source and
+published-package evidence**, not authorization to enable the 2026 adapter.
+
+The adapter registry, `compatibility.yaml` production protocol, and this
+ADR's status remain unchanged. Full source-reviewed negative contracts,
+Extension Host acceptance, final schema/server attestation, rollback and
+exact-merge gates are still required before activation or publication.
 
 ## Current ownership audit
 
