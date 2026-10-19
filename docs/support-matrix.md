@@ -14,7 +14,7 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 | Runtime | Policy |
 | --- | --- |
 | KiCad primary | `10.0.x` |
-| KiCad latest verified | `10.0.5` |
+| KiCad latest verified | `10.0.7` |
 | VS Code minimum | `1.101.0` |
 | Node | `>=24.11.0 <25` |
 | pnpm | `>=11.0.0 <12` |
@@ -99,7 +99,7 @@ exports.
 
 | KiCad line | Tested patch | Support state | Required validation                         | Extension feature state                                                                                                                                                                          |
 | ---------- | ------------ | ------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 10.0.x     | 10.0.5       | Primary       | Required release gate and KiCad canary lane | Core DRC/ERC, BOM/netlist, Gerbers/drill, jobsets, design variants, 3D PDF, STEPZ/XAO, and ODB++ are supported when command probes pass.                                                         |
+| 10.0.x     | 10.0.7       | Primary       | Required release gate and KiCad canary lane | Core DRC/ERC, BOM/netlist, Gerbers/drill, jobsets, design variants, 3D PDF, STEPZ/XAO, and ODB++ are supported when command probes pass.                                                         |
 | 9.x        | 9.0.9        | Deprecated    | Scheduled non-blocking KiCad canary lane    | Core DRC/ERC, BOM/netlist, Gerbers/drill, jobsets, ODB++, and manufacturing package workflows remain best-effort when command probes pass; KiCad 10-only variants and 3D PDF remain unavailable. |
 | 8.x        | 8.0.x        | Deprecated    | Manual compatibility check                  | Core file-level read, migration, DRC/ERC, BOM/netlist, and Gerber workflows are best-effort when command probes pass; jobsets, variants, 3D PDF, and ODB++ remain unavailable.                   |
 | <8         | none         | Unsupported   | None                                        | KiCad Studio reports the detected CLI as unsupported and does not claim feature compatibility.                                                                                                   |
@@ -129,29 +129,32 @@ fixture records the stable boundary: KiCad 10 PCB Editor supports Cadence
 Allegro `.brd` import, while current stable CLI help does not advertise
 `--format allegro`.
 
-## KiCad 10.0.5 Feature-Parity Matrix
+## KiCad 10.0.7 Feature-Parity Matrix
 
-The full KiCad 10.0.5 parity contract lives in
-[`docs/compatibility/kicad-10-0-5-feature-parity.md`](compatibility/kicad-10-0-5-feature-parity.md)
-and is machine-validated from `compatibility.yaml` `kicad10FeatureParity`.
-The stable AppImage comparison is recorded in the
-[KiCad 10.0.5 evidence summary](evidence/kicad-10-0-5/2026-07-26/summary.md).
-It covers importer, CLI/export, GUI/editor, IPC, VS Code extension, MCP server,
-and release artifact surfaces.
+The current verified primary patch is **10.0.7**. The feature-status
+contract is maintained in `compatibility.yaml` under `kicad10FeatureParity`,
+with [current 10.0.7 parity notes](compatibility/kicad-10-0-7-feature-parity.md)
+and [live acceptance evidence](evidence/kicad-10-0-7/2026-10-20/summary.md).
+The [10.0.5 feature matrix](compatibility/kicad-10-0-5-feature-parity.md)
+remains available as historical evidence; fixture IDs are not renamed.
 
-Every `supported` feature must link to a test, fixture, command probe, or smoke
-path. Every `partial` or `blocked` feature must link to a GitHub issue. KiCad
-11 readiness risks stay in the separate readiness section so the KiCad 10.0.5
-matrix remains the stable release boundary.
+Every `supported` feature must have test, fixture, probe, or smoke evidence.
+Any `partial` or `blocked` boundary remains explicit. KiCad 11 readiness is
+independent of the current 10.0.x stable release gate.
 
 ### Stable Patch Verification
 
-The official KiCad 10.0.5 Linux AppImage passed the owning KiCad MCP Pro
-`10.0.x` canary on 2026-07-26. Thirty required steps passed, no fixture failed,
-and Allegro remained the single intentional optional capability skip. See the
-[final stable evidence](evidence/kicad-10-0-5/2026-07-26/summary.md). The
-[10.0.5 RC1 report](evidence/kicad-10-0-5-rc1/2026-07-21/summary.md) remains
-historical and is no longer an active preview in `compatibility.yaml`.
+On 2026-10-20, a clean isolated KiCad MCP Pro source tree ran the actual
+`10.0.x` canary against Ubuntu KiCad CLI **10.0.7**: 32 expected outcomes,
+31 exercised probes, one intentional Allegro CLI skip, zero failed fixtures,
+and manufacturing outputs generated. The semantic differential status was
+`match`; the canary's known synthetic fixture violations were retained.
+See [10.0.7 evidence](evidence/kicad-10-0-7/2026-10-20/summary.md).
+
+The previous official KiCad 10.0.5 AppImage verification is
+[archived unchanged](evidence/kicad-10-0-5/2026-07-26/summary.md). The
+newer test uses the installed Ubuntu CLI; it does not claim a second official
+AppImage SHA-256 verification or a cross-platform GUI IPC pass.
 
 ## KiCad 11 Readiness
 
@@ -181,10 +184,12 @@ Status surfaces:
 - KiCad 10.0.x patch-specific regression coverage is tracked by
   [`kicad-10-0-3-regressions`](kicad-fixture-corpus.md#fixture-coverage).
 
-Freshness sources checked on 2026-07-26:
+Freshness sources checked on 2026-10-20 (historical entries retained):
 
-- KiCad 10.0.5 release notes: <https://www.kicad.org/blog/2026/07/KiCad-10.0.5-Release/>
-- KiCad 10.0.5 GitHub release tag: <https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.5>
+- KiCad 10.0.7 release notes: <https://www.kicad.org/blog/2026/10/KiCad-10.0.7-Release/>
+- KiCad 10.0.7 GitHub source tag: <https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.7>
+- Historical KiCad 10.0.5 release notes: <https://www.kicad.org/blog/2026/07/KiCad-10.0.5-Release/>
+- Historical KiCad 10.0.5 GitHub release tag: <https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.5>
 - Historical KiCad 10.0.5 RC1 announcement: <https://www.kicad.org/blog/2026/07/KiCad-Version-10.0.5-Release-Candidate-1-Available/>
 - KiCad 10.0.0 GitHub release note for KiCad 9.x active-maintenance EOL: <https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.0>
 - KiCad 9.0.9 release notes: <https://www.kicad.org/blog/2026/04/KiCad-9.0.9-Release/>

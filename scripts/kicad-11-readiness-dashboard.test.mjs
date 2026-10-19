@@ -242,5 +242,5 @@ test("#377 generated dashboard exposes truthful readiness and promotion gates", 
   }
   assert.match(markdown, /Critical CLI Snapshot Contract/u);
   assert.match(markdown, /Same-Day Stable Release Checklist/u);
-  assert.match(markdown, /KiCad 10\.0\.5 remains primary/u);
+  assert.match(markdown, /KiCad 10\.0\.7 remains primary/u);
 });

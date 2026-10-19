@@ -219,12 +219,12 @@ test("#494 compatibility contract rejects malformed runtime policy metadata", ()
   );
 });
 
-test("#558 final KiCad 10.0.5 baseline is aligned and has no active patch preview", () => {
-  assert.equal(compatibility.kicad.latestVerified, "10.0.5");
-  assert.equal(compatibility.kicad10FeatureParity.baseline, "10.0.5");
+test("latest verified KiCad 10.0.7 patch has live canary evidence and no preview", () => {
+  assert.equal(compatibility.kicad.latestVerified, "10.0.7");
+  assert.equal(compatibility.kicad10FeatureParity.baseline, "10.0.7");
   assert.equal(
     compatibility.kicad10FeatureParity.sources.canaryEvidence,
-    "docs/evidence/kicad-10-0-5/2026-07-26/summary.md",
+    "docs/evidence/kicad-10-0-7/2026-10-20/summary.md",
   );
   assert.equal(compatibility.kicad.patchCanary, undefined);
   assert.deepEqual(validateKiCadPatchBaseline({ compatibility }), []);
