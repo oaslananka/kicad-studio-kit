@@ -52,11 +52,15 @@ corepack pnpm run docs:generate
 `apps/vscode-extension/package.json`; `docs:generate` refreshes the generated
 docs tables. Release Please owns the changelog and manifest.
 
-Because Release Please only bumps `package.json`, the manifest, and the
-changelog, `.github/workflows/release-please.yml` runs `release:surface` +
-`docs:generate` on the open release pull request and commits the result to its
-branch, so the release PR's own CI stays green and the release is mergeable
-without a manual surface bump.
+Release Please proposes only `package.json`, the manifest, and the changelog.
+`.github/workflows/release-please.yml` restores those three files onto the
+**current `main`** before running `release:surface` and `docs:generate`.
+The generated tree is committed through GitHub's signed-commit API to a separate
+release PR; the temporary generator is then closed and its branch deleted.
+If an existing signed release PR conflicts with `main`, the workflow creates a
+new verified signed PR on current `main` and closes the obsolete PR only after
+signature and ancestry checks pass. An unchanged generator proposal is still
+reconciled. No release PR is merged as part of this synchronization.
 
 `check:release-surface` also runs inside `corepack pnpm run check:version`, so CI
 fails on README or release-surface drift on every pull request. Marketplace and

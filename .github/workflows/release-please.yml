@@ -36,94 +36,108 @@ jobs:
       # signed commits. Use the canonical PR only as a short-lived generator: mirror
       # its complete release tree to one parseable GitHub-signed shadow PR, verify
       # that shadow, then close and delete the validated generator branch.
-      - if: ${{ steps.release.outputs.pr }}
-        id: release-pr
-        name: Resolve the Release Please branch
+      # Even an unchanged generator PR needs reconciliation: Release Please may
+      # return no "pr" output when the existing release proposal is unchanged.
+      - id: release-pr
+        name: Resolve pending Release Please generator
         env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           RELEASE_PR_JSON: ${{ steps.release.outputs.pr }}
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t release_metadata < <(node --input-type=module <<'NODE'
-          const releasePr = JSON.parse(process.env.RELEASE_PR_JSON ?? "");
-          const branch = releasePr.headBranchName;
-          const title = releasePr.title;
-          const number = releasePr.number;
-          const invalidBranchCharacter =
-            typeof branch === "string" &&
-            [...branch].some((character) => {
-              const code = character.codePointAt(0);
-              return (
-                code <= 0x20 ||
-                code === 0x7f ||
-                code === 0x5c ||
-                "~^:?*[".includes(character)
-              );
-            });
-          if (
-            typeof branch !== "string" ||
-            branch.length === 0 ||
-            !branch.startsWith("release-please--branches--") ||
-            invalidBranchCharacter ||
-            branch.startsWith("-") ||
-            branch.startsWith("/") ||
-            branch.endsWith("/") ||
-            branch.endsWith(".") ||
-            branch.includes("..") ||
-            branch.includes("@{") ||
-            branch.includes("//")
-          ) {
-            throw new Error("Release Please returned an unsafe head branch name");
-          }
-          if (
-            typeof title !== "string" ||
-            !/^chore\(main\): release [a-z0-9._-]+ [0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/u.test(title)
-          ) {
-            throw new Error("Release Please returned an unsafe release PR title");
-          }
-          if (!Number.isSafeInteger(number) || number <= 0) {
-            throw new Error("Release Please returned an invalid PR number");
-          }
-          process.stdout.write(`${branch}\n${title}\n${number}\n`);
-          NODE
+          GENERATOR_BRANCH=release-please--branches--main--components--vscode-extension
+          mapfile -t generator_prs < <(
+            gh pr list --state open --head "$GENERATOR_BRANCH" \
+              --json number --jq '.[].number'
           )
-          if [[ "${#release_metadata[@]}" -ne 3 ]]; then
-            echo "Release Please returned incomplete PR metadata" >&2
+          if [[ "${#generator_prs[@]}" -gt 1 ]]; then
+            echo "Expected at most one open Release Please generator PR" >&2
             exit 1
           fi
+          if [[ "${#generator_prs[@]}" -eq 0 ]]; then
+            if [[ -n "$RELEASE_PR_JSON" ]]; then
+              echo "Release Please reported a PR but the expected generator branch is absent" >&2
+              exit 1
+            fi
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          RELEASE_PR_NUMBER="${generator_prs[0]}"
+          RELEASE_PR_HEAD="$(gh pr view "$RELEASE_PR_NUMBER" \
+            --json headRefOid --jq '.headRefOid')"
+          RELEASE_TITLE="$(gh pr view "$RELEASE_PR_NUMBER" \
+            --json title --jq '.title')"
+          RELEASE_TITLE="$RELEASE_TITLE" node --input-type=module <<'NODE'
+          const title = process.env.RELEASE_TITLE;
+          if (!/^chore\(main\): release vscode-extension [0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/u.test(title ?? "")) {
+            throw new Error("Unexpected Release Please generator title");
+          }
+          NODE
+          if [[ -n "$RELEASE_PR_JSON" ]]; then
+            RELEASE_PR_NUMBER="$RELEASE_PR_NUMBER" RELEASE_PR_HEAD="$RELEASE_PR_HEAD" \
+              node --input-type=module <<'NODE'
+          const parsed = JSON.parse(process.env.RELEASE_PR_JSON);
+          if (parsed.number !== Number(process.env.RELEASE_PR_NUMBER) ||
+              parsed.headBranchName !== "release-please--branches--main--components--vscode-extension") {
+            throw new Error("Release Please output does not match the live generator PR");
+          }
+          NODE
+          fi
           {
-            printf 'branch=%s\n' "${release_metadata[0]}"
-            printf 'title=%s\n' "${release_metadata[1]}"
-            printf 'number=%s\n' "${release_metadata[2]}"
+            echo "active=true"
+            echo "number=$RELEASE_PR_NUMBER"
+            echo "branch=$GENERATOR_BRANCH"
+            echo "head=$RELEASE_PR_HEAD"
+            echo "title=$RELEASE_TITLE"
           } >> "$GITHUB_OUTPUT"
-      - if: ${{ steps.release.outputs.pr }}
+      # Always build the signed release proposal on CURRENT main. The generator
+      # may originate on older main and must only supply version/changelog data.
+      - if: ${{ steps.release-pr.outputs.active == 'true' }}
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
-          ref: ${{ steps.release-pr.outputs.branch }}
+          ref: main
           fetch-depth: 0
           persist-credentials: false
-      - if: ${{ steps.release.outputs.pr }}
+      - if: ${{ steps.release-pr.outputs.active == 'true' }}
+        name: Restore generator-owned release files
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          RELEASE_PR_NUMBER: ${{ steps.release-pr.outputs.number }}
+          RELEASE_PR_HEAD: ${{ steps.release-pr.outputs.head }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh pr view "$RELEASE_PR_NUMBER" \
+            --json headRefOid --jq '.headRefOid')" = "$RELEASE_PR_HEAD"
+          git fetch --no-tags origin "$RELEASE_PR_HEAD"
+          git restore --source="$RELEASE_PR_HEAD" --worktree -- \
+            .release-please-manifest.json \
+            apps/vscode-extension/package.json \
+            apps/vscode-extension/CHANGELOG.md
+      - if: ${{ steps.release-pr.outputs.active == 'true' }}
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .node-version
           package-manager-cache: false
-      - if: ${{ steps.release.outputs.pr }}
+      - if: ${{ steps.release-pr.outputs.active == 'true' }}
         run: corepack enable
-      - if: ${{ steps.release.outputs.pr }}
+      - if: ${{ steps.release-pr.outputs.active == 'true' }}
         run: corepack prepare pnpm@11.6.0 --activate
-      - if: ${{ steps.release.outputs.pr }}
+      - if: ${{ steps.release-pr.outputs.active == 'true' }}
         run: corepack pnpm install --frozen-lockfile
-      - if: ${{ steps.release.outputs.pr }}
+      - if: ${{ steps.release-pr.outputs.active == 'true' }}
         run: corepack pnpm run release:surface
-      - if: ${{ steps.release.outputs.pr }}
+      - if: ${{ steps.release-pr.outputs.active == 'true' }}
         run: corepack pnpm run docs:generate
-      - if: ${{ steps.release.outputs.pr }}
+      - if: ${{ steps.release-pr.outputs.active == 'true' }}
         name: Sync signed Release Please shadow PR
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           RELEASE_PR_NUMBER: ${{ steps.release-pr.outputs.number }}
           RELEASE_PR_BRANCH: ${{ steps.release-pr.outputs.branch }}
+          RELEASE_PR_HEAD: ${{ steps.release-pr.outputs.head }}
           RELEASE_TITLE: ${{ steps.release-pr.outputs.title }}
           SIGNED_RELEASE_BRANCH: release-please/branches/main/components/vscode-extension
         shell: bash
@@ -132,62 +146,69 @@ jobs:
           RELEASE_BASE_SHA="$(git rev-parse origin/main)"
           RELEASE_BODY_FILE="$RUNNER_TEMP/release-pr-body.md"
           SIGNED_RELEASE_PR=""
+          STALE_SIGNED_PR=""
+          STALE_SIGNED_BRANCH=""
+          STALE_SIGNED_HEAD=""
 
+          test "$(git rev-parse HEAD)" = "$RELEASE_BASE_SHA"
+          test "$(gh pr view "$RELEASE_PR_NUMBER" \
+            --json headRefOid --jq '.headRefOid')" = "$RELEASE_PR_HEAD"
           gh pr view "$RELEASE_PR_NUMBER" --json body --jq '.body // ""' \
             > "$RELEASE_BODY_FILE"
 
-          if SIGNED_RELEASE_HEAD="$(gh api \
-            "repos/$GITHUB_REPOSITORY/git/ref/heads/$SIGNED_RELEASE_BRANCH" \
-            --jq '.object.sha' 2>/dev/null)"; then
-            mapfile -t signed_release_prs < <(
-              gh pr list \
-                --state open \
-                --head "$SIGNED_RELEASE_BRANCH" \
-                --json number \
-                --jq '.[].number'
-            )
-            if [[ "${#signed_release_prs[@]}" -ne 1 ]]; then
-              echo "Expected exactly one open signed release PR for existing shadow branch" >&2
-              exit 1
-            fi
+          # There must never be multiple open signed shadows. An old shadow
+          # that cannot merge main is replaced, not force-pushed or bypassed.
+          mapfile -t signed_release_prs < <(
+            gh pr list --state open --json number,headRefName,title \
+              --limit 100 --jq '.[] | select(
+                .headRefName == "release-please/branches/main/components/vscode-extension" or
+                (.headRefName | startswith("release-please/branches/main/components/vscode-extension-r"))
+              ) | .number'
+          )
+          if [[ "${#signed_release_prs[@]}" -gt 1 ]]; then
+            echo "Multiple open signed release PRs require reconciliation" >&2
+            exit 1
+          fi
+          if [[ "${#signed_release_prs[@]}" -eq 1 ]]; then
             SIGNED_RELEASE_PR="${signed_release_prs[0]}"
-            gh pr update-branch "$SIGNED_RELEASE_PR"
-            SIGNED_RELEASE_SETTLED=false
-            for attempt in $(seq 1 15); do
-              git fetch --no-tags origin \
-                "refs/heads/$SIGNED_RELEASE_BRANCH:refs/remotes/origin/$SIGNED_RELEASE_BRANCH"
-              SIGNED_RELEASE_HEAD="$(git rev-parse \
-                "refs/remotes/origin/$SIGNED_RELEASE_BRANCH")"
-              if git merge-base --is-ancestor \
-                "$RELEASE_BASE_SHA" \
-                "$SIGNED_RELEASE_HEAD"; then
-                SIGNED_RELEASE_SETTLED=true
-                break
-              fi
-              echo "Signed release shadow update not settled (attempt $attempt/15); retrying" >&2
-              sleep 2
-            done
-            if [[ "$SIGNED_RELEASE_SETTLED" != "true" ]]; then
-              echo "Timed out waiting for signed release shadow to include current main" >&2
-              exit 1
+            test "$(gh pr view "$SIGNED_RELEASE_PR" \
+              --json title --jq '.title')" = "$RELEASE_TITLE"
+            STALE_SIGNED_BRANCH="$(gh pr view "$SIGNED_RELEASE_PR" \
+              --json headRefName --jq '.headRefName')"
+            STALE_SIGNED_HEAD="$(gh pr view "$SIGNED_RELEASE_PR" \
+              --json headRefOid --jq '.headRefOid')"
+            git fetch --no-tags origin \
+              "refs/heads/$STALE_SIGNED_BRANCH:refs/remotes/origin/$STALE_SIGNED_BRANCH"
+            test "$(git rev-parse "refs/remotes/origin/$STALE_SIGNED_BRANCH")" = "$STALE_SIGNED_HEAD"
+            test "$(gh api "repos/$GITHUB_REPOSITORY/commits/$STALE_SIGNED_HEAD" \
+              --jq '.commit.verification.verified')" = true
+            if git merge-base --is-ancestor "$RELEASE_BASE_SHA" "$STALE_SIGNED_HEAD"; then
+              # The existing signed branch is current; retain its PR identity.
+              SIGNED_RELEASE_BRANCH="$STALE_SIGNED_BRANCH"
+              node scripts/create-github-signed-commit.mjs \
+                --repository "$GITHUB_REPOSITORY" \
+                --branch "$SIGNED_RELEASE_BRANCH" \
+                --message "chore(kicad-studio): sync signed release surfaces" \
+                --onto-head "$STALE_SIGNED_HEAD"
+              STALE_SIGNED_PR=""
+            else
+              # Avoid GitHub's PR branch update operation: conflicts block old
+              # release surfaces. Create a NEW signed branch on current main.
+              STALE_SIGNED_PR="$SIGNED_RELEASE_PR"
+              SIGNED_RELEASE_PR=""
+              SIGNED_RELEASE_BRANCH="${SIGNED_RELEASE_BRANCH}-r${GITHUB_RUN_ID}"
             fi
-            SIGNED_RELEASE_VERIFIED="$(gh api \
-              "repos/$GITHUB_REPOSITORY/commits/$SIGNED_RELEASE_HEAD" \
-              --jq '.commit.verification.verified')"
-            if [[ "$SIGNED_RELEASE_VERIFIED" != "true" ]]; then
-              echo "Signed release shadow head is not GitHub-verified" >&2
-              exit 1
-            fi
+          elif gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$SIGNED_RELEASE_BRANCH" \
+              >/dev/null 2>&1; then
+            echo "Canonical signed branch exists without a single matching open PR" >&2
+            exit 1
+          fi
+
+          if [[ -z "$SIGNED_RELEASE_PR" ]]; then
             node scripts/create-github-signed-commit.mjs \
               --repository "$GITHUB_REPOSITORY" \
               --branch "$SIGNED_RELEASE_BRANCH" \
-              --message "chore(kicad-studio): sync signed release surfaces"$'\n\nSigned-off-by: oaslananka <info@oaslananka.dev>' \
-              --onto-head "$SIGNED_RELEASE_HEAD"
-          else
-            node scripts/create-github-signed-commit.mjs \
-              --repository "$GITHUB_REPOSITORY" \
-              --branch "$SIGNED_RELEASE_BRANCH" \
-              --message "chore(kicad-studio): prepare signed release surfaces"$'\n\nSigned-off-by: oaslananka <info@oaslananka.dev>' \
+              --message "chore(kicad-studio): prepare signed release surfaces" \
               --create-from-base "$RELEASE_BASE_SHA"
 
             cleanup_new_shadow() {
@@ -200,12 +221,9 @@ jobs:
                 >/dev/null 2>&1 || true
             }
             trap cleanup_new_shadow ERR
-
             SIGNED_RELEASE_URL="$(gh pr create \
-              --base main \
-              --head "$SIGNED_RELEASE_BRANCH" \
-              --title "$RELEASE_TITLE" \
-              --body-file "$RELEASE_BODY_FILE")"
+              --base main --head "$SIGNED_RELEASE_BRANCH" \
+              --title "$RELEASE_TITLE" --body-file "$RELEASE_BODY_FILE")"
             SIGNED_RELEASE_PR="${SIGNED_RELEASE_URL##*/}"
           fi
 
@@ -213,17 +231,10 @@ jobs:
             --title "$RELEASE_TITLE" \
             --body-file "$RELEASE_BODY_FILE" \
             --add-label "autorelease: pending"
-
           FINAL_SIGNED_RELEASE_HEAD="$(gh pr view "$SIGNED_RELEASE_PR" \
-            --json headRefOid \
-            --jq '.headRefOid')"
-          FINAL_SIGNED_RELEASE_VERIFIED="$(gh api \
-            "repos/$GITHUB_REPOSITORY/commits/$FINAL_SIGNED_RELEASE_HEAD" \
-            --jq '.commit.verification.verified')"
-          if [[ "$FINAL_SIGNED_RELEASE_VERIFIED" != "true" ]]; then
-            echo "Final signed release shadow head is not GitHub-verified" >&2
-            exit 1
-          fi
+            --json headRefOid --jq '.headRefOid')"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/commits/$FINAL_SIGNED_RELEASE_HEAD" \
+            --jq '.commit.verification.verified')" = true
           git fetch --no-tags origin \
             "refs/heads/main:refs/remotes/origin/main" \
             "refs/heads/$SIGNED_RELEASE_BRANCH:refs/remotes/origin/$SIGNED_RELEASE_BRANCH"
@@ -233,29 +244,26 @@ jobs:
             echo "Signed release shadow is not up to date with main" >&2
             exit 1
           fi
-          # A newly-created shadow remains rollback-protected until its final
-          # signature and ancestry checks succeed. Generator cleanup is a
-          # separate phase and must never delete an already-valid shadow.
           trap - ERR
 
-          GENERATOR_PR_BRANCH="$(gh pr view "$RELEASE_PR_NUMBER" \
-            --json headRefName \
-            --jq '.headRefName')"
-          if [[ "$GENERATOR_PR_BRANCH" != "$RELEASE_PR_BRANCH" ]]; then
-            echo "Generator PR branch changed before cleanup" >&2
-            exit 1
-          fi
-          GENERATOR_PR_HEAD="$(gh pr view "$RELEASE_PR_NUMBER" \
-            --json headRefOid \
-            --jq '.headRefOid')"
-          GENERATOR_BRANCH_HEAD="$(gh api \
-            "repos/$GITHUB_REPOSITORY/git/ref/heads/$RELEASE_PR_BRANCH" \
-            --jq '.object.sha')"
-          if [[ "$GENERATOR_PR_HEAD" != "$GENERATOR_BRANCH_HEAD" ]]; then
-            echo "Generator branch head changed before cleanup" >&2
-            exit 1
+          # Delete an obsolete shadow only AFTER the new signed PR is verified.
+          if [[ -n "$STALE_SIGNED_PR" ]]; then
+            test "$(gh pr view "$STALE_SIGNED_PR" \
+              --json headRefOid --jq '.headRefOid')" = "$STALE_SIGNED_HEAD"
+            test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$STALE_SIGNED_BRANCH" \
+              --jq '.object.sha')" = "$STALE_SIGNED_HEAD"
+            gh pr close "$STALE_SIGNED_PR" \
+              --comment "Superseded by signed release PR #$SIGNED_RELEASE_PR on current main."
+            gh api --method DELETE \
+              "repos/$GITHUB_REPOSITORY/git/refs/heads/$STALE_SIGNED_BRANCH"
           fi
 
+          test "$(gh pr view "$RELEASE_PR_NUMBER" \
+            --json headRefName --jq '.headRefName')" = "$RELEASE_PR_BRANCH"
+          test "$(gh pr view "$RELEASE_PR_NUMBER" \
+            --json headRefOid --jq '.headRefOid')" = "$RELEASE_PR_HEAD"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$RELEASE_PR_BRANCH" \
+            --jq '.object.sha')" = "$RELEASE_PR_HEAD"
           gh pr edit "$RELEASE_PR_NUMBER" --remove-label "autorelease: pending"
           gh pr close "$RELEASE_PR_NUMBER"
           gh api --method DELETE \

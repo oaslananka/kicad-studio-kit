@@ -33,88 +33,84 @@ function restoreEnv(name, value) {
   }
 }
 
-test("#645 release workflow promotes a GitHub-signed parseable shadow PR without rewriting refs", () => {
+test("#645 release workflow safely refreshes its verified signed release shadow", () => {
   const workflow = fs.readFileSync(
     path.join(REPO_ROOT, ".github/workflows/release-please.yml"),
     "utf8",
   );
-  const publishWorkflow = fs.readFileSync(
+  const steps = parseYaml(workflow).jobs.release.steps;
+  const generator = steps.find((step) => step.id === "release");
+  const resolve = steps.find((step) => step.id === "release-pr");
+  const sync = steps.find(
+    (step) => step.name === "Sync signed Release Please shadow PR",
+  );
+  const restore = steps.find(
+    (step) => step.name === "Restore generator-owned release files",
+  );
+  const checkout = steps.find((step) =>
+    step.uses?.startsWith("actions/checkout@"),
+  );
+  const publish = fs.readFileSync(
     path.join(REPO_ROOT, ".github/workflows/publish-extension.yml"),
     "utf8",
   );
+  assert.ok(generator && resolve && sync && restore && checkout);
+  assert.match(generator.with.token, /RELEASE_PLEASE_TOKEN/);
+  assert.match(resolve.env.GH_TOKEN, /RELEASE_PLEASE_TOKEN/);
+  assert.match(resolve.env.RELEASE_PR_JSON, /steps.release.outputs.pr/);
+  assert.match(resolve.run, /gh pr list --state open --head/);
+  assert.match(resolve.run, /active=true/);
+  assert.match(resolve.run, /active=false/);
+  assert.match(sync.if, /steps.release-pr.outputs.active/);
+  assert.equal(checkout.with.ref, "main");
+  assert.match(restore.run, /git restore --source/);
+  assert.match(restore.run, /apps\/vscode-extension\/CHANGELOG.md/);
+  assert.match(restore.run, /apps\/vscode-extension\/package.json/);
+  assert.match(sync.env.GITHUB_TOKEN, /RELEASE_PLEASE_TOKEN/);
+  assert.match(
+    sync.env.SIGNED_RELEASE_BRANCH,
+    /release-please\/branches\/main\/components\/vscode-extension/,
+  );
+  assert.match(sync.run, /git merge-base --is-ancestor/);
+  assert.match(sync.run, /GITHUB_RUN_ID/);
+  assert.match(sync.run, /--create-from-base/);
+  assert.match(sync.run, /--onto-head/);
+  assert.match(sync.run, /commit.verification.verified/);
+  assert.match(sync.run, /gh pr create/);
+  assert.match(sync.run, /--add-label "autorelease: pending"/);
+  assert.match(sync.run, /gh pr close/);
+  assert.match(sync.run, /git\/refs\/heads\/\$RELEASE_PR_BRANCH/);
+  assert.ok(
+    sync.run.indexOf("trap - ERR") <
+      sync.run.indexOf('gh pr close "$STALE_SIGNED_PR"'),
+  );
+  assert.ok(
+    sync.run.indexOf('gh pr close "$STALE_SIGNED_PR"') <
+      sync.run.indexOf('gh pr close "$RELEASE_PR_NUMBER"'),
+  );
+  assert.doesNotMatch(sync.run, /gh pr update-branch/);
+  assert.doesNotMatch(sync.run, /--force|forceUpdateRef|git push/);
+  assert.match(publish, /release:\n\s+types: \[published\]/);
+});
 
-  assert.equal(
-    (workflow.match(/node scripts\/create-github-signed-commit\.mjs/g) ?? [])
-      .length,
-    3,
+test("#797 unchanged generator PR still runs reconciliation without rewriting refs", () => {
+  const workflow = fs.readFileSync(
+    path.join(REPO_ROOT, ".github/workflows/release-please.yml"),
+    "utf8",
   );
-  assert.match(workflow, /token: \${{ secrets\.RELEASE_PLEASE_TOKEN }}/);
-  assert.doesNotMatch(
-    workflow,
-    /id: release[\s\S]*?token: \${{ github\.token }}/,
+  const steps = parseYaml(workflow).jobs.release.steps;
+  const resolver = steps.find((step) => step.id === "release-pr");
+  const sync = steps.find(
+    (step) => step.name === "Sync signed Release Please shadow PR",
   );
-  assert.match(
-    workflow,
-    /name: Sync signed Release Please shadow PR[\s\S]*?GITHUB_TOKEN: \${{ secrets\.RELEASE_PLEASE_TOKEN }}/,
-  );
-  assert.match(
-    workflow,
-    /name: Commit post-release docs[\s\S]*?GITHUB_TOKEN: \${{ github\.token }}/,
-  );
-  assert.match(
-    workflow,
-    /RELEASE_PR_JSON: \${{ steps\.release\.outputs\.pr }}/,
-  );
-  assert.match(workflow, /ref: \${{ steps\.release-pr\.outputs\.branch }}/);
-  assert.match(
-    workflow,
-    /SIGNED_RELEASE_BRANCH: release-please\/branches\/main\/components\/vscode-extension/,
-  );
-  assert.match(workflow, /--create-from-base "\$RELEASE_BASE_SHA"/);
-  assert.match(workflow, /--onto-head "\$SIGNED_RELEASE_HEAD"/);
-  assert.match(
-    workflow,
-    /gh pr update-branch "\$SIGNED_RELEASE_PR"[\s\S]*?for attempt in[\s\S]*?git fetch --no-tags origin[\s\S]*?git merge-base --is-ancestor[\s\S]*?"\$RELEASE_BASE_SHA"[\s\S]*?"\$SIGNED_RELEASE_HEAD"[\s\S]*?sleep 2[\s\S]*?Timed out waiting for signed release shadow to include current main[\s\S]*?--onto-head "\$SIGNED_RELEASE_HEAD"/,
-  );
-  assert.match(
-    workflow,
-    /commit\.verification\.verified[\s\S]*?Signed release shadow head is not GitHub-verified/,
-  );
-  assert.match(
-    workflow,
-    /gh pr create[\s\S]*?--head "\$SIGNED_RELEASE_BRANCH"/,
-  );
-  assert.doesNotMatch(
-    workflow,
-    /gh pr create[\s\S]*?--draft[\s\S]*?--head "\$SIGNED_RELEASE_BRANCH"/,
-  );
-  assert.match(
-    workflow,
-    /RELEASE_PR_BRANCH: \${{ steps\.release-pr\.outputs\.branch }}/,
-  );
-  assert.match(
-    workflow,
-    /FINAL_SIGNED_RELEASE_HEAD=[\s\S]*?commit\.verification\.verified[\s\S]*?Final signed release shadow head is not GitHub-verified/,
-  );
-  assert.match(
-    workflow,
-    /FINAL_SIGNED_RELEASE_HEAD=[\s\S]*?git merge-base --is-ancestor[\s\S]*?Signed release shadow is not up to date with main/,
-  );
-  assert.match(
-    workflow,
-    /gh pr edit "\$SIGNED_RELEASE_PR"[\s\S]*?--add-label "autorelease: pending"[\s\S]*?FINAL_SIGNED_RELEASE_HEAD=[\s\S]*?Final signed release shadow head is not GitHub-verified[\s\S]*?git merge-base --is-ancestor[\s\S]*?GENERATOR_PR_HEAD=[\s\S]*?headRefOid[\s\S]*?GENERATOR_BRANCH_HEAD=[\s\S]*?git\/ref\/heads\/\$RELEASE_PR_BRANCH[\s\S]*?Generator branch head changed before cleanup[\s\S]*?gh pr edit "\$RELEASE_PR_NUMBER" --remove-label "autorelease: pending"[\s\S]*?gh pr close "\$RELEASE_PR_NUMBER"[\s\S]*?git\/refs\/heads\/\$RELEASE_PR_BRANCH/,
-  );
-  assert.match(
-    workflow,
-    /SIGNED_RELEASE_URL=[\s\S]*?SIGNED_RELEASE_PR=[\s\S]*?gh pr edit "\$SIGNED_RELEASE_PR"[\s\S]*?FINAL_SIGNED_RELEASE_HEAD=[\s\S]*?git merge-base --is-ancestor[\s\S]*?trap - ERR[\s\S]*?GENERATOR_PR_BRANCH=/,
-  );
-  assert.doesNotMatch(workflow, /gh pr ready --undo "\$RELEASE_PR_NUMBER"/);
-  assert.match(workflow, /gh pr list[\s\S]*?--head "\$SIGNED_RELEASE_BRANCH"/);
-  assert.doesNotMatch(workflow, /name: Append GitHub-signed release surfaces/);
-  assert.doesNotMatch(workflow, /forceUpdateRef/);
-  assert.doesNotMatch(workflow, /git push/);
-  assert.match(workflow, /Signed-off-by: oaslananka <info@oaslananka\.dev>/);
-  assert.match(publishWorkflow, /release:\n\s+types: \[published\]/);
+  assert.ok(resolver && sync);
+  assert.match(resolver.run, /gh pr list --state open --head/);
+  assert.match(resolver.run, /RELEASE_PR_JSON/);
+  assert.match(sync.if, /steps.release-pr.outputs.active/);
+  assert.match(sync.run, /STALE_SIGNED_HEAD/);
+  assert.match(sync.run, /STALE_SIGNED_PR/);
+  assert.match(sync.run, /Signed release shadow is not up to date with main/);
+  assert.match(sync.run, /gh pr close/);
 });
 
 test("release-please manifest mode is product-scoped and version aligned", () => {
