@@ -221,6 +221,7 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
         command.includes(
           "scripts/check-retired-dependency-evidence.test.mjs",
         ) &&
+        command.includes("scripts/verify-npm-release.test.mjs") &&
         command.includes("scripts/check-branch-protection-gates.test.mjs") &&
         command.includes("scripts/check-codecov-policy.test.mjs") &&
         command.includes("scripts/check-pnpm-supply-chain.test.mjs") &&
@@ -247,7 +248,8 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
       command.includes("SF:scripts/check-branch-protection-gates.mjs") &&
       command.includes("SF:scripts/check-codecov-policy.mjs") &&
       command.includes("SF:scripts/check-pnpm-supply-chain.mjs") &&
-      command.includes("SF:scripts/check-retired-dependency-evidence.mjs")
+      command.includes("SF:scripts/check-retired-dependency-evidence.mjs") &&
+      command.includes("SF:scripts/verify-npm-release.mjs")
     );
   });
   if (!lcovEvidence) {

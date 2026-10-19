@@ -39,13 +39,13 @@ function sha256(buffer) {
 }
 
 async function fetchJson(url) {
-  const response = await fetch(url);
+  const response = await fetch(url, { redirect: "error" });
   if (!response.ok) throw new Error(`GET ${url} failed: ${response.status}`);
   return response.json();
 }
 
 async function fetchBytes(url) {
-  const response = await fetch(url);
+  const response = await fetch(url, { redirect: "error" });
   if (!response.ok) throw new Error(`GET ${url} failed: ${response.status}`);
   return Buffer.from(await response.arrayBuffer());
 }
@@ -56,6 +56,29 @@ export function packageMetadataUrl(
   registryUrl = DEFAULT_REGISTRY_URL,
 ) {
   return `${registryUrl.replace(/\/$/, "")}/${encodeURIComponent(packageName)}/${version}`;
+}
+
+export function validateTarballOrigin(tarballUrl, registryUrl) {
+  let registry;
+  let tarball;
+  try {
+    registry = new URL(registryUrl);
+    tarball = new URL(tarballUrl);
+  } catch {
+    throw new TypeError("npm registry and tarball URLs must be absolute");
+  }
+  if (
+    !["https:", "http:"].includes(registry.protocol) ||
+    registry.username ||
+    registry.password ||
+    tarball.origin !== registry.origin ||
+    tarball.username ||
+    tarball.password ||
+    tarball.hash
+  ) {
+    throw new Error("npm tarball URL must use the configured registry origin");
+  }
+  return tarball.href;
 }
 
 async function retry(task, attempts, delayMs) {
@@ -92,8 +115,10 @@ export async function verifyPublishedNpmDigest({
       `npm metadata for ${packageName}@${version} has no tarball URL`,
     );
 
-  const tarball = await fetchBytes(tarballUrl);
-  const tarballName = basename(new URL(tarballUrl).pathname);
+  // Registry metadata is external input: never follow it to an unrelated host.
+  const verifiedTarballUrl = validateTarballOrigin(tarballUrl, registryUrl);
+  const tarball = await fetchBytes(verifiedTarballUrl);
+  const tarballName = basename(new URL(verifiedTarballUrl).pathname);
   const expected = checksums.get(tarballName);
   const actual = sha256(tarball);
   if (expected !== actual) {

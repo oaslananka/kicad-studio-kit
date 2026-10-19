@@ -433,3 +433,35 @@ test("#793 Sonar requires real retired-dependency evidence test coverage", () =>
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("#796 Sonar must measure the published npm release verifier", () => {
+  const root = fixture();
+  try {
+    const filename = path.join(root, ".github/workflows/sonarcloud.yml");
+    const original = readFileSync(filename, "utf8");
+    writeFileSync(
+      filename,
+      original.replace(
+        "scripts/verify-npm-release.test.mjs",
+        "scripts/not-actually-tested.mjs",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud must discover the pnpm-pinned c8 CLI/u,
+    );
+    writeFileSync(
+      filename,
+      original.replace(
+        "SF:scripts/verify-npm-release.mjs",
+        "SF:scripts/not-measured.mjs",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud must verify marketplace and changed repository-policy LCOV/u,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
