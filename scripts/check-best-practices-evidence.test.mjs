@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { validateBestPracticesEvidence } from "./check-best-practices-evidence.mjs";
@@ -23,4 +24,21 @@ test("Best Practices evidence has the repository-controlled scorecard hardening 
     branchWarningCount: 5,
     reviewCadence: "quarterly",
   });
+});
+
+test("README badges separate historic Silver evidence from current status", () => {
+  const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
+  const header = readme.split("</div>", 1)[0];
+
+  assert.doesNotMatch(header, /Historical OpenSSF Best Practices Silver/u);
+  assert.match(
+    readme,
+    /\*\*Historical OpenSSF Best Practices Silver \(MIT-licensed period\):\*\*/u,
+  );
+  assert.match(readme, /not presented as a current FLOSS badge/u);
+
+  const deepWikiLink = "https://deepwiki.com/oaslananka/kicad-studio-kit";
+  assert.equal(readme.split('href="' + deepWikiLink + '"').length - 1, 1);
+  assert.match(header, /https:\/\/img\.shields\.io\/badge\/Ask-DeepWiki-/u);
+  assert.doesNotMatch(header, /src="https:\/\/deepwiki\.com\/badge\.svg"/u);
 });

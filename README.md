@@ -12,7 +12,6 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
   <a href="https://codecov.io/gh/oaslananka/kicad-studio-kit"><img src="https://codecov.io/gh/oaslananka/kicad-studio-kit/branch/main/graph/badge.svg" alt="Codecov coverage"></a>
   <a href="https://app.codspeed.io/oaslananka/kicad-studio-kit?utm_source=badge"><img src="https://img.shields.io/endpoint?url=https://codspeed.io/badge.json" alt="CodSpeed"/></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit"><img src="https://api.scorecard.dev/projects/github.com/oaslananka/kicad-studio-kit/badge" alt="OpenSSF Scorecard"></a>
-  <span>Historical OpenSSF Best Practices Silver (MIT-licensed period)</span>
 </p>
 
 <p>
@@ -20,7 +19,7 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
   <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/badge/VS%20Marketplace-install-blue" alt="Install from Visual Studio Marketplace"></a>
   <a href="https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="PolyForm Noncommercial 1.0.0"></a>
   <a href="https://oaslananka.github.io/kicad-studio-kit/"><img src="https://img.shields.io/badge/docs-site-blue" alt="Documentation site"></a>
-  <a href="https://deepwiki.com/oaslananka/kicad-studio-kit"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+  <a href="https://deepwiki.com/oaslananka/kicad-studio-kit"><img src="https://img.shields.io/badge/Ask-DeepWiki-2475cd?logo=bookstack&amp;logoColor=white" alt="Ask DeepWiki"></a>
 </p>
 
 <p>
@@ -58,7 +57,13 @@ container image, and MCP Registry listing — lives in
 
 ## Repository maturity and standards
 
-This repository retains its OpenSSF and maturity evidence from the earlier MIT-licensed period for historical traceability. Current project-authored source is source-available under PolyForm Noncommercial 1.0.0; the existing security, release, provenance, and governance controls remain quality targets rather than current FLOSS badge claims.
+**Historical OpenSSF Best Practices Silver (MIT-licensed period):** The
+[Silver evidence](docs/best-practices-evidence.md) is preserved for traceability,
+not presented as a current FLOSS badge. Since the licensing transition,
+project-authored source is available under
+[PolyForm Noncommercial 1.0.0](LICENSE), which is not an OSI-approved open-source
+license. Security, release, provenance, and governance checks continue to
+operate independently of historical badge status.
 
 ## Version Baseline
 
