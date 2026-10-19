@@ -200,6 +200,23 @@ function checkGeneratedFreshness() {
       fs.readFileSync(file, "utf8"),
     ]),
   );
+  // The generated documentation site carries real VS Code screenshot copies.
+  // Markdown freshness alone misses stale binary captures after a UX change.
+  const screenshotDir = path.join(docsRoot, "public", "screenshots");
+  const screenshots = [
+    "project-tree.png",
+    "schematic-viewer.png",
+    "pcb-viewer.png",
+    "drc-results.png",
+    "bom-table.png",
+    "mcp-tools-dashboard.png",
+  ];
+  const previousScreenshots = new Map(
+    screenshots.map((name) => {
+      const target = path.join(screenshotDir, name);
+      return [name, fs.existsSync(target) ? fs.readFileSync(target) : null];
+    }),
+  );
   const result = awaitImportGenerator();
   if (result !== 0) {
     fail("docs generator failed");
@@ -212,6 +229,16 @@ function checkGeneratedFreshness() {
       fs.readFileSync(fullPath, "utf8") !== oldContent
     ) {
       fail(`${relativePath}: generated docs are stale`);
+    }
+  }
+  for (const [name, previous] of previousScreenshots) {
+    const target = path.join(screenshotDir, name);
+    if (
+      !previous ||
+      !fs.existsSync(target) ||
+      !fs.readFileSync(target).equals(previous)
+    ) {
+      fail(`docs/public/screenshots/${name}: generated screenshot is stale`);
     }
   }
 }
