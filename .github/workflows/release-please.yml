@@ -274,6 +274,86 @@ jobs:
           gh api --method DELETE \
             "repos/$GITHUB_REPOSITORY/git/refs/heads/$RELEASE_PR_BRANCH"
 
+      # Release Please cannot identify conflict-replacement signed PRs whose
+      # branches end with -r<run-id>. Restore tag creation only for a merged,
+      # same-repo, GitHub-verified shadow on current main; never for ordinary
+      # commits or canonical Release Please branches.
+      - if: "${{ steps.release.outputs.releases_created != 'true' && startsWith(github.event.head_commit.message, 'chore(main): release vscode-extension ') }}"
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - if: "${{ steps.release.outputs.releases_created != 'true' && startsWith(github.event.head_commit.message, 'chore(main): release vscode-extension ') }}"
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - if: "${{ steps.release.outputs.releases_created != 'true' && startsWith(github.event.head_commit.message, 'chore(main): release vscode-extension ') }}"
+        id: recover-signed-shadow
+        name: Recover tagged release from a merged signed shadow
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          RELEASE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          gh api "repos/$GITHUB_REPOSITORY/commits/$RELEASE_SHA/pulls" \
+            > "$RUNNER_TEMP/signed-shadow-prs.json"
+          node scripts/check-signed-shadow-release.mjs \
+            "$RUNNER_TEMP/signed-shadow-prs.json" \
+            "$GITHUB_REPOSITORY" "$RELEASE_SHA" \
+            .release-please-manifest.json \
+            apps/vscode-extension/package.json \
+            apps/vscode-extension/CHANGELOG.md \
+            "$RUNNER_TEMP/signed-shadow-release-notes.md" \
+            "$GITHUB_OUTPUT"
+      - if: ${{ steps.recover-signed-shadow.outputs.tag != '' }}
+        name: Publish validated signed shadow release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          RELEASE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GITHUB_REPOSITORY/commits/$RELEASE_SHA" \
+            --jq '.commit.verification.verified')" = true
+          test "$(gh api "repos/$GITHUB_REPOSITORY/commits/${{ steps.recover-signed-shadow.outputs.head }}" \
+            --jq '.commit.verification.verified')" = true
+
+          tag="${{ steps.recover-signed-shadow.outputs.tag }}"
+          existing="$(git ls-remote --tags origin "refs/tags/$tag^{}" | cut -f1)"
+          if [[ -z "$existing" ]]; then
+            existing="$(git ls-remote --tags origin "refs/tags/$tag" | cut -f1)"
+          fi
+          if [[ -n "$existing" ]]; then
+            if [[ "$existing" != "$RELEASE_SHA" ]]; then
+              echo "Release tag $tag points to a different commit" >&2
+              exit 1
+            fi
+            if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "Verified release $tag already exists; no duplicate publication"
+              exit 0
+            fi
+            echo "Release tag exists without a GitHub Release; manual review required" >&2
+            exit 1
+          fi
+
+          if [[ "${{ steps.recover-signed-shadow.outputs.prerelease }}" = true ]]; then
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
+              --target "$RELEASE_SHA" --title "vscode-extension: v${tag##*-v}" \
+              --notes-file "$RUNNER_TEMP/signed-shadow-release-notes.md" \
+              --prerelease
+          else
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
+              --target "$RELEASE_SHA" --title "vscode-extension: v${tag##*-v}" \
+              --notes-file "$RUNNER_TEMP/signed-shadow-release-notes.md" \
+              --latest
+          fi
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" \
+            --jq '.object.sha')" = "$RELEASE_SHA"
+
       # Regenerate changelog docs after a release PR is merged
       - if: ${{ steps.release.outputs.releases_created == 'true' }}
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0

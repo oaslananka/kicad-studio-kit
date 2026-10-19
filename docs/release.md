@@ -62,6 +62,15 @@ new verified signed PR on current `main` and closes the obsolete PR only after
 signature and ancestry checks pass. An unchanged generator proposal is still
 reconciled. No release PR is merged as part of this synchronization.
 
+When a conflict replacement carries the suffix `-r<run-id>`, Release Please
+does not recognize it as a canonical release PR after merge. The same Release
+Please workflow has an idempotent recovery path: only a **merged, same-repo,
+GitHub-verified** signed release shadow matching the manifest, package version,
+and changelog may create the missing GitHub Release on the exact merge commit.
+Existing tags must match that commit; otherwise the workflow fails closed.
+Ordinary Release Please PRs continue to use upstream release tagging. The
+published GitHub Release triggers the unchanged Marketplace/Open VSX workflow.
+
 `check:release-surface` also runs inside `corepack pnpm run check:version`, so CI
 fails on README or release-surface drift on every pull request. Marketplace and
 Open VSX indexing remain advisory and never block a successful package upload
