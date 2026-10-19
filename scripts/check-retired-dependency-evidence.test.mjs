@@ -13,6 +13,10 @@ import {
 
 import {
   buildGraphNodeRequest,
+  buildRepositoryGraphManifestsRequest,
+  fetchGraphManifests,
+  isDeletedGraphNodeError,
+  parseRepositoryGraphManifestsPage,
   classifyGraphResponse,
   graphManifestFromPayload,
   normalizeOpenAlerts,
@@ -214,4 +218,185 @@ test("#526 unavailable API evidence fails closed and remains artifact-safe", () 
   assert.equal(report.manifests[0].graphDependencyCount, null);
   assert.equal(report.manifests[0].openAlertCount, null);
   assert.match(report.manifests[0].differences.join("\n"), /HTTP 502/u);
+});
+
+test("#526 missing historical graph-node IDs require a live repository listing", () => {
+  const manifest = currentPolicy().manifests[0];
+  assert.equal(
+    isDeletedGraphNodeError(
+      new Error(
+        `dependency graph manifest: Could not resolve to a node with the global id of '${manifest.graphNodeId}'.`,
+      ),
+      manifest.graphNodeId,
+    ),
+    true,
+  );
+  assert.equal(
+    isDeletedGraphNodeError(
+      new Error("HTTP 403 Forbidden"),
+      manifest.graphNodeId,
+    ),
+    false,
+  );
+  const request = buildRepositoryGraphManifestsRequest(
+    currentPolicy().repository,
+    "page-1",
+  );
+  assert.deepEqual(request.variables, {
+    owner: "oaslananka",
+    name: "kicad-studio-kit",
+    after: "page-1",
+  });
+  assert.match(request.query, /dependencyGraphManifests/u);
+});
+
+test("#526 complete graph listing can prove the retired node is absent", () => {
+  const manifest = currentPolicy().manifests[0];
+  const parsed = parseRepositoryGraphManifestsPage(
+    {
+      data: {
+        repository: {
+          dependencyGraphManifests: {
+            nodes: [
+              {
+                id: "DGM_other",
+                filename: "pnpm-lock.yaml",
+                dependenciesCount: 4,
+              },
+            ],
+            pageInfo: { hasNextPage: false, endCursor: null },
+          },
+        },
+      },
+    },
+    manifest,
+  );
+  assert.deepEqual(parsed, { manifests: [], nextCursor: null });
+});
+
+test("#526 incomplete graph listings fail closed", () => {
+  const manifest = currentPolicy().manifests[0];
+  const page = (nodes, pageInfo) => ({
+    data: { repository: { dependencyGraphManifests: { nodes, pageInfo } } },
+  });
+  assert.throws(
+    () =>
+      parseRepositoryGraphManifestsPage(
+        page([], { hasNextPage: true, endCursor: null }),
+        manifest,
+      ),
+    /pagination cursor/u,
+  );
+  assert.throws(
+    () => parseRepositoryGraphManifestsPage(page([], null), manifest),
+    /missing or malformed/u,
+  );
+  assert.throws(
+    () =>
+      parseRepositoryGraphManifestsPage(
+        { errors: [{ message: "Access denied" }] },
+        manifest,
+      ),
+    /Access denied/u,
+  );
+});
+
+test("#526 reappearing or malformed retired graph metadata fails closed", () => {
+  const manifest = currentPolicy().manifests[0];
+  const page = (id, count) => ({
+    data: {
+      repository: {
+        dependencyGraphManifests: {
+          nodes: [{ id, filename: manifest.path, dependenciesCount: count }],
+          pageInfo: { hasNextPage: false, endCursor: null },
+        },
+      },
+    },
+  });
+  assert.throws(
+    () =>
+      parseRepositoryGraphManifestsPage(page("DGM_replaced", 183), manifest),
+    /unexpected node identity/u,
+  );
+  assert.throws(
+    () =>
+      parseRepositoryGraphManifestsPage(
+        page(manifest.graphNodeId, null),
+        manifest,
+      ),
+    /invalid metadata/u,
+  );
+  assert.deepEqual(
+    parseRepositoryGraphManifestsPage(page(manifest.graphNodeId, 183), manifest)
+      .manifests,
+    [{ filename: manifest.path, dependenciesCount: 183 }],
+  );
+});
+
+test("#526 deleted node fallback checks all live manifests without suppressing API errors", async () => {
+  const manifest = currentPolicy().manifests[0];
+  const originalFetch = globalThis.fetch;
+  const queries = [];
+  globalThis.fetch = async (_url, options) => {
+    const request = JSON.parse(options.body);
+    queries.push(request.query);
+    if (request.query.includes("node(id:")) {
+      return new Response(
+        JSON.stringify({
+          errors: [
+            {
+              message: `Could not resolve to a node with the global id of '${manifest.graphNodeId}'.`,
+            },
+          ],
+        }),
+      );
+    }
+    return new Response(
+      JSON.stringify({
+        data: {
+          repository: {
+            dependencyGraphManifests: {
+              nodes: [
+                {
+                  id: "DGM_other",
+                  filename: "pnpm-lock.yaml",
+                  dependenciesCount: 1,
+                },
+              ],
+              pageInfo: { hasNextPage: false, endCursor: null },
+            },
+          },
+        },
+      }),
+    );
+  };
+  try {
+    assert.deepEqual(
+      await fetchGraphManifests("test-token", currentPolicy()),
+      [],
+    );
+    assert.equal(queries.length, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("#526 unrelated GitHub GraphQL errors do not trigger the deleted-node fallback", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    return new Response(
+      JSON.stringify({ errors: [{ message: "Not authorized" }] }),
+    );
+  };
+  try {
+    await assert.rejects(
+      fetchGraphManifests("test-token", currentPolicy()),
+      /Not authorized/u,
+    );
+    assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

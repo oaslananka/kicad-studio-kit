@@ -156,19 +156,139 @@ export function graphManifestFromPayload(payload, expectedManifest) {
   };
 }
 
-async function fetchGraphManifests(token, policy) {
-  const manifests = [];
-  for (const expectedManifest of policy.manifests) {
-    const request = buildGraphNodeRequest(expectedManifest.graphNodeId);
+export function isDeletedGraphNodeError(error, graphNodeId) {
+  return String(error?.message ?? "").includes(
+    `Could not resolve to a node with the global id of '${graphNodeId}'`,
+  );
+}
+
+export function buildRepositoryGraphManifestsRequest(repository, after = null) {
+  const { owner, name } = repositoryParts(repository);
+  return {
+    query: `query($owner: String!, $name: String!, $after: String) {
+      repository(owner: $owner, name: $name) {
+        dependencyGraphManifests(first: 100, after: $after) {
+          nodes { id filename dependenciesCount }
+          pageInfo { hasNextPage endCursor }
+        }
+      }
+    }`,
+    variables: { owner, name, after },
+  };
+}
+
+export function parseRepositoryGraphManifestsPage(payload, expectedManifest) {
+  if (Array.isArray(payload?.errors) && payload.errors.length > 0) {
+    throw new Error(
+      `dependency graph manifests: ${payload.errors.map((error) => error.message).join("; ")}`,
+    );
+  }
+  const connection = payload?.data?.repository?.dependencyGraphManifests;
+  if (
+    !Array.isArray(connection?.nodes) ||
+    typeof connection.pageInfo?.hasNextPage !== "boolean"
+  ) {
+    throw new TypeError(
+      "dependency graph manifest listing is missing or malformed",
+    );
+  }
+  const matches = connection.nodes.filter(
+    (node) => node?.filename === expectedManifest.path,
+  );
+  for (const node of matches) {
+    if (
+      typeof node.id !== "string" ||
+      !Number.isSafeInteger(node.dependenciesCount) ||
+      node.dependenciesCount < 0
+    ) {
+      throw new Error(
+        "retired dependency graph manifest contains invalid metadata",
+      );
+    }
+    if (node.id !== expectedManifest.graphNodeId) {
+      throw new Error(
+        "retired dependency graph manifest has an unexpected node identity",
+      );
+    }
+  }
+  if (connection.pageInfo.hasNextPage && !connection.pageInfo.endCursor) {
+    throw new Error("dependency graph listing has no pagination cursor");
+  }
+  return {
+    manifests: matches.map(({ filename, dependenciesCount }) => ({
+      filename,
+      dependenciesCount,
+    })),
+    nextCursor: connection.pageInfo.hasNextPage
+      ? connection.pageInfo.endCursor
+      : null,
+  };
+}
+
+async function findDeletedGraphNodeInCurrentManifests(
+  token,
+  policy,
+  expectedManifest,
+) {
+  const seenCursors = new Set();
+  const matches = [];
+  let after = null;
+  for (let page = 0; page < 100; page += 1) {
+    const request = buildRepositoryGraphManifestsRequest(
+      policy.repository,
+      after,
+    );
     const payload = await fetchGraphRequest(
       token,
       request.query,
       request.variables,
     );
-    const manifest = graphManifestFromPayload(payload, expectedManifest);
-    if (manifest) manifests.push(manifest);
+    const parsed = parseRepositoryGraphManifestsPage(payload, expectedManifest);
+    matches.push(...parsed.manifests);
+    if (matches.length > 1) {
+      throw new Error(
+        "retired dependency graph manifest appears more than once",
+      );
+    }
+    if (!parsed.nextCursor) return matches;
+    if (seenCursors.has(parsed.nextCursor)) {
+      throw new Error("dependency graph manifest pagination cursor repeated");
+    }
+    seenCursors.add(parsed.nextCursor);
+    after = parsed.nextCursor;
   }
-  return manifests;
+  throw new Error(
+    "dependency graph manifest pagination exceeded its safe limit",
+  );
+}
+
+export async function fetchGraphManifests(token, policy) {
+  const groups = await Promise.all(
+    policy.manifests.map(async (expectedManifest) => {
+      const request = buildGraphNodeRequest(expectedManifest.graphNodeId);
+      try {
+        const payload = await fetchGraphRequest(
+          token,
+          request.query,
+          request.variables,
+        );
+        const manifest = graphManifestFromPayload(payload, expectedManifest);
+        return manifest ? [manifest] : [];
+      } catch (error) {
+        if (!isDeletedGraphNodeError(error, expectedManifest.graphNodeId)) {
+          throw error;
+        }
+        // GitHub can delete the historical node when the retired manifest
+        // disappears. Confirm its absence against a complete live graph listing.
+        return findDeletedGraphNodeInCurrentManifests(
+          token,
+          policy,
+          expectedManifest,
+        );
+      }
+    }),
+  );
+  return groups.flat();
 }
 
 export function parseNextLinkHeader(linkHeader) {
