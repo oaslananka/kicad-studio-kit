@@ -551,3 +551,30 @@ test("#784 temporary Release Please generator cannot trigger premature CI valida
     "release-please/branches/main/components/vscode-extension",
   );
 });
+
+test("#801 merged -r signed shadow fallback cannot publish arbitrary PRs", () => {
+  const workflow = fs.readFileSync(
+    path.join(REPO_ROOT, ".github/workflows/release-please.yml"),
+    "utf8",
+  );
+  const steps = parseYaml(workflow).jobs.release.steps;
+  const recovery = steps.find((step) => step.id === "recover-signed-shadow");
+  const publication = steps.find(
+    (step) => step.name === "Publish validated signed shadow release",
+  );
+  assert.ok(recovery && publication);
+  assert.match(recovery.if, /steps.release.outputs.releases_created != 'true'/);
+  assert.match(recovery.if, /startsWith\(github.event.head_commit.message/);
+  assert.match(
+    recovery.run,
+    /gh api "repos\/\$GITHUB_REPOSITORY\/commits\/\$RELEASE_SHA\/pulls"/,
+  );
+  assert.match(recovery.run, /scripts\/check-signed-shadow-release.mjs/);
+  assert.match(publication.if, /steps.recover-signed-shadow.outputs.tag/);
+  assert.match(publication.run, /commit.verification.verified/);
+  assert.match(publication.run, /Release tag .*points to a different commit/);
+  assert.match(publication.run, /gh release create/);
+  assert.match(publication.run, /gh release view/);
+  assert.match(publication.run, /--target "\$RELEASE_SHA"/);
+  assert.match(publication.env.GH_TOKEN, /RELEASE_PLEASE_TOKEN/);
+});
