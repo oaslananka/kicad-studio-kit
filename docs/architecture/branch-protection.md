@@ -40,7 +40,10 @@ deletion/non-fast-forward protection.
 Release Please first opens an unsynchronized, temporary candidate PR from
 `release-please--branches--main--components--vscode-extension`, then creates
 the durable, GitHub-signed PR from
-`release-please/branches/main/components/vscode-extension`. On the generator
+`release-please/branches/main/components/vscode-extension` (or a
+`-r<run-id>` successor if an older signed branch conflicts with `main`).
+The signed branch always starts from current `main` without rewriting the
+obsolete branch. On the generator
 branch the version metadata is intentionally incomplete, so running product,
 release and docs consistency validation before the signed shadow is assembled
 can only produce false CI failure notifications. The repository scopes this
