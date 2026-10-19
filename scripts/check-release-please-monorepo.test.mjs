@@ -58,7 +58,7 @@ test("#645 release workflow safely refreshes its verified signed release shadow"
   assert.match(generator.with.token, /RELEASE_PLEASE_TOKEN/);
   assert.match(resolve.env.GH_TOKEN, /RELEASE_PLEASE_TOKEN/);
   assert.match(resolve.env.RELEASE_PR_JSON, /steps.release.outputs.pr/);
-  assert.match(resolve.run, /gh pr list --state open --head/);
+  assert.match(resolve.run, /gh pr list --repo "\$GITHUB_REPOSITORY"/);
   assert.match(resolve.run, /active=true/);
   assert.match(resolve.run, /active=false/);
   assert.match(sync.if, /steps.release-pr.outputs.active/);
@@ -104,7 +104,15 @@ test("#797 unchanged generator PR still runs reconciliation without rewriting re
     (step) => step.name === "Sync signed Release Please shadow PR",
   );
   assert.ok(resolver && sync);
-  assert.match(resolver.run, /gh pr list --state open --head/);
+  assert.match(
+    resolver.run,
+    /generator_pr_list=[\s\S]*?gh pr list --repo "\$GITHUB_REPOSITORY"/,
+  );
+  assert.match(
+    resolver.run,
+    /gh pr view "\$RELEASE_PR_NUMBER" --repo "\$GITHUB_REPOSITORY"/,
+  );
+  assert.match(resolver.run, /printf[\s\S]*?generator_pr_list/);
   assert.match(resolver.run, /RELEASE_PR_JSON/);
   assert.match(sync.if, /steps.release-pr.outputs.active/);
   assert.match(sync.run, /STALE_SIGNED_HEAD/);

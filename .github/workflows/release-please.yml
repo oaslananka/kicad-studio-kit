@@ -47,9 +47,14 @@ jobs:
         run: |
           set -euo pipefail
           GENERATOR_BRANCH=release-please--branches--main--components--vscode-extension
+          # This step runs before checkout, so gh cannot infer a repository
+          # from a .git directory. Capture the command status explicitly; errors
+          # must not be mistaken for "no pending generator PR".
+          generator_pr_list="$(gh pr list --repo "$GITHUB_REPOSITORY" \
+            --state open --head "$GENERATOR_BRANCH" \
+            --json number --jq '.[].number')"
           mapfile -t generator_prs < <(
-            gh pr list --state open --head "$GENERATOR_BRANCH" \
-              --json number --jq '.[].number'
+            printf '%s\n' "$generator_pr_list" | sed '/^$/d'
           )
           if [[ "${#generator_prs[@]}" -gt 1 ]]; then
             echo "Expected at most one open Release Please generator PR" >&2
@@ -64,9 +69,9 @@ jobs:
             exit 0
           fi
           RELEASE_PR_NUMBER="${generator_prs[0]}"
-          RELEASE_PR_HEAD="$(gh pr view "$RELEASE_PR_NUMBER" \
+          RELEASE_PR_HEAD="$(gh pr view "$RELEASE_PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
             --json headRefOid --jq '.headRefOid')"
-          RELEASE_TITLE="$(gh pr view "$RELEASE_PR_NUMBER" \
+          RELEASE_TITLE="$(gh pr view "$RELEASE_PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
             --json title --jq '.title')"
           RELEASE_TITLE="$RELEASE_TITLE" node --input-type=module <<'NODE'
           const title = process.env.RELEASE_TITLE;
