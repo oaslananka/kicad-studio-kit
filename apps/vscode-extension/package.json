@@ -2193,24 +2193,12 @@
         "description": "%kicadstudio.contributes.walkthroughs.0.description%",
         "steps": [
           {
-            "id": "kicadstudio.step.detectCli",
+            "id": "kicadstudio.step.openProject",
             "title": "%kicadstudio.contributes.walkthroughs.0.steps.0.title%",
             "description": "%kicadstudio.contributes.walkthroughs.0.steps.0.description%",
             "media": {
               "altText": "%kicadstudio.contributes.walkthroughs.0.steps.0.media.altText%",
-              "image": "assets/screenshots/schematic-viewer.png"
-            },
-            "completionEvents": [
-              "onCommand:kicadstudio.detectCli"
-            ]
-          },
-          {
-            "id": "kicadstudio.step.openProject",
-            "title": "%kicadstudio.contributes.walkthroughs.0.steps.1.title%",
-            "description": "%kicadstudio.contributes.walkthroughs.0.steps.1.description%",
-            "media": {
-              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.1.media.altText%",
-              "image": "assets/screenshots/schematic-viewer.png"
+              "image": "assets/screenshots/project-tree.png"
             },
             "completionEvents": [
               "onContext:kicadstudio.hasProject"
@@ -2218,10 +2206,10 @@
           },
           {
             "id": "kicadstudio.step.viewer",
-            "title": "%kicadstudio.contributes.walkthroughs.0.steps.2.title%",
-            "description": "%kicadstudio.contributes.walkthroughs.0.steps.2.description%",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.1.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.1.description%",
             "media": {
-              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.2.media.altText%",
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.1.media.altText%",
               "image": "assets/screenshots/schematic-viewer.png"
             },
             "completionEvents": [
@@ -2229,12 +2217,49 @@
             ]
           },
           {
-            "id": "kicadstudio.step.variants",
-            "title": "%kicadstudio.contributes.walkthroughs.0.steps.3.title%",
-            "description": "%kicadstudio.contributes.walkthroughs.0.steps.3.description%",
+            "id": "kicadstudio.step.detectCli",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.2.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.2.description%",
             "media": {
-              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.3.media.altText%",
-              "image": "assets/screenshots/schematic-viewer.png"
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.2.media.altText%",
+              "image": "assets/screenshots/project-tree.png"
+            },
+            "completionEvents": [
+              "onCommand:kicadstudio.detectCli"
+            ]
+          },
+          {
+            "id": "kicadstudio.step.validateDesign",
+            "media": {
+              "image": "assets/screenshots/drc-results.png",
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.3.media.altText%"
+            },
+            "completionEvents": [
+              "onCommand:kicadstudio.runDRC",
+              "onCommand:kicadstudio.runERC"
+            ],
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.3.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.3.description%"
+          },
+          {
+            "id": "kicadstudio.step.exports",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.4.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.4.description%",
+            "media": {
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.4.media.altText%",
+              "image": "assets/screenshots/pcb-viewer.png"
+            },
+            "completionEvents": [
+              "onCommand:kicadstudio.exportManufacturingPackage"
+            ]
+          },
+          {
+            "id": "kicadstudio.step.variants",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.5.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.5.description%",
+            "media": {
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.5.media.altText%",
+              "image": "assets/screenshots/pcb-viewer.png"
             },
             "completionEvents": [
               "onCommand:kicadstudio.variant.create"
@@ -2242,11 +2267,11 @@
           },
           {
             "id": "kicadstudio.step.mcp",
-            "title": "%kicadstudio.contributes.walkthroughs.0.steps.4.title%",
-            "description": "%kicadstudio.contributes.walkthroughs.0.steps.4.description%",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.6.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.6.description%",
             "media": {
-              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.4.media.altText%",
-              "image": "assets/screenshots/project-tree.png"
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.6.media.altText%",
+              "image": "assets/screenshots/mcp-tools-dashboard.png"
             },
             "completionEvents": [
               "onCommand:kicadstudio.setupMcpIntegration"
@@ -2254,11 +2279,11 @@
           },
           {
             "id": "kicadstudio.step.configureAi",
-            "title": "%kicadstudio.contributes.walkthroughs.0.steps.5.title%",
-            "description": "%kicadstudio.contributes.walkthroughs.0.steps.5.description%",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.7.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.7.description%",
             "media": {
-              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.5.media.altText%",
-              "image": "assets/screenshots/project-tree.png"
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.7.media.altText%",
+              "image": "assets/screenshots/mcp-tools-dashboard.png"
             },
             "completionEvents": [
               "onCommand:kicadstudio.openSettings"
@@ -2266,26 +2291,14 @@
           },
           {
             "id": "kicadstudio.step.ai",
-            "title": "%kicadstudio.contributes.walkthroughs.0.steps.6.title%",
-            "description": "%kicadstudio.contributes.walkthroughs.0.steps.6.description%",
+            "title": "%kicadstudio.contributes.walkthroughs.0.steps.8.title%",
+            "description": "%kicadstudio.contributes.walkthroughs.0.steps.8.description%",
             "media": {
-              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.6.media.altText%",
-              "image": "assets/screenshots/project-tree.png"
+              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.8.media.altText%",
+              "image": "assets/screenshots/drc-results.png"
             },
             "completionEvents": [
               "onCommand:kicadstudio.openAiChat"
-            ]
-          },
-          {
-            "id": "kicadstudio.step.exports",
-            "title": "%kicadstudio.contributes.walkthroughs.0.steps.7.title%",
-            "description": "%kicadstudio.contributes.walkthroughs.0.steps.7.description%",
-            "media": {
-              "altText": "%kicadstudio.contributes.walkthroughs.0.steps.7.media.altText%",
-              "image": "assets/screenshots/pcb-viewer.png"
-            },
-            "completionEvents": [
-              "onCommand:kicadstudio.exportManufacturingPackage"
             ]
           }
         ]

@@ -134,7 +134,7 @@ describe('marketplace listing assets', () => {
     expect(manifest.sourceFingerprint).toBe(
       sourceFingerprint(contract.sources)
     );
-    expect(manifest.kicadVersion).toMatch(/10\.0\.6/u);
+    expect(manifest.kicadVersion).toMatch(/10\.0\.7/u);
 
     for (const fileName of screenshots) {
       const relativePath = 'assets/screenshots/' + fileName;

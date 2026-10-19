@@ -122,10 +122,36 @@ describe('task-oriented command hub', () => {
     expect(window.showQuickPick).toHaveBeenCalledWith(
       [
         expect.objectContaining({
+          label: expect.stringContaining('Open a KiCad project'),
+          taskCommand: 'workbench.action.files.openFolder'
+        }),
+        expect.objectContaining({
           taskCommand: COMMANDS.openMaintainTasks
         })
       ],
-      expect.any(Object)
+      expect.objectContaining({
+        placeHolder: 'Open a KiCad project to start, or configure the workspace'
+      })
+    );
+  });
+
+  it('opens the folder picker from the first-run task hub without requiring MCP', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() =>
+      taskContext({ hasProject: false, mcpConnected: false, aiEnabled: false })
+    );
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce({
+      label: '$(folder-opened) Open a KiCad project',
+      taskCommand: 'workbench.action.files.openFolder'
+    });
+
+    await handler(COMMANDS.openTaskHub)();
+
+    expect(commands.executeCommand).toHaveBeenCalledWith(
+      'workbench.action.files.openFolder'
+    );
+    expect(commands.executeCommand).not.toHaveBeenCalledWith(
+      COMMANDS.setupMcpIntegration
     );
   });
 

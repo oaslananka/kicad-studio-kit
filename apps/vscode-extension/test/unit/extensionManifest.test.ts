@@ -111,6 +111,65 @@ describe('extensionManifest', () => {
     }
   });
 
+  it('onboards users with a project-first walkthrough and optional MCP/AI', () => {
+    type WalkthroughStep = {
+      id: string;
+      title: string;
+      description: string;
+      media: { image: string; altText: string };
+      completionEvents: string[];
+    };
+    const manifest = packageJson as typeof packageJson & {
+      contributes: NonNullable<typeof packageJson.contributes> & {
+        walkthroughs: Array<{ id: string; steps: WalkthroughStep[] }>;
+      };
+    };
+    const steps = manifest.contributes.walkthroughs.find(
+      (walkthrough) => walkthrough.id === 'kicadstudio.gettingStarted'
+    )?.steps;
+    if (!steps) throw new Error('Getting Started walkthrough is missing');
+    expect(steps.map((step) => step.id)).toEqual([
+      'kicadstudio.step.openProject',
+      'kicadstudio.step.viewer',
+      'kicadstudio.step.detectCli',
+      'kicadstudio.step.validateDesign',
+      'kicadstudio.step.exports',
+      'kicadstudio.step.variants',
+      'kicadstudio.step.mcp',
+      'kicadstudio.step.configureAi',
+      'kicadstudio.step.ai'
+    ]);
+    expect(steps[3]?.completionEvents).toEqual([
+      'onCommand:kicadstudio.runDRC',
+      'onCommand:kicadstudio.runERC'
+    ]);
+    const base = path.resolve(__dirname, '..', '..');
+    for (const language of ['package.nls.json', 'package.nls.tr.json']) {
+      const strings = JSON.parse(
+        fs.readFileSync(path.join(base, language), 'utf8')
+      ) as Record<string, string>;
+      steps.forEach((step, index) => {
+        for (const field of ['title', 'description', 'media.altText']) {
+          const key = `kicadstudio.contributes.walkthroughs.0.steps.${index}.${field}`;
+          expect(strings[key]).toBeTruthy();
+          const reference =
+            field === 'media.altText'
+              ? step.media.altText
+              : step[field as 'title' | 'description'];
+          expect(reference).toBe(`%${key}%`);
+        }
+        expect(fs.existsSync(path.join(base, step.media.image))).toBe(true);
+      });
+      const optionalSteps = steps.slice(5);
+      for (let index = 0; index < optionalSteps.length; index++) {
+        const titleKey = `kicadstudio.contributes.walkthroughs.0.steps.${index + 5}.title`;
+        expect(strings[titleKey]).toMatch(
+          language.endsWith('.tr.json') ? /^İsteğe bağlı:/u : /^Optional:/u
+        );
+      }
+    }
+  });
+
   it('registers sidebar views', () => {
     const sidebarViews = (packageJson.contributes?.views?.[
       'kicadstudio-sidebar'

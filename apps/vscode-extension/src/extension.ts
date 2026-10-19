@@ -20,7 +20,6 @@ import {
   DIAGNOSTIC_COLLECTION_NAME,
   KICAD_S_EXPRESSION_LANGUAGES,
   DRC_RULES_VIEW_ID,
-  EXTENSION_ID,
   FIX_QUEUE_VIEW_ID,
   QUALITY_GATE_VIEW_ID,
   NETLIST_VIEW_ID,
@@ -90,6 +89,7 @@ import type { ProjectContext } from './types';
 import { ActivationState } from './activation/activationState';
 import { McpActivationController } from './activation/mcpActivationController';
 import { SaveCheckController } from './activation/saveCheckController';
+import { showFirstRunWelcome } from './commands/firstRunWelcome';
 import { StudioContextController } from './activation/studioContextController';
 import { WorkspaceContextController } from './activation/workspaceContextController';
 
@@ -582,20 +582,7 @@ export async function activate(
     // One-time, dismissible welcome. Offer the guided tour instead of forcibly
     // opening a tab, so the user stays in control on first activation.
     await context.globalState.update('kicadstudio.installed', true);
-    void vscode.window
-      .showInformationMessage(
-        'Welcome to KiCad Studio. Take a short guided tour to set up KiCad CLI, the MCP server, and AI?',
-        'Open Walkthrough',
-        'Maybe Later'
-      )
-      .then((choice) => {
-        if (choice === 'Open Walkthrough') {
-          void vscode.commands.executeCommand(
-            'workbench.action.openWalkthrough',
-            `${EXTENSION_ID}#kicadstudio.gettingStarted`
-          );
-        }
-      });
+    void showFirstRunWelcome();
   }
 
   logger.info('KiCad Studio activated successfully.');

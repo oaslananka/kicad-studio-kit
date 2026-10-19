@@ -8,8 +8,10 @@ import {
   type TaskRequirements
 } from './taskHubCatalog';
 
+const OPEN_PROJECT_COMMAND = 'workbench.action.files.openFolder';
+
 interface TaskGroupQuickPickItem extends vscode.QuickPickItem {
-  readonly taskCommand: TaskGroup['command'];
+  readonly taskCommand: TaskGroup['command'] | typeof OPEN_PROJECT_COMMAND;
 }
 
 interface TaskActionQuickPickItem extends vscode.QuickPickItem {
@@ -17,8 +19,7 @@ interface TaskActionQuickPickItem extends vscode.QuickPickItem {
 }
 
 export type TaskHubContextProvider = () =>
-  | TaskHubContext
-  | Promise<TaskHubContext>;
+  TaskHubContext | Promise<TaskHubContext>;
 
 function isAvailable(
   availability: TaskAvailability = 'always',
@@ -51,16 +52,28 @@ function meetsRequirements(
 
 async function openTaskHub(getContext: TaskHubContextProvider): Promise<void> {
   const context = await getContext();
+  const availableGroups: TaskGroupQuickPickItem[] = TASK_GROUPS.filter(
+    (group) => isAvailable(group.availability, context)
+  ).map((group) => ({
+    label: `${group.icon} ${group.label}`,
+    description: group.description,
+    taskCommand: group.command
+  }));
+  // A new user without a project must not land on a maintenance-only menu.
+  if (!context.hasProject) {
+    availableGroups.unshift({
+      label: '$(folder-opened) Open a KiCad project',
+      description:
+        'Choose a folder containing KiCad project, PCB, or schematic files',
+      taskCommand: OPEN_PROJECT_COMMAND
+    });
+  }
   const selection = await vscode.window.showQuickPick<TaskGroupQuickPickItem>(
-    TASK_GROUPS.filter((group) => isAvailable(group.availability, context)).map(
-      (group) => ({
-        label: `${group.icon} ${group.label}`,
-        description: group.description,
-        taskCommand: group.command
-      })
-    ),
+    availableGroups,
     {
-      placeHolder: 'Choose what you want to do with this KiCad project',
+      placeHolder: context.hasProject
+        ? 'Choose what you want to do with this KiCad project'
+        : 'Open a KiCad project to start, or configure the workspace',
       matchOnDescription: true
     }
   );

@@ -68,6 +68,16 @@ Open **KiCad Studio: Open Task Hub** from the Command Palette or select the task
 
 The task hubs delegate to the existing commands, so scripts, keybindings, and documented command IDs remain compatible.
 
+**First installation / no project:** Choose **Explore Tasks** in the welcome
+message. If there is no active KiCad project, **Open a KiCad project** is the
+first Task Hub action; select the folder containing a `.kicad_pro`,
+`.kicad_sch`, or `.kicad_pcb` file. **Guided Tour** is available separately.
+
+For the core workflow, follow **Open project → Review → Validate → Fabrication
+Release**. KiCad CLI powers validation and exports. **MCP and AI are optional**
+and can be configured later under Automate; neither is required for the
+built-in viewers or native DRC/ERC checks.
+
 ---
 
 ## 4. View a Schematic
