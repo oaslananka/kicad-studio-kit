@@ -7,7 +7,7 @@ search: false
 Machine-maintained from `compatibility.yaml.kicadIpcReadiness`. Refresh with
 `corepack pnpm run docs:generate`.
 
-KiCad 10.0.5 remains primary and release-blocking. This
+KiCad 10.0.7 remains primary and release-blocking. This
 page tracks preparation for 11.0.x; it does not claim KiCad 11
 support before the official RC or stable canary and published-artifact gates pass.
 
@@ -16,8 +16,8 @@ support before the official RC or stable canary and published-artifact gates pas
 <!-- prettier-ignore -->
 | Item | State |
 | --- | --- |
-| Reviewed | `2026-07-26` |
-| Stable baseline | `10.0.5` |
+| Reviewed | `2026-10-20` |
+| Stable baseline | `10.0.7` |
 | Target line | `11.0.x` |
 | Upstream state | `nightly` |
 | Overall readiness | `blocked` |
@@ -75,7 +75,7 @@ from a pass/fail badge.
 | 1 | verify-artifact | KiCad Studio | `pending` | Record the official KiCad 11 release URL, artifact size, and digest. |
 | 2 | run-native-canary | KiCad MCP Pro | `pending` | Run the pinned CLI and IPC canary against the official artifact. |
 | 3 | attach-snapshots | KiCad MCP Pro | `pending` | Attach the summary, failing-fixtures file, and required CLI snapshots. |
-| 4 | compare-contracts | Shared contract | `pending` | Compare KiCad 11 command, report, and IPC semantics with the 10.0.5 baseline. |
+| 4 | compare-contracts | Shared contract | `pending` | Compare KiCad 11 command, report, and IPC semantics with the 10.0.7 baseline. |
 | 5 | verify-extension | KiCad Studio | `pending` | Run unit, integration, accessibility, build, package, and cross-repository gates. |
 | 6 | verify-swig-guard | KiCad MCP Pro | `pending` | Confirm the production pcbnew / SWIG guard remains clean. |
 | 7 | update-support-policy | KiCad Studio | `pending` | Update compatibility metadata only after all canaries pass. |
