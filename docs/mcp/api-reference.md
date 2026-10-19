@@ -44,6 +44,7 @@ and `compatibility.yaml`. Refresh with `corepack pnpm run docs:generate`.
 | `liveEditingTools` | object |  |
 | `chatgptConnectorCompatible` | boolean |  |
 | `cliExports` | object |  |
+| `adapterRouting` | object |  |
 
 ## Release-Gated MCP Tools
 
