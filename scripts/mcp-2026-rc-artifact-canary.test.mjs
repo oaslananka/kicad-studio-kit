@@ -322,7 +322,20 @@ test("#777 Studio published real-pair canary uses the actual runtime owners", ()
   assert.match(source, /Mcp2026ProtocolAdapter/u);
   assert.match(
     source,
-    /KICAD_MCP_PROTOCOL_LANE: modern \? "2026-07-28-rc" : "stable"/u,
+    /KICAD_MCP_PROTOCOL_LANE: strictRc \? "2026-07-28-rc" : "stable"/u,
+  );
+  assert.match(source, /KICAD_MCP_STATEFUL_HTTP: modern \? "0" : "1"/u);
+  assert.match(
+    source,
+    /await runPair\(\{ version, modern: true, modules \}\)/u,
+  );
+  assert.match(
+    source,
+    /await runPair\(\{ version, modern: true, strictRc: true, modules \}\)/u,
+  );
+  assert.match(
+    source,
+    /await runPair\(\{ version, modern: false, modules \}\)/u,
   );
   assert.match(source, /KICAD_MCP_OPERATING_MODE: "readonly"/u);
   assert.match(source, /resolveMcpProtocolAdapter\(modernProtocol\)/u);
