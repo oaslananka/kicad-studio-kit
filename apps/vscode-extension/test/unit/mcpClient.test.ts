@@ -1,5 +1,6 @@
 import { McpClient } from '../../src/mcp/mcpClient';
 import { Mcp2026ProtocolAdapter } from '../../src/mcp/protocol/mcp2026ProtocolAdapter';
+import { Mcp2025ProtocolAdapter } from '../../src/mcp/protocol/mcp2025ProtocolAdapter';
 import {
   __setConfiguration,
   createExtensionContextMock,
@@ -20,7 +21,7 @@ const mockedFs = require('node:fs') as {
   readFileSync: jest.MockedFunction<typeof import('node:fs').readFileSync>;
 };
 
-const MCP_SERVER_VERSION = '3.5.2';
+const MCP_SERVER_VERSION = '4.3.0';
 
 function createJsonResponse(
   body: unknown,
@@ -109,7 +110,7 @@ describe('McpClient', () => {
         error: jest.fn(),
         debug: jest.fn()
       } as never,
-      options
+      { protocolAdapter: new Mcp2025ProtocolAdapter(), ...options }
     );
   }
 
@@ -212,7 +213,8 @@ describe('McpClient', () => {
         warn: jest.fn(),
         error: jest.fn(),
         debug: jest.fn()
-      } as never
+      } as never,
+      { protocolAdapter: new Mcp2025ProtocolAdapter() }
     );
 
     const first = client.testConnection();
@@ -244,7 +246,8 @@ describe('McpClient', () => {
         warn: jest.fn(),
         error: jest.fn(),
         debug: jest.fn()
-      } as never
+      } as never,
+      { protocolAdapter: new Mcp2025ProtocolAdapter() }
     );
 
     await expect(client.detectInstall()).resolves.toEqual({
@@ -684,7 +687,8 @@ describe('McpClient', () => {
           .fn()
           .mockResolvedValue({ found: true, source: 'uvx' })
       } as never,
-      logger as never
+      logger as never,
+      { protocolAdapter: new Mcp2025ProtocolAdapter() }
     );
 
     await expect(
@@ -738,7 +742,8 @@ describe('McpClient', () => {
           .fn()
           .mockResolvedValue({ found: true, source: 'uvx' })
       } as never,
-      logger as never
+      logger as never,
+      { protocolAdapter: new Mcp2025ProtocolAdapter() }
     );
 
     await expect(client.callTool('legacy_tool', {})).resolves.toEqual({
@@ -916,7 +921,8 @@ describe('McpClient', () => {
           .fn()
           .mockResolvedValue({ found: true, source: 'uvx' })
       } as never,
-      logger as never
+      logger as never,
+      { protocolAdapter: new Mcp2025ProtocolAdapter() }
     );
 
     await expect(

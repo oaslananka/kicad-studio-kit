@@ -641,17 +641,16 @@ supportAxes:
     remediation: "Install/configure a KiCad CLI line supported by Studio; MCP availability is evaluated separately."
   mcpServer:
     package: "kicad-mcp-pro"
-    required: ">=3.5.2 <5.0.0"
-    recommended: ">=3.5.2 <5.0.0"
+    required: ">=4.3.0 <5.0.0"
+    recommended: ">=4.3.0 <5.0.0"
     testedAgainst:
       version: "4.3.0"
       registry: "pypi"
       source: "https://pypi.org/project/kicad-mcp-pro/4.3.0/"
     remediation: "Install a published kicad-mcp-pro version inside the supported range and re-run compatibility diagnostics."
   mcpProtocol:
-    active: "2025-11-25"
-    next: "2026-07-28"
-    activationState: "blocked"
+    active: "2026-07-28"
+    activationState: "active"
     remediation: "Use a server that negotiates the active protocol; protocol activation remains evidence-gated by ADR 0008."
   boardReadyOps:
     package: "boardreadyops"
@@ -688,13 +687,12 @@ runtimePolicy:
       - "apps/vscode-extension/CHANGELOG.md"
 
 mcp:
-  protocolVersion: "2025-11-25"
-  nextProtocolVersion: "2026-07-28"
+  protocolVersion: "2026-07-28"
   toolSchema: "1.0"
   registrySchema: "2025-12-11"
   activation:
     targetProtocolVersion: "2026-07-28"
-    state: "blocked"
+    state: "active"
     reviewed: "2026-10-20"
     evidenceNote: "docs/evidence/mcp-2026-07-28/2026-10-20-activation-readiness.md"
     finalSpecification:
@@ -719,15 +717,15 @@ mcp:
       evidence: "docs/evidence/mcp-2026-07-28/2026-10-20-activation-readiness.md"
     adr:
       path: "docs/adr/0008-mcp-2026-07-28-protocol-upgrade.md"
-      status: "Proposed"
+      status: "Accepted"
 
 products:
   kicad-studio:
     packagePath: "apps/vscode-extension/package.json"
     version: "1.17.1"
     compatibleMcpPro:
-      required: ">=3.5.2 <5.0.0"
-      recommended: ">=3.5.2 <5.0.0"
+      required: ">=4.3.0 <5.0.0"
+      recommended: ">=4.3.0 <5.0.0"
       testedAgainst: "4.3.0"
 
 featureGates:

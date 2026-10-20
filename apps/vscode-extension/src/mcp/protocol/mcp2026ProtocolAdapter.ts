@@ -9,8 +9,8 @@ import type {
 } from './protocolAdapter';
 import { McpProtocolVersionMismatchError } from './protocolAdapter';
 
-// Staged adapter for the final published revision. Deliberately absent from
-// protocolAdapterRegistry while compatibility.yaml activation is blocked.
+// Final published protocol adapter. Production selection is controlled by
+// the compatibility matrix and verified release acceptance gates.
 export const MCP_2026_PROTOCOL_VERSION = '2026-07-28' as const;
 const PROTOCOL_META = 'io.modelcontextprotocol/protocolVersion';
 const CLIENT_INFO_META = 'io.modelcontextprotocol/clientInfo';

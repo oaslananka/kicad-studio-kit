@@ -29,6 +29,24 @@ describe('#406 assistant tool capability modes', () => {
     });
   });
 
+  it('rechecks all mode descriptions after module initialization', () => {
+    jest.isolateModules(() => {
+      const descriptions = jest.requireActual<
+        typeof import('../../src/lm/toolCapabilityModes')
+      >('../../src/lm/toolCapabilityModes').MODE_DESCRIPTIONS;
+      expect(Object.keys(descriptions).sort()).toEqual([
+        'read-only',
+        'release-preparation',
+        'review'
+      ]);
+      expect(descriptions['read-only']).toContain('never changes files');
+      expect(descriptions.review).toContain('does not modify design files');
+      expect(descriptions['release-preparation']).toContain(
+        'preview/confirmation'
+      );
+    });
+  });
+
   it('does not classify any unknown tools', () => {
     const known = new Set<string>(Object.values(TOOL_NAMES));
     for (const toolName of Object.keys(TOOL_CAPABILITY_MODES)) {

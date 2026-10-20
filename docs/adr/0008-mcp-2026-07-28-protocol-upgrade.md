@@ -1,6 +1,6 @@
-# ADR 0008: MCP 2026-07-28 Protocol Upgrade Plan
+# ADR 0008: MCP 2026-07-28 Protocol Activation
 
-Status: Proposed
+Status: Accepted
 
 Date: 2026-05-30
 
@@ -8,13 +8,13 @@ Last reviewed: 2026-10-20
 
 ## Context
 
-The active MCP protocol **in KiCad Studio** remains `2025-11-25`, and
-`2026-07-28` remains blocked for its production adapter. KiCad MCP Pro itself
-now publishes a final `2026-07-28` server contract using Python MCP SDK v2;
-legacy `2025-11-25` initialize/session traffic remains supported by the server.
-The Studio extension has validated the final protocol against signed published
-artifacts, but publication and server availability do not automatically authorize
-a breaking Studio client activation.
+The repository's production source now selects MCP `2026-07-28` through the
+stateless adapter; its server support minimum is the signed and verified
+`kicad-mcp-pro==4.3.0`. The previously published Studio `v1.17.1` artifact
+remains on `2025-11-25` with the older server compatibility window. Updating
+source metadata or accepting this ADR does **not** publish a new VSIX or authorize
+Marketplace rollout. Published server 4.3.0 uses Python MCP SDK v2 and retains
+`2025-11-25` initialize/session traffic for explicit fallback tests.
 References:
 
 - <https://modelcontextprotocol.io/specification/2026-07-28>
@@ -38,7 +38,7 @@ No local MCP server or protocol-schema source package exists in this
 repository. Upgrade instructions must therefore assign work to the owning
 repository or published artifact rather than to removed local paths.
 
-## 2026-10-20 published-artifact acceptance checkpoint (Studio still blocked)
+## 2026-10-20 published-artifact and source-activation checkpoint
 
 The published `@oaslananka/kicad-protocol-schemas@2.0.0` artifact satisfies
 the original `minimumReleaseAge: 10080` policy and is already consumed in the
@@ -52,28 +52,28 @@ legacy 2025 session lane, Extension Host acceptance, fail-closed error/MRTR,
 publisher/signature verification, rollback isolation, and 10/10 exact-merge
 CI on [PR #813](https://github.com/oaslananka/kicad-studio-kit/pull/813).
 
-**Remaining blockers:** The production Studio adapter registry still selects
-only 2025, while the advertised server compatibility range still allows
-pre-final servers (`>=3.5.2`). Those two contracts must be updated together,
-verified against an actual Studio application lifecycle, and supported by a
-versioned rollback and protected release decision before accepting this ADR.
-The source evidence fields in `compatibility.yaml` are populated for audit,
-**not for activation**; its protocol `active` stays 2025 and `activation.state`
-stays `blocked`. No VSIX or Marketplace release is authorized here.
+The source cutover is now coordinated: `compatibility.yaml`, the compiled
+compatibility matrix, and the production adapter registry all select the final
+2026 protocol and require `kicad-mcp-pro >=4.3.0 <5.0.0`. The real VS Code Host
+proves the **default, non-injected Studio client** selects 2026 against a signed
+published server; a separate 2025 adapter establishes a fresh rollback session.
+The existing published Studio release stays on 2025. A new VSIX/Marketplace
+release is a **separate rollout decision** after protected source CI and
+independent exact-merge validation.
 
 ## Current ownership audit
 
-| Surface                                    | Current value                            | Owner / source of truth                                              |
-| ------------------------------------------ | ---------------------------------------- | -------------------------------------------------------------------- |
-| Active MCP protocol                        | `2025-11-25`                             | Both repositories' compatibility metadata                            |
-| Tracked next protocol                      | `2026-07-28`                             | This repository's `compatibility.yaml` and the KiCad MCP Pro roadmap |
-| Extension protocol adapter                 | `2025-11-25` initialize/session behavior | This repository, `apps/vscode-extension/src/mcp/`                    |
-| Server protocol implementation             | `2025-11-25` GA; final target pending    | KiCad MCP Pro                                                        |
-| Protocol schemas consumed by the extension | `@oaslananka/kicad-protocol-schemas`     | Published npm artifact                                               |
-| Protocol schema source and publishing      | Current published schema package         | KiCad MCP Pro                                                        |
-| Extension compatibility range              | `products.kicad-studio.compatibleMcpPro` | This repository's `compatibility.yaml`                               |
-| Server compatibility range                 | `compatibleExtension`                    | KiCad MCP Pro compatibility metadata                                 |
-| Cross-product proof                        | Published schema and server artifacts    | `.github/workflows/cross-repo-compatibility.yml`                     |
+| Surface                                    | Current value                                   | Owner / source of truth                                              |
+| ------------------------------------------ | ----------------------------------------------- | -------------------------------------------------------------------- |
+| Active MCP protocol                        | `2026-07-28`                                    | Both repositories' compatibility metadata                            |
+| Previously tracked protocol                | `2025-11-25`                                    | This repository's `compatibility.yaml` and the KiCad MCP Pro roadmap |
+| Extension protocol adapter                 | `2026-07-28` stateless discovery; 2025 fallback | This repository, `apps/vscode-extension/src/mcp/`                    |
+| Server protocol implementation             | Published final 2026 plus 2025 compatibility    | KiCad MCP Pro                                                        |
+| Protocol schemas consumed by the extension | `@oaslananka/kicad-protocol-schemas`            | Published npm artifact                                               |
+| Protocol schema source and publishing      | Current published schema package                | KiCad MCP Pro                                                        |
+| Extension compatibility range              | `products.kicad-studio.compatibleMcpPro`        | This repository's `compatibility.yaml`                               |
+| Server compatibility range                 | `compatibleExtension`                           | KiCad MCP Pro compatibility metadata                                 |
+| Cross-product proof                        | Published schema and server artifacts           | `.github/workflows/cross-repo-compatibility.yml`                     |
 
 The versioned extension adapter/transport boundary is tracked by issue #492.
 Its preparation phase must preserve `2025-11-25` and keep any `2026-07-28`
@@ -200,10 +200,10 @@ fails the compatibility contract.
 
 ## Phase 1: Final protocol and server/schema publication
 
-The final specification and stable Python SDK are now available upstream. This
-phase remains incomplete until KiCad MCP Pro adopts the final protocol in a
-stable published server/schema pair and KiCad Studio proves the corresponding
-client adapter against those artifacts.
+The final specification, stable Python SDK, signed published server 4.3.0,
+published schemas 2.0.0, and the Studio client/Host real-pair acceptance have
+passed. The remaining product operation is the separately authorized Studio
+release and its supported-server upgrade notification.
 
 ### KiCad MCP Pro publishes first
 
@@ -234,7 +234,7 @@ client adapter against those artifacts.
 
 ### Reviewed server compatibility decision for the final activation
 
-The future active `2026-07-28` extension will require a **minimum published
+The activated source `2026-07-28` extension requires a **minimum published
 `kicad-mcp-pro` version of 4.3.0**, the first signed final server whose normal
 protocol lane, strict 2026 canary lane, and legacy 2025 session lane all passed
 Studio's real-pair and Host acceptance tests. Studio **does not auto-select**
@@ -248,10 +248,12 @@ required and recommended semver ranges in both `supportAxes.mcpServer` and
 exclude every lower version, including through union ranges. The lower bound
 of the recorded server artifact may not precede 4.3.0. This policy does not
 change the currently released 2025 client support range of `>=3.5.2 <5.0.0`.
-A coordinated breaking extension release must instead explicitly tighten
-its published range, update the compiled client matrix, verify the selected
-2026 production lifecycle and rollback, and pass protected CI before activation.
-Existing users who need older servers can remain on the 2025-capable release.
+The coordinated source cutover tightens its supported range, updates the
+compiled matrix, and verifies the default-selected production 2026 client and
+explicit 2025 fallback in the same real Host. Before distributing the new
+extension, protected exact-merge CI must pass and a release decision must be
+recorded. Users who require older servers may stay on the published
+2025-capable `v1.17.1` release.
 
 ### Release order for a breaking transition
 
@@ -262,6 +264,28 @@ Existing users who need older servers can remain on the 2025-capable release.
 4. KiCad Studio publishes a release with the new required server range.
 
 No repository publishes another repository's artifacts.
+
+## Release decision and concrete rollback
+
+The source activation is accepted only if the independent PR and exact-merge
+main CI, CodeQL, SonarCloud, Codecov, real published-pair Extension Host, and
+Windows/Linux/macOS build checks all pass. **Do not publish a VSIX or change
+Marketplace defaults as a side effect of this source merge.**
+
+If a future Studio release using final MCP 2026 causes a compatibility
+regression, stop promoting that release, select the previously published
+[`vscode-extension-v1.17.1`](https://github.com/oaslananka/kicad-studio-kit/releases/tag/vscode-extension-v1.17.1)
+artifact, and confirm an older supported server can initialize with 2025,
+issue `tools/list`, and run read-only `kicad_get_version`. Revert the coordinated
+source cutover rather than publishing mixed metadata that claims 2026 while
+selecting 2025. Do not reuse stored 2025 `MCP-Session-Id` in modern requests;
+modern discovery and header tests must remain fail-closed. The explicit
+adapter-level 2025 recovery was verified in a real published-server Host.
+
+Production release owner approval and downstream server-version communication
+remain outside this ADR's source activation. The old published extension
+supports `>=3.5.2 <5.0.0`; the new source/client would require
+`>=4.3.0 <5.0.0`. **This is a breaking change**, not silent version negotiation.
 
 ## Phase 2: Optional feature adoption
 
@@ -280,7 +304,7 @@ checklist in both owning repositories.
 
 ## Phase 3: Post-activation cleanup
 
-1. Remove `nextProtocolVersion` after `2026-07-28` is active and released.
+1. `nextProtocolVersion` has been removed with source activation; confirm the same metadata in published release manifests.
 2. Replace or remove obsolete 2025 lifecycle fixtures only after the supported
    compatibility window closes.
 3. Phase out legacy SSE according to the documented support policy.

@@ -9,7 +9,7 @@ import * as net from 'node:net';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { isMcpVersionSupported } from '../../../src/mcp/compat';
-import { MCP_PROTOCOL_VERSION } from '../../../src/mcp/compatibilityMatrix';
+import { MCP_2025_PROTOCOL_VERSION } from '../../../src/mcp/protocol/mcp2025ProtocolAdapter';
 
 const EXTENSION_PACKAGE_NAME = 'kicadstudiokit';
 
@@ -192,7 +192,12 @@ async function startRealServer(): Promise<RealServerHarness> {
       KICAD_MCP_LOG_LEVEL: 'ERROR',
       ...(process.env['REAL_SERVER_PYPI_VERSION']
         ? {
-            KICAD_MCP_OPERATING_MODE: 'readonly',
+            // The writable-context integration fixture uses a temporary
+            // project, never a user's KiCad design or production server.
+            KICAD_MCP_OPERATING_MODE:
+              process.env['REAL_SERVER_TEST_OPERATING_MODE'] === 'write'
+                ? 'write'
+                : 'readonly',
             KICAD_MCP_PROTOCOL_LANE: 'stable',
             KICAD_MCP_STATEFUL_HTTP: '1',
             KICAD_MCP_LEGACY_SSE: '0'
@@ -468,7 +473,7 @@ async function waitForInitialize(
     }
     try {
       return await postJsonRpc<InitializeResult>(endpoint, 'initialize', {
-        protocolVersion: MCP_PROTOCOL_VERSION,
+        protocolVersion: MCP_2025_PROTOCOL_VERSION,
         clientInfo: { name: 'kicad-studio-real-server-test', version: '1.0.0' },
         capabilities: {}
       });

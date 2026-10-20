@@ -19,8 +19,7 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 | Node | `>=24.11.0 <25` |
 | pnpm | `>=11.0.0 <12` |
 | Python | `>=3.13` |
-| MCP protocol | `2025-11-25` |
-| MCP protocol (next) | `2026-07-28` |
+| MCP protocol | `2026-07-28` |
 
 ### KiCad Support
 
@@ -34,7 +33,7 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 
 | Product | Version | Manifest | Compatibility range |
 | --- | --- | --- | --- |
-| kicad-studio | 1.17.1 | apps/vscode-extension/package.json | &gt;=3.5.2 &lt;5.0.0 |
+| kicad-studio | 1.17.1 | apps/vscode-extension/package.json | &gt;=4.3.0 &lt;5.0.0 |
 
 ### Release Gate Inputs
 
@@ -55,16 +54,16 @@ authoritative values live under `supportAxes` in `compatibility.yaml`, and the
 cross-repository gate compares tested-pair values with published registry
 artifacts.
 
-| Axis | Current contract | Evidence / remediation |
-| --- | --- | --- |
-| Studio CLI / KiCad | stable `10.0.x`; deprecated `9.x`, `8.x`; preview `11.0.x`; no dropped lines | CLI support is capability-probed. If unsupported, install/configure a supported `kicad-cli`. MCP is evaluated separately. |
-| MCP server product | required/recommended `>=3.5.2 <5.0.0`; tested against published `kicad-mcp-pro` `4.3.0` | PyPI is the published-artifact source. Install a server inside the supported range and re-run diagnostics. |
-| MCP protocol | active `2025-11-25`; next `2026-07-28`; activation `blocked` | Protocol activation is independent from server semver and remains gated by ADR 0008 evidence. |
-| BoardReadyOps | required `>=1.2.0 <2.0.0`; tested against npm `1.68.3`; findings schema `1`; evidence bundle schema `2` | npm is the published-artifact source. Upgrade the CLI when the detected version is outside the supported range. |
+| Axis               | Current contract                                                                                        | Evidence / remediation                                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Studio CLI / KiCad | stable `10.0.x`; deprecated `9.x`, `8.x`; preview `11.0.x`; no dropped lines                            | CLI support is capability-probed. If unsupported, install/configure a supported `kicad-cli`. MCP is evaluated separately. |
+| MCP server product | required/recommended `>=4.3.0 <5.0.0`; tested against published `kicad-mcp-pro` `4.3.0`                 | PyPI is the published-artifact source. Install a server inside the supported range and re-run diagnostics.                |
+| MCP protocol       | source active `2026-07-28`; activation `active`                                                         | Protocol activation is independent from server semver and remains gated by ADR 0008 evidence.                             |
+| BoardReadyOps      | required `>=1.2.0 <2.0.0`; tested against npm `1.68.3`; findings schema `1`; evidence bundle schema `2` | npm is the published-artifact source. Upgrade the CLI when the detected version is outside the supported range.           |
 
 This split is deliberate: Studio can continue to offer CLI/viewer workflows for a
 KiCad line even when the installed MCP server is unsupported, and an MCP server
-version can remain in-range while protocol activation is still blocked.
+version can remain in-range while the peer negotiates an incompatible protocol revision.
 
 ## MCP Compatibility Contract
 
@@ -217,18 +216,19 @@ Freshness sources checked on 2026-10-20 (historical entries retained):
 | ------------ | ---------- | ---------------------- | ---------- | ---------------------------------------- |
 | KiCad        | 10.0.x     | none                   | 9.x, 8.x   | `compatibility.yaml` + release preflight |
 | VS Code      | current    | `engines.vscode` 1.101 | none       | extension manifest + VS Code canary      |
-| MCP protocol | 2025-11-25 | 2025-11-25             | older      | published server card + client matrix    |
+| MCP protocol | 2026-07-28 | 2026-07-28             | 2025-11-25 | published server card + client matrix    |
 | Node         | 24.x       | `>=24.11.0 <25`        | older      | root and extension package metadata      |
 | pnpm         | 11.x       | `>=11.0.0 <12`         | older      | root package metadata                    |
 | Python       | 3.13       | 3.13, 3.14             | older      | KiCad MCP Pro project metadata and CI    |
 
-The MCP protocol revision `2026-07-28` is the tracked next protocol target. It is
-recorded as `nextProtocolVersion` in `compatibility.yaml` and surfaced in the
-generated runtime baseline above, but it is not yet adopted. The active protocol
-stays `2025-11-25` until the final specification, a supported KiCad MCP Pro SDK
-and server release, the matching extension adapter, and published-artifact
-canaries are all available. The cross-repository execution and release order is
-maintained in [ADR 0008](adr/0008-mcp-2026-07-28-protocol-upgrade.md).
+The development-source MCP protocol is now `2026-07-28`, selected in
+`compatibility.yaml` and the compiled client matrix. It requires a signed
+published `kicad-mcp-pro >=4.3.0 <5.0.0`. This is a **breaking source cutover**,
+not an already distributed extension update: the previously published VSIX
+`v1.17.1` continues using `2025-11-25` with server range
+`>=3.5.2 <5.0.0`. Promotion and any future VSIX/Marketplace release require
+separate protected CI and release approval. See
+[ADR 0008](adr/0008-mcp-2026-07-28-protocol-upgrade.md) for the recovery plan.
 
 ## Minimum-Bump Policy
 

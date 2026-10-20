@@ -198,7 +198,7 @@ test("#621 rejects stale published BoardReadyOps contract evidence", () => {
 
 test("#621 keeps protocol activation separate from product semver compatibility", () => {
   const drifted = structuredClone(compatibility);
-  drifted.supportAxes.mcpProtocol.active = "2026-07-28";
+  drifted.supportAxes.mcpProtocol.active = "2025-11-25";
 
   assert.match(
     validateCompatibilityAxes({ compatibility: drifted }).join("\n"),
@@ -283,6 +283,10 @@ test("#491 requires reviewable stable canary evidence", () => {
 
 test("#492 blocked MCP activation must refresh after the target release date", () => {
   const stale = structuredClone(compatibility);
+  stale.mcp.protocolVersion = "2025-11-25";
+  stale.mcp.nextProtocolVersion = "2026-07-28";
+  stale.mcp.activation.state = "blocked";
+  stale.mcp.activation.adr.status = "Proposed";
   stale.mcp.activation.reviewed = "2026-07-27";
   stale.mcp.activation.finalSpecification = null;
 
@@ -347,14 +351,15 @@ test("#777 recorded artifact evidence does not itself approve production activat
   prematurelyActivated.mcp.protocolVersion = "2026-07-28";
   delete prematurelyActivated.mcp.nextProtocolVersion;
   prematurelyActivated.mcp.activation.state = "active";
+  prematurelyActivated.mcp.activation.adr.status = "Proposed";
 
   const errors = validateMcpProtocolActivation({
     compatibility: prematurelyActivated,
     repoRoot: process.cwd(),
-    registrySource: fs.readFileSync(
-      "apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts",
-      "utf8",
-    ),
+    registrySource:
+      "export const SUPPORTED_MCP_PROTOCOL_VERSIONS = ['2025-11-25'];",
+    adrSource: "Status: Proposed",
+    adrIndexSource: "| 0008 | MCP | Proposed |",
   }).join("\n");
   assert.match(errors, /ADR 0008 must be Accepted/u);
   assert.match(
@@ -384,8 +389,14 @@ test("#777 MCP 2026 activation rejects legacy server ranges and disjunctive bypa
       adrIndexSource: "| 0008 | MCP | Accepted |",
     });
 
-  // The current 2025 range includes releases that have never passed the
-  // final 2026 published-server acceptance suite.
+  // Simulate the previous 2025 range: it includes releases never verified
+  // for final 2026 protocol and must not pass this activation gate.
+  candidate.products["kicad-studio"].compatibleMcpPro.required =
+    ">=3.5.2 <5.0.0";
+  candidate.products["kicad-studio"].compatibleMcpPro.recommended =
+    ">=3.5.2 <5.0.0";
+  candidate.supportAxes.mcpServer.required = ">=3.5.2 <5.0.0";
+  candidate.supportAxes.mcpServer.recommended = ">=3.5.2 <5.0.0";
   let errors = validate();
   assert.ok(
     errors.some((error) =>

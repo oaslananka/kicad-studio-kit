@@ -101,7 +101,13 @@ The BOM panel and its CSV/XLSX exports include only placed schematic symbols tha
 
 ## MCP Compatibility
 
-KiCad Studio 1.17.1 supports `kicad-mcp-pro >=3.5.2 <5.0.0` and was tested against `4.3.0`. If a connected server reports a version outside the required range, MCP-dependent commands are disabled while KiCad-only features continue to work.
+KiCad Studio 1.17.1 supports `kicad-mcp-pro >=3.5.2 <5.0.0` and was tested against `4.3.0`. This published release uses MCP `2025-11-25`.
+Current development source has activated the breaking MCP `2026-07-28` client
+and requires the signed published `kicad-mcp-pro >=4.3.0 <5.0.0` server.
+**The source cutover is not yet a Marketplace/VSIX release**; users of older
+servers can continue using the published 2025-capable extension. If a connected
+server is outside the release-specific supported range, MCP-dependent commands
+are disabled while KiCad-only features remain available.
 
 ## Marketplace Listing Copy
 

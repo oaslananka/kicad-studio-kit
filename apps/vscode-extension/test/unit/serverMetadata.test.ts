@@ -16,7 +16,7 @@ describe('readWellKnownMcpServerMetadata', () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        serverInfo: { name: 'kicad-mcp-pro', version: '3.33.3' },
+        serverInfo: { name: 'kicad-mcp-pro', version: '4.3.0' },
         capabilities: {
           profiles: ['review', 'build', 'release', 'expert', 'pcb_only', 42]
         }
@@ -41,7 +41,7 @@ describe('readWellKnownMcpServerMetadata', () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        serverInfo: { name: 'kicad-mcp-pro', version: '3.33.3' },
+        serverInfo: { name: 'kicad-mcp-pro', version: '4.3.0' },
         capabilities: { profiles: [] }
       })
     }) as typeof fetch;
@@ -58,7 +58,7 @@ describe('readWellKnownMcpServerMetadata', () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        serverInfo: { name: 'kicad-mcp-pro', version: '3.33.3' },
+        serverInfo: { name: 'kicad-mcp-pro', version: '4.3.0' },
         capabilities: { profiles: 'all' }
       })
     }) as typeof fetch;

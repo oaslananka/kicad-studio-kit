@@ -2,10 +2,15 @@ import {
   MCP_2025_PROTOCOL_VERSION,
   Mcp2025ProtocolAdapter
 } from './mcp2025ProtocolAdapter';
+import {
+  Mcp2026ProtocolAdapter,
+  MCP_2026_PROTOCOL_VERSION
+} from './mcp2026ProtocolAdapter';
 import type { McpProtocolAdapter } from './protocolAdapter';
 
 export const SUPPORTED_MCP_PROTOCOL_VERSIONS = [
-  MCP_2025_PROTOCOL_VERSION
+  '2025-11-25',
+  '2026-07-28'
 ] as const;
 
 export class UnsupportedMcpProtocolVersionError extends Error {
@@ -25,6 +30,9 @@ export class UnsupportedMcpProtocolVersionError extends Error {
 }
 
 export function resolveMcpProtocolAdapter(version: string): McpProtocolAdapter {
+  if (version === MCP_2026_PROTOCOL_VERSION) {
+    return new Mcp2026ProtocolAdapter();
+  }
   if (version === MCP_2025_PROTOCOL_VERSION) {
     return new Mcp2025ProtocolAdapter();
   }
