@@ -426,5 +426,5 @@ function formatTimestamp(value: string | undefined): string {
   if (Number.isNaN(timestamp.getTime())) {
     return value;
   }
-  return timestamp.toLocaleString();
+  return timestamp.toLocaleString('en-US');
 }

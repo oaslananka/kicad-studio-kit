@@ -72,11 +72,9 @@ export class ComponentSearchService implements vscode.WebviewViewProvider {
     private readonly libraryIndexer?: KiCadLibraryIndexer | undefined,
     private readonly pcmService?: PcmService | undefined,
     private readonly extensionContext?:
-      | Pick<vscode.ExtensionContext, 'globalState' | 'secrets'>
-      | undefined,
+      Pick<vscode.ExtensionContext, 'globalState' | 'secrets'> | undefined,
     private readonly projectContextProvider?:
-      | (() => Promise<ComponentSearchProjectContext | undefined>)
-      | undefined
+      (() => Promise<ComponentSearchProjectContext | undefined>) | undefined
   ) {}
 
   async resolveWebviewView(
@@ -652,7 +650,7 @@ export class ComponentSearchService implements vscode.WebviewViewProvider {
     query: string
   ): ComponentSearchViewResult[] {
     return buildComponentSearchViewResults(results, query, {
-      locale: vscode.env.language || 'en',
+      locale: 'en-US',
       messages: {
         inStock: (count) =>
           vscode.l10n.t({

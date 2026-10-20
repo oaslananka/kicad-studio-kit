@@ -2,6 +2,8 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
+import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { auditEnglishCatalog } from "./check-nls-parity.mjs";
 
@@ -17,6 +19,22 @@ describe("English-only NLS catalog policy", () => {
     });
     assert.equal(run.status, 0, run.stderr);
     assert.match(run.stdout, /English-only NLS catalog verified/u);
+  });
+
+  it("runs the policy when invoked via a symlink", () => {
+    const temporary = mkdtempSync(path.join(os.tmpdir(), "studio-nls-link-"));
+    try {
+      const link = path.join(temporary, "check-nls-parity.mjs");
+      symlinkSync(script, link);
+      const run = spawnSync(process.execPath, [link], {
+        encoding: "utf8",
+        cwd: path.resolve(path.dirname(script), ".."),
+      });
+      assert.equal(run.status, 0, run.stderr);
+      assert.match(run.stdout, /English-only NLS catalog verified/u);
+    } finally {
+      rmSync(temporary, { recursive: true, force: true });
+    }
   });
 
   it("rejects any alternate locale catalog", () => {

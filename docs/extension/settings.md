@@ -35,7 +35,7 @@ Total settings: 47.
 | `kicadstudio.ai.maxTokens` | number | `4096` |  | Maximum tokens for AI responses. Higher values allow more detailed analysis. |
 | `kicadstudio.ai.streamingEnabled` | boolean | `true` |  | Stream AI responses in the chat panel as they arrive. |
 | `kicadstudio.ai.timeout` | number | `120` |  | AI request timeout in seconds. |
-| `kicadstudio.ai.language` | string | `en` | `en`, `tr`, `de`, `zh-CN`, `ja`, `fr`, `es`, `ko`, `pt-BR` | Language for AI-generated answers. Extension UI language follows VS Code locale packs. |
+| `kicadstudio.ai.language` | string | `en` | `en` | AI-generated answers and all KiCad Studio UI are English-only, regardless of the VS Code language. |
 | `kicadstudio.ai.allowTools` | boolean | `true` |  | Allow KiCad Studio to register language-model tools when the host VS Code build supports them. |
 | `kicadstudio.logLevel` | string | `info` | `debug`, `info`, `warn`, `error` | KiCad Studio log verbosity |
 | `kicadstudio.drc.autoRunOnSave` | boolean | `false` |  | Automatically run DRC when PCB file is saved. |

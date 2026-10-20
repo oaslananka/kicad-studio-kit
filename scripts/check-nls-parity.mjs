@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { globSync } from "node:fs";
-import path from "node:path";
 import { fileURLToPath } from "node:url";
 import englishMessages from "../apps/vscode-extension/package.nls.json" with { type: "json" };
 
@@ -29,10 +28,7 @@ export function auditEnglishCatalog(base, files) {
   return errors;
 }
 
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (import.meta.main) {
   const errors = auditEnglishCatalog(
     englishMessages,
     globSync("package.nls.*.json", { cwd: extensionDir }),
