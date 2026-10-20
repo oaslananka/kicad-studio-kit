@@ -225,6 +225,28 @@ async function runPair({ version, modern, modules }) {
     );
     assert.notEqual(call.json.result?.isError, true, "read-only tool failed");
 
+    // A real published peer must reject an unknown tool instead of reporting
+    // success. This complements synthetic malformed-response adapter tests.
+    const unknownTool = "kicad_studio_nonexistent_tool_acceptance";
+    const unavailable = await lifecycle.execute(
+      "tools/call",
+      { name: unknownTool, arguments: {} },
+      runtime,
+    );
+    assert.ok(
+      unavailable.json.error !== undefined ||
+        unavailable.json.result?.isError === true,
+      "published server must not report success for an unknown tool",
+    );
+
+    if (modern) {
+      assert.equal(
+        outgoing.at(-1)?.get("Mcp-Name"),
+        unknownTool,
+        "2026 routing header must name the rejected tool",
+      );
+    }
+
     if (modern) {
       assert.ok(discovered?.supportedVersions?.includes(modernProtocol));
       assert.equal(list.json.result.resultType, "complete");
@@ -240,7 +262,7 @@ async function runPair({ version, modern, modules }) {
           (headers) => headers.get("MCP-Protocol-Version") === modernProtocol,
         ),
       );
-      assert.equal(outgoing.at(-1)?.get("Mcp-Name"), "kicad_get_version");
+      assert.equal(outgoing.at(-2)?.get("Mcp-Name"), "kicad_get_version");
     } else {
       assert.equal(discovered?.protocolVersion, "2025-11-25");
       assert.ok(
@@ -260,7 +282,7 @@ async function runPair({ version, modern, modules }) {
         version +
         "; " +
         list.json.result.tools.length +
-        " tools; read-only tools/call successful.",
+        " tools; read-only tools/call successful; unknown tool rejected.",
     );
   } finally {
     await stopServer(child);
