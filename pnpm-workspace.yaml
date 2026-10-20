@@ -14,6 +14,8 @@ minimumReleaseAgeExclude:
   - source-map-js@1.2.2
   # Security fix: Handlebars GHSA-8r5x-fm3f-whwj and GHSA-p8wg-vrv2-v86f
   - handlebars@4.7.10
+  # Security fix: follow-redirects cross-origin credential leaks (GHSA-q3jh-wrc6-jgq8, GHSA-8r9p-f939-6h3c)
+  - follow-redirects@1.16.1
 trustPolicyExclude:
   - "@octokit/endpoint@9.0.6"
   - chokidar@4.0.3
@@ -60,6 +62,7 @@ overrides:
   uuid: 14.0.2
   vite: 6.4.3
   undici: 7.30.0
+  follow-redirects: 1.16.1
   basic-ftp: ">=6.2.1"
   source-map-js: ">=1.2.2"
   "@vue/server-renderer": ">=3.5.42"
