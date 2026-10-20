@@ -47,6 +47,9 @@ describe('MCP compatibility helpers', () => {
     expect(describeMcpCompatibility('3.5.1')).toBe(
       `kicad-mcp-pro 3.5.1 is outside the required range ${MCP_COMPAT.required}.`
     );
+    expect(describeMcpCompatibility('4.3.0')).toBe(
+      'kicad-mcp-pro 4.3.0 is supported.'
+    );
     expect(describeMcpCompatibility('3.9.2')).toBe(
       'kicad-mcp-pro 3.9.2 is outside the required range >=4.3.0 <5.0.0.'
     );

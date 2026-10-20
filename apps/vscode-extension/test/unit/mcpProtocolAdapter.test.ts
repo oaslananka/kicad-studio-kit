@@ -19,6 +19,10 @@ describe('MCP protocol adapter boundary (#492)', () => {
       '2025-11-25',
       '2026-07-28'
     ]);
+    expect(resolveMcpProtocolAdapter('2026-07-28')).toMatchObject({
+      version: '2026-07-28',
+      lifecycle: 'stateless-discovery'
+    });
   });
 
   it('rejects unsupported or draft protocol versions with structured diagnostics (#492)', () => {

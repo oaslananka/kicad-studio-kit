@@ -366,10 +366,17 @@ async function main() {
       ...(await loadCompiled("protocol/protocolLifecycle")),
       ...(await loadCompiled("transport/httpJsonRpcTransport")),
     };
+    assert.equal(
+      modules.resolveMcpProtocolAdapter(modernProtocol).lifecycle,
+      "stateless-discovery",
+    );
+    assert.equal(
+      modules.resolveMcpProtocolAdapter("2025-11-25").lifecycle,
+      "initialize-session",
+    );
     assert.throws(
-      () => modules.resolveMcpProtocolAdapter(modernProtocol),
+      () => modules.resolveMcpProtocolAdapter("2026-07-28-draft"),
       modules.UnsupportedMcpProtocolVersionError,
-      "2026 must remain production-blocked",
     );
     assert.throws(
       () =>
