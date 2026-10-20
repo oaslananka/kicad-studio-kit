@@ -1,55 +1,46 @@
 #!/usr/bin/env node
-
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const repoRoot = path.resolve(
+const extensionDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  "..",
+  "../apps/vscode-extension",
 );
-const extensionDir =
-  process.env["STUDIO_NLS_TEST_DIRECTORY"] ??
-  path.join(repoRoot, "apps", "vscode-extension");
-const errors = [];
-let base;
-try {
-  base = JSON.parse(
-    fs.readFileSync(path.join(extensionDir, "package.nls.json"), "utf8"),
-  );
-} catch (error) {
-  errors.push(`English package.nls.json must be readable: ${String(error)}`);
-}
 
-if (base) {
+export function auditEnglishCatalog(base, files) {
+  const errors = [];
   if (!base || typeof base !== "object" || Array.isArray(base)) {
-    errors.push("English message catalog must contain an object");
+    errors.push("English message catalog must be a JSON object");
   } else {
     for (const [key, value] of Object.entries(base)) {
-      if (typeof value !== "string" || !value.trim()) {
+      if (typeof value !== "string" || !value.trim())
         errors.push(`English message must be a nonempty string: ${key}`);
-      }
     }
   }
-}
-
-try {
-  for (const file of fs.readdirSync(extensionDir)) {
-    if (/^package\.nls\..+\.json$/u.test(file)) {
+  for (const name of files) {
+    if (/^package\.nls\..+\.json$/u.test(name))
       errors.push(
-        `Additional locale catalog is prohibited (English-only): ${file}`,
+        `Additional locale catalog is prohibited (English-only): ${name}`,
       );
-    }
   }
-} catch (error) {
-  errors.push(`Cannot inspect extension catalog directory: ${String(error)}`);
+  return errors;
 }
 
-if (errors.length) {
-  for (const error of errors) console.error(error);
-  process.exitCode = 1;
-} else {
-  console.log(
-    `English-only NLS catalog verified (${Object.keys(base).length} keys; no additional locales)`,
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  const base = JSON.parse(
+    fs.readFileSync(path.join(extensionDir, "package.nls.json"), "utf8"),
   );
+  const errors = auditEnglishCatalog(base, fs.readdirSync(extensionDir));
+  if (errors.length) {
+    for (const error of errors) console.error(error);
+    process.exitCode = 1;
+  } else {
+    console.log(
+      `English-only NLS catalog verified (${Object.keys(base).length} keys; no additional locales)`,
+    );
+  }
 }

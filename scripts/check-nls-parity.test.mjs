@@ -2,73 +2,48 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import fs from "node:fs";
-import os from "node:os";
 import { fileURLToPath } from "node:url";
+import { auditEnglishCatalog } from "./check-nls-parity.mjs";
 
-const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(scriptsDir, "..");
-const script = path.join(scriptsDir, "check-nls-parity.mjs");
-const englishFile = path.join(
-  repoRoot,
-  "apps/vscode-extension/package.nls.json",
+const script = fileURLToPath(
+  new URL("./check-nls-parity.mjs", import.meta.url),
 );
 
-function withCatalog(callback) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "studio-nls-"));
-  try {
-    fs.copyFileSync(englishFile, path.join(dir, "package.nls.json"));
-    return callback(dir, () =>
-      spawnSync(process.execPath, [script], {
-        encoding: "utf8",
-        env: { ...process.env, STUDIO_NLS_TEST_DIRECTORY: dir },
-      }),
-    );
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
-}
-
-describe("English-only NLS catalog validation", () => {
-  it("accepts the English source message catalog", () => {
-    withCatalog((_dir, check) => {
-      const result = check();
-      assert.equal(result.status, 0, result.stderr);
-      assert.match(result.stdout, /English-only NLS catalog verified/u);
+describe("English-only NLS catalog policy", () => {
+  it("checks the actual extension catalog without translations", () => {
+    const run = spawnSync(process.execPath, [script], {
+      encoding: "utf8",
+      cwd: path.resolve(path.dirname(script), ".."),
     });
+    assert.equal(run.status, 0, run.stderr);
+    assert.match(run.stdout, /English-only NLS catalog verified/u);
   });
 
-  it("rejects translation catalogs for any locale", () => {
-    withCatalog((dir, check) => {
-      for (const locale of ["tr", "de", "fr", "ja", "es"]) {
-        const filename = `package.nls.${locale}.json`;
-        fs.writeFileSync(path.join(dir, filename), "{}");
-        const result = check();
-        assert.notEqual(result.status, 0);
-        assert.match(result.stderr, /Additional locale catalog is prohibited/u);
-        fs.rmSync(path.join(dir, filename));
-      }
-    });
+  it("rejects any alternate locale catalog", () => {
+    for (const locale of ["tr", "de", "fr", "ja", "es"]) {
+      const errors = auditEnglishCatalog({ greeting: "Welcome" }, [
+        "package.nls.json",
+        `package.nls.${locale}.json`,
+      ]);
+      assert.equal(errors.length, 1);
+      assert.match(errors[0], /Additional locale catalog is prohibited/u);
+    }
   });
 
   it("rejects empty or non-string English messages", () => {
-    withCatalog((dir, check) => {
-      const file = path.join(dir, "package.nls.json");
-      for (const value of ["", 42, null]) {
-        fs.writeFileSync(file, JSON.stringify({ sample: value }));
-        const result = check();
-        assert.notEqual(result.status, 0);
-        assert.match(result.stderr, /nonempty string/u);
-      }
-    });
+    for (const value of ["", 42, null]) {
+      assert.deepEqual(
+        auditEnglishCatalog({ greeting: value }, ["package.nls.json"]),
+        ["English message must be a nonempty string: greeting"],
+      );
+    }
   });
 
-  it("fails when the English catalog is missing", () => {
-    withCatalog((dir, check) => {
-      fs.rmSync(path.join(dir, "package.nls.json"));
-      const result = check();
-      assert.notEqual(result.status, 0);
-      assert.match(result.stderr, /must be readable/u);
-    });
+  it("rejects invalid English catalog structures", () => {
+    for (const value of [null, [], "not-an-object"]) {
+      assert.deepEqual(auditEnglishCatalog(value, ["package.nls.json"]), [
+        "English message catalog must be a JSON object",
+      ]);
+    }
   });
 });

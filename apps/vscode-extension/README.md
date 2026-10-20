@@ -58,7 +58,7 @@ On a **new workspace**, the sidebar starts with four task-oriented areas: **KiCa
 | DRC/ERC validation       | Problems integration, freshness state, quality gates, and focused validation views                   | Separates fresh failures from stale reports                                    |
 | Manufacturing handoff    | Repeatable BOM, netlist, plot, drill, and jobset-driven export commands                              | Turns review output into reproducible release artifacts                        |
 | MCP readiness            | `kicad-mcp-pro` discovery, version gating, tool status, and workspace context                        | Keeps AI-assisted commands safe when the MCP server is missing or incompatible |
-| Localization             | Marketplace copy plus extension string infrastructure                                                | English-only UI; additional translation catalogs are prohibited                                    |
+| Localization             | Marketplace copy plus extension string infrastructure                                                | English-only UI; additional translation catalogs are prohibited                |
 
 ## Screenshots
 
