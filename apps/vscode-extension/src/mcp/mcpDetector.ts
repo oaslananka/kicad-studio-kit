@@ -1,4 +1,5 @@
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import { execFile } from 'node:child_process';
 import * as vscode from 'vscode';
@@ -140,7 +141,10 @@ export class McpDetector {
         found: true,
         command: 'kicad-mcp-pro',
         version: binaryResult.version,
-        source: 'global'
+        source: 'global',
+        ...(binaryResult.executablePath
+          ? { executablePath: binaryResult.executablePath }
+          : {})
       };
     }
 
@@ -201,11 +205,12 @@ export class McpDetector {
     }
 
     const command =
-      status.command === 'uvx'
+      status.executablePath ??
+      (status.command === 'uvx'
         ? 'uvx'
         : status.command === 'npx'
           ? 'npx'
-          : 'kicad-mcp-pro';
+          : 'kicad-mcp-pro');
     const args =
       status.command === 'uvx'
         ? ['kicad-mcp-pro']
@@ -430,16 +435,39 @@ export class McpDetector {
     return match?.[1] ? { found: true, version: match[1] } : { found: false };
   }
 
-  private async tryBinary(): Promise<{ found: boolean; version?: string }> {
-    const result = await run('kicad-mcp-pro', ['version']);
-    if (!result.ok) {
-      return { found: false };
+  private async tryBinary(): Promise<{
+    found: boolean;
+    version?: string;
+    executablePath?: string;
+  }> {
+    // GUI-launched VS Code commonly omits ~/.local/bin from PATH, even when
+    // uv/pipx installed the tool there. Probe the actual executable by an
+    // absolute path rather than misreporting a valid install as missing.
+    const name =
+      process.platform === 'win32' ? 'kicad-mcp-pro.exe' : 'kicad-mcp-pro';
+    const commands = [
+      'kicad-mcp-pro',
+      path.join(os.homedir(), '.local', 'bin', name),
+      ...(process.platform === 'win32' && process.env['APPDATA']
+        ? [path.join(process.env['APPDATA'], 'Python', 'Scripts', name)]
+        : [])
+    ];
+    for (const command of commands) {
+      const result = await run(command, ['version']);
+      if (!result.ok) {
+        continue;
+      }
+      const version = extractVersion(result.output);
+      if (!version) {
+        continue;
+      }
+      return {
+        found: true,
+        version,
+        ...(path.isAbsolute(command) ? { executablePath: command } : {})
+      };
     }
-    const version = extractVersion(result.output);
-    return {
-      found: true,
-      ...(version ? { version } : {})
-    };
+    return { found: false };
   }
 
   private async tryPip(): Promise<{ found: boolean; version?: string }> {
@@ -488,6 +516,9 @@ function doctorInvocation(
 ): { command: string; args: string[] } | undefined {
   if (!status.found) {
     return undefined;
+  }
+  if (status.executablePath) {
+    return { command: status.executablePath, args: ['doctor', '--json'] };
   }
   if (status.command === 'uvx') {
     return { command: 'uvx', args: ['kicad-mcp-pro', 'doctor', '--json'] };
@@ -545,9 +576,9 @@ function buildHttpTaskArgs(
       args: ['kicad-mcp-pro', ...httpFlags]
     };
   }
-  // global binary / pip / pipx
+  // global binary / pip / pipx (including a user-local CLI outside GUI PATH)
   return {
-    command: 'kicad-mcp-pro',
+    command: status.executablePath ?? 'kicad-mcp-pro',
     args: [...httpFlags]
   };
 }
