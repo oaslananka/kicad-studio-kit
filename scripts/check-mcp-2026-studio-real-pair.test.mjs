@@ -248,6 +248,57 @@ async function runPair({ version, modern, modules }) {
     }
 
     if (modern) {
+      // Exercise the published peer over the wire, not just Studio's header
+      // builder: inconsistent or missing routing metadata must fail closed.
+      const params = adapter.prepareRequestParams(
+        { name: unknownTool, arguments: {} },
+        { name: "kicad-studio", version: "1.16.0" },
+      );
+      const requestBody = JSON.stringify({
+        jsonrpc: "2.0",
+        id: "studio-wire-header-negative",
+        method: "tools/call",
+        params,
+      });
+      for (const { label, mutate } of [
+        {
+          label: "inconsistent Mcp-Name",
+          mutate: (headers) => {
+            headers["Mcp-Name"] = "kicad_get_version";
+          },
+        },
+        {
+          label: "missing Mcp-Name",
+          mutate: (headers) => {
+            delete headers["Mcp-Name"];
+          },
+        },
+      ]) {
+        const headers = adapter.createRequestHeaders({
+          method: "tools/call",
+          params,
+        });
+        mutate(headers);
+        const response = await fetch(endpoint + "/mcp", {
+          method: "POST",
+          headers,
+          body: requestBody,
+          signal: AbortSignal.timeout(20_000),
+        });
+        const body = await response.text();
+        assert.equal(response.status, 400, label + ": " + body.slice(0, 300));
+        const result = JSON.parse(body);
+        assert.equal(
+          result.error?.code,
+          -32020,
+          label +
+            " must report HeaderMismatch; wire body=" +
+            body.slice(0, 500),
+        );
+      }
+    }
+
+    if (modern) {
       assert.ok(discovered?.supportedVersions?.includes(modernProtocol));
       assert.equal(list.json.result.resultType, "complete");
       assert.equal(call.json.result.resultType, "complete");
