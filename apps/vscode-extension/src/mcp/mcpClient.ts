@@ -20,7 +20,10 @@ import { MCP_COMPAT, getMcpCompatStatus, normalizeMcpVersion } from './compat';
 import { MCP_PROTOCOL_VERSION } from './compatibilityMatrix';
 import { McpDetector } from './mcpDetector';
 import type { McpLogger } from './mcpLogger';
-import type { McpDiscoveryResult } from './protocol/protocolAdapter';
+import type {
+  McpDiscoveryResult,
+  McpProtocolAdapter
+} from './protocol/protocolAdapter';
 import { resolveMcpProtocolAdapter } from './protocol/protocolAdapterRegistry';
 import {
   McpProtocolLifecycle,
@@ -30,6 +33,8 @@ import { VscodeProtocolSessionStore } from './adapters/vscodeProtocolSessionStor
 import { HttpJsonRpcTransport } from './transport/httpJsonRpcTransport';
 
 export interface McpClientOptions {
+  /** Explicit internal adapter injection for source-only pre-activation tests. */
+  protocolAdapter?: McpProtocolAdapter | undefined;
   maxRetries?: number | undefined;
   retryBaseDelayMs?: number | undefined;
   reconnectDelaysMs?: readonly number[] | undefined;
@@ -60,7 +65,9 @@ export class McpClient {
     options: McpClientOptions = {}
   ) {
     this.protocolLifecycle = new McpProtocolLifecycle({
-      adapter: resolveMcpProtocolAdapter(MCP_PROTOCOL_VERSION),
+      adapter:
+        options.protocolAdapter ??
+        resolveMcpProtocolAdapter(MCP_PROTOCOL_VERSION),
       transport: new HttpJsonRpcTransport({
         logger,
         trafficLogger: options.logger,
