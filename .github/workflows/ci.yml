@@ -328,6 +328,9 @@ jobs:
       - name: Run real-pair extension host test
         env:
           REAL_SERVER_ARTIFACT_DIR: apps/vscode-extension/test-results/real-server
+          # Require the actual published peer; do not silently skip when a
+          # sibling MCP source checkout is absent on GitHub-hosted runners.
+          REAL_SERVER_PYPI_VERSION: 4.3.0
         run: xvfb-run -a corepack pnpm --filter kicadstudiokit run test:integration:real:host
       - name: Run real-pair VS Code host smoke
         env:
