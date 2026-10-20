@@ -277,7 +277,7 @@
   "kicadstudio.contributes.configuration.properties.kicadstudio.ai.maxTokens.description": "Maximum tokens for AI responses. Higher values allow more detailed analysis.",
   "kicadstudio.contributes.configuration.properties.kicadstudio.ai.streamingEnabled.description": "Stream AI responses in the chat panel as they arrive.",
   "kicadstudio.contributes.configuration.properties.kicadstudio.ai.timeout.description": "AI request timeout in seconds.",
-  "kicadstudio.contributes.configuration.properties.kicadstudio.ai.language.description": "Language for AI-generated answers. Extension UI language follows VS Code locale packs.",
+  "kicadstudio.contributes.configuration.properties.kicadstudio.ai.language.description": "AI-generated answers and all KiCad Studio UI are English-only, regardless of the VS Code language.",
   "kicadstudio.contributes.configuration.properties.kicadstudio.ai.allowTools.description": "Allow KiCad Studio to register language-model tools when the host VS Code build supports them.",
   "kicadstudio.contributes.configuration.properties.kicadstudio.logLevel.description": "KiCad Studio log verbosity",
   "kicadstudio.contributes.configuration.properties.kicadstudio.drc.autoRunOnSave.description": "Automatically run DRC when PCB file is saved.",

@@ -5,7 +5,9 @@ jest.mock('vscode', () => jest.requireActual('./vscodeMock'), {
 import {
   WEBVIEW_MESSAGES,
   buildWebviewMessageMap,
-  injectWebviewLocalization
+  injectWebviewLocalization,
+  webviewLocale,
+  localizeWebviewMessage
 } from '../../src/webviewI18n';
 
 describe('webview localization', () => {
@@ -15,6 +17,34 @@ describe('webview localization', () => {
     expect(Object.keys(map).sort()).toEqual([...WEBVIEW_MESSAGES].sort());
     for (const message of WEBVIEW_MESSAGES) {
       expect(map[message]).toBe(message);
+    }
+  });
+
+  it('never translates messages or webview document language for other locales', () => {
+    const previous = process.env['VSCODE_NLS_CONFIG'];
+    try {
+      for (const locale of ['tr', 'de', 'fr', 'ja']) {
+        process.env['VSCODE_NLS_CONFIG'] = JSON.stringify({ locale });
+        expect(webviewLocale()).toBe('en');
+        expect(localizeWebviewMessage('KiCad Studio Settings')).toBe(
+          'KiCad Studio Settings'
+        );
+        expect(buildWebviewMessageMap()['KiCad Studio Settings']).toBe(
+          'KiCad Studio Settings'
+        );
+        expect(
+          injectWebviewLocalization(
+            '<html lang="en"><body></body></html>',
+            'nonce'
+          )
+        ).toContain('<html lang="en">');
+      }
+    } finally {
+      if (previous === undefined) {
+        delete process.env['VSCODE_NLS_CONFIG'];
+      } else {
+        process.env['VSCODE_NLS_CONFIG'] = previous;
+      }
     }
   });
 

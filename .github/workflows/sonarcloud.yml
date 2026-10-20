@@ -56,6 +56,7 @@ jobs:
             node --test \
               --test-concurrency=1 \
               scripts/check-quality-gate-policy.test.mjs \
+              scripts/check-nls-parity.test.mjs \
               scripts/check-docs-screenshot-freshness.test.mjs \
               scripts/check-agent-configs.test.mjs \
               scripts/check-dependency-automation-policy.test.mjs \
@@ -86,6 +87,7 @@ jobs:
           script_lcov=apps/vscode-extension/coverage/sonar-scripts/lcov.info
           test -s "$script_lcov"
           grep -q '^SF:scripts/check-quality-gate-policy.mjs' "$script_lcov"
+          grep -q '^SF:scripts/check-nls-parity.mjs' "$script_lcov"
           grep -q '^SF:scripts/check-docs-site.mjs' "$script_lcov"
           grep -q '^SF:scripts/check-agent-configs.mjs' "$script_lcov"
           grep -q '^SF:scripts/check-dependency-automation-policy.mjs' "$script_lcov"

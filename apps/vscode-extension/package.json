@@ -2021,15 +2021,7 @@
           "type": "string",
           "default": "en",
           "enum": [
-            "en",
-            "tr",
-            "de",
-            "zh-CN",
-            "ja",
-            "fr",
-            "es",
-            "ko",
-            "pt-BR"
+            "en"
           ],
           "description": "%kicadstudio.contributes.configuration.properties.kicadstudio.ai.language.description%"
         },

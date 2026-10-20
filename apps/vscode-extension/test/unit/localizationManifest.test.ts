@@ -117,6 +117,27 @@ function collectHardCodedContributionStrings(
 }
 
 describe('extension localization manifest', () => {
+  it('restricts the AI language setting and its description to English', () => {
+    const manifest = readJson<{
+      contributes: {
+        configuration: {
+          properties: Record<string, { default?: string; enum?: string[] }>;
+        };
+      };
+    }>(PACKAGE_JSON_PATH);
+    const aiLanguage =
+      manifest.contributes.configuration.properties['kicadstudio.ai.language'];
+    expect(aiLanguage).toEqual(
+      expect.objectContaining({ default: 'en', enum: ['en'] })
+    );
+    const english = readJson<Record<string, string>>(PACKAGE_NLS_PATH);
+    expect(
+      english[
+        'kicadstudio.contributes.configuration.properties.kicadstudio.ai.language.description'
+      ]
+    ).toContain('English-only');
+  });
+
   it('has a package.nls.json with English strings for every package.json localization key', () => {
     const packageJson = readJson<JsonObject>(PACKAGE_JSON_PATH);
     const english = readJson<Record<string, string>>(PACKAGE_NLS_PATH);
@@ -131,7 +152,7 @@ describe('extension localization manifest', () => {
   });
 
   it('renders welcome actions on separate lines without escaped literal newlines', () => {
-    for (const filename of ['package.nls.json', 'package.nls.tr.json']) {
+    for (const filename of ['package.nls.json']) {
       const messages = readJson<Record<string, string>>(
         path.join(EXTENSION_ROOT, filename)
       );

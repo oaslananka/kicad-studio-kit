@@ -431,7 +431,7 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
     }
     function fmtTime(timestamp) {
       const date = new Date(Number(timestamp) || Date.now());
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     }
     function setQuotaBanner(value) {
       const status = text(value);
