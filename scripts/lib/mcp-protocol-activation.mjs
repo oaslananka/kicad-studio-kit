@@ -1,11 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
+import semver from "semver";
 
 const ACTIVATION_STATES = new Set(["blocked", "active"]);
 const STATUS_PREFIX = "Status:";
 const REGISTRY_NAME = "SUPPORTED_MCP_PROTOCOL_VERSIONS";
 const REGISTRY_PATH =
   "apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts";
+// First stable, signed native 2026 server reviewed by #777 canaries.
+const FIRST_VERIFIED_MCP_2026_SERVER = "4.3.0";
 
 function isStableSemver(value) {
   return typeof value === "string" && /^\d+\.\d+\.\d+$/u.test(value);
@@ -274,6 +277,56 @@ function validateActiveState(errors, context) {
   }
 }
 
+// The final adapter speaks a breaking stateless protocol. A green artifact
+// attestation cannot make every historically supported server speak 2026.
+// Keep the 2025 compatibility window intact until the explicit cutover.
+function validateActiveServerRange(errors, compatibility) {
+  const baseline = compatibility?.mcp?.activation?.serverArtifact?.version;
+  if (!semver.valid(baseline)) {
+    // The published artifact validator reports missing/prerelease evidence.
+    return;
+  }
+  if (semver.lt(baseline, FIRST_VERIFIED_MCP_2026_SERVER)) {
+    errors.push(
+      `mcp.activation.serverArtifact.version must be at least ${FIRST_VERIFIED_MCP_2026_SERVER}, the first verified final MCP 2026 server`,
+    );
+  }
+
+  const ranges = [
+    [
+      "products.kicad-studio.compatibleMcpPro.required",
+      compatibility?.products?.["kicad-studio"]?.compatibleMcpPro?.required,
+    ],
+    [
+      "products.kicad-studio.compatibleMcpPro.recommended",
+      compatibility?.products?.["kicad-studio"]?.compatibleMcpPro?.recommended,
+    ],
+    [
+      "supportAxes.mcpServer.required",
+      compatibility?.supportAxes?.mcpServer?.required,
+    ],
+    [
+      "supportAxes.mcpServer.recommended",
+      compatibility?.supportAxes?.mcpServer?.recommended,
+    ],
+  ];
+
+  for (const [label, range] of ranges) {
+    if (typeof range !== "string" || !semver.validRange(range)) {
+      errors.push(`${label} must be a valid semver range for active MCP 2026`);
+      continue;
+    }
+    if (
+      !semver.subset(range, `>=${baseline}`) ||
+      !semver.satisfies(baseline, range)
+    ) {
+      errors.push(
+        `${label} must include the verified published server ${baseline} and exclude all older unverified servers before MCP 2026 activation`,
+      );
+    }
+  }
+}
+
 function validateExtensionAdapter(errors, activation, root, target, required) {
   const adapterPath = resolveRepositoryPath(
     errors,
@@ -391,6 +444,7 @@ export function validateMcpProtocolActivation({
     validateBlockedFreshness(errors, activation, target, today);
   } else if (activation.state === "active") {
     validateActiveState(errors, stateContext);
+    validateActiveServerRange(errors, compatibility);
   }
   validateActivationEvidence(
     errors,

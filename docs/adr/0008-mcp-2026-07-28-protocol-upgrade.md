@@ -232,6 +232,27 @@ client adapter against those artifacts.
    cross-platform extension gates.
 6. Tighten `compatibleMcpPro` only after the published server pair passes.
 
+### Reviewed server compatibility decision for the final activation
+
+The future active `2026-07-28` extension will require a **minimum published
+`kicad-mcp-pro` version of 4.3.0**, the first signed final server whose normal
+protocol lane, strict 2026 canary lane, and legacy 2025 session lane all passed
+Studio's real-pair and Host acceptance tests. Studio **does not auto-select**
+the final adapter on a legacy server based on untrusted discovery metadata.
+Do not interpret a compatible server _product_ version as proof of the active
+_protocol_ revision.
+
+The source-validated activation gate fails closed unless the supported-server
+required and recommended semver ranges in both `supportAxes.mcpServer` and
+`products.kicad-studio.compatibleMcpPro` include the reviewed artifact and
+exclude every lower version, including through union ranges. The lower bound
+of the recorded server artifact may not precede 4.3.0. This policy does not
+change the currently released 2025 client support range of `>=3.5.2 <5.0.0`.
+A coordinated breaking extension release must instead explicitly tighten
+its published range, update the compiled client matrix, verify the selected
+2026 production lifecycle and rollback, and pass protected CI before activation.
+Existing users who need older servers can remain on the 2025-capable release.
+
 ### Release order for a breaking transition
 
 1. KiCad MCP Pro publishes the schema artifact.
