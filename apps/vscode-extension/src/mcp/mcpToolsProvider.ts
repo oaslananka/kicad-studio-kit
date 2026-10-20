@@ -420,6 +420,16 @@ function dashboardStatus(
   return 'compatible';
 }
 
+function needsLocalMcpUpgrade(state: McpConnectionState): boolean {
+  const version = state.install?.version;
+  return Boolean(
+    !state.connected &&
+    state.install?.found &&
+    version &&
+    getMcpCompatStatus(version) === 'incompatible'
+  );
+}
+
 function dashboardStateLabel(
   state: McpConnectionState,
   status: DashboardStatus,
@@ -465,12 +475,7 @@ function dashboardStateLabel(
   if (isAuthOrProtocolFailure(state.message)) {
     return 'Auth/protocol failure';
   }
-  if (
-    !state.connected &&
-    state.install?.found &&
-    state.install.version &&
-    getMcpCompatStatus(state.install.version) === 'incompatible'
-  ) {
+  if (needsLocalMcpUpgrade(state)) {
     return 'Installed but update required';
   }
   return state.available ? 'Installed but not running' : 'Disconnected';
@@ -617,16 +622,12 @@ function stateNode(
   // An installed CLI can be present but older than the compatibility floor.
   // Without a live server, distinguish that from a missing installation and
   // from a compatible server which is merely not running.
-  if (
-    !state.connected &&
-    state.install?.found &&
-    state.install.version &&
-    getMcpCompatStatus(state.install.version) === 'incompatible'
-  ) {
+  const installVersion = state.install?.version;
+  if (installVersion && needsLocalMcpUpgrade(state)) {
     return {
       label: 'MCP Update Required',
-      description: state.install.version,
-      tooltip: describeMcpCompatibility(state.install.version),
+      description: installVersion,
+      tooltip: describeMcpCompatibility(installVersion),
       icon: 'warning',
       command: {
         command: COMMANDS.openMcpUpgradeGuide,

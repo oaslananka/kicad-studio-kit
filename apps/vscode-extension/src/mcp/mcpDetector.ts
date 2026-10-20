@@ -424,8 +424,8 @@ export class McpDetector {
     if (!result.ok) {
       return { found: false };
     }
-    const match = result.output.match(
-      /^kicad-mcp-pro\s+v(\d+\.\d+\.\d+)(?:\s|$)/im
+    const match = /^kicad-mcp-pro\s+v(\d+\.\d+\.\d+)(?:\s|$)/im.exec(
+      result.output
     );
     return match?.[1] ? { found: true, version: match[1] } : { found: false };
   }
