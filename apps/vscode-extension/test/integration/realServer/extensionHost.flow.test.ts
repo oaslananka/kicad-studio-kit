@@ -501,6 +501,10 @@ async function assertPublishedActive2026ExtensionHost(): Promise<void> {
     await extension.activate();
     assert.equal(extension.isActive, true);
     await vscode.commands.executeCommand(COMMANDS.retryMcp);
+    await vscode.commands.executeCommand(
+      COMMANDS.qualityGateRunThis,
+      placementGate()
+    );
 
     const saved = new Map<string, unknown>();
     const context = {
@@ -543,6 +547,22 @@ async function assertPublishedActive2026ExtensionHost(): Promise<void> {
         assert.equal(restored.kind, 'Connected', restored.message);
         const legacyVersion = await rollback.callTool('kicad_get_version', {});
         assert.ok(legacyVersion);
+        const rollbackTools = await legacy.listTools();
+        for (const tool of REQUIRED_EXTENSION_HOST_TOOLS) {
+          assert.ok(
+            rollbackTools.includes(tool),
+            `Missing 2025 rollback tool ${tool}`
+          );
+        }
+        const rollbackGate = await rollback.callTool(
+          'project_quality_gate_report',
+          {}
+        );
+        assert.ok(rollbackGate, '2025 rollback quality gate must return data');
+        const rollbackResource = await legacy.readResource(
+          'kicad://project/quality_gate'
+        );
+        assert.match(rollbackResource, /Project quality gate:/u);
         const unsupported = new McpClient(
           {
             ...context,

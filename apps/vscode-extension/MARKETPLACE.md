@@ -60,8 +60,11 @@ mockups.
 - kicad-cli for CLI-backed validation and export workflows
 - Optional MCP integration: kicad-mcp-pro >=4.3.0 <5.0.0
 
-MCP integration currently uses protocol `2025-11-25`; the `2026-07-28`
-protocol remains disabled pending separately verified activation.
+The development-source protocol is `2026-07-28` (unreleased) and requires
+published `kicad-mcp-pro >=4.3.0 <5.0.0`. The currently distributed VSIX
+`v1.17.1` instead uses MCP `2025-11-25` and supports servers
+`>=3.5.2 <5.0.0`. A new VSIX/Marketplace release requires a separate
+protected rollout decision.
 
 KiCad remains the source of truth for design files. Viewer fallback and
 compatibility state are surfaced explicitly instead of silently substituting

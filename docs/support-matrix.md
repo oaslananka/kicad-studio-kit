@@ -63,7 +63,7 @@ artifacts.
 
 This split is deliberate: Studio can continue to offer CLI/viewer workflows for a
 KiCad line even when the installed MCP server is unsupported, and an MCP server
-version can remain in-range while protocol activation is still blocked.
+version can remain in-range while the peer negotiates an incompatible protocol revision.
 
 ## MCP Compatibility Contract
 
@@ -216,18 +216,19 @@ Freshness sources checked on 2026-10-20 (historical entries retained):
 | ------------ | ---------- | ---------------------- | ---------- | ---------------------------------------- |
 | KiCad        | 10.0.x     | none                   | 9.x, 8.x   | `compatibility.yaml` + release preflight |
 | VS Code      | current    | `engines.vscode` 1.101 | none       | extension manifest + VS Code canary      |
-| MCP protocol | 2025-11-25 | 2025-11-25             | older      | published server card + client matrix    |
+| MCP protocol | 2026-07-28 | 2026-07-28             | 2025-11-25 | published server card + client matrix    |
 | Node         | 24.x       | `>=24.11.0 <25`        | older      | root and extension package metadata      |
 | pnpm         | 11.x       | `>=11.0.0 <12`         | older      | root package metadata                    |
 | Python       | 3.13       | 3.13, 3.14             | older      | KiCad MCP Pro project metadata and CI    |
 
-The MCP protocol revision `2026-07-28` is the tracked next protocol target. It is
-recorded as `nextProtocolVersion` in `compatibility.yaml` and surfaced in the
-generated runtime baseline above, but it is not yet adopted. The active protocol
-stays `2025-11-25` until the final specification, a supported KiCad MCP Pro SDK
-and server release, the matching extension adapter, and published-artifact
-canaries are all available. The cross-repository execution and release order is
-maintained in [ADR 0008](adr/0008-mcp-2026-07-28-protocol-upgrade.md).
+The development-source MCP protocol is now `2026-07-28`, selected in
+`compatibility.yaml` and the compiled client matrix. It requires a signed
+published `kicad-mcp-pro >=4.3.0 <5.0.0`. This is a **breaking source cutover**,
+not an already distributed extension update: the previously published VSIX
+`v1.17.1` continues using `2025-11-25` with server range
+`>=3.5.2 <5.0.0`. Promotion and any future VSIX/Marketplace release require
+separate protected CI and release approval. See
+[ADR 0008](adr/0008-mcp-2026-07-28-protocol-upgrade.md) for the recovery plan.
 
 ## Minimum-Bump Policy
 
