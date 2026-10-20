@@ -16,6 +16,24 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.0.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.17.1...vscode-extension-v2.0.0) (2026-10-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **kicad-studio:** Studio MCP now uses final 2026-07-28 stateless discovery and requires kicad-mcp-pro >=4.3.0. The published 1.17.1 extension retains the 2025 server range; release remains separately controlled.
+
+### Features
+
+* **kicad-studio:** activate verified MCP 2026 protocol ([#817](https://github.com/oaslananka/kicad-studio-kit/issues/817)) ([5eed33a](https://github.com/oaslananka/kicad-studio-kit/commit/5eed33a246ecb25f42c5e563fc8b3e3234049c27))
+
+
+### Bug Fixes
+
+* **kicad-studio:** make first run project-first and AI optional ([643efd4](https://github.com/oaslananka/kicad-studio-kit/commit/643efd454bf0a3714fa52b09fa2034a4522f1459))
+* **kicad-studio:** prioritize project-first onboarding and real product screenshots ([#803](https://github.com/oaslananka/kicad-studio-kit/issues/803)) ([643efd4](https://github.com/oaslananka/kicad-studio-kit/commit/643efd454bf0a3714fa52b09fa2034a4522f1459))
+* **repo:** consume mature MCP schema v2 without activating 2026 ([#806](https://github.com/oaslananka/kicad-studio-kit/issues/806)) ([0cef33a](https://github.com/oaslananka/kicad-studio-kit/commit/0cef33a3180d1b6ef388ebe3f07b251b702a6bda))
+
 ## [1.17.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.17.0...vscode-extension-v1.17.1) (2026-10-19)
 
 
