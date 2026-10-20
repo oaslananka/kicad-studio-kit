@@ -31,7 +31,7 @@ describe('mcp/compat', () => {
 
   describe('isMcpVersionSupported', () => {
     it('is true for an in-range version', () => {
-      expect(isMcpVersionSupported('3.9.2')).toBe(true);
+      expect(isMcpVersionSupported('4.3.0')).toBe(true);
     });
 
     it('is false for a below-range version', () => {
@@ -45,7 +45,7 @@ describe('mcp/compat', () => {
 
   describe('getMcpCompatStatus', () => {
     it('is ok for an in-range version', () => {
-      expect(getMcpCompatStatus('3.9.2')).toBe('ok');
+      expect(getMcpCompatStatus('4.3.0')).toBe('ok');
     });
 
     it('is incompatible below the required range', () => {
@@ -59,8 +59,8 @@ describe('mcp/compat', () => {
 
   describe('describeMcpCompatibility', () => {
     it('describes a supported version', () => {
-      const message = describeMcpCompatibility('3.9.2');
-      expect(message).toContain('3.9.2');
+      const message = describeMcpCompatibility('4.3.0');
+      expect(message).toContain('4.3.0');
       expect(message).toContain('supported');
     });
 

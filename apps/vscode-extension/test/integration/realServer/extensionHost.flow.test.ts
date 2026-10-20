@@ -2,6 +2,7 @@ import * as assert from 'node:assert/strict';
 import * as vscode from 'vscode';
 import { COMMANDS, EXTENSION_ID, SETTINGS } from '../../../src/constants';
 import { isMcpVersionSupported } from '../../../src/mcp/compat';
+import { MCP_PROTOCOL_VERSION } from '../../../src/mcp/compatibilityMatrix';
 import { McpClient } from '../../../src/mcp/mcpClient';
 import { Logger } from '../../../src/utils/logger';
 import type { QualityGateResult } from '../../../src/types';
@@ -33,6 +34,11 @@ const REQUIRED_EXTENSION_HOST_TOOLS = [
 suite('Real Pair Extension Host', () => {
   test('connects KiCad Studio commands to the real MCP server', async function () {
     this.timeout(180000);
+
+    if (MCP_PROTOCOL_VERSION === '2026-07-28') {
+      await assertPublishedActive2026ExtensionHost();
+      return;
+    }
 
     await withRealServer(async (server) => {
       const tools = await server.listTools();
@@ -473,12 +479,98 @@ suite('Real Pair Extension Host', () => {
           headers.get('MCP-Protocol-Version') === '2026-07-28'
       )
     );
-    assert.throws(
-      () => resolveMcpProtocolAdapter('2026-07-28'),
-      UnsupportedMcpProtocolVersionError
+    assert.equal(
+      resolveMcpProtocolAdapter(MCP_PROTOCOL_VERSION).lifecycle,
+      'stateless-discovery'
     );
   });
 });
+
+async function assertPublishedActive2026ExtensionHost(): Promise<void> {
+  assert.equal(
+    resolveMcpProtocolAdapter(MCP_PROTOCOL_VERSION).lifecycle,
+    'stateless-discovery'
+  );
+  await withPublishedStatelessServer(async (modernEndpoint) => {
+    await configureMcpEndpoint(`${modernEndpoint}/mcp`);
+    const extension = vscode.extensions.getExtension(EXTENSION_ID);
+    assert.ok(
+      extension,
+      'The installed Studio VS Code extension must activate'
+    );
+    await extension.activate();
+    assert.equal(extension.isActive, true);
+    await vscode.commands.executeCommand(COMMANDS.retryMcp);
+
+    const saved = new Map<string, unknown>();
+    const context = {
+      extension: { packageJSON: { version: '1.17.1' } },
+      globalState: {
+        get: <T>(key: string): T | undefined => saved.get(key) as T | undefined,
+        update: async (key: string, value: unknown) => {
+          saved.set(key, value);
+        }
+      }
+    } as unknown as vscode.ExtensionContext;
+    const detector = {
+      detectKicadMcpPro: async () => ({ found: true, source: 'uvx' })
+    } as unknown as ConstructorParameters<typeof McpClient>[1];
+    const logger = new Logger('Production MCP 2026 Selection');
+    try {
+      // No adapter injection: this selects the same compiled protocol as Studio.
+      const client = new McpClient(context, detector, logger, {
+        maxRetries: 1
+      });
+      const state = await client.testConnection();
+      assert.equal(state.kind, 'Connected', state.message);
+      assert.equal(
+        state.server?.version,
+        process.env['REAL_SERVER_PYPI_VERSION']
+      );
+      const version = await client.callTool('kicad_get_version', {});
+      assert.match(JSON.stringify(version), /KiCad MCP Pro Server v4\.3\.0/u);
+      assert.equal(saved.has('kicadstudio.mcp.sessionId'), false);
+
+      // A 2025 session remains a separate, explicit rollback path. The
+      // production 2026 client never negotiates down on untrusted metadata.
+      await withRealServer(async (legacy) => {
+        await configureMcpEndpoint(legacy.endpoint);
+        const rollback = new McpClient(context, detector, logger, {
+          protocolAdapter: new Mcp2025ProtocolAdapter(),
+          maxRetries: 1
+        });
+        const restored = await rollback.testConnection();
+        assert.equal(restored.kind, 'Connected', restored.message);
+        const legacyVersion = await rollback.callTool('kicad_get_version', {});
+        assert.ok(legacyVersion);
+        const unsupported = new McpClient(
+          {
+            ...context,
+            globalState: {
+              get: <T>(key: string): T | undefined =>
+                saved.get(key) as T | undefined,
+              update: async (key: string, value: unknown) => {
+                saved.set(key, value);
+              }
+            }
+          } as unknown as vscode.ExtensionContext,
+          detector,
+          logger,
+          { maxRetries: 1 }
+        );
+        const wrongLane = await unsupported.testConnection();
+        assert.notEqual(
+          wrongLane.kind,
+          'Connected',
+          'Do not auto-downgrade modern production'
+        );
+      });
+    } finally {
+      await configureMcpEndpoint(`${modernEndpoint}/mcp`);
+      logger.dispose();
+    }
+  });
+}
 
 async function configureMcpEndpoint(endpoint: string): Promise<void> {
   const config = vscode.workspace.getConfiguration();

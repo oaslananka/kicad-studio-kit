@@ -7,7 +7,7 @@ and `compatibility.yaml`. Refresh with `corepack pnpm run docs:generate`.
 
 | Surface | Value |
 | --- | --- |
-| MCP protocol version | `2025-11-25` |
+| MCP protocol version | `2026-07-28` |
 | Tool schema version | `1.0` |
 | Registry schema version | `2025-12-11` |
 | Server package version | `4.3.0` |

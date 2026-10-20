@@ -15,20 +15,23 @@ describe('MCP protocol adapter boundary (#492)', () => {
 
     expect(adapter.version).toBe('2025-11-25');
     expect(adapter.lifecycle).toBe('initialize-session');
-    expect(SUPPORTED_MCP_PROTOCOL_VERSIONS).toEqual(['2025-11-25']);
+    expect(SUPPORTED_MCP_PROTOCOL_VERSIONS).toEqual([
+      '2025-11-25',
+      '2026-07-28'
+    ]);
   });
 
   it('rejects unsupported or draft protocol versions with structured diagnostics (#492)', () => {
     expect.assertions(6);
 
     try {
-      resolveMcpProtocolAdapter('2026-07-28');
+      resolveMcpProtocolAdapter('2026-07-28-draft');
     } catch (error) {
       expect(error).toBeInstanceOf(UnsupportedMcpProtocolVersionError);
       expect(error).toMatchObject({
         code: 'MCP_PROTOCOL_VERSION_UNSUPPORTED',
-        requestedVersion: '2026-07-28',
-        supportedVersions: ['2025-11-25']
+        requestedVersion: '2026-07-28-draft',
+        supportedVersions: ['2025-11-25', '2026-07-28']
       });
       expect((error as UnsupportedMcpProtocolVersionError).hint).toContain(
         'compatibility metadata'
@@ -190,7 +193,7 @@ describe('MCP protocol adapter boundary (#492)', () => {
       }
     });
     expect(() =>
-      resolveMcpProtocolAdapter(draftProtocol.protocolVersion)
+      resolveMcpProtocolAdapter(`${draftProtocol.protocolVersion}-draft`)
     ).toThrow(UnsupportedMcpProtocolVersionError);
   });
 });

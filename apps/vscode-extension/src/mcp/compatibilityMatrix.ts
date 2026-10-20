@@ -15,14 +15,13 @@ export const COMPATIBILITY_MATRIX = {
       }
     },
     mcpServer: {
-      required: '>=3.5.2 <5.0.0',
-      recommended: '>=3.5.2 <5.0.0',
+      required: '>=4.3.0 <5.0.0',
+      recommended: '>=4.3.0 <5.0.0',
       testedAgainst: '4.3.0'
     },
     mcpProtocol: {
-      active: '2025-11-25',
-      next: '2026-07-28',
-      activationState: 'blocked'
+      active: '2026-07-28',
+      activationState: 'active'
     },
     boardReadyOps: {
       required: '>=1.2.0 <2.0.0',
@@ -33,15 +32,15 @@ export const COMPATIBILITY_MATRIX = {
     }
   },
   mcp: {
-    protocolVersion: '2025-11-25',
+    protocolVersion: '2026-07-28',
     toolSchema: '1.0'
   },
   products: {
     kicadStudio: {
       version: '1.17.1',
       compatibleMcpPro: {
-        required: '>=3.5.2 <5.0.0',
-        recommended: '>=3.5.2 <5.0.0',
+        required: '>=4.3.0 <5.0.0',
+        recommended: '>=4.3.0 <5.0.0',
         testedAgainst: '4.3.0'
       }
     },

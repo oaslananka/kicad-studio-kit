@@ -4,10 +4,7 @@ import {
   Mcp2026UnsupportedResultError
 } from '../../src/mcp/protocol/mcp2026ProtocolAdapter';
 import { McpProtocolVersionMismatchError } from '../../src/mcp/protocol/protocolAdapter';
-import {
-  UnsupportedMcpProtocolVersionError,
-  resolveMcpProtocolAdapter
-} from '../../src/mcp/protocol/protocolAdapterRegistry';
+import { resolveMcpProtocolAdapter } from '../../src/mcp/protocol/protocolAdapterRegistry';
 import { McpProtocolLifecycle } from '../../src/mcp/protocol/protocolLifecycle';
 import { Mcp2025ProtocolAdapter } from '../../src/mcp/protocol/mcp2025ProtocolAdapter';
 import { HttpJsonRpcTransport } from '../../src/mcp/transport/httpJsonRpcTransport';
@@ -32,8 +29,8 @@ describe('staged MCP 2026-07-28 stateless adapter (#492)', () => {
 
   it('is not production-selectable until the activation contract is verified', () => {
     expect(adapter.lifecycle).toBe('stateless-discovery');
-    expect(() => resolveMcpProtocolAdapter(adapter.version)).toThrow(
-      UnsupportedMcpProtocolVersionError
+    expect(resolveMcpProtocolAdapter(adapter.version).lifecycle).toBe(
+      'stateless-discovery'
     );
     expect(adapter.createDiscoveryRequest(clientInfo)).toEqual({
       method: 'server/discover',
@@ -187,8 +184,8 @@ describe('staged MCP 2026-07-28 stateless adapter (#492)', () => {
       ).toThrow(Mcp2026InvalidDiscoveryError);
     }
     // Even a plausible serverInfo version cannot bypass the production gate.
-    expect(() => resolveMcpProtocolAdapter(adapter.version)).toThrow(
-      UnsupportedMcpProtocolVersionError
+    expect(resolveMcpProtocolAdapter(adapter.version).lifecycle).toBe(
+      'stateless-discovery'
     );
   });
 
@@ -423,8 +420,8 @@ describe('staged MCP 2026-07-28 stateless adapter (#492)', () => {
     expect(oldRequests[0]?.session).toBe('persisted-2025-session');
     expect(oldRequests[1]?.session).toBe('negotiated-2025-session');
     expect(oldRequests.every((r) => r.meta === undefined)).toBe(true);
-    expect(() => resolveMcpProtocolAdapter('2026-07-28')).toThrow(
-      UnsupportedMcpProtocolVersionError
+    expect(resolveMcpProtocolAdapter('2026-07-28').lifecycle).toBe(
+      'stateless-discovery'
     );
   });
 

@@ -87,7 +87,7 @@ that was not recorded.
 | 0005 | [KiCad Version Support Policy](0005-kicad-version-support-policy.md)                           | Accepted |
 | 0006 | [VS Code Web Compatibility](0006-vscode-web-compatibility.md)                                  | Accepted |
 | 0007 | [Agent Onboarding and MCP Config Pack](0007-agent-onboarding-config-pack.md)                   | Accepted |
-| 0008 | [MCP 2026-07-28 Protocol Upgrade](0008-mcp-2026-07-28-protocol-upgrade.md)                     | Proposed |
+| 0008 | [MCP 2026-07-28 Protocol Upgrade](0008-mcp-2026-07-28-protocol-upgrade.md)                     | Accepted |
 | 0009 | [Split kicad-mcp-pro into Separate Repo](0009-split-kicad-mcp-pro-into-separate-repository.md) | Accepted |
 | 0010 | [Source-Available and Commercial Licensing](0010-source-available-commercial-licensing.md)     | Accepted |
 

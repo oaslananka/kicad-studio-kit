@@ -324,6 +324,8 @@ jobs:
       - name: Run real-pair compatibility tests
         env:
           REAL_SERVER_ARTIFACT_DIR: apps/vscode-extension/test-results/real-server
+          REAL_SERVER_PYPI_VERSION: 4.3.0
+          REAL_SERVER_TEST_OPERATING_MODE: write
         run: corepack pnpm --filter kicadstudiokit run test:integration:real
       - name: Run real-pair extension host test
         env:
