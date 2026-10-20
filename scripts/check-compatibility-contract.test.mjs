@@ -321,6 +321,13 @@ test("#492 rejects selecting the target protocol while final evidence is incompl
   activated.mcp.protocolVersion = activated.mcp.nextProtocolVersion;
   delete activated.mcp.nextProtocolVersion;
   activated.mcp.activation.state = "active";
+  // Deliberately simulate an unreviewed activation record: the current
+  // blocked record now contains factual published-artifact evidence.
+  activated.mcp.activation.pythonSdk = null;
+  activated.mcp.activation.protocolSchemas = null;
+  activated.mcp.activation.serverArtifact = null;
+  activated.mcp.activation.extensionAdapter = null;
+  activated.mcp.activation.realPair = null;
 
   assert.match(
     validateMcpProtocolActivation({
@@ -332,6 +339,31 @@ test("#492 rejects selecting the target protocol while final evidence is incompl
       adrIndexSource: "| 0008 | MCP | Proposed |",
     }).join("\n"),
     /finalSpecification|pythonSdk|protocolSchemas|serverArtifact|extensionAdapter|realPair/u,
+  );
+});
+
+test("#777 recorded artifact evidence does not itself approve production activation", () => {
+  const prematurelyActivated = structuredClone(compatibility);
+  prematurelyActivated.mcp.protocolVersion = "2026-07-28";
+  delete prematurelyActivated.mcp.nextProtocolVersion;
+  prematurelyActivated.mcp.activation.state = "active";
+
+  const errors = validateMcpProtocolActivation({
+    compatibility: prematurelyActivated,
+    repoRoot: process.cwd(),
+    registrySource: fs.readFileSync(
+      "apps/vscode-extension/src/mcp/protocol/protocolAdapterRegistry.ts",
+      "utf8",
+    ),
+  }).join("\n");
+  assert.match(errors, /ADR 0008 must be Accepted/u);
+  assert.match(
+    errors,
+    /supported-adapter registry must select the active target/u,
+  );
+  assert.doesNotMatch(
+    errors,
+    /pythonSdk|protocolSchemas|serverArtifact|realPair/u,
   );
 });
 

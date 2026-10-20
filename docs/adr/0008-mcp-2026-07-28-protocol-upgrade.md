@@ -8,13 +8,13 @@ Last reviewed: 2026-10-20
 
 ## Context
 
-The active MCP protocol for KiCad Studio and the current KiCad MCP Pro GA
-surface remains `2025-11-25`. The final breaking `2026-07-28` specification
-was published on July 28, 2026, and the Python MCP SDK 2.x stable line supports
-that revision. Current published KiCad MCP Pro documentation still describes
-the `2025-11-25` initialize/session-era wire contract, so final protocol
-availability does not authorize KiCad Studio production activation by itself.
-
+The active MCP protocol **in KiCad Studio** remains `2025-11-25`, and
+`2026-07-28` remains blocked for its production adapter. KiCad MCP Pro itself
+now publishes a final `2026-07-28` server contract using Python MCP SDK v2;
+legacy `2025-11-25` initialize/session traffic remains supported by the server.
+The Studio extension has validated the final protocol against signed published
+artifacts, but publication and server availability do not automatically authorize
+a breaking Studio client activation.
 References:
 
 - <https://modelcontextprotocol.io/specification/2026-07-28>
@@ -38,27 +38,28 @@ No local MCP server or protocol-schema source package exists in this
 repository. Upgrade instructions must therefore assign work to the owning
 repository or published artifact rather than to removed local paths.
 
-## 2026-10-20 published-schema checkpoint (production still blocked)
+## 2026-10-20 published-artifact acceptance checkpoint (Studio still blocked)
 
-The published `@oaslananka/kicad-protocol-schemas@2.0.0` artifact was
-released on 2026-10-05T04:22:46Z, so the unchanged
-`minimumReleaseAge: 10080` policy is satisfied. The Studio consumer
-upgrade is tracked under [#777](https://github.com/oaslananka/kicad-studio-kit/issues/777);
-the package now includes a source-reviewed `tool-effect-manifest` schema.
-The Studio schema contract verifies its published validation API and rejects
-malformed source identities, unexpected fields, and unsupported effects.
+The published `@oaslananka/kicad-protocol-schemas@2.0.0` artifact satisfies
+the original `minimumReleaseAge: 10080` policy and is already consumed in the
+Studio root and extension manifests. The published PyPI server `4.3.0` uses
+stable Python SDK v2 and advertises the final MCP 2026 revision, independently
+from the retained historical strict RC conformance selector.
 
-Using the actual compiled Studio protocol adapter and published
-`kicad-mcp-pro==4.3.0`, an isolated real-pair canary verified
-`2026-07-28` stateless and `2025-11-25` session peers, each with 24 tools
-and a successful read-only tool call. A separate 2026 artifact canary
-confirmed stateless private-cache responses. These are **source and
-published-package evidence**, not authorization to enable the 2026 adapter.
+Source-reviewed [activation readiness evidence](../evidence/mcp-2026-07-28/2026-10-20-activation-readiness.md)
+records the final on-wire Studio adapter tests, both 2026 server modes, the
+legacy 2025 session lane, Extension Host acceptance, fail-closed error/MRTR,
+publisher/signature verification, rollback isolation, and 10/10 exact-merge
+CI on [PR #813](https://github.com/oaslananka/kicad-studio-kit/pull/813).
 
-The adapter registry, `compatibility.yaml` production protocol, and this
-ADR's status remain unchanged. Full source-reviewed negative contracts,
-Extension Host acceptance, final schema/server attestation, rollback and
-exact-merge gates are still required before activation or publication.
+**Remaining blockers:** The production Studio adapter registry still selects
+only 2025, while the advertised server compatibility range still allows
+pre-final servers (`>=3.5.2`). Those two contracts must be updated together,
+verified against an actual Studio application lifecycle, and supported by a
+versioned rollback and protected release decision before accepting this ADR.
+The source evidence fields in `compatibility.yaml` are populated for audit,
+**not for activation**; its protocol `active` stays 2025 and `activation.state`
+stays `blocked`. No VSIX or Marketplace release is authorized here.
 
 ## Current ownership audit
 
@@ -67,7 +68,7 @@ exact-merge gates are still required before activation or publication.
 | Active MCP protocol                        | `2025-11-25`                             | Both repositories' compatibility metadata                            |
 | Tracked next protocol                      | `2026-07-28`                             | This repository's `compatibility.yaml` and the KiCad MCP Pro roadmap |
 | Extension protocol adapter                 | `2025-11-25` initialize/session behavior | This repository, `apps/vscode-extension/src/mcp/`                    |
-| Server protocol implementation             | `2025-11-25` GA; final target pending       | KiCad MCP Pro                                                        |
+| Server protocol implementation             | `2025-11-25` GA; final target pending    | KiCad MCP Pro                                                        |
 | Protocol schemas consumed by the extension | `@oaslananka/kicad-protocol-schemas`     | Published npm artifact                                               |
 | Protocol schema source and publishing      | Current published schema package         | KiCad MCP Pro                                                        |
 | Extension compatibility range              | `products.kicad-studio.compatibleMcpPro` | This repository's `compatibility.yaml`                               |

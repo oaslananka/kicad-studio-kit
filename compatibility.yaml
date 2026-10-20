@@ -695,16 +695,28 @@ mcp:
   activation:
     targetProtocolVersion: "2026-07-28"
     state: "blocked"
-    reviewed: "2026-09-04"
-    evidenceNote: "docs/evidence/mcp-2026-07-28/2026-09-04-review.md"
+    reviewed: "2026-10-20"
+    evidenceNote: "docs/evidence/mcp-2026-07-28/2026-10-20-activation-readiness.md"
     finalSpecification:
       version: "2026-07-28"
       source: "https://modelcontextprotocol.io/specification/2026-07-28"
-    pythonSdk: null
-    protocolSchemas: null
-    serverArtifact: null
-    extensionAdapter: null
-    realPair: null
+    pythonSdk:
+      package: "mcp"
+      version: "2.2.0"
+      source: "https://pypi.org/project/mcp/2.2.0/"
+    protocolSchemas:
+      package: "@oaslananka/kicad-protocol-schemas"
+      version: "2.0.0"
+      source: "https://www.npmjs.com/package/@oaslananka/kicad-protocol-schemas/v/2.0.0"
+    serverArtifact:
+      package: "kicad-mcp-pro"
+      version: "4.3.0"
+      protocolVersion: "2026-07-28"
+      source: "https://pypi.org/project/kicad-mcp-pro/4.3.0/"
+    extensionAdapter:
+      path: "apps/vscode-extension/src/mcp/protocol/mcp2026ProtocolAdapter.ts"
+    realPair:
+      evidence: "docs/evidence/mcp-2026-07-28/2026-10-20-activation-readiness.md"
     adr:
       path: "docs/adr/0008-mcp-2026-07-28-protocol-upgrade.md"
       status: "Proposed"
