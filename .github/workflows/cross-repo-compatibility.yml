@@ -137,13 +137,62 @@ jobs:
 
       - name: Verify published PyPI files and source-tag attestations
         env:
-          KICAD_MCP_PUBLISHER_OWNER: oaslananka
-          KICAD_MCP_PUBLISHER_REPO: kicad-mcp-pro
           KICAD_MCP_PRO_VERSION: ${{ steps.pypi-check.outputs.pypi_version }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          python3 -m unittest -q scripts/check_published_mcp_attestation_test.py
-          python3 scripts/check-published-mcp-attestation.py "$KICAD_MCP_PRO_VERSION"
+          set -euo pipefail
+          version="$KICAD_MCP_PRO_VERSION"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          owner=oaslananka
+          repository=kicad-mcp-pro
+          source_repo="$owner/$repository"
+          tag="mcp-server-v$version"
+          tag_ref="$(gh api "repos/$source_repo/git/ref/tags/$tag")"
+          [ "$(jq -r '.object.type' <<< "$tag_ref")" = commit ]
+          source_sha="$(jq -r '.object.sha' <<< "$tag_ref")"
+          [[ "$source_sha" =~ ^[a-f0-9]{40}$ ]]
+
+          scratch="$(mktemp -d)"
+          trap 'rm -rf "$scratch"' EXIT
+          curl -fsSL "https://pypi.org/pypi/kicad-mcp-pro/$version/json" -o "$scratch/metadata.json"
+          wheel="kicad_mcp_pro-$version-py3-none-any.whl"
+          sdist="kicad_mcp_pro-$version.tar.gz"
+          jq -e --arg wheel "$wheel" --arg sdist "$sdist" \
+            '([.urls[].filename] | sort) == ([$wheel, $sdist] | sort)' "$scratch/metadata.json" >/dev/null
+
+          for name in "$wheel" "$sdist"; do
+            url="$(jq -er --arg name "$name" '.urls[] | select(.filename == $name) | .url' "$scratch/metadata.json")"
+            digest="$(jq -er --arg name "$name" '.urls[] | select(.filename == $name) | .digests.sha256' "$scratch/metadata.json")"
+            [[ "$url" == https://files.pythonhosted.org/* && "${url##*/}" == "$name" ]]
+            [[ "$digest" =~ ^[a-f0-9]{64}$ ]]
+            curl -fsSL "$url" -o "$scratch/$name"
+            echo "$digest  $scratch/$name" | sha256sum --check --status
+
+            curl -fsSL "https://pypi.org/integrity/kicad-mcp-pro/$version/$name/provenance" \
+              -o "$scratch/provenance.json"
+            jq -e --arg repository "$source_repo" '
+              (.attestation_bundles | length > 0) and
+              all(.attestation_bundles[];
+                .publisher.kind == "GitHub" and .publisher.repository == $repository and
+                .publisher.workflow == "publish-python.yml" and .publisher.environment == "pypi" and
+                (.attestations | length > 0))
+            ' "$scratch/provenance.json" >/dev/null
+            uvx --from pypi-attestations==0.0.30 pypi-attestations verify pypi \
+              --repository "https://github.com/$source_repo" "$url"
+          done
+
+          mkdir "$scratch/release"
+          gh release download "$tag" --repo "$source_repo" --dir "$scratch/release" \
+            --pattern "$wheel" --pattern "$sdist"
+          for name in "$wheel" "$sdist"; do
+            cmp "$scratch/$name" "$scratch/release/$name"
+            gh attestation verify "$scratch/$name" --repo "$source_repo" \
+              --predicate-type https://cyclonedx.org/bom \
+              --signer-workflow "$source_repo/.github/workflows/publish-python.yml" \
+              --source-ref "refs/tags/$tag" --source-digest "$source_sha" \
+              --format json >/dev/null
+            echo "Verified published $name against signed $tag@$source_sha"
+          done
 
       - name: Canary published MCP 2026 RC artifact
         env:
