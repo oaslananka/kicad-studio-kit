@@ -34,12 +34,12 @@ describe('i18n', () => {
       expect(localize('restart')).toBe('Restart');
     });
 
-    it('uses Turkish messages when the locale is tr', () => {
+    it('keeps English messages when the editor locale is different', () => {
       const { localize } = loadI18n('{"locale":"tr"}');
-      expect(localize('restart')).toBe('Yeniden Başlat');
+      expect(localize('restart')).toBe('Restart');
     });
 
-    it('falls back to English for a locale without translations', () => {
+    it('returns English for every unsupported locale', () => {
       const { localize } = loadI18n('{"locale":"de"}');
       expect(localize('restart')).toBe('Restart');
     });
@@ -77,9 +77,9 @@ describe('i18n', () => {
       ).toBe('FAIL - 2 errors, 1 warnings');
     });
 
-    it('interpolates into a Turkish message', () => {
+    it('interpolates into the English message regardless of the locale', () => {
       const { localize } = loadI18n('{"locale":"tr"}');
-      expect(localize('runValidation', { label: 'DRC' })).toBe('DRC çalıştır');
+      expect(localize('runValidation', { label: 'DRC' })).toBe('Run DRC');
     });
   });
 });

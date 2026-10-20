@@ -1,5 +1,14 @@
 # Contributing
 
+## English-only project language
+
+All first-party UI labels, messages, webviews, help text, documentation, and
+release notes must be in English. Do not add translation catalogs or localized
+message dictionaries. Keep the canonical VS Code manifest strings in
+`apps/vscode-extension/package.nls.json`; `check:nls-parity` prevents additional
+locale catalogs. Respect Unicode in user-supplied project paths, filenames,
+and design data; this does not change the extension's English-only UI.
+
 Use the canonical repository at https://github.com/oaslananka/kicad-studio-kit.
 
 Before opening a pull request, run:

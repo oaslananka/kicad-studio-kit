@@ -47,11 +47,10 @@ applied to every stable promotion. The preview channel described in the
   [Performance Baselines](/performance-baselines).
 - `pnpm test:perf` passes and fails closed on regression.
 
-### 5. Internationalization complete
+### 5. English-only interface
 
-- `pnpm run check:nls-parity` passes: en/tr key parity holds and no new
-  user-facing string is left untranslated.
-- The supported GA locale set (English + Turkish) is documented and current.
+- `pnpm run check:nls-parity` validates the English source catalog and rejects additional locale files.
+- Extension and webview text remain English regardless of the editor locale.
 
 ### 6. Security and privacy posture
 

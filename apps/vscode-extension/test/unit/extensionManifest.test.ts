@@ -94,7 +94,7 @@ describe('extensionManifest', () => {
   });
 
   it('does not repeat the KiCad Studio category in BoardReadyOps review labels', () => {
-    for (const file of ['package.nls.json', 'package.nls.tr.json']) {
+    for (const file of ['package.nls.json']) {
       const nls = JSON.parse(
         fs.readFileSync(path.resolve(__dirname, '..', '..', file), 'utf8')
       ) as Record<string, string>;
@@ -144,7 +144,7 @@ describe('extensionManifest', () => {
       'onCommand:kicadstudio.runERC'
     ]);
     const base = path.resolve(__dirname, '..', '..');
-    for (const language of ['package.nls.json', 'package.nls.tr.json']) {
+    for (const language of ['package.nls.json']) {
       const strings = JSON.parse(
         fs.readFileSync(path.join(base, language), 'utf8')
       ) as Record<string, string>;
@@ -163,9 +163,7 @@ describe('extensionManifest', () => {
       const optionalSteps = steps.slice(5);
       for (let index = 0; index < optionalSteps.length; index++) {
         const titleKey = `kicadstudio.contributes.walkthroughs.0.steps.${index + 5}.title`;
-        expect(strings[titleKey]).toMatch(
-          language.endsWith('.tr.json') ? /^İsteğe bağlı:/u : /^Optional:/u
-        );
+        expect(strings[titleKey]).toMatch(/^Optional:/u);
       }
     }
   });

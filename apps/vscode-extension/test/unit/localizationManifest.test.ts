@@ -131,7 +131,7 @@ describe('extension localization manifest', () => {
   });
 
   it('renders welcome actions on separate lines without escaped literal newlines', () => {
-    for (const filename of ['package.nls.json', 'package.nls.tr.json']) {
+    for (const filename of ['package.nls.json']) {
       const messages = readJson<Record<string, string>>(
         path.join(EXTENSION_ROOT, filename)
       );
