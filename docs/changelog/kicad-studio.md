@@ -16,6 +16,14 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.0.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.0.0...vscode-extension-v2.0.1) (2026-10-20)
+
+
+### Bug Fixes
+
+* **kicad-studio:** detect installed MCP CLI and separate sidebar actions ([#821](https://github.com/oaslananka/kicad-studio-kit/issues/821)) ([92299a7](https://github.com/oaslananka/kicad-studio-kit/commit/92299a7745093a22007f171af0ca427fc717e7f8))
+* **kicad-studio:** enforce English-only extension UI ([#824](https://github.com/oaslananka/kicad-studio-kit/issues/824)) ([48a16d6](https://github.com/oaslananka/kicad-studio-kit/commit/48a16d62683118083de93f57e7bf5db486d8e6e1))
+
 ## [2.0.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.17.1...vscode-extension-v2.0.0) (2026-10-20)
 
 
