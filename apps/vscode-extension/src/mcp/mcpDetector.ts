@@ -130,16 +130,10 @@ async function detectCompatiblePythonRuntime(): Promise<
 
 export class McpDetector {
   async detectKicadMcpPro(): Promise<McpInstallStatus> {
-    const uvxResult = await this.tryUvx();
-    if (uvxResult.found) {
-      return {
-        found: true,
-        command: 'uvx',
-        version: uvxResult.version,
-        source: 'uvx'
-      };
-    }
-
+    // The actual installed executable is the most authoritative source. The
+    // CLI exposes `version`, not `--version` (the latter exits with code 2).
+    // Do not run uvx during detection: it can fetch a package from the network
+    // and make an absent installation appear to be installed.
     const binaryResult = await this.tryBinary();
     if (binaryResult.found) {
       return {
@@ -147,6 +141,16 @@ export class McpDetector {
         command: 'kicad-mcp-pro',
         version: binaryResult.version,
         source: 'global'
+      };
+    }
+
+    const uvToolResult = await this.tryUvTool();
+    if (uvToolResult.found) {
+      return {
+        found: true,
+        command: 'uvx',
+        version: uvToolResult.version,
+        source: 'uvx'
       };
     }
 
@@ -167,16 +171,6 @@ export class McpDetector {
         command: 'pipx',
         version: pipxResult.version,
         source: 'pipx'
-      };
-    }
-
-    const inspectorResult = await this.tryInspector();
-    if (inspectorResult.found) {
-      return {
-        found: true,
-        command: 'npx',
-        version: inspectorResult.version,
-        source: 'inspector'
       };
     }
 
@@ -423,20 +417,21 @@ export class McpDetector {
     return candidates;
   }
 
-  private async tryUvx(): Promise<{ found: boolean; version?: string }> {
-    const result = await run('uvx', ['kicad-mcp-pro', '--version']);
+  private async tryUvTool(): Promise<{ found: boolean; version?: string }> {
+    // `uv tool list` is a local metadata read; `uvx kicad-mcp-pro` can
+    // download packages and is not evidence of an existing installation.
+    const result = await run('uv', ['tool', 'list']);
     if (!result.ok) {
       return { found: false };
     }
-    const version = extractVersion(result.output);
-    return {
-      found: true,
-      ...(version ? { version } : {})
-    };
+    const match = result.output.match(
+      /^kicad-mcp-pro\s+v(\d+\.\d+\.\d+)(?:\s|$)/im
+    );
+    return match?.[1] ? { found: true, version: match[1] } : { found: false };
   }
 
   private async tryBinary(): Promise<{ found: boolean; version?: string }> {
-    const result = await run('kicad-mcp-pro', ['--version']);
+    const result = await run('kicad-mcp-pro', ['version']);
     if (!result.ok) {
       return { found: false };
     }
@@ -477,22 +472,6 @@ export class McpDetector {
     const version = result.output.match(
       /kicad-mcp-pro[^0-9]*(\d+\.\d+(?:\.\d+)?)/i
     )?.[1];
-    return {
-      found: true,
-      ...(version ? { version } : {})
-    };
-  }
-
-  private async tryInspector(): Promise<{ found: boolean; version?: string }> {
-    const result = await run('npx', [
-      '--yes',
-      '@modelcontextprotocol/inspector',
-      '--version'
-    ]);
-    if (!result.ok) {
-      return { found: false };
-    }
-    const version = extractVersion(result.output);
     return {
       found: true,
       ...(version ? { version } : {})

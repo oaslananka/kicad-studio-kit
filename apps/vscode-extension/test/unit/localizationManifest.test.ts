@@ -130,6 +130,48 @@ describe('extension localization manifest', () => {
     }
   });
 
+  it('renders welcome actions on separate lines without escaped literal newlines', () => {
+    for (const filename of ['package.nls.json', 'package.nls.tr.json']) {
+      const messages = readJson<Record<string, string>>(
+        path.join(EXTENSION_ROOT, filename)
+      );
+      for (const [key, value] of Object.entries(messages)) {
+        if (
+          !/^kicadstudio\.contributes\.viewsWelcome\.\d+\.contents$/u.test(key)
+        ) {
+          continue;
+        }
+        expect({
+          filename,
+          key,
+          hasLiteralNewline: value.includes('\\n')
+        }).toEqual({
+          filename,
+          key,
+          hasLiteralNewline: false
+        });
+        const lines = value.split('\n');
+        for (let i = 1; i < lines.length; i += 1) {
+          const previousIsAction = /^\[[^\]]+\]\(command:[^)]+\)$/u.test(
+            lines[i - 1] ?? ''
+          );
+          const currentIsAction = /^\[[^\]]+\]\(command:[^)]+\)$/u.test(
+            lines[i] ?? ''
+          );
+          expect({
+            filename,
+            key,
+            adjacentActions: previousIsAction && currentIsAction
+          }).toEqual({
+            filename,
+            key,
+            adjacentActions: false
+          });
+        }
+      }
+    }
+  });
+
   it('keeps package contribution labels and descriptions behind localization keys', () => {
     const packageJson = readJson<{ contributes?: JsonObject }>(
       PACKAGE_JSON_PATH

@@ -181,6 +181,46 @@ describe('McpToolsProvider', () => {
     ).toBe('3');
   });
 
+  it('distinguishes an outdated installed MCP from an absent or stopped server', () => {
+    const outdated = providerForState({
+      kind: 'Disconnected',
+      available: true,
+      connected: false,
+      install: {
+        found: true,
+        command: 'kicad-mcp-pro',
+        version: '3.22.0',
+        source: 'global'
+      }
+    });
+    expect(labels(outdated.getChildren())).toContain('MCP Update Required');
+    expect(
+      stateLabelFor({
+        kind: 'Disconnected',
+        available: true,
+        connected: false,
+        install: { found: true, version: '3.22.0', source: 'global' }
+      })
+    ).toBe('Installed but update required');
+    expect(
+      outdated.getTreeItem(child(outdated.getChildren(), 'MCP Update Required'))
+        .description
+    ).toBe('3.22.0');
+    const current = providerForState({
+      kind: 'Disconnected',
+      available: true,
+      connected: false,
+      install: { found: true, version: '4.3.0', source: 'global' }
+    });
+    expect(labels(current.getChildren())).toContain('MCP Disconnected');
+    const absent = providerForState({
+      kind: 'NotInstalled',
+      available: false,
+      connected: false
+    });
+    expect(labels(absent.getChildren())).toContain('MCP Not Installed');
+  });
+
   it('renders disconnected, remote-blocked, timeout, and protocol failure dashboard states', () => {
     expect(
       stateLabelFor({
