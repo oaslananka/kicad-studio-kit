@@ -134,33 +134,8 @@ describe('McpDetector.generateMcpJson', () => {
     expect(saved.servers.kicad.args).toEqual([]);
   });
 
-  it('prefers uvx during install detection when it is available', async () => {
-    execFileMock.mockImplementation(
-      (
-        command: string,
-        _args: string[],
-        _opts: unknown,
-        callback: (err: Error | null, stdout: string, stderr: string) => void
-      ) => {
-        if (command === 'uvx') {
-          callback(null, 'kicad-mcp-pro 0.8.0', '');
-        } else {
-          callback(new Error('missing'), '', 'missing');
-        }
-      }
-    );
-
-    const result = await new McpDetector().detectKicadMcpPro();
-
-    expect(result).toEqual({
-      found: true,
-      command: 'uvx',
-      version: '0.8.0',
-      source: 'uvx'
-    });
-  });
-
-  it('falls back to a global binary and then pip metadata', async () => {
+  it('detects a locally installed uv tool without invoking uvx or downloading', async () => {
+    const invoked: string[] = [];
     execFileMock.mockImplementation(
       (
         command: string,
@@ -168,8 +143,42 @@ describe('McpDetector.generateMcpJson', () => {
         _opts: unknown,
         callback: (err: Error | null, stdout: string, stderr: string) => void
       ) => {
-        if (command === 'kicad-mcp-pro') {
-          callback(null, 'kicad-mcp-pro 0.9.1', '');
+        invoked.push(`${command} ${args.join(' ')}`);
+        if (command === 'uv' && args.join(' ') === 'tool list') {
+          callback(null, 'kicad-mcp-pro v4.3.0\n- kicad-mcp-pro\n', '');
+        } else {
+          callback(new Error('missing'), '', 'missing');
+        }
+      }
+    );
+
+    const result = await new McpDetector().detectKicadMcpPro();
+    expect(result).toEqual({
+      found: true,
+      command: 'uvx',
+      version: '4.3.0',
+      source: 'uvx'
+    });
+    expect(invoked[0]).toBe('kicad-mcp-pro version');
+    expect(invoked).toContain(
+      `${path.join(os.homedir(), '.local', 'bin', process.platform === 'win32' ? 'kicad-mcp-pro.exe' : 'kicad-mcp-pro')} version`
+    );
+    // Windows may probe an extra APPDATA script location before uv metadata.
+    expect(invoked.at(-1)).toBe('uv tool list');
+    expect(invoked).not.toContain('kicad-mcp-pro --version');
+    expect(invoked.some((item) => item.startsWith('uvx '))).toBe(false);
+  });
+
+  it('prefers the real CLI version subcommand over uv/pip metadata', async () => {
+    execFileMock.mockImplementation(
+      (
+        command: string,
+        args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string, stderr: string) => void
+      ) => {
+        if (command === 'kicad-mcp-pro' && args[0] === 'version') {
+          callback(null, '4.3.0', '');
         } else {
           callback(new Error('missing'), '', 'missing');
         }
@@ -180,6 +189,59 @@ describe('McpDetector.generateMcpJson', () => {
 
     expect(result.command).toBe('kicad-mcp-pro');
     expect(result.source).toBe('global');
+    expect(result.version).toBe('4.3.0');
+  });
+
+  it('detects an installed CLI outside a GUI-restricted PATH without uvx', async () => {
+    const binary = path.join(
+      os.homedir(),
+      '.local',
+      'bin',
+      process.platform === 'win32' ? 'kicad-mcp-pro.exe' : 'kicad-mcp-pro'
+    );
+    const invoked: string[] = [];
+    execFileMock.mockImplementation(
+      (
+        command: string,
+        args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string, stderr: string) => void
+      ) => {
+        invoked.push(`${command} ${args.join(' ')}`);
+        if (command === binary && args.join(' ') === 'version') {
+          callback(null, '4.3.0\n', '');
+        } else {
+          callback(new Error('ENOENT: restricted GUI PATH'), '', '');
+        }
+      }
+    );
+    expect(await new McpDetector().detectKicadMcpPro()).toEqual({
+      found: true,
+      command: 'kicad-mcp-pro',
+      executablePath: binary,
+      version: '4.3.0',
+      source: 'global'
+    });
+    expect(invoked).toEqual(['kicad-mcp-pro version', `${binary} version`]);
+    expect(invoked).not.toContain('uv tool list');
+  });
+
+  it('persists an absolute local CLI in stdio MCP configuration', async () => {
+    const binary = path.join(os.homedir(), '.local', 'bin', 'kicad-mcp-pro');
+    await new McpDetector().generateMcpJson(tempDir, {
+      found: true,
+      command: 'kicad-mcp-pro',
+      executablePath: binary,
+      version: '4.3.0',
+      source: 'global'
+    });
+    const json = JSON.parse(
+      fs.readFileSync(path.join(tempDir, '.vscode', 'mcp.json'), 'utf8')
+    ) as {
+      servers: { kicad: { command: string; args: string[] } };
+    };
+    expect(json.servers.kicad.command).toBe(binary);
+    expect(json.servers.kicad.args).toEqual([]);
   });
 
   it('uses pip metadata when no direct executable is available', async () => {
@@ -205,6 +267,16 @@ describe('McpDetector.generateMcpJson', () => {
       command: 'kicad-mcp-pro',
       version: '0.7.4',
       source: 'pip'
+    });
+  });
+
+  it('does not accept unrelated or malformed uv tool names as KiCad MCP', async () => {
+    mockExecResponses({
+      'uv tool': 'kicad-mcp-pro-helper v4.3.0\n- kicad-mcp-pro-helper\n'
+    });
+    expect(await new McpDetector().detectKicadMcpPro()).toEqual({
+      found: false,
+      source: 'none'
     });
   });
 
@@ -249,7 +321,7 @@ describe('McpDetector.generateMcpJson', () => {
     });
   });
 
-  it('does not use mutable Docker image tags as an install fallback', async () => {
+  it('does not use mutable Docker images or network-fetched inspector as installed MCP', async () => {
     execFileMock.mockImplementation(
       (
         command: string,
@@ -280,16 +352,10 @@ describe('McpDetector.generateMcpJson', () => {
 
     const result = await new McpDetector().detectKicadMcpPro();
 
-    expect(result).toEqual(
-      expect.objectContaining({
-        found: true,
-        command: 'npx',
-        source: 'inspector'
-      })
-    );
+    expect(result).toEqual({ found: false, source: 'none' });
   });
 
-  it('detects MCP inspector availability as setup guidance', async () => {
+  it('does not treat the unrelated MCP Inspector as an installed KiCad server', async () => {
     execFileMock.mockImplementation(
       (
         command: string,
@@ -310,13 +376,7 @@ describe('McpDetector.generateMcpJson', () => {
 
     const result = await new McpDetector().detectKicadMcpPro();
 
-    expect(result).toEqual(
-      expect.objectContaining({
-        found: true,
-        command: 'npx',
-        source: 'inspector'
-      })
-    );
+    expect(result).toEqual({ found: false, source: 'none' });
   });
 
   it('#620 discovers installer candidates in uv, pipx, then pip order', async () => {
@@ -574,6 +634,24 @@ describe('McpDetector.generateHttpConfig', () => {
     expect((mcp.servers['kicad'] as { type: string })?.type).toBe('http');
   });
 
+  it('launches the detected absolute CLI in a GUI-restricted PATH', () => {
+    const binary = path.join(os.homedir(), '.local', 'bin', 'kicad-mcp-pro');
+    const { command, args } = new McpDetector().buildHttpTaskArgs(
+      {
+        found: true,
+        command: 'kicad-mcp-pro',
+        executablePath: binary,
+        version: '4.3.0',
+        source: 'global'
+      },
+      'review',
+      27185,
+      tempDir
+    );
+    expect(command).toBe(binary);
+    expect(args).toEqual(['--transport', 'http', '--port', '27185']);
+  });
+
   it('buildHttpTaskArgs returns global binary args for pip installs', () => {
     const detector = new McpDetector();
     const { command, args } = detector.buildHttpTaskArgs(
@@ -605,6 +683,34 @@ describe('McpDetector.runDoctor', () => {
 
   afterEach(() => {
     fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('runs doctor via the detected absolute CLI without shell PATH lookup', async () => {
+    const binary = path.join(os.homedir(), '.local', 'bin', 'kicad-mcp-pro');
+    execFileMock.mockImplementation(
+      (
+        command: string,
+        args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string, stderr: string) => void
+      ) => {
+        expect(command).toBe(binary);
+        expect(args).toEqual(['doctor', '--json']);
+        callback(
+          null,
+          JSON.stringify({ status: 'degraded', recent_errors: [] }),
+          ''
+        );
+      }
+    );
+    const result = await new McpDetector().runDoctor({
+      found: true,
+      command: 'kicad-mcp-pro',
+      executablePath: binary,
+      version: '4.3.0',
+      source: 'global'
+    });
+    expect(result).toMatchObject({ ok: true, status: 'degraded' });
   });
 
   it('calls kicad-mcp-pro doctor JSON through uvx with the active project directory', async () => {

@@ -56,7 +56,9 @@ export async function createKicadMcpServerDefinition(
 
   return createMcpStdioServerDefinition({
     label: KICAD_MCP_SERVER_LABEL,
-    command: install.command === 'uvx' ? 'uvx' : 'kicad-mcp-pro',
+    command:
+      install.executablePath ??
+      (install.command === 'uvx' ? 'uvx' : 'kicad-mcp-pro'),
     args: install.command === 'uvx' ? ['kicad-mcp-pro'] : [],
     cwd: vscode.Uri.file(workspaceRoot),
     env: {

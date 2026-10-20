@@ -1,4 +1,5 @@
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import { execFile } from 'node:child_process';
 import * as vscode from 'vscode';
@@ -130,23 +131,30 @@ async function detectCompatiblePythonRuntime(): Promise<
 
 export class McpDetector {
   async detectKicadMcpPro(): Promise<McpInstallStatus> {
-    const uvxResult = await this.tryUvx();
-    if (uvxResult.found) {
-      return {
-        found: true,
-        command: 'uvx',
-        version: uvxResult.version,
-        source: 'uvx'
-      };
-    }
-
+    // The actual installed executable is the most authoritative source. The
+    // CLI exposes `version`, not `--version` (the latter exits with code 2).
+    // Do not run uvx during detection: it can fetch a package from the network
+    // and make an absent installation appear to be installed.
     const binaryResult = await this.tryBinary();
     if (binaryResult.found) {
       return {
         found: true,
         command: 'kicad-mcp-pro',
         version: binaryResult.version,
-        source: 'global'
+        source: 'global',
+        ...(binaryResult.executablePath
+          ? { executablePath: binaryResult.executablePath }
+          : {})
+      };
+    }
+
+    const uvToolResult = await this.tryUvTool();
+    if (uvToolResult.found) {
+      return {
+        found: true,
+        command: 'uvx',
+        version: uvToolResult.version,
+        source: 'uvx'
       };
     }
 
@@ -167,16 +175,6 @@ export class McpDetector {
         command: 'pipx',
         version: pipxResult.version,
         source: 'pipx'
-      };
-    }
-
-    const inspectorResult = await this.tryInspector();
-    if (inspectorResult.found) {
-      return {
-        found: true,
-        command: 'npx',
-        version: inspectorResult.version,
-        source: 'inspector'
       };
     }
 
@@ -207,11 +205,12 @@ export class McpDetector {
     }
 
     const command =
-      status.command === 'uvx'
+      status.executablePath ??
+      (status.command === 'uvx'
         ? 'uvx'
         : status.command === 'npx'
           ? 'npx'
-          : 'kicad-mcp-pro';
+          : 'kicad-mcp-pro');
     const args =
       status.command === 'uvx'
         ? ['kicad-mcp-pro']
@@ -423,28 +422,52 @@ export class McpDetector {
     return candidates;
   }
 
-  private async tryUvx(): Promise<{ found: boolean; version?: string }> {
-    const result = await run('uvx', ['kicad-mcp-pro', '--version']);
+  private async tryUvTool(): Promise<{ found: boolean; version?: string }> {
+    // `uv tool list` is a local metadata read; `uvx kicad-mcp-pro` can
+    // download packages and is not evidence of an existing installation.
+    const result = await run('uv', ['tool', 'list']);
     if (!result.ok) {
       return { found: false };
     }
-    const version = extractVersion(result.output);
-    return {
-      found: true,
-      ...(version ? { version } : {})
-    };
+    const match = /^kicad-mcp-pro\s+v(\d+\.\d+\.\d+)(?:\s|$)/im.exec(
+      result.output
+    );
+    return match?.[1] ? { found: true, version: match[1] } : { found: false };
   }
 
-  private async tryBinary(): Promise<{ found: boolean; version?: string }> {
-    const result = await run('kicad-mcp-pro', ['--version']);
-    if (!result.ok) {
-      return { found: false };
+  private async tryBinary(): Promise<{
+    found: boolean;
+    version?: string;
+    executablePath?: string;
+  }> {
+    // GUI-launched VS Code commonly omits ~/.local/bin from PATH, even when
+    // uv/pipx installed the tool there. Probe the actual executable by an
+    // absolute path rather than misreporting a valid install as missing.
+    const name =
+      process.platform === 'win32' ? 'kicad-mcp-pro.exe' : 'kicad-mcp-pro';
+    const commands = [
+      'kicad-mcp-pro',
+      path.join(os.homedir(), '.local', 'bin', name),
+      ...(process.platform === 'win32' && process.env['APPDATA']
+        ? [path.join(process.env['APPDATA'], 'Python', 'Scripts', name)]
+        : [])
+    ];
+    for (const command of commands) {
+      const result = await run(command, ['version']);
+      if (!result.ok) {
+        continue;
+      }
+      const version = extractVersion(result.output);
+      if (!version) {
+        continue;
+      }
+      return {
+        found: true,
+        version,
+        ...(path.isAbsolute(command) ? { executablePath: command } : {})
+      };
     }
-    const version = extractVersion(result.output);
-    return {
-      found: true,
-      ...(version ? { version } : {})
-    };
+    return { found: false };
   }
 
   private async tryPip(): Promise<{ found: boolean; version?: string }> {
@@ -482,22 +505,6 @@ export class McpDetector {
       ...(version ? { version } : {})
     };
   }
-
-  private async tryInspector(): Promise<{ found: boolean; version?: string }> {
-    const result = await run('npx', [
-      '--yes',
-      '@modelcontextprotocol/inspector',
-      '--version'
-    ]);
-    if (!result.ok) {
-      return { found: false };
-    }
-    const version = extractVersion(result.output);
-    return {
-      found: true,
-      ...(version ? { version } : {})
-    };
-  }
 }
 
 function extractVersion(output: string): string | undefined {
@@ -509,6 +516,9 @@ function doctorInvocation(
 ): { command: string; args: string[] } | undefined {
   if (!status.found) {
     return undefined;
+  }
+  if (status.executablePath) {
+    return { command: status.executablePath, args: ['doctor', '--json'] };
   }
   if (status.command === 'uvx') {
     return { command: 'uvx', args: ['kicad-mcp-pro', 'doctor', '--json'] };
@@ -566,9 +576,9 @@ function buildHttpTaskArgs(
       args: ['kicad-mcp-pro', ...httpFlags]
     };
   }
-  // global binary / pip / pipx
+  // global binary / pip / pipx (including a user-local CLI outside GUI PATH)
   return {
-    command: 'kicad-mcp-pro',
+    command: status.executablePath ?? 'kicad-mcp-pro',
     args: [...httpFlags]
   };
 }

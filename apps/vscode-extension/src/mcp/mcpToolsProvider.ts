@@ -11,6 +11,7 @@ import type {
 import type { McpConnectionAdapter } from './mcpToolAdapter';
 import { readConfiguredMcpProfile } from '../commands/mcpProfilePicker';
 import { COMPATIBILITY_MATRIX } from './compatibilityMatrix';
+import { describeMcpCompatibility, getMcpCompatStatus } from './compat';
 import { discoverBoardReadyOpsContract } from '../boardreadyops/contract';
 
 type McpToolsNode = {
@@ -419,6 +420,16 @@ function dashboardStatus(
   return 'compatible';
 }
 
+function needsLocalMcpUpgrade(state: McpConnectionState): boolean {
+  const version = state.install?.version;
+  return Boolean(
+    !state.connected &&
+    state.install?.found &&
+    version &&
+    getMcpCompatStatus(version) === 'incompatible'
+  );
+}
+
 function dashboardStateLabel(
   state: McpConnectionState,
   status: DashboardStatus,
@@ -463,6 +474,9 @@ function dashboardStateLabel(
   }
   if (isAuthOrProtocolFailure(state.message)) {
     return 'Auth/protocol failure';
+  }
+  if (needsLocalMcpUpgrade(state)) {
+    return 'Installed but update required';
   }
   return state.available ? 'Installed but not running' : 'Disconnected';
 }
@@ -603,6 +617,22 @@ function stateNode(
           ? 'Connected through .vscode/mcp.json. HTTP-only Quality Gates and Fix Queue are unavailable in this transport.'
           : 'Connected to the configured HTTP endpoint.',
       icon: 'plug'
+    };
+  }
+  // An installed CLI can be present but older than the compatibility floor.
+  // Without a live server, distinguish that from a missing installation and
+  // from a compatible server which is merely not running.
+  const installVersion = state.install?.version;
+  if (installVersion && needsLocalMcpUpgrade(state)) {
+    return {
+      label: 'MCP Update Required',
+      description: installVersion,
+      tooltip: describeMcpCompatibility(installVersion),
+      icon: 'warning',
+      command: {
+        command: COMMANDS.openMcpUpgradeGuide,
+        title: 'Open MCP Upgrade Guide'
+      }
     };
   }
   if (state.kind === 'NotInstalled') {

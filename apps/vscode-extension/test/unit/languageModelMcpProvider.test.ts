@@ -36,6 +36,22 @@ describe('language model MCP server definition provider', () => {
     expect(definition.value.env['KICAD_MCP_OPERATING_MODE']).toBe('readonly');
   });
 
+  it('uses an absolute local executable for the MCP server definition', async () => {
+    const binary = '/home/local/.local/bin/kicad-mcp-pro';
+    const definition = (await createKicadMcpServerDefinition(
+      { detectKicadMcpPro: jest.fn() } as never,
+      {
+        found: true,
+        command: 'kicad-mcp-pro',
+        executablePath: binary,
+        version: '4.3.0',
+        source: 'global'
+      }
+    )) as { value: { command: string; args: string[] } };
+    expect(definition.value.command).toBe(binary);
+    expect(definition.value.args).toEqual([]);
+  });
+
   it('falls back to the VS Code 1.115 positional stdio constructor', async () => {
     const api = vscode as unknown as { McpStdioServerDefinition: unknown };
     const original = api.McpStdioServerDefinition;
