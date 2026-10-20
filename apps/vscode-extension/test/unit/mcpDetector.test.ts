@@ -159,11 +159,12 @@ describe('McpDetector.generateMcpJson', () => {
       version: '4.3.0',
       source: 'uvx'
     });
-    expect(invoked).toEqual([
-      'kicad-mcp-pro version',
-      `${path.join(os.homedir(), '.local', 'bin', process.platform === 'win32' ? 'kicad-mcp-pro.exe' : 'kicad-mcp-pro')} version`,
-      'uv tool list'
-    ]);
+    expect(invoked[0]).toBe('kicad-mcp-pro version');
+    expect(invoked).toContain(
+      `${path.join(os.homedir(), '.local', 'bin', process.platform === 'win32' ? 'kicad-mcp-pro.exe' : 'kicad-mcp-pro')} version`
+    );
+    // Windows may probe an extra APPDATA script location before uv metadata.
+    expect(invoked.at(-1)).toBe('uv tool list');
     expect(invoked).not.toContain('kicad-mcp-pro --version');
     expect(invoked.some((item) => item.startsWith('uvx '))).toBe(false);
   });
