@@ -2,6 +2,8 @@ import * as assert from 'node:assert/strict';
 import * as vscode from 'vscode';
 import { COMMANDS, EXTENSION_ID, SETTINGS } from '../../../src/constants';
 import { isMcpVersionSupported } from '../../../src/mcp/compat';
+import { McpClient } from '../../../src/mcp/mcpClient';
+import { Logger } from '../../../src/utils/logger';
 import type { QualityGateResult } from '../../../src/types';
 import { withPublishedStatelessServer, withRealServer } from './setup';
 import {
@@ -86,6 +88,63 @@ suite('Real Pair Extension Host', () => {
               }
             })
           });
+          // Full Studio client acceptance: the production connection/state and
+          // callTool implementation must also work with the final adapter,
+          // not merely the lower-level adapter/transport in this Host.
+          const stored = new Map<string, unknown>();
+          const clientContext = {
+            extension: { packageJSON: { version: '1.17.1' } },
+            globalState: {
+              get: <T>(key: string): T | undefined =>
+                stored.get(key) as T | undefined,
+              update: async (key: string, value: unknown) => {
+                stored.set(key, value);
+              }
+            }
+          } as unknown as vscode.ExtensionContext;
+          const detector = {
+            detectKicadMcpPro: async () => ({ found: true, source: 'uvx' })
+          } as unknown as ConstructorParameters<typeof McpClient>[1];
+          const clientLogger = new Logger('MCP 2026 Acceptance');
+          try {
+            await configureMcpEndpoint(`${modernEndpoint}/mcp`);
+            const actualClient = new McpClient(
+              clientContext,
+              detector,
+              clientLogger,
+              {
+                protocolAdapter: new Mcp2026ProtocolAdapter(),
+                maxRetries: 1
+              }
+            );
+            const actualState = await actualClient.testConnection();
+            assert.equal(
+              actualState.kind,
+              'Connected',
+              `The full Studio client must connect over MCP 2026: ${actualState.message ?? ''}`
+            );
+            const actualVersion = await actualClient.callTool(
+              'kicad_get_version',
+              {}
+            );
+            assert.ok(
+              actualVersion,
+              'The full Studio client must decode 2026 tools/call'
+            );
+            assert.match(
+              JSON.stringify(actualVersion),
+              /KiCad MCP Pro Server v4\.3\.0/u,
+              'The published version tool must report the pinned 4.3.0 server'
+            );
+            assert.ok(
+              !stored.has('kicadstudio.mcp.sessionId'),
+              'MCP 2026 must not persist legacy session state'
+            );
+          } finally {
+            await configureMcpEndpoint(server.endpoint);
+            clientLogger.dispose();
+          }
+
           const runtime = {
             baseEndpoint: modernEndpoint,
             allowLegacySse: false,

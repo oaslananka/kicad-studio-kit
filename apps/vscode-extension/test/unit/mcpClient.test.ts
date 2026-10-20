@@ -1,4 +1,5 @@
 import { McpClient } from '../../src/mcp/mcpClient';
+import { Mcp2026ProtocolAdapter } from '../../src/mcp/protocol/mcp2026ProtocolAdapter';
 import {
   __setConfiguration,
   createExtensionContextMock,
@@ -111,6 +112,70 @@ describe('McpClient', () => {
       options
     );
   }
+
+  it('exercises the full client with an explicitly injected stateless 2026 adapter without leaking sessions', async () => {
+    const outgoing: Array<{ method: string; headers: Headers }> = [];
+    global.fetch = jest.fn(async (_url, init?: RequestInit) => {
+      const payload = JSON.parse(String(init?.body ?? '{}')) as {
+        method: string;
+      };
+      if (payload.method) {
+        outgoing.push({
+          method: payload.method,
+          headers: new Headers(init?.headers)
+        });
+      }
+      let result: Record<string, unknown>;
+      if (payload.method === 'server/discover') {
+        result = {
+          resultType: 'complete',
+          protocolVersion: '2026-07-28',
+          supportedVersions: ['2026-07-28'],
+          capabilities: {},
+          ttlMs: 0,
+          cacheScope: 'private',
+          serverInfo: { name: 'kicad-mcp-pro', version: '4.3.0' }
+        };
+      } else if (payload.method === 'tools/list') {
+        result = {
+          resultType: 'complete',
+          tools: [{ name: 'kicad_get_version' }]
+        };
+      } else {
+        result = {
+          resultType: 'complete',
+          structuredContent: { version: '4.3.0' }
+        };
+      }
+      return createJsonResponse({ result });
+    }) as unknown as typeof fetch;
+
+    const client = createClient(createExtensionContextMock(), {
+      protocolAdapter: new Mcp2026ProtocolAdapter(),
+      maxRetries: 1
+    });
+    const state = await client.testConnection();
+    expect(state.kind).toBe('Connected');
+    await expect(client.callTool('kicad_get_version', {})).resolves.toEqual({
+      version: '4.3.0'
+    });
+    expect(outgoing.map((item) => item.method)).toEqual([
+      'server/discover',
+      'server/discover',
+      'tools/list',
+      'server/discover',
+      'tools/call'
+    ]);
+    expect(
+      outgoing.every(
+        ({ headers }) =>
+          headers.get('MCP-Protocol-Version') === '2026-07-28' &&
+          !headers.has('MCP-Session-Id') &&
+          !headers.has('Authorization')
+      )
+    ).toBe(true);
+    expect(outgoing.at(-1)?.headers.get('Mcp-Name')).toBe('kicad_get_version');
+  });
 
   it('coalesces concurrent connection tests onto one MCP probe', async () => {
     let releaseInitialize: (() => void) | undefined;
