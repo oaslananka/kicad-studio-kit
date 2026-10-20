@@ -131,6 +131,11 @@ suite('Real Pair Extension Host', () => {
               actualVersion,
               'The full Studio client must decode 2026 tools/call'
             );
+            assert.match(
+              JSON.stringify(actualVersion),
+              /KiCad MCP Pro Server v4\.3\.0/u,
+              'The published version tool must report the pinned 4.3.0 server'
+            );
             assert.ok(
               !stored.has('kicadstudio.mcp.sessionId'),
               'MCP 2026 must not persist legacy session state'
