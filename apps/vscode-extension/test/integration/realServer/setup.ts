@@ -65,7 +65,10 @@ export function realServerSkipReason(): string | undefined {
   if (!fs.existsSync(defaultFixtureProject())) {
     return 'Vendored benchmark fixture is missing.';
   }
-  if (!fs.existsSync(localMcpServerProject())) {
+  const published = process.env['REAL_SERVER_PYPI_VERSION'];
+  if (published) {
+    requirePublishedVersion();
+  } else if (!fs.existsSync(localMcpServerProject())) {
     return 'Local MCP server checkout is missing. Use a checkout from KiCad MCP Pro.';
   }
   return undefined;
@@ -76,6 +79,14 @@ export async function withRealServer(
 ): Promise<void> {
   const skip = realServerSkipReason();
   if (skip) {
+    if (
+      process.env['REAL_SERVER_PYPI_VERSION'] &&
+      !skip.includes('pull requests from forks')
+    ) {
+      throw new Error(
+        `Published MCP real-pair test cannot be skipped: ${skip}`
+      );
+    }
     console.log(`[real-server skipped] ${skip}`);
     return;
   }
@@ -85,6 +96,75 @@ export async function withRealServer(
     await testBody(harness);
   } finally {
     await harness.teardown();
+  }
+}
+
+/** An independent stateless peer for mixed-version tests inside VS Code Host. */
+export async function withPublishedStatelessServer(
+  testBody: (baseEndpoint: string) => Promise<void>
+): Promise<void> {
+  const version = requirePublishedVersion();
+  const port = await findFreePort();
+  const child = spawn(
+    'uv',
+    [
+      'run',
+      '--quiet',
+      '--with',
+      `kicad-mcp-pro==${version}`,
+      '--no-project',
+      'kicad-mcp-pro'
+    ],
+    {
+      cwd: extensionRoot(),
+      env: {
+        ...process.env,
+        KICAD_MCP_OPERATING_MODE: 'readonly',
+        KICAD_MCP_PROTOCOL_LANE: '2026-07-28-rc',
+        KICAD_MCP_TRANSPORT: 'streamable-http',
+        KICAD_MCP_STATEFUL_HTTP: '0',
+        KICAD_MCP_LEGACY_SSE: '0',
+        KICAD_MCP_HOST: '127.0.0.1',
+        KICAD_MCP_PORT: String(port)
+      },
+      stdio: 'pipe'
+    }
+  );
+  const errors: string[] = [];
+  child.stdout.resume();
+  child.stderr.on('data', (data: Buffer) => errors.push(data.toString()));
+  child.on('error', (error) => errors.push(error.message));
+  try {
+    let ready = false;
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      if (child.exitCode !== null || child.signalCode !== null) {
+        throw new Error(
+          `Published 2026 peer exited: ${errors.join('').slice(-1500)}`
+        );
+      }
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const socket = net.connect({ host: '127.0.0.1', port });
+          socket.once('connect', () => {
+            socket.destroy();
+            resolve();
+          });
+          socket.once('error', reject);
+          socket.setTimeout(500, () => socket.destroy(new Error('timeout')));
+        });
+        ready = true;
+        break;
+      } catch {
+        await delay(500);
+      }
+    }
+    assert.ok(
+      ready,
+      `Published 2026 peer did not start: ${errors.join('').slice(-1500)}`
+    );
+    await testBody(`http://127.0.0.1:${port}`);
+  } finally {
+    await stopServer(child);
   }
 }
 
@@ -109,15 +189,22 @@ async function startRealServer(): Promise<RealServerHarness> {
       KICAD_MCP_PORT: String(port),
       KICAD_MCP_PROJECT_DIR: projectDir,
       KICAD_MCP_PROFILE: 'full',
-      KICAD_MCP_LOG_LEVEL: 'ERROR'
+      KICAD_MCP_LOG_LEVEL: 'ERROR',
+      ...(process.env['REAL_SERVER_PYPI_VERSION']
+        ? {
+            KICAD_MCP_OPERATING_MODE: 'readonly',
+            KICAD_MCP_PROTOCOL_LANE: 'stable',
+            KICAD_MCP_STATEFUL_HTTP: '1',
+            KICAD_MCP_LEGACY_SSE: '0'
+          }
+        : {})
     },
     stdio: 'pipe'
   });
   const stdout: string[] = [];
   const stderr: string[] = [];
   let exited:
-    | { code: number | null; signal: NodeJS.Signals | null }
-    | undefined;
+    { code: number | null; signal: NodeJS.Signals | null } | undefined;
   server.stdout.on('data', (chunk: Buffer) => {
     stdout.push(chunk.toString('utf8'));
   });
@@ -238,6 +325,20 @@ function localServerCommand(): {
   args: string[];
   cwd: string;
 } {
+  if (process.env['REAL_SERVER_PYPI_VERSION']) {
+    return {
+      command: 'uv',
+      args: [
+        'run',
+        '--quiet',
+        '--with',
+        `kicad-mcp-pro==${requirePublishedVersion()}`,
+        '--no-project',
+        'kicad-mcp-pro'
+      ],
+      cwd: extensionRoot()
+    };
+  }
   const project = localMcpServerProject();
   return {
     command: 'uv',
@@ -252,6 +353,19 @@ function localServerCommand(): {
     ],
     cwd: project
   };
+}
+
+export function requirePublishedVersion(): string {
+  const version = process.env['REAL_SERVER_PYPI_VERSION'];
+  if (
+    !version ||
+    !/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/u.test(version)
+  ) {
+    throw new Error(
+      'REAL_SERVER_PYPI_VERSION must be an exact stable major.minor.patch PyPI version.'
+    );
+  }
+  return version;
 }
 
 function localMcpServerProject(): string {
@@ -340,8 +454,7 @@ function extensionRoot(): string {
 async function waitForInitialize(
   endpoint: string,
   getExit: () =>
-    | { code: number | null; signal: NodeJS.Signals | null }
-    | undefined,
+    { code: number | null; signal: NodeJS.Signals | null } | undefined,
   stderr: string[]
 ): Promise<RpcResult<InitializeResult>> {
   const deadline = Date.now() + 30000;
