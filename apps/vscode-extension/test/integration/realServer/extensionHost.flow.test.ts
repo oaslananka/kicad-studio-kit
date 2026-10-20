@@ -4,13 +4,22 @@ import { COMMANDS, EXTENSION_ID, SETTINGS } from '../../../src/constants';
 import { isMcpVersionSupported } from '../../../src/mcp/compat';
 import type { QualityGateResult } from '../../../src/types';
 import { withPublishedStatelessServer, withRealServer } from './setup';
-import { Mcp2026ProtocolAdapter } from '../../../src/mcp/protocol/mcp2026ProtocolAdapter';
+import {
+  Mcp2026InvalidDiscoveryError,
+  Mcp2026ProtocolAdapter,
+  Mcp2026UnsupportedResultError
+} from '../../../src/mcp/protocol/mcp2026ProtocolAdapter';
 import {
   resolveMcpProtocolAdapter,
   UnsupportedMcpProtocolVersionError
 } from '../../../src/mcp/protocol/protocolAdapterRegistry';
 import { McpProtocolLifecycle } from '../../../src/mcp/protocol/protocolLifecycle';
-import { HttpJsonRpcTransport } from '../../../src/mcp/transport/httpJsonRpcTransport';
+import type { McpDiscoveryResult } from '../../../src/mcp/protocol/protocolAdapter';
+import {
+  HttpJsonRpcTransport,
+  McpHttpError,
+  McpRequestTimeoutError
+} from '../../../src/mcp/transport/httpJsonRpcTransport';
 
 const REQUIRED_EXTENSION_HOST_TOOLS = [
   'project_quality_gate_report',
@@ -54,6 +63,7 @@ suite('Real Pair Extension Host', () => {
         await withPublishedStatelessServer(async (modernEndpoint) => {
           const outgoing: Headers[] = [];
           const sessions: Array<string | undefined> = [];
+          const discoveries: McpDiscoveryResult[] = [];
           const modern = new McpProtocolLifecycle({
             adapter: new Mcp2026ProtocolAdapter(),
             clientInfo: { name: 'kicad-studio', version: '1.17.1' },
@@ -81,7 +91,28 @@ suite('Real Pair Extension Host', () => {
             timeoutMs: 20_000,
             hasDiscoveryState: false
           };
-          await modern.ensureReady(runtime, { onDiscovery() {} });
+          const onDiscovery = (result: McpDiscoveryResult | undefined) => {
+            assert.ok(result);
+            discoveries.push(result);
+          };
+          await modern.ensureReady(runtime, { onDiscovery });
+          await modern.ensureReady(
+            { ...runtime, hasDiscoveryState: true },
+            { onDiscovery }
+          );
+          assert.equal(
+            discoveries.length,
+            2,
+            'modern discovery must not reuse a stale 2025 card'
+          );
+          for (const discovery of discoveries) {
+            assert.ok(Number.isSafeInteger(discovery.ttlMs));
+            assert.ok(discovery.ttlMs !== undefined && discovery.ttlMs >= 0);
+            assert.ok(
+              discovery.cacheScope === 'private' ||
+                discovery.cacheScope === 'public'
+            );
+          }
           const tools = await modern.execute<{
             tools: Array<{ name: string }>;
           }>('tools/list', {}, runtime);
@@ -103,7 +134,7 @@ suite('Real Pair Extension Host', () => {
             [],
             '2026 must not persist 2025 session state'
           );
-          assert.ok(outgoing.length >= 3);
+          assert.ok(outgoing.length >= 4);
           assert.ok(
             outgoing.every(
               (h) => h.get('MCP-Protocol-Version') === '2026-07-28'
@@ -130,6 +161,103 @@ suite('Real Pair Extension Host', () => {
       );
       assert.match(qualityGate, /Project quality gate:/);
     });
+  });
+
+  test('fails closed on unsupported MRTR, invalid discovery and stalled responses', async function () {
+    this.timeout(15000);
+    if (!process.env['REAL_SERVER_PYPI_VERSION']) return;
+
+    const runtime = {
+      baseEndpoint: 'http://127.0.0.1:19997',
+      allowLegacySse: false,
+      timeoutMs: 40,
+      hasDiscoveryState: false
+    };
+    const makeLifecycle = (fetchFn: typeof fetch) =>
+      new McpProtocolLifecycle({
+        adapter: new Mcp2026ProtocolAdapter(),
+        clientInfo: { name: 'kicad-studio', version: '1.17.1' },
+        sessionStore: {
+          read: () => 'persisted-2025-session',
+          write: async () => {
+            assert.fail('2026 must not persist legacy sessions');
+          }
+        },
+        transport: new HttpJsonRpcTransport({
+          fetchFn,
+          logger: { debug() {}, warn() {} },
+          maxRetries: 1
+        })
+      });
+    const rpcResponse = (result: unknown) =>
+      new Response(JSON.stringify({ jsonrpc: '2.0', id: 1, result }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+    const mrtr = makeLifecycle(async () =>
+      rpcResponse({ resultType: 'input_required', inputRequests: {} })
+    );
+    await assert.rejects(
+      mrtr.execute(
+        'tools/call',
+        { name: 'kicad_get_version', arguments: {} },
+        runtime
+      ),
+      Mcp2026UnsupportedResultError
+    );
+
+    let acceptedDiscovery = false;
+    const malformed = makeLifecycle(async () =>
+      rpcResponse({
+        resultType: 'complete',
+        supportedVersions: ['2026-07-28'],
+        capabilities: {},
+        ttlMs: -1,
+        cacheScope: 'public'
+      })
+    );
+    await assert.rejects(
+      malformed.ensureReady(runtime, {
+        onDiscovery: () => {
+          acceptedDiscovery = true;
+        }
+      }),
+      Mcp2026InvalidDiscoveryError
+    );
+    assert.equal(acceptedDiscovery, false);
+
+    const refused = makeLifecycle(
+      async () => new Response('unavailable', { status: 503 })
+    );
+    await assert.rejects(
+      refused.execute('tools/list', {}, runtime),
+      (error: unknown) => error instanceof McpHttpError && error.status === 503
+    );
+
+    for (const encoding of ['json', 'sse'] as const) {
+      const stalled = makeLifecycle(
+        async () =>
+          ({
+            ok: true,
+            status: 200,
+            headers: new Headers({
+              'Content-Type':
+                encoding === 'json' ? 'application/json' : 'text/event-stream'
+            }),
+            json: () => new Promise<never>(() => undefined),
+            text: () => new Promise<never>(() => undefined)
+          }) as unknown as Response
+      );
+      await assert.rejects(
+        stalled.execute('tools/list', {}, runtime),
+        McpRequestTimeoutError,
+        `${encoding} stalled body must time out`
+      );
+    }
+    assert.throws(
+      () => resolveMcpProtocolAdapter('2026-07-28'),
+      UnsupportedMcpProtocolVersionError
+    );
   });
 });
 
