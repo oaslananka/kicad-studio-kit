@@ -134,7 +134,7 @@ async function awaitServerReady(port, child, remaining = 160) {
   }
 }
 
-async function runPair({ version, modern, modules }) {
+async function runPair({ version, modern, modules, strictRc = false }) {
   const port = await freeLoopbackPort();
   const endpoint = "http://127.0.0.1:" + port;
   const child = spawn(
@@ -151,7 +151,9 @@ async function runPair({ version, modern, modules }) {
       env: {
         ...process.env,
         KICAD_MCP_OPERATING_MODE: "readonly",
-        KICAD_MCP_PROTOCOL_LANE: modern ? "2026-07-28-rc" : "stable",
+        // SDK v2 advertises final 2026 even on the public default lane.
+        // Separately retain the stricter legacy RC-selector regression case.
+        KICAD_MCP_PROTOCOL_LANE: strictRc ? "2026-07-28-rc" : "stable",
         KICAD_MCP_TRANSPORT: "streamable-http",
         KICAD_MCP_STATEFUL_HTTP: modern ? "0" : "1",
         KICAD_MCP_LEGACY_SSE: "0",
@@ -328,7 +330,11 @@ async function runPair({ version, modern, modules }) {
     }
     console.log(
       "Studio real-pair " +
-        (modern ? "2026 stateless" : "2025 session") +
+        (modern
+          ? strictRc
+            ? "2026 strict-canary stateless"
+            : "2026 public-default stateless"
+          : "2025 session") +
         " PASS: published kicad-mcp-pro " +
         version +
         "; " +
@@ -373,7 +379,10 @@ async function main() {
       modules.Mcp2026UnsupportedResultError,
       "unsupported MRTR must fail closed",
     );
+    // Final GA on the published server's ordinary/default SDK v2 route is
+    // a distinct acceptance condition from the historical opt-in RC lane.
     await runPair({ version, modern: true, modules });
+    await runPair({ version, modern: true, strictRc: true, modules });
     await runPair({ version, modern: false, modules });
   } finally {
     await rm(scratch, { recursive: true, force: true });
@@ -397,7 +406,7 @@ test("pinned published version rejects malformed or prerelease values", () => {
 });
 
 test(
-  "published MCP Studio 2026 stateless and 2025 session real pair",
-  { timeout: 180_000 },
+  "published MCP Studio 2026 default GA, strict canary and 2025 session real pair",
+  { timeout: 300_000 },
   main,
 );
