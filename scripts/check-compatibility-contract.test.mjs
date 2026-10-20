@@ -367,6 +367,74 @@ test("#777 recorded artifact evidence does not itself approve production activat
   );
 });
 
+test("#777 MCP 2026 activation rejects legacy server ranges and disjunctive bypasses", () => {
+  const candidate = structuredClone(compatibility);
+  candidate.mcp.protocolVersion = "2026-07-28";
+  delete candidate.mcp.nextProtocolVersion;
+  candidate.mcp.activation.state = "active";
+  candidate.mcp.activation.adr.status = "Accepted";
+  const registry =
+    "export const SUPPORTED_MCP_PROTOCOL_VERSIONS = ['2025-11-25', '2026-07-28'];";
+  const validate = () =>
+    validateMcpProtocolActivation({
+      compatibility: candidate,
+      repoRoot: process.cwd(),
+      registrySource: registry,
+      adrSource: "Status: Accepted",
+      adrIndexSource: "| 0008 | MCP | Accepted |",
+    });
+
+  // The current 2025 range includes releases that have never passed the
+  // final 2026 published-server acceptance suite.
+  let errors = validate();
+  assert.ok(
+    errors.some((error) =>
+      error.includes("products.kicad-studio.compatibleMcpPro.required"),
+    ),
+  );
+  assert.ok(
+    errors.some((error) => error.includes("supportAxes.mcpServer.required")),
+  );
+
+  const valid = ">=4.3.0 <5.0.0";
+  candidate.products["kicad-studio"].compatibleMcpPro.required = valid;
+  candidate.products["kicad-studio"].compatibleMcpPro.recommended = valid;
+  candidate.supportAxes.mcpServer.required = valid;
+  candidate.supportAxes.mcpServer.recommended = valid;
+  assert.deepEqual(
+    validate(),
+    [],
+    "the reviewed published baseline qualifies for a later coordinated cutover",
+  );
+
+  // Disjunctions and seemingly strict lower-bound clauses must not hide
+  // permissive legacy branches that accept an unsupported 2025-only peer.
+  candidate.products["kicad-studio"].compatibleMcpPro.required =
+    ">=4.3.0 <5.0.0 || >=3.5.2 <4.0.0";
+  errors = validate();
+  assert.match(errors.join("\n"), /exclude all older unverified servers/u);
+  candidate.products["kicad-studio"].compatibleMcpPro.required = valid;
+
+  // A range that excludes our signed/actually tested server also fails.
+  candidate.supportAxes.mcpServer.recommended = ">=4.4.0 <5.0.0";
+  errors = validate();
+  assert.match(
+    errors.join("\n"),
+    /include the verified published server 4\.3\.0/u,
+  );
+  candidate.supportAxes.mcpServer.recommended = "not-a-range";
+  errors = validate();
+  assert.match(errors.join("\n"), /must be a valid semver range/u);
+
+  // A forged older artifact cannot lower the known first-final release floor.
+  candidate.supportAxes.mcpServer.recommended = valid;
+  candidate.mcp.activation.serverArtifact.version = "4.0.0";
+  candidate.mcp.activation.serverArtifact.source =
+    "https://pypi.org/project/kicad-mcp-pro/4.0.0/";
+  errors = validate();
+  assert.match(errors.join("\n"), /first verified final MCP 2026 server/u);
+});
+
 test("#492 accepts activation only with stable published artifacts and accepted ADR evidence", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-activation-"));
   try {
@@ -406,6 +474,12 @@ test("#492 accepts activation only with stable published artifacts and accepted 
     const activated = structuredClone(compatibility);
     activated.mcp.protocolVersion = "2026-07-28";
     delete activated.mcp.nextProtocolVersion;
+    activated.products["kicad-studio"].compatibleMcpPro.required =
+      ">=4.3.0 <5.0.0";
+    activated.products["kicad-studio"].compatibleMcpPro.recommended =
+      ">=4.3.0 <5.0.0";
+    activated.supportAxes.mcpServer.required = ">=4.3.0 <5.0.0";
+    activated.supportAxes.mcpServer.recommended = ">=4.3.0 <5.0.0";
     activated.mcp.activation = {
       targetProtocolVersion: "2026-07-28",
       state: "active",
@@ -429,9 +503,9 @@ test("#492 accepts activation only with stable published artifacts and accepted 
       },
       serverArtifact: {
         package: "kicad-mcp-pro",
-        version: "4.0.0",
+        version: "4.3.0",
         protocolVersion: "2026-07-28",
-        source: "https://pypi.org/project/kicad-mcp-pro/4.0.0/",
+        source: "https://pypi.org/project/kicad-mcp-pro/4.3.0/",
       },
       extensionAdapter: { path: "src/mcp2026ProtocolAdapter.ts" },
       realPair: { evidence: "evidence/real-pair.md" },
