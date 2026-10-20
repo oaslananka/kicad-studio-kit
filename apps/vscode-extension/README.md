@@ -21,7 +21,7 @@
 KiCad Studio turns VS Code into a KiCad-aware engineering cockpit: project navigation, schematic and PCB inspection, DRC/ERC review, repeatable release outputs, and MCP readiness for AI-assisted workflows.
 
 - Extension ID: `oaslananka.kicadstudiokit`
-- Version: `2.0.0`
+- Version: `2.0.1`
 - Supported KiCad projects: KiCad 8.x, 9.x, and 10.x project, schematic, PCB, DRC, and jobset files
 - Supported MCP server: `kicad-mcp-pro >=3.5.2 <5.0.0`
 - Canonical repository: https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension
@@ -101,7 +101,7 @@ The BOM panel and its CSV/XLSX exports include only placed schematic symbols tha
 
 ## MCP Compatibility
 
-KiCad Studio 2.0.0 supports `kicad-mcp-pro >=3.5.2 <5.0.0` and was tested against `4.3.0`. This published release uses MCP `2025-11-25`.
+KiCad Studio 2.0.1 supports `kicad-mcp-pro >=3.5.2 <5.0.0` and was tested against `4.3.0`. This published release uses MCP `2025-11-25`.
 Current development source has activated the breaking MCP `2026-07-28` client
 and requires the signed published `kicad-mcp-pro >=4.3.0 <5.0.0` server.
 **The source cutover is not yet a Marketplace/VSIX release**; users of older
