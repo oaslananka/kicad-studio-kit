@@ -16,6 +16,16 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.0.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.0.1...vscode-extension-v2.0.2) (2026-10-21)
+
+
+### Bug Fixes
+
+* **kicad-studio:** expose on-demand MCP health recheck ([#834](https://github.com/oaslananka/kicad-studio-kit/issues/834)) ([a09616f](https://github.com/oaslananka/kicad-studio-kit/commit/a09616f781c54153cce4f42ede4d392dcbd4b6f1))
+* **kicad-studio:** prefer compatible installed uv MCP over older global CLI ([#835](https://github.com/oaslananka/kicad-studio-kit/issues/835)) ([df8550c](https://github.com/oaslananka/kicad-studio-kit/commit/df8550c5882212750c7fc43c94ee623b04738c99))
+* **kicad-studio:** prefer verified uv tool MCP executable ([df8550c](https://github.com/oaslananka/kicad-studio-kit/commit/df8550c5882212750c7fc43c94ee623b04738c99))
+* **kicad-studio:** recheck MCP health on demand ([a09616f](https://github.com/oaslananka/kicad-studio-kit/commit/a09616f781c54153cce4f42ede4d392dcbd4b6f1))
+
 ## [2.0.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.0.0...vscode-extension-v2.0.1) (2026-10-20)
 
 
