@@ -23,7 +23,7 @@ KiCad Studio turns VS Code into a KiCad-aware engineering cockpit: project navig
 - Extension ID: `oaslananka.kicadstudiokit`
 - Version: `2.0.1`
 - Supported KiCad projects: KiCad 8.x, 9.x, and 10.x project, schematic, PCB, DRC, and jobset files
-- Supported MCP server: `kicad-mcp-pro >=3.5.2 <5.0.0`
+- Supported MCP server: `kicad-mcp-pro >=4.3.0 <5.0.0`
 - Canonical repository: https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension
 
 ## Quick Start
@@ -101,13 +101,12 @@ The BOM panel and its CSV/XLSX exports include only placed schematic symbols tha
 
 ## MCP Compatibility
 
-KiCad Studio 2.0.1 supports `kicad-mcp-pro >=3.5.2 <5.0.0` and was tested against `4.3.0`. This published release uses MCP `2025-11-25`.
-Current development source has activated the breaking MCP `2026-07-28` client
-and requires the signed published `kicad-mcp-pro >=4.3.0 <5.0.0` server.
-**The source cutover is not yet a Marketplace/VSIX release**; users of older
-servers can continue using the published 2025-capable extension. If a connected
-server is outside the release-specific supported range, MCP-dependent commands
-are disabled while KiCad-only features remain available.
+KiCad Studio 2.0.1 supports `kicad-mcp-pro >=4.3.0 <5.0.0` and was tested against `4.3.0`. This release uses MCP protocol `2026-07-28`.
+The breaking protocol change shipped in KiCad Studio 2.0.0. Servers limited to
+MCP `2025-11-25` are incompatible with Studio 2.x; users who need the older
+protocol can remain on KiCad Studio 1.17.1 until the server is upgraded.
+If a connected server falls outside the supported range, MCP-dependent commands
+remain disabled while KiCad-only features remain available.
 
 ## Marketplace Listing Copy
 
