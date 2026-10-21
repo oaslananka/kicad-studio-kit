@@ -18,6 +18,7 @@ const SETTINGS_PANEL_MESSAGE_TYPES = [
   'clearAiKey',
   'testAiKey',
   'detectCli',
+  'retryMcp',
   'refreshBoardReadyOps',
   'runBoardReadyOpsCheck',
   'openBoardReadyOpsDocs',
@@ -170,6 +171,19 @@ export class KiCadSettingsPanel implements vscode.Disposable {
       await this.postState(
         cli ? 'kicad-cli detected.' : 'kicad-cli was not found.'
       );
+      return;
+    }
+
+    if (message.type === 'retryMcp') {
+      try {
+        await vscode.commands.executeCommand(COMMANDS.retryMcp);
+        await this.postState('MCP connection check finished.');
+      } catch {
+        await this.postState(
+          'MCP recheck could not complete. See the MCP diagnostics.'
+        );
+        this.services.logger.error('MCP recheck command failed.');
+      }
       return;
     }
 

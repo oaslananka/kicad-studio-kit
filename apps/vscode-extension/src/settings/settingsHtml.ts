@@ -102,7 +102,7 @@ export function buildSettingsHtml(options: SettingsHtmlOptions): string {
     <div class="health-grid" aria-label="Capability health">
       <article class="card" id="cli-health"><h2>KiCad CLI</h2><div class="health-label" id="cli-health-label"></div><div class="detail" id="cli-health-detail"></div><div class="actions"><button id="detect-cli" type="button">Refresh detection</button></div></article>
       <article class="card" id="ai-health"><h2>AI</h2><div class="health-label" id="ai-health-label"></div><div class="detail" id="ai-health-detail"></div><div class="actions"><button id="test-ai-key" type="button">Test connection</button><button id="set-ai-key" type="button">Set API key</button><button id="clear-ai-key" class="danger" type="button">Clear API key</button></div></article>
-      <article class="card" id="mcp-health"><h2>MCP</h2><div class="health-label" id="mcp-health-label"></div><div class="detail" id="mcp-health-detail"></div><div class="actions"><button id="open-mcp-docs" type="button">Integration docs</button></div></article>
+      <article class="card" id="mcp-health"><h2>MCP</h2><div class="health-label" id="mcp-health-label"></div><div class="detail" id="mcp-health-detail"></div><div class="actions"><button id="retry-mcp" type="button">Recheck connection</button><button id="open-mcp-docs" type="button">Integration docs</button></div></article>
       <article class="card" id="boardreadyops-health"><h2>BoardReadyOps</h2><div class="health-label" id="boardreadyops-health-label"></div><div class="detail" id="boardreadyops-health-detail"></div><div class="actions"><button id="refresh-boardreadyops" type="button">Refresh health</button><button id="run-boardreadyops" type="button">Run preflight</button><button id="open-boardreadyops-docs" type="button">Docs</button></div></article>
       <article class="card" id="viewer-health"><h2>Viewer</h2><div class="health-label" id="viewer-health-label"></div><div class="detail" id="viewer-health-detail"></div><div class="actions"><button id="open-viewer-settings" type="button">Viewer settings</button></div></article>
     </div>
@@ -132,8 +132,8 @@ export function buildSettingsHtml(options: SettingsHtmlOptions): string {
       byId('ai-health-label').textContent = aiStatus;
       byId('ai-health-detail').textContent = (ai.provider && ai.provider !== 'none' ? 'Provider: ' + ai.provider + '. ' : '') + (state.aiKeyStored ? 'SecretStorage credential present.' : 'No SecretStorage credential present.');
       const mcp = state.mcp || {};
-      byId('mcp-health-label').textContent = mcp.connected ? 'Connected' : mcp.available ? 'Available, disconnected' : 'Unavailable';
-      byId('mcp-health-detail').textContent = [mcp.version ? 'Version ' + mcp.version : '', mcp.profile ? 'profile ' + mcp.profile : '', mcp.compat ? 'compatibility ' + mcp.compat : '', mcp.kind || ''].filter(Boolean).join(' · ') || 'Configure or start kicad-mcp-pro to enable MCP capabilities.';
+      byId('mcp-health-label').textContent = mcp.connected ? 'Connected at last check' : mcp.available ? 'Available, disconnected' : 'Unavailable';
+      byId('mcp-health-detail').textContent = [mcp.version ? 'Version ' + mcp.version : '', mcp.profile ? 'profile ' + mcp.profile : '', mcp.compat ? 'compatibility ' + mcp.compat : '', mcp.kind || '', mcp.connected ? 'Recheck to verify current availability' : 'Last known server details may be cached'].filter(Boolean).join(' · ') || 'Configure or start kicad-mcp-pro to enable MCP capabilities.';
       const boardReadyOps = state.boardReadyOps || {};
       byId('boardreadyops-health-label').textContent = boardReadyOps.installed ? (boardReadyOps.healthy ? 'Healthy' : 'Needs attention') : 'Unavailable';
       byId('boardreadyops-health-detail').textContent = [boardReadyOps.version ? 'Version ' + boardReadyOps.version : '', typeof boardReadyOps.toolCount === 'number' ? boardReadyOps.toolCount + ' rules' : '', boardReadyOps.message || ''].filter(Boolean).join(' · ') || 'Install BoardReadyOps or refresh health after opening a trusted workspace.';
@@ -152,6 +152,7 @@ export function buildSettingsHtml(options: SettingsHtmlOptions): string {
     byId('open-boardreadyops-docs').addEventListener('click', () => vscode.postMessage({ type: 'openBoardReadyOpsDocs' }));
     byId('open-viewer-settings').addEventListener('click', () => vscode.postMessage({ type: 'openNativeSettings' }));
     byId('clear-all-secrets').addEventListener('click', () => vscode.postMessage({ type: 'clearAllSecrets' }));
+    byId('retry-mcp').addEventListener('click', () => { setToast('Checking MCP connection...'); vscode.postMessage({ type: 'retryMcp' }); });
     byId('open-mcp-docs').addEventListener('click', () => vscode.postMessage({ type: 'openExternalLink', href: ${mcpIntegrationDocsUrlJson} }));
     window.addEventListener('message', (event) => {
       const message = event.data || {};
