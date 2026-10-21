@@ -15,6 +15,8 @@ const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = [
   "source-map-js@1.2.2",
   "handlebars@4.7.10",
   "follow-redirects@1.16.1",
+  "vite@6.4.4",
+  "markdown-it@14.3.3",
 ];
 const ALLOWED_TRUST_POLICY_EXCLUDES = [
   "@octokit/endpoint@9.0.6",
@@ -35,6 +37,8 @@ const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   "linkify-it": "5.0.2",
   undici: "7.30.0",
   "follow-redirects": "1.16.1",
+  "vite": "6.4.4",
+  "markdown-it": "14.3.3",
 });
 const FORBIDDEN_PNPM_SETTINGS = [
   "minimumReleaseAge",
