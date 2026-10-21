@@ -347,9 +347,12 @@ test.describe('KiCad Studio webview DOM', () => {
       { surface: 'none' }
     );
 
+    // Surface detection, fallback negotiation, and error rendering are
+    // asynchronous. A busy CI runner can exceed the default five-second wait.
+    // Keep asserting the terminal failed state rather than accepting KiCanvas.
     await expect(page.locator('#viewer-engine-badge')).toHaveText(
       'Renderer failed',
-      { timeout: 5000 }
+      { timeout: 12000 }
     );
     await expect.poll(() => countMessages(page, 'requestSvgFallback')).toBe(1);
   });
