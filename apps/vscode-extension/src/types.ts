@@ -314,7 +314,15 @@ export interface McpInstallStatus {
   executablePath?: string | undefined;
   command?: 'uvx' | 'kicad-mcp-pro' | 'npx' | 'pipx' | 'pip' | undefined;
   version?: string | undefined;
-  source?: 'uvx' | 'global' | 'pip' | 'pipx' | 'inspector' | 'none' | undefined;
+  source?:
+    | 'uv-tool'
+    | 'uvx'
+    | 'global'
+    | 'pip'
+    | 'pipx'
+    | 'inspector'
+    | 'none'
+    | undefined;
 }
 
 export type McpCompatStatus = 'ok' | 'warn' | 'incompatible';
