@@ -4,6 +4,7 @@ import * as path from 'node:path';
 import { execFile } from 'node:child_process';
 import * as vscode from 'vscode';
 import type { McpInstallStatus } from '../types';
+import { isMcpVersionSupported } from './compat';
 
 export interface McpInstallerCandidate {
   id: 'uvx' | 'pipx' | 'pip';
@@ -131,10 +132,21 @@ async function detectCompatiblePythonRuntime(): Promise<
 
 export class McpDetector {
   async detectKicadMcpPro(): Promise<McpInstallStatus> {
-    // The actual installed executable is the most authoritative source. The
-    // CLI exposes `version`, not `--version` (the latter exits with code 2).
-    // Do not run uvx during detection: it can fetch a package from the network
-    // and make an absent installation appear to be installed.
+    // Verify installed uv-tool executables before PATH-resolved global CLI.
+    // A legacy pip installation may shadow a compatible uv tool on Windows.
+    const uvToolResult = await this.tryUvTool();
+    if (uvToolResult.found && isMcpVersionSupported(uvToolResult.version)) {
+      return {
+        found: true,
+        command: 'kicad-mcp-pro',
+        version: uvToolResult.version,
+        source: 'uv-tool',
+        executablePath: uvToolResult.executablePath
+      };
+    }
+
+    // The actual installed executable is authoritative. Never run uvx during
+    // detection: it may download a package or hide a missing installation.
     const binaryResult = await this.tryBinary();
     if (binaryResult.found) {
       return {
@@ -145,16 +157,6 @@ export class McpDetector {
         ...(binaryResult.executablePath
           ? { executablePath: binaryResult.executablePath }
           : {})
-      };
-    }
-
-    const uvToolResult = await this.tryUvTool();
-    if (uvToolResult.found) {
-      return {
-        found: true,
-        command: 'uvx',
-        version: uvToolResult.version,
-        source: 'uvx'
       };
     }
 
@@ -178,6 +180,17 @@ export class McpDetector {
       };
     }
 
+    // Preserve incompatible installed-version evidence if no other binary
+    // was found; the UI can display an actionable compatibility warning.
+    if (uvToolResult.found) {
+      return {
+        found: true,
+        command: 'kicad-mcp-pro',
+        version: uvToolResult.version,
+        source: 'uv-tool',
+        executablePath: uvToolResult.executablePath
+      };
+    }
     return {
       found: false,
       source: 'none'
@@ -422,17 +435,36 @@ export class McpDetector {
     return candidates;
   }
 
-  private async tryUvTool(): Promise<{ found: boolean; version?: string }> {
-    // `uv tool list` is a local metadata read; `uvx kicad-mcp-pro` can
-    // download packages and is not evidence of an existing installation.
-    const result = await run('uv', ['tool', 'list']);
-    if (!result.ok) {
+  private async tryUvTool(): Promise<{
+    found: boolean;
+    version?: string;
+    executablePath?: string;
+  }> {
+    // Both uv commands are read-only. Do not use uvx: it can fetch packages.
+    const installed = await run('uv', ['tool', 'list']);
+    const version = installed.output.match(
+      /^kicad-mcp-pro\s+v(\d+\.\d+\.\d+)(?:\s|$)/im
+    )?.[1];
+    if (!installed.ok || !version) {
       return { found: false };
     }
-    const match = /^kicad-mcp-pro\s+v(\d+\.\d+\.\d+)(?:\s|$)/im.exec(
-      result.output
+    const bin = await run('uv', ['tool', 'dir', '--bin']);
+    const binDir = bin.output.trim();
+    if (!bin.ok || !path.isAbsolute(binDir)) {
+      return { found: false };
+    }
+    const executablePath = path.join(
+      binDir,
+      process.platform === 'win32' ? 'kicad-mcp-pro.exe' : 'kicad-mcp-pro'
     );
-    return match?.[1] ? { found: true, version: match[1] } : { found: false };
+    if (!fs.existsSync(executablePath)) {
+      return { found: false };
+    }
+    const probed = await run(executablePath, ['version']);
+    if (!probed.ok || extractVersion(probed.output) !== version) {
+      return { found: false };
+    }
+    return { found: true, version, executablePath };
   }
 
   private async tryBinary(): Promise<{
