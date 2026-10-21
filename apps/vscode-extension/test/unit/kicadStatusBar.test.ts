@@ -274,6 +274,7 @@ describe('KiCadStatusBar', () => {
       });
       expect(item(5).text).toContain('MCP');
       expect(item(5).text).toContain('full');
+      expect(item(5).tooltip).toContain('last verified connected');
       bar.dispose();
     });
 

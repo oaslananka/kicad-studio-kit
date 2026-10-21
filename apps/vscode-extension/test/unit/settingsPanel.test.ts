@@ -141,6 +141,9 @@ describe('settings webview', () => {
     expect(html).toContain('id="cli-health"');
     expect(html).toContain('id="ai-health"');
     expect(html).toContain('id="mcp-health"');
+    expect(html).toContain('id="retry-mcp"');
+    expect(html).toContain('Connected at last check');
+    expect(html).toContain("type: 'retryMcp'");
     expect(html).toContain('id="boardreadyops-health"');
     expect(html).toContain('id="viewer-health"');
     expect(html).not.toContain('data-setting=');
@@ -198,6 +201,58 @@ describe('settings webview', () => {
       2,
       expect.objectContaining({ type: 'state' })
     );
+  });
+
+  it('rechecks a previously connected MCP and publishes disconnected health without polling', async () => {
+    const context = createExtensionContextMock();
+    const panelMock = createPanelMock();
+    const services = createServices();
+    let connected = true;
+    services.statusBar.getSnapshot.mockImplementation(
+      () =>
+        ({
+          mcpAvailable: true,
+          mcpConnected: connected,
+          mcpKind: connected ? 'Connected' : 'Disconnected',
+          mcpVersion: '4.3.0',
+          mcpProfile: 'review'
+        }) as never
+    );
+    (vscode.window.createWebviewPanel as jest.Mock).mockReturnValue(
+      panelMock.panel
+    );
+    (vscode.commands.executeCommand as jest.Mock).mockImplementation(
+      async (command: string) => {
+        if (command === COMMANDS.retryMcp) {
+          connected = false;
+        }
+      }
+    );
+
+    KiCadSettingsPanel.createOrShow(context as never, services as never);
+    expect(panelMock.panel.webview.html).toContain('Connected at last check');
+    panelMock.panel.webview.postMessage.mockClear();
+    await panelMock.send({ type: 'retryMcp' });
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
+      COMMANDS.retryMcp
+    );
+    const stateMessage = (
+      panelMock.panel.webview.postMessage as jest.Mock
+    ).mock.calls
+      .map(([message]) => message)
+      .find((message) => message.type === 'state');
+    expect(stateMessage.state.mcp).toMatchObject({
+      available: true,
+      connected: false,
+      kind: 'Disconnected',
+      version: '4.3.0'
+    });
+    expect(panelMock.panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'status',
+      text: 'MCP connection check finished.'
+    });
   });
 
   it('derives viewer health states and redacts BoardReadyOps diagnostics', () => {
