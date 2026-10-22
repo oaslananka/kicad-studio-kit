@@ -20,6 +20,8 @@ minimumReleaseAgeExclude:
   - vite@6.4.4
   # Security fix: markdown-it algorithmic DoS (GHSA-gfr2-rv44-r23c)
   - markdown-it@14.3.3
+  # Renovate security update: ip-address@10.7.4
+  - ip-address@10.7.4
 trustPolicyExclude:
   - "@octokit/endpoint@9.0.6"
   - chokidar@4.0.3
@@ -60,7 +62,7 @@ overrides:
   form-data: 4.0.6
   fast-uri: 3.1.8
   linkify-it: 5.0.2
-  ip-address: 10.7.2
+  ip-address: 10.7.4
   markdown-it: 14.3.3
   tmp: 0.2.7
   uuid: 14.0.2
