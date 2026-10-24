@@ -22,6 +22,8 @@ minimumReleaseAgeExclude:
   - markdown-it@14.3.3
   # Renovate security update: ip-address@10.7.4
   - ip-address@10.7.4
+  # Renovate security update: undici@7.30.1
+  - undici@7.30.1
 trustPolicyExclude:
   - "@octokit/endpoint@9.0.6"
   - chokidar@4.0.3
@@ -67,7 +69,7 @@ overrides:
   tmp: 0.2.7
   uuid: 14.0.2
   vite: 6.4.4
-  undici: 7.30.0
+  undici: 7.30.1
   follow-redirects: 1.16.1
   basic-ftp: ">=6.2.1"
   source-map-js: ">=1.2.2"
