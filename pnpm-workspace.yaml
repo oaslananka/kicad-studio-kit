@@ -22,6 +22,8 @@ minimumReleaseAgeExclude:
   - markdown-it@14.3.3
   # Renovate security update: ip-address@10.7.4
   - ip-address@10.7.4
+  # Renovate security update: fast-uri@3.1.9
+  - fast-uri@3.1.9
 trustPolicyExclude:
   - "@octokit/endpoint@9.0.6"
   - chokidar@4.0.3
@@ -60,7 +62,7 @@ overrides:
   tar: 7.5.22
   test-exclude: 8.0.0
   form-data: 4.0.6
-  fast-uri: 3.1.8
+  fast-uri: 3.1.9
   linkify-it: 5.0.2
   ip-address: 10.7.4
   markdown-it: 14.3.3
