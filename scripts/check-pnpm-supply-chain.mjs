@@ -17,6 +17,9 @@ const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = [
   "follow-redirects@1.16.1",
   "vite@6.4.4",
   "markdown-it@14.3.3",
+  "ip-address@10.7.4",
+  "fast-uri@3.1.9",
+  "serialize-javascript@7.1.3",
 ];
 const ALLOWED_TRUST_POLICY_EXCLUDES = [
   "@octokit/endpoint@9.0.6",
@@ -33,11 +36,15 @@ const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   "js-yaml": "4.3.2",
   "@xmldom/xmldom": "0.9.12",
   tar: "7.5.22",
-  "fast-uri": "3.1.8",
+  "fast-uri": "3.1.9",
   "linkify-it": "5.0.2",
-  undici: "7.30.0",
+  undici: "7.30.1",
+  "mocha>serialize-javascript": "7.1.3",
+  "@azure/msal-node": "7.1.0",
+  zod: "4.6.7",
+  "@vitest/mocker": "4.1.12",
   "follow-redirects": "1.16.1",
-  "vite": "6.4.4",
+  vite: "6.4.4",
   "markdown-it": "14.3.3",
 });
 const FORBIDDEN_PNPM_SETTINGS = [
@@ -231,20 +238,31 @@ function sameStringList(actual, expected) {
   return expected.every((value, index) => actual[index] === value);
 }
 
-function validateWorkspacePackageManagers(errors, repoRoot, workspace, rootPackage) {
+function validateWorkspacePackageManagers(
+  errors,
+  repoRoot,
+  workspace,
+  rootPackage,
+) {
   const expectedPackageManager = rootPackage?.packageManager;
   if (!expectedPackageManager) {
     errors.push("Root package.json missing packageManager");
     return;
   }
-  const workspacePackages = Array.isArray(workspace?.packages) ? workspace.packages : [];
+  const workspacePackages = Array.isArray(workspace?.packages)
+    ? workspace.packages
+    : [];
   for (const pkgPath of workspacePackages) {
     const fullPath = path.join(repoRoot, pkgPath, "package.json");
     if (!existsSync(fullPath)) {
       errors.push(`Workspace package missing package.json: ${pkgPath}`);
       continue;
     }
-    const pkgJson = readJson(repoRoot, path.join(pkgPath, "package.json"), errors);
+    const pkgJson = readJson(
+      repoRoot,
+      path.join(pkgPath, "package.json"),
+      errors,
+    );
     if (!pkgJson) continue;
     if (pkgJson.packageManager !== expectedPackageManager) {
       errors.push(
