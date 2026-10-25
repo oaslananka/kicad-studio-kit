@@ -63,7 +63,10 @@ or `review verify`, even with `--format json`. Studio never parses this human ou
 as a review verdict. The preview requires compatible `doctor --format json` and a
 version >=1.69.0 **plus** actual review JSON schema 1, matching tool/version, zero
 exit, `success:true`, `dryRun:true`, SHA-256 digest and no review URL or run ID.
-Any mismatch fails closed; unreleased upstream JSON is not production support.
+Unexpected top-level or tool metadata is rejected as required by the versioned
+upstream schema's `additionalProperties: false`, including fields that might
+contain private data. Any mismatch fails closed; unreleased upstream JSON is
+not production support.
 
 The preview checks `run --format json` readiness, distinguishes critical/high blockers,
 and displays an **unpublished, unapproved, unverified** digest as inert plaintext.

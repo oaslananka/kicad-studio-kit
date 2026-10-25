@@ -18,6 +18,19 @@ export interface BoardReadyOpsReviewPreview {
 const INVALID_REVIEW_CONTRACT =
   'BoardReadyOps did not return a supported structured review preview.';
 
+// Mirrors the staged upstream review-publish-result schema's
+// additionalProperties: false for both the result and nested tool object.
+const REVIEW_RESULT_FIELDS = new Set([
+  'schemaVersion',
+  'tool',
+  'success',
+  'dryRun',
+  'evidenceDigest',
+  'reviewUrl',
+  'runId'
+]);
+const REVIEW_TOOL_FIELDS = new Set(['name', 'version']);
+
 export function supportsBoardReadyOpsReviewJson(version: string): boolean {
   const valid = semver.valid(version);
   return Boolean(
@@ -51,6 +64,8 @@ export function parseBoardReadyOpsReviewPreview(
       ? (tool as Record<string, unknown>)
       : {};
   if (
+    Object.keys(result).some((field) => !REVIEW_RESULT_FIELDS.has(field)) ||
+    Object.keys(item).some((field) => !REVIEW_TOOL_FIELDS.has(field)) ||
     result['schemaVersion'] !== 1 ||
     item['name'] !== 'boardreadyops' ||
     item['version'] !== discoveredVersion ||

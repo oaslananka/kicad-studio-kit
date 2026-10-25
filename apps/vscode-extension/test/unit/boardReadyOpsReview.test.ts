@@ -11,7 +11,7 @@ const valid = {
   evidenceDigest: 'a'.repeat(64)
 };
 
-describe('BoardReadyOps published/staged review JSON capability boundary', () => {
+describe('#623 BoardReadyOps published/staged review JSON capability boundary', () => {
   test.each(['1.2.0', '1.68.3', '1.69.0-rc.1', '2.0.0', 'not-a-version'])(
     'does not enable review JSON for unsupported %s',
     (version) => expect(supportsBoardReadyOpsReviewJson(version)).toBe(false)
@@ -70,6 +70,27 @@ describe('BoardReadyOps published/staged review JSON capability boundary', () =>
       0
     ],
     ['false run ID', JSON.stringify({ ...valid, runId: 'fake' }), '1.69.0', 0],
+    [
+      'extra top-level source evidence',
+      JSON.stringify({ ...valid, sourceEvidence: 'private source contents' }),
+      '1.69.0',
+      0
+    ],
+    [
+      'extra top-level credential metadata',
+      JSON.stringify({ ...valid, credentials: { apiToken: 'redacted' } }),
+      '1.69.0',
+      0
+    ],
+    [
+      'extra tool metadata',
+      JSON.stringify({
+        ...valid,
+        tool: { ...valid.tool, internalEndpoint: 'https://internal.invalid' }
+      }),
+      '1.69.0',
+      0
+    ],
     ['array', '[]', '1.69.0', 0],
     ['null', 'null', '1.69.0', 0]
   ] as const)('fails closed on %s', (_name, stdout, version, exit) =>
