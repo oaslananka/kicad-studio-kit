@@ -36,6 +36,9 @@ const PNG_SIGNATURE = '89504e470d0a1a0a';
 const VIEWER_TOOLS_PANEL_COLLAPSED_KEY =
   'kicadstudio.viewer.toolsPanelCollapsed';
 
+// Change notifications are event-driven; no periodic filesystem polling.
+const EXTERNAL_FILE_SETTLE_MS = 120;
+
 interface ViewerPayload {
   fileName: string;
   base64: string;
@@ -50,6 +53,7 @@ interface CachedFilePayload {
   base64: string;
   disabledReason: string;
   mtimeMs: number;
+  size: number;
   metadata?: ViewerMetadata | undefined;
 }
 
@@ -84,6 +88,11 @@ export abstract class BaseKiCanvasEditorProvider
   private readonly disposables: vscode.Disposable[] = [];
   private readonly refreshDebounce = new Map<string, NodeJS.Timeout>();
   private readonly fileCache = new Map<string, CachedFilePayload>();
+  private changeWatcher: vscode.FileSystemWatcher | undefined;
+  private changeWatcherListeners: vscode.Disposable[] = [];
+  private readonly pendingExternal = new Set<string>();
+  private readonly changeRevision = new Map<string, number>();
+  private readonly refreshing = new Set<string>();
   private theme = vscode.workspace
     .getConfiguration()
     .get<string>(SETTINGS.viewerTheme, 'kicad');
@@ -118,6 +127,7 @@ export abstract class BaseKiCanvasEditorProvider
   }
 
   dispose(): void {
+    this.stopWatchingViewerFiles();
     for (const timeout of this.refreshDebounce.values()) {
       clearTimeout(timeout);
     }
@@ -205,6 +215,9 @@ export abstract class BaseKiCanvasEditorProvider
             if (info.pendingRefresh) {
               info.pendingRefresh = false;
               void this.refreshDocument(info.uri);
+            } else {
+              // Covers missed watcher events on remote/network filesystems.
+              void this.checkForChangesOnFocus(info.uri);
             }
           } else {
             info.releaseTimer = setTimeout(() => {
@@ -223,6 +236,7 @@ export abstract class BaseKiCanvasEditorProvider
             );
           }
           if (message.type === 'requestRefresh') {
+            this.invalidateFileCache(document.uri);
             await this.refreshDocument(document.uri);
           }
           if (message.type === 'viewerState') {
@@ -325,28 +339,149 @@ export abstract class BaseKiCanvasEditorProvider
     }
   }
 
-  protected async refreshDocument(uri: vscode.Uri): Promise<void> {
-    const visiblePanels: vscode.WebviewPanel[] = [];
-    for (const panel of this.panels.get(uri.toString()) ?? []) {
-      if (panel.visible) {
-        visiblePanels.push(panel);
-        continue;
-      }
-      const info = this.panelInfo.get(panel);
-      if (info) {
-        info.pendingRefresh = true;
+  /**
+   * A watched file can be written in place or atomically replaced. Only open
+   * viewer documents are eligible, and hidden panels do not initiate rendering.
+   */
+  private externalFileChanged(uri: vscode.Uri): void {
+    const key = uri.toString();
+    if (
+      !this.panels.has(key) ||
+      !vscode.workspace
+        .getConfiguration()
+        .get<boolean>(SETTINGS.viewerAutoRefresh, true)
+    ) {
+      return;
+    }
+    this.pendingExternal.add(key);
+    this.changeRevision.set(key, (this.changeRevision.get(key) ?? 0) + 1);
+    if (this.hasVisiblePanel(key)) {
+      this.scheduleRefresh(uri);
+    } else {
+      for (const panel of this.panels.get(key) ?? []) {
+        const info = this.panelInfo.get(panel);
+        if (info) info.pendingRefresh = true;
       }
     }
+  }
 
-    if (!visiblePanels.length) {
+  private hasUnsavedEditor(key: string): boolean {
+    return Boolean(
+      vscode.workspace.textDocuments?.some(
+        (document) => document.isDirty && document.uri.toString() === key
+      )
+    );
+  }
+
+  private hasVisiblePanel(key: string): boolean {
+    return [...(this.panels.get(key) ?? [])].some((panel) => panel.visible);
+  }
+
+  private async checkForChangesOnFocus(uri: vscode.Uri): Promise<void> {
+    const key = uri.toString();
+    if (
+      !this.hasVisiblePanel(key) ||
+      !vscode.workspace
+        .getConfiguration()
+        .get<boolean>(SETTINGS.viewerAutoRefresh, true)
+    ) {
+      return;
+    }
+    const cached = this.fileCache.get(key);
+    try {
+      const current = await vscode.workspace.fs.stat(uri);
+      if (
+        !cached ||
+        cached.mtimeMs !== current.mtime ||
+        cached.size !== current.size
+      ) {
+        this.externalFileChanged(uri);
+      }
+    } catch {
+      // A transiently missing or inaccessible source must not erase the
+      // last valid viewer image. A future create/change event can recover.
+    }
+  }
+
+  /** Compare two metadata snapshots without reading the file or rendering. */
+  private async isStableFile(uri: vscode.Uri): Promise<boolean> {
+    try {
+      const before = await vscode.workspace.fs.stat(uri);
+      await new Promise<void>((resolve) =>
+        setTimeout(resolve, EXTERNAL_FILE_SETTLE_MS)
+      );
+      const after = await vscode.workspace.fs.stat(uri);
+      return before.mtime === after.mtime && before.size === after.size;
+    } catch {
+      return false;
+    }
+  }
+
+  protected async refreshDocument(uri: vscode.Uri): Promise<void> {
+    const key = uri.toString();
+    if (!this.hasVisiblePanel(key)) return;
+    if (this.refreshing.has(key)) return;
+    const external = this.pendingExternal.has(key);
+    if (external && this.hasUnsavedEditor(key)) {
+      // Do not replace a preview while an editor holds unsaved content.
+      // The existing save hook will retry after the document is saved.
       return;
     }
 
-    const project = this.resolveProject?.(uri);
-    this.viewerState.beginReload(uri, { project });
-    this.onViewerReload?.(uri, project);
+    const revision = this.changeRevision.get(key) ?? 0;
+    this.refreshing.add(key);
     try {
-      const payload = await this.buildViewerPayload(uri);
+      if (external) {
+        if (!(await this.isStableFile(uri))) {
+          // Keep waiting for the writer to finish, without reading its
+          // incomplete output. A missing file waits for a create event.
+          try {
+            await vscode.workspace.fs.stat(uri);
+            this.scheduleRefresh(uri);
+          } catch {
+            // Missing/deleted: retain last valid preview without polling.
+          }
+          return;
+        }
+        const cached = this.fileCache.get(key);
+        const stat = await vscode.workspace.fs.stat(uri);
+        if (
+          cached &&
+          cached.mtimeMs === stat.mtime &&
+          cached.size === stat.size
+        ) {
+          this.pendingExternal.delete(key);
+          return;
+        }
+      }
+      const payload = await this.buildViewerPayload(uri, external);
+      const fetched = this.fileCache.get(key);
+      const current = await vscode.workspace.fs.stat(uri);
+      if (
+        !fetched ||
+        fetched.mtimeMs !== current.mtime ||
+        fetched.size !== current.size ||
+        revision !== (this.changeRevision.get(key) ?? 0)
+      ) {
+        this.invalidateFileCache(uri);
+        this.pendingExternal.add(key);
+        this.scheduleRefresh(uri);
+        return;
+      }
+
+      const visiblePanels = [...(this.panels.get(key) ?? [])].filter(
+        (panel) => panel.visible
+      );
+      if (!visiblePanels.length || (external && this.hasUnsavedEditor(key))) {
+        for (const panel of this.panels.get(key) ?? []) {
+          const info = this.panelInfo.get(panel);
+          if (info) info.pendingRefresh = true;
+        }
+        return;
+      }
+      const project = this.resolveProject?.(uri);
+      this.viewerState.beginReload(uri, { project });
+      this.onViewerReload?.(uri, project);
       for (const panel of visiblePanels) {
         await panel.webview.postMessage({
           type: 'refresh',
@@ -359,11 +494,24 @@ export abstract class BaseKiCanvasEditorProvider
           }
         });
       }
+      if (revision === (this.changeRevision.get(key) ?? 0)) {
+        this.pendingExternal.delete(key);
+      }
     } catch (error) {
-      this.viewerState.recordError(uri, error, {
-        project: this.resolveProject?.(uri)
-      });
-      throw error;
+      if (!external) {
+        this.viewerState.recordError(uri, error, {
+          project: this.resolveProject?.(uri)
+        });
+        throw error;
+      }
+      // External writes can be temporarily incomplete; keep the last image
+      // and retry on the next filesystem event or viewer activation.
+      this.invalidateFileCache(uri);
+    } finally {
+      this.refreshing.delete(key);
+      if (revision !== (this.changeRevision.get(key) ?? 0)) {
+        this.scheduleRefresh(uri);
+      }
     }
   }
 
@@ -380,6 +528,26 @@ export abstract class BaseKiCanvasEditorProvider
         void this.refreshDocument(uri);
       }, WEBVIEW_MESSAGE_DEBOUNCE_MS)
     );
+  }
+
+  private watchOpenViewerFiles(): void {
+    if (this.changeWatcher) return;
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      `**/*${this.fileExtension}`
+    );
+    this.changeWatcher = watcher;
+    this.changeWatcherListeners = [
+      watcher.onDidChange((uri) => this.externalFileChanged(uri)),
+      watcher.onDidCreate((uri) => this.externalFileChanged(uri)),
+      watcher.onDidDelete((uri) => this.externalFileChanged(uri))
+    ];
+  }
+
+  private stopWatchingViewerFiles(): void {
+    for (const listener of this.changeWatcherListeners) listener.dispose();
+    this.changeWatcherListeners = [];
+    this.changeWatcher?.dispose();
+    this.changeWatcher = undefined;
   }
 
   private async postFile(
@@ -404,13 +572,16 @@ export abstract class BaseKiCanvasEditorProvider
     });
   }
 
-  private async buildViewerPayload(uri: vscode.Uri): Promise<ViewerPayload> {
+  private async buildViewerPayload(
+    uri: vscode.Uri,
+    validateExternalSource = false
+  ): Promise<ViewerPayload> {
     const cacheKey = uri.toString();
     const fileName = path.basename(uri.fsPath);
     const stat = await vscode.workspace.fs.stat(uri);
     const mtimeMs = stat.mtime;
     const cached = this.fileCache.get(cacheKey);
-    if (cached && cached.mtimeMs === mtimeMs) {
+    if (cached && cached.mtimeMs === mtimeMs && cached.size === stat.size) {
       const restoreState = this.withWorkspaceViewerPreferences(
         uri,
         this.viewerState.getState(uri)
@@ -453,12 +624,22 @@ export abstract class BaseKiCanvasEditorProvider
     const text = bytes
       ? Buffer.from(bytes).toString('utf8')
       : await readTextPrefix(uri, LARGE_FILE_METADATA_BYTES);
+    if (
+      validateExternalSource &&
+      canInline &&
+      !isCompleteKiCadFile(text ?? '', this.fileType)
+    ) {
+      // External writers may pause after truncating a file. Never replace
+      // a usable image with an obviously incomplete source.
+      throw new Error('External KiCad source is incomplete.');
+    }
     const nextPayload: CachedFilePayload = {
       base64: bytes ? bufferToBase64(bytes) : '',
       disabledReason: canInline
         ? ''
         : `Interactive render is disabled for files larger than ${(largeFileThresholdBytes / 1024 / 1024).toFixed(0)} MB. Metadata is still available in the side panel.`,
       mtimeMs,
+      size: stat.size,
       metadata: text ? this.buildViewerMetadata(uri, text) : undefined
     };
     this.fileCache.set(cacheKey, nextPayload);
@@ -535,6 +716,7 @@ export abstract class BaseKiCanvasEditorProvider
     const set = this.panels.get(key) ?? new Set<vscode.WebviewPanel>();
     set.add(panel);
     this.panels.set(key, set);
+    this.watchOpenViewerFiles();
     this.panelInfo.set(panel, {
       uri,
       pendingRefresh: false,
@@ -552,6 +734,15 @@ export abstract class BaseKiCanvasEditorProvider
       set.delete(panel);
       if (!set.size) {
         this.panels.delete(key);
+        const refresh = this.refreshDebounce.get(key);
+        if (refresh) clearTimeout(refresh);
+        this.refreshDebounce.delete(key);
+        this.pendingExternal.delete(key);
+        this.changeRevision.delete(key);
+        this.fileCache.delete(key);
+      }
+      if (!this.panels.size) {
+        this.stopWatchingViewerFiles();
       }
     }
     const info = this.panelInfo.get(panel);
@@ -591,6 +782,19 @@ export abstract class BaseKiCanvasEditorProvider
       );
     }
   }
+}
+
+/**
+ * Fast non-parser guard for intermediate external writes. We avoid parsing a
+ * large design on every change and let KiCanvas own full syntax validation.
+ */
+function isCompleteKiCadFile(
+  source: string,
+  fileType: 'schematic' | 'board'
+): boolean {
+  const header = fileType === 'board' ? '(kicad_pcb' : '(kicad_sch';
+  const trimmed = source.trim();
+  return trimmed.startsWith(header) && trimmed.endsWith(')');
 }
 
 const BUILTIN_DEFAULT_BACKGROUNDS = {

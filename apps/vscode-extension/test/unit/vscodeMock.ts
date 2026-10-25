@@ -103,6 +103,13 @@ export const workspace = {
     stat: jest.fn(),
     writeFile: jest.fn()
   },
+  textDocuments: [] as Array<{ uri: Uri; isDirty: boolean }>,
+  createFileSystemWatcher: jest.fn(() => ({
+    onDidChange: jest.fn(() => createDisposable()),
+    onDidCreate: jest.fn(() => createDisposable()),
+    onDidDelete: jest.fn(() => createDisposable()),
+    dispose: jest.fn()
+  })),
   onDidSaveTextDocument: jest.fn(() => createDisposable()),
   onDidChangeTextDocument: jest.fn(() => createDisposable()),
   onDidOpenTextDocument: jest.fn(() => createDisposable()),

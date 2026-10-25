@@ -41,6 +41,11 @@ MCP discovery, configuration, compatibility metadata, and user experience — se
 [ADR 0009](docs/adr/0009-split-kicad-mcp-pro-into-separate-repository.md) and
 [repository structure](docs/architecture/repo-structure.md).
 
+Open KiCad Studio PCB and schematic previews can refresh automatically when
+external tools save the underlying design files, without relying on MCP.
+[Live viewer refresh](docs/extension/live-viewer-refresh.md) documents the
+event-driven behavior, resource limits, unsaved-edit safeguards and limitations.
+
 The coverage badge reports the configured Jest unit denominator, not every
 shipped source file. Exclusion ownership and the separate critical-module
 ratchet are documented in [the testing strategy](docs/testing-strategy.md#coverage-scope-inventory).
