@@ -148,6 +148,15 @@ test("#722 published MCP tested-pair evidence stays synchronized across docs and
   );
 });
 
+test("#845 real-pair workflow pins the published MCP tested-against version", () => {
+  const ci = fs.readFileSync(".github/workflows/ci.yml", "utf8");
+  const actual = [
+    ...ci.matchAll(/REAL_SERVER_PYPI_VERSION:\s*(\d+\.\d+\.\d+)/gu),
+  ].map((match) => match[1]);
+  const expected = compatibility.supportAxes.mcpServer.testedAgainst.version;
+  assert.deepEqual(actual, [expected, expected]);
+});
+
 test("repository compatibility contract validates current state", () => {
   assert.deepEqual(validateCompatibilityContract(), []);
 });

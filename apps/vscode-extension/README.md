@@ -101,7 +101,7 @@ The BOM panel and its CSV/XLSX exports include only placed schematic symbols tha
 
 ## MCP Compatibility
 
-KiCad Studio 2.0.2 supports `kicad-mcp-pro >=4.3.0 <5.0.0` and was tested against `4.3.0`. This release uses MCP protocol `2026-07-28`.
+KiCad Studio 2.0.2 supports `kicad-mcp-pro >=4.3.0 <5.0.0` and was tested against `4.4.0`. This release uses MCP protocol `2026-07-28`.
 The breaking protocol change shipped in KiCad Studio 2.0.0. Servers limited to
 MCP `2025-11-25` are incompatible with Studio 2.x; users who need the older
 protocol can remain on KiCad Studio 1.17.1 until the server is upgraded.

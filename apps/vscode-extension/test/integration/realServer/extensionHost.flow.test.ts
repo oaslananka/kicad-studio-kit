@@ -6,7 +6,11 @@ import { MCP_PROTOCOL_VERSION } from '../../../src/mcp/compatibilityMatrix';
 import { McpClient } from '../../../src/mcp/mcpClient';
 import { Logger } from '../../../src/utils/logger';
 import type { QualityGateResult } from '../../../src/types';
-import { withPublishedStatelessServer, withRealServer } from './setup';
+import {
+  requirePublishedVersion,
+  withPublishedStatelessServer,
+  withRealServer
+} from './setup';
 import {
   Mcp2026InvalidDiscoveryError,
   Mcp2026ProtocolAdapter,
@@ -137,10 +141,11 @@ suite('Real Pair Extension Host', () => {
               actualVersion,
               'The full Studio client must decode 2026 tools/call'
             );
-            assert.match(
-              JSON.stringify(actualVersion),
-              /KiCad MCP Pro Server v4\.3\.0/u,
-              'The published version tool must report the pinned 4.3.0 server'
+            assert.ok(
+              JSON.stringify(actualVersion).includes(
+                `KiCad MCP Pro Server v${requirePublishedVersion()}`
+              ),
+              'The published version tool must report the tested PyPI version'
             );
             assert.ok(
               !stored.has('kicadstudio.mcp.sessionId'),
@@ -532,7 +537,11 @@ async function assertPublishedActive2026ExtensionHost(): Promise<void> {
         process.env['REAL_SERVER_PYPI_VERSION']
       );
       const version = await client.callTool('kicad_get_version', {});
-      assert.match(JSON.stringify(version), /KiCad MCP Pro Server v4\.3\.0/u);
+      assert.ok(
+        JSON.stringify(version).includes(
+          `KiCad MCP Pro Server v${requirePublishedVersion()}`
+        )
+      );
       assert.equal(saved.has('kicadstudio.mcp.sessionId'), false);
 
       // A 2025 session remains a separate, explicit rollback path. The
