@@ -19,7 +19,7 @@ const CANONICAL_WORKSPACE = parseYaml(
   readFileSync(new URL("../pnpm-workspace.yaml", import.meta.url), "utf8"),
 );
 const MINIMUM_RELEASE_AGE_EXCLUDE_ERROR =
-  "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, nanoid@3.3.18, pnpm@11.11.0, source-map-js@1.2.2, handlebars@4.7.10, follow-redirects@1.16.1, vite@6.4.4, markdown-it@14.3.3";
+  "pnpm-workspace.yaml minimumReleaseAgeExclude must be limited to version-scoped security exceptions: tmp@0.2.7, nanoid@3.3.18, pnpm@11.11.0, source-map-js@1.2.2, handlebars@4.7.10, follow-redirects@1.16.1, vite@6.4.4, markdown-it@14.3.3, ip-address@10.7.4, fast-uri@3.1.9, serialize-javascript@7.1.3";
 
 function workspaceFixture(mutate = () => {}) {
   const workspace = structuredClone(CANONICAL_WORKSPACE);
@@ -33,7 +33,11 @@ function createFixture(overrides = {}) {
 
   const workspacePackages = Array.isArray(overrides.workspacePackages)
     ? overrides.workspacePackages
-    : ["apps/vscode-extension", "packages/kicad-fixtures", "packages/test-harness"];
+    : [
+        "apps/vscode-extension",
+        "packages/kicad-fixtures",
+        "packages/test-harness",
+      ];
 
   for (const pkgPath of workspacePackages) {
     mkdirSync(path.join(repoRoot, pkgPath), { recursive: true });
@@ -307,7 +311,7 @@ test("#508 newly disclosed transitive security fixes stay pinned", () => {
   });
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
-      "pnpm-workspace.yaml overrides must pin fast-uri to 3.1.8",
+      "pnpm-workspace.yaml overrides must pin fast-uri to 3.1.9",
       "pnpm-workspace.yaml overrides must pin linkify-it to 5.0.2",
     ]);
   } finally {
@@ -458,4 +462,42 @@ test("#554 official brace-expansion release preserves minimatch API and bounds o
   assert.equal(minimatchModule.minimatch("src/a.js", "src/*.{js,ts}"), true);
   assert.equal(minimatchModule.minimatch("src/a.css", "src/*.{js,ts}"), false);
   assert.deepEqual(minimatchModule.braceExpand("a{b,c}d"), ["abd", "acd"]);
+});
+
+test("2026-10 security overrides are immutable until reviewed", () => {
+  const repoRoot = createFixture({
+    workspace: workspaceFixture((workspace) => {
+      workspace.overrides["mocha>serialize-javascript"] = "7.1.2";
+      workspace.overrides["@azure/msal-node"] = "6.0.1";
+      workspace.overrides.zod = "4.6.5";
+      workspace.overrides["@vitest/mocker"] = "4.1.11";
+      workspace.overrides.undici = "7.30.0";
+    }),
+  });
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      "pnpm-workspace.yaml overrides must pin undici to 7.30.1",
+      "pnpm-workspace.yaml overrides must pin mocha>serialize-javascript to 7.1.3",
+      "pnpm-workspace.yaml overrides must pin @azure/msal-node to 7.1.0",
+      "pnpm-workspace.yaml overrides must pin zod to 4.6.7",
+      "pnpm-workspace.yaml overrides must pin @vitest/mocker to 4.1.12",
+    ]);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("2026-10 version-scoped exemptions must not become wildcard bypasses", () => {
+  const repoRoot = createFixture({
+    workspace: workspaceFixture((workspace) => {
+      workspace.minimumReleaseAgeExclude.push("fast-uri");
+    }),
+  });
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      MINIMUM_RELEASE_AGE_EXCLUDE_ERROR,
+    ]);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
 });
