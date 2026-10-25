@@ -323,20 +323,21 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - name: Run real-pair compatibility tests
         env:
-          REAL_SERVER_ARTIFACT_DIR: apps/vscode-extension/test-results/real-server
-          REAL_SERVER_PYPI_VERSION: 4.3.0
+          REAL_SERVER_ARTIFACT_DIR: test-results/real-server
+          REAL_SERVER_PYPI_VERSION: 4.4.0
           REAL_SERVER_TEST_OPERATING_MODE: write
         run: corepack pnpm --filter kicadstudiokit run test:integration:real
       - name: Run real-pair extension host test
         env:
-          REAL_SERVER_ARTIFACT_DIR: apps/vscode-extension/test-results/real-server
+          REAL_SERVER_ARTIFACT_DIR: test-results/real-server
           # Require the actual published peer; do not silently skip when a
           # sibling MCP source checkout is absent on GitHub-hosted runners.
-          REAL_SERVER_PYPI_VERSION: 4.3.0
+          REAL_SERVER_PYPI_VERSION: 4.4.0
         run: xvfb-run -a corepack pnpm --filter kicadstudiokit run test:integration:real:host
       - name: Run real-pair VS Code host smoke
         env:
-          REAL_SERVER_ARTIFACT_DIR: apps/vscode-extension/test-results/real-server
+          REAL_SERVER_ARTIFACT_DIR: test-results/real-server
+          REAL_SERVER_PYPI_VERSION: 4.4.0
         run: xvfb-run -a corepack pnpm --filter kicadstudiokit run test:e2e:real
       - name: Upload real-pair failure artifacts
         if: failure()

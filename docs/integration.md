@@ -1,6 +1,6 @@
 # Integration
 
-KiCad Studio discovers `kicad-mcp-pro` from `uvx`, direct executables, `pipx`, or `pip`. The supported server range is `>=4.3.0 <5.0.0`; the tested server version is `4.3.0`.
+KiCad Studio discovers `kicad-mcp-pro` from `uvx`, direct executables, `pipx`, or `pip`. The supported server range is `>=4.3.0 <5.0.0`; the tested server version is `4.4.0`.
 
 Documentation URLs use the canonical Pages site:
 
