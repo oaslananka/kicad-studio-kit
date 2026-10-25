@@ -100,6 +100,14 @@ export async function verifyBoardReadyOpsManufacturingRelease(
   }
   const readiness = parseBoardReadyOpsRunResult(readinessProcess.stdout);
   assertBoardReadyOpsRunVerdict(readiness, readinessProcess.exitCode);
+  if (readiness.tool.version !== contract.version) {
+    // A compatible semver range alone cannot prove the same executable was
+    // used for preflight and readiness. Never continue to manufacturing
+    // evidence verification after a CLI version swap.
+    throw new Error(
+      'BoardReadyOps readiness version changed during compatibility discovery.'
+    );
+  }
   if (hasBlockingReadiness(readiness)) {
     return {
       ok: false,

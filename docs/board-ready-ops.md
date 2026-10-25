@@ -137,8 +137,9 @@ Studio:
 1. runs `boardreadyops doctor --format json` and rejects unsupported or
    malformed contracts;
 2. runs the structured readiness check, rejects discrepancies between the CLI
-   process exit code and JSON status/exit code, and blocks on a failed readiness
-   result or any `critical`/`high` finding; and
+   process exit code and JSON status/exit code **or a CLI version change since
+   doctor discovery**, and blocks on a failed readiness result or any
+   `critical`/`high` finding; and
 3. verifies the project's `build/boardreadyops-release` evidence bundle,
    rejects disagreement between the CLI exit status and JSON `ok` verdict,
    and requires at least one verified artifact with no reported errors.

@@ -190,6 +190,43 @@ describe('BoardReadyOps manufacturing release gate', () => {
     ).rejects.toThrow('BoardReadyOps is not contract-compatible:');
   });
 
+  it('#623 rejects a BoardReadyOps CLI version swap before verifying manufacturing evidence', async () => {
+    const runner = jest
+      .fn()
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify({
+          schemaVersion: 1,
+          tool: { name: 'boardreadyops', version: '1.37.0' },
+          checks: []
+        }),
+        stderr: '',
+        exitCode: 0
+      })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify(
+          readiness({
+            tool: { name: 'boardreadyops', version: '1.68.3' }
+          })
+        ),
+        stderr: '',
+        exitCode: 0
+      })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify(evidence()),
+        stderr: '',
+        exitCode: 0
+      });
+
+    await expect(
+      verifyBoardReadyOpsManufacturingRelease('/project', undefined, runner)
+    ).rejects.toThrow(
+      'BoardReadyOps readiness version changed during compatibility discovery.'
+    );
+    // A green report from a different compatible version is not sufficient
+    // authority to run evidence verification or approve manufacturing.
+    expect(runner).toHaveBeenCalledTimes(2);
+  });
+
   it('fails closed when readiness exits outside the documented verdict codes', async () => {
     const runner = jest
       .fn()
