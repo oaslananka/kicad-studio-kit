@@ -154,7 +154,7 @@ test("#845 real-pair workflow pins the published MCP tested-against version", ()
     ...ci.matchAll(/REAL_SERVER_PYPI_VERSION:\s*(\d+\.\d+\.\d+)/gu),
   ].map((match) => match[1]);
   const expected = compatibility.supportAxes.mcpServer.testedAgainst.version;
-  assert.deepEqual(actual, [expected, expected]);
+  assert.deepEqual(actual, [expected, expected, expected]);
 });
 
 test("repository compatibility contract validates current state", () => {
