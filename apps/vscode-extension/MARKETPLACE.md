@@ -60,11 +60,11 @@ mockups.
 - kicad-cli for CLI-backed validation and export workflows
 - Optional MCP integration: kicad-mcp-pro >=4.3.0 <5.0.0
 
-The development-source protocol is `2026-07-28` (unreleased) and requires
-published `kicad-mcp-pro >=4.3.0 <5.0.0`. The currently distributed VSIX
-`v1.17.1` instead uses MCP `2025-11-25` and supports servers
-`>=3.5.2 <5.0.0`. A new VSIX/Marketplace release requires a separate
-protected rollout decision.
+The published extension supports MCP protocol `2026-07-28` with
+`kicad-mcp-pro >=4.3.0 <5.0.0`. MCP integration is optional; the extension
+continues to provide local KiCad workflows when the server is not configured.
+See the [compatibility matrix](https://github.com/oaslananka/kicad-studio-kit/blob/main/docs/support-matrix.md)
+for the supported versions and feature restrictions.
 
 KiCad remains the source of truth for design files. Viewer fallback and
 compatibility state are surfaced explicitly instead of silently substituting
@@ -86,6 +86,18 @@ Current project-authored source is licensed under **PolyForm Noncommercial
 1.0.0**. Commercial use requires a separate written license. Earlier revisions
 published under MIT retain the rights granted for those versions.
 
-Use the repository's GitHub Issues for reproducible bugs, compatibility reports,
-and feature requests. Include your KiCad version, operating system, extension
-version, and the command or file type that reproduced the issue.
+For reproducible bug reports, compatibility issues, or feature requests, use
+[GitHub Issues](https://github.com/oaslananka/kicad-studio-kit/issues).
+Include your KiCad version, operating system, extension version, and
+reproduction steps. See the [support guidelines](https://github.com/oaslananka/kicad-studio-kit/blob/main/SUPPORT.md)
+for reporting expectations; report security vulnerabilities privately via
+[SECURITY.md](https://github.com/oaslananka/kicad-studio-kit/blob/main/SECURITY.md).
+
+## Sponsor Development
+
+KiCad Studio is free to install. If it helps your engineering work, you can
+support ongoing maintenance through [GitHub Sponsors](https://github.com/sponsors/oaslananka)
+or [Buy Me a Coffee](https://www.buymeacoffee.com/oaslananka).
+Sponsorship is voluntary and does not grant a commercial license or a paid
+support SLA; [commercial licensing](https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSING.md)
+is handled separately.
