@@ -6,5 +6,5 @@ documentation site always follows the same release history as the repository.
 | Product | Version | Changelog |
 | --- | ---: | --- |
 | Monorepo | `1.0.0` | [Root changelog](root.md) |
-| KiCad Studio extension | `2.0.2` | [Extension changelog](kicad-studio.md) |
+| KiCad Studio extension | `2.1.0` | [Extension changelog](kicad-studio.md) |
 | kicad-mcp-pro Python server | `4.4.0` | [MCP server changelog](kicad-mcp-pro.md) |
