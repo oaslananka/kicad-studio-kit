@@ -57,7 +57,7 @@ function validateExternalSignals(repoRoot, policy, required, errors) {
     sonar.analysisMethod !== "github-actions-lcov" ||
     sonar.workflow !== ".github/workflows/sonarcloud.yml" ||
     sonar.coverageReport !==
-      "apps/vscode-extension/coverage/lcov.info,apps/vscode-extension/coverage/sonar-scripts/lcov.info" ||
+      "apps/vscode-extension/coverage/lcov.info,apps/vscode-extension/coverage/critical/lcov.info,apps/vscode-extension/coverage/sonar-scripts/lcov.info" ||
     sonar.policy !== "advisory-zero-new-issues" ||
     required.includes(sonar.checkContext)
   ) {
@@ -192,6 +192,31 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
     !steps.some((step) => String(step.run ?? "").includes("test:unit:coverage"))
   ) {
     errors.push("SonarCloud must generate actual Jest unit LCOV");
+  }
+  if (
+    !steps.some((step) => {
+      const command = String(step.run ?? "");
+      return (
+        command.includes("jest.coverage-ratchet.config.js") &&
+        command.includes("--coverageReporters=lcov")
+      );
+    })
+  ) {
+    errors.push("SonarCloud must generate real critical-module Jest coverage");
+  }
+  if (
+    !steps.some((step) => {
+      const command = String(step.run ?? "");
+      return (
+        command.includes('test -s "$critical_lcov"') &&
+        command.includes("coverage-scope.json") &&
+        command.includes("SF:apps/vscode-extension/$file")
+      );
+    })
+  ) {
+    errors.push(
+      "SonarCloud must verify every critical-module LCOV source before upload",
+    );
   }
   if (
     !steps.some((step) =>
