@@ -12,6 +12,7 @@ const REPO_ROOT = path.resolve(
   "..",
 );
 const LCOV_PATH = "apps/vscode-extension/coverage/lcov.info";
+const CRITICAL_LCOV_PATH = "apps/vscode-extension/coverage/critical/lcov.info";
 const EXTENSION_PREFIX = "apps/vscode-extension/";
 const JEST_SOURCE_PREFIX = "src/";
 
@@ -50,5 +51,8 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   const count = normalizeSonarLcov();
-  console.log(`Prepared real LCOV source paths for SonarCloud: ${count} files`);
+  const criticalCount = normalizeSonarLcov(REPO_ROOT, CRITICAL_LCOV_PATH);
+  console.log(
+    `Prepared real LCOV source paths for SonarCloud: ${count} headline + ${criticalCount} critical files`,
+  );
 }

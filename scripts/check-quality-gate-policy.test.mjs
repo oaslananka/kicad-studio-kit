@@ -207,6 +207,46 @@ test("#706 Sonar requires generated Jest coverage", () => {
   }
 });
 
+test("#849 Sonar must run real critical-module Jest coverage", () => {
+  const root = fixture();
+  try {
+    const workflow = path.join(root, ".github/workflows/sonarcloud.yml");
+    writeFileSync(
+      workflow,
+      readFileSync(workflow, "utf8").replace(
+        "jest.coverage-ratchet.config.js",
+        "missing-ratchet.js",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud must generate real critical-module Jest coverage/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#849 Sonar must verify critical-module LCOV sources before upload", () => {
+  const root = fixture();
+  try {
+    const workflow = path.join(root, ".github/workflows/sonarcloud.yml");
+    writeFileSync(
+      workflow,
+      readFileSync(workflow, "utf8").replace(
+        'test -s "$critical_lcov"',
+        "echo skip",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud must verify every critical-module LCOV source/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("#706 Sonar workflow must normalize Jest's app-relative LCOV paths", () => {
   const root = fixture();
   try {

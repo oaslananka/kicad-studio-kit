@@ -40,6 +40,11 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - name: Generate real extension Jest coverage
         run: corepack pnpm --filter kicadstudiokit run test:unit:coverage
+      - name: Generate real critical-module Jest coverage
+        run: >-
+          corepack pnpm --filter kicadstudiokit exec jest
+          --config jest.coverage-ratchet.config.js --runInBand --coverage
+          --coverageReporters=lcov --coverageReporters=json-summary
       - name: Generate real repository and marketplace-script coverage with c8
         shell: bash
         run: |
@@ -84,6 +89,16 @@ jobs:
           lcov=apps/vscode-extension/coverage/lcov.info
           test -s "$lcov"
           grep -q '^SF:apps/vscode-extension/src/' "$lcov"
+          critical_lcov=apps/vscode-extension/coverage/critical/lcov.info
+          test -s "$critical_lcov"
+          # A valid headline LCOV must not mask missing coverage on files
+          # intentionally isolated in the critical-module ratchet.
+          while IFS= read -r file; do
+            grep -Fqx "SF:apps/vscode-extension/$file" "$critical_lcov" || {
+              echo "Missing critical-module LCOV source entry" >&2
+              exit 1
+            }
+          done < <(node -p "require('./apps/vscode-extension/coverage-scope.json').ratchet.files.join('\n')")
           script_lcov=apps/vscode-extension/coverage/sonar-scripts/lcov.info
           test -s "$script_lcov"
           grep -q '^SF:scripts/check-quality-gate-policy.mjs' "$script_lcov"
@@ -102,7 +117,7 @@ jobs:
           grep -q '^SF:scripts/lib/github-signed-commit.mjs' "$script_lcov"
           grep -q '^SF:scripts/lib/release-surface.mjs' "$script_lcov"
           grep -q '^SF:apps/vscode-extension/scripts/check-marketplace-assets.js' "$script_lcov"
-          echo "Verified real Jest and Node c8 LCOV source-file entries"
+          echo "Verified headline Jest, critical Jest, and Node c8 LCOV source-file entries"
       - name: Upload analysis and LCOV to SonarQube Cloud
         uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
         env:

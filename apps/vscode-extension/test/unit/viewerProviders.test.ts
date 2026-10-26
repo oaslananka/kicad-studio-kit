@@ -40,8 +40,7 @@ function createPanel() {
 
   let disposeCallback: (() => void) | undefined;
   let viewStateCallback:
-    | ((event: { webviewPanel: unknown }) => void)
-    | undefined;
+    ((event: { webviewPanel: unknown }) => void) | undefined;
   const panel = {
     webview,
     onDidDispose: jest.fn((callback: () => void) => {
@@ -80,6 +79,7 @@ describe.each([
   let tempFile: string;
 
   beforeEach(() => {
+    jest.useFakeTimers();
     __setConfiguration({
       'kicadstudio.viewer.autoRefresh': true
     });
@@ -100,9 +100,18 @@ describe.each([
     (window.showSaveDialog as jest.Mock).mockReset();
     (window.showErrorMessage as jest.Mock).mockReset();
     (workspace.onDidSaveTextDocument as jest.Mock).mockClear();
+    (workspace.createFileSystemWatcher as jest.Mock).mockReset();
+    (workspace.createFileSystemWatcher as jest.Mock).mockImplementation(() => ({
+      onDidChange: jest.fn(() => ({ dispose: jest.fn() })),
+      onDidCreate: jest.fn(() => ({ dispose: jest.fn() })),
+      onDidDelete: jest.fn(() => ({ dispose: jest.fn() })),
+      dispose: jest.fn()
+    }));
+    workspace.textDocuments.length = 0;
   });
 
   afterEach(() => {
+    jest.useRealTimers();
     fs.rmSync(tempFile, { force: true });
   });
 
@@ -122,6 +131,719 @@ describe.each([
 
     expect(panel.webview.html).toContain('Opening interactive renderer...');
     expect(panel.webview.html).toContain('kicanvas-source');
+  });
+
+  it('watches open viewer files only and disposes the watcher when the last panel closes (#849)', async () => {
+    const watcher = {
+      onDidChange: jest.fn(() => ({ dispose: jest.fn() })),
+      onDidCreate: jest.fn(() => ({ dispose: jest.fn() })),
+      onDidDelete: jest.fn(() => ({ dispose: jest.fn() })),
+      dispose: jest.fn()
+    };
+    (workspace.createFileSystemWatcher as jest.Mock).mockReturnValue(watcher);
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    expect(workspace.createFileSystemWatcher).not.toHaveBeenCalled();
+    const panel = createPanel();
+    const document = {
+      uri: vscode.Uri.file(tempFile)
+    } as vscode.CustomDocument;
+    await provider.resolveCustomEditor(
+      document,
+      panel as unknown as vscode.WebviewPanel
+    );
+    expect(workspace.createFileSystemWatcher).toHaveBeenCalledWith(
+      `**/*${extension}`
+    );
+    panel.fireDispose();
+    expect(watcher.dispose).toHaveBeenCalledTimes(1);
+    provider.dispose();
+  });
+
+  it('coalesces a burst of external updates to one redraw and ignores unchanged events (#849)', async () => {
+    let changed: ((uri: vscode.Uri) => void) | undefined;
+    const watcher = {
+      onDidChange: jest.fn((callback: (uri: vscode.Uri) => void) => {
+        changed = callback;
+        return { dispose: jest.fn() };
+      }),
+      onDidCreate: jest.fn(() => ({ dispose: jest.fn() })),
+      onDidDelete: jest.fn(() => ({ dispose: jest.fn() })),
+      dispose: jest.fn()
+    };
+    (workspace.createFileSystemWatcher as jest.Mock).mockReturnValue(watcher);
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+
+    const next = `${sourceText} (updated)`;
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: Buffer.byteLength(next),
+      mtime: 42,
+      ctime: 0,
+      type: 1
+    });
+    (workspace.fs.readFile as jest.Mock).mockResolvedValue(Buffer.from(next));
+    for (let i = 0; i < 25; i++) changed?.(uri);
+    await jest.advanceTimersByTimeAsync(760);
+    expect(panel.webview.postMessage).toHaveBeenCalledTimes(1);
+    expect(workspace.fs.readFile).toHaveBeenCalledTimes(2);
+
+    changed?.(uri);
+    await jest.advanceTimersByTimeAsync(760);
+    expect(panel.webview.postMessage).toHaveBeenCalledTimes(1);
+    expect(workspace.fs.readFile).toHaveBeenCalledTimes(2);
+    provider.dispose();
+  });
+
+  it('defers hidden viewers and refreshes only when visible again (#849)', async () => {
+    let changed: ((uri: vscode.Uri) => void) | undefined;
+    (workspace.createFileSystemWatcher as jest.Mock).mockImplementation(() => ({
+      onDidChange: (callback: (uri: vscode.Uri) => void) => {
+        changed = callback;
+        return { dispose: jest.fn() };
+      },
+      onDidCreate: jest.fn(() => ({ dispose: jest.fn() })),
+      onDidDelete: jest.fn(() => ({ dispose: jest.fn() })),
+      dispose: jest.fn()
+    }));
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    panel.visible = false;
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: 1234,
+      mtime: 7,
+      ctime: 0,
+      type: 1
+    });
+    changed?.(uri);
+    await jest.advanceTimersByTimeAsync(600);
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+    expect(workspace.fs.readFile).toHaveBeenCalledTimes(1);
+    panel.visible = true;
+    panel.fireViewState();
+    await jest.advanceTimersByTimeAsync(165);
+    expect(panel.webview.postMessage).toHaveBeenCalledTimes(1);
+    provider.dispose();
+  });
+
+  it('keeps the previous render when a text editor has unsaved content (#849)', async () => {
+    let changed: ((uri: vscode.Uri) => void) | undefined;
+    (workspace.createFileSystemWatcher as jest.Mock).mockImplementation(() => ({
+      onDidChange: (callback: (uri: vscode.Uri) => void) => {
+        changed = callback;
+        return { dispose: jest.fn() };
+      },
+      onDidCreate: jest.fn(() => ({ dispose: jest.fn() })),
+      onDidDelete: jest.fn(() => ({ dispose: jest.fn() })),
+      dispose: jest.fn()
+    }));
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    workspace.textDocuments.push({ uri, isDirty: true });
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: 1234,
+      mtime: 8,
+      ctime: 0,
+      type: 1
+    });
+    changed?.(uri);
+    await jest.advanceTimersByTimeAsync(600);
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+    workspace.textDocuments[0]!.isDirty = false;
+    const onSave = (workspace.onDidSaveTextDocument as jest.Mock).mock.calls.at(
+      -1
+    )?.[0];
+    expect(onSave).toBeDefined();
+    onSave({ uri, fileName: tempFile });
+    await jest.advanceTimersByTimeAsync(760);
+    expect(panel.webview.postMessage).toHaveBeenCalledTimes(1);
+    workspace.textDocuments.length = 0;
+    provider.dispose();
+  });
+
+  it('retains the last good image during incomplete writes and recovers on atomic replacement (#849)', async () => {
+    let changed: ((uri: vscode.Uri) => void) | undefined;
+    let created: ((uri: vscode.Uri) => void) | undefined;
+    (workspace.createFileSystemWatcher as jest.Mock).mockImplementation(() => ({
+      onDidChange: (callback: (uri: vscode.Uri) => void) => {
+        changed = callback;
+        return { dispose: jest.fn() };
+      },
+      onDidCreate: (callback: (uri: vscode.Uri) => void) => {
+        created = callback;
+        return { dispose: jest.fn() };
+      },
+      onDidDelete: jest.fn(() => ({ dispose: jest.fn() })),
+      dispose: jest.fn()
+    }));
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: 15,
+      mtime: 10,
+      ctime: 0,
+      type: 1
+    });
+    (workspace.fs.readFile as jest.Mock).mockResolvedValue(
+      Buffer.from(`(kicad_${_label === 'pcb' ? 'pcb' : 'sch'} (footprint`)
+    );
+    changed?.(uri);
+    await jest.advanceTimersByTimeAsync(770);
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+
+    const next = sourceText.replace('R1', 'R2');
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: Buffer.byteLength(next),
+      mtime: 11,
+      ctime: 0,
+      type: 1
+    });
+    (workspace.fs.readFile as jest.Mock).mockResolvedValue(Buffer.from(next));
+    created?.(uri);
+    await jest.advanceTimersByTimeAsync(770);
+    expect(panel.webview.postMessage).toHaveBeenCalledTimes(1);
+    provider.dispose();
+  });
+
+  it('waits for stable file metadata rather than rendering an in-progress write (#849)', async () => {
+    let changed: ((uri: vscode.Uri) => void) | undefined;
+    (workspace.createFileSystemWatcher as jest.Mock).mockImplementation(() => ({
+      onDidChange: (callback: (uri: vscode.Uri) => void) => {
+        changed = callback;
+        return { dispose: jest.fn() };
+      },
+      onDidCreate: jest.fn(() => ({ dispose: jest.fn() })),
+      onDidDelete: jest.fn(() => ({ dispose: jest.fn() })),
+      dispose: jest.fn()
+    }));
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    let statCalls = 0;
+    (workspace.fs.stat as jest.Mock).mockImplementation(async () => {
+      statCalls++;
+      return { size: 20, mtime: statCalls === 1 ? 10 : 11, ctime: 0, type: 1 };
+    });
+    changed?.(uri);
+    await jest.advanceTimersByTimeAsync(590);
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+    await jest.advanceTimersByTimeAsync(760);
+    expect(panel.webview.postMessage).toHaveBeenCalledTimes(1);
+    expect(statCalls).toBeGreaterThanOrEqual(4);
+    provider.dispose();
+  });
+
+  it('disables external file redraw when autoRefresh is false (#849)', async () => {
+    let changed: ((uri: vscode.Uri) => void) | undefined;
+    (workspace.createFileSystemWatcher as jest.Mock).mockImplementation(() => ({
+      onDidChange: (callback: (uri: vscode.Uri) => void) => {
+        changed = callback;
+        return { dispose: jest.fn() };
+      },
+      onDidCreate: jest.fn(() => ({ dispose: jest.fn() })),
+      onDidDelete: jest.fn(() => ({ dispose: jest.fn() })),
+      dispose: jest.fn()
+    }));
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    __setConfiguration({ 'kicadstudio.viewer.autoRefresh': false });
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: 100,
+      mtime: 44,
+      ctime: 0,
+      type: 1
+    });
+    changed?.(uri);
+    await jest.advanceTimersByTimeAsync(40);
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+    expect(workspace.fs.readFile).toHaveBeenCalledTimes(1);
+    provider.dispose();
+  });
+
+  it('does not redraw on delete and can recover when a file is recreated (#849)', async () => {
+    let deleted: ((uri: vscode.Uri) => void) | undefined;
+    let created: ((uri: vscode.Uri) => void) | undefined;
+    (workspace.createFileSystemWatcher as jest.Mock).mockImplementation(() => ({
+      onDidChange: jest.fn(() => ({ dispose: jest.fn() })),
+      onDidCreate: (callback: (uri: vscode.Uri) => void) => {
+        created = callback;
+        return { dispose: jest.fn() };
+      },
+      onDidDelete: (callback: (uri: vscode.Uri) => void) => {
+        deleted = callback;
+        return { dispose: jest.fn() };
+      },
+      dispose: jest.fn()
+    }));
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    (workspace.fs.stat as jest.Mock).mockRejectedValue(new Error('missing'));
+    deleted?.(uri);
+    await jest.advanceTimersByTimeAsync(760);
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+
+    const updated = sourceText.replace('R1', 'R8');
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: Buffer.byteLength(updated),
+      mtime: 77,
+      ctime: 0,
+      type: 1
+    });
+    (workspace.fs.readFile as jest.Mock).mockResolvedValue(
+      Buffer.from(updated)
+    );
+    created?.(uri);
+    await jest.advanceTimersByTimeAsync(760);
+    expect(panel.webview.postMessage).toHaveBeenCalledTimes(1);
+    provider.dispose();
+  });
+
+  it('keeps the shared file watcher until all same-type panels close (#849)', async () => {
+    const watcher = {
+      onDidChange: jest.fn(() => ({ dispose: jest.fn() })),
+      onDidCreate: jest.fn(() => ({ dispose: jest.fn() })),
+      onDidDelete: jest.fn(() => ({ dispose: jest.fn() })),
+      dispose: jest.fn()
+    };
+    (workspace.createFileSystemWatcher as jest.Mock).mockReturnValue(watcher);
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const first = createPanel();
+    const second = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      first as unknown as vscode.WebviewPanel
+    );
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      second as unknown as vscode.WebviewPanel
+    );
+    expect(workspace.createFileSystemWatcher).toHaveBeenCalledTimes(1);
+    first.fireDispose();
+    expect(watcher.dispose).not.toHaveBeenCalled();
+    second.fireDispose();
+    expect(watcher.dispose).toHaveBeenCalledTimes(1);
+    provider.dispose();
+  });
+
+  it('ignores file events unrelated to a currently opened viewer (#849)', async () => {
+    let changed: ((uri: vscode.Uri) => void) | undefined;
+    (workspace.createFileSystemWatcher as jest.Mock).mockImplementation(() => ({
+      onDidChange: (callback: (uri: vscode.Uri) => void) => {
+        changed = callback;
+        return { dispose: jest.fn() };
+      },
+      onDidCreate: jest.fn(() => ({ dispose: jest.fn() })),
+      onDidDelete: jest.fn(() => ({ dispose: jest.fn() })),
+      dispose: jest.fn()
+    }));
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    await provider.resolveCustomEditor(
+      { uri: vscode.Uri.file(tempFile) } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    changed?.(vscode.Uri.file(tempFile + '.unrelated'));
+    await jest.advanceTimersByTimeAsync(35);
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+    provider.dispose();
+  });
+
+  it('checks disk metadata on focus to recover missed remote watcher events (#849)', async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    panel.visible = false;
+    panel.visible = true;
+    panel.fireViewState();
+    await jest.advanceTimersByTimeAsync(30);
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: 999,
+      mtime: 9,
+      ctime: 0,
+      type: 1
+    });
+    panel.fireViewState();
+    await jest.advanceTimersByTimeAsync(760);
+    expect(panel.webview.postMessage).toHaveBeenCalledTimes(1);
+    provider.dispose();
+  });
+
+  it('does not launch concurrent viewer redraws for the same document (#849)', async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+
+    const first = (provider as any).refreshDocument(uri);
+    const second = (provider as any).refreshDocument(uri);
+    await Promise.all([first, second]);
+    expect(panel.webview.postMessage).toHaveBeenCalledTimes(1);
+    provider.dispose();
+  });
+
+  it('does not probe files on focus while auto-refresh is disabled (#849)', async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    (workspace.fs.stat as jest.Mock).mockClear();
+    __setConfiguration({ 'kicadstudio.viewer.autoRefresh': false });
+    await (provider as any).checkForChangesOnFocus(uri);
+    expect(workspace.fs.stat).not.toHaveBeenCalled();
+    provider.dispose();
+  });
+
+  it('retains the last image when the source disappears during a focus check (#849)', async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    (workspace.fs.stat as jest.Mock).mockRejectedValueOnce(
+      new Error('not found')
+    );
+    await (provider as any).checkForChangesOnFocus(uri);
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+    expect(workspace.fs.readFile).toHaveBeenCalledTimes(1);
+    provider.dispose();
+  });
+
+  it('rechecks changed size on focus even if source mtime has not changed (#849)', async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    const changed = sourceText + ' (comment "new")';
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: Buffer.byteLength(changed),
+      mtime: 0,
+      ctime: 0,
+      type: 1
+    });
+    (workspace.fs.readFile as jest.Mock).mockResolvedValue(
+      Buffer.from(changed)
+    );
+    await (provider as any).checkForChangesOnFocus(uri);
+    await jest.advanceTimersByTimeAsync(760);
+    expect(panel.webview.postMessage).toHaveBeenCalledTimes(1);
+    provider.dispose();
+  });
+
+  it('retains a preview if a document becomes dirty during an external refresh (#849)', async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    const next = sourceText.replace('R1', 'R5');
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: Buffer.byteLength(next),
+      mtime: 15,
+      ctime: 0,
+      type: 1
+    });
+    (workspace.fs.readFile as jest.Mock).mockImplementation(async () => {
+      workspace.textDocuments.push({ uri, isDirty: true });
+      return Buffer.from(next);
+    });
+    (provider as any).pendingExternal.add(uri.toString());
+    const refresh = (provider as any).refreshDocument(uri);
+    await jest.advanceTimersByTimeAsync(140);
+    await refresh;
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+    expect((provider as any).panelInfo.get(panel).pendingRefresh).toBe(true);
+    workspace.textDocuments.length = 0;
+    provider.dispose();
+  });
+
+  it('keeps the previous render on a failed external read and retries later (#849)', async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: 456,
+      mtime: 55,
+      ctime: 0,
+      type: 1
+    });
+    (workspace.fs.readFile as jest.Mock).mockRejectedValueOnce(
+      new Error('write in progress')
+    );
+    (provider as any).pendingExternal.add(uri.toString());
+    const refresh = (provider as any).refreshDocument(uri);
+    await jest.advanceTimersByTimeAsync(140);
+    await refresh;
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+    const next = sourceText.replace('R1', 'R7');
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: Buffer.byteLength(next),
+      mtime: 56,
+      ctime: 0,
+      type: 1
+    });
+    (workspace.fs.readFile as jest.Mock).mockResolvedValue(Buffer.from(next));
+    const refreshAfterRecovery = (provider as any).refreshDocument(uri);
+    await jest.advanceTimersByTimeAsync(140);
+    await refreshAfterRecovery;
+    expect(panel.webview.postMessage).toHaveBeenCalledTimes(1);
+    provider.dispose();
+  });
+
+  it('avoids publishing a stale image if a new write arrives during the read (#849)', async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    const next = sourceText.replace('R1', 'R4');
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: Buffer.byteLength(next),
+      mtime: 60,
+      ctime: 0,
+      type: 1
+    });
+    let interrupted = false;
+    (workspace.fs.readFile as jest.Mock).mockImplementation(async () => {
+      if (!interrupted) {
+        interrupted = true;
+        (provider as any).externalFileChanged(uri);
+      }
+      return Buffer.from(next);
+    });
+    (provider as any).pendingExternal.add(uri.toString());
+    const refresh = (provider as any).refreshDocument(uri);
+    await jest.advanceTimersByTimeAsync(140);
+    await refresh;
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+    await jest.advanceTimersByTimeAsync(770);
+    expect(panel.webview.postMessage).toHaveBeenCalledTimes(1);
+    provider.dispose();
+  });
+
+  it('keeps last rendered metadata after hidden cache eviction and avoids unchanged redraw (#849)', async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    panel.visible = false;
+    panel.fireViewState();
+    await jest.advanceTimersByTimeAsync(5 * 60 * 1000 + 1);
+    expect((provider as any).fileCache.has(uri.toString())).toBe(false);
+    expect((provider as any).lastRendered.has(uri.toString())).toBe(true);
+    panel.visible = true;
+    panel.fireViewState();
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+    expect(workspace.fs.readFile).toHaveBeenCalledTimes(1);
+    panel.fireDispose();
+    expect((provider as any).lastRendered.has(uri.toString())).toBe(false);
+    provider.dispose();
+  });
+
+  it("does not let a newly opened sibling hide an older panel's pending change (#849)", async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const first = createPanel();
+    const second = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      first as unknown as vscode.WebviewPanel
+    );
+    expect((provider as any).lastRendered.get(uri.toString())?.mtimeMs).toBe(0);
+    first.visible = false;
+    first.fireViewState();
+    const changed = sourceText.replace('R1', 'R9');
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: Buffer.byteLength(changed),
+      mtime: 241,
+      ctime: 0,
+      type: 1
+    });
+    (workspace.fs.readFile as jest.Mock).mockResolvedValue(
+      Buffer.from(changed)
+    );
+    (provider as any).externalFileChanged(uri);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      second as unknown as vscode.WebviewPanel
+    );
+    // The second panel already has the new source; the first still has v1.
+    expect((provider as any).lastRendered.get(uri.toString())?.mtimeMs).toBe(0);
+    expect(first.webview.postMessage).not.toHaveBeenCalled();
+    first.visible = true;
+    first.fireViewState();
+    await jest.advanceTimersByTimeAsync(160);
+    expect(first.webview.postMessage).toHaveBeenCalledTimes(1);
+    expect((provider as any).lastRendered.get(uri.toString())?.mtimeMs).toBe(
+      241
+    );
+    provider.dispose();
+  });
+
+  it('refreshes a hidden sibling panel on reveal after a visible sibling updates (#849)', async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const visible = createPanel();
+    const hidden = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      visible as unknown as vscode.WebviewPanel
+    );
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      hidden as unknown as vscode.WebviewPanel
+    );
+    hidden.visible = false;
+    hidden.fireViewState();
+    const changed = sourceText.replace('R1', 'R9');
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: Buffer.byteLength(changed),
+      mtime: 211,
+      ctime: 0,
+      type: 1
+    });
+    (workspace.fs.readFile as jest.Mock).mockResolvedValue(
+      Buffer.from(changed)
+    );
+    (provider as any).externalFileChanged(uri);
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(visible.webview.postMessage).toHaveBeenCalledTimes(1);
+    expect(hidden.webview.postMessage).not.toHaveBeenCalled();
+    expect((provider as any).panelInfo.get(hidden).pendingRefresh).toBe(true);
+    hidden.visible = true;
+    hidden.fireViewState();
+    await jest.advanceTimersByTimeAsync(200);
+    expect(hidden.webview.postMessage).toHaveBeenCalledTimes(1);
+    expect(visible.webview.postMessage).toHaveBeenCalledTimes(2);
+    provider.dispose();
+  });
+
+  it('bounds retry work for a writer that never stabilizes (#849)', async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    let statCalls = 0;
+    (workspace.fs.stat as jest.Mock).mockImplementation(async () => ({
+      size: 300,
+      mtime: ++statCalls,
+      ctime: 0,
+      type: 1
+    }));
+    (provider as any).externalFileChanged(uri);
+    await jest.advanceTimersByTimeAsync(5000);
+    expect(statCalls).toBe(8);
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+    expect(jest.getTimerCount()).toBe(0);
+    provider.dispose();
   });
 
   it('refreshes via postMessage without replacing HTML', async () => {
@@ -154,15 +876,17 @@ describe.each([
 
   it('notifies diagnostics when a visible viewer reloads', async () => {
     const onViewerReload = jest.fn();
-    const provider = new (ContextProvider as never as {
-      new (
-        context: vscode.ExtensionContext,
-        svgFallbackProvider: undefined,
-        viewerState: ViewerStateStore,
-        resolveProject: undefined,
-        onViewerReload: (uri: vscode.Uri) => void
-      ): InstanceType<typeof ContextProvider>;
-    })(
+    const provider = new (
+      ContextProvider as never as {
+        new (
+          context: vscode.ExtensionContext,
+          svgFallbackProvider: undefined,
+          viewerState: ViewerStateStore,
+          resolveProject: undefined,
+          onViewerReload: (uri: vscode.Uri) => void
+        ): InstanceType<typeof ContextProvider>;
+      }
+    )(
       {
         extensionUri: vscode.Uri.file('/extension')
       } as vscode.ExtensionContext,
@@ -188,13 +912,15 @@ describe.each([
 
   it('keeps hidden viewers out of loading state until refresh becomes visible', async () => {
     const viewerState = new ViewerStateStore();
-    const provider = new (ContextProvider as never as {
-      new (
-        context: vscode.ExtensionContext,
-        svgFallbackProvider: undefined,
-        viewerState: ViewerStateStore
-      ): InstanceType<typeof ContextProvider>;
-    })(
+    const provider = new (
+      ContextProvider as never as {
+        new (
+          context: vscode.ExtensionContext,
+          svgFallbackProvider: undefined,
+          viewerState: ViewerStateStore
+        ): InstanceType<typeof ContextProvider>;
+      }
+    )(
       {
         extensionUri: vscode.Uri.file('/extension')
       } as vscode.ExtensionContext,
@@ -381,13 +1107,15 @@ describe.each([
 
   it('persists viewer engine diagnostics from viewer state messages', async () => {
     const viewerState = new ViewerStateStore();
-    const provider = new (ContextProvider as never as {
-      new (
-        context: vscode.ExtensionContext,
-        svgFallbackProvider: undefined,
-        viewerState: ViewerStateStore
-      ): InstanceType<typeof ContextProvider>;
-    })(
+    const provider = new (
+      ContextProvider as never as {
+        new (
+          context: vscode.ExtensionContext,
+          svgFallbackProvider: undefined,
+          viewerState: ViewerStateStore
+        ): InstanceType<typeof ContextProvider>;
+      }
+    )(
       {
         extensionUri: vscode.Uri.file('/extension')
       } as vscode.ExtensionContext,
@@ -631,13 +1359,15 @@ describe.each([
   it('persists the OASLANA-18 tools panel collapsed state in workspace state', async () => {
     const context = createExtensionContextMock();
     const viewerState = new ViewerStateStore();
-    const provider = new (ContextProvider as never as {
-      new (
-        context: vscode.ExtensionContext,
-        svgFallbackProvider: undefined,
-        viewerState: ViewerStateStore
-      ): InstanceType<typeof ContextProvider>;
-    })(context as unknown as vscode.ExtensionContext, undefined, viewerState);
+    const provider = new (
+      ContextProvider as never as {
+        new (
+          context: vscode.ExtensionContext,
+          svgFallbackProvider: undefined,
+          viewerState: ViewerStateStore
+        ): InstanceType<typeof ContextProvider>;
+      }
+    )(context as unknown as vscode.ExtensionContext, undefined, viewerState);
     const panel = createPanel();
     const document = {
       uri: vscode.Uri.file(tempFile)
@@ -676,13 +1406,15 @@ describe.each([
     );
     (context.workspaceState.update as jest.Mock).mockClear();
     const viewerState = new ViewerStateStore();
-    const provider = new (ContextProvider as never as {
-      new (
-        context: vscode.ExtensionContext,
-        svgFallbackProvider: undefined,
-        viewerState: ViewerStateStore
-      ): InstanceType<typeof ContextProvider>;
-    })(context as unknown as vscode.ExtensionContext, undefined, viewerState);
+    const provider = new (
+      ContextProvider as never as {
+        new (
+          context: vscode.ExtensionContext,
+          svgFallbackProvider: undefined,
+          viewerState: ViewerStateStore
+        ): InstanceType<typeof ContextProvider>;
+      }
+    )(context as unknown as vscode.ExtensionContext, undefined, viewerState);
     const panel = createPanel();
     const document = {
       uri: vscode.Uri.file(tempFile)

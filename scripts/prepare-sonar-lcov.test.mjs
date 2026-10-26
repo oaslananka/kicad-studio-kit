@@ -92,3 +92,53 @@ test("#706 missing SF records fail closed", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("#849 critical-module LCOV is rebased independently of headline coverage", () => {
+  const headline = "TN:\nSF:src/viewer.ts\nDA:1,1\nend_of_record\n";
+  const { root, report } = fixture(headline);
+  const critical = path.join(
+    root,
+    "apps/vscode-extension/coverage/critical/lcov.info",
+  );
+  try {
+    mkdirSync(path.dirname(critical), { recursive: true });
+    writeFileSync(critical, "TN:\nSF:src/viewer.ts\nDA:1,1\nend_of_record\n");
+    assert.equal(
+      normalizeSonarLcov(
+        root,
+        "apps/vscode-extension/coverage/critical/lcov.info",
+      ),
+      1,
+    );
+    assert.match(
+      readFileSync(critical, "utf8"),
+      /^SF:apps\/vscode-extension\/src\/viewer\.ts$/mu,
+    );
+    assert.equal(readFileSync(report, "utf8"), headline);
+    assert.equal(
+      normalizeSonarLcov(
+        root,
+        "apps/vscode-extension/coverage/critical/lcov.info",
+      ),
+      1,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#849 absent critical LCOV fails closed", () => {
+  const { root } = fixture("TN:\nSF:src/viewer.ts\nDA:1,1\nend_of_record\n");
+  try {
+    assert.throws(
+      () =>
+        normalizeSonarLcov(
+          root,
+          "apps/vscode-extension/coverage/critical/lcov.info",
+        ),
+      /ENOENT/u,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
