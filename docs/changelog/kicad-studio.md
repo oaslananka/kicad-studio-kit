@@ -16,6 +16,22 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.1.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.0.2...vscode-extension-v2.1.0) (2026-10-26)
+
+
+### Features
+
+* **kicad-studio:** low-overhead external PCB and schematic live refresh ([#849](https://github.com/oaslananka/kicad-studio-kit/issues/849)) ([#850](https://github.com/oaslananka/kicad-studio-kit/issues/850)) ([411ebc3](https://github.com/oaslananka/kicad-studio-kit/commit/411ebc34d2a51065254263764563297dfac3e2f6))
+
+
+### Bug Fixes
+
+* **deps:** remediate October 2026 OSV advisories ([#845](https://github.com/oaslananka/kicad-studio-kit/issues/845)) ([748beca](https://github.com/oaslananka/kicad-studio-kit/commit/748beca0e97dd363e0737b6596d5533c7efdb2c9))
+* **kicad-studio:** enforce strict BoardReadyOps review JSON schema ([#623](https://github.com/oaslananka/kicad-studio-kit/issues/623)) ([#847](https://github.com/oaslananka/kicad-studio-kit/issues/847)) ([2005179](https://github.com/oaslananka/kicad-studio-kit/commit/200517904528e86a0bb761e9dbecf8f22ba3fc66))
+* **kicad-studio:** pin manufacturing readiness to discovered CLI version ([23ebe55](https://github.com/oaslananka/kicad-studio-kit/commit/23ebe5514eecb47b51beb71eeabe6e2ddab8b169))
+* **kicad-studio:** pin manufacturing readiness to discovered CLI version ([#623](https://github.com/oaslananka/kicad-studio-kit/issues/623)) ([#848](https://github.com/oaslananka/kicad-studio-kit/issues/848)) ([23ebe55](https://github.com/oaslananka/kicad-studio-kit/commit/23ebe5514eecb47b51beb71eeabe6e2ddab8b169))
+* **kicad-studio:** reject undeclared review JSON fields ([2005179](https://github.com/oaslananka/kicad-studio-kit/commit/200517904528e86a0bb761e9dbecf8f22ba3fc66))
+
 ## [2.0.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.0.1...vscode-extension-v2.0.2) (2026-10-21)
 
 
