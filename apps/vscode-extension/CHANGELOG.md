@@ -10,6 +10,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.1.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.1.0...vscode-extension-v2.1.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **kicad-studio:** expose sponsor and support links in marketplace ([#853](https://github.com/oaslananka/kicad-studio-kit/issues/853)) ([#854](https://github.com/oaslananka/kicad-studio-kit/issues/854)) ([5b74436](https://github.com/oaslananka/kicad-studio-kit/commit/5b7443646ceda97ce303da37c922ae1e3a427383))
+
 ## [2.1.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.0.2...vscode-extension-v2.1.0) (2026-10-26)
 
 
