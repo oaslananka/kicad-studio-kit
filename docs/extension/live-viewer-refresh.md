@@ -13,7 +13,8 @@ connection or additional background service is needed.
   the last such viewer closes. There is no periodic filesystem polling.
 - Repeated notifications for the same open file are coalesced for 500 ms.
   The extension compares file size and modification time twice, 120 ms
-  apart, before loading the new content. Unchanged files do not redraw.
+  apart, before loading the new content. An unstable write receives at most
+  two additional settle retries without a new event; unchanged files do not redraw.
 - A hidden viewer is not redrawn in the background. It refreshes when shown.
   On focus the extension also compares file metadata, which helps recover
   from missed file notifications on some remote or network drives.

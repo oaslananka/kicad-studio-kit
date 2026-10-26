@@ -38,6 +38,8 @@ const VIEWER_TOOLS_PANEL_COLLAPSED_KEY =
 
 // Change notifications are event-driven; no periodic filesystem polling.
 const EXTERNAL_FILE_SETTLE_MS = 120;
+// Never spin indefinitely on an external writer that never stabilizes.
+const EXTERNAL_SETTLE_RETRY_LIMIT = 2;
 
 interface ViewerPayload {
   fileName: string;
@@ -88,9 +90,16 @@ export abstract class BaseKiCanvasEditorProvider
   private readonly disposables: vscode.Disposable[] = [];
   private readonly refreshDebounce = new Map<string, NodeJS.Timeout>();
   private readonly fileCache = new Map<string, CachedFilePayload>();
+  // Last successfully displayed metadata survives the hidden-viewer payload
+  // cache release. File-cache eviction alone must never force a re-render.
+  private readonly lastRendered = new Map<
+    string,
+    { mtimeMs: number; size: number }
+  >();
   private changeWatcher: vscode.FileSystemWatcher | undefined;
   private changeWatcherListeners: vscode.Disposable[] = [];
   private readonly pendingExternal = new Set<string>();
+  private readonly settleRetries = new Map<string, number>();
   private readonly changeRevision = new Map<string, number>();
   private readonly refreshing = new Set<string>();
   private theme = vscode.workspace
@@ -354,6 +363,7 @@ export abstract class BaseKiCanvasEditorProvider
       return;
     }
     this.pendingExternal.add(key);
+    this.settleRetries.delete(key);
     this.changeRevision.set(key, (this.changeRevision.get(key) ?? 0) + 1);
     if (this.hasVisiblePanel(key)) {
       this.scheduleRefresh(uri);
@@ -387,13 +397,13 @@ export abstract class BaseKiCanvasEditorProvider
     ) {
       return;
     }
-    const cached = this.fileCache.get(key);
+    const rendered = this.lastRendered.get(key);
     try {
       const current = await vscode.workspace.fs.stat(uri);
       if (
-        !cached ||
-        cached.mtimeMs !== current.mtime ||
-        cached.size !== current.size
+        !rendered ||
+        rendered.mtimeMs !== current.mtime ||
+        rendered.size !== current.size
       ) {
         this.externalFileChanged(uri);
       }
@@ -433,22 +443,28 @@ export abstract class BaseKiCanvasEditorProvider
     try {
       if (external) {
         if (!(await this.isStableFile(uri))) {
-          // Keep waiting for the writer to finish, without reading its
-          // incomplete output. A missing file waits for a create event.
-          try {
-            await vscode.workspace.fs.stat(uri);
-            this.scheduleRefresh(uri);
-          } catch {
-            // Missing/deleted: retain last valid preview without polling.
+          // Bounded retries prevent a continuously unstable writer from
+          // turning filesystem notifications into background polling.
+          const attempts = this.settleRetries.get(key) ?? 0;
+          if (attempts < EXTERNAL_SETTLE_RETRY_LIMIT) {
+            try {
+              await vscode.workspace.fs.stat(uri);
+              this.settleRetries.set(key, attempts + 1);
+              this.scheduleRefresh(uri);
+            } catch {
+              // Missing/deleted: retain last valid preview until an event.
+            }
           }
+          // After the budget is exhausted, wait for a new event or focus.
           return;
         }
-        const cached = this.fileCache.get(key);
+        this.settleRetries.delete(key);
+        const rendered = this.lastRendered.get(key);
         const stat = await vscode.workspace.fs.stat(uri);
         if (
-          cached &&
-          cached.mtimeMs === stat.mtime &&
-          cached.size === stat.size
+          rendered &&
+          rendered.mtimeMs === stat.mtime &&
+          rendered.size === stat.size
         ) {
           this.pendingExternal.delete(key);
           return;
@@ -469,9 +485,16 @@ export abstract class BaseKiCanvasEditorProvider
         return;
       }
 
-      const visiblePanels = [...(this.panels.get(key) ?? [])].filter(
-        (panel) => panel.visible
-      );
+      const allPanels = [...(this.panels.get(key) ?? [])];
+      const visiblePanels = allPanels.filter((panel) => panel.visible);
+      // A sibling hidden during the update must still receive its own
+      // refresh when revealed, even after the shared file cache is current.
+      for (const panel of allPanels) {
+        if (!panel.visible) {
+          const info = this.panelInfo.get(panel);
+          if (info) info.pendingRefresh = true;
+        }
+      }
       if (!visiblePanels.length || (external && this.hasUnsavedEditor(key))) {
         for (const panel of this.panels.get(key) ?? []) {
           const info = this.panelInfo.get(panel);
@@ -494,6 +517,10 @@ export abstract class BaseKiCanvasEditorProvider
           }
         });
       }
+      this.lastRendered.set(key, {
+        mtimeMs: fetched.mtimeMs,
+        size: fetched.size
+      });
       if (revision === (this.changeRevision.get(key) ?? 0)) {
         this.pendingExternal.delete(key);
       }
@@ -570,6 +597,13 @@ export abstract class BaseKiCanvasEditorProvider
       ...(payload.metadata ? { metadata: payload.metadata } : {}),
       ...(payload.restoreState ? { restoreState: payload.restoreState } : {})
     });
+    const cached = this.fileCache.get(uri.toString());
+    if (cached) {
+      this.lastRendered.set(uri.toString(), {
+        mtimeMs: cached.mtimeMs,
+        size: cached.size
+      });
+    }
   }
 
   private async buildViewerPayload(
@@ -738,8 +772,10 @@ export abstract class BaseKiCanvasEditorProvider
         if (refresh) clearTimeout(refresh);
         this.refreshDebounce.delete(key);
         this.pendingExternal.delete(key);
+        this.settleRetries.delete(key);
         this.changeRevision.delete(key);
         this.fileCache.delete(key);
+        this.lastRendered.delete(key);
       }
       if (!this.panels.size) {
         this.stopWatchingViewerFiles();
