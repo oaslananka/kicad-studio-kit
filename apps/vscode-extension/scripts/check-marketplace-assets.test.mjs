@@ -142,3 +142,32 @@ function mockTextFile(context, relativePath, mutate) {
     return Buffer.isBuffer(current) ? Buffer.from(next) : next;
   });
 }
+
+test('#853 marketplace checker requires native sponsor metadata', (context) => {
+  mockTextFile(context, 'package.json', (original) => {
+    const metadata = JSON.parse(original);
+    delete metadata.sponsor;
+    return JSON.stringify(metadata, null, 2) + '\n';
+  });
+  assert.throws(runMarketplaceCheck, /sponsor\.url.*github\.com\/sponsors/iu);
+});
+
+test('#853 marketplace checker requires explicit sponsor and support links in listing', (context) => {
+  mockTextFile(context, 'MARKETPLACE.md', (original) =>
+    original.replace(
+      'https://github.com/sponsors/oaslananka',
+      'https://example.invalid/missing-sponsor'
+    )
+  );
+  assert.throws(runMarketplaceCheck, /marketplace.*github sponsors/iu);
+});
+
+test('#853 marketplace checker forbids obsolete published-version claims', (context) => {
+  mockTextFile(
+    context,
+    'MARKETPLACE.md',
+    (original) =>
+      original + '\nThe currently distributed VSIX v1.17.1 is supported.\n'
+  );
+  assert.throws(runMarketplaceCheck, /obsolete.*version/iu);
+});

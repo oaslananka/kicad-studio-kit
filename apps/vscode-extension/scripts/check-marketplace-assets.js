@@ -236,6 +236,9 @@ function assertPackageMetadata() {
     fail('package.json galleryBanner.color must stay #1a1a2e');
   if (packageJson.galleryBanner?.theme !== 'dark')
     fail('package.json galleryBanner.theme must stay dark');
+  if (packageJson.sponsor?.url !== 'https://github.com/sponsors/oaslananka') {
+    fail('package.json sponsor.url must use github.com/sponsors/oaslananka');
+  }
   if (
     packageJson.scripts?.['marketplace:check'] !==
     'node scripts/check-marketplace-assets.js'
@@ -366,7 +369,8 @@ function assertMarketplaceMarkdown() {
     'Real Product Captures',
     'Requirements and Compatibility',
     'Privacy and Network Access',
-    'License and Support'
+    'License and Support',
+    'Sponsor Development'
   ]) {
     assertSection(marketplace, heading);
   }
@@ -387,6 +391,25 @@ function assertMarketplaceMarkdown() {
           forbidden
       );
     }
+  }
+  const mandatoryLinks = [
+    ['GitHub Sponsors', 'https://github.com/sponsors/oaslananka'],
+    ['Buy Me a Coffee', 'https://www.buymeacoffee.com/oaslananka'],
+    [
+      'Support',
+      'https://github.com/oaslananka/kicad-studio-kit/blob/main/SUPPORT.md'
+    ],
+    ['GitHub Issues', 'https://github.com/oaslananka/kicad-studio-kit/issues']
+  ];
+  for (const [label, url] of mandatoryLinks) {
+    if (!marketplace.includes('](' + url + ')')) {
+      fail('MARKETPLACE.md is missing ' + label + ' link');
+    }
+  }
+  if (
+    /(?:currently distributed VSIX|v1[.]17[.]1|2025-11-25)/iu.test(marketplace)
+  ) {
+    fail('MARKETPLACE.md contains an obsolete published version claim');
   }
   for (const screenshot of listingScreenshots) {
     const target = baseImagesUrl + '/' + screenshot;

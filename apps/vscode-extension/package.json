@@ -57,6 +57,9 @@
     "url": "https://github.com/oaslananka/kicad-studio-kit/issues"
   },
   "homepage": "https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension",
+  "sponsor": {
+    "url": "https://github.com/sponsors/oaslananka"
+  },
   "license": "PolyForm-Noncommercial-1.0.0",
   "main": "./dist/extension.js",
   "extensionKind": [
