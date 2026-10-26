@@ -619,9 +619,12 @@ export abstract class BaseKiCanvasEditorProvider
       ...(payload.metadata ? { metadata: payload.metadata } : {}),
       ...(payload.restoreState ? { restoreState: payload.restoreState } : {})
     });
-    const cached = this.fileCache.get(uri.toString());
-    if (cached) {
-      this.lastRendered.set(uri.toString(), {
+    const renderedKey = uri.toString();
+    const cached = this.fileCache.get(renderedKey);
+    // Another panel may still show an older source: opening this panel
+    // must not advance the shared last-rendered marker prematurely.
+    if (cached && !this.lastRendered.has(renderedKey)) {
+      this.lastRendered.set(renderedKey, {
         mtimeMs: cached.mtimeMs,
         size: cached.size
       });

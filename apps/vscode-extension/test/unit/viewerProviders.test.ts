@@ -739,6 +739,48 @@ describe.each([
     provider.dispose();
   });
 
+  it("does not let a newly opened sibling hide an older panel's pending change (#849)", async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const first = createPanel();
+    const second = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      first as unknown as vscode.WebviewPanel
+    );
+    expect((provider as any).lastRendered.get(uri.toString())?.mtimeMs).toBe(0);
+    first.visible = false;
+    first.fireViewState();
+    const changed = sourceText.replace('R1', 'R9');
+    (workspace.fs.stat as jest.Mock).mockResolvedValue({
+      size: Buffer.byteLength(changed),
+      mtime: 241,
+      ctime: 0,
+      type: 1
+    });
+    (workspace.fs.readFile as jest.Mock).mockResolvedValue(
+      Buffer.from(changed)
+    );
+    (provider as any).externalFileChanged(uri);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      second as unknown as vscode.WebviewPanel
+    );
+    // The second panel already has the new source; the first still has v1.
+    expect((provider as any).lastRendered.get(uri.toString())?.mtimeMs).toBe(0);
+    expect(first.webview.postMessage).not.toHaveBeenCalled();
+    first.visible = true;
+    first.fireViewState();
+    await jest.advanceTimersByTimeAsync(160);
+    expect(first.webview.postMessage).toHaveBeenCalledTimes(1);
+    expect((provider as any).lastRendered.get(uri.toString())?.mtimeMs).toBe(
+      241
+    );
+    provider.dispose();
+  });
+
   it('refreshes a hidden sibling panel on reveal after a visible sibling updates (#849)', async () => {
     const provider = new ContextProvider({
       extensionUri: vscode.Uri.file('/extension')
