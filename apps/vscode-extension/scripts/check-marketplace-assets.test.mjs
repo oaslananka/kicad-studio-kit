@@ -171,3 +171,24 @@ test('#853 marketplace checker forbids obsolete published-version claims', (cont
   );
   assert.throws(runMarketplaceCheck, /obsolete.*version/iu);
 });
+
+test('#853 marketplace checker rejects other stale published-version claims', (context) => {
+  mockTextFile(
+    context,
+    'MARKETPLACE.md',
+    (original) => original + '\nThe published extension is v0.0.0.\n'
+  );
+  assert.throws(runMarketplaceCheck, /obsolete published version claim/u);
+});
+
+test('#853 marketplace checker accepts a current published-version claim', (context) => {
+  const version = JSON.parse(
+    originalReadFileSync(require.resolve('../package.json'), 'utf8')
+  ).version;
+  mockTextFile(
+    context,
+    'MARKETPLACE.md',
+    (original) => original + `\nThe published extension is v${version}.\n`
+  );
+  assert.doesNotThrow(runMarketplaceCheck);
+});

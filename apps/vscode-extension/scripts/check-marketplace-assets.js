@@ -374,6 +374,17 @@ function assertMarketplacePublicLinks(marketplace) {
     }
   }
 }
+function assertPublishedVersionClaim(marketplace, expectedVersion) {
+  const publishedVersion = marketplace.match(
+    /\b(?:published\s+(?:extension|VSIX)|currently\s+distributed\s+VSIX)\s+(?:(?:is|version)\s+)?v?(\d+\.\d+\.\d+)\b/iu
+  )?.[1];
+  if (publishedVersion && publishedVersion !== expectedVersion) {
+    fail(
+      'MARKETPLACE.md contains an obsolete published version claim: ' +
+        publishedVersion
+    );
+  }
+}
 function assertMarketplaceMarkdown() {
   const packageJson = readJson('package.json');
   const marketplace = readText('MARKETPLACE.md');
@@ -409,11 +420,10 @@ function assertMarketplaceMarkdown() {
     }
   }
   assertMarketplacePublicLinks(marketplace);
-  if (
-    /(?:currently distributed VSIX|v1[.]17[.]1|2025-11-25)/iu.test(marketplace)
-  ) {
+  if (/(?:currently distributed VSIX|2025-11-25)/iu.test(marketplace)) {
     fail('MARKETPLACE.md contains an obsolete published version claim');
   }
+  assertPublishedVersionClaim(marketplace, packageJson.version);
   for (const screenshot of listingScreenshots) {
     const target = baseImagesUrl + '/' + screenshot;
     if (!marketplace.includes(target)) {
