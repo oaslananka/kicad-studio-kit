@@ -133,6 +133,34 @@ function sonarCsv(properties, key) {
     .filter(Boolean);
 }
 
+function validateCriticalSonarCoverage(steps, errors) {
+  if (
+    !steps.some((step) => {
+      const command = String(step.run ?? "");
+      return (
+        command.includes("jest.coverage-ratchet.config.js") &&
+        command.includes("--coverageReporters=lcov")
+      );
+    })
+  ) {
+    errors.push("SonarCloud must generate real critical-module Jest coverage");
+  }
+  if (
+    !steps.some((step) => {
+      const command = String(step.run ?? "");
+      return (
+        command.includes('test -s "$critical_lcov"') &&
+        command.includes("coverage-scope.json") &&
+        command.includes("SF:apps/vscode-extension/$file")
+      );
+    })
+  ) {
+    errors.push(
+      "SonarCloud must verify every critical-module LCOV source before upload",
+    );
+  }
+}
+
 function validateSonarCiCoverage(repoRoot, sonar, errors) {
   const properties = readSonarProperties(repoRoot, errors);
   for (const [key, expected] of [
@@ -193,31 +221,7 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
   ) {
     errors.push("SonarCloud must generate actual Jest unit LCOV");
   }
-  if (
-    !steps.some((step) => {
-      const command = String(step.run ?? "");
-      return (
-        command.includes("jest.coverage-ratchet.config.js") &&
-        command.includes("--coverageReporters=lcov")
-      );
-    })
-  ) {
-    errors.push("SonarCloud must generate real critical-module Jest coverage");
-  }
-  if (
-    !steps.some((step) => {
-      const command = String(step.run ?? "");
-      return (
-        command.includes('test -s "$critical_lcov"') &&
-        command.includes("coverage-scope.json") &&
-        command.includes("SF:apps/vscode-extension/$file")
-      );
-    })
-  ) {
-    errors.push(
-      "SonarCloud must verify every critical-module LCOV source before upload",
-    );
-  }
+  validateCriticalSonarCoverage(steps, errors);
   if (
     !steps.some((step) =>
       String(step.run ?? "").includes("node scripts/prepare-sonar-lcov.mjs"),

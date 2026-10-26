@@ -401,9 +401,8 @@ export abstract class BaseKiCanvasEditorProvider
     try {
       const current = await vscode.workspace.fs.stat(uri);
       if (
-        !rendered ||
-        rendered.mtimeMs !== current.mtime ||
-        rendered.size !== current.size
+        rendered?.mtimeMs !== current.mtime ||
+        rendered?.size !== current.size
       ) {
         this.externalFileChanged(uri);
       }
@@ -427,103 +426,126 @@ export abstract class BaseKiCanvasEditorProvider
     }
   }
 
-  protected async refreshDocument(uri: vscode.Uri): Promise<void> {
-    const key = uri.toString();
-    if (!this.hasVisiblePanel(key)) return;
-    if (this.refreshing.has(key)) return;
-    const external = this.pendingExternal.has(key);
-    if (external && this.hasUnsavedEditor(key)) {
-      // Do not replace a preview while an editor holds unsaved content.
-      // The existing save hook will retry after the document is saved.
+  private async prepareExternalRefresh(
+    uri: vscode.Uri,
+    key: string
+  ): Promise<boolean> {
+    if (!(await this.isStableFile(uri))) {
+      // Bounded retries prevent an unstable writer from turning change
+      // notifications into indefinite background polling.
+      const attempts = this.settleRetries.get(key) ?? 0;
+      if (attempts < EXTERNAL_SETTLE_RETRY_LIMIT) {
+        try {
+          await vscode.workspace.fs.stat(uri);
+          this.settleRetries.set(key, attempts + 1);
+          this.scheduleRefresh(uri);
+        } catch {
+          // A deleted source retains the last image until another event.
+        }
+      }
+      return false;
+    }
+    this.settleRetries.delete(key);
+    const rendered = this.lastRendered.get(key);
+    const stat = await vscode.workspace.fs.stat(uri);
+    if (rendered?.mtimeMs === stat.mtime && rendered.size === stat.size) {
+      this.pendingExternal.delete(key);
+      return false;
+    }
+    return true;
+  }
+
+  private async readRefreshPayload(
+    uri: vscode.Uri,
+    key: string,
+    external: boolean,
+    revision: number
+  ): Promise<
+    { payload: ViewerPayload; fetched: CachedFilePayload } | undefined
+  > {
+    const payload = await this.buildViewerPayload(uri, external);
+    const fetched = this.fileCache.get(key);
+    const current = await vscode.workspace.fs.stat(uri);
+    if (
+      fetched?.mtimeMs !== current.mtime ||
+      fetched.size !== current.size ||
+      revision !== (this.changeRevision.get(key) ?? 0)
+    ) {
+      this.invalidateFileCache(uri);
+      this.pendingExternal.add(key);
+      this.scheduleRefresh(uri);
+      return undefined;
+    }
+    return { payload, fetched };
+  }
+
+  private markPanelRefreshPending(panel: vscode.WebviewPanel): void {
+    const info = this.panelInfo.get(panel);
+    if (info) info.pendingRefresh = true;
+  }
+
+  private async publishRefresh(
+    uri: vscode.Uri,
+    key: string,
+    result: { payload: ViewerPayload; fetched: CachedFilePayload },
+    external: boolean,
+    revision: number
+  ): Promise<void> {
+    const allPanels = [...(this.panels.get(key) ?? [])];
+    const visiblePanels = allPanels.filter((panel) => panel.visible);
+    // Even when a sibling is visible and updated, the hidden viewer must
+    // receive the same design revision when it is next revealed.
+    for (const panel of allPanels) {
+      if (!panel.visible) this.markPanelRefreshPending(panel);
+    }
+    if (!visiblePanels.length || (external && this.hasUnsavedEditor(key))) {
+      for (const panel of allPanels) this.markPanelRefreshPending(panel);
       return;
     }
+    const project = this.resolveProject?.(uri);
+    this.viewerState.beginReload(uri, { project });
+    this.onViewerReload?.(uri, project);
+    for (const panel of visiblePanels) {
+      await panel.webview.postMessage({
+        type: 'refresh',
+        payload: {
+          ...result.payload,
+          restoreState: this.withWorkspaceViewerPreferences(
+            uri,
+            this.panelInfo.get(panel)?.state
+          )
+        }
+      });
+    }
+    this.lastRendered.set(key, {
+      mtimeMs: result.fetched.mtimeMs,
+      size: result.fetched.size
+    });
+    if (revision === (this.changeRevision.get(key) ?? 0)) {
+      this.pendingExternal.delete(key);
+    }
+  }
 
+  protected async refreshDocument(uri: vscode.Uri): Promise<void> {
+    const key = uri.toString();
+    if (!this.hasVisiblePanel(key) || this.refreshing.has(key)) return;
+    const external = this.pendingExternal.has(key);
+    if (external && this.hasUnsavedEditor(key)) {
+      // Preserve unsaved editor contents; the save hook retries the update.
+      return;
+    }
     const revision = this.changeRevision.get(key) ?? 0;
     this.refreshing.add(key);
     try {
-      if (external) {
-        if (!(await this.isStableFile(uri))) {
-          // Bounded retries prevent a continuously unstable writer from
-          // turning filesystem notifications into background polling.
-          const attempts = this.settleRetries.get(key) ?? 0;
-          if (attempts < EXTERNAL_SETTLE_RETRY_LIMIT) {
-            try {
-              await vscode.workspace.fs.stat(uri);
-              this.settleRetries.set(key, attempts + 1);
-              this.scheduleRefresh(uri);
-            } catch {
-              // Missing/deleted: retain last valid preview until an event.
-            }
-          }
-          // After the budget is exhausted, wait for a new event or focus.
-          return;
-        }
-        this.settleRetries.delete(key);
-        const rendered = this.lastRendered.get(key);
-        const stat = await vscode.workspace.fs.stat(uri);
-        if (
-          rendered &&
-          rendered.mtimeMs === stat.mtime &&
-          rendered.size === stat.size
-        ) {
-          this.pendingExternal.delete(key);
-          return;
-        }
-      }
-      const payload = await this.buildViewerPayload(uri, external);
-      const fetched = this.fileCache.get(key);
-      const current = await vscode.workspace.fs.stat(uri);
-      if (
-        !fetched ||
-        fetched.mtimeMs !== current.mtime ||
-        fetched.size !== current.size ||
-        revision !== (this.changeRevision.get(key) ?? 0)
-      ) {
-        this.invalidateFileCache(uri);
-        this.pendingExternal.add(key);
-        this.scheduleRefresh(uri);
-        return;
-      }
-
-      const allPanels = [...(this.panels.get(key) ?? [])];
-      const visiblePanels = allPanels.filter((panel) => panel.visible);
-      // A sibling hidden during the update must still receive its own
-      // refresh when revealed, even after the shared file cache is current.
-      for (const panel of allPanels) {
-        if (!panel.visible) {
-          const info = this.panelInfo.get(panel);
-          if (info) info.pendingRefresh = true;
-        }
-      }
-      if (!visiblePanels.length || (external && this.hasUnsavedEditor(key))) {
-        for (const panel of this.panels.get(key) ?? []) {
-          const info = this.panelInfo.get(panel);
-          if (info) info.pendingRefresh = true;
-        }
-        return;
-      }
-      const project = this.resolveProject?.(uri);
-      this.viewerState.beginReload(uri, { project });
-      this.onViewerReload?.(uri, project);
-      for (const panel of visiblePanels) {
-        await panel.webview.postMessage({
-          type: 'refresh',
-          payload: {
-            ...payload,
-            restoreState: this.withWorkspaceViewerPreferences(
-              uri,
-              this.panelInfo.get(panel)?.state
-            )
-          }
-        });
-      }
-      this.lastRendered.set(key, {
-        mtimeMs: fetched.mtimeMs,
-        size: fetched.size
-      });
-      if (revision === (this.changeRevision.get(key) ?? 0)) {
-        this.pendingExternal.delete(key);
-      }
+      if (external && !(await this.prepareExternalRefresh(uri, key))) return;
+      const result = await this.readRefreshPayload(
+        uri,
+        key,
+        external,
+        revision
+      );
+      if (!result) return;
+      await this.publishRefresh(uri, key, result, external, revision);
     } catch (error) {
       if (!external) {
         this.viewerState.recordError(uri, error, {
@@ -531,8 +553,8 @@ export abstract class BaseKiCanvasEditorProvider
         });
         throw error;
       }
-      // External writes can be temporarily incomplete; keep the last image
-      // and retry on the next filesystem event or viewer activation.
+      // Incomplete external writes retain the previous valid image until
+      // the next event or focus; never retry a failing read indefinitely.
       this.invalidateFileCache(uri);
     } finally {
       this.refreshing.delete(key);
@@ -615,7 +637,7 @@ export abstract class BaseKiCanvasEditorProvider
     const stat = await vscode.workspace.fs.stat(uri);
     const mtimeMs = stat.mtime;
     const cached = this.fileCache.get(cacheKey);
-    if (cached && cached.mtimeMs === mtimeMs && cached.size === stat.size) {
+    if (isCurrentCacheEntry(cached, mtimeMs, stat.size)) {
       const restoreState = this.withWorkspaceViewerPreferences(
         uri,
         this.viewerState.getState(uri)
@@ -818,6 +840,14 @@ export abstract class BaseKiCanvasEditorProvider
       );
     }
   }
+}
+
+function isCurrentCacheEntry(
+  cached: CachedFilePayload | undefined,
+  mtimeMs: number,
+  size: number
+): cached is CachedFilePayload {
+  return cached?.mtimeMs === mtimeMs && cached.size === size;
 }
 
 /**
