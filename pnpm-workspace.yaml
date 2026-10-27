@@ -25,6 +25,8 @@ minimumReleaseAgeExclude:
   # Oct 2026 security fixes newer than seven days: exact-version maturity exceptions.
   - fast-uri@3.1.9
   - serialize-javascript@7.1.3
+  # Renovate security update: qs@6.16.1
+  - qs@6.16.1
 trustPolicyExclude:
   - "@octokit/endpoint@9.0.6"
   - chokidar@4.0.3
@@ -59,7 +61,7 @@ overrides:
   esbuild: 0.28.2
   glob: 13.0.6
   mocha>serialize-javascript: 7.1.3
-  qs: 6.16.0
+  qs: 6.16.1
   tar: 7.5.22
   test-exclude: 8.0.0
   form-data: 4.0.6
