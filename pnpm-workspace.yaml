@@ -16,8 +16,8 @@ minimumReleaseAgeExclude:
   - handlebars@4.7.10
   # Security fix: follow-redirects cross-origin credential leaks (GHSA-q3jh-wrc6-jgq8, GHSA-8r9p-f939-6h3c)
   - follow-redirects@1.16.1
-  # Security fix: Vite/launch-editor Windows cmd escaping (GHSA-698v-4r3x-3vcv)
-  - vite@6.4.4
+  # Security fix: Vite/launch-editor Windows cmd escaping (GHSA-698v-4r3x-3vcv) || 6.4.5
+  - vite@6.4.4 || 6.4.5
   # Security fix: markdown-it algorithmic DoS (GHSA-gfr2-rv44-r23c)
   - markdown-it@14.3.3
   # Renovate security update: ip-address@10.7.4
@@ -69,7 +69,7 @@ overrides:
   markdown-it: 14.3.3
   tmp: 0.2.7
   uuid: 14.0.2
-  vite: 6.4.4
+  vite: 6.4.5
   undici: 7.30.1
   "@azure/msal-node": 7.1.0
   zod: 4.6.7
