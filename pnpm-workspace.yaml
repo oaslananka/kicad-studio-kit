@@ -16,8 +16,8 @@ minimumReleaseAgeExclude:
   - handlebars@4.7.10
   # Security fix: follow-redirects cross-origin credential leaks (GHSA-q3jh-wrc6-jgq8, GHSA-8r9p-f939-6h3c)
   - follow-redirects@1.16.1
-  # Security fix: Vite/launch-editor Windows cmd escaping (GHSA-698v-4r3x-3vcv)
-  - vite@6.4.4
+  # Security fixes: Vite dev-server fs.deny query bypass and Windows escaping
+  - vite@6.4.5
   # Security fix: markdown-it algorithmic DoS (GHSA-gfr2-rv44-r23c)
   - markdown-it@14.3.3
   # Renovate security update: ip-address@10.7.4
@@ -25,6 +25,8 @@ minimumReleaseAgeExclude:
   # Oct 2026 security fixes newer than seven days: exact-version maturity exceptions.
   - fast-uri@3.1.9
   - serialize-javascript@7.1.3
+  # Renovate security update: qs@6.16.1
+  - qs@6.16.1
 trustPolicyExclude:
   - "@octokit/endpoint@9.0.6"
   - chokidar@4.0.3
@@ -59,7 +61,7 @@ overrides:
   esbuild: 0.28.2
   glob: 13.0.6
   mocha>serialize-javascript: 7.1.3
-  qs: 6.16.0
+  qs: 6.16.1
   tar: 7.5.22
   test-exclude: 8.0.0
   form-data: 4.0.6
@@ -69,7 +71,7 @@ overrides:
   markdown-it: 14.3.3
   tmp: 0.2.7
   uuid: 14.0.2
-  vite: 6.4.4
+  vite: 6.4.5
   undici: 7.30.1
   "@azure/msal-node": 7.1.0
   zod: 4.6.7

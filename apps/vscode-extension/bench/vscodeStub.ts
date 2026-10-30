@@ -1,5 +1,5 @@
 /**
- * Minimal `vscode` module stand-in for CodSpeed benchmarks.
+ * Minimal `vscode` module stand-in for local Vitest benchmarks.
  *
  * Benchmarks exercise pure, deterministic extension logic outside the VS Code
  * extension host, so only the handful of runtime values those modules touch

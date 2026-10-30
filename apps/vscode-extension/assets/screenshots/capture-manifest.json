@@ -8,15 +8,15 @@
   "theme": "Default Dark Modern",
   "fixture": "test/fixtures/benchmark_projects/pass_i2c_sensor_hub",
   "vscodeVersion": "1.122.0",
-  "kicadVersion": "10.0.7",
+  "kicadVersion": "10.0.8",
   "sourceContractVersion": 4,
-  "sourceFingerprint": "3b4d43e1731eb2bdd5dd7ac05b99874a839d0bbc2a21fd752fec56dc58c23db3",
+  "sourceFingerprint": "cd0490b64947b04b6bb4056558f3a2bf5839406f0bff6bacced65b77f4a35a34",
   "screenshots": {
-    "project-tree.png": "ea711b682ad22eae054d21448a2043598bb92ffe34e5b37b0e068813e815670d",
-    "schematic-viewer.png": "57c0bf97efc594420a2dba0f485a21a3b2e2d4ec1e4f58107a9a966a844e9714",
-    "pcb-viewer.png": "b4450de700f70173aa2517f6f831f4ee83c286ad44c4165c11b00da3e10ad01c",
-    "drc-results.png": "b98aa3653e8ba0ae3625c6473f4780c1de87e8d19af0f42d7fba462b5faa4394",
-    "bom-table.png": "1ea93b7defd79a35f74d917c3673776a391990d739588e3ff52fd509433c2898",
-    "mcp-tools-dashboard.png": "63c17b95df23ec23259b82264664023a82264b5cb19d46fefbdb06917dd36837"
+    "project-tree.png": "589cf03f7cdc13b6f8b005083ae56eb5257c72ff2670776065890c040aa86d13",
+    "schematic-viewer.png": "a7b545fbe91eccbe9ce6b68b0b16acb708745e24d119a9b09a41d9808c03810d",
+    "pcb-viewer.png": "d9ec229e23abadc60a9bcb6b4b01bb865bbe430891c4ea2853d5ba84bd252f17",
+    "drc-results.png": "bf2effb92fa9e00ea3e0c53af7761d8a1e1ae3dfb00f325a623522aa61a8d73e",
+    "bom-table.png": "a713ac54563e79254db79c843b2e54bce92a66ad44069351d41ec562e8cbbc38",
+    "mcp-tools-dashboard.png": "5fed2c227d63f1efa03a57c574ea8be558c5f97ea825e35d4c52bde7907f6cfd"
   }
 }

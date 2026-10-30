@@ -11,7 +11,7 @@ describe('MCP compatibility helpers', () => {
     expect(MCP_COMPAT).toEqual({
       required: '>=4.3.0 <5.0.0',
       recommended: '>=4.3.0 <5.0.0',
-      testedAgainst: '4.4.0'
+      testedAgainst: '4.5.0'
     });
   });
 
@@ -21,7 +21,7 @@ describe('MCP compatibility helpers', () => {
     expect(normalizeMcpVersion('not-a-version')).toBe('0.0.0');
     expect(normalizeMcpVersion(undefined)).toBe('0.0.0');
     expect(getMcpCompatStatus('4.3.0')).toBe('ok');
-    expect(getMcpCompatStatus('4.4.0')).toBe('ok');
+    expect(getMcpCompatStatus('4.5.0')).toBe('ok');
     expect(getMcpCompatStatus('3.5.1')).toBe('incompatible');
     expect(getMcpCompatStatus('4.0.0')).toBe('incompatible');
     expect(getMcpCompatStatus(undefined)).toBe('incompatible');
@@ -57,10 +57,10 @@ describe('MCP compatibility helpers', () => {
     const mutableCompat = MCP_COMPAT as { recommended: string };
     const originalRecommended = mutableCompat.recommended;
     try {
-      mutableCompat.recommended = '>=4.4.0 <5.0.0';
+      mutableCompat.recommended = '>=4.5.0 <5.0.0';
       expect(getMcpCompatStatus('4.3.0')).toBe('warn');
       expect(describeMcpCompatibility('4.3.0')).toBe(
-        'kicad-mcp-pro 4.3.0 satisfies the required range but is older than >=4.4.0 <5.0.0.'
+        'kicad-mcp-pro 4.3.0 satisfies the required range but is older than >=4.5.0 <5.0.0.'
       );
     } finally {
       mutableCompat.recommended = originalRecommended;
