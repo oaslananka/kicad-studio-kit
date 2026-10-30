@@ -15,11 +15,12 @@ const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = [
   "source-map-js@1.2.2",
   "handlebars@4.7.10",
   "follow-redirects@1.16.1",
-  "vite@6.4.4",
+  "vite@6.4.5",
   "markdown-it@14.3.3",
   "ip-address@10.7.4",
   "fast-uri@3.1.9",
   "serialize-javascript@7.1.3",
+  "qs@6.16.1",
 ];
 const ALLOWED_TRUST_POLICY_EXCLUDES = [
   "@octokit/endpoint@9.0.6",
@@ -40,11 +41,12 @@ const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   "linkify-it": "5.0.2",
   undici: "7.30.1",
   "mocha>serialize-javascript": "7.1.3",
+  qs: "6.16.1",
   "@azure/msal-node": "7.1.0",
   zod: "4.6.7",
   "@vitest/mocker": "4.1.12",
   "follow-redirects": "1.16.1",
-  vite: "6.4.4",
+  vite: "6.4.5",
   "markdown-it": "14.3.3",
 });
 const FORBIDDEN_PNPM_SETTINGS = [
