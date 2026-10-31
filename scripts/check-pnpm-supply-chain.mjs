@@ -21,6 +21,10 @@ const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = [
   "fast-uri@3.1.9",
   "serialize-javascript@7.1.3",
   "qs@6.16.1",
+  "glob@14.0.3",
+  "minimatch@11.0.3",
+  "path-scurry@3.0.0",
+  "@isaacs/nonrecursive-glob-match@1.0.3",
 ];
 const ALLOWED_TRUST_POLICY_EXCLUDES = [
   "@octokit/endpoint@9.0.6",
@@ -42,6 +46,7 @@ const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   undici: "7.30.1",
   "mocha>serialize-javascript": "7.1.3",
   qs: "6.16.1",
+  glob: "14.0.3",
   "@azure/msal-node": "7.1.0",
   zod: "4.6.7",
   "@vitest/mocker": "4.1.12",
