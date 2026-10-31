@@ -427,41 +427,59 @@ test("workspace package with malformed package.json fails validation", () => {
   }
 });
 
-test("#554 official brace-expansion release preserves minimatch API and bounds output", () => {
+test("#554 patched brace-expansion 5 and minimatch 11 preserve API and bound output", () => {
   const pnpmRoot = path.resolve("node_modules/.pnpm");
-  const officialDirectory = readdirSync(pnpmRoot).find((entry) =>
-    entry.startsWith("brace-expansion@2.1.7"),
-  );
-  assert.ok(
-    officialDirectory,
-    "expected official brace-expansion 2.1.7 installation",
-  );
-
-  const packageRoot = path.join(
-    pnpmRoot,
-    officialDirectory,
-    "node_modules/brace-expansion",
-  );
   const require = createRequire(import.meta.url);
-  const expand = require(packageRoot);
+  const officialDirectory = readdirSync(pnpmRoot).find((entry) =>
+    entry.startsWith("brace-expansion@5.0.12"),
+  );
+  assert.ok(officialDirectory, "expected patched brace-expansion 5.0.12 installation");
+  const { expand } = require(
+    path.join(pnpmRoot, officialDirectory, "node_modules/brace-expansion"),
+  );
   assert.equal(typeof expand, "function");
   assert.deepEqual(expand("{a,b}"), ["a", "b"]);
 
-  const expanded = expand("{a,b}".repeat(5000));
+  const expanded = expand("{a,b}".repeat(1500), {
+    max: 100,
+    maxLength: 10_000,
+  });
   const totalLength = expanded.reduce((sum, value) => sum + value.length, 0);
   assert.ok(expanded.length > 0);
-  assert.ok(totalLength <= 4_000_000);
+  assert.ok(expanded.length <= 100);
+  assert.ok(totalLength <= 10_000);
 
+  const lockfile = parseYaml(readFileSync(new URL("../pnpm-lock.yaml", import.meta.url), "utf8"));
+  for (const section of ["packages", "snapshots"]) {
+    const lockedPackages = Object.keys(lockfile[section] ?? {});
+    assert.ok(!lockedPackages.some((name) => /^minimatch@(9\.0\.9|10\.2\.6)$/u.test(name)), `vulnerable minimatch in ${section}`);
+  }
   const minimatchDirectory = readdirSync(pnpmRoot).find((entry) =>
-    entry.startsWith("minimatch@9.0.9"),
+    entry.startsWith("minimatch@11.0.3"),
   );
-  assert.ok(minimatchDirectory, "expected minimatch 9 installation");
+  assert.ok(minimatchDirectory, "expected patched minimatch 11.0.3 installation");
   const minimatchModule = require(
     path.join(pnpmRoot, minimatchDirectory, "node_modules/minimatch"),
   );
   assert.equal(minimatchModule.minimatch("src/a.js", "src/*.{js,ts}"), true);
   assert.equal(minimatchModule.minimatch("src/a.css", "src/*.{js,ts}"), false);
   assert.deepEqual(minimatchModule.braceExpand("a{b,c}d"), ["abd", "acd"]);
+});
+
+test("GHSA-g3hv-75wg-m249 pins both previously vulnerable minimatch majors", () => {
+  const repoRoot = createFixture({
+    workspace: workspaceFixture((workspace) => {
+      delete workspace.overrides["minimatch@9.0.9"];
+      workspace.overrides["minimatch@10.2.6"] = "10.2.6";
+    }),
+  });
+  try {
+    const errors = validatePnpmSupplyChain(repoRoot);
+    assert.ok(errors.includes("pnpm-workspace.yaml overrides must pin minimatch@9.0.9 to 11.0.3"));
+    assert.ok(errors.includes("pnpm-workspace.yaml overrides must pin minimatch@10.2.6 to 11.0.3"));
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
 });
 
 test("2026-10 security overrides are immutable until reviewed", () => {

@@ -47,6 +47,8 @@ const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   "mocha>serialize-javascript": "7.1.3",
   qs: "6.16.1",
   glob: "14.0.3",
+  "minimatch@9.0.9": "11.0.3",
+  "minimatch@10.2.6": "11.0.3",
   "@azure/msal-node": "7.1.0",
   zod: "4.6.7",
   "@vitest/mocker": "4.1.12",
