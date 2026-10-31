@@ -10,6 +10,14 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.1.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.1.1...vscode-extension-v2.1.2) (2026-10-31)
+
+
+### Bug Fixes
+
+* **repo:** patch security dependencies, remove CodSpeed, and align MCP canary ([f805b95](https://github.com/oaslananka/kicad-studio-kit/commit/f805b95fec4591bd0cb43e7c8d08d68df8a5489d))
+* **repo:** remove CodSpeed and patch security and MCP compatibility ([#859](https://github.com/oaslananka/kicad-studio-kit/issues/859)) ([f805b95](https://github.com/oaslananka/kicad-studio-kit/commit/f805b95fec4591bd0cb43e7c8d08d68df8a5489d))
+
 ## [2.1.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.1.0...vscode-extension-v2.1.1) (2026-10-26)
 
 
