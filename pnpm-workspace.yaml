@@ -14,8 +14,8 @@ minimumReleaseAgeExclude:
   - source-map-js@1.2.2
   # Security fix: Handlebars GHSA-8r5x-fm3f-whwj and GHSA-p8wg-vrv2-v86f
   - handlebars@4.7.10
-  # Security fix: follow-redirects cross-origin credential leaks (GHSA-q3jh-wrc6-jgq8, GHSA-8r9p-f939-6h3c)
-  - follow-redirects@1.16.1
+  # Security fix: follow-redirects credential leak (GHSA-mrwp-f3q8-3g9p)
+  - follow-redirects@1.16.2
   # Security fixes: Vite dev-server fs.deny query bypass and Windows escaping
   - vite@6.4.5
   # Security fix: markdown-it algorithmic DoS (GHSA-gfr2-rv44-r23c)
@@ -76,7 +76,7 @@ overrides:
   "@azure/msal-node": 7.1.0
   zod: 4.6.7
   "@vitest/mocker": 4.1.12
-  follow-redirects: 1.16.1
+  follow-redirects: 1.16.2
   basic-ftp: ">=6.2.1"
   source-map-js: ">=1.2.2"
   "@vue/server-renderer": ">=3.5.42"
