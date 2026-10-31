@@ -14,7 +14,7 @@ const ALLOWED_MINIMUM_RELEASE_AGE_EXCLUDES = [
   "pnpm@11.11.0",
   "source-map-js@1.2.2",
   "handlebars@4.7.10",
-  "follow-redirects@1.16.1",
+  "follow-redirects@1.16.2",
   "vite@6.4.5",
   "markdown-it@14.3.3",
   "ip-address@10.7.4",
@@ -45,7 +45,7 @@ const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
   "@azure/msal-node": "7.1.0",
   zod: "4.6.7",
   "@vitest/mocker": "4.1.12",
-  "follow-redirects": "1.16.1",
+  "follow-redirects": "1.16.2",
   vite: "6.4.5",
   "markdown-it": "14.3.3",
 });
