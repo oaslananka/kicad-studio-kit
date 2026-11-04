@@ -21,6 +21,94 @@ function readJson(root, file, errors) {
     return {};
   }
 }
+function isSingleRuleMatch(rule, key, value) {
+  const values = rule?.[key];
+  return values?.length === 1 && values[0] === value;
+}
+
+function isDevPatchAutomerge(rule) {
+  return (
+    isSingleRuleMatch(rule, "matchManagers", "npm") &&
+    isSingleRuleMatch(rule, "matchDepTypes", "devDependencies") &&
+    isSingleRuleMatch(rule, "matchUpdateTypes", "patch") &&
+    rule.automerge === true
+  );
+}
+
+function isProtectedSquashLane(lane) {
+  return (
+    lane?.automergeType === "pr" &&
+    lane.platformAutomerge === true &&
+    lane.automergeStrategy === "squash"
+  );
+}
+
+function validateGlobalAutomergePolicy(renovate, errors) {
+  if (
+    renovate.automerge !== false ||
+    renovate.platformAutomerge !== false ||
+    renovate.automergeType !== "pr"
+  ) {
+    errors.push(
+      "Renovate must not enable global automerge or direct branch merging",
+    );
+  }
+  if (
+    renovate.commitHourlyLimit !== 2 ||
+    renovate.prHourlyLimit !== 2 ||
+    renovate.prConcurrentLimit !== 5
+  ) {
+    errors.push("Renovate update frequency/concurrency must remain bounded");
+  }
+  if (
+    renovate.vulnerabilityAlerts?.dependencyDashboardApproval !== false ||
+    renovate.vulnerabilityAlerts?.prCreation !== "immediate"
+  ) {
+    errors.push(
+      "Security advisory remediation must not wait for dashboard approval",
+    );
+  }
+}
+
+function validateProtectedAutomergeLanes(renovate, errors) {
+  const devPatch = renovate.packageRules?.filter(isDevPatchAutomerge) ?? [];
+  const lockfile = renovate.lockFileMaintenance;
+  if (
+    devPatch.length !== 1 ||
+    !isProtectedSquashLane(devPatch[0]) ||
+    lockfile?.enabled !== true ||
+    lockfile?.automerge !== true ||
+    !isProtectedSquashLane(lockfile)
+  ) {
+    errors.push(
+      "Only protected squash-merged dev patch and lockfile lanes may automerge",
+    );
+  }
+  for (const rule of renovate.packageRules ?? []) {
+    if (rule.automerge === true && !devPatch.includes(rule)) {
+      errors.push(
+        "Unexpected automatic merge rule outside safe dev patch lane",
+      );
+    }
+  }
+  const majorRule = renovate.packageRules?.find((rule) =>
+    isSingleRuleMatch(rule, "matchUpdateTypes", "major"),
+  );
+  if (
+    majorRule?.dependencyDashboardApproval !== true ||
+    majorRule?.automerge !== false
+  ) {
+    errors.push("Major upgrades must remain dashboard-gated and review-only");
+  }
+}
+
+function validateRenovateAutoMerge(renovate, errors) {
+  // Renovate is the only updater; GitHub protected squash PRs are the
+  // only merger. Runtime, major and workflow updates remain reviewed.
+  validateGlobalAutomergePolicy(renovate, errors);
+  validateProtectedAutomergeLanes(renovate, errors);
+}
+
 export function validateDependencyAutomationPolicy(root = repoRoot) {
   const errors = [];
   // Commit 5779718 deliberately retired Dependabot PR generation.
@@ -34,6 +122,8 @@ export function validateDependencyAutomationPolicy(root = repoRoot) {
     errors.push("Renovate dependencyDashboard must stay enabled");
   if (renovate.vulnerabilityAlerts?.enabled !== true)
     errors.push("Renovate vulnerabilityAlerts must stay enabled");
+  validateRenovateAutoMerge(renovate, errors);
+
   const scripts = readJson(root, "package.json", errors).scripts ?? {};
   if (
     scripts["check:dependency-automation-policy"] !== rootCommand ||

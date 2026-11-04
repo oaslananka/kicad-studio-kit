@@ -155,3 +155,74 @@ test("#728 CLI reports the canonical Renovate policy as passing", () => {
   );
   assert.match(output, /Renovate-only dependency automation policy passed/);
 });
+
+test("GitHub auto-merge scope is protected, bounded and squash-only", () => {
+  usingFixture((root) => {
+    const policy = JSON.parse(
+      readFileSync(path.join(root, "renovate.json"), "utf8"),
+    );
+    assert.equal(policy.automerge, false);
+    assert.equal(policy.platformAutomerge, false);
+    assert.equal(policy.commitHourlyLimit, 2);
+    assert.deepEqual(validateDependencyAutomationPolicy(root), []);
+  });
+});
+
+test("global auto-merge or unlimited commits are rejected", () => {
+  usingFixture((root) => {
+    mutateJson(root, "renovate.json", (config) => {
+      config.automerge = true;
+      config.commitHourlyLimit = 99;
+    });
+    const errors = validateDependencyAutomationPolicy(root);
+    assert.ok(errors.some((error) => error.includes("global automerge")));
+    assert.ok(errors.some((error) => error.includes("frequency/concurrency")));
+  });
+});
+
+test("renovate safe merge rules cannot widen to runtime, minor or major", () => {
+  usingFixture((root) => {
+    mutateJson(root, "renovate.json", (config) => {
+      const rule = config.packageRules.find((item) => item.automerge === true);
+      rule.matchDepTypes = ["dependencies"];
+      rule.matchUpdateTypes = ["minor", "patch"];
+    });
+    assert.ok(
+      validateDependencyAutomationPolicy(root).some((error) =>
+        error.includes("Only protected squash-merged"),
+      ),
+    );
+  });
+});
+
+test("actions or runtime updates cannot silently turn on automerge", () => {
+  usingFixture((root) => {
+    mutateJson(root, "renovate.json", (config) => {
+      config.packageRules.push({
+        matchManagers: ["github-actions"],
+        matchUpdateTypes: ["patch"],
+        automerge: true,
+      });
+    });
+    assert.ok(
+      validateDependencyAutomationPolicy(root).some((error) =>
+        error.includes("Unexpected automatic merge"),
+      ),
+    );
+  });
+});
+
+test("dev patch and lockfile automerge must use protected squash PRs", () => {
+  usingFixture((root) => {
+    mutateJson(root, "renovate.json", (config) => {
+      const rule = config.packageRules.find((item) => item.automerge === true);
+      rule.automergeType = "branch";
+      config.lockFileMaintenance.platformAutomerge = false;
+    });
+    assert.ok(
+      validateDependencyAutomationPolicy(root).some((error) =>
+        error.includes("Only protected squash-merged"),
+      ),
+    );
+  });
+});

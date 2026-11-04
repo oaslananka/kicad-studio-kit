@@ -21,6 +21,32 @@ GitHub's dependency graph and security alerts remain enabled. Renovate is the so
 | High-risk major   | Major updates, protocol/runtime packages, VS Code API packages, security-sensitive packages | Dashboard approval before PR creation | Migration notes and compatibility review required                                                                                            |
 | Vulnerability fix | GitHub security alert consumed by Renovate                                                  | Immediate                             | No dashboard approval, security review required                                                                                              |
 
+## Automated merge safety contract
+
+The repository uses Renovate as its sole dependency PR author and GitHub's
+protected squash PR merge as its merge authority. Mergify was intentionally
+retired for this repository by #720; do not reintroduce a second merge bot or
+a parallel Dependabot updater. The repository's GitHub **Allow auto-merge**
+setting and active `main-standard` strict required checks must remain enabled.
+
+Only npm **devDependency patch** updates and **lockfile maintenance** may enable
+`platformAutomerge`. They wait for the seven-day release age policy, successful
+strict main-branch status checks and resolution of review threads. GitHub
+Actions, Docker, runtime/protocol dependencies, majors and vulnerability fixes
+remain review-only, even when their dependency PR is opened automatically.
+Major versions require dashboard approval; security remediation PRs are
+created immediately without dashboard approval but still undergo review.
+Cross-repo compatibility validates the newest signed published MCP artifact and real protocol behavior, but separately keeps the last accepted testedAgainst version in Studio's support matrix. A newly published compatible version cannot block unrelated low-risk bot PRs merely because the registry advanced; an incompatible release, broken real-pair test, missing provenance or unsupported major still fails the canary.\n\nThe bound of two commits and two PRs per hour (five concurrent PRs) is meant
+to reduce superseded CI runs. Renovate's schedule is Monday before 06:00
+Europe/Istanbul; merges occur automatically after eligible PRs pass, not on
+an independent timer.
+
+Prior verified Renovate-initiated merges include lockfile maintenance PR #715;
+the configuration and policy tests alone cannot guarantee that future checks,
+external service permissions or upstream releases will succeed. When an
+eligible bot PR remains open, inspect its exact-head required checks and
+Renovate status/PR body before diagnosing auto-merge failure.
+
 ## Labels
 
 Every update PR should keep the base labels `dependencies` and `dependency-lifecycle`.

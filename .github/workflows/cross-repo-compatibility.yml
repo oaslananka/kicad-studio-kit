@@ -275,9 +275,22 @@ jobs:
           echo "✓ boardreadyops resolves from npm registry (v$VERSION)"
 
       # ── D. Studio compatibility checks ──────────────────────────────────
+      # The PyPI step above always tests the latest released artifact, its
+      # publisher/source attestations and the actual Studio protocol adapter.
+      # The pinned testedAgainst is separate: publication alone is not a
+      # claim that the extension release was independently accepted on it.
+      - name: Verify latest published MCP within supported range
+        id: mcp-window
+        env:
+          KICAD_MCP_PRO_LATEST_VERSION: ${{ steps.pypi-check.outputs.pypi_version }}
+        run: |
+          set -euo pipefail
+          tested="$(node scripts/check-published-mcp-peer.mjs)"
+          echo "tested_version=$tested" >> "$GITHUB_OUTPUT"
+
       - name: Run check:compatibility-contract (compatibility contract validation)
         env:
-          KICAD_MCP_PRO_PUBLISHED_VERSION: ${{ steps.pypi-check.outputs.pypi_version }}
+          KICAD_MCP_PRO_PUBLISHED_VERSION: ${{ steps.mcp-window.outputs.tested_version }}
           BOARDREADYOPS_PUBLISHED_VERSION: ${{ steps.boardreadyops-check.outputs.version }}
         run: pnpm run check:compatibility-contract
 
@@ -291,6 +304,7 @@ jobs:
         run: |
           echo "━━━ Cross-repo Compatibility Canary ━━━"
           echo "npm  @oaslananka/kicad-protocol-schemas: v${{ steps.npm-check.outputs.version }}"
-          echo "PyPI kicad-mcp-pro:                     v${{ steps.pypi-check.outputs.pypi_version }}"
+          echo "PyPI latest artifact and real-pair canary:  v${{ steps.pypi-check.outputs.pypi_version }}"
+          echo "Studio explicitly accepted testedAgainst: v${{ steps.mcp-window.outputs.tested_version }}"
           echo "npm  boardreadyops:                      v${{ steps.boardreadyops-check.outputs.version }}"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

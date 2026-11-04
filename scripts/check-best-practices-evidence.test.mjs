@@ -37,8 +37,9 @@ test("README badges separate historic Silver evidence from current status", () =
   );
   assert.match(readme, /not presented as a current FLOSS badge/u);
 
-  const deepWikiLink = "https://deepwiki.com/oaslananka/kicad-studio-kit";
-  assert.equal(readme.split('href="' + deepWikiLink + '"').length - 1, 1);
-  assert.match(header, /https:\/\/img\.shields\.io\/badge\/Ask-DeepWiki-/u);
-  assert.doesNotMatch(header, /src="https:\/\/deepwiki\.com\/badge\.svg"/u);
+  const badges =
+    "[![GitGem](https://gitgem.org/api/badge/github/oaslananka/kicad-studio-kit.svg)](https://gitgem.org/github/oaslananka/kicad-studio-kit)" +
+    "  " +
+    "[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/oaslananka/kicad-studio-kit)";
+  assert.equal(readme.split(badges).length - 1, 1);
 });
