@@ -18,7 +18,6 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
   <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/badge/VS%20Marketplace-install-blue" alt="Install from Visual Studio Marketplace"></a>
   <a href="https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="PolyForm Noncommercial 1.0.0"></a>
   <a href="https://oaslananka.github.io/kicad-studio-kit/"><img src="https://img.shields.io/badge/docs-site-blue" alt="Documentation site"></a>
-  <a href="https://deepwiki.com/oaslananka/kicad-studio-kit"><img src="https://img.shields.io/badge/Ask-DeepWiki-2475cd?logo=bookstack&amp;logoColor=white" alt="Ask DeepWiki"></a>
 </p>
 
 <p>
@@ -33,6 +32,8 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
 </p>
 
 </div>
+
+[![GitGem](https://gitgem.org/api/badge/github/oaslananka/kicad-studio-kit.svg)](https://gitgem.org/github/oaslananka/kicad-studio-kit)  [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/oaslananka/kicad-studio-kit)
 
 KiCad Studio Kit is the VS Code extension repository. The MCP server is
 developed and released separately. This repository owns only the extension-side
