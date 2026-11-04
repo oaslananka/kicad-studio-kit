@@ -56,14 +56,17 @@ describe('NVIDIA Build cloud chat provider', () => {
       Authorization: 'Bearer ' + key
     });
     const body = JSON.parse(String(init.body)) as Record<string, unknown>;
-    expect(body).toEqual({
+    expect(body).toMatchObject({
       model: 'vendor/new-catalog-model',
-      max_tokens: AI_MAX_TOKENS,
       messages: [
         { role: 'system', content: 'system' },
         { role: 'user', content: 'Explain\n\nContext:\nclearance rules' }
       ]
     });
+    expect(Object.keys(body).sort()).toEqual(
+      ['max_tokens', 'messages', 'model'].sort()
+    );
+    expect(body['max_tokens']).toBe(AI_MAX_TOKENS);
     expect(body).not.toHaveProperty('max_completion_tokens');
     expect(body).not.toHaveProperty('input');
   });
