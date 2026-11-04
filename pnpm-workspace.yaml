@@ -49,6 +49,10 @@ ignoredOptionalDependencies:
   - keytar
 
 overrides:
+  # GHSA-gcqx-w48m-w2h4: upstream deepmerge has no fixed 4.3.x release.
+  # Limit the last non-affected v4 (4.1.2) to Jest config only; remove this
+  # exception once Jest depends on a maintained non-vulnerable replacement.
+  "jest-config>deepmerge": 4.1.2
   "brace-expansion@2.1.1": 2.1.7
   "brace-expansion@5.0.6": 5.0.12
   "brace-expansion@5.0.7": 5.0.12

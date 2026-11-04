@@ -98,6 +98,31 @@ Compatibility-sensitive updates must also run the relevant contract or fixture t
 
 ## Security updates
 
+### deepmerge advisory: Jest-only non-affected version
+
+On 2026-11-04, Dependabot alert #169 and Scorecard code scanning alert #21
+both reported the same low-severity vulnerability,
+[GHSA-gcqx-w48m-w2h4](https://github.com/advisories/GHSA-gcqx-w48m-w2h4),
+in deepmerge@4.3.1. It was introduced exclusively by jest-config@30.5.2
+through the test-only Jest dependency tree, not by the published VSIX.
+No fixed upstream release exists. The GitHub-reviewed advisory affects
+versions from 4.2.0 through 4.3.1; 4.1.2 is outside that affected range.
+
+The root pnpm-workspace.yaml therefore applies an exact-parent
+jest-config>deepmerge: 4.1.2 override as a temporary risk reduction. This
+intentionally falls below Jest's declared ^4.3.1 range: it is accepted only
+after successful Jest configuration loading, real merged-config behavior,
+all 1,330 existing Jest unit tests, frozen pnpm install and the security
+audit. No global override, suppression, audit ignore or lowering of
+security checks was introduced.
+
+Remove the override only after Jest's upstream dependency chain resolves to
+a maintained, non-vulnerable version and the full CI matrix and supply-chain
+checks pass again. The exact-parent pin is enforced by the existing
+supply-chain checker to prevent accidental reintroduction during maintenance.
+GitHub alert closure must be verified separately after the updated lockfile
+lands on main; local audit success alone is not proof of closure.
+
 Vulnerability-fix PRs skip the weekly schedule and should be reviewed first. Keep the fix narrow:
 
 - Prefer the lowest patched version that resolves the alert.
