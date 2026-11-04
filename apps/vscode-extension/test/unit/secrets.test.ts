@@ -18,6 +18,9 @@ describe('AI secret utilities', () => {
       'AIza...3456'
     );
     expect(redactApiKey('failed with tiny', 'tiny')).toContain('***');
+    expect(
+      redactSensitiveText('credential nvapi-' + 'a'.repeat(24))
+    ).not.toContain('nvapi-' + 'a'.repeat(24));
   });
 
   it('redacts bearer tokens, assignments, known secret values, and home paths', () => {
@@ -87,9 +90,7 @@ describe('AI secret utilities', () => {
       })
     ).resolves.toBe(true);
 
-    expect(secretStore.get(getAiSecretKey('openrouter'))).toBe(
-      'plaintext-key'
-    );
+    expect(secretStore.get(getAiSecretKey('openrouter'))).toBe('plaintext-key');
     expect(config.update.mock.calls).toEqual([
       ['kicadstudio.ai.apiKey', undefined, 'global'],
       ['kicadstudio.ai.apiKey', undefined, 'workspace'],

@@ -25,6 +25,40 @@ describe('AIProviderRegistry per-provider keys', () => {
     await expect(registry.hasApiKey('openrouter')).resolves.toBe(false);
   });
 
+  it('stores NVIDIA keys independently and never steals the legacy shared key', async () => {
+    const context = createExtensionContextMock();
+    await context.secrets.store(AI_SECRET_KEY_LEGACY, 'old-openai-key');
+    const registry = new AIProviderRegistry(context as never);
+
+    await expect(
+      registry.getProviderForSelection('nvidia')
+    ).resolves.toBeUndefined();
+    await expect(context.secrets.get(AI_SECRET_KEY_LEGACY)).resolves.toBe(
+      'old-openai-key'
+    );
+    await expect(
+      context.secrets.get(getAiSecretKey('nvidia'))
+    ).resolves.toBeUndefined();
+
+    await registry.setApiKey('nvidia', 'nvapi-independent-secret');
+    await expect(registry.hasApiKey('nvidia')).resolves.toBe(true);
+    const provider = await registry.getProviderForSelection(
+      'nvidia',
+      'new-model/custom'
+    );
+    expect(provider?.name).toBe('NVIDIA Build');
+    expect(registry.getDefaultModel('nvidia')).toBe(
+      'nvidia/nemotron-3-super-120b-a12b'
+    );
+    expect(registry.isKeyedProvider('nvidia')).toBe(true);
+
+    await registry.clearApiKey('nvidia');
+    await expect(registry.hasApiKey('nvidia')).resolves.toBe(false);
+    await expect(context.secrets.get(AI_SECRET_KEY_LEGACY)).resolves.toBe(
+      'old-openai-key'
+    );
+  });
+
   it('migrates the legacy shared key only to the selected provider secret', async () => {
     const context = createExtensionContextMock();
     await context.secrets.store(AI_SECRET_KEY_LEGACY, 'legacy-key');

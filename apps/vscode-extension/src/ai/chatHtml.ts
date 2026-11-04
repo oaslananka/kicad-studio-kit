@@ -346,6 +346,9 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
         <option value="none">Disabled</option>
         <option value="claude">Claude</option>
         <option value="openai">OpenAI</option>
+        <option value="openrouter">OpenRouter</option>
+        <option value="nvidia">NVIDIA Build</option>
+        <option value="local">Local OpenAI-compatible</option>
         <option value="copilot">Copilot</option>
         <option value="gemini">Gemini</option>
       </select>
@@ -687,7 +690,11 @@ export function buildChatHtml(options: ChatHtmlOptions): string {
     document.getElementById('quota-banner-retry').addEventListener('click', () => vscode.postMessage({ type: 'retry' }));
     nodes.cancel.addEventListener('click', () => vscode.postMessage({ type: 'cancel' }));
     nodes.send.addEventListener('click', sendPrompt);
-    nodes.provider.addEventListener('change', postSelection);
+    nodes.provider.addEventListener('change', () => {
+      // A model ID from the previous vendor must not be sent to another API.
+      nodes.model.value = '';
+      postSelection();
+    });
     nodes.model.addEventListener('change', postSelection);
     nodes.prompt.addEventListener('input', estimateTokens);
     nodes.extraContext.addEventListener('input', estimateTokens);

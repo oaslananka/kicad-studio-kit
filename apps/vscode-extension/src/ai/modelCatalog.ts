@@ -2,6 +2,7 @@ export type AiProviderId =
   | 'claude'
   | 'openai'
   | 'openrouter'
+  | 'nvidia'
   | 'copilot'
   | 'gemini'
   | 'local';
@@ -217,6 +218,31 @@ export const OPENROUTER_MODELS: AiModelInfo[] = [
   }
 ];
 
+/**
+ * NVIDIA-hosted NIM API catalog models. User-entered model IDs are supported
+ * as well; availability is determined by the NVIDIA account, not this list.
+ */
+export const NVIDIA_MODELS: AiModelInfo[] = [
+  {
+    id: 'nvidia/nemotron-3-super-120b-a12b',
+    provider: 'nvidia',
+    label: 'NVIDIA Nemotron 3 Super',
+    maxTokens: 4096,
+    supportsStreaming: true,
+    contextWindow: 128000,
+    recommended: true,
+    default: true
+  },
+  {
+    id: 'openai/gpt-oss-20b',
+    provider: 'nvidia',
+    label: 'GPT-OSS 20B via NVIDIA Build',
+    maxTokens: 4096,
+    supportsStreaming: true,
+    contextWindow: 128000
+  }
+];
+
 export const COPILOT_MODELS: AiModelInfo[] = [
   {
     id: 'copilot/default',
@@ -237,6 +263,7 @@ export const MODEL_CATALOG: Record<AiProviderId, AiModelInfo[]> = {
   claude: CLAUDE_MODELS,
   openai: OPENAI_MODELS,
   openrouter: OPENROUTER_MODELS,
+  nvidia: NVIDIA_MODELS,
   gemini: GEMINI_MODELS,
   copilot: COPILOT_MODELS,
   local: LOCAL_MODELS

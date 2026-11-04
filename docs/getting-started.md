@@ -136,6 +136,8 @@ See [MCP Overview](/mcp/) for transport options and profiles.
 1. Open the **AI Chat** panel (sidebar or `Ctrl+Shift+I`).
 2. Ask: "Summarize the DRC violations" or "Explain this schematic block".
 3. Configure your AI provider in **Settings → KiCad Studio → AI** if not already set.
+4. For NVIDIA Build cloud models, use **KiCad: Manage Chat Provider** to
+   set a key and model. See the [AI FAQ](/faq#do-i-need-an-api-key-for-ai-features).
 
 ---
 

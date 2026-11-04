@@ -29,6 +29,20 @@ describe('AI model catalog', () => {
     );
   });
 
+  it('offers NVIDIA Build defaults and leaves room for custom catalog IDs', () => {
+    expect(getDefaultModel('nvidia')).toBe('nvidia/nemotron-3-super-120b-a12b');
+    expect(getProviderModels('nvidia')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'nvidia/nemotron-3-super-120b-a12b',
+          provider: 'nvidia',
+          recommended: true,
+          default: true
+        })
+      ])
+    );
+  });
+
   it('does not advertise Codex as a direct extension model provider', () => {
     expect(Object.keys(MODEL_CATALOG)).not.toContain('codex');
     expect(() => getProviderModels('codex' as never)).toThrow();

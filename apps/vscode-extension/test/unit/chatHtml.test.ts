@@ -31,6 +31,12 @@ describe('buildChatHtml', () => {
 
     expect(html).toContain('id="provider"');
     expect(html).toContain('id="model"');
+    expect(html).toContain('<option value="nvidia">NVIDIA Build</option>');
+    expect(html).toContain("nodes.model.value = '';");
+    expect(html).toContain('<option value="openrouter">OpenRouter</option>');
+    expect(html).toContain(
+      '<option value="local">Local OpenAI-compatible</option>'
+    );
     expect(html).toContain('id="settings"');
     expect(html).toContain('id="export"');
     expect(html).toContain('id="cancel"');

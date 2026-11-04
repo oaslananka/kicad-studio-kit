@@ -14,6 +14,7 @@ export type OpenAIApiMode = 'responses' | 'chat-completions';
 
 export interface OpenAIProviderOptions {
   chatCompletionsUrl?: string;
+  chatCompletionsTokenField?: 'max_tokens' | 'max_completion_tokens';
   name?: string;
   requiresApiKey?: boolean;
   responsesUrl?: string;
@@ -60,6 +61,8 @@ export class OpenAIProvider implements AIProvider {
   readonly name: string;
   readonly capabilities: AIProvider['capabilities'];
   private readonly chatCompletionsUrl: string;
+  private readonly chatCompletionsTokenField:
+    'max_tokens' | 'max_completion_tokens';
   private readonly requiresApiKey: boolean;
   private readonly responsesUrl: string;
 
@@ -78,6 +81,8 @@ export class OpenAIProvider implements AIProvider {
     this.chatCompletionsUrl =
       options.chatCompletionsUrl ??
       'https://api.openai.com/v1/chat/completions';
+    this.chatCompletionsTokenField =
+      options.chatCompletionsTokenField ?? 'max_completion_tokens';
     this.responsesUrl =
       options.responsesUrl ?? 'https://api.openai.com/v1/responses';
   }
@@ -109,6 +114,9 @@ export class OpenAIProvider implements AIProvider {
         {
           model: this.model,
           stream: true,
+          ...(this.chatCompletionsTokenField === 'max_tokens'
+            ? { max_tokens: AI_MAX_TOKENS }
+            : {}),
           messages: [
             {
               role: 'system',
@@ -258,7 +266,7 @@ export class OpenAIProvider implements AIProvider {
       model: this.model,
       // Newer OpenAI models (gpt-4.5, gpt-5, gpt-5-mini, o-series) require
       // max_completion_tokens instead of the deprecated max_tokens parameter.
-      max_completion_tokens: AI_MAX_TOKENS,
+      [this.chatCompletionsTokenField]: AI_MAX_TOKENS,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: this.buildUserMessage(prompt, context) }
