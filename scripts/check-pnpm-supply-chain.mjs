@@ -32,6 +32,8 @@ const ALLOWED_TRUST_POLICY_EXCLUDES = [
   "semver@5.7.2 || 6.3.1",
 ];
 const REQUIRED_SECURITY_OVERRIDES = Object.freeze({
+  // GHSA-gcqx-w48m-w2h4: Jest-config only; latest deepmerge has no fix.
+  "jest-config>deepmerge": "4.1.2",
   "brace-expansion@2.1.1": "2.1.7",
   "brace-expansion@5.0.6": "5.0.12",
   "brace-expansion@5.0.7": "5.0.12",

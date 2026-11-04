@@ -251,6 +251,27 @@ test(".npmrc and package.json cannot carry ignored pnpm supply-chain settings", 
   }
 });
 
+test("GHSA-gcqx-w48m-w2h4 Jest-only non-affected deepmerge pin is required", () => {
+  for (const insecure of [undefined, "4.3.1"]) {
+    const repoRoot = createFixture({
+      workspace: workspaceFixture((workspace) => {
+        if (insecure === undefined) {
+          delete workspace.overrides["jest-config>deepmerge"];
+        } else {
+          workspace.overrides["jest-config>deepmerge"] = insecure;
+        }
+      }),
+    });
+    try {
+      assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+        "pnpm-workspace.yaml overrides must pin jest-config>deepmerge to 4.1.2",
+      ]);
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true });
+    }
+  }
+});
+
 test("#506 missing brace-expansion security overrides fail validation", () => {
   const repoRoot = createFixture({
     workspace: workspaceFixture((workspace) => {
