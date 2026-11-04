@@ -10,6 +10,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.2.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.1.2...vscode-extension-v2.2.0) (2026-11-04)
+
+
+### Features
+
+* **kicad-studio:** support NVIDIA Build cloud models with API keys ([#871](https://github.com/oaslananka/kicad-studio-kit/issues/871)) ([0860d25](https://github.com/oaslananka/kicad-studio-kit/commit/0860d2597b1c019adca65f3dce0f2bd530f328ff))
+
 ## [2.1.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.1.1...vscode-extension-v2.1.2) (2026-10-31)
 
 
