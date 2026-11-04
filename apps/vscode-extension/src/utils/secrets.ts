@@ -9,7 +9,7 @@ import {
 export type AiSecretProvider = AiProviderName;
 
 const API_KEY_PATTERN =
-  /\b(?:sk-[A-Za-z0-9_-]{8,}|sk-ant-[A-Za-z0-9_-]{8,}|AIza[0-9A-Za-z_-]{8,})\b/g;
+  /\b(?:sk-[A-Za-z0-9_-]{8,}|sk-ant-[A-Za-z0-9_-]{8,}|nvapi-[A-Za-z0-9_-]{8,}|AIza[0-9A-Za-z_-]{8,})\b/g;
 const BEARER_TOKEN_PATTERN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/gi;
 const SECRET_ASSIGNMENT_PATTERN =
   /\b([A-Za-z0-9_.-]*(?:api[_-]?key|token|secret|password|passwd|auth)[A-Za-z0-9_.-]*)=([^\s,;&]+)/gi;
@@ -19,6 +19,7 @@ export function isAiSecretProvider(value: string): value is AiSecretProvider {
     value === 'claude' ||
     value === 'openai' ||
     value === 'openrouter' ||
+    value === 'nvidia' ||
     value === 'gemini'
   );
 }
@@ -28,7 +29,7 @@ export function getAiSecretKey(provider: AiSecretProvider): string {
 }
 
 export function getAiSecretProviders(): AiSecretProvider[] {
-  return ['claude', 'openai', 'openrouter', 'gemini'];
+  return ['claude', 'openai', 'openrouter', 'nvidia', 'gemini'];
 }
 
 export function redactApiKey(value: string, apiKey?: string): string {
@@ -104,6 +105,12 @@ export async function migrateLegacyAiSecret(args: {
   const existing = await args.secrets.get(providerKey);
   if (existing) {
     return existing;
+  }
+
+  // NVIDIA keys are never sourced from the old shared legacy credential.
+  // Otherwise an existing OpenAI/Claude key could be silently sent to NVIDIA.
+  if (args.provider === 'nvidia') {
+    return undefined;
   }
 
   const legacy = await args.secrets.get(AI_SECRET_KEY_LEGACY);

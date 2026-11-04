@@ -62,12 +62,29 @@ See the [MCP deployment docs](/mcp/deployment) for detailed instructions.
 3. Set the path manually in VS Code settings under `kicadstudio.kicadCliPath`.
 4. Run the **KiCad: Detect kicad-cli** command from the Command Palette.
 
-### Do I need to set up an API key for AI features?
+### Do I need an API key for AI features?
 
-AI features (error analysis, chat, DRC explanation) require a provider API key.
-Open VS Code Settings → KiCad Studio → AI and select your provider (Claude, OpenAI,
-Gemini, or GitHub Copilot). For GitHub Copilot, no separate key is needed if you have
-a GitHub Copilot subscription.
+Select Claude, OpenAI, OpenRouter, NVIDIA Build, Gemini, local inference, or
+Copilot under **KiCad Studio → AI**. Copilot uses your VS Code subscription;
+remote API providers require their own keys.
+
+To use **NVIDIA Build cloud models**:
+
+1. On [NVIDIA Build](https://build.nvidia.com/) select a hosted model and
+   **Generate API Key**. Free developer access has account quotas and is
+   intended for prototyping.
+2. Run **KiCad: Manage Chat Provider → Pick AI provider → NVIDIA Build**.
+3. Select **Set provider API key** (masked VS Code **SecretStorage**).
+4. Under **Pick provider model**, choose a model or **Custom model...** and
+   paste its full NVIDIA catalog ID, e.g. `nvidia/nemotron-3-super-120b-a12b`.
+5. Choose **Test chat provider**, then **KiCad: Open AI Chat**.
+
+The fixed endpoint is
+`https://integrate.api.nvidia.com/v1/chat/completions` (Bearer authentication,
+Chat Completions `max_tokens`). **Clear AI Provider Key** removes its credential.
+No local NIM is required. NVIDIA's hosted API receives the prompt and
+attached KiCad context; avoid confidential designs without permission.
+DRC/ERC and manufacturing gates remain authoritative.
 
 ## Cross-Platform
 

@@ -12,6 +12,7 @@ import { ClaudeProvider } from './claudeProvider';
 import { CopilotProvider } from './copilotProvider';
 import { GeminiProvider } from './geminiProvider';
 import { LocalProvider } from './localProvider';
+import { NvidiaBuildProvider } from './nvidiaBuildProvider';
 import { getDefaultModel } from './modelCatalog';
 import { OpenAIProvider } from './openaiProvider';
 import { OpenRouterProvider } from './openrouterProvider';
@@ -91,6 +92,16 @@ export class AIProviderRegistry {
         model || getDefaultModel('openrouter')
       );
     }
+    if (selected === 'nvidia') {
+      const apiKey = await this.getApiKey('nvidia');
+      if (!apiKey) {
+        return undefined;
+      }
+      return new NvidiaBuildProvider(
+        apiKey,
+        model || getDefaultModel('nvidia')
+      );
+    }
     if (selected === 'gemini') {
       const apiKey = await this.getApiKey('gemini');
       if (!apiKey) {
@@ -128,6 +139,7 @@ export class AIProviderRegistry {
     return provider === 'claude' ||
       provider === 'openai' ||
       provider === 'openrouter' ||
+      provider === 'nvidia' ||
       provider === 'copilot' ||
       provider === 'gemini' ||
       provider === 'local'

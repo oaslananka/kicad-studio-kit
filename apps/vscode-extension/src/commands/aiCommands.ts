@@ -143,7 +143,7 @@ export function registerAiCommands(
           {
             label: 'Clear all AI API keys',
             description:
-              'Remove Claude, OpenAI, OpenRouter, and Gemini keys from SecretStorage.',
+              'Remove Claude, OpenAI, OpenRouter, NVIDIA Build, and Gemini keys from SecretStorage.',
             action: 'clear-all'
           },
           {
@@ -175,6 +175,7 @@ export function registerAiCommands(
             { label: 'Claude', provider: 'claude' },
             { label: 'OpenAI', provider: 'openai' },
             { label: 'OpenRouter', provider: 'openrouter' },
+            { label: 'NVIDIA Build (cloud API)', provider: 'nvidia' },
             { label: 'GitHub Copilot', provider: 'copilot' },
             { label: 'Gemini', provider: 'gemini' },
             { label: 'Local OpenAI-compatible', provider: 'local' }
@@ -239,6 +240,7 @@ export function registerAiCommands(
           selectedProvider === 'claude' ||
           selectedProvider === 'openai' ||
           selectedProvider === 'openrouter' ||
+          selectedProvider === 'nvidia' ||
           selectedProvider === 'copilot' ||
           selectedProvider === 'gemini' ||
           selectedProvider === 'local'
@@ -249,6 +251,7 @@ export function registerAiCommands(
           provider === 'claude' ||
           provider === 'openai' ||
           provider === 'openrouter' ||
+          provider === 'nvidia' ||
           provider === 'copilot' ||
           provider === 'gemini' ||
           provider === 'local'

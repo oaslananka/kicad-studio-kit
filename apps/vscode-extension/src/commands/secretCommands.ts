@@ -120,11 +120,12 @@ async function pickAiSecretProvider(): Promise<AiSecretProvider | undefined> {
 }
 
 function formatProviderName(provider: AiSecretProvider): string {
-  return provider === 'openai'
-    ? 'OpenAI'
-    : provider === 'openrouter'
-      ? 'OpenRouter'
-    : provider === 'gemini'
-      ? 'Gemini'
-      : 'Claude';
+  const names: Record<AiSecretProvider, string> = {
+    claude: 'Claude',
+    openai: 'OpenAI',
+    openrouter: 'OpenRouter',
+    nvidia: 'NVIDIA Build',
+    gemini: 'Gemini'
+  };
+  return names[provider];
 }

@@ -627,7 +627,11 @@ function getConfiguredAiSecretProvider():
   const provider = vscode.workspace
     .getConfiguration()
     .get<string>(SETTINGS.aiProvider, 'claude');
-  return isAiSecretProvider(provider) ? provider : 'claude';
+  // The deprecated plaintext setting predates NVIDIA Build. Never migrate an
+  // older provider's API key to the new remote service by accident.
+  return isAiSecretProvider(provider) && provider !== 'nvidia'
+    ? provider
+    : 'claude';
 }
 
 async function migrateDeprecatedSecretSetting(args: {

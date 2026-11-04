@@ -34,6 +34,7 @@ export const AI_SECRET_KEYS = {
   claude: 'kicadstudio.secrets.ai.claude',
   openai: 'kicadstudio.secrets.ai.openai',
   openrouter: 'kicadstudio.secrets.ai.openrouter',
+  nvidia: 'kicadstudio.secrets.ai.nvidia',
   gemini: 'kicadstudio.secrets.ai.gemini'
 } as const;
 export type AiProviderName = keyof typeof AI_SECRET_KEYS;

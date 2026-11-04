@@ -35,6 +35,30 @@ KiCad Studio turns VS Code into a KiCad-aware engineering cockpit: project navig
 5. Run **KiCad: Run DRC** or **KiCad: Run ERC** to populate Problems and validation views.
 6. Optional: start `kicad-mcp-pro` and connect your AI client with the generated `.vscode/mcp.json` schema.
 
+## NVIDIA Build cloud models (optional)
+
+KiCad Studio supports the NVIDIA-hosted [Build API Catalog](https://build.nvidia.com/)
+using an API key and a provider-specific model ID. No local GPU, paid API
+subscription, custom endpoint, or new MCP server is needed for prototyping.
+
+1. On an NVIDIA Build model page, select **Generate API Key**.
+2. In VS Code, run **KiCad: Manage Chat Provider** → **Pick AI provider** →
+   **NVIDIA Build (cloud API)**.
+3. Use **Set provider API key** to save the key securely in VS Code SecretStorage.
+4. Choose **Pick provider model** to select a suggested model or **Custom
+   model...** to enter an exact catalog model ID, e.g.
+   nvidia/nemotron-3-super-120b-a12b.
+5. Run **Test chat provider** and open **KiCad: Open AI Chat**.
+
+The HTTPS endpoint is fixed to
+https://integrate.api.nvidia.com/v1/chat/completions. KiCad Studio sends
+NVIDIA-compatible Chat Completions requests and never stores the key in
+workspace settings or logs. NVIDIA's free developer endpoints are for
+prototyping and have account-specific quotas; do not assume free production
+inference. Selecting a remote AI provider transmits the prompt and
+explicitly attached KiCad context to that provider. See the
+[FAQ](../../docs/faq.md#do-i-need-to-set-up-an-api-key-for-ai-features).
+
 ## Task-Oriented Workflows
 
 Open **KiCad Studio: Open Task Hub** from the Command Palette or use the task button in the **KiCad Project** view title. Existing command IDs remain available, while the primary workflows are grouped around the engineering outcome you need.
