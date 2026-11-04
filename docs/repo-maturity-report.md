@@ -8,11 +8,11 @@ Repository: `oaslananka/kicad-studio-kit`
 Audit date: 2026-07-20
 Mode: Live GitHub evidence reconciliation + implementation PR
 Historical target: OpenSSF Best Practices Silver / Solo-maintainer Professional OSS (MIT-licensed period)
-Current licensing: PolyForm Noncommercial 1.0.0 source-available project-authored code
+Current licensing (2026-11-04 update): MIT; PolyForm applied only to historical releases
 
 ## Executive summary
 
-KiCad Studio Kit built a strong professional open-source foundation during its MIT-licensed period: README, contribution guide, Code of Conduct, security policy, support policy, release automation, pinned GitHub Actions, CodeQL, Scorecard, Gitleaks, Renovate, release evidence, and a documented support matrix. Since 2026-09-14, current project-authored source is PolyForm Noncommercial 1.0.0 and should be described as source-available rather than as current OSS.
+KiCad Studio Kit built a strong professional open-source foundation during its MIT-licensed period: README, contribution guide, Code of Conduct, security policy, support policy, release automation, pinned GitHub Actions, CodeQL, Scorecard, Gitleaks, Renovate, release evidence, and a documented support matrix. The project was source-available under PolyForm from 2026-09-14 until MIT was restored on 2026-11-04. The archived quality assessment predates that restoration.
 
 The historical MIT period is best classified as **Solo-maintainer Professional OSS / Mature OSS in progress**. Gold/foundation-grade is intentionally not targeted under the project's solo-maintainer operating model. The 2026-07-20 live audit confirmed that `main` is protected by the active `main-protection` repository ruleset with signed commits, pull-request-only changes, strict required checks, deletion protection, and non-fast-forward protection.
 
@@ -20,7 +20,7 @@ The legacy branch-protection endpoint still returns `404 Branch not protected` b
 
 ## Current maturity level
 
-**Production-ready source-available project; historical Mature OSS evidence retained.**
+**Production-ready MIT-licensed project; historical Mature OSS evidence retained.**
 
 Rationale:
 
@@ -32,7 +32,7 @@ Rationale:
 
 ## Target maturity level
 
-**Historical: OpenSSF Best Practices Silver / Solo-maintainer Professional OSS. Current: source-available commercial/noncommercial dual-path licensing.**
+**Historical: OpenSSF Best Practices Silver / Solo-maintainer Professional OSS. Current: MIT open-source licensing; live badge status remains unverified.**
 
 Silver was the final OpenSSF Best Practices target during the MIT-licensed period. Current licensing is not an OSI-approved open-source license, so the badge material is retained as historical evidence; the underlying security and quality controls remain active.
 
@@ -41,7 +41,7 @@ Silver was the final OpenSSF Best Practices target during the MIT-licensed perio
 | Criterion                     | Status  | Evidence / action                                                                                    |
 | ----------------------------- | ------- | ---------------------------------------------------------------------------------------------------- |
 | README                        | Passed  | `README.md` exists with product scope, install, validation, badges, and docs links.                  |
-| LICENSE                       | Passed  | `LICENSE` is PolyForm Noncommercial 1.0.0; prior MIT releases retain their original grants.          |
+| LICENSE                       | Passed  | `LICENSE` is MIT; historical PolyForm releases retain their original grants.                         |
 | CONTRIBUTING                  | Passed  | `CONTRIBUTING.md` and `.github/CONTRIBUTING.md` exist; this PR adds stronger standards links.        |
 | CODE_OF_CONDUCT               | Passed  | `CODE_OF_CONDUCT.md` exists.                                                                         |
 | SECURITY                      | Passed  | `SECURITY.md` exists and links private advisory reporting.                                           |
@@ -69,7 +69,7 @@ Silver was the final OpenSSF Best Practices target during the MIT-licensed perio
 | Code-Review            | Partial | The active ruleset enforces pull requests and CI but intentionally requires zero approvals; independent human-review history remains limited by the solo-maintainer model. |
 | Maintained             | Passed  | Recent release and push activity exist.                                                                                                                                    |
 | Security-Policy        | Passed  | `SECURITY.md`.                                                                                                                                                             |
-| License                | Current | PolyForm Noncommercial 1.0.0 for current project-authored source; MIT remains applicable to previously published revisions.                                                |
+| License                | Current | MIT for current project-authored source; historical releases retain the grants applicable when distributed.                                                                |
 | CI-Tests               | Passed  | `ci.yml`, product checks, docs, package, integration, a11y, visual, and release checks exist.                                                                              |
 | Dependency-Update-Tool | Passed  | Renovate and GitHub-native dependency alert/update configuration exist.                                                                                                    |
 | Pinned-Dependencies    | Passed  | GitHub Actions are digest-pinned; lockfile is committed.                                                                                                                   |
@@ -148,7 +148,7 @@ The repository already has extensive architecture, release, testing, compatibili
 
 | Criterion                                | Status  | Evidence / action                                                                                                  |
 | ---------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
-| LICENSE                                  | Passed  | PolyForm Noncommercial 1.0.0; historical MIT grants are preserved.                                                 |
+| LICENSE                                  | Passed  | MIT; historical releases retain their original grants.                                                             |
 | SPDX identifiers                         | Partial | Policy documented in `docs/legal/reuse-spdx-notice-assessment.md`; per-file headers are future optional work.      |
 | REUSE readiness                          | Partial | Assessment documented; full REUSE compliance is not claimed.                                                       |
 | Third-party dependency license awareness | Partial | SBOM/release evidence exists; dependency license review should be automated or documented per release.             |
@@ -232,5 +232,5 @@ forward.
 1. Merge policy changes only after required checks, bot findings, and review threads are resolved.
 2. Let the weekly governance evidence workflow verify live ruleset and security-setting drift.
 3. Re-run OpenSSF Scorecard after the updated evidence reaches `main`.
-4. Preserve the Best Practices project and evidence links as historical MIT-period records; do not present them as a current FLOSS licensing claim.
+4. Preserve the historic Best Practices project evidence; do not claim a currently verified Silver badge without renewed live verification.
 5. Keep Gold/foundation-grade badge work out of the roadmap; reconsider only if the maintainer explicitly changes the declared target.

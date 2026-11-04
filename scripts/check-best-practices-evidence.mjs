@@ -106,13 +106,25 @@ export function validateBestPracticesEvidence(root = repoRoot) {
   const rootPackage = JSON.parse(readFromRoot("package.json"));
   const coverageThreshold = validateCoveragePolicy(root);
 
-  assert.equal(rootPackage.license, "PolyForm-Noncommercial-1.0.0");
-  assert.equal(extensionPackage.license, "PolyForm-Noncommercial-1.0.0");
+  assert.equal(rootPackage.license, "MIT");
+  assert.equal(extensionPackage.license, "MIT");
+  for (const workspace of [
+    "packages/kicad-fixtures",
+    "packages/test-harness",
+  ]) {
+    assert.equal(
+      JSON.parse(readFromRoot(workspace + "/package.json")).license,
+      "MIT",
+    );
+  }
+  const mitNotice = readFromRoot("LICENSE");
+  assert.match(mitNotice, /^MIT License\n\nCopyright \(c\) 2026 oaslananka\n/u);
+  assert.equal(readFromRoot("apps/vscode-extension/LICENSE"), mitNotice);
 
   requireIncludes(
     "README.md",
     readme,
-    "Historical OpenSSF Best Practices Silver (MIT-licensed period)",
+    "Historical OpenSSF Best Practices Silver",
   );
   const hasCurrentBestPracticesBadge = Array.from(
     readme.matchAll(/https?:\/\/[^\s)"'<>]+/g),
@@ -180,7 +192,7 @@ export function validateBestPracticesEvidence(root = repoRoot) {
   requireIncludes(
     ".github/PULL_REQUEST_TEMPLATE.md",
     prTemplate,
-    "reviewed CLA on record",
+    "no separate CLA needed for MIT contributions",
   );
   assert.equal(
     extensionPackage.scripts?.["test:dynamic-analysis"],

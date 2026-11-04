@@ -92,10 +92,10 @@ to submit it. Pull requests with non-trivial code, test, documentation, CI, or
 release-process changes must include signed-off commits or document why the DCO
 requirement is not applicable.
 
-Because the current project is source-available and may also be commercially
-licensed, non-trivial external code contributions additionally require a reviewed
-Contributor License Agreement before merge. DCO sign-off does not replace that
-CLA requirement. See [CONTRIBUTOR-LICENSING.md](CONTRIBUTOR-LICENSING.md).
+Contributions are submitted under the project's current MIT License.
+Non-trivial changes require DCO sign-off; a separate Contributor License
+Agreement is not required for ordinary MIT-licensed contributions. See
+[CONTRIBUTOR-LICENSING.md](CONTRIBUTOR-LICENSING.md).
 
 ## Architecture Decision Records
 

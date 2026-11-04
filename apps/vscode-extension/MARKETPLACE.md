@@ -82,9 +82,10 @@ integrations and their credentials before enabling them.
 
 ## License and Support
 
-Current project-authored source is licensed under **PolyForm Noncommercial
-1.0.0**. Commercial use requires a separate written license. Earlier revisions
-published under MIT retain the rights granted for those versions.
+Current project-authored source is licensed under the **MIT License**,
+including commercial reuse under its terms. Historical releases retain
+the licenses originally published with them. Third-party materials have
+their own licenses and notices.
 
 For reproducible bug reports, compatibility issues, or feature requests, use
 [GitHub Issues](https://github.com/oaslananka/kicad-studio-kit/issues).
@@ -98,6 +99,6 @@ for reporting expectations; report security vulnerabilities privately via
 KiCad Studio is free to install. If it helps your engineering work, you can
 support ongoing maintenance through [GitHub Sponsors](https://github.com/sponsors/oaslananka)
 or [Buy Me a Coffee](https://www.buymeacoffee.com/oaslananka).
-Sponsorship is voluntary and does not grant a commercial license or a paid
-support SLA; [commercial licensing](https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSING.md)
-is handled separately.
+Sponsorship is voluntary and does not change the project's MIT terms
+or provide a paid support SLA. See [licensing](https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSING.md)
+for historical license and third-party notice details.

@@ -1,5 +1,10 @@
 # ADR-0010 - Source-Available and Commercial Licensing
 
+> **Status: Superseded 2026-11-04** by
+> [ADR-0011 — Restore MIT Licensing](0011-restore-mit-licensing.md).
+> This ADR records the 2026-09-14 decision; references to "current" below
+> describe the historical period, not the current source license.
+
 **Status:** Accepted
 **Date:** 2026-09-14
 

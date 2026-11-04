@@ -13,18 +13,18 @@ This reference summarizes the repository standards that contributors and maintai
 
 ## Required repository files
 
-| File                 | Purpose                                                    |
-| -------------------- | ---------------------------------------------------------- |
-| `README.md`          | Project overview, install, validation, product boundaries. |
-| `LICENSE`            | Current PolyForm Noncommercial 1.0.0 license.              |
-| `CONTRIBUTING.md`    | Contribution process, DCO, ADR expectations.               |
-| `CODE_OF_CONDUCT.md` | Contributor behavior standards.                            |
-| `SECURITY.md`        | Private vulnerability reporting.                           |
-| `SUPPORT.md`         | Support channels and response goals.                       |
-| `GOVERNANCE.md`      | Roles, decision process, review policy.                    |
-| `MAINTAINERS.md`     | Current maintainer list and continuity model.              |
-| `ROADMAP.md`         | Public direction and priorities.                           |
-| `.github/CODEOWNERS` | Path ownership and review routing.                         |
+| File                 | Purpose                                                            |
+| -------------------- | ------------------------------------------------------------------ |
+| `README.md`          | Project overview, install, validation, product boundaries.         |
+| `LICENSE`            | Current MIT License (earlier PolyForm releases remain historical). |
+| `CONTRIBUTING.md`    | Contribution process, DCO, ADR expectations.                       |
+| `CODE_OF_CONDUCT.md` | Contributor behavior standards.                                    |
+| `SECURITY.md`        | Private vulnerability reporting.                                   |
+| `SUPPORT.md`         | Support channels and response goals.                               |
+| `GOVERNANCE.md`      | Roles, decision process, review policy.                            |
+| `MAINTAINERS.md`     | Current maintainer list and continuity model.                      |
+| `ROADMAP.md`         | Public direction and priorities.                                   |
+| `.github/CODEOWNERS` | Path ownership and review routing.                                 |
 
 ## Required change process
 
