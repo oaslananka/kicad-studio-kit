@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import YAML from "yaml";
@@ -70,4 +71,51 @@ test("canary still tests latest signed published artifacts and real-pair protoco
   assert.match(workflow, /node scripts\/check-published-mcp-peer\.mjs/u);
   assert.match(workflow, /steps\.mcp-window\.outputs\.tested_version/u);
   assert.doesNotMatch(workflow, /continue-on-error:\s*true/u);
+});
+
+test("CLI outputs only the pinned stable version for the workflow", () => {
+  const run = spawnSync(
+    process.execPath,
+    ["scripts/check-published-mcp-peer.mjs"],
+    {
+      env: { ...process.env, KICAD_MCP_PRO_LATEST_VERSION: tested },
+      encoding: "utf8",
+    },
+  );
+  assert.equal(run.status, 0);
+  assert.equal(run.stdout.trim(), tested);
+  assert.equal(run.stderr.trim(), "");
+});
+
+test("CLI reports a compatible latest version as a notice, not a tested claim", () => {
+  const run = spawnSync(
+    process.execPath,
+    ["scripts/check-published-mcp-peer.mjs"],
+    {
+      env: { ...process.env, KICAD_MCP_PRO_LATEST_VERSION: "4.99.0" },
+      encoding: "utf8",
+    },
+  );
+  assert.equal(run.status, 0);
+  assert.equal(run.stdout.trim(), tested);
+  assert.match(run.stderr, /::notice::Latest published MCP 4\.99\.0/u);
+});
+
+test("CLI refuses unsupported and missing latest versions", () => {
+  for (const latest of ["5.0.0", ""]) {
+    const run = spawnSync(
+      process.execPath,
+      ["scripts/check-published-mcp-peer.mjs"],
+      {
+        env: { ...process.env, KICAD_MCP_PRO_LATEST_VERSION: latest },
+        encoding: "utf8",
+      },
+    );
+    assert.equal(run.status, 1);
+    assert.equal(run.stdout, "");
+    assert.match(
+      run.stderr,
+      /outside the supported range|exact stable version/u,
+    );
+  }
 });

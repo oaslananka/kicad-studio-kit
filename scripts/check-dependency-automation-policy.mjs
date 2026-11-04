@@ -21,21 +21,29 @@ function readJson(root, file, errors) {
     return {};
   }
 }
-export function validateDependencyAutomationPolicy(root = repoRoot) {
-  const errors = [];
-  // Commit 5779718 deliberately retired Dependabot PR generation.
-  if (fs.existsSync(path.join(root, ".github/dependabot.yml"))) {
-    errors.push(
-      ".github/dependabot.yml must remain absent: Renovate owns update PRs",
-    );
-  }
-  const renovate = readJson(root, "renovate.json", errors);
-  if (renovate.dependencyDashboard !== true)
-    errors.push("Renovate dependencyDashboard must stay enabled");
-  if (renovate.vulnerabilityAlerts?.enabled !== true)
-    errors.push("Renovate vulnerabilityAlerts must stay enabled");
-  // The only automatic merge authority is Renovate via protected GitHub PRs.
-  // Keep risky runtime, protocol, toolchain-major, and workflow updates reviewed.
+function isSingleRuleMatch(rule, key, value) {
+  const values = rule?.[key];
+  return values?.length === 1 && values[0] === value;
+}
+
+function isDevPatchAutomerge(rule) {
+  return (
+    isSingleRuleMatch(rule, "matchManagers", "npm") &&
+    isSingleRuleMatch(rule, "matchDepTypes", "devDependencies") &&
+    isSingleRuleMatch(rule, "matchUpdateTypes", "patch") &&
+    rule.automerge === true
+  );
+}
+
+function isProtectedSquashLane(lane) {
+  return (
+    lane?.automergeType === "pr" &&
+    lane.platformAutomerge === true &&
+    lane.automergeStrategy === "squash"
+  );
+}
+
+function validateGlobalAutomergePolicy(renovate, errors) {
   if (
     renovate.automerge !== false ||
     renovate.platformAutomerge !== false ||
@@ -52,50 +60,6 @@ export function validateDependencyAutomationPolicy(root = repoRoot) {
   ) {
     errors.push("Renovate update frequency/concurrency must remain bounded");
   }
-  const devPatch =
-    renovate.packageRules?.filter(
-      (rule) =>
-        rule.matchManagers?.length === 1 &&
-        rule.matchManagers[0] === "npm" &&
-        rule.matchDepTypes?.length === 1 &&
-        rule.matchDepTypes[0] === "devDependencies" &&
-        rule.matchUpdateTypes?.length === 1 &&
-        rule.matchUpdateTypes[0] === "patch" &&
-        rule.automerge === true,
-    ) ?? [];
-  const lockfile = renovate.lockFileMaintenance;
-  if (
-    devPatch.length !== 1 ||
-    devPatch[0].automergeType !== "pr" ||
-    devPatch[0].platformAutomerge !== true ||
-    devPatch[0].automergeStrategy !== "squash" ||
-    lockfile?.enabled !== true ||
-    lockfile?.automerge !== true ||
-    lockfile?.automergeType !== "pr" ||
-    lockfile?.platformAutomerge !== true ||
-    lockfile?.automergeStrategy !== "squash"
-  ) {
-    errors.push(
-      "Only protected squash-merged dev patch and lockfile lanes may automerge",
-    );
-  }
-  for (const rule of renovate.packageRules ?? []) {
-    if (rule.automerge !== true) continue;
-    if (devPatch.includes(rule)) continue;
-    errors.push("Unexpected automatic merge rule outside safe dev patch lane");
-  }
-  const majorRule = renovate.packageRules?.find(
-    (rule) =>
-      rule.matchUpdateTypes?.length === 1 &&
-      rule.matchUpdateTypes[0] === "major",
-  );
-  if (
-    !majorRule ||
-    majorRule.dependencyDashboardApproval !== true ||
-    majorRule.automerge !== false
-  ) {
-    errors.push("Major upgrades must remain dashboard-gated and review-only");
-  }
   if (
     renovate.vulnerabilityAlerts?.dependencyDashboardApproval !== false ||
     renovate.vulnerabilityAlerts?.prCreation !== "immediate"
@@ -104,6 +68,61 @@ export function validateDependencyAutomationPolicy(root = repoRoot) {
       "Security advisory remediation must not wait for dashboard approval",
     );
   }
+}
+
+function validateProtectedAutomergeLanes(renovate, errors) {
+  const devPatch = renovate.packageRules?.filter(isDevPatchAutomerge) ?? [];
+  const lockfile = renovate.lockFileMaintenance;
+  if (
+    devPatch.length !== 1 ||
+    !isProtectedSquashLane(devPatch[0]) ||
+    lockfile?.enabled !== true ||
+    lockfile?.automerge !== true ||
+    !isProtectedSquashLane(lockfile)
+  ) {
+    errors.push(
+      "Only protected squash-merged dev patch and lockfile lanes may automerge",
+    );
+  }
+  for (const rule of renovate.packageRules ?? []) {
+    if (rule.automerge === true && !devPatch.includes(rule)) {
+      errors.push(
+        "Unexpected automatic merge rule outside safe dev patch lane",
+      );
+    }
+  }
+  const majorRule = renovate.packageRules?.find((rule) =>
+    isSingleRuleMatch(rule, "matchUpdateTypes", "major"),
+  );
+  if (
+    majorRule?.dependencyDashboardApproval !== true ||
+    majorRule?.automerge !== false
+  ) {
+    errors.push("Major upgrades must remain dashboard-gated and review-only");
+  }
+}
+
+function validateRenovateAutoMerge(renovate, errors) {
+  // Renovate is the only updater; GitHub protected squash PRs are the
+  // only merger. Runtime, major and workflow updates remain reviewed.
+  validateGlobalAutomergePolicy(renovate, errors);
+  validateProtectedAutomergeLanes(renovate, errors);
+}
+
+export function validateDependencyAutomationPolicy(root = repoRoot) {
+  const errors = [];
+  // Commit 5779718 deliberately retired Dependabot PR generation.
+  if (fs.existsSync(path.join(root, ".github/dependabot.yml"))) {
+    errors.push(
+      ".github/dependabot.yml must remain absent: Renovate owns update PRs",
+    );
+  }
+  const renovate = readJson(root, "renovate.json", errors);
+  if (renovate.dependencyDashboard !== true)
+    errors.push("Renovate dependencyDashboard must stay enabled");
+  if (renovate.vulnerabilityAlerts?.enabled !== true)
+    errors.push("Renovate vulnerabilityAlerts must stay enabled");
+  validateRenovateAutoMerge(renovate, errors);
 
   const scripts = readJson(root, "package.json", errors).scripts ?? {};
   if (
