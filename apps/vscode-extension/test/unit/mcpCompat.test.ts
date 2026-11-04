@@ -11,7 +11,7 @@ describe('MCP compatibility helpers', () => {
     expect(MCP_COMPAT).toEqual({
       required: '>=4.3.0 <5.0.0',
       recommended: '>=4.3.0 <5.0.0',
-      testedAgainst: '4.6.1'
+      testedAgainst: '4.7.0'
     });
   });
 
@@ -21,7 +21,7 @@ describe('MCP compatibility helpers', () => {
     expect(normalizeMcpVersion('not-a-version')).toBe('0.0.0');
     expect(normalizeMcpVersion(undefined)).toBe('0.0.0');
     expect(getMcpCompatStatus('4.3.0')).toBe('ok');
-    expect(getMcpCompatStatus('4.6.1')).toBe('ok');
+    expect(getMcpCompatStatus('4.7.0')).toBe('ok');
     expect(getMcpCompatStatus('3.5.1')).toBe('incompatible');
     expect(getMcpCompatStatus('4.0.0')).toBe('incompatible');
     expect(getMcpCompatStatus(undefined)).toBe('incompatible');

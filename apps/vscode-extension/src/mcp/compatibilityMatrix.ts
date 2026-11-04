@@ -17,7 +17,7 @@ export const COMPATIBILITY_MATRIX = {
     mcpServer: {
       required: '>=4.3.0 <5.0.0',
       recommended: '>=4.3.0 <5.0.0',
-      testedAgainst: '4.6.1'
+      testedAgainst: '4.7.0'
     },
     mcpProtocol: {
       active: '2026-07-28',
@@ -41,11 +41,11 @@ export const COMPATIBILITY_MATRIX = {
       compatibleMcpPro: {
         required: '>=4.3.0 <5.0.0',
         recommended: '>=4.3.0 <5.0.0',
-        testedAgainst: '4.6.1'
+        testedAgainst: '4.7.0'
       }
     },
     kicadMcpPro: {
-      version: '4.6.1',
+      version: '4.7.0',
       compatibleExtension: {
         required: '>=1.0.0 <2.0.0',
         testedAgainst: '2.1.2'
