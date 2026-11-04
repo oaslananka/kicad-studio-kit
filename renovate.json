@@ -21,6 +21,7 @@
   "schedule": [
     "before 6am on monday"
   ],
+  "commitHourlyLimit": 2,
   "prHourlyLimit": 2,
   "prConcurrentLimit": 5,
   "minimumReleaseAge": "7 days",
@@ -154,6 +155,7 @@
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": true,
+      "automergeStrategy": "squash",
       "addLabels": [
         "risk:low",
         "ci"
@@ -312,6 +314,7 @@
     "automerge": true,
     "automergeType": "pr",
     "platformAutomerge": true,
+    "automergeStrategy": "squash",
     "addLabels": [
       "risk:low"
     ]

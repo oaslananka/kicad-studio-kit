@@ -34,6 +34,77 @@ export function validateDependencyAutomationPolicy(root = repoRoot) {
     errors.push("Renovate dependencyDashboard must stay enabled");
   if (renovate.vulnerabilityAlerts?.enabled !== true)
     errors.push("Renovate vulnerabilityAlerts must stay enabled");
+  // The only automatic merge authority is Renovate via protected GitHub PRs.
+  // Keep risky runtime, protocol, toolchain-major, and workflow updates reviewed.
+  if (
+    renovate.automerge !== false ||
+    renovate.platformAutomerge !== false ||
+    renovate.automergeType !== "pr"
+  ) {
+    errors.push(
+      "Renovate must not enable global automerge or direct branch merging",
+    );
+  }
+  if (
+    renovate.commitHourlyLimit !== 2 ||
+    renovate.prHourlyLimit !== 2 ||
+    renovate.prConcurrentLimit !== 5
+  ) {
+    errors.push("Renovate update frequency/concurrency must remain bounded");
+  }
+  const devPatch =
+    renovate.packageRules?.filter(
+      (rule) =>
+        rule.matchManagers?.length === 1 &&
+        rule.matchManagers[0] === "npm" &&
+        rule.matchDepTypes?.length === 1 &&
+        rule.matchDepTypes[0] === "devDependencies" &&
+        rule.matchUpdateTypes?.length === 1 &&
+        rule.matchUpdateTypes[0] === "patch" &&
+        rule.automerge === true,
+    ) ?? [];
+  const lockfile = renovate.lockFileMaintenance;
+  if (
+    devPatch.length !== 1 ||
+    devPatch[0].automergeType !== "pr" ||
+    devPatch[0].platformAutomerge !== true ||
+    devPatch[0].automergeStrategy !== "squash" ||
+    lockfile?.enabled !== true ||
+    lockfile?.automerge !== true ||
+    lockfile?.automergeType !== "pr" ||
+    lockfile?.platformAutomerge !== true ||
+    lockfile?.automergeStrategy !== "squash"
+  ) {
+    errors.push(
+      "Only protected squash-merged dev patch and lockfile lanes may automerge",
+    );
+  }
+  for (const rule of renovate.packageRules ?? []) {
+    if (rule.automerge !== true) continue;
+    if (devPatch.includes(rule)) continue;
+    errors.push("Unexpected automatic merge rule outside safe dev patch lane");
+  }
+  const majorRule = renovate.packageRules?.find(
+    (rule) =>
+      rule.matchUpdateTypes?.length === 1 &&
+      rule.matchUpdateTypes[0] === "major",
+  );
+  if (
+    !majorRule ||
+    majorRule.dependencyDashboardApproval !== true ||
+    majorRule.automerge !== false
+  ) {
+    errors.push("Major upgrades must remain dashboard-gated and review-only");
+  }
+  if (
+    renovate.vulnerabilityAlerts?.dependencyDashboardApproval !== false ||
+    renovate.vulnerabilityAlerts?.prCreation !== "immediate"
+  ) {
+    errors.push(
+      "Security advisory remediation must not wait for dashboard approval",
+    );
+  }
+
   const scripts = readJson(root, "package.json", errors).scripts ?? {};
   if (
     scripts["check:dependency-automation-policy"] !== rootCommand ||
