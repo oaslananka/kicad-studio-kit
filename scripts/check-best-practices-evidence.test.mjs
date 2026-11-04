@@ -26,7 +26,7 @@ test("Best Practices evidence has the repository-controlled scorecard hardening 
   });
 });
 
-test("README badges separate historic Silver evidence from current status", () => {
+test("README keeps GitGem while DeepWiki is a plain link and Silver remains historical", () => {
   const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
   const header = readme.split("</div>", 1)[0];
 
@@ -37,9 +37,11 @@ test("README badges separate historic Silver evidence from current status", () =
   );
   assert.match(readme, /not presented as a current FLOSS badge/u);
 
-  const badges =
-    "[![GitGem](https://gitgem.org/api/badge/github/oaslananka/kicad-studio-kit.svg)](https://gitgem.org/github/oaslananka/kicad-studio-kit)" +
-    "  " +
-    "[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/oaslananka/kicad-studio-kit)";
-  assert.equal(readme.split(badges).length - 1, 1);
+  const gitGemBadge =
+    "[![GitGem](https://gitgem.org/api/badge/github/oaslananka/kicad-studio-kit.svg)](https://gitgem.org/github/oaslananka/kicad-studio-kit)";
+  const deepWikiLink =
+    '<a href="https://deepwiki.com/oaslananka/kicad-studio-kit">Ask DeepWiki</a>';
+  assert.equal(readme.split(gitGemBadge).length - 1, 1);
+  assert.equal(readme.split(deepWikiLink).length - 1, 1);
+  assert.doesNotMatch(readme, /deepwiki\.com\/badge\.svg/u);
 });

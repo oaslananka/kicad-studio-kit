@@ -24,7 +24,8 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
   <a href="docs/best-practices-evidence.md">Best Practices evidence</a> ·
   <a href="GOVERNANCE.md">Governance</a> ·
   <a href="ROADMAP.md">Roadmap</a> ·
-  <a href="SUPPORT.md">Support</a>
+  <a href="SUPPORT.md">Support</a> ·
+  <a href="https://deepwiki.com/oaslananka/kicad-studio-kit">Ask DeepWiki</a>
 </p>
 
 <p>
@@ -33,7 +34,7 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
 
 </div>
 
-[![GitGem](https://gitgem.org/api/badge/github/oaslananka/kicad-studio-kit.svg)](https://gitgem.org/github/oaslananka/kicad-studio-kit)  [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/oaslananka/kicad-studio-kit)
+[![GitGem](https://gitgem.org/api/badge/github/oaslananka/kicad-studio-kit.svg)](https://gitgem.org/github/oaslananka/kicad-studio-kit)
 
 KiCad Studio Kit is the VS Code extension repository. The MCP server is
 developed and released separately. This repository owns only the extension-side
