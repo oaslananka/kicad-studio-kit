@@ -187,6 +187,12 @@ function validateExample(example, errors) {
   assertFile(readmePath, errors);
   const readme = existsSync(readmePath) ? readFileSync(readmePath, "utf8") : "";
 
+  validateReadmeContent(example, readme, errors);
+  validateProjectFiles(example, exampleRoot, errors);
+  validateGeneratedOutputs(example, exampleRoot, errors);
+}
+
+function validateReadmeContent(example, readme, errors) {
   if (!readme.startsWith(`# ${example.title}`)) {
     errors.push(`${example.id}/README.md must start with the manifest title`);
   }
@@ -202,7 +208,9 @@ function validateExample(example, errors) {
       errors.push(`${example.id}/README.md missing workflow ${workflow}`);
     }
   }
+}
 
+function validateProjectFiles(example, exampleRoot, errors) {
   const projectFiles = example.projectFiles ?? [];
   for (const file of projectFiles) {
     assertFile(join(exampleRoot, file), errors);
@@ -214,10 +222,12 @@ function validateExample(example, errors) {
       errors.push(`${example.id} must declare a ${extension} project file`);
     }
   }
+}
 
+function validateGeneratedOutputs(example, exampleRoot, errors) {
   for (const file of walkFiles(exampleRoot)) {
     const relativePath = toPosixPath(relative(exampleRoot, file));
-    if (relativePath === "README.md" || projectFiles.includes(relativePath)) {
+    if (relativePath === "README.md" || example.projectFiles.includes(relativePath)) {
       continue;
     }
     if (forbiddenGeneratedOutputs.has(extname(file).toLowerCase())) {

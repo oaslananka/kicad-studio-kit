@@ -106,8 +106,6 @@ export class McpToolsProvider implements vscode.TreeDataProvider<McpToolsNode> {
   ) {
     if (broStatusOverride) {
       this.broStatus = { ...this.broStatus, ...broStatusOverride };
-    } else {
-      void this.checkBoardReadyOps();
     }
   }
 
@@ -116,31 +114,48 @@ export class McpToolsProvider implements vscode.TreeDataProvider<McpToolsNode> {
       return;
     }
     if (!vscode.workspace.isTrusted) {
-      this.broStatus = {
+      this.setBroStatus({
         installed: false,
         healthy: false,
         message: 'Workspace is not trusted.',
         tools: []
-      };
+      });
       return;
     }
 
     this.isCheckingBro = true;
     const projectPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!projectPath) {
-      this.broStatus = {
+      this.setBroStatus({
         installed: false,
         healthy: false,
         message: 'No workspace folder open.',
         tools: []
-      };
+      });
       this.isCheckingBro = false;
       return;
     }
 
-    const cmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+    try {
+      await this.checkBoardReadyOpsWithProject(projectPath);
+    } catch (err) {
+      // CLI not found or errored out
+      this.setBroStatus({
+        installed: false,
+        healthy: false,
+        message: err instanceof Error ? err.message : String(err),
+        tools: []
+      });
+    } finally {
+      this.isCheckingBro = false;
+      this.onDidChangeTreeDataEmitter.fire(undefined);
+    }
+  }
 
-    // First, run npx boardreadyops doctor --format json to get installation, version, and health status
+  private async checkBoardReadyOpsWithProject(
+    projectPath: string
+  ): Promise<void> {
+    const cmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
     const runDoctor = (): Promise<{ stdout: string; stderr: string }> => {
       return new Promise((resolve, reject) => {
         execFile(
@@ -158,7 +173,6 @@ export class McpToolsProvider implements vscode.TreeDataProvider<McpToolsNode> {
       });
     };
 
-    // Second, run npx boardreadyops schema findings to get list of rules
     const runSchema = (): Promise<{ stdout: string; stderr: string }> => {
       return new Promise((resolve, reject) => {
         execFile(
@@ -176,98 +190,73 @@ export class McpToolsProvider implements vscode.TreeDataProvider<McpToolsNode> {
       });
     };
 
-    try {
-      const { stdout: docStdout } = await runDoctor();
-      const contract = discoverBoardReadyOpsContract(docStdout);
-      const version = contract.version;
-      if (!contract.compatible) {
-        this.broStatus = {
-          installed: true,
-          version,
-          healthy: false,
-          message: `BoardReadyOps compatibility check failed: ${contract.reason}.`,
-          tools: []
-        };
-        return;
-      }
-
-      const doc = JSON.parse(docStdout.trim());
-      let healthy = true;
-      let message = 'BoardReadyOps is healthy.';
-      if (Array.isArray(doc.checks)) {
-        for (const check of doc.checks) {
-          if (Array.isArray(check.items)) {
-            for (const item of check.items) {
-              if (item.severity === 'fail') {
-                healthy = false;
-                message =
-                  item.message || 'BoardReadyOps environment check failed.';
-                break;
-              }
-            }
-          }
-          if (!healthy) {
-            break;
-          }
-        }
-      }
-
-      let tools: string[] = [];
-      try {
-        const { stdout: schemaStdout } = await runSchema();
-        const schema = JSON.parse(schemaStdout.trim());
-        const enumList = schema?.$defs?.ruleId?.oneOf?.[0]?.enum;
-        if (Array.isArray(enumList)) {
-          tools = enumList;
-        }
-      } catch {
-        // Fallback list of static tools in case schema findings fails or is old
-        tools = [
-          'bom.missing-mpn',
-          'bom.single-source',
-          'bom.eol-detection',
-          'bom.lifecycle',
-          'bom.footprint-mismatch',
-          'bom.dnp-consistency',
-          'bom.variant-consistency',
-          'design.copper-balance',
-          'design.board-outline',
-          'pinmap.verify',
-          'pinmap.unmapped-pin',
-          'pinmap.collision',
-          'pinmap.net-label',
-          'manufacturing.outputs-present',
-          'manufacturing.jobset-outputs',
-          'manufacturing.panel-sanity',
-          'manufacturing.fab-notes',
-          'manufacturing.drill-coverage',
-          'manufacturing.layer-stackup',
-          'release.revision-set',
-          'release.changelog-present',
-          'release.tag-matches-revision',
-          'release.version-format'
-        ];
-      }
-
-      this.broStatus = {
+    const { stdout: docStdout } = await runDoctor();
+    const contract = discoverBoardReadyOpsContract(docStdout);
+    const version = contract.version;
+    if (!contract.compatible) {
+      this.setBroStatus({
         installed: true,
         version,
-        healthy,
-        message,
-        tools
-      };
-    } catch (err) {
-      // CLI not found or errored out
-      this.broStatus = {
-        installed: false,
         healthy: false,
-        message: err instanceof Error ? err.message : String(err),
+        message: `BoardReadyOps compatibility check failed: ${contract.reason}.`,
         tools: []
-      };
-    } finally {
-      this.isCheckingBro = false;
-      this.onDidChangeTreeDataEmitter.fire(undefined);
+      });
+      return;
     }
+
+    const doc = JSON.parse(docStdout.trim());
+    const health = parseBoardReadyOpsHealth(doc);
+    this.setBroStatus({
+      installed: true,
+      version,
+      healthy: health.healthy,
+      message: health.message,
+      tools: await this.collectBoardReadyOpsTools(runSchema)
+    });
+  }
+
+  private setBroStatus(status: Partial<McpToolsProvider['broStatus']>): void {
+    this.broStatus = { ...this.broStatus, ...status };
+  }
+
+  private async collectBoardReadyOpsTools(
+    runSchema: () => Promise<{ stdout: string; stderr: string }>
+  ): Promise<string[]> {
+    try {
+      const { stdout: schemaStdout } = await runSchema();
+      const schema = JSON.parse(schemaStdout.trim());
+      const enumList = schema?.$defs?.ruleId?.oneOf?.[0]?.enum;
+      if (Array.isArray(enumList)) {
+        return enumList;
+      }
+    } catch {
+      // Fallback list of static tools in case schema findings fails or is old
+    }
+    return [
+      'bom.missing-mpn',
+      'bom.single-source',
+      'bom.eol-detection',
+      'bom.lifecycle',
+      'bom.footprint-mismatch',
+      'bom.dnp-consistency',
+      'bom.variant-consistency',
+      'design.copper-balance',
+      'design.board-outline',
+      'pinmap.verify',
+      'pinmap.unmapped-pin',
+      'pinmap.collision',
+      'pinmap.net-label',
+      'manufacturing.outputs-present',
+      'manufacturing.jobset-outputs',
+      'manufacturing.panel-sanity',
+      'manufacturing.fab-notes',
+      'manufacturing.drill-coverage',
+      'manufacturing.layer-stackup',
+      'release.revision-set',
+      'release.changelog-present',
+      'release.tag-matches-revision',
+      'release.version-format'
+    ];
   }
 
   refresh(): void {
@@ -430,6 +419,35 @@ function needsLocalMcpUpgrade(state: McpConnectionState): boolean {
   );
 }
 
+function parseBoardReadyOpsHealth(doc: unknown): {
+  healthy: boolean;
+  message: string;
+} {
+  let healthy = true;
+  let message = 'BoardReadyOps is healthy.';
+  const checks = (doc as { checks?: unknown }).checks;
+  if (Array.isArray(checks)) {
+    for (const check of checks) {
+      const items = (check as { items?: unknown }).items;
+      if (Array.isArray(items)) {
+        for (const item of items) {
+          if ((item as { severity?: string })?.severity === 'fail') {
+            healthy = false;
+            message =
+              (item as { message?: string })?.message ||
+              'BoardReadyOps environment check failed.';
+            break;
+          }
+        }
+      }
+      if (!healthy) {
+        break;
+      }
+    }
+  }
+  return { healthy, message };
+}
+
 function dashboardStateLabel(
   state: McpConnectionState,
   status: DashboardStatus,
@@ -444,18 +462,10 @@ function dashboardStateLabel(
   if (state.kind === 'Incompatible') {
     return 'Connected but incompatible';
   }
-  if (
-    status === 'degraded' &&
-    hasFileBackedRead(serverInfo) &&
-    serverInfo?.kicad.ipcAvailable === false
-  ) {
+  if (isFileBackedReadOnlyDegraded(status, serverInfo)) {
     return 'MCP connected; live KiCad IPC unavailable, file-backed read-only features active';
   }
-  if (
-    status === 'degraded' &&
-    hasFileBackedRead(serverInfo) &&
-    hasUnavailableLiveContext(serverInfo)
-  ) {
+  if (isFileBackedReadOnlyContextDegraded(status, serverInfo)) {
     return 'MCP connected; live KiCad context unavailable, file-backed read-only features active';
   }
   if (state.kind === 'Degraded' || status === 'degraded') {
@@ -481,6 +491,28 @@ function dashboardStateLabel(
   return state.available ? 'Installed but not running' : 'Disconnected';
 }
 
+function isFileBackedReadOnlyDegraded(
+  status: DashboardStatus,
+  serverInfo: McpServerInfoContract | undefined
+): boolean {
+  return (
+    status === 'degraded' &&
+    hasFileBackedRead(serverInfo) &&
+    serverInfo?.kicad.ipcAvailable === false
+  );
+}
+
+function isFileBackedReadOnlyContextDegraded(
+  status: DashboardStatus,
+  serverInfo: McpServerInfoContract | undefined
+): boolean {
+  return (
+    status === 'degraded' &&
+    hasFileBackedRead(serverInfo) &&
+    hasUnavailableLiveContext(serverInfo)
+  );
+}
+
 function compatibilityDescription(
   state: McpConnectionState,
   status: DashboardStatus
@@ -503,68 +535,105 @@ function compatibilityDashboardNode(
   return {
     label: 'Compatibility dashboard',
     description: dashboard.status,
-    tooltip: [
-      `State: ${dashboard.stateLabel}`,
-      `Server: ${dashboard.serverName} ${dashboard.serverVersion}`,
-      `Transport: ${dashboard.transportMode}`,
-      `Unavailable tools: ${dashboard.missingRequiredTools.length}`,
-      `Unavailable capabilities: ${dashboard.missingOptionalCapabilities.length}`,
-      `Last health check: ${dashboard.lastHealthCheck}`,
-      `Remediation: ${dashboard.remediation}`
-    ].join('\n'),
+    tooltip: buildDashboardTooltip(dashboard).join('\n'),
     icon: dashboardIcon(dashboard.status),
     collapsedByDefault: dashboard.status !== 'incompatible',
-    children: [
-      dashboardField(
-        'Compatibility state',
-        dashboard.stateLabel,
-        dashboard.status,
-        dashboardIcon(dashboard.status)
-      ),
-      dashboardGroup('Server contract', [
-        dashboardField('Server', dashboard.serverName, dashboard.serverVersion),
-        dashboardField('Endpoint', dashboard.endpoint),
-        dashboardField('Transport mode', dashboard.transportMode),
-        dashboardField('Profile', dashboard.profile),
-        dashboardField('Operating mode', dashboard.operatingMode),
-        dashboardField('Protocol version', dashboard.protocolVersion),
-        dashboardField('Tool schema version', dashboard.toolSchemaVersion),
-        dashboardField('Compatibility', dashboard.compatibility)
-      ]),
-      dashboardGroup('KiCad runtime', [
-        dashboardField('KiCad CLI', dashboard.kicadCli),
-        dashboardField('Live GUI availability', dashboard.liveGui),
-        dashboardField('Live PCB context', dashboard.livePcb),
-        dashboardField('Live schematic context', dashboard.liveSchematic)
-      ]),
-      dashboardGroup('Advertised surface', [
-        dashboardField('Advertised tools', countText(dashboard.toolCount)),
-        dashboardField(
-          'Advertised resources',
-          countText(dashboard.resourceCount)
-        ),
-        dashboardField('Advertised prompts', countText(dashboard.promptCount)),
-        unavailableGroup(
-          'Unavailable tools',
-          dashboard.missingRequiredTools,
-          'All required extension tools are advertised.',
-          'Connect to a kicad-mcp-pro server that advertises this tool.'
-        ),
-        unavailableGroup(
-          'Unavailable capabilities',
-          dashboard.missingOptionalCapabilities,
-          'All optional capabilities are available.',
-          'Launch KiCad with the target project or upgrade kicad-mcp-pro.'
-        )
-      ]),
-      dashboardGroup('Health and remediation', [
-        dashboardField('Last health check', dashboard.lastHealthCheck),
-        dashboardField('Last error', dashboard.lastError),
-        dashboardField('Remediation hint', dashboard.remediation),
-        diagnosticsGroup(dashboard.diagnostics)
-      ])
-    ]
+    children: buildDashboardChildren(dashboard)
   };
+}
+
+function buildDashboardTooltip(dashboard: CompatibilityDashboard): string[] {
+  return [
+    `State: ${dashboard.stateLabel}`,
+    `Server: ${dashboard.serverName} ${dashboard.serverVersion}`,
+    `Transport: ${dashboard.transportMode}`,
+    `Unavailable tools: ${dashboard.missingRequiredTools.length}`,
+    `Unavailable capabilities: ${dashboard.missingOptionalCapabilities.length}`,
+    `Last health check: ${dashboard.lastHealthCheck}`,
+    `Remediation: ${dashboard.remediation}`
+  ];
+}
+
+function buildDashboardChildren(
+  dashboard: CompatibilityDashboard
+): McpToolsNode[] {
+  return [
+    dashboardField(
+      'Compatibility state',
+      dashboard.stateLabel,
+      dashboard.status,
+      dashboardIcon(dashboard.status)
+    ),
+    dashboardGroup('Server contract', buildServerContractFields(dashboard)),
+    dashboardGroup('KiCad runtime', buildKiCadRuntimeFields(dashboard)),
+    dashboardGroup(
+      'Advertised surface',
+      buildAdvertisedSurfaceChildren(dashboard)
+    ),
+    dashboardGroup(
+      'Health and remediation',
+      buildHealthAndRemediationChildren(dashboard)
+    )
+  ];
+}
+
+function buildServerContractFields(
+  dashboard: CompatibilityDashboard
+): McpToolsNode[] {
+  return [
+    dashboardField('Server', dashboard.serverName, dashboard.serverVersion),
+    dashboardField('Endpoint', dashboard.endpoint),
+    dashboardField('Transport mode', dashboard.transportMode),
+    dashboardField('Profile', dashboard.profile),
+    dashboardField('Operating mode', dashboard.operatingMode),
+    dashboardField('Protocol version', dashboard.protocolVersion),
+    dashboardField('Tool schema version', dashboard.toolSchemaVersion),
+    dashboardField('Compatibility', dashboard.compatibility)
+  ];
+}
+
+function buildKiCadRuntimeFields(
+  dashboard: CompatibilityDashboard
+): McpToolsNode[] {
+  return [
+    dashboardField('KiCad CLI', dashboard.kicadCli),
+    dashboardField('Live GUI availability', dashboard.liveGui),
+    dashboardField('Live PCB context', dashboard.livePcb),
+    dashboardField('Live schematic context', dashboard.liveSchematic)
+  ];
+}
+
+function buildAdvertisedSurfaceChildren(
+  dashboard: CompatibilityDashboard
+): McpToolsNode[] {
+  return [
+    dashboardField('Advertised tools', countText(dashboard.toolCount)),
+    dashboardField('Advertised resources', countText(dashboard.resourceCount)),
+    dashboardField('Advertised prompts', countText(dashboard.promptCount)),
+    unavailableGroup(
+      'Unavailable tools',
+      dashboard.missingRequiredTools,
+      'All required extension tools are advertised.',
+      'Connect to a kicad-mcp-pro server that advertises this tool.'
+    ),
+    unavailableGroup(
+      'Unavailable capabilities',
+      dashboard.missingOptionalCapabilities,
+      'All optional capabilities are available.',
+      'Launch KiCad with the target project or upgrade kicad-mcp-pro.'
+    )
+  ];
+}
+
+function buildHealthAndRemediationChildren(
+  dashboard: CompatibilityDashboard
+): McpToolsNode[] {
+  return [
+    dashboardField('Last health check', dashboard.lastHealthCheck),
+    dashboardField('Last error', dashboard.lastError),
+    dashboardField('Remediation hint', dashboard.remediation),
+    diagnosticsGroup(dashboard.diagnostics)
+  ];
 }
 
 function stateNode(
@@ -572,80 +641,108 @@ function stateNode(
   dashboard: CompatibilityDashboard
 ): McpToolsNode {
   if (dashboard.status === 'degraded') {
-    const fileBackedDegraded =
-      dashboard.fileBackedReadAvailable && dashboard.liveContextUnavailable;
-    const degradedReason = dashboard.stateLabel.includes('context unavailable')
-      ? 'live context unavailable'
-      : 'live IPC unavailable';
-    return {
-      label: 'MCP Degraded',
-      description: fileBackedDegraded
-        ? '📄 file-backed'
-        : dashboard.serverVersion,
-      tooltip: [
-        dashboard.stateLabel,
-        fileBackedDegraded
-          ? `${sentenceCase(degradedReason)}; file-backed read-only features active.`
-          : dashboard.remediation
-      ].join('\n'),
-      icon: 'warning',
-      command: {
-        command: COMMANDS.retryMcp,
-        title: 'Refresh MCP Capabilities'
-      }
-    };
+    return buildDegradedStateNode(dashboard);
   }
   if (state.kind === 'Incompatible') {
-    return {
-      label: 'MCP Incompatible',
-      description: dashboard.serverVersion,
-      tooltip:
-        'The detected kicad-mcp-pro version is outside the extension compatibility range. Update kicad-mcp-pro to a compatible version.',
-      icon: 'warning',
-      command: {
-        command: COMMANDS.openMcpUpgradeGuide,
-        title: 'Open MCP Upgrade Guide'
-      }
-    };
+    return buildIncompatibleStateNode(dashboard);
   }
   if (state.connected || state.kind === 'VsCodeStdio') {
-    return {
-      label: 'MCP Connected',
-      description: state.kind === 'VsCodeStdio' ? 'stdio' : 'HTTP',
-      tooltip:
-        state.kind === 'VsCodeStdio'
-          ? 'Connected through .vscode/mcp.json. HTTP-only Quality Gates and Fix Queue are unavailable in this transport.'
-          : 'Connected to the configured HTTP endpoint.',
-      icon: 'plug'
-    };
+    return buildConnectedStateNode(state);
   }
-  // An installed CLI can be present but older than the compatibility floor.
-  // Without a live server, distinguish that from a missing installation and
-  // from a compatible server which is merely not running.
   const installVersion = state.install?.version;
   if (installVersion && needsLocalMcpUpgrade(state)) {
-    return {
-      label: 'MCP Update Required',
-      description: installVersion,
-      tooltip: describeMcpCompatibility(installVersion),
-      icon: 'warning',
-      command: {
-        command: COMMANDS.openMcpUpgradeGuide,
-        title: 'Open MCP Upgrade Guide'
-      }
-    };
+    return buildUpdateRequiredStateNode(installVersion);
   }
   if (state.kind === 'NotInstalled') {
-    return {
-      label: 'MCP Not Installed',
-      description: 'install required',
-      icon: 'cloud-download',
-      command: {
-        command: COMMANDS.installMcp,
-        title: 'Install kicad-mcp-pro'
-      }
-    };
+    return buildNotInstalledStateNode();
   }
+  return buildDisconnectedStateNode(state, dashboard);
+}
+
+function buildDegradedStateNode(
+  dashboard: CompatibilityDashboard
+): McpToolsNode {
+  const fileBackedDegraded =
+    dashboard.fileBackedReadAvailable && dashboard.liveContextUnavailable;
+  const degradedReason = dashboard.stateLabel.includes('context unavailable')
+    ? 'live context unavailable'
+    : 'live IPC unavailable';
+  return {
+    label: 'MCP Degraded',
+    description: fileBackedDegraded
+      ? '📄 file-backed'
+      : dashboard.serverVersion,
+    tooltip: [
+      dashboard.stateLabel,
+      fileBackedDegraded
+        ? `${sentenceCase(degradedReason)}; file-backed read-only features active.`
+        : dashboard.remediation
+    ].join('\n'),
+    icon: 'warning',
+    command: {
+      command: COMMANDS.retryMcp,
+      title: 'Refresh MCP Capabilities'
+    }
+  };
+}
+
+function buildIncompatibleStateNode(
+  dashboard: CompatibilityDashboard
+): McpToolsNode {
+  return {
+    label: 'MCP Incompatible',
+    description: dashboard.serverVersion,
+    tooltip:
+      'The detected kicad-mcp-pro version is outside the extension compatibility range. Update kicad-mcp-pro to a compatible version.',
+    icon: 'warning',
+    command: {
+      command: COMMANDS.openMcpUpgradeGuide,
+      title: 'Open MCP Upgrade Guide'
+    }
+  };
+}
+
+function buildConnectedStateNode(state: McpConnectionState): McpToolsNode {
+  return {
+    label: 'MCP Connected',
+    description: state.kind === 'VsCodeStdio' ? 'stdio' : 'HTTP',
+    tooltip:
+      state.kind === 'VsCodeStdio'
+        ? 'Connected through .vscode/mcp.json. HTTP-only Quality Gates and Fix Queue are unavailable in this transport.'
+        : 'Connected to the configured HTTP endpoint.',
+    icon: 'plug'
+  };
+}
+
+function buildUpdateRequiredStateNode(installVersion: string): McpToolsNode {
+  return {
+    label: 'MCP Update Required',
+    description: installVersion,
+    tooltip: describeMcpCompatibility(installVersion),
+    icon: 'warning',
+    command: {
+      command: COMMANDS.openMcpUpgradeGuide,
+      title: 'Open MCP Upgrade Guide'
+    }
+  };
+}
+
+function buildNotInstalledStateNode(): McpToolsNode {
+  return {
+    label: 'MCP Not Installed',
+    description: 'install required',
+    icon: 'cloud-download',
+    command: {
+      command: COMMANDS.installMcp,
+      title: 'Install kicad-mcp-pro'
+    }
+  };
+}
+
+function buildDisconnectedStateNode(
+  state: McpConnectionState,
+  dashboard: CompatibilityDashboard
+): McpToolsNode {
   return {
     label: 'MCP Disconnected',
     description: state.available ? 'detected' : 'not detected',
@@ -808,7 +905,7 @@ function capabilityNode(capabilities: McpCapabilityCard): McpToolsNode {
   const diagnostics = capabilities.diagnostics ?? [];
   const description = `${capabilities.tools.length} tools, ${capabilities.resources.length} resources, ${capabilities.prompts.length} prompts${
     diagnostics.length
-      ? `, ${diagnostics.length} diagnostic${diagnostics.length === 1 ? '' : 's'}`
+      ? `, ${diagnostics.length} diagnostic${diagnosticPluralSuffix(diagnostics.length)}`
       : ''
   }`;
   // Operation modes kept here since it shows granular per-mode flags not in dashboard.
@@ -874,10 +971,7 @@ function operationModesNode(
     label: 'Operation modes',
     description: serverInfo.operatingMode.active,
     tooltip: modes
-      .map(
-        (mode) =>
-          `${mode.label}: ${mode.description ?? (mode.enabled ? '✓ available' : '✗ unavailable')}`
-      )
+      .map((mode) => `${mode.label}: ${modeStatusText(mode)}`)
       .join('\n'),
     icon: 'checklist',
     collapsedByDefault: true,
@@ -890,12 +984,26 @@ function operationModesNode(
       },
       ...modes.map((mode) => ({
         label: mode.label,
-        description:
-          mode.description ?? (mode.enabled ? '✓ available' : '✗ unavailable'),
+        description: modeStatusText(mode),
         icon: mode.enabled ? 'pass' : 'circle-slash'
       }))
     ]
   };
+}
+
+function modeStatusText(mode: {
+  label: string;
+  enabled: boolean;
+  description?: string | undefined;
+}): string {
+  if (mode.description) {
+    return mode.description;
+  }
+  return mode.enabled ? '✓ available' : '✗ unavailable';
+}
+
+function versionSuffix(install: { version?: string | undefined }): string {
+  return install.version ? ` ${install.version}` : '';
 }
 
 function modeIcon(mode: string): string {
@@ -973,7 +1081,7 @@ function installNode(install: McpInstallStatus | undefined): McpToolsNode {
   }
   return {
     label: 'Install',
-    description: `${install.command ?? 'kicad-mcp-pro'}${install.version ? ` ${install.version}` : ''}`,
+    description: `${install.command ?? 'kicad-mcp-pro'}${versionSuffix(install)}`,
     tooltip: `Detected from ${install.source ?? 'unknown source'}.`,
     icon: 'check'
   };
@@ -1131,6 +1239,10 @@ function dashboardIcon(status: DashboardStatus): string {
     return 'error';
   }
   return 'circle-slash';
+}
+
+function diagnosticPluralSuffix(count: number): string {
+  return count === 1 ? '' : 's';
 }
 
 function isRemoteEndpointBlocked(message: string | undefined): boolean {

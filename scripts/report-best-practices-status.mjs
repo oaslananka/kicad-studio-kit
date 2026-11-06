@@ -119,7 +119,7 @@ export function summarizeStatuses(project) {
   });
 
   return {
-    summary: Object.fromEntries([...summary.entries()].sort()),
+    summary: Object.fromEntries([...summary.entries()].sort((a, b) => a[0].localeCompare(b[0]))),
     fields,
     unmet: fields.filter((entry) => entry.status === "Unmet"),
     unknown: fields.filter((entry) => entry.status === "?"),

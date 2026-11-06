@@ -73,7 +73,7 @@ async function collectFiles(root: string): Promise<string[]> {
     }
   };
   await visit(root);
-  return result.sort();
+  return result.sort((a, b) => a.localeCompare(b));
 }
 
 function createLocalFileHeader(entry: ZipEntry): Buffer {

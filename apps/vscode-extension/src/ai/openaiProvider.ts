@@ -295,17 +295,10 @@ export class OpenAIProvider implements AIProvider {
       signal
     );
     try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      if (this.apiKey) {
-        headers['Authorization'] = `Bearer ${this.apiKey}`;
-      }
-
       const response = await fetch(url, {
         method: 'POST',
         signal: managedSignal.signal,
-        headers,
+        headers: this.buildRequestHeaders(),
         body: JSON.stringify(body)
       });
 
@@ -315,37 +308,55 @@ export class OpenAIProvider implements AIProvider {
 
       return response;
     } catch (error) {
-      if (managedSignal.wasTimeoutTriggered()) {
-        throw new AIRequestTimeoutError(this.name, AI_STREAM_TIMEOUT_MS);
-      }
-      if (signal?.aborted) {
-        throw signal.reason instanceof Error
-          ? signal.reason
-          : new AIStreamAbortedError();
-      }
-      if (error instanceof AIHttpError) {
-        throw error;
-      }
-      if (
-        error instanceof AIRequestTimeoutError ||
-        error instanceof AIStreamAbortedError
-      ) {
-        throw error;
-      }
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        throw new AIRequestTimeoutError(this.name, AI_STREAM_TIMEOUT_MS);
-      }
-      throw error instanceof Error
-        ? new Error(redactApiKey(error.message, this.apiKey), { cause: error })
-        : new Error(
-            `${this.name} request failed due to an unknown network error.`,
-            {
-              cause: error
-            }
-          );
+      throw this.classifyRequestError(error, managedSignal, signal);
     } finally {
       managedSignal.cleanup();
     }
+  }
+
+  private buildRequestHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (this.apiKey) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+    }
+    return headers;
+  }
+
+  private classifyRequestError(
+    error: unknown,
+    managedSignal: { wasTimeoutTriggered: () => boolean; cleanup: () => void },
+    signal?: AbortSignal
+  ): never {
+    if (managedSignal.wasTimeoutTriggered()) {
+      throw new AIRequestTimeoutError(this.name, AI_STREAM_TIMEOUT_MS);
+    }
+    if (signal?.aborted) {
+      throw signal.reason instanceof Error
+        ? signal.reason
+        : new AIStreamAbortedError();
+    }
+    if (error instanceof AIHttpError) {
+      throw error;
+    }
+    if (
+      error instanceof AIRequestTimeoutError ||
+      error instanceof AIStreamAbortedError
+    ) {
+      throw error;
+    }
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new AIRequestTimeoutError(this.name, AI_STREAM_TIMEOUT_MS);
+    }
+    throw error instanceof Error
+      ? new Error(redactApiKey(error.message, this.apiKey), { cause: error })
+      : new Error(
+          `${this.name} request failed due to an unknown network error.`,
+          {
+            cause: error
+          }
+        );
   }
 
   private async formatHttpError(response: Response): Promise<string> {

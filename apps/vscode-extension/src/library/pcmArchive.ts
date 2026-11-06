@@ -87,44 +87,26 @@ function parseZipArchive(
     'PCM ZIP end of central directory is truncated'
   );
 
-  const diskNumber = buffer.readUInt16LE(eocdOffset + 4);
-  const centralDiskNumber = buffer.readUInt16LE(eocdOffset + 6);
-  const entriesOnDisk = buffer.readUInt16LE(eocdOffset + 8);
-  const totalEntries = buffer.readUInt16LE(eocdOffset + 10);
-  const centralDirectorySize = buffer.readUInt32LE(eocdOffset + 12);
-  const centralDirectoryOffset = buffer.readUInt32LE(eocdOffset + 16);
-  const commentLength = buffer.readUInt16LE(eocdOffset + 20);
-
-  if (
-    entriesOnDisk === ZIP64_U16 ||
-    totalEntries === ZIP64_U16 ||
-    centralDirectorySize === ZIP64_U32 ||
-    centralDirectoryOffset === ZIP64_U32
-  ) {
-    throw new Error('PCM ZIP64 archives are not supported.');
-  }
-  if (
-    diskNumber !== 0 ||
-    centralDiskNumber !== 0 ||
-    entriesOnDisk !== totalEntries
-  ) {
-    throw new Error('PCM multi-disk ZIP archives are not supported.');
-  }
-  if (totalEntries > limits.maxEntries) {
-    throw new Error(
-      `PCM ZIP entry count ${totalEntries} exceeds maximum ${limits.maxEntries}.`
-    );
-  }
+  const eocd = readEocdHeader(buffer, eocdOffset);
   assertRange(
     buffer.length,
     eocdOffset + EOCD_FIXED_BYTES,
-    commentLength,
+    eocd.commentLength,
     'PCM ZIP end-of-central-directory comment exceeds archive bounds'
   );
 
+  validateZip64Support(eocd);
+  validateMultiDiskSupport(eocd);
+
+  if (eocd.totalEntries > limits.maxEntries) {
+    throw new Error(
+      `PCM ZIP entry count ${eocd.totalEntries} exceeds maximum ${limits.maxEntries}.`
+    );
+  }
+
   const centralDirectoryEnd = checkedEnd(
-    centralDirectoryOffset,
-    centralDirectorySize,
+    eocd.centralDirectoryOffset,
+    eocd.centralDirectorySize,
     buffer.length,
     'PCM ZIP central directory exceeds archive bounds'
   );
@@ -134,12 +116,71 @@ function parseZipArchive(
     );
   }
 
+  const entries = parseCentralDirectoryEntries(
+    buffer,
+    eocd,
+    centralDirectoryEnd,
+    limits
+  );
+
+  return { entries };
+}
+
+type EocdHeaderFields = {
+  diskNumber: number;
+  centralDiskNumber: number;
+  entriesOnDisk: number;
+  totalEntries: number;
+  centralDirectorySize: number;
+  centralDirectoryOffset: number;
+  commentLength: number;
+};
+
+function readEocdHeader(buffer: Buffer, eocdOffset: number): EocdHeaderFields {
+  return {
+    diskNumber: buffer.readUInt16LE(eocdOffset + 4),
+    centralDiskNumber: buffer.readUInt16LE(eocdOffset + 6),
+    entriesOnDisk: buffer.readUInt16LE(eocdOffset + 8),
+    totalEntries: buffer.readUInt16LE(eocdOffset + 10),
+    centralDirectorySize: buffer.readUInt32LE(eocdOffset + 12),
+    centralDirectoryOffset: buffer.readUInt32LE(eocdOffset + 16),
+    commentLength: buffer.readUInt16LE(eocdOffset + 20)
+  };
+}
+
+function validateZip64Support(eocd: EocdHeaderFields): void {
+  if (
+    eocd.entriesOnDisk === ZIP64_U16 ||
+    eocd.totalEntries === ZIP64_U16 ||
+    eocd.centralDirectorySize === ZIP64_U32 ||
+    eocd.centralDirectoryOffset === ZIP64_U32
+  ) {
+    throw new Error('PCM ZIP64 archives are not supported.');
+  }
+}
+
+function validateMultiDiskSupport(eocd: EocdHeaderFields): void {
+  if (
+    eocd.diskNumber !== 0 ||
+    eocd.centralDiskNumber !== 0 ||
+    eocd.entriesOnDisk !== eocd.totalEntries
+  ) {
+    throw new Error('PCM multi-disk ZIP archives are not supported.');
+  }
+}
+
+function parseCentralDirectoryEntries(
+  buffer: Buffer,
+  eocd: EocdHeaderFields,
+  centralDirectoryEnd: number,
+  limits: PcmArchiveLimits
+): ParsedZipEntry[] {
   const entries: ParsedZipEntry[] = [];
   const extractedNames = new Set<string>();
   let totalUncompressedBytes = 0;
-  let centralOffset = centralDirectoryOffset;
+  let centralOffset = eocd.centralDirectoryOffset;
 
-  for (let index = 0; index < totalEntries; index += 1) {
+  for (let index = 0; index < eocd.totalEntries; index += 1) {
     assertRange(
       centralDirectoryEnd,
       centralOffset,
@@ -150,36 +191,28 @@ function parseZipArchive(
       throw new Error('PCM package ZIP central directory is malformed.');
     }
 
-    const centralFlags = buffer.readUInt16LE(centralOffset + 8);
-    const method = buffer.readUInt16LE(centralOffset + 10);
-    const compressedSize = buffer.readUInt32LE(centralOffset + 20);
-    const uncompressedSize = buffer.readUInt32LE(centralOffset + 24);
-    const fileNameLength = buffer.readUInt16LE(centralOffset + 28);
-    const extraLength = buffer.readUInt16LE(centralOffset + 30);
-    const commentLengthForEntry = buffer.readUInt16LE(centralOffset + 32);
-    const diskStart = buffer.readUInt16LE(centralOffset + 34);
-    const localHeaderOffset = buffer.readUInt32LE(centralOffset + 42);
+    const entry = readCentralEntry(buffer, centralOffset);
+    validateFlags(entry.flags);
+    validateMethod(entry.method);
 
     if (
-      compressedSize === ZIP64_U32 ||
-      uncompressedSize === ZIP64_U32 ||
-      localHeaderOffset === ZIP64_U32
+      entry.compressedSize === ZIP64_U32 ||
+      entry.uncompressedSize === ZIP64_U32 ||
+      entry.localHeaderOffset === ZIP64_U32
     ) {
       throw new Error('PCM ZIP64 archives are not supported.');
     }
-    if (diskStart !== 0) {
+    if (entry.diskStart !== 0) {
       throw new Error('PCM multi-disk ZIP archives are not supported.');
     }
-    validateFlags(centralFlags);
-    validateMethod(method);
 
     const variableLength = checkedAdd(
       checkedAdd(
-        fileNameLength,
-        extraLength,
+        entry.fileNameLength,
+        entry.extraLength,
         'PCM ZIP central directory entry length is invalid'
       ),
-      commentLengthForEntry,
+      entry.commentLengthForEntry,
       'PCM ZIP central directory entry length is invalid'
     );
     const entryEnd = checkedEnd(
@@ -189,24 +222,27 @@ function parseZipArchive(
       'PCM ZIP central directory entry exceeds archive bounds'
     );
     const fileNameStart = centralOffset + CENTRAL_FIXED_BYTES;
-    const extraStart = fileNameStart + fileNameLength;
     const fileNameBytes = buffer.subarray(
       fileNameStart,
-      fileNameStart + fileNameLength
+      fileNameStart + entry.fileNameLength
     );
-    const extraBytes = buffer.subarray(extraStart, extraStart + extraLength);
+    const extraStart = fileNameStart + entry.fileNameLength;
+    const extraBytes = buffer.subarray(
+      extraStart,
+      extraStart + entry.extraLength
+    );
     if (containsZip64Extra(extraBytes)) {
       throw new Error('PCM ZIP64 archives are not supported.');
     }
 
-    if (uncompressedSize > limits.maxEntryUncompressedBytes) {
+    if (entry.uncompressedSize > limits.maxEntryUncompressedBytes) {
       throw new Error(
-        `PCM ZIP entry uncompressed size ${uncompressedSize} exceeds maximum ${limits.maxEntryUncompressedBytes}.`
+        `PCM ZIP entry uncompressed size ${entry.uncompressedSize} exceeds maximum ${limits.maxEntryUncompressedBytes}.`
       );
     }
     totalUncompressedBytes = checkedAdd(
       totalUncompressedBytes,
-      uncompressedSize,
+      entry.uncompressedSize,
       'PCM ZIP total uncompressed size is invalid'
     );
     if (totalUncompressedBytes > limits.maxTotalUncompressedBytes) {
@@ -217,18 +253,21 @@ function parseZipArchive(
 
     const local = parseLocalHeader({
       buffer,
-      centralDirectoryOffset,
-      localHeaderOffset,
-      centralFlags,
-      method,
-      compressedSize,
-      uncompressedSize,
+      centralDirectoryOffset: eocd.centralDirectoryOffset,
+      localHeaderOffset: entry.localHeaderOffset,
+      centralFlags: entry.flags,
+      method: entry.method,
+      compressedSize: entry.compressedSize,
+      uncompressedSize: entry.uncompressedSize,
       centralFileName: fileNameBytes
     });
     const name = fileNameBytes.toString('utf8');
     const safeName = normalizeZipEntryName(name);
     const directory = Boolean(safeName?.endsWith('/'));
-    if (directory && (compressedSize !== 0 || uncompressedSize !== 0)) {
+    if (
+      directory &&
+      (entry.compressedSize !== 0 || entry.uncompressedSize !== 0)
+    ) {
       throw new Error(`PCM ZIP directory entry ${name} must have zero sizes.`);
     }
     if (safeName) {
@@ -242,10 +281,10 @@ function parseZipArchive(
     entries.push({
       name,
       safeName,
-      method,
+      method: entry.method,
       compressedOffset: local.compressedOffset,
-      compressedSize,
-      uncompressedSize,
+      compressedSize: entry.compressedSize,
+      uncompressedSize: entry.uncompressedSize,
       directory
     });
     centralOffset = entryEnd;
@@ -256,7 +295,36 @@ function parseZipArchive(
       'PCM ZIP central directory size does not match its entries.'
     );
   }
-  return { entries };
+  return entries;
+}
+
+type CentralEntryFields = {
+  flags: number;
+  method: number;
+  compressedSize: number;
+  uncompressedSize: number;
+  fileNameLength: number;
+  extraLength: number;
+  commentLengthForEntry: number;
+  diskStart: number;
+  localHeaderOffset: number;
+};
+
+function readCentralEntry(
+  buffer: Buffer,
+  centralOffset: number
+): CentralEntryFields {
+  return {
+    flags: buffer.readUInt16LE(centralOffset + 8),
+    method: buffer.readUInt16LE(centralOffset + 10),
+    compressedSize: buffer.readUInt32LE(centralOffset + 20),
+    uncompressedSize: buffer.readUInt32LE(centralOffset + 24),
+    fileNameLength: buffer.readUInt16LE(centralOffset + 28),
+    extraLength: buffer.readUInt16LE(centralOffset + 30),
+    commentLengthForEntry: buffer.readUInt16LE(centralOffset + 32),
+    diskStart: buffer.readUInt16LE(centralOffset + 34),
+    localHeaderOffset: buffer.readUInt32LE(centralOffset + 42)
+  };
 }
 
 function parseLocalHeader(options: {
@@ -468,20 +536,19 @@ function findEndOfCentralDirectory(buffer: Buffer): number {
   let sawOutOfBoundsComment = false;
 
   for (let offset = minimumOffset; offset <= buffer.length - 4; offset += 1) {
-    if (buffer.readUInt32LE(offset) !== EOCD_SIGNATURE) {
+    const classification = classifyEocdCandidate(buffer, offset);
+    if (classification.signatureMismatch) {
       continue;
     }
-    if (offset + EOCD_FIXED_BYTES > buffer.length) {
+    if (classification.truncated) {
       sawTruncatedSignature = true;
       continue;
     }
-    const commentLength = buffer.readUInt16LE(offset + 20);
-    const recordEnd = offset + EOCD_FIXED_BYTES + commentLength;
-    if (recordEnd > buffer.length) {
+    if (classification.outOfBoundsComment) {
       sawOutOfBoundsComment = true;
       continue;
     }
-    if (recordEnd !== buffer.length) {
+    if (!classification.recordEndsAtBufferEnd) {
       continue;
     }
 
@@ -493,6 +560,65 @@ function findEndOfCentralDirectory(buffer: Buffer): number {
     }
   }
 
+  return selectEndOfCentralDirectory(
+    validCandidates,
+    fallbackCandidates,
+    sawTruncatedSignature,
+    sawOutOfBoundsComment
+  );
+}
+
+type EocdClassification = {
+  signatureMismatch: boolean;
+  truncated: boolean;
+  outOfBoundsComment: boolean;
+  recordEndsAtBufferEnd: boolean;
+};
+
+function classifyEocdCandidate(
+  buffer: Buffer,
+  offset: number
+): EocdClassification {
+  if (buffer.readUInt32LE(offset) !== EOCD_SIGNATURE) {
+    return {
+      signatureMismatch: true,
+      truncated: false,
+      outOfBoundsComment: false,
+      recordEndsAtBufferEnd: false
+    };
+  }
+  if (offset + EOCD_FIXED_BYTES > buffer.length) {
+    return {
+      signatureMismatch: false,
+      truncated: true,
+      outOfBoundsComment: false,
+      recordEndsAtBufferEnd: false
+    };
+  }
+  const commentLength = buffer.readUInt16LE(offset + 20);
+  const recordEnd = offset + EOCD_FIXED_BYTES + commentLength;
+  if (recordEnd > buffer.length) {
+    return {
+      signatureMismatch: false,
+      truncated: false,
+      outOfBoundsComment: true,
+      recordEndsAtBufferEnd: false
+    };
+  }
+  return {
+    signatureMismatch: false,
+    truncated: false,
+    outOfBoundsComment: false,
+    recordEndsAtBufferEnd: recordEnd === buffer.length
+  };
+}
+
+function selectEndOfCentralDirectory(
+  validCandidates: number[],
+  fallbackCandidates: number[],
+  sawTruncatedSignature: boolean,
+  sawOutOfBoundsComment: boolean
+): number {
   if (validCandidates.length > 1) {
     throw new Error(
       'PCM ZIP contains multiple valid end-of-central-directory records.'
@@ -575,7 +701,11 @@ function normalizeZipEntryName(fileName: string): string | undefined {
     return undefined;
   }
   const safeName = parts.join('/');
-  return safeName ? `${safeName}${directory ? '/' : ''}` : undefined;
+  if (!safeName) {
+    return undefined;
+  }
+  const suffix = directory ? '/' : '';
+  return `${safeName}${suffix}`;
 }
 
 function resolveInside(root: string, relativePath: string): string {

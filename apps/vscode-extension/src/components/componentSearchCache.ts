@@ -68,8 +68,10 @@ export class ComponentSearchCache {
       .sort((left, right) => left.entry.timestamp - right.entry.timestamp);
 
     const deleteCount = entries.length - MAX_CACHE_ENTRIES + 1;
-    for (const item of entries.slice(0, deleteCount)) {
-      await this.storage.update(item.key, undefined);
-    }
+    await Promise.all(
+      entries.slice(0, deleteCount).map(async (item) => {
+        await this.storage.update(item.key, undefined);
+      })
+    );
   }
 }

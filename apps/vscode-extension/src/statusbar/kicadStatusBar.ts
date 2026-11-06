@@ -263,10 +263,11 @@ export class KiCadStatusBar implements vscode.Disposable {
     }
     if (this.mcpKind === 'VsCodeStdio' || this.mcpConnected) {
       this.mcpItem.text = `$(plug) MCP${profile}`;
+      const profileSuffix = profile ? `  •  profile: ${this.mcpProfile}` : '';
       this.mcpItem.tooltip =
         this.mcpKind === 'VsCodeStdio'
-          ? `MCP connected via VS Code stdio (.vscode/mcp.json)${profile ? `  •  profile: ${this.mcpProfile}` : ''}. Click to switch profile.`
-          : `MCP last verified connected${profile ? `  •  profile: ${this.mcpProfile}` : ''}  •  server ${this.mcpVersion ?? 'unknown'}. Open KiCad Studio Health to recheck availability; click to switch profile.`;
+          ? `MCP connected via VS Code stdio (.vscode/mcp.json)${profileSuffix}. Click to switch profile.`
+          : `MCP last verified connected${profileSuffix}  •  server ${this.mcpVersion ?? 'unknown'}. Open KiCad Studio Health to recheck availability; click to switch profile.`;
       this.mcpItem.command = COMMANDS.pickMcpProfile;
       this.mcpItem.backgroundColor = undefined;
       return;

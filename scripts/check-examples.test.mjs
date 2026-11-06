@@ -21,8 +21,9 @@ test("root package wires the examples contract into repository checks", () => {
 });
 
 test("user-facing examples satisfy the OASLANA-77 repository contract", () => {
-  execFileSync(process.execPath, ["scripts/check-examples.mjs"], {
+  const result = execFileSync(process.execPath, ["scripts/check-examples.mjs"], {
     cwd: repoRoot,
     stdio: "pipe",
   });
+  assert.ok(result, "check-examples.mjs should produce output");
 });

@@ -121,7 +121,7 @@ function isDocumentationOnlyPath(file) {
 function classifyChangedFiles(changedFiles, options = {}) {
   const normalizedFiles = [
     ...new Set(changedFiles.map(normalizeChangedFile).filter(Boolean)),
-  ].sort();
+  ].sort((a, b) => a.localeCompare(b));
   const reasons = createInitialReasons();
 
   addReason(
@@ -139,104 +139,7 @@ function classifyChangedFiles(changedFiles, options = {}) {
   }
 
   for (const file of normalizedFiles) {
-    if (GLOBAL_ALL_FILES.has(file)) {
-      markAllProductLanes(
-        reasons,
-        `${file} affects root toolchain or the CI workflow definition.`,
-      );
-      continue;
-    }
-
-    if (RELEASE_AND_COMPATIBILITY_FILES.has(file)) {
-      addReason(
-        reasons,
-        "sharedPackages",
-        `${file} affects shared compatibility validation.`,
-      );
-      addReason(
-        reasons,
-        "integrationContracts",
-        `${file} affects cross-product contract validation.`,
-      );
-      addReason(
-        reasons,
-        "realPairCompatibility",
-        `${file} affects cross-product runtime compatibility.`,
-      );
-      continue;
-    }
-
-    if (matchesPrefix(file, EXTENSION_PREFIXES)) {
-      addReason(
-        reasons,
-        "vscodeExtension",
-        `${file} is owned by the VS Code extension.`,
-      );
-      addReason(
-        reasons,
-        "performanceBudgets",
-        `${file} may affect extension performance baselines.`,
-      );
-      if (matchesPrefix(file, EXTENSION_INTEGRATION_PREFIXES)) {
-        addReason(
-          reasons,
-          "integrationContracts",
-          `${file} touches extension MCP/integration code.`,
-        );
-        addReason(
-          reasons,
-          "realPairCompatibility",
-          `${file} touches extension MCP/integration code.`,
-        );
-      }
-      continue;
-    }
-
-    if (matchesPrefix(file, SHARED_PREFIXES)) {
-      addReason(
-        reasons,
-        "sharedPackages",
-        `${file} is shared test/schema/fixture infrastructure.`,
-      );
-      addReason(
-        reasons,
-        "vscodeExtension",
-        `${file} must remain compatible with the extension.`,
-      );
-      addReason(
-        reasons,
-        "integrationContracts",
-        `${file} requires cross-product contract validation.`,
-      );
-      addReason(
-        reasons,
-        "realPairCompatibility",
-        `${file} requires cross-product runtime validation.`,
-      );
-      addReason(
-        reasons,
-        "performanceBudgets",
-        `${file} can affect shared performance fixtures.`,
-      );
-      continue;
-    }
-
-    if (
-      matchesPrefix(file, CI_POLICY_PREFIXES) &&
-      !isDocumentationOnlyPath(file)
-    ) {
-      addReason(
-        reasons,
-        "integrationContracts",
-        `${file} affects repository CI or policy wiring.`,
-      );
-      if (file.startsWith(".github/workflows/")) {
-        markAllProductLanes(
-          reasons,
-          `${file} is a workflow change and needs full CI validation.`,
-        );
-      }
-    }
+    markFileLanes(file, reasons);
   }
 
   const lanes = Object.fromEntries(
@@ -248,6 +151,112 @@ function classifyChangedFiles(changedFiles, options = {}) {
     lanes,
     reasons,
   };
+}
+
+function markFileLanes(file, reasons) {
+  if (GLOBAL_ALL_FILES.has(file)) {
+    markAllProductLanes(
+      reasons,
+      `${file} affects root toolchain or the CI workflow definition.`,
+    );
+    return;
+  }
+
+  if (RELEASE_AND_COMPATIBILITY_FILES.has(file)) {
+    markReleaseCompatibilityLanes(reasons, file);
+    return;
+  }
+
+  if (matchesPrefix(file, EXTENSION_PREFIXES)) {
+    addReason(
+      reasons,
+      "vscodeExtension",
+      `${file} is owned by the VS Code extension.`,
+    );
+    addReason(
+      reasons,
+      "performanceBudgets",
+      `${file} may affect extension performance baselines.`,
+    );
+    if (matchesPrefix(file, EXTENSION_INTEGRATION_PREFIXES)) {
+      addReason(
+        reasons,
+        "integrationContracts",
+        `${file} touches extension MCP/integration code.`,
+      );
+      addReason(
+        reasons,
+        "realPairCompatibility",
+        `${file} touches extension MCP/integration code.`,
+      );
+    }
+    return;
+  }
+
+  if (matchesPrefix(file, SHARED_PREFIXES)) {
+    markSharedPrefixLanes(reasons, file);
+    return;
+  }
+
+  if (matchesPrefix(file, CI_POLICY_PREFIXES) && !isDocumentationOnlyPath(file)) {
+    addReason(
+      reasons,
+      "integrationContracts",
+      `${file} affects repository CI or policy wiring.`,
+    );
+    if (file.startsWith(".github/workflows/")) {
+      markAllProductLanes(
+        reasons,
+        `${file} is a workflow change and needs full CI validation.`,
+      );
+    }
+  }
+}
+
+function markReleaseCompatibilityLanes(reasons, file) {
+  addReason(
+    reasons,
+    "sharedPackages",
+    `${file} affects shared compatibility validation.`,
+  );
+  addReason(
+    reasons,
+    "integrationContracts",
+    `${file} affects cross-product contract validation.`,
+  );
+  addReason(
+    reasons,
+    "realPairCompatibility",
+    `${file} affects cross-product runtime compatibility.`,
+  );
+}
+
+function markSharedPrefixLanes(reasons, file) {
+  addReason(
+    reasons,
+    "sharedPackages",
+    `${file} is shared test/schema/fixture infrastructure.`,
+  );
+  addReason(
+    reasons,
+    "vscodeExtension",
+    `${file} must remain compatible with the extension.`,
+  );
+  addReason(
+    reasons,
+    "integrationContracts",
+    `${file} requires cross-product contract validation.`,
+  );
+  addReason(
+    reasons,
+    "realPairCompatibility",
+    `${file} requires cross-product runtime validation.`,
+  );
+  addReason(
+    reasons,
+    "performanceBudgets",
+    `${file} can affect shared performance fixtures.`,
+  );
 }
 
 function gitDiffNames(range, cwd = REPO_ROOT) {
@@ -400,35 +409,56 @@ function parseCliArgs(argv) {
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
-    if (arg === "--base") {
-      options.baseSha = argv[++index];
-    } else if (arg === "--head") {
-      options.headSha = argv[++index];
-    } else if (arg === "--before") {
-      options.before = argv[++index];
-    } else if (arg === "--sha") {
-      options.sha = argv[++index];
-    } else if (arg === "--event") {
-      options.eventName = argv[++index];
-    } else if (arg === "--github-output") {
-      options.githubOutput = true;
-    } else if (arg === "--summary") {
-      options.summary = true;
-    } else if (arg === "--json") {
-      options.json = true;
-    } else if (arg === "--all") {
-      options.forceAll = true;
-      options.forceAllReason = "Explicit --all flag requested all CI lanes.";
-    } else if (arg === "--files") {
-      while (argv[index + 1] && !argv[index + 1].startsWith("--")) {
-        options.changedFiles.push(argv[++index]);
-      }
+    const handled = handleCliArg(argv, index, arg, options);
+    if (handled.consumed) {
+      index = handled.nextIndex;
     } else {
       options.changedFiles.push(arg);
     }
   }
 
   return options;
+}
+
+function handleCliArg(argv, index, arg, options) {
+  const valueHandlers = {
+    "--base": () => (options.baseSha = argv[++index]),
+    "--head": () => (options.headSha = argv[++index]),
+    "--before": () => (options.before = argv[++index]),
+    "--sha": () => (options.sha = argv[++index]),
+    "--event": () => (options.eventName = argv[++index]),
+  };
+
+  if (arg in valueHandlers) {
+    valueHandlers[arg]();
+    return { consumed: true, nextIndex: index };
+  }
+
+  if (arg === "--github-output") {
+    options.githubOutput = true;
+    return { consumed: true, nextIndex: index };
+  }
+  if (arg === "--summary") {
+    options.summary = true;
+    return { consumed: true, nextIndex: index };
+  }
+  if (arg === "--json") {
+    options.json = true;
+    return { consumed: true, nextIndex: index };
+  }
+  if (arg === "--all") {
+    options.forceAll = true;
+    options.forceAllReason = "Explicit --all flag requested all CI lanes.";
+    return { consumed: true, nextIndex: index };
+  }
+  if (arg === "--files") {
+    while (argv[index + 1] && !argv[index + 1].startsWith("--")) {
+      options.changedFiles.push(argv[++index]);
+    }
+    return { consumed: true, nextIndex: index };
+  }
+
+  return { consumed: false, nextIndex: index };
 }
 
 function main() {

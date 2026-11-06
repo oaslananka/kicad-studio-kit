@@ -1145,32 +1145,9 @@ export class KiCadExportService {
     expectedExtensions: string[]
   ): Promise<string | undefined> {
     const candidates: string[] = [];
-    if (
-      resource?.fsPath &&
-      expectedExtensions.includes(path.extname(resource.fsPath))
-    ) {
-      candidates.push(resource.fsPath);
-    }
-
-    const activeUri = vscode.window.activeTextEditor?.document.uri;
-    if (
-      activeUri?.fsPath &&
-      expectedExtensions.includes(path.extname(activeUri.fsPath))
-    ) {
-      candidates.push(activeUri.fsPath);
-    }
-
-    const customUri = (
-      vscode.window.tabGroups.activeTabGroup.activeTab?.input as
-        | { uri?: vscode.Uri }
-        | undefined
-    )?.uri;
-    if (
-      customUri?.fsPath &&
-      expectedExtensions.includes(path.extname(customUri.fsPath))
-    ) {
-      candidates.push(customUri.fsPath);
-    }
+    this.collectResourceCandidates(resource, expectedExtensions, candidates);
+    this.collectActiveEditorCandidates(expectedExtensions, candidates);
+    this.collectTabGroupCandidates(expectedExtensions, candidates);
 
     if (!candidates.length) {
       for (const ext of expectedExtensions) {
@@ -1211,6 +1188,48 @@ export class KiCadExportService {
       return undefined;
     }
     return file;
+  }
+
+  private collectResourceCandidates(
+    resource: vscode.Uri | undefined,
+    expectedExtensions: string[],
+    candidates: string[]
+  ): void {
+    if (
+      resource?.fsPath &&
+      expectedExtensions.includes(path.extname(resource.fsPath))
+    ) {
+      candidates.push(resource.fsPath);
+    }
+  }
+
+  private collectActiveEditorCandidates(
+    expectedExtensions: string[],
+    candidates: string[]
+  ): void {
+    const activeUri = vscode.window.activeTextEditor?.document.uri;
+    if (
+      activeUri?.fsPath &&
+      expectedExtensions.includes(path.extname(activeUri.fsPath))
+    ) {
+      candidates.push(activeUri.fsPath);
+    }
+  }
+
+  private collectTabGroupCandidates(
+    expectedExtensions: string[],
+    candidates: string[]
+  ): void {
+    const customUri = (
+      vscode.window.tabGroups.activeTabGroup.activeTab?.input as
+        { uri?: vscode.Uri } | undefined
+    )?.uri;
+    if (
+      customUri?.fsPath &&
+      expectedExtensions.includes(path.extname(customUri.fsPath))
+    ) {
+      candidates.push(customUri.fsPath);
+    }
   }
 
   private async findSiblingSchematic(

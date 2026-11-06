@@ -177,69 +177,88 @@ function validateWorkspace(workspace) {
     const normalizedContent = content.replaceAll("\\", "/");
     const productionSourceFile = isProductionSourceFile(workspace, file);
 
-    for (const token of workspace.forbiddenTokens) {
-      if (ALLOWED_METADATA_READS.get(relativeFile)?.has(token)) {
-        continue;
-      }
-      const index = normalizedContent.indexOf(token);
-      if (index !== -1) {
-        violations.push({
-          file: relativeFile,
-          line: lineNumberAt(content, index),
-          reason: `references another product workspace path: ${token}`,
-        });
-      }
-    }
-
+    checkForbiddenTokens(
+      violations,
+      relativeFile,
+      normalizedContent,
+      content,
+      workspace,
+    );
     if (productionSourceFile) {
-      for (const token of TEST_ONLY_SHARED_PATH_TOKENS) {
-        const index = normalizedContent.indexOf(token);
-        if (index !== -1) {
-          violations.push({
-            file: relativeFile,
-            line: lineNumberAt(content, index),
-            reason: `production source references test-only shared path: ${token}`,
-          });
-        }
-      }
+      checkTestOnlySharedPathTokens(violations, relativeFile, normalizedContent, content);
     }
-
-    for (const { specifier, index } of extractImports(content)) {
-      if (
-        workspace.forbiddenModules.some((pattern) => pattern.test(specifier))
-      ) {
-        violations.push({
-          file: relativeFile,
-          line: lineNumberAt(content, index),
-          reason: `imports another product's implementation module: ${specifier}`,
-        });
-      }
-
-      if (
-        productionSourceFile &&
-        TEST_ONLY_SHARED_MODULE_PATTERNS.some((pattern) =>
-          pattern.test(specifier),
-        )
-      ) {
-        violations.push({
-          file: relativeFile,
-          line: lineNumberAt(content, index),
-          reason: `production source imports test-only shared module: ${specifier}`,
-        });
-      }
-
-      const targetWorkspace = targetWorkspaceForImport(file, specifier);
-      if (targetWorkspace && targetWorkspace.name !== workspace.name) {
-        violations.push({
-          file: relativeFile,
-          line: lineNumberAt(content, index),
-          reason: `relative import crosses from ${workspace.path} to ${targetWorkspace.path}: ${specifier}`,
-        });
-      }
-    }
+    checkImports(
+      violations,
+      relativeFile,
+      content,
+      productionSourceFile,
+      workspace,
+      file,
+    );
   }
 
   return violations;
+}
+
+function checkForbiddenTokens(violations, relativeFile, normalizedContent, content, workspace) {
+  for (const token of workspace.forbiddenTokens) {
+    if (ALLOWED_METADATA_READS.get(relativeFile)?.has(token)) {
+      continue;
+    }
+    const index = normalizedContent.indexOf(token);
+    if (index !== -1) {
+      violations.push({
+        file: relativeFile,
+        line: lineNumberAt(content, index),
+        reason: `references another product workspace path: ${token}`,
+      });
+    }
+  }
+}
+
+function checkTestOnlySharedPathTokens(violations, relativeFile, normalizedContent, content) {
+  for (const token of TEST_ONLY_SHARED_PATH_TOKENS) {
+    const index = normalizedContent.indexOf(token);
+    if (index !== -1) {
+      violations.push({
+        file: relativeFile,
+        line: lineNumberAt(content, index),
+        reason: `production source references test-only shared path: ${token}`,
+      });
+    }
+  }
+}
+
+function checkImports(violations, relativeFile, content, productionSourceFile, workspace, file) {
+  for (const { specifier, index } of extractImports(content)) {
+    if (workspace.forbiddenModules.some((pattern) => pattern.test(specifier))) {
+      violations.push({
+        file: relativeFile,
+        line: lineNumberAt(content, index),
+        reason: `imports another product's implementation module: ${specifier}`,
+      });
+    }
+
+    if (
+      productionSourceFile &&
+      TEST_ONLY_SHARED_MODULE_PATTERNS.some((pattern) => pattern.test(specifier))
+    ) {
+      violations.push({
+        file: relativeFile,
+        line: lineNumberAt(content, index),
+        reason: `production source imports test-only shared module: ${specifier}`,
+      });
+    }
+
+    const targetWorkspace = targetWorkspaceForImport(file, specifier);
+    if (targetWorkspace && targetWorkspace.name !== workspace.name) {
+      violations.push({
+        file: relativeFile,
+        line: lineNumberAt(content, index),
+        reason: `relative import crosses from ${workspace.path} to ${targetWorkspace.path}: ${specifier}`,
+      });
+    }
+  }
 }
 
 const violations = [

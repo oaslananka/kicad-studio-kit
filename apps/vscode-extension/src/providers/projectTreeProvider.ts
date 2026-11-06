@@ -149,57 +149,47 @@ export class KiCadProjectTreeProvider implements vscode.TreeDataProvider<Project
       {
         label: 'Jobsets',
         type: 'jobset' as const,
-        children: jobsetFiles.map(
-          (file): ProjectTreeNode => ({
-            label: path.basename(file),
-            type: 'jobset',
-            uri: vscode.Uri.file(file)
-          })
-        )
+        children: jobsetFiles.map((file): ProjectTreeNode => ({
+          label: path.basename(file),
+          type: 'jobset',
+          uri: vscode.Uri.file(file)
+        }))
       },
       {
         label: 'Schematic Libraries',
         type: 'symbol-library' as const,
-        children: symbolFiles.map(
-          (file): ProjectTreeNode => ({
-            label: path.basename(file),
-            type: 'file',
-            uri: vscode.Uri.file(file)
-          })
-        )
+        children: symbolFiles.map((file): ProjectTreeNode => ({
+          label: path.basename(file),
+          type: 'file',
+          uri: vscode.Uri.file(file)
+        }))
       },
       {
         label: 'Footprint Libraries',
         type: 'footprint-library' as const,
-        children: footprintFiles.map(
-          (file): ProjectTreeNode => ({
-            label: path.basename(file),
-            type: 'file',
-            uri: vscode.Uri.file(file)
-          })
-        )
+        children: footprintFiles.map((file): ProjectTreeNode => ({
+          label: path.basename(file),
+          type: 'file',
+          uri: vscode.Uri.file(file)
+        }))
       },
       {
         label: 'Fabrication Outputs',
         type: 'fab-output' as const,
-        children: fabFiles.map(
-          (file): ProjectTreeNode => ({
-            label: path.basename(file),
-            type: 'file',
-            uri: vscode.Uri.file(file)
-          })
-        )
+        children: fabFiles.map((file): ProjectTreeNode => ({
+          label: path.basename(file),
+          type: 'file',
+          uri: vscode.Uri.file(file)
+        }))
       },
       {
         label: '3D Models',
         type: 'model' as const,
-        children: models.map(
-          (file): ProjectTreeNode => ({
-            label: path.basename(file),
-            type: 'file',
-            uri: vscode.Uri.file(file)
-          })
-        )
+        children: models.map((file): ProjectTreeNode => ({
+          label: path.basename(file),
+          type: 'file',
+          uri: vscode.Uri.file(file)
+        }))
       }
     ].filter((node) => !node.children || node.children.length > 0);
 
@@ -237,13 +227,14 @@ function projectFileNode(
   const extension = normalizedExtension(file);
   return {
     label: path.basename(file),
-    type: extension === '.kicad_sch'
-      ? 'schematic'
-      : extension === '.kicad_pcb'
-        ? 'pcb'
-        : extension === '.kicad_dru'
-          ? 'drc-rule'
-          : 'file',
+    type:
+      extension === '.kicad_sch'
+        ? 'schematic'
+        : extension === '.kicad_pcb'
+          ? 'pcb'
+          : extension === '.kicad_dru'
+            ? 'drc-rule'
+            : 'file',
     uri: vscode.Uri.file(file),
     project:
       extension === '.kicad_pro'
@@ -304,7 +295,7 @@ function tooltipForNode(
     `Role: ${roleForNode(node)}`,
     node.uri ? `Path: ${node.uri.fsPath}` : undefined,
     node.children
-      ? `State: ${node.children.length} visible item${node.children.length === 1 ? '' : 's'}${diagnosticState ? ` | ${diagnosticState}` : ''}`
+      ? `State: ${node.children.length} visible item${node.children.length === 1 ? '' : 's'}${diagnosticStateSuffix(diagnosticState)}`
       : `State: ${diagnosticState ?? 'No diagnostics reported'}`,
     node.uri && node.type !== 'project'
       ? 'Source control: VS Code file decorations reflect working tree changes.'
@@ -333,6 +324,13 @@ function diagnosticSummary(diagnostics: TreeDiagnostics): string | undefined {
     return `${diagnostics.total} diagnostic${diagnostics.total === 1 ? '' : 's'}`;
   }
   return undefined;
+}
+
+function diagnosticStateSuffix(diagnosticState: string | undefined): string {
+  if (!diagnosticState) {
+    return '';
+  }
+  return ` | ${diagnosticState}`;
 }
 
 function roleForNode(node: ProjectTreeNode): string {
@@ -501,7 +499,7 @@ async function collectFiles(
   };
 
   await visit(resolvedRootPath);
-  return result.sort();
+  return result.sort((a, b) => a.localeCompare(b));
 }
 
 function shouldIgnoreDirectory(

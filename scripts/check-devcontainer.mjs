@@ -65,6 +65,13 @@ function validateDevcontainerJson(errors, config) {
     return;
   }
 
+  validateDevcontainerFields(errors, config);
+  validateContainerEnv(errors, config);
+  validateNodeFeature(errors, config);
+  validateGithubCliFeature(errors, config);
+}
+
+function validateDevcontainerFields(errors, config) {
   if (config.name !== "KiCad Studio Kit") {
     errors.push("devcontainer name must be KiCad Studio Kit");
   }
@@ -83,7 +90,9 @@ function validateDevcontainerJson(errors, config) {
   if (config.waitFor !== "postCreateCommand") {
     errors.push("devcontainer waitFor must be postCreateCommand");
   }
+}
 
+function validateContainerEnv(errors, config) {
   const containerEnv = config.containerEnv ?? {};
   for (const [name, expected] of Object.entries({
     KICAD_STUDIO_DEVCONTAINER: "1",
@@ -95,26 +104,31 @@ function validateDevcontainerJson(errors, config) {
       errors.push(`devcontainer containerEnv.${name} must be ${expected}`);
     }
   }
+}
 
+function validateNodeFeature(errors, config) {
   const nodeFeature =
     config.features?.["ghcr.io/devcontainers/features/node:1"];
   if (!isRecord(nodeFeature)) {
     errors.push(
       "devcontainer must include the official Node devcontainer feature",
     );
-  } else {
-    if (nodeFeature.version !== "24") {
-      errors.push("Node devcontainer feature must install Node 24");
-    }
-    if (nodeFeature.pnpmVersion !== "none") {
-      errors.push("Node devcontainer feature must leave pnpm to Corepack");
-    }
-    if (nodeFeature.nodeGypDependencies !== true) {
-      errors.push(
-        "Node devcontainer feature must install node-gyp dependencies",
-      );
-    }
+    return;
   }
+  if (nodeFeature.version !== "24") {
+    errors.push("Node devcontainer feature must install Node 24");
+  }
+  if (nodeFeature.pnpmVersion !== "none") {
+    errors.push("Node devcontainer feature must leave pnpm to Corepack");
+  }
+  if (nodeFeature.nodeGypDependencies !== true) {
+    errors.push(
+      "Node devcontainer feature must install node-gyp dependencies",
+    );
+  }
+}
+
+function validateGithubCliFeature(errors, config) {
   if (
     !isRecord(config.features?.["ghcr.io/devcontainers/features/github-cli:1"])
   ) {

@@ -402,7 +402,7 @@ async function showDryRunPreview(plan: {
     `Variant: ${plan.variant || 'default'}`,
     `KiCad CLI: ${plan.kicadSnapshot?.version ?? 'not detected'}`,
     plan.git?.shortCommit
-      ? `Source: ${plan.git.shortCommit}${plan.git.dirty ? ' (uncommitted changes)' : ''}`
+      ? `Source: ${plan.git.shortCommit}${dirtySuffix(plan.git.dirty)}`
       : 'Source: not a git repository',
     `Quality gates: ${
       plan.gateSummaries
@@ -464,6 +464,10 @@ async function chooseVariant(
       title: 'Select release variant'
     }
   );
+}
+
+function dirtySuffix(dirty: boolean | undefined): string {
+  return dirty ? ' (uncommitted changes)' : '';
 }
 
 function formatBlockedMessage(gates: QualityGateResult[]): string {

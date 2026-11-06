@@ -413,56 +413,67 @@ function runSync(args) {
   const fields = fieldIndex(project);
 
   for (const number of plan.selected) {
-    try {
-      const issueData = graphql(issueQuery(), {
-        owner: args.owner,
-        repo: args.repo,
-        number,
-      });
-      const issue = issueData.repository?.issue;
-      if (!issue) {
-        throw new Error("issue not found");
-      }
-      let itemId = findProjectItem(issue, project.id);
-      if (!itemId) {
-        const added = graphql(ADD_ITEM_MUTATION, {
-          projectId: project.id,
-          contentId: issue.id,
-        });
-        itemId = added.addProjectV2ItemById.item.id;
-      }
-
-      const metadata = issueMetadata(issue, phaseByIssue);
-      for (const fieldName of args.fields) {
-        const value = metadata[fieldName];
-        if (!value) {
-          continue;
-        }
-        const field = fields.get(fieldName);
-        if (!field) {
-          throw new Error(`field ${fieldName} not found`);
-        }
-        try {
-          updateField(project.id, itemId, field, value);
-        } catch (error) {
-          result.failures.push({
-            issue_number: number,
-            field: fieldName,
-            message: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }
-      result.processed_issue_numbers.push(number);
-    } catch (error) {
-      result.failures.push({
-        issue_number: number,
-        field: null,
-        message: error instanceof Error ? error.message : String(error),
-      });
-    }
+    processGovernanceIssue(
+      number,
+      args,
+      project,
+      fields,
+      phaseByIssue,
+      result,
+    );
   }
 
   return result;
+}
+
+function processGovernanceIssue(number, args, project, fields, phaseByIssue, result) {
+  try {
+    const issueData = graphql(issueQuery(), {
+      owner: args.owner,
+      repo: args.repo,
+      number,
+    });
+    const issue = issueData.repository?.issue;
+    if (!issue) {
+      throw new Error("issue not found");
+    }
+    let itemId = findProjectItem(issue, project.id);
+    if (!itemId) {
+      const added = graphql(ADD_ITEM_MUTATION, {
+        projectId: project.id,
+        contentId: issue.id,
+      });
+      itemId = added.addProjectV2ItemById.item.id;
+    }
+
+    const metadata = issueMetadata(issue, phaseByIssue);
+    for (const fieldName of args.fields) {
+      const value = metadata[fieldName];
+      if (!value) {
+        continue;
+      }
+      const field = fields.get(fieldName);
+      if (!field) {
+        throw new Error(`field ${fieldName} not found`);
+      }
+      try {
+        updateField(project.id, itemId, field, value);
+      } catch (error) {
+        result.failures.push({
+          issue_number: number,
+          field: fieldName,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+    result.processed_issue_numbers.push(number);
+  } catch (error) {
+    result.failures.push({
+      issue_number: number,
+      field: null,
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 function selfTest() {

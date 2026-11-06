@@ -53,37 +53,50 @@ function readBalancedExpression(
   let escaped = false;
 
   for (let index = start; index < text.length; index++) {
-    const char = text[index];
-    if (escaped) {
-      escaped = false;
-      continue;
-    }
-    if (inString) {
-      if (char === '\\') {
-        escaped = true;
-      } else if (char === '"') {
-        inString = false;
-      }
-      continue;
-    }
-    if (char === '"') {
-      inString = true;
-      continue;
-    }
-    if (char === '(') {
-      depth++;
-      continue;
-    }
-    if (char !== ')') {
-      continue;
-    }
-    depth--;
-    if (depth === 0) {
+    const char = text[index]!;
+    const action = classifyParenChar(char, { depth, inString, escaped });
+    depth = action.depth;
+    inString = action.inString;
+    escaped = action.escaped;
+    if (action.complete) {
       return text.slice(start, index + 1);
     }
   }
 
   return undefined;
+}
+
+type ParenState = { depth: number; inString: boolean; escaped: boolean };
+
+type ParenAction = ParenState & { complete: boolean };
+
+function classifyParenChar(char: string, state: ParenState): ParenAction {
+  if (state.escaped) {
+    return { ...state, escaped: false, complete: false };
+  }
+  if (state.inString) {
+    if (char === '\\') {
+      return { ...state, escaped: true, complete: false };
+    }
+    if (char === '"') {
+      return { ...state, inString: false, complete: false };
+    }
+    return { ...state, complete: false };
+  }
+  if (char === '"') {
+    return { ...state, inString: true, complete: false };
+  }
+  if (char === '(') {
+    return { ...state, depth: state.depth + 1, complete: false };
+  }
+  if (char !== ')') {
+    return { ...state, complete: false };
+  }
+  const nextDepth = state.depth - 1;
+  if (nextDepth === 0) {
+    return { ...state, depth: nextDepth, complete: true };
+  }
+  return { ...state, depth: nextDepth, complete: false };
 }
 
 function extractSchematicSheets(text: string): ViewerSheetInfo[] {

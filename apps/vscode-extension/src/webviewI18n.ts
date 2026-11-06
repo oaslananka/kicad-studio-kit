@@ -288,5 +288,5 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 function escapeAttribute(value: string): string {
-  return value.replace(/&/gu, '&amp;').replace(/"/gu, '&quot;');
+  return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;');
 }

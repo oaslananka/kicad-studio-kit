@@ -7,6 +7,16 @@ import { asRecord, asString, hasType } from '../utils/webviewMessages';
 import { createNonce } from '../utils/nonce';
 import { injectWebviewLocalization } from '../webviewI18n';
 
+function _diffTypePrefix(type: string): string {
+  if (type === 'added') {
+    return '+ ';
+  }
+  if (type === 'removed') {
+    return '- ';
+  }
+  return '~ ';
+}
+
 /**
  * Panel manager for visual schematic/PCB Git diffs. Panels are keyed by
  * document URI so re-opening the same file reveals the existing panel.
@@ -262,7 +272,7 @@ export class DiffEditorProvider {
         summaryEl.textContent = data.payload.summary;
         listEl.innerHTML = data.payload.components.map(c =>
           '<li class="' + c.type + '">' +
-            (c.type === 'added' ? '+ ' : c.type === 'removed' ? '- ' : '~ ') +
+            _diffTypePrefix(c.type) +
             (c.reference ?? c.uuid ?? '?') +
             (c.value ? ' (' + c.value + ')' : '') +
           '</li>'

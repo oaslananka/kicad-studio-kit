@@ -196,17 +196,21 @@ export class DiagnosticStateStore implements vscode.Disposable {
   }
 
   getLatestDrcRun(projectId?: string | undefined): LatestDrcRun | undefined {
-    const latest = projectId
-      ? this.projectDiagnostics.get(projectId)?.latestDrcRun
-      : this.activeProjectId
-        ? (this.projectDiagnostics.get(this.activeProjectId)?.latestDrcRun ??
-          this.latestDrcRun)
-        : this.latestDrcRun;
-    return latest
+    let latestDrcRun: LatestDrcRun | undefined;
+    if (projectId) {
+      latestDrcRun = this.projectDiagnostics.get(projectId)?.latestDrcRun;
+    } else if (this.activeProjectId) {
+      latestDrcRun =
+        this.projectDiagnostics.get(this.activeProjectId)?.latestDrcRun ??
+        this.latestDrcRun;
+    } else {
+      latestDrcRun = this.latestDrcRun;
+    }
+    return latestDrcRun
       ? {
-          file: latest.file,
-          diagnostics: [...latest.diagnostics],
-          summary: cloneSummary(latest.summary)
+          file: latestDrcRun.file,
+          diagnostics: [...latestDrcRun.diagnostics],
+          summary: cloneSummary(latestDrcRun.summary)
         }
       : undefined;
   }
@@ -220,20 +224,8 @@ export class DiagnosticStateStore implements vscode.Disposable {
       : undefined;
     const useProjectScope = Boolean(projectId);
     return {
-      drc: projectState?.drc
-        ? cloneSummary(projectState.drc)
-        : useProjectScope
-          ? undefined
-          : this.drc
-            ? cloneSummary(this.drc)
-            : undefined,
-      erc: projectState?.erc
-        ? cloneSummary(projectState.erc)
-        : useProjectScope
-          ? undefined
-          : this.erc
-            ? cloneSummary(this.erc)
-            : undefined,
+      drc: resolveSummary(projectState?.drc, useProjectScope, this.drc),
+      erc: resolveSummary(projectState?.erc, useProjectScope, this.erc),
       activeProjectId: this.activeProjectId,
       projects: [...this.projectDiagnostics.entries()].map(
         ([entryProjectId, state]) => ({
@@ -256,14 +248,17 @@ export class DiagnosticStateStore implements vscode.Disposable {
   private getOrCreateProjectDiagnostics(
     projectId: string | undefined
   ): ProjectDiagnostics | undefined {
-    return projectId
-      ? (this.projectDiagnostics.get(projectId) ?? {
-          drc: undefined,
-          erc: undefined,
-          latestDrcRun: undefined,
-          latestErcRun: undefined
-        })
-      : undefined;
+    if (!projectId) {
+      return undefined;
+    }
+    return (
+      this.projectDiagnostics.get(projectId) ?? {
+        drc: undefined,
+        erc: undefined,
+        latestDrcRun: undefined,
+        latestErcRun: undefined
+      }
+    );
   }
 
   private getSummaryForSource(
@@ -328,6 +323,20 @@ function cloneSummary(summary: DiagnosticSummary): DiagnosticSummary {
     ...summary,
     commandArgs: summary.commandArgs ? [...summary.commandArgs] : undefined
   };
+}
+
+function resolveSummary(
+  value: DiagnosticSummary | undefined,
+  useProjectScope: boolean,
+  fallback: DiagnosticSummary | undefined
+): DiagnosticSummary | undefined {
+  if (value) {
+    return cloneSummary(value);
+  }
+  if (useProjectScope) {
+    return undefined;
+  }
+  return fallback ? cloneSummary(fallback) : undefined;
 }
 
 function normalizeDiagnosticSummary(

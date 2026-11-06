@@ -15,8 +15,7 @@ export function getActiveResourceUri(): vscode.Uri | undefined {
   }
 
   const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab?.input as
-    | { uri?: vscode.Uri }
-    | undefined;
+    { uri?: vscode.Uri } | undefined;
   return activeTab?.uri;
 }
 
@@ -41,7 +40,10 @@ export async function resolveTargetFile(
     return active.fsPath;
   }
   if (options.projectRoot) {
-    const projectFile = await findFirstProjectFile(options.projectRoot, extname);
+    const projectFile = await findFirstProjectFile(
+      options.projectRoot,
+      extname
+    );
     if (projectFile) {
       return projectFile;
     }
@@ -85,7 +87,8 @@ async function collectFiles(
     currentPath !== rootPath &&
     entries.some(
       (entry) =>
-        entry.isFile() && path.extname(entry.name).toLowerCase() === '.kicad_pro'
+        entry.isFile() &&
+        path.extname(entry.name).toLowerCase() === '.kicad_pro'
     )
   ) {
     return [];
@@ -107,11 +110,14 @@ async function collectFiles(
       matches.push(absolute);
     }
   }
-  return matches.sort();
+  return matches.sort((a, b) => a.localeCompare(b));
 }
 
 function isWithinDirectory(rootPath: string, filePath: string): boolean {
-  const relative = path.relative(path.resolve(rootPath), path.resolve(filePath));
+  const relative = path.relative(
+    path.resolve(rootPath),
+    path.resolve(filePath)
+  );
   return !relative.startsWith('..') && !path.isAbsolute(relative);
 }
 

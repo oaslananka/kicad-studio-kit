@@ -36,6 +36,7 @@ export function createKiCanvasViewerHtml(
 ): string {
   const nonce = createNonce();
   const themeName = options.theme ?? 'kicad';
+  const isLightTheme = themeName === 'light';
   const palette = resolveViewerPalette(themeName);
   const hasLayerControls = Boolean(options.metadata?.layers?.length);
   const sidebarWidth = getViewerSidebarWidth(options.metadata);
@@ -113,7 +114,7 @@ export function createKiCanvasViewerHtml(
         <select id="sheet-select" aria-label="Sheet selector"></select>
       </label>
       <button class="btn compact-btn" id="grid-toggle" type="button" aria-pressed="false">Grid</button>
-      <button class="btn compact-btn" id="theme-toggle" type="button" aria-pressed="${themeName === 'light' ? 'true' : 'false'}">${themeName === 'light' ? 'Light' : 'Dark'}</button>
+      <button class="btn compact-btn" id="theme-toggle" type="button" aria-pressed="${isLightTheme ? 'true' : 'false'}">${isLightTheme ? 'Light' : 'Dark'}</button>
       <label class="reference-search-field" for="reference-search">
         <span>Reference</span>
         <input id="reference-search" type="search" inputmode="search" autocomplete="off" placeholder="Find reference" aria-label="Find reference">

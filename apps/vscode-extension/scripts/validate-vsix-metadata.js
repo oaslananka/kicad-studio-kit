@@ -184,7 +184,7 @@ function compareVsixContent(expectedPath, actualPath) {
 
 function computeContentDigest(entries) {
   const digest = crypto.createHash('sha256');
-  for (const name of [...entries.keys()].sort()) {
+  for (const name of [...entries.keys()].sort((a, b) => a.localeCompare(b))) {
     digest.update(name);
     digest.update('\0');
     digest.update(entries.get(name));

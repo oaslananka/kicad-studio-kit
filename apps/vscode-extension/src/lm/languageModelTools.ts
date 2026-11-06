@@ -670,7 +670,7 @@ function collectProjectFiles(
         ? [absolute]
         : [];
     })
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
 }
 
 function isWithinDirectory(rootPath: string, filePath: string): boolean {

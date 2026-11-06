@@ -1,3 +1,4 @@
+import test from 'node:test';
 import * as assert from 'node:assert/strict';
 import * as path from 'node:path';
 import { withRealServer } from './setup';
@@ -17,6 +18,10 @@ async function run(): Promise<void> {
     console.log('real-server context bridge passed');
   });
 }
+
+test('MCP context bridge flow', async () => {
+  await run();
+});
 
 void run().catch((error) => {
   console.error(error);

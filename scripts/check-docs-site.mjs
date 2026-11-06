@@ -162,35 +162,44 @@ function checkLinks(files) {
     const content = fs.readFileSync(file, "utf8");
     const rel = relativeToRepo(file);
     for (const rawLink of extractLinks(content)) {
-      const target = rawLink.replace(/^<|>$/gu, "");
-      if (isIgnoredUrl(target)) {
-        continue;
-      }
-      const { filePath: resolvedPath, hash } = resolveTarget(
-        file,
-        decodeURI(target),
-      );
-      const existing = candidateFiles(resolvedPath).find((candidate) =>
-        fs.existsSync(candidate),
-      );
-      if (!existing) {
-        fail(`${rel}: broken internal link ${rawLink}`);
-        continue;
-      }
-      if (hash) {
-        if (!anchorCache.has(existing)) {
-          anchorCache.set(
-            existing,
-            anchorsFor(fs.readFileSync(existing, "utf8")),
-          );
-        }
-        const anchors = anchorCache.get(existing);
-        if (!anchors.has(hash)) {
-          fail(`${rel}: missing anchor ${rawLink}`);
-        }
-      }
+      checkDocLink(file, rel, rawLink, anchorCache);
     }
   }
+}
+
+function checkDocLink(file, rel, rawLink, anchorCache) {
+  const target = rawLink.replace(/^<|>$/gu, "");
+  if (isIgnoredUrl(target)) {
+    return;
+  }
+  const { filePath: resolvedPath, hash } = resolveTarget(
+    file,
+    decodeURI(target),
+  );
+  const existing = candidateFiles(resolvedPath).find((candidate) =>
+    fs.existsSync(candidate),
+  );
+  if (!existing) {
+    fail(`${rel}: broken internal link ${rawLink}`);
+    return;
+  }
+  if (!hash) {
+    return;
+  }
+  const anchors = getCachedAnchors(existing, anchorCache);
+  if (!anchors.has(hash)) {
+    fail(`${rel}: missing anchor ${rawLink}`);
+  }
+}
+
+function getCachedAnchors(existing, anchorCache) {
+  if (!anchorCache.has(existing)) {
+    anchorCache.set(
+      existing,
+      anchorsFor(fs.readFileSync(existing, "utf8")),
+    );
+  }
+  return anchorCache.get(existing);
 }
 
 function checkGeneratedFreshness() {

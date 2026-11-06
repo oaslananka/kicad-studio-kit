@@ -59,7 +59,13 @@ export class DrcRulesProvider implements vscode.TreeDataProvider<DrcRulesNode> {
   }
 
   getChildren(): DrcRulesNode[] {
-    return this.items.length ? this.items : this.state ? [this.state] : [];
+    if (this.items.length) {
+      return this.items;
+    }
+    if (this.state) {
+      return [this.state];
+    }
+    return [];
   }
 
   async reveal(item: DrcRuleItem): Promise<void> {

@@ -1,3 +1,4 @@
+import test from 'node:test';
 import * as assert from 'node:assert/strict';
 import { isMcpVersionSupported } from '../../../src/mcp/compat';
 import { withRealServer } from './setup';
@@ -14,6 +15,10 @@ async function run(): Promise<void> {
     console.log(`real-server quickstart passed against ${server.endpoint}`);
   });
 }
+
+test('MCP quickstart flow', async () => {
+  await run();
+});
 
 void run().catch((error) => {
   console.error(error);

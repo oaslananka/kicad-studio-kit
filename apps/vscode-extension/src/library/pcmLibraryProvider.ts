@@ -267,8 +267,15 @@ function iconForKind(kind: PcmPackageKind): string {
 }
 
 function comparePackages(left: PcmPackage, right: PcmPackage): number {
-  const stateOrder = (pkg: PcmPackage): number =>
-    pkg.state === 'update-available' ? 0 : pkg.state === 'available' ? 1 : 2;
+  const stateOrder = (pkg: PcmPackage): number => {
+    if (pkg.state === 'update-available') {
+      return 0;
+    }
+    if (pkg.state === 'available') {
+      return 1;
+    }
+    return 2;
+  };
   return (
     stateOrder(left) - stateOrder(right) ||
     left.metadata.name.localeCompare(right.metadata.name)

@@ -18,11 +18,7 @@ export interface ComponentAlternative {
 }
 
 export type ComponentLifecycle =
-  | 'active'
-  | 'nrnd'
-  | 'obsolete'
-  | 'preview'
-  | 'unknown';
+  'active' | 'nrnd' | 'obsolete' | 'preview' | 'unknown';
 
 export interface ComponentIntelligence {
   lifecycle?: ComponentLifecycle;
@@ -195,19 +191,20 @@ export async function scoreBomWithProvider(
 ): Promise<BomRiskReport> {
   const active = entries.filter((entry) => !entry.dnp);
   const dnp = entries.length - active.length;
-  const scored: ScoredBomEntry[] = [];
-  for (const entry of active) {
-    const mpn = normalizeMpn(entry.mpn ?? '');
-    let intelligence: ComponentIntelligence | undefined;
-    if (mpn) {
-      try {
-        intelligence = await provider.lookup(mpn);
-      } catch {
-        intelligence = undefined;
+  const scored = await Promise.all(
+    active.map(async (entry) => {
+      const mpn = normalizeMpn(entry.mpn ?? '');
+      let intelligence: ComponentIntelligence | undefined;
+      if (mpn) {
+        try {
+          intelligence = await provider.lookup(mpn);
+        } catch {
+          intelligence = undefined;
+        }
       }
-    }
-    scored.push(scoreBomEntry(entry, options, intelligence));
-  }
+      return scoreBomEntry(entry, options, intelligence);
+    })
+  );
   scored.sort((left, right) => right.score - left.score);
   return { entries: scored, summary: summarize(scored, dnp) };
 }

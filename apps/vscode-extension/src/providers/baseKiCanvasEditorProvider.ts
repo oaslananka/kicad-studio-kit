@@ -38,6 +38,12 @@ const VIEWER_TOOLS_PANEL_COLLAPSED_KEY =
 
 // Change notifications are event-driven; no periodic filesystem polling.
 const EXTERNAL_FILE_SETTLE_MS = 120;
+
+type ViewerMessageHandler = (
+  message: unknown,
+  uri: vscode.Uri,
+  panel: vscode.WebviewPanel
+) => Promise<void>;
 // Never spin indefinitely on an external writer that never stabilizes.
 const EXTERNAL_SETTLE_RETRY_LIMIT = 2;
 
@@ -87,6 +93,21 @@ export abstract class BaseKiCanvasEditorProvider
 
   private readonly panels = new Map<string, Set<vscode.WebviewPanel>>();
   private readonly panelInfo = new Map<vscode.WebviewPanel, PanelInfo>();
+  private readonly viewerMessageHandlers: Record<string, ViewerMessageHandler> =
+    {
+      openInKiCad: (message, uri) => this.handleOpenInKiCad(message, uri),
+      requestRefresh: (message, uri) => this.handleRequestRefresh(message, uri),
+      viewerState: (message, uri, panel) =>
+        this.handleViewerState(message, uri, panel),
+      selectionChanged: (message, uri, panel) =>
+        this.handleSelectionChanged(message, uri, panel),
+      exportPng: (message, uri) => this.handleExportPng(message, uri),
+      exportSvg: (message, uri) => this.handleExportSvg(message, uri),
+      componentSelected: (message, uri, panel) =>
+        this.handleComponentSelected(message, uri, panel),
+      requestSvgFallback: (message, uri, panel) =>
+        this.handleRequestSvgFallback(message, uri, panel)
+    };
   private readonly disposables: vscode.Disposable[] = [];
   private readonly refreshDebounce = new Map<string, NodeJS.Timeout>();
   private readonly fileCache = new Map<string, CachedFilePayload>();
@@ -238,100 +259,9 @@ export abstract class BaseKiCanvasEditorProvider
           if (!hasType(message, VIEWER_OUTBOUND_MESSAGE_TYPES)) {
             return;
           }
-          if (message.type === 'openInKiCad') {
-            await vscode.commands.executeCommand(
-              COMMANDS.openInKiCad,
-              document.uri
-            );
-          }
-          if (message.type === 'requestRefresh') {
-            this.invalidateFileCache(document.uri);
-            await this.refreshDocument(document.uri);
-          }
-          if (message.type === 'viewerState') {
-            const info = this.panelInfo.get(webviewPanel);
-            const nextState = readViewerState(message.payload);
-            if (info && nextState) {
-              info.state = nextState;
-              await this.persistWorkspaceViewerPreferences(nextState);
-              this.viewerState.updateState(document.uri, info.state, {
-                project: this.resolveProject?.(document.uri)
-              });
-            }
-          }
-          if (message.type === 'selectionChanged') {
-            const info = this.panelInfo.get(webviewPanel);
-            const payload = readViewerSelection(message.payload);
-            if (info) {
-              info.state = {
-                ...(info.state ?? { zoom: 1, grid: false, theme: this.theme }),
-                ...payload
-              };
-              this.viewerState.updateState(document.uri, info.state, {
-                project: this.resolveProject?.(document.uri)
-              });
-            }
-          }
-          if (message.type === 'exportPng') {
-            const payload = asRecord(message.payload);
-            const dataUrl = asString(payload?.['dataUrl']);
-            if (dataUrl) {
-              await this.exportPngSnapshot(document.uri, dataUrl);
-            }
-          }
-          if (message.type === 'exportSvg') {
-            await vscode.commands.executeCommand(
-              COMMANDS.exportViewerSvg,
-              document.uri
-            );
-          }
-          if (message.type === 'componentSelected') {
-            const info = this.panelInfo.get(webviewPanel);
-            const payload = asRecord(message.payload);
-            const reference = asString(payload?.['reference']);
-            if (info) {
-              info.state = {
-                ...(info.state ?? { zoom: 1, grid: false, theme: this.theme }),
-                selectedReference: reference ?? info.state?.selectedReference
-              };
-              this.viewerState.updateState(document.uri, info.state, {
-                project: this.resolveProject?.(document.uri)
-              });
-            }
-          }
-          if (message.type === 'requestSvgFallback') {
-            const payload = asRecord(message.payload);
-            const requestId = asString(payload?.['requestId']);
-            if (!requestId) {
-              return;
-            }
-
-            try {
-              const svg = await this.svgFallbackProvider?.(document.uri);
-              await webviewPanel.webview.postMessage(
-                svg
-                  ? {
-                      type: 'svgFallback',
-                      payload: {
-                        requestId,
-                        svg
-                      }
-                    }
-                  : {
-                      type: 'svgFallbackUnavailable',
-                      payload: {
-                        requestId
-                      }
-                    }
-              );
-            } catch {
-              await webviewPanel.webview.postMessage({
-                type: 'svgFallbackUnavailable',
-                payload: {
-                  requestId
-                }
-              });
-            }
+          const handler = this.viewerMessageHandlers[message.type];
+          if (handler) {
+            await handler(message, document.uri, webviewPanel);
           }
         })
       );
@@ -345,6 +275,135 @@ export abstract class BaseKiCanvasEditorProvider
         error,
         webviewPanel.webview.cspSource
       );
+    }
+  }
+
+  private async handleOpenInKiCad(
+    _message: unknown,
+    uri: vscode.Uri
+  ): Promise<void> {
+    await vscode.commands.executeCommand(COMMANDS.openInKiCad, uri);
+  }
+
+  private async handleRequestRefresh(
+    _message: unknown,
+    uri: vscode.Uri
+  ): Promise<void> {
+    this.invalidateFileCache(uri);
+    await this.refreshDocument(uri);
+  }
+
+  private async handleViewerState(
+    message: unknown,
+    uri: vscode.Uri,
+    panel: vscode.WebviewPanel
+  ): Promise<void> {
+    const info = this.panelInfo.get(panel);
+    const nextState = readViewerState(
+      (message as { payload?: unknown }).payload
+    );
+    if (info && nextState) {
+      info.state = nextState;
+      await this.persistWorkspaceViewerPreferences(nextState);
+      this.viewerState.updateState(uri, info.state, {
+        project: this.resolveProject?.(uri)
+      });
+    }
+  }
+
+  private async handleSelectionChanged(
+    message: unknown,
+    uri: vscode.Uri,
+    panel: vscode.WebviewPanel
+  ): Promise<void> {
+    const info = this.panelInfo.get(panel);
+    const payload = readViewerSelection(
+      (message as { payload?: unknown }).payload
+    );
+    if (info) {
+      info.state = {
+        ...(info.state ?? { zoom: 1, grid: false, theme: this.theme }),
+        ...payload
+      };
+      this.viewerState.updateState(uri, info.state, {
+        project: this.resolveProject?.(uri)
+      });
+    }
+  }
+
+  private async handleExportPng(
+    message: unknown,
+    uri: vscode.Uri
+  ): Promise<void> {
+    const payload = asRecord((message as { payload?: unknown }).payload);
+    const dataUrl = asString(payload?.['dataUrl']);
+    if (dataUrl) {
+      await this.exportPngSnapshot(uri, dataUrl);
+    }
+  }
+
+  private async handleExportSvg(
+    _message: unknown,
+    uri: vscode.Uri
+  ): Promise<void> {
+    await vscode.commands.executeCommand(COMMANDS.exportViewerSvg, uri);
+  }
+
+  private async handleComponentSelected(
+    message: unknown,
+    uri: vscode.Uri,
+    panel: vscode.WebviewPanel
+  ): Promise<void> {
+    const info = this.panelInfo.get(panel);
+    const payload = asRecord((message as { payload?: unknown }).payload);
+    const reference = asString(payload?.['reference']);
+    if (info) {
+      info.state = {
+        ...(info.state ?? { zoom: 1, grid: false, theme: this.theme }),
+        selectedReference: reference ?? info.state?.selectedReference
+      };
+      this.viewerState.updateState(uri, info.state, {
+        project: this.resolveProject?.(uri)
+      });
+    }
+  }
+
+  private async handleRequestSvgFallback(
+    message: unknown,
+    uri: vscode.Uri,
+    panel: vscode.WebviewPanel
+  ): Promise<void> {
+    const payload = asRecord((message as { payload?: unknown }).payload);
+    const requestId = asString(payload?.['requestId']);
+    if (!requestId) {
+      return;
+    }
+
+    try {
+      const svg = await this.svgFallbackProvider?.(uri);
+      await panel.webview.postMessage(
+        svg
+          ? {
+              type: 'svgFallback',
+              payload: {
+                requestId,
+                svg
+              }
+            }
+          : {
+              type: 'svgFallbackUnavailable',
+              payload: {
+                requestId
+              }
+            }
+      );
+    } catch {
+      await panel.webview.postMessage({
+        type: 'svgFallbackUnavailable',
+        payload: {
+          requestId
+        }
+      });
     }
   }
 
@@ -923,9 +982,8 @@ function readKiCadEditorBackground(
 
   const themeFile = path.join(configDir, 'colors', `${selectedTheme}.json`);
   const themeRecord = readJsonRecord(themeFile);
-  const section = asRecord(
-    themeRecord?.[fileType === 'board' ? 'board' : 'schematic']
-  );
+  const sectionKey = fileType === 'board' ? 'board' : 'schematic';
+  const section = asRecord(themeRecord?.[sectionKey]);
   const background = asString(section?.['background']);
   return background ?? BUILTIN_DEFAULT_BACKGROUNDS[fileType];
 }

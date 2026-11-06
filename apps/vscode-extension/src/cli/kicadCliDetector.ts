@@ -146,6 +146,36 @@ export function getCliCandidates(
   return [...new Set(candidates)];
 }
 
+type CommandCharState = {
+  inQuotes: boolean;
+  quoteChar: string;
+  current: string;
+};
+
+type CommandCharAction = CommandCharState & { pushArg: boolean };
+
+function classifyCommandChar(
+  char: string,
+  state: CommandCharState
+): CommandCharAction {
+  if (state.inQuotes) {
+    if (char === state.quoteChar) {
+      return { ...state, inQuotes: false, pushArg: false };
+    }
+    return { ...state, current: state.current + char, pushArg: false };
+  }
+  if (char === '"' || char === "'") {
+    return { ...state, inQuotes: true, quoteChar: char, pushArg: false };
+  }
+  if (/\s/.test(char)) {
+    if (state.current.length > 0) {
+      return { ...state, current: '', pushArg: true };
+    }
+    return { ...state, pushArg: false };
+  }
+  return { ...state, current: state.current + char, pushArg: false };
+}
+
 export class KiCadCliDetector {
   private detected: DetectedKiCadCli | undefined;
   private readonly capabilityCache = new Map<string, boolean>();
@@ -433,24 +463,17 @@ export class KiCadCliDetector {
     let quoteChar = '';
 
     for (const char of cmd) {
-      if (inQuotes) {
-        if (char === quoteChar) {
-          inQuotes = false;
-        } else {
-          current += char;
-        }
-      } else {
-        if (char === '"' || char === "'") {
-          inQuotes = true;
-          quoteChar = char;
-        } else if (/\s/.test(char)) {
-          if (current.length > 0) {
-            args.push(current);
-            current = '';
-          }
-        } else {
-          current += char;
-        }
+      const action = classifyCommandChar(char, {
+        inQuotes,
+        quoteChar,
+        current
+      });
+      inQuotes = action.inQuotes;
+      quoteChar = action.quoteChar;
+      current = action.current;
+      if (action.pushArg) {
+        args.push(current);
+        current = '';
       }
     }
     if (current.length > 0) {

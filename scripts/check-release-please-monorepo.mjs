@@ -64,56 +64,15 @@ export function validateRepositoryPolicy(repoRoot = REPO_ROOT) {
   const config = readJson(repoRoot, "release-please-config.json");
   const manifest = readJson(repoRoot, ".release-please-manifest.json");
   const renovate = readJson(repoRoot, "renovate.json");
-  const packagePaths = Object.keys(config.packages ?? {}).sort();
-  const expectedPaths = Object.keys(EXPECTED_PACKAGES).sort();
+  const packagePaths = Object.keys(config.packages ?? {}).sort((a, b) => a.localeCompare(b));
+  const expectedPaths = Object.keys(EXPECTED_PACKAGES).sort((a, b) => a.localeCompare(b));
   const changelogPaths = {};
 
-  if (config["include-component-in-tag"] !== true) {
-    errors.push(
-      "release-please-config.json must set include-component-in-tag: true",
-    );
-  }
-  if (config["separate-pull-requests"] !== true) {
-    errors.push(
-      "release-please-config.json must set separate-pull-requests: true",
-    );
-  }
-  if (!sameList(packagePaths, expectedPaths)) {
-    errors.push(
-      `release-please package paths must be ${expectedPaths.join(", ")}, found ${packagePaths.join(", ")}`,
-    );
-  }
+  validateReleasePleaseConfig(config, errors);
+  validatePackagePaths(packagePaths, expectedPaths, errors);
+  validateExpectedPackages(config, expectedPaths, repoRoot, errors, changelogPaths);
 
-  for (const [packagePath, expected] of Object.entries(EXPECTED_PACKAGES)) {
-    const packageConfig = config.packages?.[packagePath];
-    if (!packageConfig) {
-      continue;
-    }
-    if (packageConfig["release-type"] !== expected.releaseType) {
-      errors.push(
-        `${packagePath} release-type must be ${expected.releaseType}`,
-      );
-    }
-    if (packageConfig["package-name"] !== expected.packageName) {
-      errors.push(
-        `${packagePath} package-name must be ${expected.packageName}`,
-      );
-    }
-    if (packageConfig.component !== expected.component) {
-      errors.push(`${packagePath} component must be ${expected.component}`);
-    }
-    if (packageConfig["changelog-path"] !== "CHANGELOG.md") {
-      errors.push(`${packagePath} changelog-path must be CHANGELOG.md`);
-    }
-
-    const changelogPath = `${packagePath}/CHANGELOG.md`;
-    changelogPaths[packagePath] = changelogPath;
-    if (!fs.existsSync(path.join(repoRoot, changelogPath))) {
-      errors.push(`${changelogPath} is required for product-scoped releases`);
-    }
-  }
-
-  const manifestPaths = Object.keys(manifest).sort();
+  const manifestPaths = Object.keys(manifest).sort((a, b) => a.localeCompare(b));
   if (!sameList(manifestPaths, expectedPaths)) {
     errors.push(
       `.release-please-manifest.json paths must be ${expectedPaths.join(", ")}, found ${manifestPaths.join(", ")}`,
@@ -147,6 +106,58 @@ export function validateRepositoryPolicy(repoRoot = REPO_ROOT) {
     productPaths: PRODUCTS,
     changelogPaths,
   };
+}
+
+function validateReleasePleaseConfig(config, errors) {
+  if (config["include-component-in-tag"] !== true) {
+    errors.push(
+      "release-please-config.json must set include-component-in-tag: true",
+    );
+  }
+  if (config["separate-pull-requests"] !== true) {
+    errors.push(
+      "release-please-config.json must set separate-pull-requests: true",
+    );
+  }
+}
+
+function validatePackagePaths(packagePaths, expectedPaths, errors) {
+  if (!sameList(packagePaths, expectedPaths)) {
+    errors.push(
+      `release-please package paths must be ${expectedPaths.join(", ")}, found ${packagePaths.join(", ")}`,
+    );
+  }
+}
+
+function validateExpectedPackages(config, expectedPaths, repoRoot, errors, changelogPaths) {
+  for (const [packagePath, expected] of Object.entries(EXPECTED_PACKAGES)) {
+    const packageConfig = config.packages?.[packagePath];
+    if (!packageConfig) {
+      continue;
+    }
+    if (packageConfig["release-type"] !== expected.releaseType) {
+      errors.push(
+        `${packagePath} release-type must be ${expected.releaseType}`,
+      );
+    }
+    if (packageConfig["package-name"] !== expected.packageName) {
+      errors.push(
+        `${packagePath} package-name must be ${expected.packageName}`,
+      );
+    }
+    if (packageConfig.component !== expected.component) {
+      errors.push(`${packagePath} component must be ${expected.component}`);
+    }
+    if (packageConfig["changelog-path"] !== "CHANGELOG.md") {
+      errors.push(`${packagePath} changelog-path must be CHANGELOG.md`);
+    }
+
+    const changelogPath = `${packagePath}/CHANGELOG.md`;
+    changelogPaths[packagePath] = changelogPath;
+    if (!fs.existsSync(path.join(repoRoot, changelogPath))) {
+      errors.push(`${changelogPath} is required for product-scoped releases`);
+    }
+  }
 }
 
 export function parseConventionalSubject(subject) {
@@ -388,7 +399,7 @@ export function parseReleasePleaseDryRun(output) {
         .map((match) => match[1])
         .filter((file) => SNAPSHOT_UPDATE_PATHS.includes(file)),
     ),
-  ].sort();
+  ].sort((a, b) => a.localeCompare(b));
 
   return {
     pullRequestCount,

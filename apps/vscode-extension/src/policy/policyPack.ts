@@ -255,61 +255,105 @@ function evaluateRule(
 ): { status: PolicyStatus; detail: string } {
   switch (rule.type) {
     case 'maxDrcViolations':
-    case 'maxErcViolations': {
-      const actual =
-        rule.type === 'maxDrcViolations'
-          ? context.drcViolations
-          : context.ercViolations;
-      if (typeof actual !== 'number') {
-        return { status: 'unknown', detail: 'No DRC/ERC data was provided.' };
-      }
-      return actual <= rule.max
-        ? { status: 'pass', detail: `${actual} ≤ ${rule.max}` }
-        : { status: 'fail', detail: `${actual} > ${rule.max}` };
-    }
-    case 'requiredFiles': {
-      if (!context.presentFiles) {
-        return { status: 'unknown', detail: 'No file listing was provided.' };
-      }
-      const present = new Set(context.presentFiles);
-      const missing = rule.files.filter((file) => !present.has(file));
-      return missing.length === 0
-        ? { status: 'pass', detail: 'All required files present.' }
-        : { status: 'fail', detail: `Missing: ${missing.join(', ')}` };
-    }
-    case 'requiredArtifacts': {
-      if (!context.artifacts) {
-        return {
-          status: 'unknown',
-          detail: 'No artifact listing was provided.'
-        };
-      }
-      const present = new Set(context.artifacts);
-      const missing = rule.artifacts.filter(
-        (artifact) => !present.has(artifact)
-      );
-      return missing.length === 0
-        ? { status: 'pass', detail: 'All required artifacts present.' }
-        : { status: 'fail', detail: `Missing: ${missing.join(', ')}` };
-    }
-    case 'forbiddenFootprints': {
-      if (!context.footprints) {
-        return {
-          status: 'unknown',
-          detail: 'No footprint listing was provided.'
-        };
-      }
-      const offenders = context.footprints.filter((footprint) =>
-        rule.patterns.some((pattern) => matchesPattern(footprint, pattern))
-      );
-      return offenders.length === 0
-        ? { status: 'pass', detail: 'No forbidden footprints found.' }
-        : {
-            status: 'fail',
-            detail: `Found: ${[...new Set(offenders)].join(', ')}`
-          };
-    }
+    case 'maxErcViolations':
+      return evaluateMaxViolationsRule(rule, context);
+    case 'requiredFiles':
+      return evaluateRequiredFilesRule(rule, context);
+    case 'requiredArtifacts':
+      return evaluateRequiredArtifactsRule(rule, context);
+    case 'forbiddenFootprints':
+      return evaluateForbiddenFootprintsRule(rule, context);
+    default:
+      return {
+        status: 'unknown',
+        detail: `Unknown rule type: ${(rule as { type: string }).type}`
+      };
   }
+}
+
+function evaluateMaxViolationsRule(
+  rule: PolicyRule,
+  context: PolicyContext
+): { status: PolicyStatus; detail: string } {
+  const maxRule = rule as {
+    type: 'maxDrcViolations' | 'maxErcViolations';
+    max: number;
+  };
+  const actual =
+    maxRule.type === 'maxDrcViolations'
+      ? context.drcViolations
+      : context.ercViolations;
+  if (typeof actual !== 'number') {
+    return { status: 'unknown', detail: 'No DRC/ERC data was provided.' };
+  }
+  return actual <= maxRule.max
+    ? { status: 'pass', detail: `${actual} ≤ ${maxRule.max}` }
+    : { status: 'fail', detail: `${actual} > ${maxRule.max}` };
+}
+
+function evaluateRequiredFilesRule(
+  rule: PolicyRule,
+  context: PolicyContext
+): { status: PolicyStatus; detail: string } {
+  const filesRule = rule as { type: 'requiredFiles'; files: string[] };
+  if (!context.presentFiles) {
+    return { status: 'unknown', detail: 'No file listing was provided.' };
+  }
+  const present = new Set(context.presentFiles);
+  const missing = filesRule.files.filter((file) => !present.has(file));
+  return missing.length === 0
+    ? { status: 'pass', detail: 'All required files present.' }
+    : { status: 'fail', detail: `Missing: ${missing.join(', ')}` };
+}
+
+function evaluateRequiredArtifactsRule(
+  rule: PolicyRule,
+  context: PolicyContext
+): { status: PolicyStatus; detail: string } {
+  const artifactsRule = rule as {
+    type: 'requiredArtifacts';
+    artifacts: string[];
+  };
+  if (!context.artifacts) {
+    return {
+      status: 'unknown',
+      detail: 'No artifact listing was provided.'
+    };
+  }
+  const present = new Set(context.artifacts);
+  const missing = artifactsRule.artifacts.filter(
+    (artifact) => !present.has(artifact)
+  );
+  return missing.length === 0
+    ? { status: 'pass', detail: 'All required artifacts present.' }
+    : { status: 'fail', detail: `Missing: ${missing.join(', ')}` };
+}
+
+function evaluateForbiddenFootprintsRule(
+  rule: PolicyRule,
+  context: PolicyContext
+): { status: PolicyStatus; detail: string } {
+  const footprintsRule = rule as {
+    type: 'forbiddenFootprints';
+    patterns: string[];
+  };
+  if (!context.footprints) {
+    return {
+      status: 'unknown',
+      detail: 'No footprint listing was provided.'
+    };
+  }
+  const offenders = context.footprints.filter((footprint) =>
+    footprintsRule.patterns.some((pattern) =>
+      matchesPattern(footprint, pattern)
+    )
+  );
+  return offenders.length === 0
+    ? { status: 'pass', detail: 'No forbidden footprints found.' }
+    : {
+        status: 'fail',
+        detail: `Found: ${[...new Set(offenders)].join(', ')}`
+      };
 }
 
 export function evaluatePolicyPack(
@@ -346,8 +390,15 @@ export function evaluatePolicyPack(
 }
 
 export function renderPolicyReport(evaluation: PolicyEvaluation): string {
-  const icon = (status: PolicyStatus): string =>
-    status === 'pass' ? '✅' : status === 'fail' ? '❌' : '❔';
+  const icon = (status: PolicyStatus): string => {
+    if (status === 'pass') {
+      return '✅';
+    }
+    if (status === 'fail') {
+      return '❌';
+    }
+    return '❔';
+  };
   const lines: string[] = [];
   lines.push('# Policy Pack Result', '');
   lines.push(`- Pack: ${evaluation.pack.name} (${evaluation.pack.version})`);
@@ -362,7 +413,7 @@ export function renderPolicyReport(evaluation: PolicyEvaluation): string {
   );
   for (const result of evaluation.results) {
     lines.push(
-      `| ${result.id} | ${result.severity} | ${icon(result.status)} ${result.status} | ${result.detail.replace(/\\/g, '\\\\').replace(/\|/g, '\\|')} |`
+      `| ${result.id} | ${result.severity} | ${icon(result.status)} ${result.status} | ${result.detail.replaceAll('\\', '\\\\').replaceAll('|', '\\|')} |`
     );
   }
   lines.push('');

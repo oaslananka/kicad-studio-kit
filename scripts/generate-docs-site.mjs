@@ -56,12 +56,12 @@ function resolveMessage(value, messages) {
 
 function markdownEscape(value) {
   return String(value ?? "")
-    .replace(/&/gu, "&amp;")
-    .replace(/</gu, "&lt;")
-    .replace(/>/gu, "&gt;")
-    .replace(/\\/gu, "\\\\")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\\", "\\\\")
     .replace(/\r?\n/gu, "<br>")
-    .replace(/\|/gu, "\\|");
+    .replaceAll("|", "\\|");
 }
 
 function renderTable(headers, rows) {

@@ -142,87 +142,116 @@ export class McpClient {
     const install = await this.detectInstall();
     const endpoint = this.getEndpoint();
     if (!endpoint) {
-      // No HTTP endpoint configured — check for VS Code stdio MCP config.
-      if (hasVsCodeMcpJsonWithKicad()) {
-        return this.setState({
-          kind: 'VsCodeStdio',
-          available: true,
-          connected: true,
-          install,
-          message:
-            'kicad-mcp-pro configured via .vscode/mcp.json (VS Code stdio).'
-        });
-      }
-      return this.setState({
-        kind: install.found ? 'Disconnected' : 'NotInstalled',
-        available: install.found,
-        connected: false,
-        install
-      });
+      return this.handleNoEndpoint(install);
     }
 
     try {
-      await this.ensureProtocolReady({ force: true });
-      if (this.state.kind === 'Incompatible') {
-        return this.setState({
-          ...this.state,
-          available: install.found,
-          connected: false,
-          install
-        });
-      }
-      const toolDiscovery = await this.rpc('tools/list', {});
-      const toolDiscoveryValidation = validateMcpToolDiscovery(toolDiscovery);
-      if (!toolDiscoveryValidation.valid) {
-        throw new Error(
-          `MCP tools/list response failed protocol schema validation: ${formatProtocolValidationErrors(
-            toolDiscoveryValidation.errors
-          )}`
-        );
-      }
-      return this.setState({
-        kind: 'Connected',
-        available: install.found,
-        connected: true,
-        install,
-        server: this.state.server,
-        message: this.state.message
-      });
+      return await this.runHttpConnectionTest(install);
     } catch (error) {
       this.logger.debug(
         `MCP connection test failed: ${error instanceof Error ? error.message : String(error)}`
       );
       if (this.state.connected && this.state.server) {
-        return this.setState({
-          kind: 'Degraded',
-          available: install.found,
-          connected: false,
-          install,
-          server: this.state.server,
-          message: `MCP protocol contract failed: ${error instanceof Error ? error.message : String(error)}`
-        });
+        return this.setDegradedState(install, error);
       }
-      // HTTP endpoint unreachable — fall back to VS Code stdio detection.
       if (hasVsCodeMcpJsonWithKicad()) {
-        return this.setState({
-          kind: 'VsCodeStdio',
-          available: true,
-          connected: true,
-          install,
-          server: this.state.server,
-          message:
-            'kicad-mcp-pro configured via .vscode/mcp.json (VS Code stdio). HTTP endpoint unavailable.'
-        });
+        return this.setVsCodeStdioState(install, error);
       }
+      return this.setDisconnectedOrNotInstalledState(install, error);
+    }
+  }
+
+  private handleNoEndpoint(install: McpInstallStatus): McpConnectionState {
+    if (hasVsCodeMcpJsonWithKicad()) {
       return this.setState({
-        kind: install.found ? 'Disconnected' : 'NotInstalled',
-        available: install.found,
-        connected: false,
+        kind: 'VsCodeStdio',
+        available: true,
+        connected: true,
         install,
-        server: this.state.server,
-        message: error instanceof Error ? error.message : String(error)
+        message:
+          'kicad-mcp-pro configured via .vscode/mcp.json (VS Code stdio).'
       });
     }
+    return this.setState({
+      kind: install.found ? 'Disconnected' : 'NotInstalled',
+      available: install.found,
+      connected: false,
+      install
+    });
+  }
+
+  private async runHttpConnectionTest(
+    install: McpInstallStatus
+  ): Promise<McpConnectionState> {
+    await this.ensureProtocolReady({ force: true });
+    if (this.state.kind === 'Incompatible') {
+      return this.setState({
+        ...this.state,
+        available: install.found,
+        connected: false,
+        install
+      });
+    }
+    const toolDiscovery = await this.rpc('tools/list', {});
+    const toolDiscoveryValidation = validateMcpToolDiscovery(toolDiscovery);
+    if (!toolDiscoveryValidation.valid) {
+      throw new Error(
+        `MCP tools/list response failed protocol schema validation: ${formatProtocolValidationErrors(
+          toolDiscoveryValidation.errors
+        )}`
+      );
+    }
+    return this.setState({
+      kind: 'Connected',
+      available: install.found,
+      connected: true,
+      install,
+      server: this.state.server,
+      message: this.state.message
+    });
+  }
+
+  private setDegradedState(
+    install: McpInstallStatus,
+    error: unknown
+  ): McpConnectionState {
+    return this.setState({
+      kind: 'Degraded',
+      available: install.found,
+      connected: false,
+      install,
+      server: this.state.server,
+      message: `MCP protocol contract failed: ${error instanceof Error ? error.message : String(error)}`
+    });
+  }
+
+  private setVsCodeStdioState(
+    install: McpInstallStatus,
+    _error: unknown
+  ): McpConnectionState {
+    return this.setState({
+      kind: 'VsCodeStdio',
+      available: true,
+      connected: true,
+      install,
+      server: this.state.server,
+      message:
+        'kicad-mcp-pro configured via .vscode/mcp.json (VS Code stdio). HTTP endpoint unavailable.'
+    });
+  }
+
+  private setDisconnectedOrNotInstalledState(
+    install: McpInstallStatus,
+    error: unknown
+  ): McpConnectionState {
+    return this.setState({
+      kind: install.found ? 'Disconnected' : 'NotInstalled',
+      available: install.found,
+      connected: false,
+      install,
+      server: this.state.server,
+      message: error instanceof Error ? error.message : String(error)
+    });
   }
 
   async pushContext(context: StudioContext): Promise<void> {
@@ -340,9 +369,7 @@ export class McpClient {
 
   async fetchFixQueue(args: Record<string, unknown> = {}): Promise<FixItem[]> {
     const resource = await this.readResource('kicad://project/fix_queue');
-    const items =
-      (Array.isArray(resource?.['items']) ? resource['items'] : undefined) ??
-      (Array.isArray(resource?.['fixes']) ? resource['fixes'] : undefined);
+    const items = findFixQueueItems(resource);
     const textItems = parseFixQueueText(
       typeof resource?.['text'] === 'string' ? resource['text'] : undefined
     );
@@ -716,44 +743,16 @@ function toStudioContextToolArgs(
 }
 
 function normalizeFixItem(value: unknown, index: number): FixItem {
-  const item = typeof value === 'object' && value !== null ? value : {};
-  const record = item as Record<string, unknown>;
-  const source =
-    record['source'] === 'mcp' ||
-    record['source'] === 'file-backed' ||
-    record['source'] === 'live-ipc' ||
-    record['source'] === 'cached'
-      ? record['source']
-      : undefined;
+  const record = normalizeFixItemRecord(value);
+  const source = normalizeFixSource(record);
   return {
-    id: String(record['id'] ?? `fix-${index + 1}`),
-    title:
-      typeof record['title'] === 'string'
-        ? record['title']
-        : typeof record['description'] === 'string'
-          ? record['description']
-          : undefined,
-    description: String(
-      record['description'] ?? record['title'] ?? `Suggested fix ${index + 1}`
-    ),
-    severity:
-      record['severity'] === 'error' ||
-      record['severity'] === 'warning' ||
-      record['severity'] === 'info'
-        ? record['severity']
-        : 'info',
-    tool: String(record['tool'] ?? record['name'] ?? 'unknown_tool'),
-    args:
-      typeof record['args'] === 'object' && record['args'] !== null
-        ? (record['args'] as Record<string, unknown>)
-        : {},
-    status:
-      record['status'] === 'pending' ||
-      record['status'] === 'applying' ||
-      record['status'] === 'done' ||
-      record['status'] === 'failed'
-        ? record['status']
-        : 'pending',
+    id: normalizeFixId(record, index),
+    title: normalizeFixTitle(record),
+    description: normalizeFixDescription(record, index),
+    severity: normalizeFixSeverity(record),
+    tool: normalizeFixTool(record),
+    args: normalizeFixArgs(record),
+    status: normalizeFixStatus(record),
     ...(typeof record['preview'] === 'string'
       ? { preview: record['preview'] }
       : {}),
@@ -762,16 +761,94 @@ function normalizeFixItem(value: unknown, index: number): FixItem {
       ? { disabledReason: record['disabledReason'] }
       : {}),
     ...(typeof record['path'] === 'string' ? { path: record['path'] } : {}),
-    ...(typeof record['line'] === 'number'
-      ? { line: record['line'] }
-      : typeof record['line'] === 'string' &&
-          Number.isFinite(Number(record['line']))
-        ? { line: Number(record['line']) }
-        : {}),
+    ...normalizeFixLine(record),
     ...(typeof record['confidence'] === 'number'
       ? { confidence: record['confidence'] }
       : {})
   };
+}
+
+type FixItemRecord = Record<string, unknown>;
+
+function normalizeFixItemRecord(value: unknown): FixItemRecord {
+  const item = typeof value === 'object' && value !== null ? value : {};
+  return item as FixItemRecord;
+}
+
+function normalizeFixSource(record: FixItemRecord): FixItem['source'] {
+  return record['source'] === 'mcp' ||
+    record['source'] === 'file-backed' ||
+    record['source'] === 'live-ipc' ||
+    record['source'] === 'cached'
+    ? (record['source'] as FixItem['source'])
+    : undefined;
+}
+
+function normalizeFixId(record: FixItemRecord, index: number): string {
+  return String(record['id'] ?? `fix-${index + 1}`);
+}
+
+function normalizeFixTitle(record: FixItemRecord): string | undefined {
+  if (typeof record['title'] === 'string') {
+    return record['title'];
+  }
+  if (typeof record['description'] === 'string') {
+    return record['description'];
+  }
+  return undefined;
+}
+
+function normalizeFixDescription(record: FixItemRecord, index: number): string {
+  return String(
+    record['description'] ?? record['title'] ?? `Suggested fix ${index + 1}`
+  );
+}
+
+function normalizeFixSeverity(record: FixItemRecord): FixItem['severity'] {
+  if (
+    record['severity'] === 'error' ||
+    record['severity'] === 'warning' ||
+    record['severity'] === 'info'
+  ) {
+    return record['severity'] as FixItem['severity'];
+  }
+  return 'info';
+}
+
+function normalizeFixTool(record: FixItemRecord): string {
+  return String(record['tool'] ?? record['name'] ?? 'unknown_tool');
+}
+
+function normalizeFixArgs(record: FixItemRecord): Record<string, unknown> {
+  if (typeof record['args'] === 'object' && record['args'] !== null) {
+    return record['args'] as Record<string, unknown>;
+  }
+  return {};
+}
+
+function normalizeFixStatus(record: FixItemRecord): FixItem['status'] {
+  if (
+    record['status'] === 'pending' ||
+    record['status'] === 'applying' ||
+    record['status'] === 'done' ||
+    record['status'] === 'failed'
+  ) {
+    return record['status'] as FixItem['status'];
+  }
+  return 'pending';
+}
+
+function normalizeFixLine(record: FixItemRecord): { line?: number } {
+  if (typeof record['line'] === 'number') {
+    return { line: record['line'] };
+  }
+  if (
+    typeof record['line'] === 'string' &&
+    Number.isFinite(Number(record['line']))
+  ) {
+    return { line: Number(record['line']) };
+  }
+  return {};
 }
 
 function parseFixQueueText(text: string | undefined): FixItem[] | undefined {
@@ -835,6 +912,16 @@ function severityFromText(value: string): FixItem['severity'] {
     return 'warning';
   }
   return 'info';
+}
+
+function findFixQueueItems(resource: unknown): unknown[] | undefined {
+  const items =
+    resource && typeof resource === 'object'
+      ? (resource as Record<string, unknown>)
+      : {};
+  const arrayItems = Array.isArray(items['items']) ? items['items'] : undefined;
+  const fixes = Array.isArray(items['fixes']) ? items['fixes'] : undefined;
+  return arrayItems ?? fixes;
 }
 
 function normalizeCapabilities(

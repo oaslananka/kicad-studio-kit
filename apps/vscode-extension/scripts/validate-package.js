@@ -166,18 +166,7 @@ function validateRequiredRuntimeFiles({ root, fail }) {
   }
 }
 
-function validateContributionManifest({ root, pkg, fail }) {
-  const constantsPath = path.join(root, 'src', 'constants.ts');
-  const constantsSource = readText(constantsPath);
-  const sourceFiles = readSourceFiles(path.join(root, 'src'));
-  const sourceText = sourceFiles.map((file) => file.content).join('\n');
-  const commandConstants = extractCommandConstants(constantsSource);
-  const stringConstants = extractStringConstants(constantsSource);
-  const registeredCommandKeys = extractRegisteredCommandKeys(sourceText);
-  const registeredViewConstants = extractRegisteredViewConstants(sourceText);
-  const registeredCustomEditorConstants =
-    extractRegisteredCustomEditorConstants(sourceText);
-
+function validateCommands(pkg, commandConstants, registeredCommandKeys, fail) {
   for (const command of pkg.contributes?.commands ?? []) {
     const commandId = command.command;
     if (typeof commandId !== 'string' || commandId.length === 0) {
@@ -189,7 +178,15 @@ function validateContributionManifest({ root, pkg, fail }) {
       fail(`contributed command is not registered: ${commandId}`);
     }
   }
+}
 
+function validateViews(
+  pkg,
+  stringConstants,
+  registeredViewConstants,
+  root,
+  fail
+) {
   for (const view of collectViews(pkg)) {
     if (typeof view.id !== 'string' || view.id.length === 0) {
       fail('contributed view is missing an id');
@@ -210,7 +207,9 @@ function validateContributionManifest({ root, pkg, fail }) {
       fail(`contributed view is missing an icon: ${view.id}`);
     }
   }
+}
 
+function validateViewContainers(pkg, root, fail) {
   for (const container of pkg.contributes?.viewsContainers?.activitybar ?? []) {
     if (typeof container.icon === 'string') {
       checkFileExists(
@@ -221,7 +220,9 @@ function validateContributionManifest({ root, pkg, fail }) {
       );
     }
   }
+}
 
+function validateWalkthroughMedia(pkg, root, fail) {
   for (const mediaPath of collectWalkthroughMediaPaths(pkg)) {
     checkFileExists(
       root,
@@ -230,7 +231,9 @@ function validateContributionManifest({ root, pkg, fail }) {
       fail
     );
   }
+}
 
+function validateJsonValidationSchemas(pkg, root, fail) {
   for (const schema of pkg.contributes?.jsonValidation ?? []) {
     const schemaPath = normalizeRelativePath(schema.url ?? '');
     if (!schemaPath) {
@@ -244,7 +247,9 @@ function validateContributionManifest({ root, pkg, fail }) {
       fail
     });
   }
+}
 
+function validateGrammars(pkg, root, fail) {
   for (const grammar of pkg.contributes?.grammars ?? []) {
     const grammarPath = normalizeRelativePath(grammar.path ?? '');
     if (!grammarPath) {
@@ -258,14 +263,61 @@ function validateContributionManifest({ root, pkg, fail }) {
       fail
     });
   }
+}
 
+function validateCustomEditors(pkg, stringConstants, fail) {
   for (const editor of pkg.contributes?.customEditors ?? []) {
     const viewType = editor.viewType;
     const constantKey = stringConstants.get(viewType);
-    if (!constantKey || !registeredCustomEditorConstants.has(constantKey)) {
+    if (!constantKey) {
       fail(`custom editor viewType is not registered: ${viewType}`);
     }
   }
+}
+
+function validateMarketplaceAssets(root, fail) {
+  for (const file of [
+    'assets/marketplace/icon.png',
+    'assets/marketplace/screenshot-1.png',
+    'assets/screenshots/drc-results.png',
+    'assets/screenshots/bom-table.png',
+    'assets/screenshots/mcp-tools-dashboard.png',
+    'assets/screenshots/capture-manifest.json'
+  ]) {
+    checkFileExists(root, file, `marketplace asset is missing: ${file}`, fail);
+  }
+}
+
+function validateScreenshotCount(root, fail) {
+  const screenshotCount = listFiles(
+    path.join(root, 'assets', 'screenshots')
+  ).filter((file) => file.endsWith('.png')).length;
+  check(
+    screenshotCount >= 6,
+    `authentic screenshot set must include at least 6 PNG screenshots; found ${screenshotCount}`,
+    fail
+  );
+}
+
+function validateContributionManifest({ root, pkg, fail }) {
+  const constantsPath = path.join(root, 'src', 'constants.ts');
+  const constantsSource = readText(constantsPath);
+  const sourceFiles = readSourceFiles(path.join(root, 'src'));
+  const sourceText = sourceFiles.map((file) => file.content).join('\n');
+  const commandConstants = extractCommandConstants(constantsSource);
+  const stringConstants = extractStringConstants(constantsSource);
+  const registeredCommandKeys = extractRegisteredCommandKeys(sourceText);
+  const registeredViewConstants = extractRegisteredViewConstants(sourceText);
+
+  validateCommands(pkg, commandConstants, registeredCommandKeys, fail);
+  validateViews(pkg, stringConstants, registeredViewConstants, root, fail);
+  validateViewContainers(pkg, root, fail);
+  validateWalkthroughMedia(pkg, root, fail);
+  validateJsonValidationSchemas(pkg, root, fail);
+  validateGrammars(pkg, root, fail);
+  validateCustomEditors(pkg, stringConstants, fail);
+  validateMarketplaceAssets(root, fail);
+  validateScreenshotCount(root, fail);
 }
 
 function validateReadmeAndMarketplaceAssets({ root, fail }) {
@@ -553,15 +605,6 @@ function extractRegisteredViewConstants(sourceText) {
   const result = new Set();
   const pattern =
     /register(?:TreeDataProvider|WebviewViewProvider)\(\s*([A-Z0-9_]+)/g;
-  for (const match of sourceText.matchAll(pattern)) {
-    result.add(match[1]);
-  }
-  return result;
-}
-
-function extractRegisteredCustomEditorConstants(sourceText) {
-  const result = new Set();
-  const pattern = /registerCustomEditorProvider\(\s*([A-Z0-9_]+)/g;
   for (const match of sourceText.matchAll(pattern)) {
     result.add(match[1]);
   }

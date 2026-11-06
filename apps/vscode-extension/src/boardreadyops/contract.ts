@@ -69,18 +69,11 @@ export function discoverBoardReadyOpsContract(
     };
   }
 
-  const tool =
-    value && typeof value === 'object'
-      ? (value as { tool?: unknown }).tool
-      : undefined;
+  const tool = extractTool(value);
   const toolName =
-    tool && typeof tool === 'object'
-      ? (tool as { name?: unknown }).name
-      : undefined;
-  const checks =
-    value && typeof value === 'object'
-      ? (value as { checks?: unknown }).checks
-      : undefined;
+    tool && typeof tool === 'object' ? extractToolName(tool) : undefined;
+  const checks = extractChecks(value);
+
   if (
     toolName !== 'boardreadyops' ||
     !Array.isArray(checks) ||
@@ -171,6 +164,27 @@ const READINESS_CONTRACT_ERROR =
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function extractTool(value: unknown): unknown {
+  if (value && typeof value === 'object') {
+    return (value as { tool?: unknown }).tool;
+  }
+  return undefined;
+}
+
+function extractToolName(tool: unknown): string | undefined {
+  if (tool && typeof tool === 'object') {
+    return (tool as { name?: string }).name;
+  }
+  return undefined;
+}
+
+function extractChecks(value: unknown): unknown {
+  if (value && typeof value === 'object') {
+    return (value as { checks?: unknown }).checks;
+  }
+  return undefined;
 }
 
 function isNonNegativeInteger(value: unknown): value is number {

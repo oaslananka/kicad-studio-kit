@@ -14,20 +14,10 @@ export function extractMcpToolCalls(markdown: string): McpToolCall[] {
       const parsed = JSON.parse(source) as unknown;
       const values = Array.isArray(parsed) ? parsed : [parsed];
       for (const value of values) {
-        if (!isRecord(value)) {
-          continue;
+        const toolCall = parseMcpToolCallValue(value);
+        if (toolCall) {
+          toolCalls.push(toolCall);
         }
-        if (typeof value['name'] !== 'string') {
-          continue;
-        }
-        const argumentsValue = value['arguments'];
-        toolCalls.push({
-          name: value['name'],
-          arguments: isRecord(argumentsValue) ? argumentsValue : {},
-          ...(typeof value['preview'] === 'string'
-            ? { preview: value['preview'] }
-            : {})
-        });
       }
     } catch {
       // Malformed MCP blocks are intentionally ignored so surrounding markdown
@@ -36,4 +26,21 @@ export function extractMcpToolCalls(markdown: string): McpToolCall[] {
   }
 
   return toolCalls;
+}
+
+function parseMcpToolCallValue(value: unknown): McpToolCall | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  if (typeof value['name'] !== 'string') {
+    return undefined;
+  }
+  const argumentsValue = value['arguments'];
+  return {
+    name: value['name'],
+    arguments: isRecord(argumentsValue) ? argumentsValue : {},
+    ...(typeof value['preview'] === 'string'
+      ? { preview: value['preview'] }
+      : {})
+  };
 }

@@ -27,7 +27,7 @@ async function main() {
   const files = fs
     .readdirSync(workflowsDir)
     .filter((file) => file.endsWith('.yml') || file.endsWith('.yaml'))
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
 
   const results = [];
   for (const file of files) {

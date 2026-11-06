@@ -16,15 +16,16 @@ export async function discoverKiCadProjects(
   workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined
 ): Promise<ProjectContext[]> {
   const folders = workspaceFolders ?? [];
-  const projects: ProjectContext[] = [];
-
-  for (const folder of folders) {
-    const workspaceFolder = path.resolve(folder.uri.fsPath);
-    const projectFiles = await collectProjectFiles(workspaceFolder);
-    for (const projectFile of projectFiles) {
-      projects.push(createProjectContext(workspaceFolder, projectFile));
-    }
-  }
+  const projectFolders = await Promise.all(
+    folders.map(async (folder) => {
+      const workspaceFolder = path.resolve(folder.uri.fsPath);
+      const projectFiles = await collectProjectFiles(workspaceFolder);
+      return projectFiles.map((projectFile) =>
+        createProjectContext(workspaceFolder, projectFile)
+      );
+    })
+  );
+  const projects = projectFolders.flat();
 
   return projects.sort((left, right) =>
     pathComparisonKey(left.projectFile).localeCompare(
@@ -46,7 +47,9 @@ export function pickActiveProject(
     options.previousActiveProjectId,
     options.persistedActiveProjectId
   ]) {
-    const match = id ? projects.find((project) => project.id === id) : undefined;
+    const match = id
+      ? projects.find((project) => project.id === id)
+      : undefined;
     if (match) {
       return cloneProjectContext(match);
     }
@@ -182,7 +185,11 @@ function shouldIgnoreFile(name: string): boolean {
 
 function isWithinDirectory(rootPath: string, filePath: string): boolean {
   const relative = path.relative(rootPath, filePath);
-  return Boolean(relative) && !relative.startsWith('..') && !path.isAbsolute(relative);
+  return (
+    Boolean(relative) &&
+    !relative.startsWith('..') &&
+    !path.isAbsolute(relative)
+  );
 }
 
 function samePath(left: string, right: string): boolean {

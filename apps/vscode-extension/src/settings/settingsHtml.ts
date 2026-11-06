@@ -47,7 +47,7 @@ export interface SettingsHtmlOptions {
 
 export function buildSettingsHtml(options: SettingsHtmlOptions): string {
   const nonce = createNonce();
-  const stateJson = JSON.stringify(options.state).replace(/</g, '\\u003c');
+  const stateJson = JSON.stringify(options.state).replaceAll('<', '\\u003c');
   const mcpIntegrationDocsUrlJson = JSON.stringify(
     DOCUMENTATION_URLS.mcpIntegration
   );
@@ -128,19 +128,90 @@ export function buildSettingsHtml(options: SettingsHtmlOptions): string {
       byId('cli-health-label').textContent = cli ? cli.versionLabel : 'Not detected';
       byId('cli-health-detail').textContent = cli ? cli.path + ' (' + cli.source + ')' : 'Run detection or configure the CLI path in VS Code Settings.';
       const ai = state.ai || {};
-      const aiStatus = ai.healthy === true ? 'Healthy' : ai.healthy === false ? 'Connection failed' : ai.configured ? 'Configured, not tested' : 'Not configured';
+      let aiStatus: string;
+      if (ai.healthy === true) {
+        aiStatus = 'Healthy';
+      } else if (ai.healthy === false) {
+        aiStatus = 'Connection failed';
+      } else if (ai.configured) {
+        aiStatus = 'Configured, not tested';
+      } else {
+        aiStatus = 'Not configured';
+      }
       byId('ai-health-label').textContent = aiStatus;
-      byId('ai-health-detail').textContent = (ai.provider && ai.provider !== 'none' ? 'Provider: ' + ai.provider + '. ' : '') + (state.aiKeyStored ? 'SecretStorage credential present.' : 'No SecretStorage credential present.');
+      const aiProviderDetail = ai.provider && ai.provider !== 'none'
+        ? 'Provider: ' + ai.provider + '. '
+        : '';
+      const aiKeyDetail = state.aiKeyStored
+        ? 'SecretStorage credential present.'
+        : 'No SecretStorage credential present.';
+      byId('ai-health-detail').textContent = aiProviderDetail + aiKeyDetail;
       const mcp = state.mcp || {};
-      byId('mcp-health-label').textContent = mcp.connected ? 'Connected at last check' : mcp.available ? 'Available, disconnected' : 'Unavailable';
-      byId('mcp-health-detail').textContent = [mcp.version ? 'Version ' + mcp.version : '', mcp.profile ? 'profile ' + mcp.profile : '', mcp.compat ? 'compatibility ' + mcp.compat : '', mcp.kind || '', mcp.connected ? 'Recheck to verify current availability' : 'Last known server details may be cached'].filter(Boolean).join(' · ') || 'Configure or start kicad-mcp-pro to enable MCP capabilities.';
+      let mcpLabel: string;
+      if (mcp.connected) {
+        mcpLabel = 'Connected at last check';
+      } else if (mcp.available) {
+        mcpLabel = 'Available, disconnected';
+      } else {
+        mcpLabel = 'Unavailable';
+      }
+      byId('mcp-health-label').textContent = mcpLabel;
+      const mcpDetailItems = [];
+      if (mcp.version) {
+        mcpDetailItems.push('Version ' + mcp.version);
+      }
+      if (mcp.profile) {
+        mcpDetailItems.push('profile ' + mcp.profile);
+      }
+      if (mcp.compat) {
+        mcpDetailItems.push('compatibility ' + mcp.compat);
+      }
+      if (mcp.kind) {
+        mcpDetailItems.push(mcp.kind);
+      }
+      mcpDetailItems.push(mcp.connected ? 'Recheck to verify current availability' : 'Last known server details may be cached');
+      byId('mcp-health-detail').textContent = mcpDetailItems.join(' · ') || 'Configure or start kicad-mcp-pro to enable MCP capabilities.';
       const boardReadyOps = state.boardReadyOps || {};
-      byId('boardreadyops-health-label').textContent = boardReadyOps.installed ? (boardReadyOps.healthy ? 'Healthy' : 'Needs attention') : 'Unavailable';
-      byId('boardreadyops-health-detail').textContent = [boardReadyOps.version ? 'Version ' + boardReadyOps.version : '', typeof boardReadyOps.toolCount === 'number' ? boardReadyOps.toolCount + ' rules' : '', boardReadyOps.message || ''].filter(Boolean).join(' · ') || 'Install BoardReadyOps or refresh health after opening a trusted workspace.';
+      let boardReadyOpsLabel: string;
+      if (!boardReadyOps.installed) {
+        boardReadyOpsLabel = 'Unavailable';
+      } else if (boardReadyOps.healthy) {
+        boardReadyOpsLabel = 'Healthy';
+      } else {
+        boardReadyOpsLabel = 'Needs attention';
+      }
+      byId('boardreadyops-health-label').textContent = boardReadyOpsLabel;
+      const boardReadyOpsDetailItems = [];
+      if (boardReadyOps.version) {
+        boardReadyOpsDetailItems.push('Version ' + boardReadyOps.version);
+      }
+      if (typeof boardReadyOps.toolCount === 'number') {
+        boardReadyOpsDetailItems.push(boardReadyOps.toolCount + ' rules');
+      }
+      if (boardReadyOps.message) {
+        boardReadyOpsDetailItems.push(boardReadyOps.message);
+      }
+      byId('boardreadyops-health-detail').textContent = boardReadyOpsDetailItems.join(' · ') || 'Install BoardReadyOps or refresh health after opening a trusted workspace.';
       const viewer = state.viewer || { status: 'idle', engines: [], openCount: 0 };
-      byId('viewer-health-label').textContent = viewer.status === 'error' ? 'Error' : viewer.status === 'ready' ? 'Ready' : viewer.status === 'loading' ? 'Loading' : 'Idle';
-      byId('viewer-health-detail').textContent = viewer.error || [(viewer.engines || []).join(', '), viewer.openCount ? viewer.openCount + ' open viewer' + (viewer.openCount === 1 ? '' : 's') : 'No open viewer'].filter(Boolean).join(' · ');
-      byId('octopart-key-status').textContent = state.octopartKeyStored ? 'Octopart/Nexar credential is stored in SecretStorage.' : 'No Octopart/Nexar credential is stored.';
+      let viewerLabel: string;
+      if (viewer.status === 'error') {
+        viewerLabel = 'Error';
+      } else if (viewer.status === 'ready') {
+        viewerLabel = 'Ready';
+      } else if (viewer.status === 'loading') {
+        viewerLabel = 'Loading';
+      } else {
+        viewerLabel = 'Idle';
+      }
+      byId('viewer-health-label').textContent = viewerLabel;
+      const viewerOpenCountDetail = viewer.openCount
+        ? viewer.openCount + ' open viewer' + (viewer.openCount === 1 ? '' : 's')
+        : 'No open viewer';
+      byId('viewer-health-detail').textContent = viewer.error || [(viewer.engines || []).join(', '), viewerOpenCountDetail].filter(Boolean).join(' · ');
+      const octopartKeyStatusText = state.octopartKeyStored
+        ? 'Octopart/Nexar credential is stored in SecretStorage.'
+        : 'No Octopart/Nexar credential is stored.';
+      byId('octopart-key-status').textContent = octopartKeyStatusText;
     }
     byId('open-native-settings').addEventListener('click', () => vscode.postMessage({ type: 'openNativeSettings' }));
     byId('set-ai-key').addEventListener('click', () => vscode.postMessage({ type: 'setAiKey' }));

@@ -485,22 +485,15 @@ export class ComponentSearchService implements vscode.WebviewViewProvider {
       this.libraryIndexer?.isIndexed() === true &&
       this.libraryIndexer?.isStale() === false;
 
-    const warnings: string[] = [];
-    if (!octopartConfigured) {
-      warnings.push(
-        'Octopart/Nexar API key is missing; LCSC and local library searches still work.'
-      );
-    }
-    if (!aiConfigured) {
-      warnings.push(
-        'AI API key is missing; AI matching stays disabled without blocking search.'
-      );
-    }
-    if (!lcscEnabled) {
-      warnings.push(
-        'LCSC search is disabled in settings; local and configured providers still work.'
-      );
-    }
+    const warnings = this.collectProviderWarnings(
+      octopartConfigured,
+      aiConfigured,
+      lcscEnabled
+    );
+    const inlineSources = this.collectInlineSources(
+      octopartConfigured,
+      lcscEnabled
+    );
 
     return {
       providers: [
@@ -538,23 +531,60 @@ export class ComponentSearchService implements vscode.WebviewViewProvider {
         }
       ],
       warnings,
-      inlineSources: [
-        ...(octopartConfigured ? (['octopart'] as const) : []),
-        ...(lcscEnabled ? (['lcsc'] as const) : [])
-      ]
+      inlineSources
     };
+  }
+
+  private collectProviderWarnings(
+    octopartConfigured: boolean,
+    aiConfigured: boolean,
+    lcscEnabled: boolean
+  ): string[] {
+    const warnings: string[] = [];
+    if (!octopartConfigured) {
+      warnings.push(
+        'Octopart/Nexar API key is missing; LCSC and local library searches still work.'
+      );
+    }
+    if (!aiConfigured) {
+      warnings.push(
+        'AI API key is missing; AI matching stays disabled without blocking search.'
+      );
+    }
+    if (!lcscEnabled) {
+      warnings.push(
+        'LCSC search is disabled in settings; local and configured providers still work.'
+      );
+    }
+    return warnings;
+  }
+
+  private collectInlineSources(
+    octopartConfigured: boolean,
+    lcscEnabled: boolean
+  ): ComponentSearchSource[] {
+    const sources: ComponentSearchSource[] = [];
+    if (octopartConfigured) {
+      sources.push('octopart');
+    }
+    if (lcscEnabled) {
+      sources.push('lcsc');
+    }
+    return sources;
   }
 
   private async hasConfiguredAiKey(): Promise<boolean> {
     if (!this.extensionContext) {
       return false;
     }
-    for (const key of Object.values(AI_SECRET_KEYS)) {
-      if (await this.extensionContext.secrets.get(key)) {
-        return true;
-      }
-    }
-    return false;
+    const context = this.extensionContext;
+    const results = await Promise.all(
+      Object.values(AI_SECRET_KEYS).map(async (key) => {
+        const value = await context.secrets.get(key);
+        return Boolean(value);
+      })
+    );
+    return results.some(Boolean);
   }
 
   private async getRecentSearches(): Promise<string[]> {

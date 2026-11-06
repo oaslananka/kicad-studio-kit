@@ -197,15 +197,15 @@ export function renderScorecardHtml(scorecard: Scorecard): string {
 
 function escapeCell(value: string): string {
   return value
-    .replace(/\\/g, '\\\\')
-    .replace(/\|/g, '\\|')
+    .replaceAll('\\', '\\\\')
+    .replaceAll('|', '\\|')
     .replace(/\r?\n/g, ' ');
 }
 
 function escapeHtml(value: string): string {
   return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
 }

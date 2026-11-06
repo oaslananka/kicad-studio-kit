@@ -112,32 +112,42 @@ export function validatePerformanceCatalog(catalog) {
   if (catalog.schemaVersion !== 1) {
     errors.push("Performance catalog schemaVersion must be 1.");
   }
+  validateTolerance(catalog, errors);
+  validateMetrics(catalog, errors);
+
+  return errors;
+}
+
+function validateTolerance(catalog, errors) {
   if (!isRecord(catalog.tolerance)) {
     errors.push("Performance catalog tolerance must be an object.");
-  } else {
-    if (!isPositiveNumber(catalog.tolerance.warningRatio)) {
-      errors.push(
-        "Performance catalog warningRatio must be a positive number.",
-      );
-    }
-    if (!isPositiveNumber(catalog.tolerance.failureRatio)) {
-      errors.push(
-        "Performance catalog failureRatio must be a positive number.",
-      );
-    }
-    if (
-      isPositiveNumber(catalog.tolerance.warningRatio) &&
-      isPositiveNumber(catalog.tolerance.failureRatio) &&
-      catalog.tolerance.warningRatio >= catalog.tolerance.failureRatio
-    ) {
-      errors.push(
-        "Performance catalog warningRatio must be lower than failureRatio.",
-      );
-    }
+    return;
   }
+  if (!isPositiveNumber(catalog.tolerance.warningRatio)) {
+    errors.push(
+      "Performance catalog warningRatio must be a positive number.",
+    );
+  }
+  if (!isPositiveNumber(catalog.tolerance.failureRatio)) {
+    errors.push(
+      "Performance catalog failureRatio must be a positive number.",
+    );
+  }
+  if (
+    isPositiveNumber(catalog.tolerance.warningRatio) &&
+    isPositiveNumber(catalog.tolerance.failureRatio) &&
+    catalog.tolerance.warningRatio >= catalog.tolerance.failureRatio
+  ) {
+    errors.push(
+      "Performance catalog warningRatio must be lower than failureRatio.",
+    );
+  }
+}
+
+function validateMetrics(catalog, errors) {
   if (!isRecord(catalog.metrics)) {
     errors.push("Performance catalog metrics must be an object.");
-    return errors;
+    return;
   }
 
   for (const metricId of REQUIRED_PERFORMANCE_METRIC_IDS) {
@@ -147,33 +157,35 @@ export function validatePerformanceCatalog(catalog) {
   }
 
   for (const [metricId, metric] of Object.entries(catalog.metrics)) {
-    if (!isRecord(metric)) {
-      errors.push(`Performance metric ${metricId} must be an object.`);
-      continue;
-    }
-    if (!REQUIRED_PERFORMANCE_METRIC_IDS.includes(metricId)) {
-      errors.push(`Performance catalog has unknown metric ${metricId}.`);
-    }
-    if (!isPositiveNumber(metric.baseline)) {
-      errors.push(
-        `Performance metric ${metricId} baseline must be a positive number.`,
-      );
-    }
-    if (!SUPPORTED_UNITS.has(metric.unit)) {
-      errors.push(`Performance metric ${metricId} unit must be ms or MB.`);
-    }
-    if (typeof metric.ciRequired !== "boolean") {
-      errors.push(`Performance metric ${metricId} ciRequired must be boolean.`);
-    }
-    if (typeof metric.summary !== "string" || metric.summary.trim() === "") {
-      errors.push(`Performance metric ${metricId} summary must be non-empty.`);
-    }
-    if (typeof metric.source !== "string" || metric.source.trim() === "") {
-      errors.push(`Performance metric ${metricId} source must be non-empty.`);
-    }
+    validatePerformanceMetric(errors, metricId, metric);
   }
+}
 
-  return errors;
+function validatePerformanceMetric(errors, metricId, metric) {
+  if (!isRecord(metric)) {
+    errors.push(`Performance metric ${metricId} must be an object.`);
+    return;
+  }
+  if (!REQUIRED_PERFORMANCE_METRIC_IDS.includes(metricId)) {
+    errors.push(`Performance catalog has unknown metric ${metricId}.`);
+  }
+  if (!isPositiveNumber(metric.baseline)) {
+    errors.push(
+      `Performance metric ${metricId} baseline must be a positive number.`,
+    );
+  }
+  if (!SUPPORTED_UNITS.has(metric.unit)) {
+    errors.push(`Performance metric ${metricId} unit must be ms or MB.`);
+  }
+  if (typeof metric.ciRequired !== "boolean") {
+    errors.push(`Performance metric ${metricId} ciRequired must be boolean.`);
+  }
+  if (typeof metric.summary !== "string" || metric.summary.trim() === "") {
+    errors.push(`Performance metric ${metricId} summary must be non-empty.`);
+  }
+  if (typeof metric.source !== "string" || metric.source.trim() === "") {
+    errors.push(`Performance metric ${metricId} source must be non-empty.`);
+  }
 }
 
 export function evaluatePerformanceMeasurements(catalog, measurements) {
@@ -214,54 +226,17 @@ export function evaluatePerformanceMeasurements(catalog, measurements) {
   }
 
   for (const [metricId, measurement] of measurementsByMetric) {
-    const metric = catalog.metrics?.[metricId];
-    if (!isRecord(metric)) {
-      errors.push(`Unknown performance measurement metric: ${metricId}.`);
-      continue;
-    }
-    if (measurement.unit !== metric.unit) {
-      errors.push(
-        `${metricId} must use ${metric.unit}, received ${measurement.unit}.`,
-      );
-      continue;
-    }
-    if (!isPositiveNumber(measurement.value)) {
-      errors.push(`${metricId} must report a positive numeric value.`);
-      continue;
-    }
-
-    const warningLimit = multiplyThreshold(
-      metric.baseline,
-      catalog.tolerance.warningRatio,
+    const result = evaluateMeasurement(
+      catalog,
+      metricId,
+      measurement,
+      errors,
+      metrics,
+      summary,
     );
-    const failureLimit = multiplyThreshold(
-      metric.baseline,
-      catalog.tolerance.failureRatio,
-    );
-    let status = "pass";
-    if (measurement.value > failureLimit) {
-      status = "fail";
-      errors.push(
-        `${metricId} exceeded performance budget: ${formatMeasurement(
-          measurement.value,
-          metric.unit,
-        )} > ${formatMeasurement(failureLimit, metric.unit)}.`,
-      );
-    } else if (measurement.value > warningLimit) {
-      status = "warn";
+    if (!result) {
+      continue;
     }
-    summary[status] += 1;
-    metrics.push({
-      metric: metricId,
-      status,
-      value: measurement.value,
-      baseline: metric.baseline,
-      unit: metric.unit,
-      statistic: measurement.statistic,
-      samples: measurement.samples,
-      warningLimit,
-      failureLimit,
-    });
   }
 
   for (const [metricId, metric] of Object.entries(catalog.metrics ?? {})) {
@@ -271,6 +246,58 @@ export function evaluatePerformanceMeasurements(catalog, measurements) {
   }
 
   return { errors, metrics, summary };
+}
+
+function evaluateMeasurement(catalog, metricId, measurement, errors, metrics, summary) {
+  const metric = catalog.metrics?.[metricId];
+  if (!isRecord(metric)) {
+    errors.push(`Unknown performance measurement metric: ${metricId}.`);
+    return null;
+  }
+  if (measurement.unit !== metric.unit) {
+    errors.push(
+      `${metricId} must use ${metric.unit}, received ${measurement.unit}.`,
+    );
+    return null;
+  }
+  if (!isPositiveNumber(measurement.value)) {
+    errors.push(`${metricId} must report a positive numeric value.`);
+    return null;
+  }
+
+  const warningLimit = multiplyThreshold(
+    metric.baseline,
+    catalog.tolerance.warningRatio,
+  );
+  const failureLimit = multiplyThreshold(
+    metric.baseline,
+    catalog.tolerance.failureRatio,
+  );
+  let status = "pass";
+  if (measurement.value > failureLimit) {
+    status = "fail";
+    errors.push(
+      `${metricId} exceeded performance budget: ${formatMeasurement(
+        measurement.value,
+        metric.unit,
+      )} > ${formatMeasurement(failureLimit, metric.unit)}.`,
+    );
+  } else if (measurement.value > warningLimit) {
+    status = "warn";
+  }
+  summary[status] += 1;
+  metrics.push({
+    metric: metricId,
+    status,
+    value: measurement.value,
+    baseline: metric.baseline,
+    unit: metric.unit,
+    statistic: measurement.statistic,
+    samples: measurement.samples,
+    warningLimit,
+    failureLimit,
+  });
+  return status;
 }
 
 function parseArgs(argv) {

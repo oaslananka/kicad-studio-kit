@@ -143,7 +143,7 @@ function stableJson(value: unknown): string {
   }
   if (value && typeof value === 'object') {
     return `{${Object.keys(value as Record<string, unknown>)
-      .sort()
+      .sort((a, b) => a.localeCompare(b))
       .filter(
         (key) => typeof (value as Record<string, unknown>)[key] !== 'undefined'
       )

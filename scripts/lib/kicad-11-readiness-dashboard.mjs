@@ -329,9 +329,9 @@ export function validateKiCad11Readiness({
 
 function escapeCell(value) {
   return String(value ?? "")
-    .replace(/\\/gu, "\\\\")
+    .replaceAll("\\", "\\\\")
     .replace(/\r?\n/gu, " ")
-    .replace(/\|/gu, "\\|");
+    .replaceAll("|", "\\|");
 }
 
 function renderTable(headers, rows) {

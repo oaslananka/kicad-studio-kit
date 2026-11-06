@@ -272,6 +272,7 @@ export class NetlistViewProvider
     if (active?.fileName.endsWith('.kicad_sch')) {
       return { file: active.fileName };
     }
+
     const files = await vscode.workspace.findFiles(
       '**/*.kicad_sch',
       '**/node_modules/**',
@@ -279,40 +280,71 @@ export class NetlistViewProvider
     );
     const candidates = files.map((file) => file.fsPath);
 
-    // If we have a cached last file and it's still in the workspace, prefer it
-    // over falling back to prompting if there are multiple candidates.
-    // Except if the user specifically opened a different project.
-    if (this._lastFile && candidates.includes(this._lastFile)) {
-      const activeProject = this.findProjectFile(active?.fileName);
-      const lastProject = this.findProjectFile(this._lastFile);
-      if (!activeProject || activeProject === lastProject) {
-        return { file: this._lastFile };
-      }
+    const cached = this.resolveCachedSchematic(active?.fileName, candidates);
+    if (cached) {
+      return cached;
     }
 
     const projectFile = this.findProjectFile(active?.fileName);
-    if (projectFile) {
-      const projectSchematic = this.findSchematicBesideProject(projectFile);
-      if (projectSchematic) {
-        return { file: projectSchematic };
-      }
+    const projectSchematic = projectFile
+      ? this.findSchematicBesideProject(projectFile)
+      : undefined;
+    if (projectSchematic) {
+      return { file: projectSchematic };
     }
 
-    // Fallback: when no active editor and no cached schematic, discover
-    // KiCad project files and resolve their sibling .kicad_sch.
-    if (!projectFile && !this._lastFile) {
-      const projectFiles = await vscode.workspace.findFiles(
-        '**/*.kicad_pro',
-        '**/node_modules/**',
-        5
-      );
-      for (const projectUri of projectFiles) {
-        const sibling = this.findSchematicBesideProject(projectUri.fsPath);
-        if (sibling) {
-          return { file: sibling };
-        }
+    const projectFromDiscovery =
+      !projectFile && !this._lastFile
+        ? await this.discoverProjectSchematic()
+        : undefined;
+    if (projectFromDiscovery) {
+      return projectFromDiscovery;
+    }
+
+    return this.resolveFallbackSchematic(
+      active?.fileName,
+      projectFile,
+      candidates
+    );
+  }
+
+  private resolveCachedSchematic(
+    activeFile: string | undefined,
+    candidates: string[]
+  ): SchematicResolution | undefined {
+    if (!this._lastFile || !candidates.includes(this._lastFile)) {
+      return undefined;
+    }
+    const activeProject = this.findProjectFile(activeFile);
+    const lastProject = this.findProjectFile(this._lastFile);
+    if (!activeProject || activeProject === lastProject) {
+      return { file: this._lastFile };
+    }
+    return undefined;
+  }
+
+  private async discoverProjectSchematic(): Promise<
+    SchematicResolution | undefined
+  > {
+    const projectFiles = await vscode.workspace.findFiles(
+      '**/*.kicad_pro',
+      '**/node_modules/**',
+      5
+    );
+    for (const projectUri of projectFiles) {
+      const sibling = this.findSchematicBesideProject(projectUri.fsPath);
+      if (sibling) {
+        return { file: sibling };
       }
     }
+    return undefined;
+  }
+
+  private async resolveFallbackSchematic(
+    activeFile: string | undefined,
+    projectFile: string | undefined,
+    candidates: string[]
+  ): Promise<SchematicResolution> {
     if (candidates.length === 1) {
       return { file: candidates[0] };
     }
@@ -329,11 +361,7 @@ export class NetlistViewProvider
       }
     }
     return {
-      status: this.describeMissingSchematic(
-        active?.fileName,
-        projectFile,
-        candidates
-      )
+      status: this.describeMissingSchematic(activeFile, projectFile, candidates)
     };
   }
 

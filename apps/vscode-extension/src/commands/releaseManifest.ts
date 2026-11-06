@@ -96,39 +96,53 @@ export function renderReleaseSummary(manifest: ReleaseManifest): string {
   if (manifest.mcpServerVersion) {
     lines.push(`- MCP server: ${manifest.mcpServerVersion}`);
   }
-  if (manifest.git?.shortCommit) {
-    const dirty = manifest.git.dirty ? ' (uncommitted changes)' : '';
-    const branch = manifest.git.branch ? ` on ${manifest.git.branch}` : '';
-    const tag = manifest.git.tag ? ` [${manifest.git.tag}]` : '';
-    lines.push(`- Source: ${manifest.git.shortCommit}${branch}${tag}${dirty}`);
-  }
-
+  renderGitSection(lines, manifest);
   lines.push('', '## Quality Gates', '');
-  if (manifest.qualityGates.length === 0) {
-    lines.push('No quality gate results were recorded.');
-  } else {
-    lines.push('| Gate | Status | Summary |', '| --- | --- | --- |');
-    for (const gate of manifest.qualityGates) {
-      lines.push(
-        `| ${escapeCell(gate.label)} | ${escapeCell(gate.status)} | ${escapeCell(gate.summary)} |`
-      );
-    }
-  }
-
+  renderQualityGatesTable(lines, manifest);
   lines.push('', `## Artifacts (${manifest.files.length})`, '');
-  if (manifest.files.length === 0) {
-    lines.push('No artifacts were generated.');
-  } else {
-    lines.push('| File | Size (bytes) | SHA-256 |', '| --- | ---: | --- |');
-    for (const file of manifest.files) {
-      lines.push(
-        `| ${escapeCell(file.path)} | ${file.size} | ${file.sha256} |`
-      );
-    }
-  }
-
+  renderArtifactsTable(lines, manifest);
   lines.push('');
   return lines.join('\n');
+}
+
+function renderGitSection(lines: string[], manifest: ReleaseManifest): void {
+  if (!manifest.git?.shortCommit) {
+    return;
+  }
+  const dirty = manifest.git.dirty ? ' (uncommitted changes)' : '';
+  const branch = manifest.git.branch ? ` on ${manifest.git.branch}` : '';
+  const tag = manifest.git.tag ? ` [${manifest.git.tag}]` : '';
+  lines.push(`- Source: ${manifest.git.shortCommit}${branch}${tag}${dirty}`);
+}
+
+function renderQualityGatesTable(
+  lines: string[],
+  manifest: ReleaseManifest
+): void {
+  if (manifest.qualityGates.length === 0) {
+    lines.push('No quality gate results were recorded.');
+    return;
+  }
+  lines.push('| Gate | Status | Summary |', '| --- | --- | --- |');
+  for (const gate of manifest.qualityGates) {
+    lines.push(
+      `| ${escapeCell(gate.label)} | ${escapeCell(gate.status)} | ${escapeCell(gate.summary)} |`
+    );
+  }
+}
+
+function renderArtifactsTable(
+  lines: string[],
+  manifest: ReleaseManifest
+): void {
+  if (manifest.files.length === 0) {
+    lines.push('No artifacts were generated.');
+    return;
+  }
+  lines.push('| File | Size (bytes) | SHA-256 |', '| --- | ---: | --- |');
+  for (const file of manifest.files) {
+    lines.push(`| ${escapeCell(file.path)} | ${file.size} | ${file.sha256} |`);
+  }
 }
 
 function escapeCell(value: string): string {

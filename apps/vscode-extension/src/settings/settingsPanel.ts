@@ -121,106 +121,127 @@ export class KiCadSettingsPanel implements vscode.Disposable {
     }
 
     const record = asRecord(message) ?? {};
-    if (message.type === 'ready' || message.type === 'requestApiKeyStatus') {
+    const type = (record as { type?: string }).type;
+    if (!type) {
+      return;
+    }
+
+    if (type === 'ready' || type === 'requestApiKeyStatus') {
       await this.postState();
       return;
     }
 
-    if (message.type === 'openNativeSettings') {
-      await vscode.commands.executeCommand(
-        'workbench.action.openSettings',
-        '@ext:oaslananka.kicadstudiokit'
-      );
+    const handlers: Record<string, () => Promise<void>> = {
+      openNativeSettings: () => this.handleOpenNativeSettings(),
+      setAiKey: () => this.handleSetAiKey(),
+      clearAiKey: () => this.handleClearAiKey(),
+      testAiKey: () => this.handleTestAiKey(),
+      detectCli: () => this.handleDetectCli(),
+      retryMcp: () => this.handleRetryMcp(),
+      refreshBoardReadyOps: () => this.handleRefreshBoardReadyOps(),
+      runBoardReadyOpsCheck: () => this.handleRunBoardReadyOpsCheck(),
+      openBoardReadyOpsDocs: () => this.handleOpenBoardReadyOpsDocs(),
+      openExternalLink: () => this.handleOpenExternalLink(record),
+      clearAllSecrets: () => this.handleClearAllSecrets()
+    };
+
+    const handler = handlers[type];
+    if (handler) {
+      await handler();
       return;
     }
+  }
 
-    if (message.type === 'setAiKey') {
-      await vscode.commands.executeCommand(COMMANDS.setAiApiKey);
-      await this.postState('AI API key status refreshed.');
+  private async handleReady(_record: Record<string, unknown>): Promise<void> {
+    await this.postState();
+  }
+
+  private async handleOpenNativeSettings(): Promise<void> {
+    await vscode.commands.executeCommand(
+      'workbench.action.openSettings',
+      '@ext:oaslananka.kicadstudiokit'
+    );
+  }
+
+  private async handleSetAiKey(): Promise<void> {
+    await vscode.commands.executeCommand(COMMANDS.setAiApiKey);
+    await this.postState('AI API key status refreshed.');
+  }
+
+  private async handleClearAiKey(): Promise<void> {
+    const provider = this.services.aiProviders.getSelection().provider;
+    if (isAiSecretProvider(provider)) {
+      await this.services.aiProviders.clearApiKey(provider);
+    } else {
+      await this.context.secrets.delete(AI_SECRET_KEY_LEGACY);
+    }
+    this.services.setAiHealthy(undefined);
+    this.services.statusBar.update({
+      aiConfigured: false,
+      aiHealthy: undefined
+    });
+    await this.postState('AI API key cleared.');
+  }
+
+  private async handleTestAiKey(): Promise<void> {
+    await vscode.commands.executeCommand(COMMANDS.testAiConnection);
+    await this.postState('AI connection test finished.');
+  }
+
+  private async handleDetectCli(): Promise<void> {
+    if (!(await requireWorkspaceTrust('Detect kicad-cli'))) {
       return;
     }
+    const cli = await this.services.cliDetector.detect(true);
+    this.services.statusBar.update({ cli });
+    await this.postState(
+      cli ? 'kicad-cli detected.' : 'kicad-cli was not found.'
+    );
+  }
 
-    if (message.type === 'clearAiKey') {
-      const provider = this.services.aiProviders.getSelection().provider;
-      if (isAiSecretProvider(provider)) {
-        await this.services.aiProviders.clearApiKey(provider);
-      } else {
-        await this.context.secrets.delete(AI_SECRET_KEY_LEGACY);
-      }
-      this.services.setAiHealthy(undefined);
-      this.services.statusBar.update({
-        aiConfigured: false,
-        aiHealthy: undefined
-      });
-      await this.postState('AI API key cleared.');
-      return;
-    }
-
-    if (message.type === 'testAiKey') {
-      await vscode.commands.executeCommand(COMMANDS.testAiConnection);
-      await this.postState('AI connection test finished.');
-      return;
-    }
-
-    if (message.type === 'detectCli') {
-      if (!(await requireWorkspaceTrust('Detect kicad-cli'))) {
-        return;
-      }
-      const cli = await this.services.cliDetector.detect(true);
-      this.services.statusBar.update({ cli });
+  private async handleRetryMcp(): Promise<void> {
+    try {
+      await vscode.commands.executeCommand(COMMANDS.retryMcp);
+      await this.postState('MCP connection check finished.');
+    } catch {
       await this.postState(
-        cli ? 'kicad-cli detected.' : 'kicad-cli was not found.'
+        'MCP recheck could not complete. See the MCP diagnostics.'
       );
-      return;
+      this.services.logger.error('MCP recheck command failed.');
     }
+  }
 
-    if (message.type === 'retryMcp') {
-      try {
-        await vscode.commands.executeCommand(COMMANDS.retryMcp);
-        await this.postState('MCP connection check finished.');
-      } catch {
-        await this.postState(
-          'MCP recheck could not complete. See the MCP diagnostics.'
-        );
-        this.services.logger.error('MCP recheck command failed.');
-      }
-      return;
-    }
+  private async handleRefreshBoardReadyOps(): Promise<void> {
+    this.services.mcpToolsProvider.refresh();
+    await this.postState('BoardReadyOps health refresh started.');
+  }
 
-    if (message.type === 'refreshBoardReadyOps') {
-      this.services.mcpToolsProvider.refresh();
-      await this.postState('BoardReadyOps health refresh started.');
-      return;
-    }
+  private async handleRunBoardReadyOpsCheck(): Promise<void> {
+    await vscode.commands.executeCommand(COMMANDS.boardReadyOpsCheck);
+    this.services.mcpToolsProvider.refresh();
+  }
 
-    if (message.type === 'runBoardReadyOpsCheck') {
-      await vscode.commands.executeCommand(COMMANDS.boardReadyOpsCheck);
-      this.services.mcpToolsProvider.refresh();
-      return;
-    }
+  private async handleOpenBoardReadyOpsDocs(): Promise<void> {
+    await vscode.commands.executeCommand(COMMANDS.boardReadyOpsOpenDocs);
+  }
 
-    if (message.type === 'openBoardReadyOpsDocs') {
-      await vscode.commands.executeCommand(COMMANDS.boardReadyOpsOpenDocs);
-      return;
+  private async handleOpenExternalLink(
+    _record: Record<string, unknown>
+  ): Promise<void> {
+    const href = asString(_record['href']);
+    if (href && this.isAllowedExternalLink(href)) {
+      await vscode.env.openExternal(vscode.Uri.parse(href));
     }
+  }
 
-    if (message.type === 'openExternalLink') {
-      const href = asString(record['href']);
-      if (href && this.isAllowedExternalLink(href)) {
-        await vscode.env.openExternal(vscode.Uri.parse(href));
-      }
-      return;
-    }
-
-    if (message.type === 'clearAllSecrets') {
-      await vscode.commands.executeCommand(COMMANDS.clearSecrets);
-      this.services.setAiHealthy(undefined);
-      this.services.statusBar.update({
-        aiConfigured: false,
-        aiHealthy: undefined
-      });
-      await this.postState('Stored KiCad Studio secrets cleared.');
-    }
+  private async handleClearAllSecrets(): Promise<void> {
+    await vscode.commands.executeCommand(COMMANDS.clearSecrets);
+    this.services.setAiHealthy(undefined);
+    this.services.statusBar.update({
+      aiConfigured: false,
+      aiHealthy: undefined
+    });
+    await this.postState('Stored KiCad Studio secrets cleared.');
   }
 
   private isAllowedExternalLink(href: string): boolean {

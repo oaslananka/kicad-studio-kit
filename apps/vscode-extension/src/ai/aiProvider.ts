@@ -26,6 +26,20 @@ import {
 export class AIProviderRegistry {
   constructor(private readonly context: vscode.ExtensionContext) {}
 
+  private readonly aiProviderFactories: Record<
+    string,
+    (model: string) => Promise<AIProvider | undefined>
+  > = {
+    none: (_model) => this.createNoneProvider(_model),
+    copilot: (_model) => this.createCopilotProvider(_model),
+    local: (model) => this.createLocalProvider(model),
+    claude: (model) => this.createClaudeProvider(model),
+    openai: (model) => this.createOpenAIProvider(model),
+    openrouter: (model) => this.createOpenRouterProvider(model),
+    nvidia: (model) => this.createNvidiaProvider(model),
+    gemini: (model) => this.createGeminiProvider(model)
+  };
+
   async getProvider(): Promise<AIProvider | undefined> {
     const selection = this.getSelection();
     return this.getProviderForSelection(selection.provider, selection.model);
@@ -51,65 +65,91 @@ export class AIProviderRegistry {
       return undefined;
     }
 
-    if (selected === 'copilot') {
-      return new CopilotProvider();
+    const factory = this.aiProviderFactories[selected];
+    if (!factory) {
+      return undefined;
     }
+    return factory.call(this, model);
+  }
 
-    if (selected === 'local') {
-      const endpoint = vscode.workspace
-        .getConfiguration()
-        .get<string>(SETTINGS.aiLocalEndpoint, '')
-        .trim();
-      return endpoint ? new LocalProvider(endpoint, model) : undefined;
-    }
-
-    if (selected === 'claude') {
-      const apiKey = await this.getApiKey('claude');
-      if (!apiKey) {
-        return undefined;
-      }
-      return new ClaudeProvider(apiKey, model || DEFAULT_CLAUDE_MODEL);
-    }
-    if (selected === 'openai') {
-      const apiKey = await this.getApiKey('openai');
-      if (!apiKey) {
-        return undefined;
-      }
-      const apiMode = this.getSelection().openAIApiMode;
-      return new OpenAIProvider(
-        apiKey,
-        model || DEFAULT_OPENAI_MODEL,
-        apiMode === 'chat-completions' ? 'chat-completions' : 'responses'
-      );
-    }
-    if (selected === 'openrouter') {
-      const apiKey = await this.getApiKey('openrouter');
-      if (!apiKey) {
-        return undefined;
-      }
-      return new OpenRouterProvider(
-        apiKey,
-        model || getDefaultModel('openrouter')
-      );
-    }
-    if (selected === 'nvidia') {
-      const apiKey = await this.getApiKey('nvidia');
-      if (!apiKey) {
-        return undefined;
-      }
-      return new NvidiaBuildProvider(
-        apiKey,
-        model || getDefaultModel('nvidia')
-      );
-    }
-    if (selected === 'gemini') {
-      const apiKey = await this.getApiKey('gemini');
-      if (!apiKey) {
-        return undefined;
-      }
-      return new GeminiProvider(apiKey, model || DEFAULT_GEMINI_MODEL);
-    }
+  private async createNoneProvider(
+    _model: string
+  ): Promise<AIProvider | undefined> {
     return undefined;
+  }
+
+  private async createCopilotProvider(
+    _model: string
+  ): Promise<AIProvider | undefined> {
+    return new CopilotProvider();
+  }
+
+  private async createLocalProvider(
+    model: string
+  ): Promise<AIProvider | undefined> {
+    const endpoint = vscode.workspace
+      .getConfiguration()
+      .get<string>(SETTINGS.aiLocalEndpoint, '')
+      .trim();
+    return endpoint ? new LocalProvider(endpoint, model) : undefined;
+  }
+
+  private async createClaudeProvider(
+    model: string
+  ): Promise<AIProvider | undefined> {
+    const apiKey = await this.getApiKey('claude');
+    if (!apiKey) {
+      return undefined;
+    }
+    return new ClaudeProvider(apiKey, model || DEFAULT_CLAUDE_MODEL);
+  }
+
+  private async createOpenAIProvider(
+    model: string
+  ): Promise<AIProvider | undefined> {
+    const apiKey = await this.getApiKey('openai');
+    if (!apiKey) {
+      return undefined;
+    }
+    const apiMode = this.getSelection().openAIApiMode;
+    return new OpenAIProvider(
+      apiKey,
+      model || DEFAULT_OPENAI_MODEL,
+      apiMode === 'chat-completions' ? 'chat-completions' : 'responses'
+    );
+  }
+
+  private async createOpenRouterProvider(
+    model: string
+  ): Promise<AIProvider | undefined> {
+    const apiKey = await this.getApiKey('openrouter');
+    if (!apiKey) {
+      return undefined;
+    }
+    return new OpenRouterProvider(
+      apiKey,
+      model || getDefaultModel('openrouter')
+    );
+  }
+
+  private async createNvidiaProvider(
+    model: string
+  ): Promise<AIProvider | undefined> {
+    const apiKey = await this.getApiKey('nvidia');
+    if (!apiKey) {
+      return undefined;
+    }
+    return new NvidiaBuildProvider(apiKey, model || getDefaultModel('nvidia'));
+  }
+
+  private async createGeminiProvider(
+    model: string
+  ): Promise<AIProvider | undefined> {
+    const apiKey = await this.getApiKey('gemini');
+    if (!apiKey) {
+      return undefined;
+    }
+    return new GeminiProvider(apiKey, model || DEFAULT_GEMINI_MODEL);
   }
 
   async getApiKey(provider: AiSecretProvider): Promise<string | undefined> {

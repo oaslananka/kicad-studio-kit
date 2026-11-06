@@ -137,39 +137,66 @@ function createVariantFromBase(basePng, mode) {
     for (let x = 0; x < width; x += 1) {
       const index = (width * y + x) << 2;
       const alpha = alphaMap[y * width + x];
-
-      if (alpha > 0) {
-        const transformed = transformPixel(
-          basePng.data[index],
-          basePng.data[index + 1],
-          basePng.data[index + 2],
-          mode
-        );
-        result.data[index] = transformed.r;
-        result.data[index + 1] = transformed.g;
-        result.data[index + 2] = transformed.b;
-        result.data[index + 3] = alpha;
-        continue;
-      }
-
-      if (hasOpaqueNeighbor(alphaMap, width, height, x, y, 1)) {
-        result.data[index] = outline.r;
-        result.data[index + 1] = outline.g;
-        result.data[index + 2] = outline.b;
-        result.data[index + 3] = outline.a;
-        continue;
-      }
-
-      if (hasOpaqueNeighbor(alphaMap, width, height, x, y, 2)) {
-        result.data[index] = halo.r;
-        result.data[index + 1] = halo.g;
-        result.data[index + 2] = halo.b;
-        result.data[index + 3] = halo.a;
-      }
+      renderIconPixel(
+        result,
+        basePng,
+        alphaMap,
+        width,
+        height,
+        index,
+        alpha,
+        mode,
+        outline,
+        halo
+      );
     }
   }
 
   return result;
+}
+
+function renderIconPixel(
+  result,
+  basePng,
+  alphaMap,
+  width,
+  height,
+  index,
+  alpha,
+  mode,
+  outline,
+  halo
+) {
+  if (alpha > 0) {
+    const transformed = transformPixel(
+      basePng.data[index],
+      basePng.data[index + 1],
+      basePng.data[index + 2],
+      mode
+    );
+    result.data[index] = transformed.r;
+    result.data[index + 1] = transformed.g;
+    result.data[index + 2] = transformed.b;
+    result.data[index + 3] = alpha;
+    return;
+  }
+
+  const x = index % width;
+  const y = Math.floor(index / width);
+  if (hasOpaqueNeighbor(alphaMap, width, height, x, y, 1)) {
+    result.data[index] = outline.r;
+    result.data[index + 1] = outline.g;
+    result.data[index + 2] = outline.b;
+    result.data[index + 3] = outline.a;
+    return;
+  }
+  if (hasOpaqueNeighbor(alphaMap, width, height, x, y, 2)) {
+    result.data[index] = halo.r;
+    result.data[index + 1] = halo.g;
+    result.data[index + 2] = halo.b;
+    result.data[index + 3] = halo.a;
+    return;
+  }
 }
 
 const root = path.resolve(__dirname, '..');
