@@ -740,7 +740,7 @@ describe('BoardReadyOps commands', () => {
     const outside = path.join(fixture, 'outside');
     fs.mkdirSync(project);
     fs.mkdirSync(outside);
-    fs.symlinkSync(outside, path.join(project, 'linked'), 'dir');
+    fs.symlinkSync(outside, path.join(project, 'linked'), 'junction');
     try {
       enableBoardReadyOpsProject();
       mockProjectState.getActiveProject.mockReturnValue({ rootPath: project });
@@ -1154,7 +1154,7 @@ describe('BoardReadyOps commands', () => {
     const outside = path.join(fixture, 'outside');
     fs.mkdirSync(project);
     fs.mkdirSync(outside);
-    fs.symlinkSync(outside, path.join(project, 'linked'), 'dir');
+    fs.symlinkSync(outside, path.join(project, 'linked'), 'junction');
     try {
       enableBoardReadyOpsProject();
       mockProjectState.getActiveProject.mockReturnValue({ rootPath: project });
