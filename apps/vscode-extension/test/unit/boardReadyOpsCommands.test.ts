@@ -630,6 +630,8 @@ describe('BoardReadyOps commands', () => {
       (window.showWarningMessage as jest.Mock).mock.calls
     );
     expect(warningCalls).toContain('release evidence is not verified');
+    expect(warningCalls).toContain('release pack');
+    expect(warningCalls).not.toContain('release prepare/verify');
     expect(warningCalls).not.toContain('PRIVATE_EVIDENCE_SENTINEL');
     expect(warningCalls).not.toContain('/private/evidence/manifest.json');
   });
