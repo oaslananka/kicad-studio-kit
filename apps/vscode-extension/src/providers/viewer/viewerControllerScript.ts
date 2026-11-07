@@ -110,6 +110,7 @@ export function createViewerControllerScript(): string {
     let fallbackUserZoomed = false;
     let fallbackResizeHandler = null;
     let viewerGeneration = 0;
+    let cancelPendingPreparation = null;
     let rendererInitializing = false;
     let rendererFallbackAttempt = null;
     let rendererFallbackGeneration = 0;
@@ -259,6 +260,9 @@ export function createViewerControllerScript(): string {
     void initViewer();
     async function initViewer() {
       const generation = ++viewerGeneration;
+      // Preparing a large PCB can outlast a refresh. Stop the superseded worker
+      // immediately rather than decoding a stale board while the new one loads.
+      cancelPendingPreparation?.();
       rendererInitializing = true;
       rendererFallbackAttempt = null;
       rendererFallbackGeneration = generation;
@@ -300,8 +304,10 @@ export function createViewerControllerScript(): string {
         let prepared;
         try {
           showLoading('Decoding and normalizing file…');
-          prepared = await prepareKiCanvasText(payload.base64, payload.fileType);
+          prepared = await prepareKiCanvasText(payload.base64, payload.fileType, generation);
+          if (generation !== viewerGeneration || !prepared) return;
         } catch (err) {
+          if (generation !== viewerGeneration) return;
           showError('Decode error', String(err), 'Could not decode the base64 file payload.');
           return;
         }
@@ -320,7 +326,9 @@ export function createViewerControllerScript(): string {
 
         showLoading('Waiting for KiCanvas element definitions…');
         await waitForDefinition('kicanvas-embed', 8000);
+        if (generation !== viewerGeneration) return;
         await waitForDefinition('kicanvas-source', 8000);
+        if (generation !== viewerGeneration) return;
 
         showLoading('Mounting viewer…');
         const renderText = prepared.renderText;
@@ -340,8 +348,10 @@ export function createViewerControllerScript(): string {
 
         showLoading('Rendering ' + escapeHtml(payload.fileName) + '…');
         await waitForViewerLoaded(viewer, 15000);
+        if (generation !== viewerGeneration) return;
 
         const renderSurface = await waitForRenderableSurface(viewerMount, 2000);
+        if (generation !== viewerGeneration) return;
         if (!renderSurface) {
           const fallbackLoaded = await recoverRendererFailure(
             'KiCanvas reported success but did not create a drawable render surface.',
@@ -382,6 +392,7 @@ export function createViewerControllerScript(): string {
             renderSurface.style.height = '100%';
           }
           const blankCanvas = await isCanvasEffectivelyBlank(renderSurface);
+          if (generation !== viewerGeneration) return;
           if (blankCanvas) {
             const fallbackLoaded = await recoverRendererFailure(
               'KiCanvas created a blank render surface for this file.',
@@ -706,7 +717,7 @@ export function createViewerControllerScript(): string {
       );
     }
 
-    async function prepareKiCanvasText(base64, fileType) {
+    async function prepareKiCanvasText(base64, fileType, generation) {
       if (typeof Worker === 'undefined' || typeof Blob === 'undefined' || typeof URL === 'undefined') {
         const text = decodeBase64Utf8(base64);
         return {
@@ -718,6 +729,9 @@ export function createViewerControllerScript(): string {
       try {
         return await prepareKiCanvasTextInWorker(base64, fileType);
       } catch {
+        // Cancellation must not trigger a second, synchronous decode of the
+        // superseded buffer on the UI thread.
+        if (generation !== viewerGeneration) return null;
         const text = decodeBase64Utf8(base64);
         return {
           text,
@@ -743,7 +757,14 @@ export function createViewerControllerScript(): string {
           window.clearTimeout(timeout);
           worker.terminate();
           URL.revokeObjectURL(workerUrl);
+          if (cancelPendingPreparation === abort) cancelPendingPreparation = null;
         }
+
+        function abort() {
+          cleanup();
+          reject(new Error('Viewer preparation superseded.'));
+        }
+        cancelPendingPreparation = abort;
 
         worker.onmessage = (event) => {
           const data = event.data || {};

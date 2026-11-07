@@ -459,7 +459,7 @@ describe('createKiCanvasViewerHtml', () => {
 
     expect(html).toContain("showLoading('Decoding and normalizing file…');");
     expect(html).toContain(
-      'prepared = await prepareKiCanvasText(payload.base64, payload.fileType);'
+      'prepared = await prepareKiCanvasText(payload.base64, payload.fileType, generation);'
     );
     expect(html).toContain('const renderText = prepared.renderText;');
     expect(html).toContain(
@@ -467,6 +467,11 @@ describe('createKiCanvasViewerHtml', () => {
     );
     expect(html).toContain('new Worker(workerUrl);');
     expect(html).toContain('URL.revokeObjectURL(workerUrl);');
+    expect(html).toContain('cancelPendingPreparation?.();');
+    expect(html).toContain(
+      'if (generation !== viewerGeneration || !prepared) return;'
+    );
+    expect(html).toContain('cancelPendingPreparation = abort;');
     expect(html).toContain('function createKiCanvasPreparationWorker()');
   });
 

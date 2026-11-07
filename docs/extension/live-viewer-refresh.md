@@ -25,6 +25,11 @@ connection or additional background service is needed.
 - Files over the existing interactive-viewer size limit continue to use the
   metadata-only fallback. The viewer preserves its existing selection,
   layers and other state during refresh.
+- If another refresh arrives while a large file is still being decoded in a
+  web worker, the previous preparation is cancelled. Its late results cannot
+  mount over the newer document; only the latest viewer load may update the
+  visible surface. This prevents unnecessary stale work but does not make
+  KiCanvas's subsequent full-board render incremental.
 - If a text editor has unsaved changes for the same file, external refresh
   is held until the document is saved. **The extension does not overwrite
   unsaved editor contents.**
