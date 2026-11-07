@@ -197,6 +197,18 @@ export function createKiCanvasViewerHtml(
         </div>
         <div id="layer-list" class="layer-list"></div>
       </div>
+      <div class="side-section" id="nets-section" hidden>
+        <div class="layer-heading"><h2>PCB Nets</h2><span id="net-count" class="layer-count" aria-live="polite"></span></div>
+        <p class="layer-help">Find a board net and highlight its copper connections, including tracks and vias. Read-only preview.</p>
+        <label class="net-search-label" for="net-search">Net name or number</label>
+        <input id="net-search" class="net-search" type="search" list="net-suggestions" autocomplete="off" placeholder="Search board nets" aria-describedby="net-feedback" disabled>
+        <datalist id="net-suggestions"></datalist>
+        <div class="side-actions net-actions">
+          <button class="btn btn-primary" type="button" id="net-highlight-btn" disabled>Highlight net</button>
+          <button class="btn" type="button" id="net-clear-btn" disabled>Clear</button>
+        </div>
+        <div class="net-feedback" id="net-feedback" role="status" aria-live="polite">Available when the interactive board loads.</div>
+      </div>
       <div class="side-section" id="tuning-section" hidden>
         <h2>Tuning Profiles</h2>
         <div id="tuning-list" class="meta-list"></div>
