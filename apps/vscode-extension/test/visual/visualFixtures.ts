@@ -98,6 +98,7 @@ export const VISUAL_FIXTURES: readonly VisualFixture[] = [
   }),
   viewerFixture({
     id: 'large-pcb-issue-19-layer-panel-overflow',
+    platformSnapshots: ['win32'],
     fileType: 'board',
     mockOptions: { surface: 'canvas' },
     options: {
@@ -119,6 +120,7 @@ export const VISUAL_FIXTURES: readonly VisualFixture[] = [
   }),
   viewerFixture({
     id: 'empty-project-invalid-export-controls',
+    platformSnapshots: ['win32'],
     fileType: 'schematic',
     mockOptions: { surface: 'none' },
     options: {
