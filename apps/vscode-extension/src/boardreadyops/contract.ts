@@ -37,7 +37,7 @@ function readDoctorVersion(value: unknown): string {
 }
 
 // Shape pinned to the doctor-v1 JSON Schema shipped by published
-// boardreadyops@1.68.3. A matching version number alone is not a capability
+// boardreadyops@1.68.3 and @1.70.0. A matching version alone is not a capability
 // contract: malformed or extra private fields must fail before CLI invocation.
 const doctorTopFields = new Set([
   'schemaVersion',

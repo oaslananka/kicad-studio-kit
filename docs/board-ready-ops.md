@@ -6,7 +6,7 @@ BoardReadyOps runs as an external CLI tool (`npx boardreadyops`) and reports fin
 
 ## Prerequisites
 
-- **Node.js** 22.14+ or 24.x (the supported engines of published BoardReadyOps 1.68.3)
+- **Node.js** 24.x (published BoardReadyOps 1.70.0 declares the `^24.0.0` engine range)
 - The CLI is resolved automatically — no separate install step required.
 
 ## Configuration
@@ -55,15 +55,19 @@ All commands are available from the Command Palette (`Ctrl+Shift+P`) or the KiCa
 
 ### Review JSON version gate
 
-**Published BoardReadyOps 1.68.3 does not emit JSON** for `review publish --dry-run`
-or `review verify`, even with `--format json`. Studio never parses this human output
-as a review verdict. The preview requires compatible `doctor --format json` and a
-version >=1.69.0 **plus** actual review JSON schema 1, matching tool/version, zero
-exit, `success:true`, `dryRun:true`, SHA-256 digest and no review URL or run ID.
-Unexpected top-level or tool metadata is rejected as required by the versioned
-upstream schema's `additionalProperties: false`, including fields that might
-contain private data. Any mismatch fails closed; unreleased upstream JSON is
-not production support.
+**Published BoardReadyOps 1.70.0 supports review publish JSON v1.** The npm
+tarball's versioned `review-publish-result.schema.json` and the real
+`review publish --dry-run --upload metadata --format json` CLI output were
+checked against a test-only KiCad fixture. Earlier published 1.68.3 emits
+human-oriented text for review publish, even with `--format json`: Studio must
+never treat that text as a review verdict.
+
+The preview requires compatible `doctor --format json`, CLI version >=1.70.0
+and an actual schema-v1 review result with matching tool/version, zero exit,
+`success:true`, `dryRun:true`, SHA-256 digest and no review URL or run ID.
+Unexpected top-level or tool metadata is rejected, matching the published
+schema's `additionalProperties: false`. Unpublished or malformed review
+results remain disabled, even when doctor compatibility succeeds.
 
 The preview checks `run --format json` readiness, distinguishes critical/high blockers,
 and displays an **unpublished, unapproved, unverified** digest as inert plaintext.
