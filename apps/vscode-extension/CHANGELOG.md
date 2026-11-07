@@ -10,6 +10,18 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.3.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.2.1...vscode-extension-v2.3.0) (2026-11-07)
+
+
+### Features
+
+* **kicad-studio:** improve multilayer PCB inspection and rendering ([ea96a88](https://github.com/oaslananka/kicad-studio-kit/commit/ea96a8802b381cae46670c5dffec929cf923ff45))
+
+
+### Bug Fixes
+
+* **kicad-studio:** cancel stale PCB preparation on refresh ([2cff53a](https://github.com/oaslananka/kicad-studio-kit/commit/2cff53ac2263a021318d4c491f7c8203c5cbb23f))
+
 ## [2.2.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.2.0...vscode-extension-v2.2.1) (2026-11-07)
 
 
