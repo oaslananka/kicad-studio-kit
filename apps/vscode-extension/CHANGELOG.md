@@ -10,6 +10,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.2.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.2.0...vscode-extension-v2.2.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* **kicad-studio:** restore MIT licensing and refresh repository badges ([#874](https://github.com/oaslananka/kicad-studio-kit/issues/874)) ([3c2746c](https://github.com/oaslananka/kicad-studio-kit/commit/3c2746c27c664e0d13349a364c34da77d5fe1b76))
+
 ## [2.2.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.1.2...vscode-extension-v2.2.0) (2026-11-04)
 
 
