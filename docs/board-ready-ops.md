@@ -73,8 +73,17 @@ The preview checks `run --format json` readiness, distinguishes critical/high bl
 and displays an **unpublished, unapproved, unverified** digest as inert plaintext.
 There is **no upload, token use, approval, signature, project edit or gate change**.
 The web link opens the general dashboard, not an invented review-specific URL.
-Actual manufacturer handoff still requires separate `release prepare` and verified
-`release verify --format json` evidence. DRC/ERC gates remain independent.
+`release prepare` writes `release-prepare.json`, not the `manifest.json` needed
+by `release verify`. Generate and check a local evidence bundle instead:
+
+```bash
+npx boardreadyops release pack . --output build/boardreadyops-release
+npx boardreadyops release verify build/boardreadyops-release --format json
+```
+
+Use a fresh output directory. Successful verification checks bundle integrity,
+**not** readiness or manufacturing/review approval. DRC/ERC and BoardReadyOps
+readiness gates remain independent.
 
 ## Results
 

@@ -133,7 +133,7 @@ async function showBoardReadyOpsEvidenceState(
           );
         } else {
           void vscode.window.showWarningMessage(
-            `BoardReadyOps release evidence is not verified (${verification.checked} artifact(s) checked).${signatureText} Run BoardReadyOps release prepare/verify to refresh the bundle.`
+            `BoardReadyOps release evidence is not verified (${verification.checked} artifact(s) checked).${signatureText} Use BoardReadyOps release pack to create a fresh evidence bundle, then release verify. Release prepare alone does not create a verifiable bundle.`
           );
         }
       } catch (err) {
