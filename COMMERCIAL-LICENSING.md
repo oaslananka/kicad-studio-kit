@@ -1,18 +1,13 @@
-# Commercial Licensing
+# Historical Commercial Licensing Notice
 
-The PolyForm Noncommercial License 1.0.0 does not grant permission for
-commercial use of current KiCad Studio Kit project-authored source code.
+> **Superseded on 2026-11-04.** Current project-authored source is
+> [MIT-licensed](LICENSE), allowing commercial reuse under the MIT terms
+> without a separate commercial agreement.
 
-Organizations or individuals that want to use, deploy, redistribute, embed, or
-otherwise exploit the current project-authored code commercially must obtain a
-separate written commercial license from the copyright holder.
+Between 2026-09-14 and the MIT restoration, project-authored source was
+distributed under PolyForm Noncommercial 1.0.0. That historical license did
+not authorize commercial use without separate permission.
 
-Commercial licensing can cover the KiCad Studio VS Code extension and other
-project-authored components in this repository. It does not alter the licenses
-of third-party dependencies or bundled materials such as KiCanvas.
-
-For licensing inquiries, contact the maintainer through:
-`https://github.com/oaslananka`.
-
-This document is informational and does not itself grant a commercial license,
-support commitment, warranty, or service-level agreement.
+This document records the earlier policy, not a restriction on current
+MIT-licensed code. Earlier release artifacts retain their original grants.
+Third-party components retain their own license terms; see [Licensing](LICENSING.md).

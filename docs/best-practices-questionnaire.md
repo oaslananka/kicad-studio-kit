@@ -15,7 +15,7 @@ The first command prints a dry-run report. The second writes `docs/best-practice
 
 ## Badge milestone
 
-Passing and Silver were achieved on 2026-06-30 while the repository was MIT-licensed. Since the 2026-09-14 transition to PolyForm Noncommercial 1.0.0, these questionnaire answers are historical evidence rather than a current FLOSS badge claim. Gold remains outside the roadmap.
+Passing and Silver were achieved on 2026-06-30 under MIT. The repository used PolyForm from 2026-09-14 until MIT was restored on 2026-11-04. These historical answers do not establish current BadgeApp status, which must be verified separately. Gold remains outside the roadmap.
 
 ## High-impact Passing fields
 

@@ -271,7 +271,7 @@ function validateWorkspacePackageManagers(
     }
     const pkgJson = readJson(
       repoRoot,
-      path.join(pkgPath, "package.json"),
+      pkgPath + "/package.json",
       errors,
     );
     if (!pkgJson) continue;

@@ -13,10 +13,13 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
   <a href="https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit"><img src="https://api.scorecard.dev/projects/github.com/oaslananka/kicad-studio-kit/badge" alt="OpenSSF Scorecard"></a>
 </p>
 
+[![GitGem](https://gitgem.org/api/badge/github/oaslananka/kicad-studio-kit.svg)](https://gitgem.org/github/oaslananka/kicad-studio-kit)
+
 <p>
+  <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/badge/VS%20Marketplace-install-007ACC" alt="Install from Visual Studio Marketplace"></a>
   <a href="https://open-vsx.org/extension/oaslananka/kicadstudiokit"><img src="https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX" alt="Open VSX version"></a>
-  <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/badge/VS%20Marketplace-install-blue" alt="Install from Visual Studio Marketplace"></a>
-  <a href="https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="PolyForm Noncommercial 1.0.0"></a>
+  <a href="https://open-vsx.org/extension/oaslananka/kicadstudiokit"><img src="https://img.shields.io/open-vsx/dt/oaslananka/kicadstudiokit?label=Open%20VSX%20downloads" alt="Total Open VSX downloads"></a>
+  <a href="https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44f" alt="MIT license"></a>
   <a href="https://oaslananka.github.io/kicad-studio-kit/"><img src="https://img.shields.io/badge/docs-site-blue" alt="Documentation site"></a>
 </p>
 
@@ -29,12 +32,17 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
 </p>
 
 <p>
-  <a href="https://www.buymeacoffee.com/oaslananka"><img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=000000&labelColor=FFDD00&color=111111" alt="Buy me a coffee"></a>
+  <a href="https://github.com/sponsors/oaslananka"><img src="https://img.shields.io/badge/GitHub%20Sponsors-sponsor-EA4AAA?logo=githubsponsors&logoColor=white" alt="Sponsor on GitHub"></a>
+  <a href="https://www.buymeacoffee.com/oaslananka"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black" alt="Support on Buy Me a Coffee"></a>
 </p>
 
 </div>
 
-[![GitGem](https://gitgem.org/api/badge/github/oaslananka/kicad-studio-kit.svg)](https://gitgem.org/github/oaslananka/kicad-studio-kit)
+The **Open VSX downloads** badge reports that registry's cumulative download
+count. Microsoft Marketplace version/download badges were retired upstream; the
+[Marketplace listing](https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit)
+remains the source for its own usage metrics. No unsupported cross-store total
+or manually invented download figure is displayed.
 
 KiCad Studio Kit is the VS Code extension repository. The MCP server is
 developed and released separately. This repository owns only the extension-side
@@ -63,13 +71,13 @@ container image, and MCP Registry listing — lives in
 
 ## Repository maturity and standards
 
-**Historical OpenSSF Best Practices Silver (MIT-licensed period):** The
+**Historical OpenSSF Best Practices Silver:** The
 [Silver evidence](docs/best-practices-evidence.md) is preserved for traceability,
-not presented as a current FLOSS badge. Since the licensing transition,
-project-authored source is available under
-[PolyForm Noncommercial 1.0.0](LICENSE), which is not an OSI-approved open-source
-license. Security, release, provenance, and governance checks continue to
-operate independently of historical badge status.
+not presented as a current badge. Current project-authored source is
+[MIT-licensed](LICENSE), following the November 2026 restoration of MIT terms.
+Past PolyForm-licensed releases retain their original grant; badge status is
+not automatically reinstated by a license change. Security and release
+controls remain independently enforced.
 
 ## Version Baseline
 
@@ -185,4 +193,4 @@ opening a pull request.
 
 ## License
 
-Current KiCad Studio Kit project-authored source is available under the [PolyForm Noncommercial License 1.0.0](LICENSE). Commercial use requires a separate written license; see [LICENSING.md](LICENSING.md) and [COMMERCIAL-LICENSING.md](COMMERCIAL-LICENSING.md). Earlier revisions already published under MIT remain available under the MIT terms that applied when they were published.
+Current KiCad Studio Kit project-authored source is licensed under the [MIT License](LICENSE), including commercial reuse under its terms. Existing releases retain the license applicable when they were distributed. Third-party code retains its own license; see [LICENSING.md](LICENSING.md).

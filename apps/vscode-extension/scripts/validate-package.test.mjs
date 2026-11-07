@@ -54,7 +54,7 @@ test('validatePackage rejects contributed commands without registered implementa
 
 test('validatePackage rejects stale project license metadata', () => {
   const packageJson = readPackageJson();
-  packageJson.license = 'MIT';
+  packageJson.license = 'PolyForm-Noncommercial-1.0.0';
 
   assert.throws(
     () =>
@@ -65,7 +65,7 @@ test('validatePackage rejects stale project license metadata', () => {
         runVsce: false,
         validatePackageFiles: false
       }),
-    /extension license must be PolyForm-Noncommercial-1\.0\.0/
+    /extension license must be MIT/
   );
 });
 test('validatePackage rejects the deleted Marketplace package name', () => {

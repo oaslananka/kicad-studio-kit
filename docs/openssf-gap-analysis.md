@@ -1,10 +1,14 @@
+---
+search: false
+---
+
 # Historical OpenSSF Silver Evidence Analysis
 
 Review date: 2026-08-02
 
 ## Summary
 
-Passing and Silver were achieved during the MIT-licensed period. Since 2026-09-14, current project-authored source is PolyForm Noncommercial 1.0.0 and source-available rather than OSI-approved open source. This document now preserves the earlier Silver evidence and the quality controls that remain useful.
+Passing and Silver were achieved during the original MIT-licensed period. Source distributed from 2026-09-14 through the licensing restoration on 2026-11-04 used PolyForm Noncommercial 1.0.0. Current source is MIT-licensed again. This historical analysis preserves Silver evidence but does not assert a renewed live BadgeApp status.
 
 ## Passing readiness
 

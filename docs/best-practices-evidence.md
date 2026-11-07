@@ -3,11 +3,11 @@
 This page is the evidence register for the OpenSSF Best Practices project at
 <https://www.bestpractices.dev/projects/13405>.
 
-Last reviewed: 2026-08-02.
+Historical evidence last reviewed: 2026-08-02. License metadata updated: 2026-11-04.
 
 ## Historical MIT-period badge status
 
-Silver was achieved on 2026-06-30 while the project was MIT-licensed. That status is retained here as historical evidence; it is no longer presented in the README as a current FLOSS licensing claim after the 2026-09-14 move to PolyForm Noncommercial 1.0.0.
+Silver was achieved on 2026-06-30 under MIT. PolyForm applied to new project-authored source between 2026-09-14 and the MIT restoration on 2026-11-04. The achievement remains historical evidence; current badge status has not been reverified.
 
 | Field                    | Value                                             |
 | ------------------------ | ------------------------------------------------- |
@@ -17,14 +17,14 @@ Silver was achieved on 2026-06-30 while the project was MIT-licensed. That statu
 | Historical badge status  | Passing and Silver achieved during MIT period     |
 | Next priority            | Preserve historical evidence and quality controls |
 
-Silver was the final badge target during the MIT-licensed period. Current project-authored source is source-available rather than OSI-approved open source, so the prior badge evidence is historical. Existing controls that exceed Silver remain product-quality and security controls and must not be weakened.
+Silver was the last verified badge milestone. Current project-authored source is MIT-licensed again, but this does not automatically reactivate any BadgeApp designation. Existing controls exceeding Silver remain independent product and security gates.
 
 ## Evidence matrix
 
 | Area                  | Claim                                                                                                                            | Repository evidence                                                                                                                                                             | Follow-up                                                                                                                                                                     |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Project identity      | The repository has a clear product boundary and canonical URL.                                                                   | `README.md`, `CANONICAL.md`, `docs/architecture/repo-structure.md`, `docs/architecture/product-boundaries.md`                                                                   | Keep this repo scoped to the VS Code extension.                                                                                                                               |
-| License               | Historical MIT releases used a recognized FLOSS license; current project-authored source is PolyForm Noncommercial 1.0.0.        | `LICENSE`, `LICENSING.md`, `README.md`                                                                                                                                          | Preserve prior MIT grants while keeping current release artifacts aligned with the source-available license.                                                                  |
+| License               | Current project-authored source is MIT; historical PolyForm releases retain their original terms.                                | `LICENSE`, `LICENSING.md`, `README.md`                                                                                                                                          | Keep current MIT metadata and new release artifacts aligned without rewriting historical licenses.                                                                            |
 | Contribution process  | Contributors have documented contribution requirements.                                                                          | `CONTRIBUTING.md`, `.github/pull_request_template.md`, `.github/CODEOWNERS`, `GOVERNANCE.md`, `SUPPORT.md`                                                                      | Reference these files in the badge form.                                                                                                                                      |
 | Code of conduct       | Contributor behavior is documented.                                                                                              | `CODE_OF_CONDUCT.md`                                                                                                                                                            | Link the file in the badge form.                                                                                                                                              |
 | Security policy       | Vulnerability reporting is documented.                                                                                           | `SECURITY.md`, `docs/security.md`, `docs/security/threat-model.md`                                                                                                              | Keep reporting instructions current.                                                                                                                                          |

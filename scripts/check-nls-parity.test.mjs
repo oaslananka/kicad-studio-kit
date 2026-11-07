@@ -21,11 +21,20 @@ describe("English-only NLS catalog policy", () => {
     assert.match(run.stdout, /English-only NLS catalog verified/u);
   });
 
-  it("runs the policy when invoked via a symlink", () => {
+  it("runs the policy when invoked through a filesystem link", () => {
     const temporary = mkdtempSync(path.join(os.tmpdir(), "studio-nls-link-"));
     try {
-      const link = path.join(temporary, "check-nls-parity.mjs");
-      symlinkSync(script, link);
+      // Windows directory junctions are available without symlink privileges.
+      // POSIX still exercises a file symlink and its realpath resolution.
+      const link =
+        process.platform === "win32"
+          ? path.join(temporary, "scripts", path.basename(script))
+          : path.join(temporary, path.basename(script));
+      if (process.platform === "win32") {
+        symlinkSync(path.dirname(script), path.dirname(link), "junction");
+      } else {
+        symlinkSync(script, link);
+      }
       const run = spawnSync(process.execPath, [link], {
         encoding: "utf8",
         cwd: path.resolve(path.dirname(script), ".."),
