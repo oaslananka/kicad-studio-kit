@@ -18,9 +18,10 @@ Open VS Code Settings (`Ctrl+,`) and search for `boardreadyops`.
 | `kicadstudio.boardReadyOps.enabled`  | boolean | `false` | Enable BoardReadyOps checks for the active board.                                                   |
 | `kicadstudio.boardReadyOps.specFile` | string  | `""`    | Path to the board specification file (JSON or YAML). Leave empty to use the project's default spec. |
 
-BoardReadyOps execution requires a trusted VS Code workspace. In Restricted Mode,
-BoardReadyOps commands cannot launch the external CLI, and workspace-defined
-BoardReadyOps settings are ignored until trust is granted.
+BoardReadyOps requires workspace trust. Restricted Mode blocks CLI use and
+ignores workspace settings. Studio validates doctor v1 JSON checks,
+recommendations, tool identity and version before advanced workflows; malformed
+reports fail closed.
 
 ## Commands
 
@@ -41,16 +42,12 @@ All commands are available from the Command Palette (`Ctrl+Shift+P`) or the KiCa
 2. (Optional) Set `kicadstudio.boardReadyOps.specFile` to a custom spec path.
 3. Open a KiCad project (a directory containing a `.kicad_pro` file).
 4. Run **BoardReadyOps: Check Board Readiness** from the Command Palette.
-5. Review findings in the Problems panel (`Ctrl+Shift+M`). The saved readiness report is scoped to the
-   project that was checked; it is not displayed after changing projects or
-   disabling BoardReadyOps. Retrying a check clears the cached report until
-   the new check succeeds.
-6. Use **KiCad Studio: Show BoardReadyOps Remediation Plan** for structured next actions.
-   The cancellable CLI progress indicator closes before the action picker appears.
-   Select an action to open its **complete fix steps and verification commands in an
-   unsaved plaintext preview**; suggested commands are never executed automatically.
-   The external plan is accepted only when its JSON status/exit code agrees with the
-   CLI process result; malformed or contradictory plans are rejected.
+5. Review findings in Problems (`Ctrl+Shift+M`). Reports are project-scoped and
+   cleared on retry, project change or disabling BoardReadyOps.
+6. **Show BoardReadyOps Remediation Plan** displays structured next actions.
+   Selecting one opens all fix steps and verification commands in unsaved
+   plaintext; none execute automatically. Malformed JSON or inconsistent
+   status/exit codes are rejected.
 
 7. Choose **KiCad Studio: BoardReadyOps Review and Evidence** in the Review Task Hub to
    verify local release evidence, preview review metadata (dry run only), or open the web

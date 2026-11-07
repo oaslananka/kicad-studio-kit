@@ -36,6 +36,71 @@ function readDoctorVersion(value: unknown): string {
     : 'unknown';
 }
 
+// Shape pinned to the doctor-v1 JSON Schema shipped by published
+// boardreadyops@1.68.3. A matching version number alone is not a capability
+// contract: malformed or extra private fields must fail before CLI invocation.
+const doctorTopFields = new Set([
+  'schemaVersion',
+  'tool',
+  'checks',
+  'recommendations'
+]);
+const doctorToolFields = new Set(['name', 'version']);
+const doctorCheckFields = new Set(['name', 'title', 'items']);
+const doctorItemFields = new Set(['severity', 'message', 'recommendation']);
+const doctorCheckNames = new Set([
+  'runtime',
+  'kicad',
+  'adapters',
+  'repository',
+  'suppressions',
+  'action'
+]);
+const doctorItemSeverities = new Set(['pass', 'warn', 'fail', 'info']);
+
+function hasDoctorFields(
+  value: unknown,
+  allowed: ReadonlySet<string>
+): value is Record<string, unknown> {
+  return isRecord(value) && Object.keys(value).every((key) => allowed.has(key));
+}
+
+function isDoctorItem(value: unknown): boolean {
+  return (
+    hasDoctorFields(value, doctorItemFields) &&
+    doctorItemSeverities.has(String(value['severity'])) &&
+    typeof value['message'] === 'string' &&
+    (value['recommendation'] === undefined ||
+      typeof value['recommendation'] === 'string')
+  );
+}
+
+function isDoctorCheck(value: unknown): boolean {
+  return (
+    hasDoctorFields(value, doctorCheckFields) &&
+    doctorCheckNames.has(String(value['name'])) &&
+    typeof value['title'] === 'string' &&
+    Array.isArray(value['items']) &&
+    value['items'].every(isDoctorItem)
+  );
+}
+
+function isPublishedDoctorShape(value: unknown): boolean {
+  if (!hasDoctorFields(value, doctorTopFields)) return false;
+  const tool = value['tool'];
+  const checks = value['checks'];
+  const recommendations = value['recommendations'];
+  return (
+    hasDoctorFields(tool, doctorToolFields) &&
+    tool['name'] === 'boardreadyops' &&
+    typeof tool['version'] === 'string' &&
+    Array.isArray(checks) &&
+    checks.every(isDoctorCheck) &&
+    Array.isArray(recommendations) &&
+    recommendations.every((item) => typeof item === 'string')
+  );
+}
+
 export function discoverBoardReadyOpsContract(
   input: unknown
 ): BoardReadyOpsContractDiscovery {
@@ -69,23 +134,7 @@ export function discoverBoardReadyOpsContract(
     };
   }
 
-  const tool =
-    value && typeof value === 'object'
-      ? (value as { tool?: unknown }).tool
-      : undefined;
-  const toolName =
-    tool && typeof tool === 'object'
-      ? (tool as { name?: unknown }).name
-      : undefined;
-  const checks =
-    value && typeof value === 'object'
-      ? (value as { checks?: unknown }).checks
-      : undefined;
-  if (
-    toolName !== 'boardreadyops' ||
-    !Array.isArray(checks) ||
-    version === 'unknown'
-  ) {
+  if (!isPublishedDoctorShape(value) || version === 'unknown') {
     return {
       compatible: false,
       reason: 'malformed doctor payload',

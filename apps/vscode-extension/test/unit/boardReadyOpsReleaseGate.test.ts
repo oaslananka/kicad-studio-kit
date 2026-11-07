@@ -72,7 +72,8 @@ describe('BoardReadyOps manufacturing release gate', () => {
         stdout: JSON.stringify({
           schemaVersion: 1,
           tool: { name: 'boardreadyops', version: '1.37.0' },
-          checks: []
+          checks: [],
+          recommendations: []
         }),
         stderr: '',
         exitCode: 0
@@ -122,7 +123,8 @@ describe('BoardReadyOps manufacturing release gate', () => {
         stdout: JSON.stringify({
           schemaVersion: 1,
           tool: { name: 'boardreadyops', version: '1.37.0' },
-          checks: []
+          checks: [],
+          recommendations: []
         }),
         stderr: '',
         exitCode: 0
@@ -180,7 +182,8 @@ describe('BoardReadyOps manufacturing release gate', () => {
       stdout: JSON.stringify({
         schemaVersion: 99,
         tool: { name: 'boardreadyops', version: '1.37.0' },
-        checks: []
+        checks: [],
+        recommendations: []
       }),
       stderr: '',
       exitCode: 0
@@ -197,7 +200,8 @@ describe('BoardReadyOps manufacturing release gate', () => {
         stdout: JSON.stringify({
           schemaVersion: 1,
           tool: { name: 'boardreadyops', version: '1.37.0' },
-          checks: []
+          checks: [],
+          recommendations: []
         }),
         stderr: '',
         exitCode: 0
@@ -234,7 +238,8 @@ describe('BoardReadyOps manufacturing release gate', () => {
         stdout: JSON.stringify({
           schemaVersion: 1,
           tool: { name: 'boardreadyops', version: '1.37.0' },
-          checks: []
+          checks: [],
+          recommendations: []
         }),
         stderr: '',
         exitCode: 0
@@ -270,7 +275,8 @@ describe('BoardReadyOps manufacturing release gate', () => {
           stdout: JSON.stringify({
             schemaVersion: 1,
             tool: { name: 'boardreadyops', version: '1.37.0' },
-            checks: []
+            checks: [],
+            recommendations: []
           }),
           stderr: '',
           exitCode: 0
@@ -296,7 +302,8 @@ describe('BoardReadyOps manufacturing release gate', () => {
         stdout: JSON.stringify({
           schemaVersion: 1,
           tool: { name: 'boardreadyops', version: '1.37.0' },
-          checks: []
+          checks: [],
+          recommendations: []
         }),
         stderr: '',
         exitCode: 0
@@ -356,7 +363,8 @@ describe('BoardReadyOps manufacturing release gate', () => {
         stdout: JSON.stringify({
           schemaVersion: 1,
           tool: { name: 'boardreadyops', version: '1.37.0' },
-          checks: []
+          checks: [],
+          recommendations: []
         }),
         stderr: '',
         exitCode: 0
