@@ -37,6 +37,22 @@ test.describe('KiCad Studio VS Code E2E', () => {
     });
 
     try {
+      // Browser flags alone do not reliably disable WebGL in Electron's
+      // isolated VS Code webviews. Remove GPU contexts in newly loaded frames
+      // to exercise the real renderer-failure recovery path deterministically.
+      await session.context.addInitScript({
+        content: `
+        (() => {
+          const realGetContext = HTMLCanvasElement.prototype.getContext;
+          HTMLCanvasElement.prototype.getContext = function (kind, ...args) {
+            if (kind === 'webgl' || kind === 'webgl2' || kind === 'experimental-webgl') {
+              return null;
+            }
+            return realGetContext.call(this, kind, ...args);
+          };
+        })();
+      `
+      });
       // This is a fresh VS Code session. Ensure the extension has activated
       // and registered its custom editors before opening the PCB; otherwise a
       // slow runner can race file opening against provider registration.
@@ -45,7 +61,6 @@ test.describe('KiCad Studio VS Code E2E', () => {
         'KiCad Studio: Open Task Hub'
       );
       await openWorkspaceFile(session.page, 'sample.kicad_pcb');
-
       await expect
         .poll(
           async () => {
@@ -60,6 +75,17 @@ test.describe('KiCad Studio VS Code E2E', () => {
           { timeout: 60000 }
         )
         .toBe('CLI SVG fallback');
+
+      // Prove the isolated webview really lacked GPU context. Without this,
+      // an unrelated CLI fallback could accidentally make the test pass.
+      for (const frame of session.page.frames()) {
+        if (!(await frame.locator('#viewer-engine-badge').count())) continue;
+        const webgl2Available = await frame.evaluate(() =>
+          Boolean(document.createElement('canvas').getContext('webgl2'))
+        );
+        expect(webgl2Available).toBe(false);
+        break;
+      }
     } finally {
       await session.close();
     }

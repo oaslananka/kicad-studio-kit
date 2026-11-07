@@ -40,6 +40,10 @@ export function createViewerControllerScript(): string {
     const allLayersBtn = document.getElementById('all-layers-btn');
     const noneLayersBtn = document.getElementById('none-layers-btn');
     const copperLayersBtn = document.getElementById('copper-layers-btn');
+    const layerNormalBtn = document.getElementById('layer-normal-btn');
+    const layerDimBtn = document.getElementById('layer-dim-btn');
+    const layerSoloBtn = document.getElementById('layer-solo-btn');
+    const layerCountEl = document.getElementById('layer-count');
 
     const payload = JSON.parse(
       document.getElementById('viewer-payload').textContent || '{}'
@@ -116,6 +120,7 @@ export function createViewerControllerScript(): string {
       theme: payload.theme || 'kicad',
       toolsPanelCollapsed: true,
       selectedSheet: 'root',
+      layerMode: 'normal',
       ...(payload.restoreState || {}),
       engine: payload.engine || createEngineState(payload.disabledReason ? 'metadata-only' : 'kicanvas', payload.disabledReason || undefined)
     };
@@ -176,6 +181,9 @@ export function createViewerControllerScript(): string {
     allLayersBtn?.addEventListener('click', () => setAllLayers(true));
     noneLayersBtn?.addEventListener('click', () => setAllLayers(false));
     copperLayersBtn?.addEventListener('click', () => setCopperOnly());
+    layerNormalBtn?.addEventListener('click', () => setLayerMode('normal'));
+    layerDimBtn?.addEventListener('click', () => setLayerMode('dim'));
+    layerSoloBtn?.addEventListener('click', () => setLayerMode('solo'));
     populateSheetSelect();
     renderSidebar();
     updateEngineUi(localState.engine);
@@ -359,6 +367,20 @@ export function createViewerControllerScript(): string {
         }
 
         if (renderSurface.tagName.toLowerCase() === 'canvas') {
+          // Bundled KiCanvas draws inside nested Shadow DOM. Its board canvas
+          // otherwise retains the browser default 300x150 box in VS Code,
+          // exposing a bright unpainted surface around the actual PCB.
+          // Only repair layout for the known board-viewer host; the renderer
+          // retains ownership of GPU resources and pixel dimensions.
+          const boardHost = renderSurface.getRootNode()?.host;
+          if (boardHost?.tagName?.toLowerCase() === 'kc-board-viewer') {
+            boardHost.style.flex = '1 1 auto';
+            boardHost.style.height = '100%';
+            boardHost.style.minHeight = '0';
+            renderSurface.style.display = 'block';
+            renderSurface.style.width = '100%';
+            renderSurface.style.height = '100%';
+          }
           const blankCanvas = await isCanvasEffectivelyBlank(renderSurface);
           if (blankCanvas) {
             const fallbackLoaded = await recoverRendererFailure(
@@ -389,8 +411,15 @@ export function createViewerControllerScript(): string {
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         if (generation !== viewerGeneration) return;
         viewer.fitToScreen?.();
-        applyLayerVisibility(viewer);
+        if (payload.fileType === 'board' && payload.metadata?.layers?.some((layer) => layer.name === 'Edge.Cuts')) {
+          try {
+            getKiCanvasViewer(viewer)?.zoom_to_board?.();
+          } catch {
+            // Bundled renderer versions without this optional API retain Fit.
+          }
+        }
         applyViewerState(viewer);
+        applyLayerVisibility(viewer);
         installSelectionTracking(viewer);
         setViewerSurfaceVisible(true);
         renderHopOverOverlay();
@@ -506,18 +535,39 @@ export function createViewerControllerScript(): string {
       });
     }
 
+    // KiCanvas paints inside several nested open shadow roots. A normal
+    // querySelectorAll() cannot see those canvases, even when rendering works.
+    function findRenderSurfaces(root) {
+      const found = [];
+      const stack = [root];
+      let scanned = 0;
+      while (stack.length && scanned < 1800) {
+        const node = stack.pop();
+        scanned++;
+        if (node instanceof HTMLCanvasElement || node instanceof SVGSVGElement) {
+          found.push(node);
+        }
+        if (node.shadowRoot) {
+          stack.push(...Array.from(node.shadowRoot.children));
+        }
+        stack.push(...Array.from(node.children || []));
+      }
+      return found;
+    }
+
     function waitForRenderableSurface(container, timeoutMs) {
       return new Promise((resolve) => {
         const startedAt = Date.now();
         const pickSurface = () => {
-          const canvases = Array.from(container.querySelectorAll('canvas'))
-            .filter((entry) => entry.width > 0 && entry.height > 0)
+          const surfaces = findRenderSurfaces(container);
+          const canvases = surfaces
+            .filter((entry) => entry instanceof HTMLCanvasElement && entry.width > 0 && entry.height > 0)
             .sort((left, right) => (right.width * right.height) - (left.width * left.height));
           if (canvases[0]) {
             return canvases[0];
           }
-          return Array.from(container.querySelectorAll('svg')).find(
-            (entry) => entry.clientWidth > 0 && entry.clientHeight > 0
+          return surfaces.find(
+            (entry) => entry instanceof SVGSVGElement && entry.clientWidth > 0 && entry.clientHeight > 0
           );
         };
 
@@ -990,6 +1040,13 @@ export function createViewerControllerScript(): string {
       setControlDisabled(allLayersBtn, !layerControlsEnabled);
       setControlDisabled(noneLayersBtn, !layerControlsEnabled);
       setControlDisabled(copperLayersBtn, !layerControlsEnabled);
+      setControlDisabled(layerNormalBtn, !layerControlsEnabled);
+      setControlDisabled(layerDimBtn, !layerControlsEnabled);
+      setControlDisabled(layerSoloBtn, !layerControlsEnabled);
+      layerListEl.querySelectorAll('input,button').forEach((control) => {
+        setControlDisabled(control, !layerControlsEnabled ||
+          (localState.layerMode === 'solo' && control.tagName === 'INPUT'));
+      });
     }
 
     function setControlDisabled(control, disabled) {
@@ -1018,6 +1075,7 @@ export function createViewerControllerScript(): string {
       updateZoomLevel();
       updateGridToggle();
       updateThemeToggle();
+      renderSidebar();
       updateSelectionSummary();
       postViewerState();
     }
@@ -1034,28 +1092,76 @@ export function createViewerControllerScript(): string {
       tuningListEl.innerHTML = '';
       notesListEl.innerHTML = '';
 
-      if (!localState.activeLayers && layers.length) {
+      const names = new Set(layers.map((layer) => layer.name));
+      if (!Array.isArray(localState.activeLayers)) {
         localState.activeLayers = layers.filter((layer) => layer.visible !== false).map((layer) => layer.name);
+      } else {
+        localState.activeLayers = localState.activeLayers.filter((name) => names.has(name));
+      }
+      if (!names.has(localState.focusedLayer)) {
+        localState.focusedLayer = layers.find((layer) => /\.Cu$/i.test(layer.name))?.name || layers[0]?.name;
+      }
+      if (!['normal', 'dim', 'solo'].includes(localState.layerMode)) {
+        localState.layerMode = 'normal';
       }
 
+      const mode = localState.layerMode;
+      for (const [button, value] of [[layerNormalBtn, 'normal'], [layerDimBtn, 'dim'], [layerSoloBtn, 'solo']]) {
+        if (!button) continue;
+        button.setAttribute('aria-pressed', mode === value ? 'true' : 'false');
+        button.classList.toggle('is-active', mode === value);
+      }
+      const visibleCount = mode === 'solo'
+        ? Number(Boolean(localState.focusedLayer))
+        : localState.activeLayers.length;
+      if (layerCountEl) layerCountEl.textContent = visibleCount + '/' + layers.length + ' visible';
+
       for (const layer of layers) {
-        const row = document.createElement('label');
+        const row = document.createElement('div');
         row.className = 'layer-row';
-        const checked = (localState.activeLayers || []).includes(layer.name);
-        row.innerHTML = '<input type="checkbox"' + (checked ? ' checked' : '') + '> <span></span>';
-        row.querySelector('span').textContent = layer.name + (layer.kind ? ' (' + layer.kind + ')' : '');
-        row.querySelector('input').addEventListener('change', (event) => {
-          const nextChecked = Boolean(event.target.checked);
+        const checked = localState.activeLayers.includes(layer.name);
+        row.classList.toggle('is-focused', layer.name === localState.focusedLayer);
+        row.classList.toggle('is-hidden', !checked && mode !== 'solo');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = mode === 'solo' ? layer.name === localState.focusedLayer : checked;
+        checkbox.disabled = mode === 'solo' || localState.engine?.capabilities?.layers === false;
+        checkbox.setAttribute('aria-label', 'Show ' + layer.name);
+        checkbox.addEventListener('change', () => {
           const activeLayers = new Set(localState.activeLayers || []);
-          if (nextChecked) {
-            activeLayers.add(layer.name);
-          } else {
-            activeLayers.delete(layer.name);
-          }
-          localState = { ...localState, activeLayers: [...activeLayers] };
+          if (checkbox.checked) activeLayers.add(layer.name);
+          else activeLayers.delete(layer.name);
+          localState.activeLayers = [...activeLayers];
           postViewerState();
           applyLayerVisibility(viewerMount.querySelector('kicanvas-embed'));
+          renderSidebar();
         });
+        const swatch = document.createElement('span');
+        swatch.className = 'layer-swatch';
+        swatch.setAttribute('aria-hidden', 'true');
+        const color = readRenderedLayerColor(viewerMount.querySelector('kicanvas-embed'), layer.name);
+        swatch.dataset.colorSource = color ? 'renderer' : 'unavailable';
+        if (color) swatch.style.backgroundColor = color;
+        const select = document.createElement('button');
+        select.type = 'button';
+        select.className = 'layer-select';
+        select.disabled = localState.engine?.capabilities?.layers === false;
+        select.setAttribute('aria-pressed', layer.name === localState.focusedLayer ? 'true' : 'false');
+        select.setAttribute('aria-label', 'Focus ' + layer.name);
+        const name = document.createElement('span');
+        name.textContent = layer.name;
+        const kind = document.createElement('span');
+        kind.className = 'layer-kind';
+        kind.textContent = layer.kind || '';
+        select.append(name, kind);
+        select.addEventListener('click', () => {
+          localState.focusedLayer = layer.name;
+          if (localState.layerMode === 'normal') localState.layerMode = 'dim';
+          postViewerState();
+          applyLayerVisibility(viewerMount.querySelector('kicanvas-embed'));
+          renderSidebar();
+        });
+        row.append(checkbox, swatch, select);
         layerListEl.appendChild(row);
       }
 
@@ -1121,26 +1227,62 @@ export function createViewerControllerScript(): string {
       hopOverOverlay.hidden = true;
     }
 
-    function applyLayerVisibility(viewer) {
-      if (!viewer || !Array.isArray(localState.activeLayers)) {
-        return;
+    function getKiCanvasViewer(embed) {
+      // The shipped KiCanvas exposes its board viewer through the shadow-root
+      // app. Keep the mock/older direct shape as a compatibility fallback.
+      return embed?.viewer || embed?.shadowRoot?.querySelector('kc-board-app')?.viewer;
+    }
+
+    function readRenderedLayerColor(viewer, name) {
+      try {
+        const css = getKiCanvasViewer(viewer)?.layers?.by_name?.(name)?.color?.to_css?.();
+        return typeof css === 'string' && /^(?:rgba?\(|#[0-9a-f]{3,8}$)/i.test(css) ? css : '';
+      } catch {
+        // Color is an optional hint, never an invented representation of the board.
+        return '';
       }
+    }
 
-      try {
-        viewer.setAttribute('layers', localState.activeLayers.join(','));
-      } catch {}
+    function setLayerMode(mode) {
+      if (!['normal', 'dim', 'solo'].includes(mode)) return;
+      localState.layerMode = mode;
+      applyLayerVisibility(viewerMount.querySelector('kicanvas-embed'));
+      renderSidebar();
+      postViewerState();
+    }
 
+    function applyLayerVisibility(viewer) {
+      if (!viewer || !Array.isArray(localState.activeLayers)) return;
+      const names = new Set((payload.metadata?.layers || []).map((layer) => layer.name));
+      const focus = names.has(localState.focusedLayer) ? localState.focusedLayer : undefined;
+      const mode = ['normal', 'dim', 'solo'].includes(localState.layerMode) ? localState.layerMode : 'normal';
+      const visible = mode === 'solo' && focus ? [focus] : localState.activeLayers;
+      const selected = new Set(visible);
       try {
-        const internalViewer = viewer.viewer;
+        viewer.setAttribute('layers', visible.join(','));
+      } catch {
+        // The optional embed attribute is not part of the stable KiCanvas API.
+      }
+      try {
+        const internalViewer = getKiCanvasViewer(viewer);
         const layerSet = internalViewer?.layers;
-        if (!layerSet?.in_order) {
-          return;
-        }
+        if (!layerSet?.in_order || !layerSet?.highlight) return;
+        // Leave synthetic renderer layers (pads, vias, overlays) intact.
+        // Only PCB document layers listed by the parser are user-controllable.
         for (const layer of Array.from(layerSet.in_order())) {
-          layer.visible = localState.activeLayers.includes(layer.name);
+          if (names.has(layer.name)) layer.visible = selected.has(layer.name);
+        }
+        if (mode === 'dim' && focus && selected.has(focus)) {
+          layerSet.highlight(layerSet.by_name?.(focus) ?? focus);
+        } else if (mode === 'solo' && focus) {
+          layerSet.highlight(layerSet.by_name?.(focus) ?? focus);
+        } else {
+          layerSet.highlight(null);
         }
         internalViewer.draw?.();
-      } catch {}
+      } catch {
+        // Do not turn a renderer-internal API mismatch into a broken viewer.
+      }
     }
 
     function setAllLayers(visible) {
@@ -1226,7 +1368,7 @@ export function createViewerControllerScript(): string {
     }
 
     function exportPng() {
-      const canvas = viewerMount.querySelector('canvas');
+      const canvas = findRenderSurfaces(viewerMount).find((entry) => entry instanceof HTMLCanvasElement);
       if (!canvas && fallbackSvgDataUrl) {
         void exportFallbackSvgAsPng();
         return;

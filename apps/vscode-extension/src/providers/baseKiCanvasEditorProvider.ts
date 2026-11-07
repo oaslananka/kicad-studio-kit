@@ -1077,6 +1077,8 @@ function readViewerState(value: unknown): ViewerState | undefined {
   const activeLayers = readStringArray(payload['activeLayers']);
   const engine = readViewerEngineState(payload['engine']);
   const toolsPanelCollapsed = payload['toolsPanelCollapsed'];
+  const focusedLayer = asString(payload['focusedLayer']);
+  const layerMode = payload['layerMode'];
   return {
     zoom,
     grid,
@@ -1092,7 +1094,11 @@ function readViewerState(value: unknown): ViewerState | undefined {
       ? { selectedSheet: payload['selectedSheet'] }
       : {}),
     ...(selectedArea ? { selectedArea } : {}),
-    ...(activeLayers ? { activeLayers } : {})
+    ...(activeLayers ? { activeLayers } : {}),
+    ...(focusedLayer ? { focusedLayer } : {}),
+    ...(layerMode === 'normal' || layerMode === 'dim' || layerMode === 'solo'
+      ? { layerMode }
+      : {})
   };
 }
 

@@ -65,6 +65,8 @@ export interface ViewerState {
       }
     | undefined;
   activeLayers?: string[] | undefined;
+  focusedLayer?: string | undefined;
+  layerMode?: 'normal' | 'dim' | 'solo' | undefined;
 }
 
 export type ViewerEngineKind =
