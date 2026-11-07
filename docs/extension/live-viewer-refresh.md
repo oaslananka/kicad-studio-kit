@@ -32,6 +32,32 @@ connection or additional background service is needed.
   Refresh does **not** run DRC/ERC, export manufacturing files, modify the
   design or approve a manufacturing gate.
 
+## Multilayer PCB inspection
+
+Open a `*.kicad_pcb` file and select **Panel** in the embedded viewer to
+display the **PCB Layers** section. The colored swatches are read from the
+actual KiCanvas layer model, so the legend reflects the active renderer theme
+rather than a separate, misleading hard-coded color map. An unavailable
+renderer color is shown as a neutral swatch.
+
+- **All**, **None** and **Copper Only** change the selected PCB layer set.
+- Click a layer name to focus it and enter **Dim others** mode. KiCanvas draws
+  the focused layer on top and dims other layers while retaining their context.
+- **Solo** displays the selected PCB document layer; internal pad, via and
+  overlay layers may remain for orientation. **Normal** restores the previous
+  visible-layer selection. Selecting a different layer changes the focus.
+- The active layer, mode and visible-layer selection are preserved with the
+  viewer state when a saved file refreshes. They do not edit the KiCad board.
+- Layer controls require the interactive KiCanvas renderer. The CLI SVG and
+  metadata-only fallbacks explicitly disable these controls because their
+  exported image does not expose independent interactive layers.
+
+The KiCanvas embedding API remains experimental. This integration tests the
+bundled engine's nested Shadow DOM surface and internal layer behavior against
+real 4-, 8-, 16- and 32-copper-layer PCB examples, and falls back safely when
+the interactive renderer is unavailable. The original KiCad PCB file remains
+the source of truth for design, manufacturing and layer-stack definitions.
+
 ## Configuration and limitations
 
 The existing setting `kicadstudio.viewer.autoRefresh` (default: `true`)

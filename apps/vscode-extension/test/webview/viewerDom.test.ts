@@ -204,6 +204,148 @@ test.describe('KiCad Studio webview DOM', () => {
     await expect(page.locator('#fit-btn')).toBeFocused();
   });
 
+  test('multilayer focus, dim and solo affect renderer layers and preserve colors', async ({
+    page
+  }) => {
+    await installVsCodeApiMock(page);
+    const layers = ['F.Cu', 'In1.Cu', 'In2.Cu', 'B.Cu', 'Edge.Cuts'].map(
+      (name) => ({
+        name,
+        kind: name.endsWith('.Cu') ? 'signal' : 'user',
+        visible: true
+      })
+    );
+    await setViewerContent(page, {
+      fileName: 'four-layer.kicad_pcb',
+      fileType: 'board',
+      base64: readFixtureBase64('sample.kicad_pcb'),
+      metadata: { layers }
+    });
+    await expect(page.locator('#viewer-status')).toHaveText(
+      'Interactive renderer loaded: four-layer.kicad_pcb'
+    );
+    await page.locator('#side-panel-toggle').click();
+    await expect(page.locator('#layer-list .layer-row')).toHaveCount(5);
+    const swatches = await page
+      .locator('.layer-swatch')
+      .evaluateAll((elements) =>
+        elements.map(
+          (element) => (element as HTMLElement).style.backgroundColor
+        )
+      );
+    expect(new Set(swatches).size).toBeGreaterThan(3);
+    await expect(
+      page.locator('.layer-swatch[data-color-source="renderer"]')
+    ).toHaveCount(5);
+    await page.getByRole('button', { name: 'Focus In2.Cu' }).click();
+    await expect(page.locator('#layer-dim-btn')).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    await expect(
+      page.getByRole('button', { name: 'Focus In2.Cu' })
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(
+      await page.evaluate(() => (window as any).__kicadMock.highlight)
+    ).toBe('In2.Cu');
+    await page.locator('#layer-solo-btn').click();
+    await expect(page.locator('#layer-count')).toHaveText('1/5 visible');
+    const solo = await page.evaluate(() =>
+      (window as any).__kicadMock.layers.map((l: any) => ({
+        name: l.name,
+        visible: l.visible
+      }))
+    );
+    expect(
+      solo.filter((layer: any) => layer.visible).map((layer: any) => layer.name)
+    ).toEqual(['In2.Cu', ':Via:Holes']);
+    await expect(
+      page.getByRole('checkbox', { name: 'Show F.Cu' })
+    ).toBeDisabled();
+    await page.locator('#layer-normal-btn').click();
+    const restored = await page.evaluate(() =>
+      (window as any).__kicadMock.layers
+        .filter((l: any) => l.visible)
+        .map((l: any) => l.name)
+    );
+    expect(restored).toEqual([
+      ...layers.map((layer) => layer.name),
+      ':Via:Holes'
+    ]);
+    expect(
+      await page.evaluate(() => (window as any).__kicadMock.highlight)
+    ).toBeNull();
+    await page.getByRole('checkbox', { name: 'Show B.Cu' }).uncheck();
+    const invisible = await page.evaluate(
+      () =>
+        (window as any).__kicadMock.layers.find((l: any) => l.name === 'B.Cu')
+          .visible
+    );
+    expect(invisible).toBe(false);
+    expect(
+      await page.evaluate(() =>
+        (window as any).__vscodeMessages.some(
+          (message: any) =>
+            message.type === 'viewerState' &&
+            message.payload?.focusedLayer === 'In2.Cu' &&
+            message.payload?.layerMode === 'normal'
+        )
+      )
+    ).toBe(true);
+  });
+
+  test('restores focused layer and solo mode after a viewer refresh', async ({
+    page
+  }) => {
+    await installVsCodeApiMock(page);
+    await setViewerContent(page, {
+      fileName: 'restored.kicad_pcb',
+      fileType: 'board',
+      base64: readFixtureBase64('sample.kicad_pcb'),
+      metadata: {
+        layers: [
+          { name: 'F.Cu', visible: true },
+          { name: 'In1.Cu', visible: true },
+          { name: 'B.Cu', visible: true }
+        ]
+      },
+      restoreState: {
+        zoom: 1,
+        grid: false,
+        theme: 'kicad',
+        activeLayers: ['F.Cu', 'B.Cu'],
+        focusedLayer: 'In1.Cu',
+        layerMode: 'solo',
+        toolsPanelCollapsed: false
+      }
+    });
+    await expect(page.locator('#viewer-status')).toHaveText(
+      'Interactive renderer loaded: restored.kicad_pcb'
+    );
+    await expect(page.locator('#layer-solo-btn')).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    await expect(
+      page.getByRole('button', { name: 'Focus In1.Cu' })
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(
+      await page.evaluate(() =>
+        (window as any).__kicadMock.layers
+          .filter((l: any) => l.visible)
+          .map((l: any) => l.name)
+      )
+    ).toEqual(['In1.Cu', ':Via:Holes']);
+    await page.locator('#layer-normal-btn').click();
+    expect(
+      await page.evaluate(() =>
+        (window as any).__kicadMock.layers
+          .filter((l: any) => l.visible)
+          .map((l: any) => l.name)
+      )
+    ).toEqual(['F.Cu', 'B.Cu', ':Via:Holes']);
+  });
+
   test('does not replace a healthy KiCanvas renderer after an unrelated script error', async ({
     page
   }) => {

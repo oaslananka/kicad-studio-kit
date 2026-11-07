@@ -61,11 +61,25 @@ test.describe('KiCad Studio marketplace captures', () => {
       await capture(session, 'project-tree.png');
 
       await openWorkspaceFile(session.page, 'demo.kicad_sch');
-      await waitForViewerReady(session.page);
+      await waitForViewerReady(session.page, 'demo.kicad_sch');
       await capture(session, 'schematic-viewer.png');
 
-      await openWorkspaceFile(session.page, 'demo.kicad_pcb');
-      await waitForViewerReady(session.page);
+      // Capture a genuine board with explicit KiCad layer metadata; the
+      // standard project demo board is legacy-minimal and has no (layers) block.
+      // Keep the project DRC fixture intact for the remaining capture steps.
+      fs.copyFileSync(
+        path.join(
+          __dirname,
+          '..',
+          'fixtures',
+          'kicad10',
+          'multilayer_traces.kicad_pcb'
+        ),
+        path.join(session.workspacePath, 'multilayer_traces.kicad_pcb')
+      );
+      await openWorkspaceFile(session.page, 'multilayer_traces.kicad_pcb');
+      await waitForViewerReady(session.page, 'multilayer_traces.kicad_pcb');
+      await showPcbLayerPanel(session.page);
       await capture(session, 'pcb-viewer.png');
 
       await invokeCommand(session.page, 'KiCad: Run Design Rule Check (DRC)');
@@ -227,7 +241,39 @@ async function openWorkspaceFile(page: Page, fileName: string): Promise<void> {
   await expect(quickInput).toBeHidden({ timeout: 5000 });
 }
 
-async function waitForViewerReady(page: Page): Promise<void> {
+async function showPcbLayerPanel(page: Page): Promise<void> {
+  for (const frame of page.frames()) {
+    const status = frame.locator('#viewer-status');
+    if (
+      (await status.count()) === 0 ||
+      !(await status.isVisible()) ||
+      !(await status.textContent())?.includes('multilayer_traces.kicad_pcb')
+    ) {
+      continue;
+    }
+    const toggle = frame.locator('#side-panel-toggle');
+    if ((await toggle.getAttribute('aria-expanded')) !== 'true') {
+      // Native UI button click inside the active embedded VS Code webview.
+      // CDP clicks can be intercepted by an Electron webview overlay on Linux.
+      await toggle.evaluate((button: HTMLButtonElement) => button.click());
+    }
+    await expect(frame.locator('#layers-section')).toBeVisible({
+      timeout: 12000
+    });
+    await expect(
+      frame.locator('.layer-swatch[data-color-source="renderer"]').first()
+    ).toBeVisible({ timeout: 12000 });
+    return;
+  }
+  throw new Error(
+    'Active PCB viewer layer panel could not be found for real-host capture.'
+  );
+}
+
+async function waitForViewerReady(
+  page: Page,
+  expectedFile?: string
+): Promise<void> {
   await expect
     .poll(
       async () => {
@@ -245,6 +291,9 @@ async function waitForViewerReady(page: Page): Promise<void> {
             (await frame.locator('#viewer-status').textContent())?.trim() ?? '';
           const engineKind =
             (await badge.getAttribute('data-engine-kind')) ?? '';
+          if (expectedFile && !status.includes(expectedFile)) {
+            continue;
+          }
           const loadingHidden =
             (await loading.count()) > 0 &&
             ((await loading.getAttribute('hidden')) !== null ||

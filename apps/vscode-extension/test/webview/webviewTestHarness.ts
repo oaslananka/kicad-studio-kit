@@ -62,7 +62,10 @@ export function createViewerHtml(
     cspSource: 'data:',
     kicanvasUri: dataUri(
       'text/javascript',
-      createKiCanvasMockScript(mockOptions)
+      createKiCanvasMockScript({
+        ...mockOptions,
+        layerNames: options.metadata?.layers?.map((layer) => layer.name) ?? []
+      })
     ),
     viewerCssUri: dataUri('text/css', readAsset('media/kicanvas/viewer.css')),
     base64: '',
@@ -205,7 +208,10 @@ function loadViewerHtmlFactory(): ViewerHtmlFactory {
   }
 }
 
-function withVsCodeApiPrelude(html: string, fallbackSvg?: string): string {
+export function withVsCodeApiPrelude(
+  html: string,
+  fallbackSvg?: string
+): string {
   const encodedFallback = Buffer.from(fallbackSvg ?? '').toString('base64');
   const prelude = /* html */ `<script>
     (() => {
@@ -256,6 +262,7 @@ function withVsCodeApiPrelude(html: string, fallbackSvg?: string): string {
 function createKiCanvasMockScript(options: {
   surface: 'canvas' | 'none';
   failure?: 'webgl-init' | 'webgl-event';
+  layerNames?: string[];
 }): string {
   return `
     (() => {
@@ -263,8 +270,24 @@ function createKiCanvasMockScript(options: {
         fit: 0,
         zoomIn: 0,
         zoomOut: 0,
-        selectedReference: ''
+        selectedReference: '',
+        drawCount: 0,
+        highlight: null
       };
+      const mockLayers = ${JSON.stringify(options.layerNames ?? [])}.map((name, index) => ({
+        name,
+        visible: true,
+        highlighted: false,
+        color: { to_css: () => ['rgb(235, 70, 75)', 'rgb(242, 165, 58)', 'rgb(88, 200, 145)', 'rgb(84, 151, 238)'][index % 4] }
+      }));
+      // Synthetic internal layers are not listed in PCB document metadata.
+      mockLayers.push({
+        name: ':Via:Holes',
+        visible: true,
+        highlighted: false,
+        color: { to_css: () => 'rgb(220, 220, 220)' }
+      });
+      window.__kicadMock.layers = mockLayers;
 
       class KiCanvasSourceMock extends HTMLElement {}
 
@@ -276,9 +299,17 @@ function createKiCanvasMockScript(options: {
               window.__kicadMock.selectedReference = reference;
             },
             layers: {
-              in_order: () => []
+              in_order: () => mockLayers,
+              by_name: (name) => mockLayers.find((layer) => layer.name === name),
+              highlight: (value) => {
+                const name = typeof value === 'string' ? value : value?.name ?? null;
+                window.__kicadMock.highlight = name;
+                mockLayers.forEach((layer) => {
+                  layer.highlighted = layer.name === name;
+                });
+              }
             },
-            draw: () => undefined
+            draw: () => { window.__kicadMock.drawCount += 1; }
           };
         }
 
