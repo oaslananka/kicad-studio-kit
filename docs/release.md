@@ -95,7 +95,15 @@ The publish workflows keep release evidence product-scoped:
   back to the exact commit and workflow run that produced it. `release-summary.md`
   restates the same evidence and links the Visual Studio Marketplace, Open VSX,
   and GitHub Release locations for the published version.
-- Release Please uses the dedicated `RELEASE_PLEASE_TOKEN` to create release PRs,
+- The trusted Release Please workflow fetches `RELEASE_PLEASE_TOKEN` at runtime
+  from Doppler project `kicad-studio-kit`, config `main`, using a read-only
+  Service Token stored as `DOPPLER_TOKEN` in the GitHub `release` environment.
+  Restrict that environment to the protected `main` branch; remove any
+  repository-wide copy of `DOPPLER_TOKEN` after the environment secret works.
+  Never make this release-config Service Token available to pull-request jobs.
+  The PR analysis workflows retain their existing credentials until a separate,
+  lower-privilege Doppler CI config is available.
+  The fetched `RELEASE_PLEASE_TOKEN` is used to create release PRs,
   update their generated surfaces, and publish GitHub Releases. The authenticated
   `release: published` event triggers `publish-extension.yml` exactly once; the
   workflow checks out the release tag and attaches VSIX, checksum, SBOM, and

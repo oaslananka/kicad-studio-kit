@@ -17,6 +17,8 @@ concurrency:
 
 jobs:
   release:
+    # workflow_dispatch must not allow release credentials on feature refs.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     environment: release
     permissions:
@@ -25,10 +27,28 @@ jobs:
       issues: write
       actions: write
     steps:
+      # Only the protected, main-branch release job may access Doppler's
+      # release-scoped Service Token. Never expose it in pull_request jobs.
+      - name: Fetch release credentials from Doppler
+        id: doppler_release
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534 # v2.0.0
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN }}
+      - name: Verify release secret source
+        shell: bash
+        env:
+          DOPPLER_PROJECT: ${{ steps.doppler_release.outputs.DOPPLER_PROJECT }}
+          DOPPLER_CONFIG: ${{ steps.doppler_release.outputs.DOPPLER_CONFIG }}
+          RELEASE_PLEASE_TOKEN: ${{ steps.doppler_release.outputs.RELEASE_PLEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$DOPPLER_PROJECT" = "kicad-studio-kit"
+          test "$DOPPLER_CONFIG" = "main"
+          test -n "$RELEASE_PLEASE_TOKEN"
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7
         id: release
         with:
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          token: ${{ steps.doppler_release.outputs.RELEASE_PLEASE_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
@@ -41,7 +61,7 @@ jobs:
       - id: release-pr
         name: Resolve pending Release Please generator
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          GH_TOKEN: ${{ steps.doppler_release.outputs.RELEASE_PLEASE_TOKEN }}
           RELEASE_PR_JSON: ${{ steps.release.outputs.pr }}
         shell: bash
         run: |
@@ -107,7 +127,7 @@ jobs:
       - if: ${{ steps.release-pr.outputs.active == 'true' }}
         name: Restore generator-owned release files
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          GH_TOKEN: ${{ steps.doppler_release.outputs.RELEASE_PLEASE_TOKEN }}
           RELEASE_PR_NUMBER: ${{ steps.release-pr.outputs.number }}
           RELEASE_PR_HEAD: ${{ steps.release-pr.outputs.head }}
         shell: bash
@@ -138,8 +158,8 @@ jobs:
       - if: ${{ steps.release-pr.outputs.active == 'true' }}
         name: Sync signed Release Please shadow PR
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.doppler_release.outputs.RELEASE_PLEASE_TOKEN }}
+          GH_TOKEN: ${{ steps.doppler_release.outputs.RELEASE_PLEASE_TOKEN }}
           RELEASE_PR_NUMBER: ${{ steps.release-pr.outputs.number }}
           RELEASE_PR_BRANCH: ${{ steps.release-pr.outputs.branch }}
           RELEASE_PR_HEAD: ${{ steps.release-pr.outputs.head }}
@@ -293,7 +313,7 @@ jobs:
         id: recover-signed-shadow
         name: Recover tagged release from a merged signed shadow
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          GH_TOKEN: ${{ steps.doppler_release.outputs.RELEASE_PLEASE_TOKEN }}
           RELEASE_SHA: ${{ github.sha }}
         shell: bash
         run: |
@@ -312,7 +332,7 @@ jobs:
       - if: ${{ steps.recover-signed-shadow.outputs.tag != '' }}
         name: Publish validated signed shadow release
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          GH_TOKEN: ${{ steps.doppler_release.outputs.RELEASE_PLEASE_TOKEN }}
           RELEASE_SHA: ${{ github.sha }}
         shell: bash
         run: |

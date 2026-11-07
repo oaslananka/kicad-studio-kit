@@ -33,6 +33,33 @@ function restoreEnv(name, value) {
   }
 }
 
+test("release credentials come from Doppler only on the main-branch release job", () => {
+  const source = fs.readFileSync(
+    path.join(REPO_ROOT, ".github/workflows/release-please.yml"),
+    "utf8",
+  );
+  const job = parseYaml(source).jobs.release;
+  const steps = job.steps;
+  const fetchIndex = steps.findIndex((step) => step.id === "doppler_release");
+  const fetch = steps[fetchIndex];
+  const verify = steps[fetchIndex + 1];
+
+  assert.equal(job.environment, "release");
+  assert.match(job.if, /refs\/heads\/main/u);
+  assert.ok(fetchIndex >= 0);
+  assert.match(fetch.uses, /^dopplerhq\/secrets-fetch-action@[a-f0-9]{40}$/u);
+  assert.match(fetch.with["doppler-token"], /secrets\.DOPPLER_TOKEN/u);
+  assert.equal(verify.name, "Verify release secret source");
+  assert.match(verify.run, /DOPPLER_PROJECT.*kicad-studio-kit/u);
+  assert.match(verify.run, /DOPPLER_CONFIG.*main/u);
+  assert.match(verify.run, /test -n "\$RELEASE_PLEASE_TOKEN"/u);
+  assert.doesNotMatch(source, /secrets\.RELEASE_PLEASE_TOKEN/u);
+  assert.match(
+    steps.find((step) => step.id === "release").with.token,
+    /steps\.doppler_release\.outputs\.RELEASE_PLEASE_TOKEN/u,
+  );
+});
+
 test("#645 release workflow safely refreshes its verified signed release shadow", () => {
   const workflow = fs.readFileSync(
     path.join(REPO_ROOT, ".github/workflows/release-please.yml"),
