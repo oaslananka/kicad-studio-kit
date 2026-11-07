@@ -25,7 +25,7 @@ export const COMPATIBILITY_MATRIX = {
     },
     boardReadyOps: {
       required: '>=1.2.0 <2.0.0',
-      testedAgainst: '1.68.3',
+      testedAgainst: '1.70.0',
       doctorSchema: 1,
       findingsSchema: 1,
       evidenceBundleSchema: 2

@@ -1,11 +1,11 @@
 import semver from 'semver';
 
 /**
- * Review JSON is a staged upstream interface and is not emitted by published
- * BoardReadyOps 1.68.3. Never infer this capability from generic doctor schema
- * compatibility alone; verify a supported CLI version AND its actual output.
+ * Published BoardReadyOps 1.70.0 provides review-publish-result JSON schema v1;
+ * 1.68.3 predates it. Never infer review capability from doctor compatibility
+ * alone: verify the published CLI version AND the actual fail-closed output.
  */
-export const BOARDREADYOPS_REVIEW_JSON_MIN_VERSION = '1.69.0';
+export const BOARDREADYOPS_REVIEW_JSON_MIN_VERSION = '1.70.0';
 
 export interface BoardReadyOpsReviewPreview {
   schemaVersion: 1;
@@ -18,7 +18,7 @@ export interface BoardReadyOpsReviewPreview {
 const INVALID_REVIEW_CONTRACT =
   'BoardReadyOps did not return a supported structured review preview.';
 
-// Mirrors the staged upstream review-publish-result schema's
+// Mirrors the published review-publish-result schema v1's
 // additionalProperties: false for both the result and nested tool object.
 const REVIEW_RESULT_FIELDS = new Set([
   'schemaVersion',

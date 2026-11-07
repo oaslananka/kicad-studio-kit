@@ -133,13 +133,20 @@ describe('BoardReadyOps published doctor v1 shape', () => {
     recommendations: ['Install the optional CLI before manufacturing.']
   };
 
-  it('accepts the published 1.68.3 doctor check and recommendation shape', () => {
-    expect(discoverBoardReadyOpsContract(JSON.stringify(report))).toEqual({
-      compatible: true,
-      schemaVersion: 1,
-      version: '1.68.3'
-    });
-  });
+  it.each(['1.68.3', '1.70.0'])(
+    'accepts the published %s doctor check and recommendation shape',
+    (version) => {
+      expect(
+        discoverBoardReadyOpsContract(
+          JSON.stringify({ ...report, tool: { ...report.tool, version } })
+        )
+      ).toEqual({
+        compatible: true,
+        schemaVersion: 1,
+        version
+      });
+    }
+  );
 
   it.each([
     ['missing recommendations', { recommendations: undefined }],

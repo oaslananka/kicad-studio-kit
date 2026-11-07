@@ -252,12 +252,12 @@ describe('BoardReadyOps commands', () => {
       items.find((x: { id: string }) => x.id === 'preview')
     );
     const doctor = boardReadyOpsDoctorContract();
-    doctor.tool.version = '1.69.0';
+    doctor.tool.version = '1.70.0';
     const readiness = readinessWithFindings(['board.kicad_pcb']);
-    readiness.tool.version = '1.69.0';
+    readiness.tool.version = '1.70.0';
     const preview = {
       schemaVersion: 1,
-      tool: { name: 'boardreadyops', version: '1.69.0' },
+      tool: { name: 'boardreadyops', version: '1.70.0' },
       success: true,
       dryRun: true,
       evidenceDigest: 'd'.repeat(64)
@@ -304,9 +304,9 @@ describe('BoardReadyOps commands', () => {
       items.find((x: { id: string }) => x.id === 'preview')
     );
     const doctor = boardReadyOpsDoctorContract();
-    doctor.tool.version = '1.69.0';
+    doctor.tool.version = '1.70.0';
     const readiness = readinessWithFindings(['board.kicad_pcb']);
-    readiness.tool.version = '1.69.0';
+    readiness.tool.version = '1.70.0';
     readiness.status = 'passed';
     readiness.exitCode = 0;
     (childProcess.spawn as jest.Mock)
@@ -328,9 +328,9 @@ describe('BoardReadyOps commands', () => {
       items.find((x: { id: string }) => x.id === 'preview')
     );
     const doctor = boardReadyOpsDoctorContract();
-    doctor.tool.version = '1.69.0';
+    doctor.tool.version = '1.70.0';
     const readiness = readinessWithFindings(['board.kicad_pcb']);
-    readiness.tool.version = '1.69.0';
+    readiness.tool.version = '1.70.0';
     (childProcess.spawn as jest.Mock)
       .mockImplementationOnce(() => boardReadyOpsChild(JSON.stringify(doctor)))
       .mockImplementationOnce(() =>
