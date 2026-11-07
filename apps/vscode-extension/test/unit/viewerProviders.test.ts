@@ -1171,6 +1171,73 @@ describe.each([
     );
   });
 
+  it.each(['normal', 'dim', 'solo'] as const)(
+    'persists focused layers in %s mode while rejecting invalid mode state',
+    async (layerMode) => {
+      const viewerState = new ViewerStateStore();
+      const provider = new (
+        ContextProvider as never as {
+          new (
+            context: vscode.ExtensionContext,
+            svgFallbackProvider: undefined,
+            viewerState: ViewerStateStore
+          ): InstanceType<typeof ContextProvider>;
+        }
+      )(
+        {
+          extensionUri: vscode.Uri.file('/extension')
+        } as vscode.ExtensionContext,
+        undefined,
+        viewerState
+      );
+      const panel = createPanel();
+      const document = {
+        uri: vscode.Uri.file(tempFile)
+      } as vscode.CustomDocument;
+      await provider.resolveCustomEditor(
+        document,
+        panel as unknown as vscode.WebviewPanel
+      );
+
+      await panel.fireMessage({
+        type: 'viewerState',
+        payload: {
+          zoom: 1,
+          grid: true,
+          theme: 'dark',
+          activeLayers: ['F.Cu', 'In1.Cu'],
+          focusedLayer: 'In1.Cu',
+          layerMode
+        }
+      });
+      expect(viewerState.getState(document.uri)).toEqual(
+        expect.objectContaining({
+          activeLayers: ['F.Cu', 'In1.Cu'],
+          focusedLayer: 'In1.Cu',
+          layerMode
+        })
+      );
+
+      // Malformed webview state must not inject unsupported focus/mode values.
+      await panel.fireMessage({
+        type: 'viewerState',
+        payload: {
+          zoom: 1,
+          grid: true,
+          theme: 'dark',
+          focusedLayer: '',
+          layerMode: 'x-ray'
+        }
+      });
+      expect(viewerState.getState(document.uri)).toEqual({
+        zoom: 1,
+        grid: true,
+        theme: 'dark'
+      });
+      provider.dispose();
+    }
+  );
+
   it('untracks panels when the webview is disposed', async () => {
     const provider = new ContextProvider({
       extensionUri: vscode.Uri.file('/extension')
