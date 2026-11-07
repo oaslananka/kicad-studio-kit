@@ -44,6 +44,13 @@ export function createViewerControllerScript(): string {
     const layerDimBtn = document.getElementById('layer-dim-btn');
     const layerSoloBtn = document.getElementById('layer-solo-btn');
     const layerCountEl = document.getElementById('layer-count');
+    const netsSectionEl = document.getElementById('nets-section');
+    const netCountEl = document.getElementById('net-count');
+    const netSearchEl = document.getElementById('net-search');
+    const netSuggestionsEl = document.getElementById('net-suggestions');
+    const netHighlightBtn = document.getElementById('net-highlight-btn');
+    const netClearBtn = document.getElementById('net-clear-btn');
+    const netFeedbackEl = document.getElementById('net-feedback');
 
     const payload = JSON.parse(
       document.getElementById('viewer-payload').textContent || '{}'
@@ -111,6 +118,8 @@ export function createViewerControllerScript(): string {
     let fallbackResizeHandler = null;
     let viewerGeneration = 0;
     let cancelPendingPreparation = null;
+    let netCatalog = [];
+    let highlightedNetName = '';
     let rendererInitializing = false;
     let rendererFallbackAttempt = null;
     let rendererFallbackGeneration = 0;
@@ -185,6 +194,15 @@ export function createViewerControllerScript(): string {
     layerNormalBtn?.addEventListener('click', () => setLayerMode('normal'));
     layerDimBtn?.addEventListener('click', () => setLayerMode('dim'));
     layerSoloBtn?.addEventListener('click', () => setLayerMode('solo'));
+    netHighlightBtn?.addEventListener('click', highlightSearchedNet);
+    netClearBtn?.addEventListener('click', clearNetHighlight);
+    netSearchEl?.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        highlightSearchedNet();
+      }
+    });
+    netSearchEl?.addEventListener('input', refreshNetSuggestions);
     populateSheetSelect();
     renderSidebar();
     updateEngineUi(localState.engine);
@@ -284,6 +302,7 @@ export function createViewerControllerScript(): string {
       hideAll();
       showLoading('Waiting for KiCanvas…');
       setEngineUiState('kicanvas');
+      resetNetInspector();
 
       try {
         if (payload.disabledReason) {
@@ -438,6 +457,7 @@ export function createViewerControllerScript(): string {
         installKeyboardShortcuts(viewer);
         rendererInitializing = false;
         setEngineState('kicanvas');
+        initializeNetInspector(viewer);
         setStatus('Interactive renderer loaded: ' + payload.fileName);
         vscode.postMessage({ type: 'ready', payload: { fileName: payload.fileName } });
 
@@ -1036,6 +1056,7 @@ export function createViewerControllerScript(): string {
       const engine = createEngineState(kind, reason);
       localState = { ...localState, engine };
       updateEngineUi(engine);
+      if (engine.kind !== 'kicanvas') resetNetInspector();
     }
 
     function updateEngineUi(engine) {
@@ -1252,6 +1273,124 @@ export function createViewerControllerScript(): string {
       // The shipped KiCanvas exposes its board viewer through the shadow-root
       // app. Keep the mock/older direct shape as a compatibility fallback.
       return embed?.viewer || embed?.shadowRoot?.querySelector('kc-board-app')?.viewer;
+    }
+
+    function resetNetInspector() {
+      if (!netsSectionEl) return;
+      netsSectionEl.hidden = true;
+      netCatalog = [];
+      netCountEl.textContent = '';
+      netSuggestionsEl.replaceChildren();
+      setControlDisabled(netSearchEl, true);
+      setControlDisabled(netHighlightBtn, true);
+      setControlDisabled(netClearBtn, true);
+      netFeedbackEl.textContent = 'Available only in the interactive KiCanvas board viewer.';
+    }
+
+    function refreshNetSuggestions() {
+      if (!netSuggestionsEl || !netSearchEl || !netCatalog.length) return;
+      const filter = netSearchEl.value.trim().toLocaleLowerCase();
+      const options = netCatalog
+        .filter((net) => !filter || net.name.toLocaleLowerCase().includes(filter) || String(net.number).includes(filter))
+        .slice(0, 40);
+      netSuggestionsEl.replaceChildren();
+      for (const net of options) {
+        const option = document.createElement('option');
+        option.value = net.name;
+        option.label = '#' + net.number;
+        netSuggestionsEl.appendChild(option);
+      }
+    }
+
+    function initializeNetInspector(embed) {
+      resetNetInspector();
+      if (payload.fileType !== 'board') return;
+      try {
+        const viewer = getKiCanvasViewer(embed);
+        const nets = viewer?.board?.nets;
+        if (typeof viewer?.highlight_net !== 'function' || !Array.isArray(nets)) return;
+        netsSectionEl.hidden = false;
+        netCatalog = nets
+          .filter((net) => Number.isSafeInteger(net?.number) && net.number > 0 && typeof net.name === 'string' && net.name.length > 0)
+          .map((net) => ({ number: net.number, name: net.name }));
+        netCountEl.textContent = netCatalog.length + (netCatalog.length === 1 ? ' net' : ' nets');
+        if (!netCatalog.length) {
+          highlightedNetName = '';
+          netSearchEl.value = '';
+          netFeedbackEl.textContent = 'No named nets found in this board.';
+          return;
+        }
+        setControlDisabled(netSearchEl, false);
+        setControlDisabled(netHighlightBtn, false);
+        netSearchEl.value = highlightedNetName;
+        refreshNetSuggestions();
+        if (highlightedNetName) {
+          const previous = netCatalog.find((net) => net.name === highlightedNetName);
+          if (previous) {
+            viewer.highlight_net(previous.number);
+            setControlDisabled(netClearBtn, false);
+            setNetFeedback(previous, viewer);
+            return;
+          }
+          // The old net may not exist after a PCB refresh; never select the
+          // same numeric ID in a different board by accident.
+          highlightedNetName = '';
+          netSearchEl.value = '';
+        }
+        netFeedbackEl.textContent = 'Choose a net to highlight its PCB copper connections.';
+      } catch {
+        resetNetInspector();
+      }
+    }
+
+    function setNetFeedback(net, viewer) {
+      const segments = Array.isArray(viewer.board?.segments)
+        ? viewer.board.segments.filter((item) => item.net === net.number).length : 0;
+      const vias = Array.isArray(viewer.board?.vias)
+        ? viewer.board.vias.filter((item) => item.net === net.number).length : 0;
+      netFeedbackEl.textContent = net.name + ' · ' + segments + ' tracks/arcs · ' + vias + ' vias';
+    }
+
+    function highlightSearchedNet() {
+      const value = netSearchEl?.value;
+      if (!value || !value.trim() || !netCatalog.length) return;
+      // Net names are case-sensitive KiCad identifiers. Only accept an exact
+      // model match or its numeric ID, never a guessed partial match.
+      const net = netCatalog.find((item) => item.name === value) ||
+        netCatalog.find((item) => String(item.number) === value.trim());
+      if (!net) {
+        netFeedbackEl.textContent = 'No exact net match. Select a suggestion or enter a net number.';
+        return;
+      }
+      try {
+        const viewer = getKiCanvasViewer(viewerMount.querySelector('kicanvas-embed'));
+        if (typeof viewer?.highlight_net !== 'function') throw new Error('Net API unavailable');
+        viewer.highlight_net(net.number);
+        highlightedNetName = net.name;
+        netSearchEl.value = net.name;
+        setControlDisabled(netClearBtn, false);
+        setNetFeedback(net, viewer);
+      } catch {
+        netFeedbackEl.textContent = 'Net highlight is unavailable in this renderer.';
+        setControlDisabled(netHighlightBtn, true);
+      }
+    }
+
+    function clearNetHighlight() {
+      try {
+        const viewer = getKiCanvasViewer(viewerMount.querySelector('kicanvas-embed'));
+        if (typeof viewer?.highlight_net !== 'function') return;
+        // KiCad net numbers are nonnegative; -1 produces an empty overlay
+        // using the bundled KiCanvas painter without touching the source.
+        viewer.highlight_net(-1);
+        highlightedNetName = '';
+        netSearchEl.value = '';
+        setControlDisabled(netClearBtn, true);
+        refreshNetSuggestions();
+        netFeedbackEl.textContent = 'Net highlight cleared.';
+      } catch {
+        netFeedbackEl.textContent = 'Unable to clear net highlight.';
+      }
     }
 
     function readRenderedLayerColor(viewer, name) {

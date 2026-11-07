@@ -922,3 +922,30 @@ test.describe('KiCad Studio webview DOM', () => {
     await expect(action).toBeHidden();
   });
 });
+
+test('PCB net controls require an interactive renderer and are absent for schematics', async ({
+  page
+}) => {
+  await installVsCodeApiMock(page);
+  await setViewerContent(page, {
+    fileType: 'board',
+    fileName: 'sample.kicad_pcb',
+    base64: readFixtureBase64('sample.kicad_pcb'),
+    disabledReason: 'Interactive preview disabled'
+  });
+  await page.locator('#side-panel-toggle').click();
+  await expect(page.locator('#nets-section')).toBeHidden();
+  await expect(page.locator('#net-search')).toBeDisabled();
+  await expect(page.locator('#net-highlight-btn')).toBeDisabled();
+  await expect(page.locator('#net-clear-btn')).toBeDisabled();
+  await expect(page.locator('#net-feedback')).toContainText(
+    'only in the interactive'
+  );
+
+  await setViewerContent(page, {
+    fileType: 'schematic',
+    fileName: 'sample.kicad_sch',
+    base64: readFixtureBase64('sample.kicad_sch')
+  });
+  await expect(page.locator('#nets-section')).toBeHidden();
+});

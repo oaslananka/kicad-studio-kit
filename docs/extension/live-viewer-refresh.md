@@ -57,11 +57,17 @@ renderer color is shown as a neutral swatch.
   metadata-only fallbacks explicitly disable these controls because their
   exported image does not expose independent interactive layers.
 
-The KiCanvas embedding API remains experimental. This integration tests the
-bundled engine's nested Shadow DOM surface and internal layer behavior against
-real 4-, 8-, 16- and 32-copper-layer PCB examples, and falls back safely when
-the interactive renderer is unavailable. The original KiCad PCB file remains
-the source of truth for design, manufacturing and layer-stack definitions.
+KiCanvas embedding is experimental. Real 4-, 8-, 16- and 32-copper-layer
+tests cover the bundled renderer and its fallback. The KiCad PCB file remains
+the sole design and manufacturing source of truth.
+
+## Read-only PCB net inspection
+
+Open **Panel → PCB Nets** in the interactive PCB viewer. Search an **exact**
+net name or number; **Highlight net** overlays its tracks and vias, and
+**Clear** removes the overlay. This is visual only, not DRC. Refresh matches
+nets by name; if missing, the highlight clears. Other viewer modes hide the
+panel.
 
 ## Configuration and limitations
 
@@ -70,15 +76,12 @@ controls automatic save-based and external-change refresh. Disable it to
 use manual refresh only. In an embedded viewer, press **R** to request a
 manual refresh.
 
-This refreshes **KiCad Studio's embedded KiCanvas preview**, not a separate
-KiCad PCB Editor or Schematic Editor process. It does not perform incremental
-component-level rendering: KiCanvas reconstructs its view on a changed file,
-so a large board can take longer than the notification debounce.
+Refresh targets the **embedded KiCanvas preview**, not the KiCad editors.
+Rendering is not incremental; large boards may take longer to redraw.
 
-VS Code file event delivery can vary across workspaces, symlinks, remote and
-network filesystems. A metadata check on viewer focus and the existing manual
-refresh provide fallback paths. Source detection is based on file size and
-modification time, not a continuous content hash, so an external writer that
-deliberately preserves both metadata values may require manual refresh.
+File events vary across remote workspaces, symlinks and network drives.
+Focus-time metadata checks and manual refresh provide fallbacks. Detection uses
+file size and modification time, not a continuous content hash; manual refresh
+may be needed if an external writer preserves both values.
 
 The implementation is event-driven and has no MCP protocol changes.

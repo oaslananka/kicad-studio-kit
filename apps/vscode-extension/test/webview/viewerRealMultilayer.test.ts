@@ -211,3 +211,135 @@ for (const copperCount of [4, 16, 32]) {
     );
   });
 }
+
+test('real KiCanvas highlights named net connections, clears them, and rejects stale net names after refresh', async ({
+  page
+}) => {
+  await installVsCodeApiMock(page);
+  const layers = [
+    'F.Cu',
+    'In1.Cu',
+    'In2.Cu',
+    'In3.Cu',
+    'In4.Cu',
+    'In5.Cu',
+    'In6.Cu',
+    'B.Cu',
+    'Edge.Cuts'
+  ].map((name) => ({
+    name,
+    kind: name.endsWith('.Cu') ? 'signal' : 'user',
+    visible: true
+  }));
+  const html = createViewerHtml(
+    {
+      fileName: 'multilayer_traces.kicad_pcb',
+      fileType: 'board',
+      base64: readFixtureBase64('kicad10/multilayer_traces.kicad_pcb'),
+      metadata: { layers },
+      restoreState: {
+        zoom: 1,
+        grid: false,
+        theme: 'kicad',
+        toolsPanelCollapsed: false
+      },
+      kicanvasUri: dataUri(
+        'text/javascript',
+        readAsset('media/kicanvas/kicanvas.js')
+      )
+    },
+    { surface: 'canvas' }
+  );
+  await page.route('https://studio-test.example/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: withVsCodeApiPrelude(html)
+    })
+  );
+  await page.goto('https://studio-test.example/net-inspection');
+  await expect(page.locator('#viewer-status')).toHaveText(
+    'Interactive renderer loaded: multilayer_traces.kicad_pcb',
+    { timeout: 30000 }
+  );
+  await expect(page.locator('#nets-section')).toBeVisible();
+  await expect(page.locator('#net-count')).toHaveText('1 net');
+  await expect(page.locator('#net-suggestions option')).toHaveAttribute(
+    'value',
+    'TEST'
+  );
+  await expect(page.locator('#net-search')).toBeEnabled();
+  await expect(page.locator('#net-clear-btn')).toBeDisabled();
+
+  const surface = page.locator('#viewer-mount');
+  const before = PNG.sync.read(await surface.screenshot());
+  await page.locator('#net-search').fill('TEST');
+  await page.locator('#net-search').press('Enter');
+  await expect(page.locator('#net-feedback')).toContainText(
+    'TEST · 8 tracks/arcs · 0 vias'
+  );
+  await expect(page.locator('#net-clear-btn')).toBeEnabled();
+  const highlighted = PNG.sync.read(await surface.screenshot());
+  let changed = 0;
+  for (let i = 0; i < before.data.length; i += 4) {
+    if (
+      Math.abs(before.data[i]! - highlighted.data[i]!) > 14 ||
+      Math.abs(before.data[i + 1]! - highlighted.data[i + 1]!) > 14 ||
+      Math.abs(before.data[i + 2]! - highlighted.data[i + 2]!) > 14
+    )
+      changed++;
+  }
+  expect(changed).toBeGreaterThan(150);
+
+  await page.locator('#net-clear-btn').click();
+  await expect(page.locator('#net-feedback')).toHaveText(
+    'Net highlight cleared.'
+  );
+  await expect(page.locator('#net-clear-btn')).toBeDisabled();
+  const cleared = PNG.sync.read(await surface.screenshot());
+  let remaining = 0;
+  for (let i = 0; i < before.data.length; i += 4) {
+    if (
+      Math.abs(before.data[i]! - cleared.data[i]!) > 14 ||
+      Math.abs(before.data[i + 1]! - cleared.data[i + 1]!) > 14 ||
+      Math.abs(before.data[i + 2]! - cleared.data[i + 2]!) > 14
+    )
+      remaining++;
+  }
+  expect(remaining).toBeLessThan(150);
+
+  await page.locator('#net-search').fill('TEST');
+  await page.locator('#net-highlight-btn').click();
+  await expect(page.locator('#net-clear-btn')).toBeEnabled();
+
+  const replacement = [
+    '(kicad_pcb',
+    ' (version 20250314) (generator "kicad")',
+    ' (general (thickness 1.6)) (paper "A4")',
+    ' (layers (0 "F.Cu" signal) (31 "B.Cu" signal) (44 "Edge.Cuts" user))',
+    ' (net 0 "") (net 1 "DIFFERENT")',
+    ' (segment (start 90 81) (end 140 81) (width 1) (layer "F.Cu") (net 1))',
+    ')'
+  ].join('\n');
+  await page.evaluate((base64) => {
+    window.postMessage(
+      {
+        type: 'refresh',
+        payload: { base64, fileName: 'different.kicad_pcb' }
+      },
+      window.location.origin
+    );
+  }, Buffer.from(replacement).toString('base64'));
+  await expect(page.locator('#viewer-status')).toHaveText(
+    'Interactive renderer loaded: different.kicad_pcb',
+    { timeout: 30000 }
+  );
+  await expect(page.locator('#net-count')).toHaveText('1 net');
+  await expect(page.locator('#net-search')).toHaveValue('');
+  await expect(page.locator('#net-clear-btn')).toBeDisabled();
+  await page.locator('#net-search').fill('TEST');
+  await page.locator('#net-highlight-btn').click();
+  await expect(page.locator('#net-feedback')).toContainText(
+    'No exact net match'
+  );
+});
