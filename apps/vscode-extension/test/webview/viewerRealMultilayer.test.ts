@@ -327,7 +327,7 @@ test('real KiCanvas highlights named net connections, clears them, and rejects s
         type: 'refresh',
         payload: { base64, fileName: 'different.kicad_pcb' }
       },
-      '*'
+      window.location.origin
     );
   }, Buffer.from(replacement).toString('base64'));
   await expect(page.locator('#viewer-status')).toHaveText(
