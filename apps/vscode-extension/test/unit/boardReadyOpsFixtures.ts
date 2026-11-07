@@ -2,7 +2,8 @@ export function boardReadyOpsDoctorContract(version = '1.37.0') {
   return {
     schemaVersion: 1,
     tool: { name: 'boardreadyops', version },
-    checks: []
+    checks: [],
+    recommendations: []
   };
 }
 

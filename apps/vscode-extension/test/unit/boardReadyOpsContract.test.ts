@@ -10,7 +10,8 @@ describe('BoardReadyOps contract discovery', () => {
       discoverBoardReadyOpsContract({
         schemaVersion: 1,
         tool: { name: 'boardreadyops', version: '1.37.0' },
-        checks: []
+        checks: [],
+        recommendations: []
       })
     ).toEqual({
       compatible: true,
@@ -25,7 +26,8 @@ describe('BoardReadyOps contract discovery', () => {
         JSON.stringify({
           schemaVersion: 1,
           tool: { name: 'boardreadyops', version: '1.37.0' },
-          checks: []
+          checks: [],
+          recommendations: []
         })
       )
     ).toEqual({
@@ -40,7 +42,8 @@ describe('BoardReadyOps contract discovery', () => {
       discoverBoardReadyOpsContract({
         schemaVersion: 1,
         tool: { name: 'other-tool', version: '1.37.0' },
-        checks: []
+        checks: [],
+        recommendations: []
       })
     ).toEqual({
       compatible: false,
@@ -82,7 +85,8 @@ describe('BoardReadyOps contract discovery', () => {
       discoverBoardReadyOpsContract({
         schemaVersion: 1,
         tool: { name: 'boardreadyops', version: '1.37.0-rc.1' },
-        checks: []
+        checks: [],
+        recommendations: []
       })
     ).toEqual({
       compatible: false,
@@ -97,13 +101,118 @@ describe('BoardReadyOps contract discovery', () => {
       discoverBoardReadyOpsContract({
         schemaVersion: 1,
         tool: { name: 'boardreadyops', version: '2.0.0' },
-        checks: []
+        checks: [],
+        recommendations: []
       })
     ).toEqual({
       compatible: false,
       reason: 'unsupported BoardReadyOps version',
       schemaVersion: 1,
       version: '2.0.0'
+    });
+  });
+});
+
+describe('BoardReadyOps published doctor v1 shape', () => {
+  const report = {
+    schemaVersion: 1,
+    tool: { name: 'boardreadyops', version: '1.68.3' },
+    checks: [
+      {
+        name: 'runtime',
+        title: 'Runtime checks',
+        items: [
+          {
+            severity: 'warn',
+            message: 'Optional local CLI unavailable.',
+            recommendation: 'Install the optional CLI before manufacturing.'
+          }
+        ]
+      }
+    ],
+    recommendations: ['Install the optional CLI before manufacturing.']
+  };
+
+  it('accepts the published 1.68.3 doctor check and recommendation shape', () => {
+    expect(discoverBoardReadyOpsContract(JSON.stringify(report))).toEqual({
+      compatible: true,
+      schemaVersion: 1,
+      version: '1.68.3'
+    });
+  });
+
+  it.each([
+    ['missing recommendations', { recommendations: undefined }],
+    ['invalid recommendations type', { recommendations: 'not an array' }],
+    ['invalid recommendation item', { recommendations: [null] }],
+    ['invalid root metadata', { privateSource: '/private/workspace' }],
+    ['unexpected tool metadata', { tool: { ...report.tool, token: 'SECRET' } }],
+    ['nonobject check', { checks: [null] }],
+    [
+      'unknown check name',
+      { checks: [{ name: 'other', title: 'Runtime', items: [] }] }
+    ],
+    ['missing check title', { checks: [{ name: 'runtime', items: [] }] }],
+    [
+      'malformed check items',
+      { checks: [{ name: 'runtime', title: 'Runtime', items: {} }] }
+    ],
+    [
+      'unexpected check field',
+      { checks: [{ name: 'runtime', title: 'Runtime', items: [], extra: 1 }] }
+    ],
+    [
+      'invalid item severity',
+      {
+        checks: [
+          {
+            name: 'runtime',
+            title: 'Runtime',
+            items: [{ severity: 'error', message: 'bad' }]
+          }
+        ]
+      }
+    ],
+    [
+      'missing item message',
+      {
+        checks: [
+          { name: 'runtime', title: 'Runtime', items: [{ severity: 'fail' }] }
+        ]
+      }
+    ],
+    [
+      'invalid item recommendation',
+      {
+        checks: [
+          {
+            name: 'runtime',
+            title: 'Runtime',
+            items: [{ severity: 'warn', message: 'bad', recommendation: {} }]
+          }
+        ]
+      }
+    ],
+    [
+      'unexpected private item metadata',
+      {
+        checks: [
+          {
+            name: 'runtime',
+            title: 'Runtime',
+            items: [
+              { severity: 'warn', message: 'bad', evidencePath: '/private' }
+            ]
+          }
+        ]
+      }
+    ]
+  ])('rejects %s before any readiness invocation', (_name, patch) => {
+    expect(discoverBoardReadyOpsContract({ ...report, ...patch })).toEqual({
+      compatible: false,
+      reason: 'malformed doctor payload',
+      schemaVersion: 1,
+      version: '1.68.3'
     });
   });
 });
