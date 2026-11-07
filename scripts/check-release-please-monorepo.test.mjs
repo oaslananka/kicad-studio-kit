@@ -38,7 +38,21 @@ test("#645 release workflow safely refreshes its verified signed release shadow"
     path.join(REPO_ROOT, ".github/workflows/release-please.yml"),
     "utf8",
   );
-  const steps = parseYaml(workflow).jobs.release.steps;
+  const releaseJob = parseYaml(workflow).jobs.release;
+  const steps = releaseJob.steps;
+  const fetchIndex = steps.findIndex((step) => step.id === "doppler_release");
+  const fetch = steps[fetchIndex];
+  const verify = steps[fetchIndex + 1];
+  assert.equal(releaseJob.environment, "release");
+  assert.match(releaseJob.if, /refs\/heads\/main/u);
+  assert.ok(fetchIndex >= 0);
+  assert.match(fetch.uses, /^dopplerhq\/secrets-fetch-action@[a-f0-9]{40}$/u);
+  assert.match(fetch.with["doppler-token"], /secrets\.DOPPLER_TOKEN/u);
+  assert.equal(verify.name, "Verify release secret source");
+  assert.match(verify.run, /DOPPLER_PROJECT.*kicad-studio-kit/u);
+  assert.match(verify.run, /DOPPLER_CONFIG.*main/u);
+  assert.match(verify.run, /test -n "\$RELEASE_PLEASE_TOKEN"/u);
+  assert.doesNotMatch(workflow, /secrets\.RELEASE_PLEASE_TOKEN/u);
   const generator = steps.find((step) => step.id === "release");
   const resolve = steps.find((step) => step.id === "release-pr");
   const sync = steps.find(

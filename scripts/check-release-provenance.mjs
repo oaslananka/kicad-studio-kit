@@ -191,15 +191,31 @@ function checkWorkflowEvidence(failures) {
     "post-publish verification must fail closed instead of masking missing registry versions",
     failures,
   );
+  for (const required of [
+    "if: github.ref == 'refs/heads/main'",
+    "environment: release",
+    "dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534",
+    "doppler-token: ${{ secrets.DOPPLER_TOKEN }}",
+    'test "$DOPPLER_PROJECT" = "kicad-studio-kit"',
+    'test "$DOPPLER_CONFIG" = "main"',
+    'test -n "$RELEASE_PLEASE_TOKEN"',
+  ]) {
+    expectIncludes(
+      releasePleaseWorkflow,
+      required,
+      "release-please Doppler policy",
+      failures,
+    );
+  }
   expectIncludes(
     releasePleaseWorkflow,
-    "token: ${{ secrets.RELEASE_PLEASE_TOKEN }}",
+    "token: ${{ steps.doppler_release.outputs.RELEASE_PLEASE_TOKEN }}",
     "release-please workflow",
     failures,
   );
   expectIncludes(
     releasePleaseWorkflow,
-    "GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}",
+    "GITHUB_TOKEN: ${{ steps.doppler_release.outputs.RELEASE_PLEASE_TOKEN }}",
     "release-please workflow release-branch commit",
     failures,
   );

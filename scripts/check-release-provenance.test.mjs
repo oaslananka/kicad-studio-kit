@@ -14,3 +14,9 @@ test("release provenance policy check passes", () => {
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
   assert.match(result.stdout, /Release provenance check passed/);
 });
+
+test("release provenance policy is also exercised in the Sonar c8 process", async () => {
+  // CLI smoke executes in a child process. Import the same validator so c8
+  // measures real policy branches rather than reporting zero new coverage.
+  await import("./check-release-provenance.mjs");
+});
