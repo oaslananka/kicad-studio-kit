@@ -30,29 +30,10 @@ test.describe('KiCad Studio VS Code E2E', () => {
     }
   });
 
-  test('recovers the PCB viewer when WebGL is unavailable in the extension host', async () => {
-    const session = await launchVsCodeWithFixtures({
-      disableWebgl: true,
-      mockKiCadCli: true
-    });
+  test('recovers the PCB viewer when KiCanvas cannot mount its source', async () => {
+    const session = await launchVsCodeWithFixtures({ mockKiCadCli: true });
 
     try {
-      // Browser flags alone do not reliably disable WebGL in Electron's
-      // isolated VS Code webviews. Remove GPU contexts in newly loaded frames
-      // to exercise the real renderer-failure recovery path deterministically.
-      await session.context.addInitScript({
-        content: `
-        (() => {
-          const realGetContext = HTMLCanvasElement.prototype.getContext;
-          HTMLCanvasElement.prototype.getContext = function (kind, ...args) {
-            if (kind === 'webgl' || kind === 'webgl2' || kind === 'experimental-webgl') {
-              return null;
-            }
-            return realGetContext.call(this, kind, ...args);
-          };
-        })();
-      `
-      });
       // This is a fresh VS Code session. Ensure the extension has activated
       // and registered its custom editors before opening the PCB; otherwise a
       // slow runner can race file opening against provider registration.
@@ -61,31 +42,60 @@ test.describe('KiCad Studio VS Code E2E', () => {
         'KiCad Studio: Open Task Hub'
       );
       await openWorkspaceFile(session.page, 'sample.kicad_pcb');
+      // Electron may still render with KiCanvas when WebGL is disabled.
+      // Induce a real KiCanvas mount failure in the loaded extension webview
+      // instead of relying on browser GPU flags or timing-sensitive init scripts.
+      let viewerFrame: import('@playwright/test').Frame | undefined;
       await expect
         .poll(
           async () => {
             for (const frame of session.page.frames()) {
-              const badge = frame.locator('#viewer-engine-badge');
-              if ((await badge.count()) > 0) {
-                return (await badge.textContent())?.trim() ?? '';
+              if ((await frame.locator('#viewer-engine-badge').count()) > 0) {
+                viewerFrame = frame;
+                return true;
               }
             }
-            return '';
+            return false;
           },
-          { timeout: 60000 }
+          { timeout: 30000 }
         )
-        .toBe('CLI SVG fallback');
-
-      // Prove the isolated webview really lacked GPU context. Without this,
-      // an unrelated CLI fallback could accidentally make the test pass.
-      for (const frame of session.page.frames()) {
-        if (!(await frame.locator('#viewer-engine-badge').count())) continue;
-        const webgl2Available = await frame.evaluate(() =>
-          Boolean(document.createElement('canvas').getContext('webgl2'))
-        );
-        expect(webgl2Available).toBe(false);
-        break;
+        .toBe(true);
+      if (!viewerFrame) {
+        throw new Error('PCB viewer iframe did not load.');
       }
+
+      await viewerFrame.evaluate(() => {
+        const originalAppendChild = Element.prototype.appendChild;
+        const testState = window as Window & { __kicadBlockedMounts?: number };
+        testState.__kicadBlockedMounts = 0;
+        Element.prototype.appendChild = function <T extends Node>(child: T): T {
+          if (
+            this.localName === 'kicanvas-embed' &&
+            child instanceof Element &&
+            child.localName === 'kicanvas-source'
+          ) {
+            testState.__kicadBlockedMounts =
+              (testState.__kicadBlockedMounts ?? 0) + 1;
+            throw new Error('Simulated KiCanvas source-mount failure');
+          }
+          return originalAppendChild.call(this, child);
+        };
+      });
+
+      // User-facing Reload Viewer starts a new KiCanvas mount, whose failure
+      // must recover to the actual CLI-rendered SVG instead of showing a blank
+      // or misleadingly successful KiCanvas surface.
+      await viewerFrame.locator('#reload-btn').click();
+      await expect(viewerFrame.locator('#viewer-engine-badge')).toHaveText(
+        'CLI SVG fallback',
+        { timeout: 60000 }
+      );
+      const blockedMounts = await viewerFrame.evaluate(
+        () =>
+          (window as Window & { __kicadBlockedMounts?: number })
+            .__kicadBlockedMounts
+      );
+      expect(blockedMounts).toBeGreaterThan(0);
     } finally {
       await session.close();
     }
