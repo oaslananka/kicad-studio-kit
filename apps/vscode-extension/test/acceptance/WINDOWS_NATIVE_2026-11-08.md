@@ -44,10 +44,23 @@ After rebuilding the extension, the eight-layer viewer and controls passed under
 
 ## Open acceptance work
 
-- **PENDING:** the old `Ctrl+P` direct-file opening check opened a source tab rather than auto-choosing the custom editor. The documented project-tree click/default-editor association and Quick Open focus behavior need to be independently separated; explicit custom editor opening works.
-- **PENDING:** native error-recovery with **real** KiCad CLI (current injected failure test uses a fake SVG-generating CLI); run a genuine export-backed degraded scenario.
+- **PARTIAL:** clicking the actual **KiCad Studio → KiCad Project → PCB** row now has a separate native Windows **PASS**. General Explorer double-click / `Ctrl+P` direct-file association remains PENDING and must not be conflated with the explicit project-tree command.
+- **PASS (scoped Windows):** real KiCad CLI 10.0.8 native webview error recovery with the CH224A sample now passes, with actual SVG rendered and source SHA-256 unchanged. Other invalid/broken CLI/error paths and Linux still PENDING.
 - **PENDING:** real high-density 8/16/32-layer engineering fixture proof, nets/pads/vias/zones, performance, repeatable reopen, original-file immutability and DRC/ERC/BOM/export verification. The eight-layer **synthetic** trace fixture does not satisfy this gate.
 - **PENDING:** all other commands, shortcuts, sidebars and search/filter controls; responsive/dark/light/high-contrast/HiDPI/accessibility; native full project-to-report-to-safe-handoff preparation and **Node 24** complete quality gate.
 - Linux MSI maintains separate concurrent uncommitted implementation/evidence. Reconcile both branches manually after acceptance; do not overwrite that work.
 
 **All four owner-approved local acceptance categories remain PENDING. No PR (including draft/dependency), merge, release or deployment before all pass.**
+
+## Further verified Windows native tests — 2026-11-08
+
+Two **separately attributable** opt-in native tests were added at `test/e2e/nativeRealCli.windows.local.test.ts`:
+
+- **Real KiCad CLI SVG error recovery — 1/1 PASS (18.1s).** In an isolated VS Code 1.122.0 host, the copied CH224A benchmark PCB was opened in the custom PCB viewer, then KiCanvas source mounting was deliberately made to fail. The normal Reload command recovered using the **installed actual KiCad CLI 10.0.8**, produced a visible SVG with paths, and did not mutate either the source fixture or isolated copy (both SHA-256 values preserved). A separate short-lived local CLI export independently returned exit 0 and a 35,361-byte SVG, with an unchanged source hash. No external design transfer or persistent artifact.
+- **KiCad Project tree selection — 1/1 PASS (12.2s).** After waiting for real extension activation (KiCad/AI/MCP status bar, not only a contributed command), opened the KiCad Studio activity-bar section and clicked the CH224A PCB row in its own tree. A real custom PCB editor webview mounted. The tree can briefly render an empty/Welcome state while its provider initializes; first exploratory runs without the activation gate were inconclusive and are **not** counted as product defects or passing acceptance.
+
+Note: VS Code's ordinary Explorer double-click / `Ctrl+P` did not consistently open the custom viewer automatically in this isolated host; this separate default-editor-association UX remains **PENDING**. These two tests do not authorize finishing any of the four local gates or creating a PR. The fixture is a real benchmark PCB but is not sufficient evidence for high-density engineering performance.
+
+### Final combined Windows native regression run
+
+Both new real-CLI/project-tree tests and the existing four opt-in Task Hub/viewer tests were run **together with one worker: 6/6 PASS (approximately 1.1 minutes)**. This gives a repeatable Windows-local acceptance baseline for those six scenarios only. Do not count this as a full command/UX/engineering/e2e gate or as a Node 24 toolchain acceptance.
