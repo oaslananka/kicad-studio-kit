@@ -268,7 +268,13 @@ test('Windows eight-copper-layer fixture controls change native KiCanvas camera 
       process.env.KICADSTUDIO_LOCAL_WINDOWS_ACCEPTANCE !== '1',
     'Opt-in local Windows native acceptance only'
   );
+  const nativeStart = Date.now();
+  const markPhase = (phase: string) =>
+    console.log(
+      `WINDOWS_EIGHT_LAYER_TIMING ${phase} +${Date.now() - nativeStart}ms`
+    );
   const session = await launchVsCodeWithFixtures();
+  markPhase('VS_CODE_LAUNCHED');
   try {
     const picker = await openTaskHub(session.page);
     await session.page.keyboard.press('Escape');
@@ -319,6 +325,7 @@ test('Windows eight-copper-layer fixture controls change native KiCanvas camera 
       )
       .toBe(true);
     if (!frame) throw new Error('KiCanvas custom viewer did not open.');
+    markPhase('CUSTOM_EDITOR_MOUNTED');
     await expect(frame.locator('#viewer-engine-badge')).toHaveText('KiCanvas', {
       timeout: 45000
     });
@@ -327,6 +334,7 @@ test('Windows eight-copper-layer fixture controls change native KiCanvas camera 
       { timeout: 45000 }
     );
 
+    markPhase('INTERACTIVE_RENDER_READY');
     // Read KiCanvas's actual model, not merely the toolbar's percentage.
     const cameraZoom = () =>
       frame!.evaluate(() => {
@@ -374,15 +382,18 @@ test('Windows eight-copper-layer fixture controls change native KiCanvas camera 
     );
     await expect(frame.locator('#nets-section')).toBeVisible();
     await expect(frame.locator('#net-count')).toHaveText('1 net');
+    markPhase('LAYER_AND_GRID_ACTIONS_DONE');
     const canvasBefore = PNG.sync.read(
       await frame.locator('#viewer-mount').screenshot()
     );
+    markPhase('BASELINE_SCREENSHOT_CAPTURED');
     await frame.locator('#net-search').fill('TEST');
     await frame.locator('#net-highlight-btn').click();
     await expect(frame.locator('#net-feedback')).toContainText('8 tracks/arcs');
     const canvasHighlighted = PNG.sync.read(
       await frame.locator('#viewer-mount').screenshot()
     );
+    markPhase('HIGHLIGHT_SCREENSHOT_CAPTURED');
     expect(countChangedPixels(canvasBefore, canvasHighlighted)).toBeGreaterThan(
       150
     );
@@ -393,14 +404,18 @@ test('Windows eight-copper-layer fixture controls change native KiCanvas camera 
     const canvasCleared = PNG.sync.read(
       await frame.locator('#viewer-mount').screenshot()
     );
+    markPhase('NET_CLEARED_SCREENSHOT_CAPTURED');
     expect(countChangedPixels(canvasBefore, canvasCleared)).toBeLessThan(150);
     console.log('WINDOWS_NATIVE_EIGHT_LAYER_CAMERA_LAYERS_NETS=PASS');
+    markPhase('ASSERTIONS_DONE');
     await test.info().attach('windows-eight-layer-controls', {
       body: await session.page.screenshot({ fullPage: true }),
       contentType: 'image/png'
     });
   } finally {
+    markPhase('STARTING_TEARDOWN');
     await session.close();
+    markPhase('TEARDOWN_DONE');
   }
 });
 
