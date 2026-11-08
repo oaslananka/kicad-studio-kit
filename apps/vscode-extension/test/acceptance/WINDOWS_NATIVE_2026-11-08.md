@@ -12,7 +12,7 @@
 
 ```powershell
 $env:KICADSTUDIO_LOCAL_WINDOWS_ACCEPTANCE = '1'
-node .\node_modules\@playwright\test\cli.js test test/e2e/nativeTaskHub.windows.local.test.ts --workers=1 --reporter=list
+node .\node_modules\@playwright\test\cli.js test test/e2e/nativeRealCli.windows.local.test.ts test/e2e/nativeTaskHub.windows.local.test.ts --workers=1 --reporter=list
 ```
 
 A skipped test without this opt-in is **not** a PASS. Playwright screenshot attachments are obtained from the isolated real VS Code host, not synthesized media. No real external cloud approvals, manufacturing submissions or user-design transfers.
@@ -44,7 +44,7 @@ After rebuilding the extension, the eight-layer viewer and controls passed under
 
 ## Open acceptance work
 
-- **PARTIAL:** clicking the actual **KiCad Studio → KiCad Project → PCB** row now has a separate native Windows **PASS**. General Explorer double-click / `Ctrl+P` direct-file association remains PENDING and must not be conflated with the explicit project-tree command.
+- **PASS (scoped Windows):** the actual **KiCad Studio → KiCad Project → PCB** row, Explorer PCB double-click, `Ctrl+P` PCB Quick Open and Explorer schematic double-click all opened the relevant custom viewer after extension activation. The normal file-open behavior is verified in the isolated Windows host, not yet Linux or every VS Code version.
 - **PASS (scoped Windows):** real KiCad CLI 10.0.8 native webview error recovery with the CH224A sample now passes, with actual SVG rendered and source SHA-256 unchanged. Other invalid/broken CLI/error paths and Linux still PENDING.
 - **PENDING:** real high-density 8/16/32-layer engineering fixture proof, nets/pads/vias/zones, performance, repeatable reopen, original-file immutability and DRC/ERC/BOM/export verification. The eight-layer **synthetic** trace fixture does not satisfy this gate.
 - **PENDING:** all other commands, shortcuts, sidebars and search/filter controls; responsive/dark/light/high-contrast/HiDPI/accessibility; native full project-to-report-to-safe-handoff preparation and **Node 24** complete quality gate.
@@ -59,8 +59,22 @@ Two **separately attributable** opt-in native tests were added at `test/e2e/nati
 - **Real KiCad CLI SVG error recovery — 1/1 PASS (18.1s).** In an isolated VS Code 1.122.0 host, the copied CH224A benchmark PCB was opened in the custom PCB viewer, then KiCanvas source mounting was deliberately made to fail. The normal Reload command recovered using the **installed actual KiCad CLI 10.0.8**, produced a visible SVG with paths, and did not mutate either the source fixture or isolated copy (both SHA-256 values preserved). A separate short-lived local CLI export independently returned exit 0 and a 35,361-byte SVG, with an unchanged source hash. No external design transfer or persistent artifact.
 - **KiCad Project tree selection — 1/1 PASS (12.2s).** After waiting for real extension activation (KiCad/AI/MCP status bar, not only a contributed command), opened the KiCad Studio activity-bar section and clicked the CH224A PCB row in its own tree. A real custom PCB editor webview mounted. The tree can briefly render an empty/Welcome state while its provider initializes; first exploratory runs without the activation gate were inconclusive and are **not** counted as product defects or passing acceptance.
 
-Note: VS Code's ordinary Explorer double-click / `Ctrl+P` did not consistently open the custom viewer automatically in this isolated host; this separate default-editor-association UX remains **PENDING**. These two tests do not authorize finishing any of the four local gates or creating a PR. The fixture is a real benchmark PCB but is not sufficient evidence for high-density engineering performance.
+Historical note: Early Explorer / `Ctrl+P` attempts occasionally opened the text editor when the test did not await activation. Subsequent opt-in regression tests that waited for the real MCP status indicator demonstrated normal custom-editor default selection. No production manifest/association changes were necessary. These tests do not authorize finishing any of the four local gates or creating a PR. The fixture is a real benchmark PCB but is not sufficient evidence for high-density engineering performance.
 
 ### Final combined Windows native regression run
 
 Both new real-CLI/project-tree tests and the existing four opt-in Task Hub/viewer tests were run **together with one worker: 6/6 PASS (approximately 1.1 minutes)**. This gives a repeatable Windows-local acceptance baseline for those six scenarios only. Do not count this as a full command/UX/engineering/e2e gate or as a Node 24 toolchain acceptance.
+
+## Default custom editor acceptance — follow-up
+
+The `contributes.customEditors` manifest already sets `priority: "default"` for `*.kicad_pcb` and `*.kicad_sch`, in line with the VS Code Custom Editor API. **No production editor-association setting was added.** The earlier inconsistent direct-file opening is reproducible as a readiness race in native test setup: command-palette contribution visibility alone does not prove full extension activation. The new acceptance tests first wait for the actual KiCad/AI/MCP status indicator, then exercise the original native file-opening UI.
+
+Three explicit additional Windows-native tests were introduced in `nativeRealCli.windows.local.test.ts`:
+
+- **Explorer double-click on `sample.kicad_pcb` → KiCanvas custom PCB editor**, 1/1 PASS.
+- **`Ctrl+P` Quick Open on `sample.kicad_pcb` → KiCanvas custom PCB editor**, 1/1 PASS.
+- **Explorer double-click on `sample.kicad_sch` → schematic custom viewer**, 1/1 PASS.
+
+The entire nine-scenario opt-in Windows Playwright set was then run **9/9 PASS using one worker (approximately 2.8 minutes)**, including actual KiCad 10.0.8 SVG fallback, project tree, Task Hub/Health and eight-copper-layer net/camera/layer tests. One eight-layer scenario took roughly **1.3 minutes** in this cumulative run versus about 10 seconds in its prior targeted run; investigate this intermittent acceptance-host latency instead of interpreting the 9/9 functional result as a performance SLA. Neither native Linux acceptance nor dense real PCB performance is accepted by this run.
+
+**All four owner-mandated acceptance gates remain PENDING. PR_OPEN_GATE: LOCKED.**

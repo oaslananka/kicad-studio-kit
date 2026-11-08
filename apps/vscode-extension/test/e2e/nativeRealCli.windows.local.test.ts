@@ -184,3 +184,167 @@ test('Windows KiCad project tree opens PCB custom viewer from a real project nod
     await session.close();
   }
 });
+
+test('Windows Explorer uses registered default PCB viewer after extension activation', async () => {
+  test.skip(
+    process.platform !== 'win32' ||
+      process.env.KICADSTUDIO_LOCAL_WINDOWS_ACCEPTANCE !== '1',
+    'Opt-in isolated local Windows test only'
+  );
+  const session = await launchVsCodeWithFixtures();
+  try {
+    await expect(session.page.locator('.statusbar')).toContainText('MCP', {
+      timeout: 30000
+    });
+    const pcb = session.page
+      .locator('.explorer-folders-view')
+      .getByText('sample.kicad_pcb', { exact: true });
+    await expect(pcb).toBeVisible();
+    await pcb.dblclick();
+    await expect(session.page.locator('.tab.active')).toContainText(
+      'sample.kicad_pcb'
+    );
+    await expect
+      .poll(
+        async () => {
+          for (const frame of session.page.frames()) {
+            if (await frame.locator('#viewer-engine-badge').count())
+              return true;
+          }
+          return false;
+        },
+        { timeout: 20000 }
+      )
+      .toBe(true);
+    console.log('WINDOWS_EXPLORER_DEFAULT_PCB_VIEWER=PASS');
+  } catch (error) {
+    console.log(
+      'WINDOWS_EXPLORER_DEFAULT_TABS=' +
+        JSON.stringify(
+          await session.page.locator('.tab.active').allInnerTexts()
+        )
+    );
+    console.log(
+      'WINDOWS_EXPLORER_DEFAULT_STATUS=' +
+        JSON.stringify(
+          (await session.page.locator('.statusbar').innerText()).slice(0, 500)
+        )
+    );
+    console.log(
+      'WINDOWS_EXPLORER_DEFAULT_FRAMES=' +
+        JSON.stringify(session.page.frames().map((f) => f.url().slice(0, 110)))
+    );
+    await test.info().attach('windows-explorer-default-editor', {
+      body: await session.page.screenshot({ fullPage: true }),
+      contentType: 'image/png'
+    });
+    throw error;
+  } finally {
+    await session.close();
+  }
+});
+
+test('Windows Quick Open respects default PCB viewer after extension activation', async () => {
+  test.skip(
+    process.platform !== 'win32' ||
+      process.env.KICADSTUDIO_LOCAL_WINDOWS_ACCEPTANCE !== '1',
+    'Opt-in isolated local Windows test only'
+  );
+  const session = await launchVsCodeWithFixtures();
+  try {
+    // Wait for real extension activation, not the static manifest command label.
+    await expect(session.page.locator('.statusbar')).toContainText('MCP', {
+      timeout: 30000
+    });
+    const picker = session.page.locator('.quick-input-widget');
+    await session.page.keyboard.press('Control+P');
+    await expect(picker).toBeVisible();
+    await picker.locator('input').fill('sample.kicad_pcb');
+    await expect(picker).toContainText('sample.kicad_pcb', {
+      timeout: 8000
+    });
+    await session.page.keyboard.press('Enter');
+    await expect(picker).toBeHidden();
+    await expect(session.page.locator('.tab.active')).toContainText(
+      'sample.kicad_pcb'
+    );
+    await expect
+      .poll(
+        async () => {
+          for (const frame of session.page.frames()) {
+            if (await frame.locator('#viewer-engine-badge').count())
+              return true;
+          }
+          return false;
+        },
+        { timeout: 20000 }
+      )
+      .toBe(true);
+    console.log('WINDOWS_QUICK_OPEN_DEFAULT_PCB_VIEWER=PASS');
+  } catch (error) {
+    console.log(
+      'WINDOWS_QUICK_OPEN_DEFAULT_TABS=' +
+        JSON.stringify(
+          await session.page.locator('.tab.active').allInnerTexts()
+        )
+    );
+    console.log(
+      'WINDOWS_QUICK_OPEN_DEFAULT_FRAMES=' +
+        JSON.stringify(session.page.frames().map((f) => f.url().slice(0, 110)))
+    );
+    await test.info().attach('windows-quick-open-default-editor', {
+      body: await session.page.screenshot({ fullPage: true }),
+      contentType: 'image/png'
+    });
+    throw error;
+  } finally {
+    await session.close();
+  }
+});
+
+test('Windows Explorer defaults to custom schematic viewer after extension activation', async () => {
+  test.skip(
+    process.platform !== 'win32' ||
+      process.env.KICADSTUDIO_LOCAL_WINDOWS_ACCEPTANCE !== '1',
+    'Opt-in isolated local Windows test only'
+  );
+  const session = await launchVsCodeWithFixtures();
+  try {
+    await expect(session.page.locator('.statusbar')).toContainText('MCP', {
+      timeout: 30000
+    });
+    const schematic = session.page
+      .locator('.explorer-folders-view')
+      .getByText('sample.kicad_sch', { exact: true });
+    await expect(schematic).toBeVisible();
+    await schematic.dblclick();
+    await expect(session.page.locator('.tab.active')).toContainText(
+      'sample.kicad_sch'
+    );
+    let frame: Frame | undefined;
+    await expect
+      .poll(
+        async () => {
+          for (const candidate of session.page.frames()) {
+            if (await candidate.locator('#viewer-engine-badge').count()) {
+              frame = candidate;
+              return true;
+            }
+          }
+          return false;
+        },
+        { timeout: 20000 }
+      )
+      .toBe(true);
+    if (!frame) throw new Error('Schematic custom editor did not open.');
+    await expect(frame.locator('#reload-btn')).toBeVisible();
+    await expect(frame.locator('#viewer-engine-badge')).toBeVisible();
+    console.log('WINDOWS_EXPLORER_DEFAULT_SCHEMATIC_VIEWER=PASS');
+    await test.info().attach('windows-explorer-default-schematic', {
+      body: await session.page.screenshot({ fullPage: true }),
+      contentType: 'image/png'
+    });
+  } finally {
+    await session.close();
+  }
+});
