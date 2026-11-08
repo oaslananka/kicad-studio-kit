@@ -126,7 +126,7 @@ export function createKiCanvasViewerHtml(
           <button class="btn" id="export-svg-btn" type="button" aria-label="Export SVG">SVG</button>
         </div>
       </details>
-      <button class="btn compact-btn" id="side-panel-toggle" type="button" aria-controls="viewer-side-panel" aria-expanded="false">Panel</button>
+      <button class="btn compact-btn" id="side-panel-toggle" type="button" aria-controls="viewer-side-panel" aria-expanded="false" aria-label="${options.fileType === 'board' ? 'Open PCB layers and nets panel' : 'Open viewer tools panel'}" title="${options.fileType === 'board' ? 'Show PCB layer visibility and net highlight controls' : 'Show viewer tools and metadata'}">Panel</button>
     </div>
     <span id="viewer-engine-badge" class="engine-badge" data-engine-kind="${escapeAttr(initialEngine.kind)}" title="${escapeAttr(initialEngine.reason ?? initialEngine.label)}">${escapeHtml(initialEngine.label)}</span>
     <span id="viewer-status">${escapeHtml(options.status)}</span>

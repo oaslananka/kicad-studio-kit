@@ -386,9 +386,10 @@ suite('Extension Integration', () => {
       ]);
 
       const treeItem = provider.getTreeItem(schematic);
-      assert.ok(
-        String(treeItem.description ?? '').includes('Schematic sheet'),
-        'Expected schematic tree row to describe its file role.'
+      assert.strictEqual(
+        treeItem.description,
+        '1 warning',
+        'Expected schematic tree row to show only actionable diagnostics.'
       );
       assert.ok(
         String(treeItem.tooltip ?? '').includes('Schematic sheet'),

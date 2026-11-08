@@ -1,10 +1,19 @@
 import * as vscode from 'vscode';
 import { COMMANDS, EXTENSION_ID } from '../constants';
 
-// Primary path needs only a KiCad project; MCP and AI are optional.
-export async function showFirstRunWelcome(): Promise<void> {
+// The first-run message follows the discovered project and workspace-trust
+// state. A visible project does not imply permission to run design tools.
+export async function showFirstRunWelcome(workspace: {
+  hasProject: boolean;
+  workspaceTrusted: boolean;
+}): Promise<void> {
+  const message = workspace.hasProject
+    ? workspace.workspaceTrusted
+      ? 'Welcome to KiCad Studio. Your KiCad project is ready. Review schematics and PCBs, run checks, and prepare manufacturing outputs. MCP and AI are optional.'
+      : 'Welcome to KiCad Studio. KiCad project detected. You can inspect files now. Trust this workspace to run design checks and manufacturing exports. MCP and AI are optional.'
+    : 'Welcome to KiCad Studio. Open a project to review schematics and PCBs, run checks, and prepare manufacturing outputs. MCP and AI are optional.';
   const selection = await vscode.window.showInformationMessage(
-    'Welcome to KiCad Studio. Open a project to review schematics and PCBs, run checks, and prepare manufacturing outputs. MCP and AI are optional.',
+    message,
     'Explore Tasks',
     'Guided Tour',
     'Maybe Later'

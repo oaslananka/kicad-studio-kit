@@ -582,7 +582,7 @@ export async function activate(
     // One-time, dismissible welcome. Offer the guided tour instead of forcibly
     // opening a tab, so the user stays in control on first activation.
     await context.globalState.update('kicadstudio.installed', true);
-    void showFirstRunWelcome();
+    void showFirstRunWelcome(projectState.getSnapshot());
   }
 
   logger.info('KiCad Studio activated successfully.');
