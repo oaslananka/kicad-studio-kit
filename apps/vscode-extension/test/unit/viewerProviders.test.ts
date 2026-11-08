@@ -195,6 +195,8 @@ describe.each([
       expect(window.showSaveDialog).not.toHaveBeenCalled();
 
       (panel.webview.postMessage as jest.Mock).mockClear();
+      const readsBeforeInvalid = (workspace.fs.readFile as jest.Mock).mock.calls
+        .length;
       await panel.fireMessage({
         type: 'requestPartialPreview',
         payload: {
@@ -202,6 +204,9 @@ describe.each([
           bounds: { minX: 0, maxX: 300, minY: 0, maxY: 50 }
         }
       });
+      expect((workspace.fs.readFile as jest.Mock).mock.calls.length).toBe(
+        readsBeforeInvalid
+      );
       expect(panel.webview.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'partialPreviewError',
@@ -237,6 +242,101 @@ describe.each([
           })
         })
       );
+      provider.dispose();
+    });
+  }
+
+  if (_label === 'pcb') {
+    it('blocks full-source fallback and drops stale partial images after source changes', async () => {
+      const fallback = jest.fn().mockResolvedValue('<svg/>');
+      const provider = new ContextProvider(
+        {
+          extensionUri: vscode.Uri.file('/extension')
+        } as vscode.ExtensionContext,
+        fallback
+      );
+      const panel = createPanel();
+      const uri = vscode.Uri.file(tempFile);
+      const source = `(kicad_pcb
+        (version 20250114)
+        (layers (0 "F.Cu" signal) (31 "B.Cu" signal))
+        (net 0 "")
+        (footprint "Test:Resistor" (layer "F.Cu") (at 10 10))
+        (segment (start 10 10) (end 20 20) (layer "F.Cu") (net 0))
+      )`.padEnd(11 * 1024 * 1024, ' ');
+      let revision = 2;
+      (workspace.fs.stat as jest.Mock).mockImplementation(async () => ({
+        size: Buffer.byteLength(source),
+        ctime: 0,
+        mtime: revision,
+        type: 1
+      }));
+      (workspace.fs.readFile as jest.Mock).mockResolvedValue(
+        Buffer.from(source)
+      );
+      await provider.resolveCustomEditor(
+        { uri } as vscode.CustomDocument,
+        panel as unknown as vscode.WebviewPanel
+      );
+      await panel.fireMessage({
+        type: 'requestPartialPreview',
+        payload: {
+          action: 'start',
+          bounds: { minX: 0, maxX: 40, minY: 0, maxY: 40 }
+        }
+      });
+      expect(panel.webview.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'refresh',
+          payload: expect.objectContaining({
+            partialPreview: expect.objectContaining({
+              warning: expect.stringContaining('PARTIAL PREVIEW')
+            })
+          })
+        })
+      );
+      (panel.webview.postMessage as jest.Mock).mockClear();
+      await panel.fireMessage({
+        type: 'requestSvgFallback',
+        payload: { requestId: 'partial-probe' }
+      });
+      expect(fallback).not.toHaveBeenCalled();
+      expect(panel.webview.postMessage).toHaveBeenCalledWith({
+        type: 'svgFallbackUnavailable',
+        payload: { requestId: 'partial-probe' }
+      });
+
+      // Even a same-size change to the PCB invalidates its source-bound cursor.
+      revision = 3;
+      const changed = source.replace('Test:Resistor', 'Test:Resistox');
+      expect(changed).toHaveLength(source.length);
+      (workspace.fs.readFile as jest.Mock).mockResolvedValue(
+        Buffer.from(changed)
+      );
+      (panel.webview.postMessage as jest.Mock).mockClear();
+      await panel.fireMessage({
+        type: 'requestPartialPreview',
+        payload: { action: 'next' }
+      });
+      const messages = (panel.webview.postMessage as jest.Mock).mock.calls.map(
+        ([message]) =>
+          message as { type: string; payload?: Record<string, unknown> }
+      );
+      expect(messages).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'refresh',
+            payload: expect.objectContaining({ partialPreview: null })
+          }),
+          expect.objectContaining({
+            type: 'partialPreviewError',
+            payload: expect.objectContaining({
+              message: expect.stringContaining('Preview continuation is stale')
+            })
+          })
+        ])
+      );
+      expect(workspace.fs.writeFile).not.toHaveBeenCalled();
       provider.dispose();
     });
   }

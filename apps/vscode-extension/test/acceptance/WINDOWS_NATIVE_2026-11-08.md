@@ -185,3 +185,14 @@ Repeated same-tab test with an explicit decoded-PNG pixel-difference threshold: 
 - First attempt ran Playwright against the **stale compiled `dist/extension.js`** after only `tsc --noEmit`, and could not find the new UI. Rebuilt the actual extension using `pnpm run build`; second attempt identified net-search reactivation from `initializeNetInspector`. Added an explicit partial-mode guard to keep the inaccurate net tracing disabled; final native test passed. These failures are not recorded as passing acceptance.
 
 **Still blocked:** true complete-in-view and full high-density interactive PCB; accurate pads, zone fills, net connectivity, 16/32-layer authentic examples, native accessibility/HiDPI/full command coverage and supported Windows Node24 build. **All owner gates A1–A4 remain PENDING; PR_OPEN_GATE=LOCKED; no push, PR, merge, release or deploy.**
+
+## Source-change and fail-fast preview safeguards — 2026-11-08
+
+Follow-up from local `485101b`, Windows native test against the same installed genuine KiCad 10 VME Wren PCB.
+
+- A partial preview cannot trigger **full source KiCad CLI SVG fallback** through the webview bridge: explicit fallback requests receive `svgFallbackUnavailable` without invoking the provider. Existing full-file behavior is preserved for normal (non-partial) viewers.
+- If a **source-bound continuation token becomes stale** (including source changes without byte-count changes), the provider clears the in-memory partial page and reverts the displayed board to the normal metadata-only viewer before reporting the error. Never silently display old copper geometry as a current complete design. The tests verify same-size source mutation, an explicit stale error, no source writes, and the metadata-only refresh.
+- Explicitly invalid region coordinates are rejected **before a 71.6 MB source read**. The real native E2E first enters an invalid 300 mm-wide region, expects a visible non-destructive validation error and unchanged metadata mode, then corrects to 90 × 95 mm, opens a partial canvas, loads a second bounded page, and verifies that user source files remain SHA-256-identical.
+- Scoped verification: **118/118 unit tests PASS**, TypeScript and ESLint PASS, rebuilt webpack extension and actual Windows VS Code 1.122.0 opt-in native Playwright **1/1 PASS in 16.8s**. This is still a _PARTIAL_ preview: zones, pads, much in-region copper and full connectivity are not authoritative. Windows Node26 is outside the repository's Node24 build range. Previous unrelated actual KiCad10 ERC CLI parity invocation failed twice under its own 35s subprocess bound; this does not imply ERC correctness was revalidated in this run.
+
+**No complete dense-board A2 or other A1/A3/A4 acceptance; PR_OPEN_GATE=LOCKED.**

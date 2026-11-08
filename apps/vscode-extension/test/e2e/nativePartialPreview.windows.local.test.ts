@@ -74,9 +74,20 @@ test('Windows actual dense PCB allows opt-in incomplete region pages without sou
     const partial = viewer.locator('#partial-preview-section');
     await expect(partial).toBeVisible();
     await viewer.locator('#partial-x-min').fill('125');
-    await viewer.locator('#partial-x-max').fill('215');
+    await viewer.locator('#partial-x-max').fill('425');
     await viewer.locator('#partial-y-min').fill('195');
     await viewer.locator('#partial-y-max').fill('290');
+    // Invalid region fails quickly without touching or rendering the huge PCB.
+    await viewer.locator('#partial-start-btn').click();
+    await expect(viewer.locator('#partial-preview-status')).toContainText(
+      'no larger than 250 x 250 mm',
+      { timeout: 12_000 }
+    );
+    await expect(viewer.locator('#viewer-engine-badge')).toHaveText(
+      'Metadata only'
+    );
+    await expect(viewer.locator('#partial-preview-banner')).toBeHidden();
+    await viewer.locator('#partial-x-max').fill('215');
     await viewer.locator('#partial-start-btn').click();
 
     await expect(viewer.locator('#partial-preview-banner')).toBeVisible({

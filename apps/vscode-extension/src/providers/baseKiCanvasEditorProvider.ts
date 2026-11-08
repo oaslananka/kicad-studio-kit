@@ -328,6 +328,15 @@ export abstract class BaseKiCanvasEditorProvider
             if (!requestId) {
               return;
             }
+            // A partial snapshot cannot authorize a full-board CLI export,
+            // even when the webview renderer falls back after a paint failure.
+            if (this.panelInfo.get(webviewPanel)?.partialPage) {
+              await webviewPanel.webview.postMessage({
+                type: 'svgFallbackUnavailable',
+                payload: { requestId }
+              });
+              return;
+            }
 
             try {
               const svg = await this.svgFallbackProvider?.(document.uri);
@@ -660,6 +669,12 @@ export abstract class BaseKiCanvasEditorProvider
         );
       }
       const oldPage = info.partialPage;
+      // Reject invalid region geometry before reading a potentially 80 MiB
+      // board; no source string is needed for an explicitly supplied window.
+      const explicitBounds =
+        action === 'start' && request?.['bounds'] !== undefined
+          ? readBoundedPcbViewport(request['bounds'], '')
+          : undefined;
       if (action === 'next' && !oldPage) {
         throw new Error(
           'Start a partial preview region before loading its next page.'
@@ -677,7 +692,7 @@ export abstract class BaseKiCanvasEditorProvider
       const bounds =
         action === 'next'
           ? oldPage!.viewport
-          : readBoundedPcbViewport(request?.['bounds'], source);
+          : (explicitBounds ?? readBoundedPcbViewport(undefined, source));
       const page = selectBoundedPcbPreview(source, {
         viewport: bounds,
         maxBytes: 2 * 1024 * 1024,
@@ -727,12 +742,26 @@ export abstract class BaseKiCanvasEditorProvider
       }
       info.partialPage = page;
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Partial preview failed.';
+      if (
+        info.partialPage &&
+        (message.startsWith('Preview continuation is stale:') ||
+          message.startsWith('The PCB changed during preview loading.'))
+      ) {
+        // The displayed snapshot is no longer tied to current source bytes.
+        // Restore metadata-only rather than silently keeping stale copper.
+        info.partialPage = undefined;
+        this.invalidateFileCache(uri);
+        try {
+          await this.refreshDocument(uri);
+        } catch {
+          // Preserve the explicit stale-source warning if reload fails.
+        }
+      }
       await panel.webview.postMessage({
         type: 'partialPreviewError',
-        payload: {
-          message:
-            error instanceof Error ? error.message : 'Partial preview failed.'
-        }
+        payload: { message }
       });
     } finally {
       info.partialBusy = false;
