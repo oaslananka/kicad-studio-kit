@@ -1207,18 +1207,20 @@ describe.each([
           theme: 'dark',
           activeLayers: ['F.Cu', 'In1.Cu'],
           focusedLayer: 'In1.Cu',
-          layerMode
+          layerMode,
+          zoneFillsVisible: layerMode === 'solo'
         }
       });
       expect(viewerState.getState(document.uri)).toEqual(
         expect.objectContaining({
           activeLayers: ['F.Cu', 'In1.Cu'],
           focusedLayer: 'In1.Cu',
-          layerMode
+          layerMode,
+          zoneFillsVisible: layerMode === 'solo'
         })
       );
 
-      // Malformed webview state must not inject unsupported focus/mode values.
+      // Malformed state must not inject invalid focus, mode, or zone visibility.
       await panel.fireMessage({
         type: 'viewerState',
         payload: {
@@ -1226,7 +1228,8 @@ describe.each([
           grid: true,
           theme: 'dark',
           focusedLayer: '',
-          layerMode: 'x-ray'
+          layerMode: 'x-ray',
+          zoneFillsVisible: 'invalid'
         }
       });
       expect(viewerState.getState(document.uri)).toEqual({
