@@ -185,7 +185,7 @@ describe('native KiCad 10 ERC report parity — isolated, opt-in', () => {
           get: jest.fn(),
           has: jest.fn(),
           dispose: jest.fn(),
-          [Symbol.iterator]: jest.fn(() => [][Symbol.iterator]())
+          *[Symbol.iterator]() {}
         } as unknown as vscode.DiagnosticCollection);
         const state = new DiagnosticStateStore(collection);
         const sourceUris = new Map<string, vscode.Uri>();

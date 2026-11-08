@@ -73,7 +73,6 @@ const DEFAULT_LIMITS: Readonly<Record<PcbDrawableKind, number>> = {
 };
 
 const DRAWABLE_KINDS = new Set<string>(Object.keys(DEFAULT_LIMITS));
-const KEY = /^\(\s*([a-z_][a-z0-9_]*)/;
 const COORDINATE =
   /\((?:at|start|end|mid|center)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g;
 const LAYER = /\((?:layer|layers)\s+((?:"[^"]+"\s*)+)/;
@@ -88,75 +87,8 @@ export function selectBoundedPcbPreview(
   source: string,
   options: PcbPreviewSelection
 ): BoundedPcbPreview {
-  if (!/^\s*\(kicad_pcb\b/.test(source)) {
-    throw new Error('Expected a KiCad PCB source file.');
-  }
-
-  const bounds = options.viewport;
-  if (
-    ![bounds.minX, bounds.maxX, bounds.minY, bounds.maxY].every(
-      Number.isFinite
-    ) ||
-    bounds.minX >= bounds.maxX ||
-    bounds.minY >= bounds.maxY
-  ) {
-    throw new Error('A finite, non-empty preview viewport is required.');
-  }
-
-  const maxBytes = options.maxBytes ?? 2 * 1024 * 1024;
-  if (
-    !Number.isSafeInteger(maxBytes) ||
-    maxBytes < 4096 ||
-    maxBytes > 8 * 1024 * 1024
-  ) {
-    throw new Error('The preview byte budget must be between 4 KiB and 8 MiB.');
-  }
-  const limits = { ...DEFAULT_LIMITS, ...options.limits };
-  for (const value of Object.values(limits)) {
-    if (!Number.isSafeInteger(value) || value < 0 || value > 10000) {
-      throw new Error(
-        'The preview object caps must be bounded nonnegative integers.'
-      );
-    }
-  }
-
-  const cursor = Object.fromEntries(
-    Object.keys(DEFAULT_LIMITS).map((key) => {
-      const value = options.cursor?.[key as PcbDrawableKind] ?? 0;
-      if (!Number.isSafeInteger(value) || value < 0) {
-        throw new Error(
-          'Preview cursor positions must be nonnegative integers.'
-        );
-      }
-      return [key, value];
-    })
-  ) as Record<PcbDrawableKind, number>;
-
-  const requestedLayers = options.layers ?? [];
-  const layerSet = new Set(requestedLayers);
-  if (
-    layerSet.size > 64 ||
-    [...layerSet].some((layer) => !/^(?:F|B|In\d+)\.Cu$/.test(layer))
-  ) {
-    throw new Error('Only bounded KiCad copper-layer filters are allowed.');
-  }
-
-  const continuationToken = createHash('sha256')
-    .update(source, 'utf8')
-    .update('\0')
-    .update(
-      JSON.stringify({
-        bounds: [bounds.minX, bounds.maxX, bounds.minY, bounds.maxY],
-        layers: [...layerSet].sort((left, right) => left.localeCompare(right))
-      })
-    )
-    .digest('hex');
-  const resuming = Object.values(cursor).some((value) => value > 0);
-  if (resuming && options.continuationToken !== continuationToken) {
-    throw new Error(
-      'Preview continuation is stale: source, viewport or layers changed.'
-    );
-  }
+  const { bounds, maxBytes, limits, cursor, layerSet, continuationToken } =
+    validatePreviewRequest(source, options);
 
   const parts: string[] = [];
   const included: Record<string, number> = {};
@@ -202,7 +134,7 @@ export function selectBoundedPcbPreview(
     if (depth !== 1) continue;
 
     const header = source.slice(start, Math.min(i + 1, start + 90));
-    const key = KEY.exec(header)?.[1];
+    const key = readSourceKey(header);
     if (!key) continue;
     sourceObjects[key] = (sourceObjects[key] ?? 0) + 1;
 
@@ -299,6 +231,145 @@ export function selectBoundedPcbPreview(
     viewport: { ...bounds },
     layers: [...layerSet]
   };
+}
+
+interface ValidatedPreviewRequest {
+  bounds: PcbPreviewBounds;
+  maxBytes: number;
+  limits: Record<PcbDrawableKind, number>;
+  cursor: Record<PcbDrawableKind, number>;
+  layerSet: Set<string>;
+  continuationToken: string;
+}
+
+function isSourceWhitespace(code: number): boolean {
+  return code === 32 || (code >= 9 && code <= 13) || code === 0xfeff;
+}
+
+// Read a fixed ASCII KiCad root keyword without applying regex to untrusted
+// multi-megabyte input. Whitespace at the beginning is scanned once.
+function isKiCadPcbSource(source: string): boolean {
+  let index = 0;
+  while (
+    index < source.length &&
+    isSourceWhitespace(source.charCodeAt(index))
+  ) {
+    index += 1;
+  }
+  const root = '(kicad_pcb';
+  if (!source.startsWith(root, index)) return false;
+  const next = source.charCodeAt(index + root.length);
+  return (
+    Number.isNaN(next) ||
+    isSourceWhitespace(next) ||
+    next === 40 || // (
+    next === 41 || // )
+    next === 59 // ;
+  );
+}
+
+function isKeyStart(code: number): boolean {
+  return code === 95 || (code >= 97 && code <= 122);
+}
+
+function isKeyPart(code: number): boolean {
+  return isKeyStart(code) || (code >= 48 && code <= 57);
+}
+
+// Caller bounds the source header to 90 UTF-16 code units.
+function readSourceKey(header: string): string | undefined {
+  if (header[0] !== '(') return undefined;
+  let index = 1;
+  while (
+    index < header.length &&
+    isSourceWhitespace(header.charCodeAt(index))
+  ) {
+    index += 1;
+  }
+  const begin = index;
+  if (!isKeyStart(header.charCodeAt(index))) return undefined;
+  index += 1;
+  while (index < header.length && isKeyPart(header.charCodeAt(index))) {
+    index += 1;
+  }
+  return header.slice(begin, index);
+}
+
+function validatePreviewRequest(
+  source: string,
+  options: PcbPreviewSelection
+): ValidatedPreviewRequest {
+  if (!isKiCadPcbSource(source)) {
+    throw new Error('Expected a KiCad PCB source file.');
+  }
+
+  const bounds = options.viewport;
+  if (
+    ![bounds.minX, bounds.maxX, bounds.minY, bounds.maxY].every(
+      Number.isFinite
+    ) ||
+    bounds.minX >= bounds.maxX ||
+    bounds.minY >= bounds.maxY
+  ) {
+    throw new Error('A finite, non-empty preview viewport is required.');
+  }
+
+  const maxBytes = options.maxBytes ?? 2 * 1024 * 1024;
+  if (
+    !Number.isSafeInteger(maxBytes) ||
+    maxBytes < 4096 ||
+    maxBytes > 8 * 1024 * 1024
+  ) {
+    throw new Error('The preview byte budget must be between 4 KiB and 8 MiB.');
+  }
+  const limits = { ...DEFAULT_LIMITS, ...options.limits };
+  for (const value of Object.values(limits)) {
+    if (!Number.isSafeInteger(value) || value < 0 || value > 10000) {
+      throw new Error(
+        'The preview object caps must be bounded nonnegative integers.'
+      );
+    }
+  }
+
+  const cursor = Object.fromEntries(
+    Object.keys(DEFAULT_LIMITS).map((key) => {
+      const value = options.cursor?.[key as PcbDrawableKind] ?? 0;
+      if (!Number.isSafeInteger(value) || value < 0) {
+        throw new Error(
+          'Preview cursor positions must be nonnegative integers.'
+        );
+      }
+      return [key, value];
+    })
+  ) as Record<PcbDrawableKind, number>;
+
+  const requestedLayers = options.layers ?? [];
+  const layerSet = new Set(requestedLayers);
+  if (
+    layerSet.size > 64 ||
+    [...layerSet].some((layer) => !/^(?:F|B|In\d+)\.Cu$/.test(layer))
+  ) {
+    throw new Error('Only bounded KiCad copper-layer filters are allowed.');
+  }
+
+  const continuationToken = createHash('sha256')
+    .update(source, 'utf8')
+    .update('\0')
+    .update(
+      JSON.stringify({
+        bounds: [bounds.minX, bounds.maxX, bounds.minY, bounds.maxY],
+        layers: [...layerSet].sort((left, right) => left.localeCompare(right))
+      })
+    )
+    .digest('hex');
+  const resuming = Object.values(cursor).some((value) => value > 0);
+  if (resuming && options.continuationToken !== continuationToken) {
+    throw new Error(
+      'Preview continuation is stale: source, viewport or layers changed.'
+    );
+  }
+
+  return { bounds, maxBytes, limits, cursor, layerSet, continuationToken };
 }
 
 /**

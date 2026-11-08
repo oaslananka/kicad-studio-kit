@@ -67,6 +67,27 @@ describe('bounded genuine KiCad PCB spatial preview', () => {
     });
   });
 
+  it('rejects long untrusted prefixes and invented PCB keyword suffixes', () => {
+    for (const source of [
+      ' '.repeat(200_000) + '(other_document)',
+      '(kicad_pcb_extra (layers (0 "F.Cu" signal)))',
+      '(kicad_pcb0 (layers (0 "F.Cu" signal)))'
+    ]) {
+      expect(() =>
+        selectBoundedPcbPreview(source, {
+          viewport: VIEWPORT,
+          maxBytes: 4096
+        })
+      ).toThrow('Expected a KiCad PCB source file.');
+    }
+    expect(() =>
+      selectBoundedPcbPreview('  \n(kicad_pcb (layers (0 "F.Cu" signal)))', {
+        viewport: VIEWPORT,
+        maxBytes: 4096
+      })
+    ).not.toThrow();
+  });
+
   it('selects a requested copper layer, keeping a true through-via', () => {
     const result = selectBoundedPcbPreview(realGeometry, {
       viewport: VIEWPORT,
