@@ -1,6 +1,7 @@
 import * as crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import {
@@ -34,8 +35,30 @@ const DEMO_WORKSPACE = path.resolve(
 
 test.describe('KiCad Studio marketplace captures', () => {
   test('captures real extension host product surfaces', async () => {
+    // Prepare the real multi-project fixture before launching VS Code. The
+    // Quick Open index need not notice files added after startup on Windows.
+    const captureSource = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'kicad-studio-marketplace-source-')
+    );
+    fs.cpSync(DEMO_WORKSPACE, captureSource, { recursive: true });
+    for (const ext of ['kicad_pro', 'kicad_sch', 'kicad_pcb']) {
+      fs.copyFileSync(
+        path.resolve(
+          __dirname,
+          '../../../../examples/led-basic/KICAD_TEST.' + ext
+        ),
+        path.join(captureSource, 'KICAD_TEST.' + ext)
+      );
+    }
+    fs.copyFileSync(
+      path.resolve(
+        __dirname,
+        '../fixtures/kicad10/multilayer_traces.kicad_pcb'
+      ),
+      path.join(captureSource, 'multilayer_traces.kicad_pcb')
+    );
     const session = await launchVsCodeWithFixtures({
-      workspaceSourcePath: DEMO_WORKSPACE,
+      workspaceSourcePath: captureSource,
       workspaceName: 'KiCad Studio Demo',
       softwareWebgl: true,
       settings: {
@@ -48,6 +71,9 @@ test.describe('KiCad Studio marketplace captures', () => {
         'extensions.autoUpdate': false,
         'update.mode': 'none'
       }
+    }).catch((error) => {
+      fs.rmSync(captureSource, { recursive: true, force: true });
+      throw error;
     });
 
     try {
@@ -60,23 +86,14 @@ test.describe('KiCad Studio marketplace captures', () => {
       await expect(session.page.locator('body')).toContainText('KiCad Project');
       await capture(session, 'project-tree.png');
 
-      await openWorkspaceFile(session.page, 'demo.kicad_sch');
-      await waitForViewerReady(session.page, 'demo.kicad_sch');
+      // The benchmark hub schematic is not supported by this pinned KiCanvas.
+      // Capture the real, pre-indexed KiCad 10 LED sheet instead.
+      await openWorkspaceFile(session.page, 'KICAD_TEST.kicad_sch');
+      await waitForViewerReady(session.page, 'KICAD_TEST.kicad_sch');
       await capture(session, 'schematic-viewer.png');
 
-      // Capture a genuine board with explicit KiCad layer metadata; the
-      // standard project demo board is legacy-minimal and has no (layers) block.
-      // Keep the project DRC fixture intact for the remaining capture steps.
-      fs.copyFileSync(
-        path.join(
-          __dirname,
-          '..',
-          'fixtures',
-          'kicad10',
-          'multilayer_traces.kicad_pcb'
-        ),
-        path.join(session.workspacePath, 'multilayer_traces.kicad_pcb')
-      );
+      // Capture a genuine board with explicit KiCad layer metadata. Its file
+      // was indexed before VS Code launched, like the schematic fixture.
       await openWorkspaceFile(session.page, 'multilayer_traces.kicad_pcb');
       await waitForViewerReady(session.page, 'multilayer_traces.kicad_pcb');
       await showPcbLayerPanel(session.page);
@@ -84,7 +101,11 @@ test.describe('KiCad Studio marketplace captures', () => {
 
       await openWorkspaceFile(session.page, 'demo.kicad_pcb');
       await waitForViewerReady(session.page, 'demo.kicad_pcb');
-      await invokeCommand(session.page, 'KiCad: Run Design Rule Check (DRC)');
+      await invokeCommand(
+        session.page,
+        'KiCad: Run Design Rule Check (DRC)',
+        true
+      );
       // The old global body-text check could remain "Not run" because a
       // hidden/background summary was stale even after the real CLI ran.
       // The Problems entries establish the user-visible DRC result instead.
@@ -99,8 +120,8 @@ test.describe('KiCad Studio marketplace captures', () => {
       await capture(session, 'drc-results.png');
 
       await session.page.keyboard.press('Control+Shift+M');
-      await openWorkspaceFile(session.page, 'demo.kicad_sch');
-      await waitForViewerReady(session.page);
+      await openWorkspaceFile(session.page, 'KICAD_TEST.kicad_sch');
+      await waitForViewerReady(session.page, 'KICAD_TEST.kicad_sch');
       await openBomView(session.page);
       await capture(session, 'bom-table.png');
 
@@ -116,6 +137,7 @@ test.describe('KiCad Studio marketplace captures', () => {
       writeCaptureManifest();
     } finally {
       await session.close();
+      fs.rmSync(captureSource, { recursive: true, force: true });
     }
   });
 });
@@ -149,7 +171,11 @@ async function dismissWelcomeNotification(page: Page): Promise<void> {
   }
 }
 
-async function invokeCommand(page: Page, title: string): Promise<void> {
+async function invokeCommand(
+  page: Page,
+  title: string,
+  exactDrc = false
+): Promise<void> {
   const quickInput = page.locator('.quick-input-widget');
   await page.keyboard.press('Control+Shift+P');
   await expect(quickInput).toBeVisible({ timeout: 5000 });
@@ -157,7 +183,14 @@ async function invokeCommand(page: Page, title: string): Promise<void> {
   await input.fill('');
   await input.fill('>' + title);
   await expect(quickInput).toContainText(title, { timeout: 5000 });
-  await page.keyboard.press('Enter');
+  if (exactDrc) {
+    // Native VS Code can rank an unrelated Debug command before KiCad DRC.
+    await quickInput
+      .getByText('Run Design Rule Check (DRC)', { exact: false })
+      .click();
+  } else {
+    await page.keyboard.press('Enter');
+  }
   await expect(quickInput).toBeHidden({ timeout: 5000 });
 }
 
@@ -326,13 +359,7 @@ async function capture(
   fileName: string
 ): Promise<void> {
   await hideTransientUi(session.page);
-  fs.mkdirSync(CAPTURE_DIR, { recursive: true });
-  const target = path.join(CAPTURE_DIR, fileName);
-  await session.page.screenshot({
-    path: target,
-    fullPage: false,
-    animations: 'disabled'
-  });
+  // Reject local-user or secret text BEFORE writing any screenshot bytes.
   const body = await session.page.locator('body').innerText();
   for (const forbidden of [
     process.env.HOME,
@@ -346,10 +373,34 @@ async function capture(
       expect(body).not.toContain(forbidden);
     }
   }
+  fs.mkdirSync(CAPTURE_DIR, { recursive: true });
+  const target = path.join(CAPTURE_DIR, fileName);
+  await session.page.screenshot({
+    path: target,
+    fullPage: false,
+    animations: 'disabled'
+  });
 }
 
 async function hideTransientUi(page: Page): Promise<void> {
   await dismissWelcomeNotification(page);
+  // The real DRC CLI progress toast can contain a local temp report path.
+  // Dismiss it through VS Code instead of just covering pixels or weakening
+  // the screenshot's sensitive-content assertion.
+  const palette = page.locator('.quick-input-widget');
+  await page.keyboard.press('Control+Shift+P');
+  await expect(palette).toBeVisible({ timeout: 5000 });
+  await palette
+    .locator('input')
+    .fill('>Notifications: Clear All Notifications');
+  await expect(palette).toContainText('Clear All Notifications', {
+    timeout: 5000
+  });
+  await palette
+    .getByText('Clear All Notifications', { exact: false })
+    .first()
+    .click();
+  await expect(palette).toBeHidden({ timeout: 5000 });
   await page.keyboard.press('Escape').catch(() => undefined);
   await page.evaluate(() => {
     document

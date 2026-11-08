@@ -164,6 +164,22 @@ function captureSourceContents() {
       fs.readFileSync(
         'test/fixtures/benchmark_projects/pass_i2c_sensor_hub/demo.kicad_pcb'
       )
+    ],
+    [
+      'test/fixtures/kicad10/multilayer_traces.kicad_pcb',
+      fs.readFileSync('test/fixtures/kicad10/multilayer_traces.kicad_pcb')
+    ],
+    [
+      '../../examples/led-basic/KICAD_TEST.kicad_pro',
+      fs.readFileSync('../../examples/led-basic/KICAD_TEST.kicad_pro')
+    ],
+    [
+      '../../examples/led-basic/KICAD_TEST.kicad_sch',
+      fs.readFileSync('../../examples/led-basic/KICAD_TEST.kicad_sch')
+    ],
+    [
+      '../../examples/led-basic/KICAD_TEST.kicad_pcb',
+      fs.readFileSync('../../examples/led-basic/KICAD_TEST.kicad_pcb')
     ]
   ]);
 }
