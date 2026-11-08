@@ -106,6 +106,29 @@ function extractSchematicSheets(text: string): ViewerSheetInfo[] {
   return [...sheets.values()];
 }
 
+/**
+ * Only names present in placed schematic symbol blocks may be reported as
+ * searchable. Library symbol definitions and child-sheet files are not
+ * evidence of a placed symbol in the currently displayed document.
+ *
+ * If a file exceeds the metadata budget, fail closed rather than reporting
+ * a misleading "not found" result from a truncated index.
+ */
+function extractSchematicReferences(text: string): string[] | undefined {
+  const symbols = extractTopLevelBlocks(text, 'symbol');
+  if (symbols.length > 4096) {
+    return undefined;
+  }
+  const references = new Set<string>();
+  for (const symbol of symbols) {
+    const reference = readSheetProperty(symbol, 'Reference');
+    if (reference && reference.length <= 128) {
+      references.add(reference);
+    }
+  }
+  return [...references];
+}
+
 function readSheetProperty(
   block: string,
   propertyName: string
@@ -163,8 +186,9 @@ export class SchematicEditorProvider extends BaseKiCanvasEditorProvider {
       }))
       .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
     const sheets = extractSchematicSheets(schBody);
+    const references = extractSchematicReferences(schBody);
 
-    if (!hopOvers.length && !sheets.length) {
+    if (!hopOvers.length && !sheets.length && references === undefined) {
       return undefined;
     }
 
@@ -179,7 +203,8 @@ export class SchematicEditorProvider extends BaseKiCanvasEditorProvider {
             ]
           }
         : {}),
-      ...(sheets.length ? { sheets } : {})
+      ...(sheets.length ? { sheets } : {}),
+      ...(references !== undefined ? { references } : {})
     };
   }
 }

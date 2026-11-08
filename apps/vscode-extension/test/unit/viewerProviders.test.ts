@@ -389,6 +389,16 @@ describe.each([
       })
     );
 
+    // A malformed selection event must not wipe the last verified selection.
+    await panel.fireMessage({ type: 'selectionChanged', payload: null });
+    expect(provider.getViewerState(uri)).toEqual(
+      expect.objectContaining({
+        selectedReference: 'R2',
+        selectedArea: complete,
+        activeLayers: ['F.Cu', 'B.Cu']
+      })
+    );
+
     await panel.fireMessage({
       type: 'viewerState',
       payload: {
@@ -1578,6 +1588,47 @@ describe.each([
     expect(metadata.tuningProfiles?.[0]).toEqual(
       expect.objectContaining({ name: 'DDR4', layer: 'F.Cu' })
     );
+  });
+
+  it('indexes only placed schematic references, excluding library definitions', () => {
+    if (extension !== '.kicad_sch') return;
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext) as unknown as SchematicEditorProvider;
+    const metadata = (provider as any).buildViewerMetadata(
+      vscode.Uri.file(tempFile),
+      `(kicad_sch
+  (lib_symbols
+    (symbol "Device:TEST"
+      (property "Reference" "LIBRARY_ONLY")
+    )
+  )
+  (symbol
+    (lib_id "Device:TEST")
+    (property "Reference" "R7" (at 10 12 0))
+    (property "Value" "1k" (at 10 14 0))
+    (uuid "12345678-1234-1234-1234-123456789abc")
+  )
+  (symbol
+    (lib_id "Device:TEST")
+    (property "Reference" "H2" (at 20 20 0))
+  )
+)`
+    ) as { references?: string[] };
+    expect(metadata.references).toEqual(['R7', 'H2']);
+    expect(metadata.references).not.toContain('LIBRARY_ONLY');
+  });
+
+  it('distinguishes an empty schematic from unavailable reference metadata', () => {
+    if (extension !== '.kicad_sch') return;
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext) as unknown as SchematicEditorProvider;
+    const metadata = (provider as any).buildViewerMetadata(
+      vscode.Uri.file(tempFile),
+      '(kicad_sch (version 20261108))'
+    ) as { references?: string[] };
+    expect(metadata.references).toEqual([]);
   });
 
   it('adds schematic hop-over metadata notes for KiCad 10 fixtures', () => {

@@ -143,6 +143,8 @@ export interface ViewerMetadata {
   layers?: ViewerLayerInfo[] | undefined;
   tuningProfiles?: TuningProfile[] | undefined;
   sheets?: ViewerSheetInfo[] | undefined;
+  /** Source-verified references for the open schematic file, not library symbols. */
+  references?: string[] | undefined;
   hopOvers?: Array<{ x: number; y: number }> | undefined;
   notes?: string[] | undefined;
 }
