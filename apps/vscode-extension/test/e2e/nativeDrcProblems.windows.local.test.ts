@@ -61,7 +61,11 @@ test('native Windows DRC palette runs on an authentic KiCad 10 PCB custom editor
       });
     }).toPass({ timeout: 30_000 });
     console.log('NATIVE_DRC_COMMAND_VISIBLE=PASS');
-    await session.page.keyboard.press('Enter');
+    // VS Code can rank its built-in Debug: Run to Cursor above DRC for >DRC.
+    // Select the KiCad command explicitly instead of relying on fuzzy ranking.
+    await palette
+      .getByText('Run Design Rule Check (DRC)', { exact: false })
+      .click();
 
     const problems = session.page.locator('.markers-panel');
     await expect(problems).toBeVisible({ timeout: 120_000 });
