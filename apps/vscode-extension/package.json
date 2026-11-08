@@ -1460,7 +1460,8 @@
           "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
         },
         {
-          "command": "kicadstudio.runERC"
+          "command": "kicadstudio.runERC",
+          "when": "workspaceFolderCount > 0"
         },
         {
           "command": "kicadstudio.exportPDF",

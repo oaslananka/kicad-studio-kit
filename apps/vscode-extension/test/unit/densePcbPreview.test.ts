@@ -80,6 +80,19 @@ describe('bounded genuine KiCad PCB spatial preview', () => {
     expect(result.layers).toEqual(['B.Cu']);
   });
 
+  it('uses a deterministic locale-aware layer order for continuation tokens', () => {
+    const first = selectBoundedPcbPreview(realGeometry, {
+      viewport: VIEWPORT,
+      layers: ['F.Cu', 'B.Cu']
+    });
+    const reversed = selectBoundedPcbPreview(realGeometry, {
+      viewport: VIEWPORT,
+      layers: ['B.Cu', 'F.Cu']
+    });
+    expect(first.continuationToken).toMatch(/^[a-f0-9]{64}$/);
+    expect(reversed.continuationToken).toBe(first.continuationToken);
+  });
+
   it('distinguishes in-viewport items omitted by caps from out-of-view objects', () => {
     const preview = selectBoundedPcbPreview(realGeometry, {
       viewport: VIEWPORT,

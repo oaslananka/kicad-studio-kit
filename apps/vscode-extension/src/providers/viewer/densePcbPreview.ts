@@ -147,7 +147,7 @@ export function selectBoundedPcbPreview(
     .update(
       JSON.stringify({
         bounds: [bounds.minX, bounds.maxX, bounds.minY, bounds.maxY],
-        layers: [...layerSet].sort()
+        layers: [...layerSet].sort((left, right) => left.localeCompare(right))
       })
     )
     .digest('hex');
