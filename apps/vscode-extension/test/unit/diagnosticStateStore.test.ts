@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { DiagnosticStateStore } from '../../src/state/diagnosticStateStore';
+import { KiCadDiagnosticsAggregator } from '../../src/language/diagnosticsAggregator';
 import type { DiagnosticSummary, ProjectContext } from '../../src/types';
 
 jest.mock('vscode', () => jest.requireActual('./vscodeMock'), {
@@ -61,6 +62,144 @@ function diagnosticFixture(
 }
 
 describe('diagnostic state store boundary', () => {
+  function linkedErc(
+    message: string,
+    file: vscode.Uri,
+    line: number
+  ): vscode.Diagnostic {
+    // The shared minimal VS Code Uri mock has no scheme property; native
+    // vscode.Uri.file always returns scheme === 'file'.
+    Object.defineProperty(file, 'scheme', { value: 'file' });
+    const diagnostic = diagnosticFixture(message, 'kicad-cli:erc');
+    diagnostic.code = 'power_pin_not_driven';
+    diagnostic.relatedInformation = [
+      {
+        message: 'Exact KiCad source UUID location (open related information)',
+        location: { uri: file, range: new vscode.Range(line, 4, line, 16) }
+      }
+    ];
+    return diagnostic;
+  }
+
+  it('publishes the primary Problems entry at exact child source and preserves syntax', () => {
+    const backing = createDiagnosticsCollection();
+    const collection = new KiCadDiagnosticsAggregator(backing);
+    const store = new DiagnosticStateStore(collection);
+    const root = vscode.Uri.file('/workspace/alpha/root.kicad_sch');
+    const child = vscode.Uri.file('/workspace/alpha/sch/Debugger.kicad_sch');
+    const existingSyntax = diagnosticFixture(
+      'S-expression warning',
+      'kicad-studio:syntax'
+    );
+    collection.setForSource(child, 'syntax', [existingSyntax]);
+
+    const issue = linkedErc('Unpowered pin', child, 41);
+    store.applyValidationResult(
+      root,
+      [issue],
+      summaryFixture('erc', root.fsPath, { errors: 1 }),
+      { project: projectFixture('alpha') }
+    );
+    const atChild = collection.get(child) ?? [];
+    expect(atChild.map((entry) => entry.message)).toEqual([
+      'S-expression warning',
+      'Unpowered pin'
+    ]);
+    expect(atChild[1]?.range.start.line).toBe(41);
+    expect(atChild[1]?.code).toBe('power_pin_not_driven');
+    expect(atChild[1]?.relatedInformation?.[0]?.location.uri.fsPath).toBe(
+      child.fsPath
+    );
+    expect(collection.get(root)).toEqual([]);
+    expect(store.getSnapshot({ projectId: 'alpha' }).erc?.errors).toBe(1);
+
+    // Running the same root again must clear old child ERC entries without
+    // deleting syntax diagnostics belonging to its own collection bucket.
+    store.applyValidationResult(
+      root,
+      [diagnosticFixture('Root-only issue', 'kicad-cli:erc')],
+      summaryFixture('erc', root.fsPath, { errors: 1 }),
+      { project: projectFixture('alpha') }
+    );
+    expect(collection.get(root)?.map((entry) => entry.message)).toEqual([
+      'Root-only issue'
+    ]);
+    expect(collection.get(child)?.map((entry) => entry.message)).toEqual([
+      'S-expression warning'
+    ]);
+  });
+
+  it('keeps ERC findings from two project roots sharing one child schematic isolated', () => {
+    const collection = new KiCadDiagnosticsAggregator(
+      createDiagnosticsCollection()
+    );
+    const store = new DiagnosticStateStore(collection);
+    const alpha = vscode.Uri.file('/workspace/alpha/root.kicad_sch');
+    const beta = vscode.Uri.file('/workspace/beta/root.kicad_sch');
+    const child = vscode.Uri.file('/workspace/shared/Debugger.kicad_sch');
+    store.applyValidationResult(
+      alpha,
+      [linkedErc('Alpha-only warning', child, 8)],
+      summaryFixture('erc', alpha.fsPath, { warnings: 1 }),
+      { project: projectFixture('alpha') }
+    );
+    store.applyValidationResult(
+      beta,
+      [linkedErc('Beta-only error', child, 12)],
+      summaryFixture('erc', beta.fsPath, { errors: 1 }),
+      { project: projectFixture('beta') }
+    );
+    expect(collection.get(child)?.map((entry) => entry.message)).toEqual([
+      'Alpha-only warning',
+      'Beta-only error'
+    ]);
+    store.applyValidationResult(
+      alpha,
+      [],
+      summaryFixture('erc', alpha.fsPath),
+      { project: projectFixture('alpha') }
+    );
+    expect(collection.get(child)?.map((entry) => entry.message)).toEqual([
+      'Beta-only error'
+    ]);
+    expect(store.getSnapshot({ projectId: 'alpha' }).erc?.errors).toBe(0);
+    expect(store.getSnapshot({ projectId: 'beta' }).erc?.errors).toBe(1);
+  });
+
+  it('marks distributed child ERC Problems stale when its schematic changes', () => {
+    const collection = new KiCadDiagnosticsAggregator(
+      createDiagnosticsCollection()
+    );
+    const store = new DiagnosticStateStore(collection);
+    const root = vscode.Uri.file('/workspace/alpha/root.kicad_sch');
+    const child = vscode.Uri.file('/workspace/alpha/sch/Debugger.kicad_sch');
+    const issue = linkedErc('Needs power', child, 7);
+    store.applyValidationResult(
+      root,
+      [issue],
+      summaryFixture('erc', root.fsPath, {
+        errors: 1,
+        capturedAt: '2026-11-08T01:00:00.000Z'
+      }),
+      { project: projectFixture('alpha') }
+    );
+    store.markStaleForResource(child, 'child schematic edited', {
+      project: projectFixture('alpha')
+    });
+    const stale = collection.get(child) ?? [];
+    expect(stale).toHaveLength(1);
+    expect(stale[0]?.message).toContain('[stale] Needs power');
+    expect(stale[0]?.source).toContain(':stale');
+    expect(stale[0]?.range.start.line).toBe(7);
+    expect(store.getSnapshot({ projectId: 'alpha' }).erc?.freshness).toBe(
+      'stale'
+    );
+    expect(
+      store.getSnapshot({ projectId: 'alpha' }).erc?.lastGoodCapturedAt
+    ).toBe('2026-11-08T01:00:00.000Z');
+    expect(collection.get(root)).toEqual([]);
+  });
+
   it('normalizes project-scoped DRC results and isolates summary arrays', () => {
     const collection = createDiagnosticsCollection();
     const store = new DiagnosticStateStore(collection);
@@ -309,8 +448,7 @@ describe('diagnostic state store boundary', () => {
     store.markValidationStale('drc', board, 'source changed');
 
     const stale = (collection.set as jest.Mock).mock.calls.at(-1)?.[1]?.[0] as
-      | vscode.Diagnostic
-      | undefined;
+      vscode.Diagnostic | undefined;
     expect(stale).toEqual(
       expect.objectContaining({
         code: 'DRC-1',

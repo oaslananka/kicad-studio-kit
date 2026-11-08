@@ -227,10 +227,7 @@ suite('Extension Integration', () => {
         'kicadstudio.runDRC',
         ['kicadstudio.workspaceTrusted', 'kicadstudio.pcbOpen']
       ],
-      [
-        'kicadstudio.runERC',
-        ['kicadstudio.workspaceTrusted', 'kicadstudio.schematicOpen']
-      ],
+      ['kicadstudio.runERC', ['workspaceFolderCount > 0']],
       [
         'kicadstudio.exportViewerSvg',
         ['kicadstudio.workspaceTrusted', 'activeCustomEditorId']
@@ -494,8 +491,10 @@ suite('Extension Integration', () => {
     assertCommandPaletteWhen(commandPalette, 'kicadstudio.runDRC', [
       'kicadstudio.pcbOpen'
     ]);
+    // Runtime trust and file checks are enforced by the ERC command. The
+    // legacy schematicOpen palette context hides ERC in native custom tabs.
     assertCommandPaletteWhen(commandPalette, 'kicadstudio.runERC', [
-      'kicadstudio.schematicOpen'
+      'workspaceFolderCount > 0'
     ]);
   });
 

@@ -67,6 +67,9 @@ export function registerCheckCommands(
           projectRoot: services.projectState.getActiveProject()?.rootPath
         });
         if (!file) {
+          void vscode.window.showWarningMessage(
+            'No KiCad schematic found. Open a .kicad_sch file or project before running ERC.'
+          );
           return;
         }
         try {

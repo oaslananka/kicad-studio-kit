@@ -99,6 +99,16 @@ test('limits empty-workspace palette entries to the main hub and maintenance', (
   );
 });
 
+test('exposes ERC only with an opened folder using a native VS Code workspace context', () => {
+  const palette = paletteMap();
+  assert.equal(palette.get('kicadstudio.runERC'), 'workspaceFolderCount > 0');
+  assert.equal(
+    palette.get('kicadstudio.tasks.open'),
+    'ALWAYS',
+    'the main task entry point must remain visible in empty workspaces'
+  );
+});
+
 test('routes disconnected MCP onboarding through the Automate task hub', () => {
   for (const index of [8, 11, 14]) {
     const disconnectedWelcome =

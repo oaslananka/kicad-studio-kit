@@ -5,6 +5,7 @@ import * as path from 'node:path';
 import { SchematicEditorProvider } from '../../src/providers/schematicEditorProvider';
 import { PcbEditorProvider } from '../../src/providers/pcbEditorProvider';
 import { ViewerStateStore } from '../../src/state/stateStores';
+import type { ViewerState } from '../../src/types';
 import {
   __setConfiguration,
   createExtensionContextMock,
@@ -21,6 +22,7 @@ type ProviderCtor = new (
     webviewPanel: vscode.WebviewPanel
   ): Promise<void>;
   dispose(): void;
+  getViewerState(uri: vscode.Uri): ViewerState | undefined;
 };
 
 function createPanel() {
@@ -131,6 +133,285 @@ describe.each([
 
     expect(panel.webview.html).toContain('Opening interactive renderer...');
     expect(panel.webview.html).toContain('kicanvas-source');
+  });
+
+  if (_label === 'pcb') {
+    it('reads bounded partial PCB geometry without writes or export privileges', async () => {
+      const provider = new ContextProvider({
+        extensionUri: vscode.Uri.file('/extension')
+      } as vscode.ExtensionContext);
+      const panel = createPanel();
+      const uri = vscode.Uri.file(tempFile);
+      const source = `(kicad_pcb
+        (version 20250114)
+        (layers (0 "F.Cu" signal) (31 "B.Cu" signal))
+        (net 0 "")
+        (footprint "Test:Resistor" (layer "F.Cu") (at 10 10)
+          (pad "1" smd rect (at 0 0) (net 0 ""))
+        )
+        (segment (start 10 10) (end 20 20) (layer "F.Cu") (net 0))
+        (via (at 15 15) (layers "F.Cu" "B.Cu") (net 0))
+      )`.padEnd(11 * 1024 * 1024, ' ');
+      const bytes = Buffer.from(source, 'utf8');
+      (workspace.fs.stat as jest.Mock).mockResolvedValue({
+        size: bytes.length,
+        ctime: 0,
+        mtime: 2,
+        type: 1
+      });
+      (workspace.fs.readFile as jest.Mock).mockResolvedValue(bytes);
+      await provider.resolveCustomEditor(
+        { uri } as vscode.CustomDocument,
+        panel as unknown as vscode.WebviewPanel
+      );
+      expect(panel.webview.html).toContain('Metadata only');
+      await panel.fireMessage({
+        type: 'requestPartialPreview',
+        payload: {
+          action: 'start',
+          bounds: { minX: 0, maxX: 50, minY: 0, maxY: 50 }
+        }
+      });
+      expect(panel.webview.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'refresh',
+          payload: expect.objectContaining({
+            disabledReason: '',
+            partialPreview: expect.objectContaining({
+              warning: expect.stringContaining('PARTIAL PREVIEW')
+            })
+          })
+        })
+      );
+      expect(workspace.fs.writeFile).not.toHaveBeenCalled();
+      const previousCommands = (vscode.commands.executeCommand as jest.Mock)
+        .mock.calls.length;
+      await panel.fireMessage({ type: 'exportSvg' });
+      await panel.fireMessage({
+        type: 'exportPng',
+        payload: { dataUrl: 'data:image/png;base64,INVALID' }
+      });
+      expect(
+        (vscode.commands.executeCommand as jest.Mock).mock.calls.length
+      ).toBe(previousCommands);
+      expect(window.showSaveDialog).not.toHaveBeenCalled();
+
+      (panel.webview.postMessage as jest.Mock).mockClear();
+      const readsBeforeInvalid = (workspace.fs.readFile as jest.Mock).mock.calls
+        .length;
+      await panel.fireMessage({
+        type: 'requestPartialPreview',
+        payload: {
+          action: 'start',
+          bounds: { minX: 0, maxX: 300, minY: 0, maxY: 50 }
+        }
+      });
+      expect((workspace.fs.readFile as jest.Mock).mock.calls.length).toBe(
+        readsBeforeInvalid
+      );
+      expect(panel.webview.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'partialPreviewError',
+          payload: expect.objectContaining({
+            message: expect.stringContaining('250 x 250')
+          })
+        })
+      );
+      expect(workspace.fs.writeFile).not.toHaveBeenCalled();
+      // A normal source refresh must revoke partial-preview privileges.
+      (panel.webview.postMessage as jest.Mock).mockClear();
+      await (
+        provider as unknown as {
+          refreshDocument(uri: vscode.Uri): Promise<void>;
+        }
+      ).refreshDocument(uri);
+      expect(panel.webview.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'refresh',
+          payload: expect.objectContaining({ partialPreview: null })
+        })
+      );
+      (panel.webview.postMessage as jest.Mock).mockClear();
+      await panel.fireMessage({
+        type: 'requestPartialPreview',
+        payload: { action: 'next' }
+      });
+      expect(panel.webview.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'partialPreviewError',
+          payload: expect.objectContaining({
+            message: expect.stringContaining('Start a partial preview')
+          })
+        })
+      );
+      provider.dispose();
+    });
+  }
+
+  if (_label === 'pcb') {
+    it('blocks full-source fallback and drops stale partial images after source changes', async () => {
+      const fallback = jest.fn().mockResolvedValue('<svg/>');
+      const provider = new ContextProvider(
+        {
+          extensionUri: vscode.Uri.file('/extension')
+        } as vscode.ExtensionContext,
+        fallback
+      );
+      const panel = createPanel();
+      const uri = vscode.Uri.file(tempFile);
+      const source = `(kicad_pcb
+        (version 20250114)
+        (layers (0 "F.Cu" signal) (31 "B.Cu" signal))
+        (net 0 "")
+        (footprint "Test:Resistor" (layer "F.Cu") (at 10 10))
+        (segment (start 10 10) (end 20 20) (layer "F.Cu") (net 0))
+      )`.padEnd(11 * 1024 * 1024, ' ');
+      let revision = 2;
+      (workspace.fs.stat as jest.Mock).mockImplementation(async () => ({
+        size: Buffer.byteLength(source),
+        ctime: 0,
+        mtime: revision,
+        type: 1
+      }));
+      (workspace.fs.readFile as jest.Mock).mockResolvedValue(
+        Buffer.from(source)
+      );
+      await provider.resolveCustomEditor(
+        { uri } as vscode.CustomDocument,
+        panel as unknown as vscode.WebviewPanel
+      );
+      await panel.fireMessage({
+        type: 'requestPartialPreview',
+        payload: {
+          action: 'start',
+          bounds: { minX: 0, maxX: 40, minY: 0, maxY: 40 }
+        }
+      });
+      expect(panel.webview.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'refresh',
+          payload: expect.objectContaining({
+            partialPreview: expect.objectContaining({
+              warning: expect.stringContaining('PARTIAL PREVIEW')
+            })
+          })
+        })
+      );
+      (panel.webview.postMessage as jest.Mock).mockClear();
+      await panel.fireMessage({
+        type: 'requestSvgFallback',
+        payload: { requestId: 'partial-probe' }
+      });
+      expect(fallback).not.toHaveBeenCalled();
+      expect(panel.webview.postMessage).toHaveBeenCalledWith({
+        type: 'svgFallbackUnavailable',
+        payload: { requestId: 'partial-probe' }
+      });
+
+      // Even a same-size change to the PCB invalidates its source-bound cursor.
+      revision = 3;
+      const changed = source.replace('Test:Resistor', 'Test:Resistox');
+      expect(changed).toHaveLength(source.length);
+      (workspace.fs.readFile as jest.Mock).mockResolvedValue(
+        Buffer.from(changed)
+      );
+      (panel.webview.postMessage as jest.Mock).mockClear();
+      await panel.fireMessage({
+        type: 'requestPartialPreview',
+        payload: { action: 'next' }
+      });
+      const messages = (panel.webview.postMessage as jest.Mock).mock.calls.map(
+        ([message]) =>
+          message as { type: string; payload?: Record<string, unknown> }
+      );
+      expect(messages).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'refresh',
+            payload: expect.objectContaining({ partialPreview: null })
+          }),
+          expect.objectContaining({
+            type: 'partialPreviewError',
+            payload: expect.objectContaining({
+              message: expect.stringContaining('Preview continuation is stale')
+            })
+          })
+        ])
+      );
+      expect(workspace.fs.writeFile).not.toHaveBeenCalled();
+      provider.dispose();
+    });
+  }
+
+  it('rejects malformed source-area coordinates while retaining safe webview selections', async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+
+    const complete = { x1: 12, y1: 24, x2: 42, y2: 64 };
+    for (const invalidCoordinate of ['x1', 'y1', 'x2', 'y2'] as const) {
+      await panel.fireMessage({
+        type: 'selectionChanged',
+        payload: {
+          selectedReference: 'R1',
+          selectedArea: { ...complete, [invalidCoordinate]: 'invalid' },
+          activeLayers: ['F.Cu', 42, 'B.Cu']
+        }
+      });
+      expect(provider.getViewerState(uri)).toEqual(
+        expect.objectContaining({
+          selectedReference: 'R1',
+          activeLayers: ['F.Cu', 'B.Cu']
+        })
+      );
+      expect(provider.getViewerState(uri)?.selectedArea).toBeUndefined();
+    }
+
+    await panel.fireMessage({
+      type: 'selectionChanged',
+      payload: {
+        selectedReference: 'R2',
+        selectedArea: complete,
+        activeLayers: ['F.Cu', 'B.Cu']
+      }
+    });
+    expect(provider.getViewerState(uri)).toEqual(
+      expect.objectContaining({
+        selectedReference: 'R2',
+        selectedArea: complete,
+        activeLayers: ['F.Cu', 'B.Cu']
+      })
+    );
+
+    await panel.fireMessage({
+      type: 'viewerState',
+      payload: {
+        zoom: 2,
+        grid: false,
+        theme: 'dark',
+        selectedSheet: '/design/connector',
+        selectedArea: complete,
+        activeLayers: ['F.Cu', 'B.Cu'],
+        toolsPanelCollapsed: true,
+        focusedLayer: 'B.Cu'
+      }
+    });
+    expect(provider.getViewerState(uri)).toEqual(
+      expect.objectContaining({
+        zoom: 2,
+        selectedSheet: '/design/connector',
+        selectedArea: complete,
+        toolsPanelCollapsed: true,
+        activeLayers: ['F.Cu', 'B.Cu']
+      })
+    );
+    provider.dispose();
   });
 
   it('watches open viewer files only and disposes the watcher when the last panel closes (#849)', async () => {
@@ -1041,7 +1322,7 @@ describe.each([
     );
 
     expect(workspace.fs.readFile).toHaveBeenCalledWith(remoteUri);
-    expect(panel.webview.html).not.toContain('Interactive render is disabled');
+    expect(panel.webview.html).toContain('data-engine-kind="kicanvas"');
   });
 
   it('rejects invalid PNG export payloads from the webview bridge', async () => {

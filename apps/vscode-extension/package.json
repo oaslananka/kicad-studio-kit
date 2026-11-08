@@ -1461,7 +1461,7 @@
         },
         {
           "command": "kicadstudio.runERC",
-          "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
+          "when": "workspaceFolderCount > 0"
         },
         {
           "command": "kicadstudio.exportPDF",

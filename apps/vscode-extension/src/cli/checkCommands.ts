@@ -7,6 +7,12 @@ import { Logger } from '../utils/logger';
 import { readTextFileSync } from '../utils/fileUtils';
 import { SExpressionParser, type SNode } from '../language/sExpressionParser';
 import { KiCadCliRunner } from './kicadCliRunner';
+import { ErcSourceLocations } from './ercSourceLocations';
+
+interface ReportIssue {
+  row: Record<string, unknown>;
+  sheet?: { path: string; uuidPath: string } | undefined;
+}
 
 export class KiCadCheckService {
   constructor(
@@ -129,16 +135,41 @@ export class KiCadCheckService {
     file: string,
     kind: 'drc' | 'erc'
   ): vscode.Diagnostic[] {
-    const data = JSON.parse(rawJson);
+    const data: unknown = JSON.parse(rawJson);
     const ast = this.parser.parse(readTextFileSync(file));
     const rows = this.collectIssueRows(data);
-
-    return rows.map((row) => {
-      const range = this.findClosestRange(
-        ast,
-        Number(row['x'] ?? 0),
-        Number(row['y'] ?? 0)
+    const sourceLocations =
+      kind === 'erc' ? new ErcSourceLocations(file, this.parser) : undefined;
+    const rootUri = vscode.Uri.file(file);
+    // Build the coordinate candidates once per report, not once for every
+    // diagnostic. Large KiCad projects may report hundreds of violations.
+    const candidates = this.parser
+      .findAllNodes(ast, 'at')
+      .map((node) => ({ node, coords: this.extractCoordinates(node) }))
+      .filter(
+        (
+          entry
+        ): entry is {
+          node: SNode;
+          coords: { x: number; y: number };
+        } => Boolean(entry.coords)
       );
+
+    return rows.map(({ row, sheet }) => {
+      // KiCad 10 reports issue coordinates in items[].pos. A violation is
+      // one diagnostic; its constituent item descriptions are not issues.
+      const verified = sourceLocations?.resolve(sheet, row['items']);
+      const isOtherSheet =
+        verified &&
+        verified.uri.fsPath.toLowerCase() !== rootUri.fsPath.toLowerCase();
+      // An item with an explicit sheet UUID path must NEVER be projected
+      // onto unrelated root-sheet coordinates when source lookup fails.
+      const range =
+        verified && !isOtherSheet
+          ? verified.range
+          : isOtherSheet || (kind === 'erc' && sheet !== undefined)
+            ? new vscode.Range(0, 0, 0, 1)
+            : this.findClosestRange(candidates, this.issuePosition(row));
       const severity = this.toSeverity(String(row['severity'] ?? 'warning'));
       const diagnostic = new vscode.Diagnostic(
         range,
@@ -146,57 +177,125 @@ export class KiCadCheckService {
         severity
       );
       diagnostic.source = `kicad-cli:${kind}`;
-      diagnostic.code = String(row['rule_name'] ?? row['rule'] ?? 'rule');
+      if (verified) {
+        diagnostic.relatedInformation = [
+          {
+            location: verified,
+            message:
+              'Exact KiCad source UUID location (open related information)'
+          }
+        ];
+      }
+      diagnostic.code = String(
+        row['rule_name'] ?? row['rule'] ?? row['type'] ?? 'rule'
+      );
       return diagnostic;
     });
   }
 
-  private collectIssueRows(data: unknown): Array<Record<string, unknown>> {
-    if (Array.isArray(data)) {
-      return data.flatMap((item) => this.collectIssueRows(item));
-    }
+  private collectIssueRows(
+    data: unknown,
+    sheet?: ReportIssue['sheet']
+  ): ReportIssue[] {
     if (!data || typeof data !== 'object') {
       return [];
     }
 
-    const record = data as Record<string, unknown>;
-    const nestedArrays = Object.values(record)
-      .filter(Array.isArray)
-      .flatMap((value) => this.collectIssueRows(value));
-
-    if ('description' in record || 'message' in record) {
-      return [record, ...nestedArrays];
+    if (Array.isArray(data)) {
+      return data.flatMap((item) => this.collectIssueRows(item, sheet));
     }
 
-    return nestedArrays;
+    const record = data as Record<string, unknown>;
+    // A standalone violation remains supported, but a descriptive metadata
+    // row (such as KiCad's ERC rule catalog) is never a diagnostic.
+    if (
+      ('description' in record || 'message' in record) &&
+      ('severity' in record || 'items' in record)
+    ) {
+      return [{ row: record, sheet }];
+    }
+
+    // KiCad 10 reports carry a rule-description catalog alongside findings.
+    // Recursively visiting every array misidentifies those documentation
+    // descriptions as violations. Only the named finding collections count.
+    const issueGroups = [
+      record['violations'],
+      record['unconnected_items'],
+      record['schematic_parity']
+    ];
+    const rows = issueGroups
+      .filter(Array.isArray)
+      .flatMap((items) => this.collectIssueRows(items, sheet));
+    if (Array.isArray(record['sheets'])) {
+      for (const child of record['sheets']) {
+        if (!child || typeof child !== 'object') continue;
+        const entry = child as Record<string, unknown>;
+        const nextSheet =
+          typeof entry['path'] === 'string' &&
+          typeof entry['uuid_path'] === 'string'
+            ? { path: entry['path'], uuidPath: entry['uuid_path'] }
+            : undefined;
+        rows.push(...this.collectIssueRows(child, nextSheet));
+      }
+    }
+    return rows;
   }
 
-  private findClosestRange(root: SNode, x: number, y: number): vscode.Range {
-    const candidates = this.parser
-      .findAllNodes(root, 'at')
-      .map((node) => ({
-        node,
-        coords: this.extractCoordinates(node)
-      }))
-      .filter(
-        (entry): entry is { node: SNode; coords: { x: number; y: number } } =>
-          Boolean(entry.coords)
-      );
+  private issuePosition(
+    row: Record<string, unknown>
+  ): { x: number; y: number } | undefined {
+    const items = row['items'];
+    if (Array.isArray(items)) {
+      for (const item of items) {
+        if (!item || typeof item !== 'object') {
+          continue;
+        }
+        const pos = (item as Record<string, unknown>)['pos'];
+        if (!pos || typeof pos !== 'object') {
+          continue;
+        }
+        const coordinate = pos as Record<string, unknown>;
+        const x = Number(coordinate['x']);
+        const y = Number(coordinate['y']);
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+          return { x, y };
+        }
+      }
+    }
 
-    if (!candidates.length) {
+    // Compatibility with older, flat diagnostic payloads.
+    if (row['x'] !== undefined && row['y'] !== undefined) {
+      const x = Number(row['x']);
+      const y = Number(row['y']);
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        return { x, y };
+      }
+    }
+    return undefined;
+  }
+
+  private findClosestRange(
+    candidates: readonly {
+      node: SNode;
+      coords: { x: number; y: number };
+    }[],
+    position: { x: number; y: number } | undefined
+  ): vscode.Range {
+    if (!position || candidates.length === 0) {
       return new vscode.Range(0, 0, 0, 1);
     }
 
     const closest = candidates.reduce((best, current) => {
       const bestScore =
-        Math.abs(best.coords.x - x) + Math.abs(best.coords.y - y);
+        Math.abs(best.coords.x - position.x) +
+        Math.abs(best.coords.y - position.y);
       const currentScore =
-        Math.abs(current.coords.x - x) + Math.abs(current.coords.y - y);
+        Math.abs(current.coords.x - position.x) +
+        Math.abs(current.coords.y - position.y);
       return currentScore < bestScore ? current : best;
     });
 
-    const parentRange = this.parser.getPosition(closest.node);
-    return parentRange;
+    return this.parser.getPosition(closest.node);
   }
 
   private extractCoordinates(

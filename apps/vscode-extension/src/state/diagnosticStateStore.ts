@@ -43,6 +43,12 @@ export class DiagnosticStateStore implements vscode.Disposable {
   private latestErcRun: LatestValidationRun | undefined;
   private activeProjectId: string | undefined;
   private readonly projectDiagnostics = new Map<string, ProjectDiagnostics>();
+  // Keep per-report diagnostics so two projects sharing a child schematic
+  // cannot erase each other's active ERC Problems entries on revalidation.
+  private readonly ercPublishedReports = new Map<
+    string,
+    Map<string, { uri: vscode.Uri; diagnostics: vscode.Diagnostic[] }>
+  >();
 
   constructor(private readonly diagnostics: vscode.DiagnosticCollection) {}
 
@@ -59,7 +65,11 @@ export class DiagnosticStateStore implements vscode.Disposable {
     summary: DiagnosticSummary,
     options: { project?: ProjectContext | undefined; projectId?: string } = {}
   ): DiagnosticStateSnapshot {
-    this.diagnostics.set(uri, diagnostics);
+    if (summary.source === 'erc') {
+      this.publishErcProblems(uri, diagnostics);
+    } else {
+      this.diagnostics.set(uri, diagnostics);
+    }
     const projectId = options.project?.id ?? options.projectId;
     const projectState = this.getOrCreateProjectDiagnostics(projectId);
     const nextSummary = normalizeDiagnosticSummary(summary, {
@@ -304,6 +314,84 @@ export class DiagnosticStateStore implements vscode.Disposable {
     return projectState?.latestErcRun ?? this.latestErcRun;
   }
 
+  /**
+   * VS Code uses the DiagnosticCollection URI (not relatedInformation) for
+   * primary Problems-row navigation. Preserve exact verified UUID positions
+   * and leave unresolved findings on the original report URI.
+   *
+   * The aggregator's ERC bucket preserves independent syntax/DRC findings.
+   * Missing child-file entries are explicitly cleared on every new run.
+   */
+  private publishErcProblems(
+    root: vscode.Uri,
+    diagnostics: readonly vscode.Diagnostic[]
+  ): void {
+    const groups = new Map<
+      string,
+      { uri: vscode.Uri; diagnostics: vscode.Diagnostic[] }
+    >();
+    for (const diagnostic of diagnostics) {
+      const location = diagnostic.relatedInformation?.find(
+        (info) =>
+          info.message ===
+            'Exact KiCad source UUID location (open related information)' &&
+          info.location.uri.scheme === 'file' &&
+          info.location.uri.fsPath.toLowerCase().endsWith('.kicad_sch')
+      )?.location;
+      const target = location?.uri ?? root;
+      const key = diagnosticUriKey(target);
+      let group = groups.get(key);
+      if (!group) {
+        group = { uri: target, diagnostics: [] };
+        groups.set(key, group);
+      }
+      group.diagnostics.push(
+        location
+          ? cloneDiagnosticAtLocation(diagnostic, location.range)
+          : diagnostic
+      );
+    }
+
+    const rootKey = diagnosticUriKey(root);
+    const previous = this.ercPublishedReports.get(rootKey);
+    const affected = new Map<string, vscode.Uri>([
+      [rootKey, root],
+      ...[...(previous?.entries() ?? [])].map(
+        ([key, entry]) => [key, entry.uri] as const
+      ),
+      ...[...groups.entries()].map(([key, entry]) => [key, entry.uri] as const)
+    ]);
+    this.ercPublishedReports.set(rootKey, groups);
+    for (const [key, uri] of affected) {
+      const combined = [...this.ercPublishedReports.values()].flatMap(
+        (report) => report.get(key)?.diagnostics ?? []
+      );
+      this.setErcProblems(uri, combined);
+    }
+  }
+
+  private setErcProblems(
+    uri: vscode.Uri,
+    diagnostics: readonly vscode.Diagnostic[]
+  ): void {
+    const bucketed = this.diagnostics as vscode.DiagnosticCollection & {
+      setForSource?: (
+        uri: vscode.Uri,
+        source: 'erc',
+        diagnostics: readonly vscode.Diagnostic[]
+      ) => void;
+    };
+    if (typeof bucketed.setForSource === 'function') {
+      bucketed.setForSource(uri, 'erc', diagnostics);
+      return;
+    }
+    // Keep non-ERC entries if a plain DiagnosticCollection is injected.
+    const other = (this.diagnostics.get(uri) ?? []).filter(
+      (diagnostic) => !diagnostic.source?.includes('kicad-cli:erc')
+    );
+    this.diagnostics.set(uri, [...other, ...diagnostics]);
+  }
+
   private markProblemsDiagnosticsStale(
     source: ValidationSource,
     uri: vscode.Uri,
@@ -314,13 +402,42 @@ export class DiagnosticStateStore implements vscode.Disposable {
     if (!latest?.diagnostics.length) {
       return;
     }
-    this.diagnostics.set(
-      uri,
-      latest.diagnostics.map((diagnostic) =>
-        cloneStaleDiagnostic(diagnostic, source, reason)
-      )
+    const stale = latest.diagnostics.map((diagnostic) =>
+      cloneStaleDiagnostic(diagnostic, source, reason)
     );
+    if (source === 'erc') {
+      this.publishErcProblems(vscode.Uri.file(latest.file), stale);
+    } else {
+      this.diagnostics.set(uri, stale);
+    }
   }
+}
+
+function diagnosticUriKey(uri: vscode.Uri): string {
+  const normalized = uri.fsPath.replace(/\\/g, '/');
+  return process.platform === 'win32' || /^[a-z]:\//i.test(normalized)
+    ? normalized.toLowerCase()
+    : normalized;
+}
+
+function cloneDiagnosticAtLocation(
+  original: vscode.Diagnostic,
+  range: vscode.Range
+): vscode.Diagnostic {
+  const clone = new vscode.Diagnostic(
+    range,
+    original.message,
+    original.severity
+  );
+  if (original.source !== undefined) clone.source = original.source;
+  if (original.code !== undefined) clone.code = original.code;
+  if (original.relatedInformation) {
+    clone.relatedInformation = [...original.relatedInformation];
+  }
+  if (original.tags) {
+    clone.tags = [...original.tags];
+  }
+  return clone;
 }
 
 function cloneSummary(summary: DiagnosticSummary): DiagnosticSummary {

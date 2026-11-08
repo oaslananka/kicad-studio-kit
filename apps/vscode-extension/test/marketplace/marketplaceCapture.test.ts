@@ -82,20 +82,20 @@ test.describe('KiCad Studio marketplace captures', () => {
       await showPcbLayerPanel(session.page);
       await capture(session, 'pcb-viewer.png');
 
+      await openWorkspaceFile(session.page, 'demo.kicad_pcb');
+      await waitForViewerReady(session.page, 'demo.kicad_pcb');
       await invokeCommand(session.page, 'KiCad: Run Design Rule Check (DRC)');
-      await expect
-        .poll(
-          async () =>
-            !(await session.page.locator('body').innerText()).includes(
-              'DRCNot run - Run DRC'
-            ),
-          { timeout: 60000 }
-        )
-        .toBe(true);
-      const problemsPanel = session.page.locator(
-        '[id="workbench.parts.panel"]'
-      );
+      // The old global body-text check could remain "Not run" because a
+      // hidden/background summary was stale even after the real CLI ran.
+      // The Problems entries establish the user-visible DRC result instead.
+      const problemsPanel = session.page.locator('.markers-panel');
       await expect(problemsPanel).toBeVisible({ timeout: 60000 });
+      await expect(
+        problemsPanel
+          .locator('.monaco-list-row')
+          .filter({ hasText: 'kicad-cli:drc' })
+          .first()
+      ).toBeVisible({ timeout: 60000 });
       await capture(session, 'drc-results.png');
 
       await session.page.keyboard.press('Control+Shift+M');
