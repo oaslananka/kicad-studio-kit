@@ -345,7 +345,9 @@ describe('createKiCanvasViewerHtml', () => {
     expect(html).toContain('applyViewerGridState(');
     expect(html).toContain('localState = { ...localState, theme: nextTheme };');
     expect(html).toContain('updateFallbackTheme();');
-    expect(html).toContain('selectedReference: reference');
+    expect(html).toContain(
+      'localState = { ...localState, selectedReference };'
+    );
     expect(html).toContain('applyViewerSelectionState(');
     expect(html).toContain(
       "viewer.setAttribute('selected-reference', reference);"

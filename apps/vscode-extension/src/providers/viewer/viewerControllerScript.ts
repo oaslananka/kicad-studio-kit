@@ -1108,7 +1108,37 @@ export function createViewerControllerScript(): string {
         setStatus('Enter a component reference to find.');
         return;
       }
+      // The schematic renderer's select API does not confirm that the
+      // reference exists or that its camera moved. Resolve against actual
+      // placed symbols in this source before updating persisted selection.
+      // Avoid claiming exact graphical focus until native navigation proves it.
+      let matchedSchematicReference = null;
+      if (payload.fileType === 'schematic') {
+        const references = payload.metadata?.references;
+        if (!Array.isArray(references)) {
+          referenceSearchInput.setAttribute('aria-invalid', 'true');
+          setStatus('Reference lookup is unavailable for this schematic. Open in KiCad to locate the object.');
+          return;
+        }
+        matchedSchematicReference = references.find(
+          (candidate) => typeof candidate === 'string' &&
+            candidate.toLowerCase() === reference.toLowerCase()
+        );
+        if (!matchedSchematicReference) {
+          referenceSearchInput.setAttribute('aria-invalid', 'true');
+          setStatus('Reference ' + reference + ' was not found in this schematic.');
+          return;
+        }
+      }
       const embed = viewerMount.querySelector('kicanvas-embed');
+      if (payload.fileType === 'schematic' && !embed) {
+        referenceSearchInput.removeAttribute('aria-invalid');
+        setStatus(
+          'Reference ' + matchedSchematicReference +
+            ' found in source; visual focus is unavailable in SVG fallback. Open in KiCad to locate it.'
+        );
+        return;
+      }
       const renderer = getKiCanvasViewer(embed);
       if (payload.fileType === 'board' && renderer?.board?.find_footprint) {
         if (!renderer.board.find_footprint(reference)) {
@@ -1139,12 +1169,15 @@ export function createViewerControllerScript(): string {
         return;
       }
       referenceSearchInput.removeAttribute('aria-invalid');
-      if (payload.fileType === 'board') embed?.setAttribute('selected-reference', reference);
-      localState = { ...localState, selectedReference: reference };
+      const selectedReference = matchedSchematicReference || reference;
+      if (payload.fileType === 'board') embed?.setAttribute('selected-reference', selectedReference);
+      localState = { ...localState, selectedReference };
       if (payload.fileType !== 'board') applyViewerSelectionState(embed);
       postViewerState();
-      setStatus('Focused reference: ' + reference);
-      vscode.postMessage({ type: 'componentSelected', payload: { reference } });
+      setStatus(payload.fileType === 'schematic'
+        ? 'Reference ' + selectedReference + ' found in this schematic.'
+        : 'Focused reference: ' + selectedReference);
+      vscode.postMessage({ type: 'componentSelected', payload: { reference: selectedReference } });
     }
 
     function applyViewerSelectionState(viewer) {
