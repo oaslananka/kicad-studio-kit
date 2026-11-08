@@ -165,32 +165,41 @@ export class KiCadCheckService {
   }
 
   private collectIssueRows(data: unknown): Array<Record<string, unknown>> {
-    if (Array.isArray(data)) {
-      return data.flatMap((item) => this.collectIssueRows(item));
-    }
     if (!data || typeof data !== 'object') {
       return [];
     }
 
+    if (Array.isArray(data)) {
+      return data.flatMap((item) => this.collectIssueRows(item));
+    }
+
     const record = data as Record<string, unknown>;
-    if ('description' in record || 'message' in record) {
-      // Each KiCad violation contains nested "items" with their own
-      // descriptions; counting those as separate violations doubles or
-      // triples the Issues/Problems totals.
-      if (
-        'pos' in record &&
-        !('items' in record) &&
-        !('severity' in record) &&
-        !('type' in record)
-      ) {
-        return [];
-      }
+    // A standalone violation remains supported, but a descriptive metadata
+    // row (such as KiCad's ERC rule catalog) is never a diagnostic.
+    if (
+      ('description' in record || 'message' in record) &&
+      ('severity' in record || 'items' in record)
+    ) {
       return [record];
     }
 
-    return Object.values(record)
+    // KiCad 10 reports carry a rule-description catalog alongside findings.
+    // Recursively visiting every array misidentifies those documentation
+    // descriptions as violations. Only the named finding collections count.
+    const issueGroups = [
+      record['violations'],
+      record['unconnected_items'],
+      record['schematic_parity']
+    ];
+    const rows = issueGroups
       .filter(Array.isArray)
-      .flatMap((value) => this.collectIssueRows(value));
+      .flatMap((items) => this.collectIssueRows(items));
+    if (Array.isArray(record['sheets'])) {
+      for (const sheet of record['sheets']) {
+        rows.push(...this.collectIssueRows(sheet));
+      }
+    }
+    return rows;
   }
 
   private issuePosition(

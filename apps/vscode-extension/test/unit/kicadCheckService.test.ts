@@ -114,4 +114,35 @@ describe('KiCadCheckService KiCad 10 JSON diagnostics', () => {
       expect.objectContaining({ source: 'erc', warnings: 1, errors: 0 })
     );
   });
+  it('ignores KiCad ERC rule catalog descriptions while counting real violations', async () => {
+    const service = checkService({
+      erc: {
+        rules: [
+          { description: 'Global label only appears once in the schematic' },
+          { description: 'Four connection points are joined together' },
+          { description: 'Unused footprint library', severity: 'warning' }
+        ]
+      },
+      sheets: [
+        {
+          path: '/root',
+          violations: [
+            {
+              description: 'Symbol pin not connected',
+              severity: 'warning',
+              type: 'pin_not_connected',
+              items: [
+                { description: 'Connection point', pos: { x: 12, y: 34 } }
+              ]
+            }
+          ]
+        }
+      ]
+    });
+    const result = await service.runERC(schematic);
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.message).toBe('Symbol pin not connected');
+    expect(result.diagnostics[0]?.code).toBe('pin_not_connected');
+    expect(result.summary.warnings).toBe(1);
+  });
 });
