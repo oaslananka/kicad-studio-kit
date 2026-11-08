@@ -67,6 +67,9 @@ describe('ERC command visibility and runtime safety', () => {
       manifest.contributes.menus.commandPalette.find(
         (item) => item.command === 'kicadstudio.runERC'
       )
-    ).toEqual({ command: 'kicadstudio.runERC' });
+    ).toEqual({
+      command: 'kicadstudio.runERC',
+      when: 'workspaceFolderCount > 0'
+    });
   });
 });
