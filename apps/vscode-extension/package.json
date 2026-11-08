@@ -1457,7 +1457,7 @@
         },
         {
           "command": "kicadstudio.runDRC",
-          "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
+          "when": "workspaceFolderCount > 0"
         },
         {
           "command": "kicadstudio.runERC",

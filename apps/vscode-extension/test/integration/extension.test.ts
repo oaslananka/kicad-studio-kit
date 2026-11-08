@@ -223,10 +223,7 @@ suite('Extension Integration', () => {
         'kicadstudio.exportInteractiveBOM',
         ['kicadstudio.workspaceTrusted', 'kicadstudio.schematicOpen']
       ],
-      [
-        'kicadstudio.runDRC',
-        ['kicadstudio.workspaceTrusted', 'kicadstudio.pcbOpen']
-      ],
+      ['kicadstudio.runDRC', ['workspaceFolderCount > 0']],
       ['kicadstudio.runERC', ['workspaceFolderCount > 0']],
       [
         'kicadstudio.exportViewerSvg',
@@ -488,8 +485,10 @@ suite('Extension Integration', () => {
 
     const commandPalette = getCommandPalettePolicies(extension);
     assertCommandPaletteWhen(commandPalette, 'kicadstudio.showStatusMenu', []);
+    // Both checks use stable VS Code folder context, not fragile custom-editor
+    // state; runtime trust and matching-file checks still remain mandatory.
     assertCommandPaletteWhen(commandPalette, 'kicadstudio.runDRC', [
-      'kicadstudio.pcbOpen'
+      'workspaceFolderCount > 0'
     ]);
     // Runtime trust and file checks are enforced by the ERC command. The
     // legacy schematicOpen palette context hides ERC in native custom tabs.

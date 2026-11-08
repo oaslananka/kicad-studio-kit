@@ -99,9 +99,11 @@ test('limits empty-workspace palette entries to the main hub and maintenance', (
   );
 });
 
-test('exposes ERC only with an opened folder using a native VS Code workspace context', () => {
+test('exposes DRC and ERC only with an opened folder using native VS Code context', () => {
   const palette = paletteMap();
-  assert.equal(palette.get('kicadstudio.runERC'), 'workspaceFolderCount > 0');
+  for (const command of ['kicadstudio.runDRC', 'kicadstudio.runERC']) {
+    assert.equal(palette.get(command), 'workspaceFolderCount > 0');
+  }
   assert.equal(
     palette.get('kicadstudio.tasks.open'),
     'ALWAYS',

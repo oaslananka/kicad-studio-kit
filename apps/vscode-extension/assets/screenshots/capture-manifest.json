@@ -10,9 +10,9 @@
   "vscodeVersion": "1.122.0",
   "kicadVersion": "10.0.8",
   "sourceContractVersion": 4,
-  "sourceFingerprint": "424553064c203f8ab92859ab5392d17535b14c84897068cb0dfca588f305947a",
+  "sourceFingerprint": "a4e4420b64b4fe626b291e8d7f8674969c57e613d09284d8c189bc14d8d8fd41",
   "screenshots": {
-    "project-tree.png": "5f5787b7279b40a59f0e50d9bfc67dd461d2b8366d9030d8efebe513f1043c00",
+    "project-tree.png": "a9f1d61744b470738628909034c708132f31dcf3ec1701025546e220bfca0f42",
     "schematic-viewer.png": "36e9d49dc6e23c3dfa60e988d59fa1e5734874a61daf0f39c05afea58b7efb40",
     "pcb-viewer.png": "484cd7d4d5c9d9280e777035e4253c9fa808327e9575f24b4504593051913cd1",
     "drc-results.png": "b7ffe783b12287bbecd0981aa463994d505730835212b66c660cd7c4ec9f2a3d",

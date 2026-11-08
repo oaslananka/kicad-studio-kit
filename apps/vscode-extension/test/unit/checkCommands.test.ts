@@ -73,3 +73,69 @@ describe('ERC command visibility and runtime safety', () => {
     });
   });
 });
+
+describe('DRC command visibility and runtime safety', () => {
+  const resolve = resolveTargetFile as jest.Mock;
+
+  function registerDRC() {
+    const runDRC = jest.fn();
+    registerCheckCommands({
+      projectState: { getActiveProject: jest.fn() },
+      checkService: { runDRC }
+    } as unknown as CommandServices);
+    const entry = (commands.registerCommand as jest.Mock).mock.calls.find(
+      ([name]) => name === 'kicadstudio.runDRC'
+    );
+    expect(entry).toBeDefined();
+    return {
+      runDRC,
+      invoke: entry![1] as () => Promise<unknown>
+    };
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    workspace.isTrusted = true;
+    resolve.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    workspace.isTrusted = true;
+  });
+
+  it('rejects untrusted DRC execution even though the command is discoverable', async () => {
+    workspace.isTrusted = false;
+    const { invoke, runDRC } = registerDRC();
+    await invoke();
+    expect(resolve).not.toHaveBeenCalled();
+    expect(runDRC).not.toHaveBeenCalled();
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Run DRC requires a trusted workspace')
+    );
+  });
+
+  it('explains missing PCB instead of silently returning', async () => {
+    const { invoke, runDRC } = registerDRC();
+    await invoke();
+    expect(resolve).toHaveBeenCalledWith(
+      undefined,
+      '.kicad_pcb',
+      expect.objectContaining({ projectRoot: undefined })
+    );
+    expect(runDRC).not.toHaveBeenCalled();
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('No KiCad PCB found')
+    );
+  });
+
+  it('contributes DRC with the stable folder-count palette context', () => {
+    expect(
+      manifest.contributes.menus.commandPalette.find(
+        (item) => item.command === 'kicadstudio.runDRC'
+      )
+    ).toEqual({
+      command: 'kicadstudio.runDRC',
+      when: 'workspaceFolderCount > 0'
+    });
+  });
+});
