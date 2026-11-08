@@ -6,7 +6,7 @@ BoardReadyOps runs as an external CLI tool (`npx boardreadyops`) and reports fin
 
 ## Prerequisites
 
-- **Node.js** 24.x (published BoardReadyOps 1.70.0 declares the `^24.0.0` engine range)
+- **Node.js** 24.x (published BoardReadyOps 1.71.0 declares the `^24.0.0` engine range)
 - The CLI is resolved automatically — no separate install step required.
 
 ## Configuration

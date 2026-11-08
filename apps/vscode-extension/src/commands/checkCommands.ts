@@ -19,6 +19,9 @@ export function registerCheckCommands(
           projectRoot: services.projectState.getActiveProject()?.rootPath
         });
         if (!file) {
+          void vscode.window.showWarningMessage(
+            'No KiCad PCB found. Open a .kicad_pcb file or project before running DRC.'
+          );
           return;
         }
         try {
