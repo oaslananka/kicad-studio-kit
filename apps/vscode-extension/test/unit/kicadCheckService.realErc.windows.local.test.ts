@@ -4,7 +4,10 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import * as vscode from 'vscode';
 import { KiCadCheckService } from '../../src/cli/checkCommands';
+import { DiagnosticStateStore } from '../../src/state/diagnosticStateStore';
+import { KiCadDiagnosticsAggregator } from '../../src/language/diagnosticsAggregator';
 import { SExpressionParser } from '../../src/language/sExpressionParser';
 
 const execFileAsync = promisify(execFile);
@@ -171,6 +174,74 @@ describe('native KiCad 10 ERC report parity — isolated, opt-in', () => {
             expect(location.range.start.line).toBeGreaterThan(0);
           }
         }
+        // Real KiCad source UUID locations must drive the PRIMARY Problems
+        // collection URI, not merely a related-information child link.
+        const collection = new KiCadDiagnosticsAggregator({
+          name: 'kicad-studio-real-erc',
+          set: jest.fn(),
+          delete: jest.fn(),
+          clear: jest.fn(),
+          forEach: jest.fn(),
+          get: jest.fn(),
+          has: jest.fn(),
+          dispose: jest.fn(),
+          [Symbol.iterator]: jest.fn(() => [][Symbol.iterator]())
+        } as unknown as vscode.DiagnosticCollection);
+        const state = new DiagnosticStateStore(collection);
+        const sourceUris = new Map<string, vscode.Uri>();
+        for (const location of linked) {
+          // vscodeMock.Uri.file omits scheme, unlike the real VS Code API.
+          Object.defineProperty(location.uri, 'scheme', { value: 'file' });
+          sourceUris.set(location.uri.fsPath, location.uri);
+        }
+        state.applyValidationResult(
+          vscode.Uri.file(schematic),
+          result.diagnostics,
+          result.summary
+        );
+        expect(
+          [...sourceUris.values()].reduce(
+            (sum, uri) => sum + (collection.get(uri)?.length ?? 0),
+            0
+          )
+        ).toBe(44);
+        for (const [index, diagnostic] of result.diagnostics.entries()) {
+          const target = links[index]!;
+          const published = collection.get(target.uri) ?? [];
+          expect(
+            published.some(
+              (entry) =>
+                entry.message === diagnostic.message &&
+                entry.code === diagnostic.code &&
+                entry.range.start.line === target.range.start.line
+            )
+          ).toBe(true);
+        }
+        console.log(
+          'REAL_KICAD_10_ERC_PRIMARY_PROBLEMS_LINKS=44 FILES=' + sourceUris.size
+        );
+        const linkedChildUri = linkedChild[0]?.uri;
+        expect(linkedChildUri).toBeDefined();
+        state.markStaleForResource(linkedChildUri!, 'child schematic edited');
+        for (const uri of sourceUris.values()) {
+          expect(
+            (collection.get(uri) ?? []).every((diagnostic) =>
+              diagnostic.message.startsWith('[stale]')
+            )
+          ).toBe(true);
+        }
+        expect(state.getSnapshot().erc?.freshness).toBe('stale');
+        // A fresh clean ERC result must remove the previous child-file entries.
+        state.applyValidationResult(vscode.Uri.file(schematic), [], {
+          ...result.summary,
+          errors: 0,
+          warnings: 0,
+          infos: 0
+        });
+        for (const uri of sourceUris.values()) {
+          expect(collection.get(uri)).toEqual([]);
+        }
+
         const total =
           result.summary.errors +
           result.summary.warnings +
