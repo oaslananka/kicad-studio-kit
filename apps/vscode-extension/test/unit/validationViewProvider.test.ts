@@ -21,6 +21,74 @@ function createDiagnosticsCollection(): vscode.DiagnosticCollection {
 }
 
 describe('ValidationViewProvider', () => {
+  it('shows a locked, non-actionable row in Restricted Mode and refreshes on trust', () => {
+    const originalTrust = vscode.workspace.isTrusted;
+    (vscode.workspace as unknown as { isTrusted: boolean }).isTrusted = false;
+    const diagnostics = new DiagnosticStateStore(createDiagnosticsCollection());
+    (diagnostics.onDidChange as jest.Mock).mockReturnValue({
+      dispose: jest.fn()
+    });
+    const fire = jest.spyOn(vscode.EventEmitter.prototype, 'fire');
+    const provider = new ValidationViewProvider(diagnostics);
+    try {
+      const items = provider
+        .getChildren()
+        .map((row) => provider.getTreeItem(row));
+      for (const item of items) {
+        expect(item.description).toBe('Trust workspace to run checks');
+        expect(item.tooltip).toContain('Trust this workspace');
+        expect(item.iconPath).toEqual(expect.objectContaining({ id: 'lock' }));
+        expect(item.command).toBeUndefined();
+      }
+
+      fire.mockClear();
+      const trustHandler = (
+        vscode.workspace.onDidGrantWorkspaceTrust as jest.Mock
+      ).mock.calls.at(-1)?.[0] as (() => void) | undefined;
+      expect(trustHandler).toBeDefined();
+      (vscode.workspace as unknown as { isTrusted: boolean }).isTrusted = true;
+      trustHandler?.();
+      expect(fire).toHaveBeenCalledWith(undefined);
+      expect(provider.getTreeItem(provider.getChildren()[0]!).command).toEqual(
+        expect.objectContaining({ command: 'kicadstudio.runDRC' })
+      );
+    } finally {
+      provider.dispose();
+      fire.mockRestore();
+      (vscode.workspace as unknown as { isTrusted: boolean }).isTrusted =
+        originalTrust;
+    }
+  });
+
+  it('keeps prior diagnostic status readable in Restricted Mode without an executable command', () => {
+    const originalTrust = vscode.workspace.isTrusted;
+    (vscode.workspace as unknown as { isTrusted: boolean }).isTrusted = false;
+    const diagnostics = new DiagnosticStateStore(createDiagnosticsCollection());
+    const board = vscode.Uri.file('/workspace/demo.kicad_pcb');
+    diagnostics.applyValidationResult(board, [], {
+      file: board.fsPath,
+      errors: 0,
+      warnings: 0,
+      infos: 0,
+      source: 'drc',
+      capturedAt: '2026-05-21T05:00:00.000Z'
+    });
+    (diagnostics.onDidChange as jest.Mock).mockReturnValue({
+      dispose: jest.fn()
+    });
+    const provider = new ValidationViewProvider(diagnostics);
+    try {
+      const item = provider.getTreeItem(provider.getChildren()[0]!);
+      expect(item.description).toContain('PASS');
+      expect(item.tooltip).toContain('Trust this workspace');
+      expect(item.command).toBeUndefined();
+    } finally {
+      provider.dispose();
+      (vscode.workspace as unknown as { isTrusted: boolean }).isTrusted =
+        originalTrust;
+    }
+  });
+
   it('derives DRC and ERC rows from the shared diagnostic state', () => {
     const diagnostics = new DiagnosticStateStore(createDiagnosticsCollection());
     const provider = new ValidationViewProvider(diagnostics);

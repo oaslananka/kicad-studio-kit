@@ -68,10 +68,11 @@ Open **KiCad Studio: Open Task Hub** from the Command Palette or select the task
 
 The task hubs delegate to the existing commands, so scripts, keybindings, and documented command IDs remain compatible.
 
-**First installation / no project:** Choose **Explore Tasks** in the welcome
-message. If there is no active KiCad project, **Open a KiCad project** is the
-first Task Hub action; select the folder containing a `.kicad_pro`,
-`.kicad_sch`, or `.kicad_pcb` file. **Guided Tour** is available separately.
+**First installation:** Choose **Explore Tasks** or **Guided Tour**.
+Without a project, Task Hub offers **Open a KiCad project** for folders
+containing `.kicad_pro`, `.kicad_sch`, or `.kicad_pcb` files. With an open
+project, the welcome acknowledges it. In Restricted Mode, DRC/ERC actions
+show as locked until the workspace is trusted; prior results stay visible.
 
 For the core workflow, follow **Open project → Review → Validate → Fabrication
 Release**. KiCad CLI powers validation and exports. **MCP and AI are optional**
@@ -92,7 +93,8 @@ built-in viewers or native DRC/ERC checks.
 
 1. Click a `.kicad_pcb` file in the project tree.
 2. The PCB opens in the built-in KiCad PCB Viewer.
-3. Use the layer panel to show/hide copper layers, silkscreen, etc.
+3. Choose **Panel** for **PCB Layers** and **PCB Nets**. Independent
+   layer controls require interactive KiCanvas, not the CLI SVG fallback.
 
 ---
 

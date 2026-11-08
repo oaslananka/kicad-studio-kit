@@ -16,7 +16,12 @@ class KiCadTreeItem extends vscode.TreeItem {
       this.resourceUri = node.uri;
     }
     const diagnostics = diagnosticsForNode(node);
-    this.description = descriptionForNode(node, diagnostics);
+    // Narrow tree rows show diagnostic counts, not duplicate role labels.
+    // The tooltip retains the role, path, and full diagnostic context.
+    const diagnosticState = diagnosticSummary(diagnostics);
+    if (diagnosticState) {
+      this.description = diagnosticState;
+    }
     this.tooltip = tooltipForNode(node, diagnostics);
     this.iconPath = new vscode.ThemeIcon(iconForNode(node, diagnostics));
 
@@ -149,57 +154,47 @@ export class KiCadProjectTreeProvider implements vscode.TreeDataProvider<Project
       {
         label: 'Jobsets',
         type: 'jobset' as const,
-        children: jobsetFiles.map(
-          (file): ProjectTreeNode => ({
-            label: path.basename(file),
-            type: 'jobset',
-            uri: vscode.Uri.file(file)
-          })
-        )
+        children: jobsetFiles.map((file): ProjectTreeNode => ({
+          label: path.basename(file),
+          type: 'jobset',
+          uri: vscode.Uri.file(file)
+        }))
       },
       {
         label: 'Schematic Libraries',
         type: 'symbol-library' as const,
-        children: symbolFiles.map(
-          (file): ProjectTreeNode => ({
-            label: path.basename(file),
-            type: 'file',
-            uri: vscode.Uri.file(file)
-          })
-        )
+        children: symbolFiles.map((file): ProjectTreeNode => ({
+          label: path.basename(file),
+          type: 'file',
+          uri: vscode.Uri.file(file)
+        }))
       },
       {
         label: 'Footprint Libraries',
         type: 'footprint-library' as const,
-        children: footprintFiles.map(
-          (file): ProjectTreeNode => ({
-            label: path.basename(file),
-            type: 'file',
-            uri: vscode.Uri.file(file)
-          })
-        )
+        children: footprintFiles.map((file): ProjectTreeNode => ({
+          label: path.basename(file),
+          type: 'file',
+          uri: vscode.Uri.file(file)
+        }))
       },
       {
         label: 'Fabrication Outputs',
         type: 'fab-output' as const,
-        children: fabFiles.map(
-          (file): ProjectTreeNode => ({
-            label: path.basename(file),
-            type: 'file',
-            uri: vscode.Uri.file(file)
-          })
-        )
+        children: fabFiles.map((file): ProjectTreeNode => ({
+          label: path.basename(file),
+          type: 'file',
+          uri: vscode.Uri.file(file)
+        }))
       },
       {
         label: '3D Models',
         type: 'model' as const,
-        children: models.map(
-          (file): ProjectTreeNode => ({
-            label: path.basename(file),
-            type: 'file',
-            uri: vscode.Uri.file(file)
-          })
-        )
+        children: models.map((file): ProjectTreeNode => ({
+          label: path.basename(file),
+          type: 'file',
+          uri: vscode.Uri.file(file)
+        }))
       }
     ].filter((node) => !node.children || node.children.length > 0);
 
@@ -237,13 +232,14 @@ function projectFileNode(
   const extension = normalizedExtension(file);
   return {
     label: path.basename(file),
-    type: extension === '.kicad_sch'
-      ? 'schematic'
-      : extension === '.kicad_pcb'
-        ? 'pcb'
-        : extension === '.kicad_dru'
-          ? 'drc-rule'
-          : 'file',
+    type:
+      extension === '.kicad_sch'
+        ? 'schematic'
+        : extension === '.kicad_pcb'
+          ? 'pcb'
+          : extension === '.kicad_dru'
+            ? 'drc-rule'
+            : 'file',
     uri: vscode.Uri.file(file),
     project:
       extension === '.kicad_pro'
@@ -284,15 +280,6 @@ function diagnosticsForNode(node: ProjectTreeNode): TreeDiagnostics {
     }),
     { errors: 0, warnings: 0, total: 0 }
   );
-}
-
-function descriptionForNode(
-  node: ProjectTreeNode,
-  diagnostics: TreeDiagnostics
-): string {
-  const description = roleForNode(node);
-  const diagnosticState = diagnosticSummary(diagnostics);
-  return diagnosticState ? `${description} | ${diagnosticState}` : description;
 }
 
 function tooltipForNode(

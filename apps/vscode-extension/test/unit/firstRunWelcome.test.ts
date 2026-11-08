@@ -13,7 +13,7 @@ describe('first-run welcome', () => {
     (window.showInformationMessage as jest.Mock).mockResolvedValueOnce(
       'Explore Tasks'
     );
-    await showFirstRunWelcome();
+    await showFirstRunWelcome({ hasProject: false, workspaceTrusted: false });
     expect(window.showInformationMessage).toHaveBeenCalledWith(
       expect.stringMatching(
         /review schematics and PCBs.*MCP and AI are optional/u
@@ -25,11 +25,30 @@ describe('first-run welcome', () => {
     expect(commands.executeCommand).toHaveBeenCalledWith(COMMANDS.openTaskHub);
   });
 
+  it('acknowledges an already discovered trusted project instead of asking to open one', async () => {
+    await showFirstRunWelcome({ hasProject: true, workspaceTrusted: true });
+    const message = (window.showInformationMessage as jest.Mock).mock.calls.at(
+      -1
+    )?.[0];
+    expect(message).toContain('Your KiCad project is ready');
+    expect(message).not.toContain('Open a project');
+  });
+
+  it('explains Workspace Trust clearly for an already open restricted project', async () => {
+    await showFirstRunWelcome({ hasProject: true, workspaceTrusted: false });
+    const message = (window.showInformationMessage as jest.Mock).mock.calls.at(
+      -1
+    )?.[0];
+    expect(message).toContain('KiCad project detected');
+    expect(message).toContain('Trust this workspace');
+    expect(message).toContain('MCP and AI are optional');
+  });
+
   it('opens the real VS Code walkthrough from the secondary option', async () => {
     (window.showInformationMessage as jest.Mock).mockResolvedValueOnce(
       'Guided Tour'
     );
-    await showFirstRunWelcome();
+    await showFirstRunWelcome({ hasProject: false, workspaceTrusted: false });
     expect(commands.executeCommand).toHaveBeenCalledWith(
       'workbench.action.openWalkthrough',
       `${EXTENSION_ID}#kicadstudio.gettingStarted`
@@ -42,7 +61,7 @@ describe('first-run welcome', () => {
       (window.showInformationMessage as jest.Mock).mockResolvedValueOnce(
         choice
       );
-      await showFirstRunWelcome();
+      await showFirstRunWelcome({ hasProject: false, workspaceTrusted: false });
       expect(commands.executeCommand).not.toHaveBeenCalled();
     }
   );

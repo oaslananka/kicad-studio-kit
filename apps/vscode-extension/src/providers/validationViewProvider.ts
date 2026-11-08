@@ -3,6 +3,7 @@ import { COMMANDS } from '../constants';
 import { localize } from '../i18n';
 import type { DiagnosticSummary } from '../types';
 import type { DiagnosticStateStore } from '../state/stateStores';
+import { isWorkspaceTrusted } from '../utils/workspaceTrust';
 
 export interface ValidationRow {
   label: 'DRC' | 'ERC';
@@ -17,9 +18,13 @@ export class ValidationViewProvider
   >();
   readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
   private readonly subscription: vscode.Disposable;
+  private readonly trustSubscription: vscode.Disposable;
 
   constructor(private readonly diagnostics: DiagnosticStateStore) {
     this.subscription = diagnostics.onDidChange(() =>
+      this.onDidChangeTreeDataEmitter.fire(undefined)
+    );
+    this.trustSubscription = vscode.workspace.onDidGrantWorkspaceTrust(() =>
       this.onDidChangeTreeDataEmitter.fire(undefined)
     );
   }
@@ -29,13 +34,28 @@ export class ValidationViewProvider
       element.label,
       vscode.TreeItemCollapsibleState.None
     );
-    item.description = describe(element);
-    item.tooltip = tooltip(element);
-    item.iconPath = new vscode.ThemeIcon(iconFor(element.summary));
-    item.command = {
-      command: element.label === 'DRC' ? COMMANDS.runDRC : COMMANDS.runERC,
-      title: localize('runValidation', { label: element.label })
-    };
+    const trusted = isWorkspaceTrusted();
+    // Keep existing results visible, but do not advertise a runnable check
+    // when VS Code Restricted Mode blocks all CLI validation.
+    item.description =
+      !trusted && !element.summary
+        ? 'Trust workspace to run checks'
+        : describe(element);
+    item.tooltip = trusted
+      ? tooltip(element)
+      : [
+          tooltip(element),
+          'Trust this workspace to run DRC and ERC checks.'
+        ].join('\n');
+    item.iconPath = new vscode.ThemeIcon(
+      !trusted && !element.summary ? 'lock' : iconFor(element.summary)
+    );
+    if (trusted) {
+      item.command = {
+        command: element.label === 'DRC' ? COMMANDS.runDRC : COMMANDS.runERC,
+        title: localize('runValidation', { label: element.label })
+      };
+    }
     return item;
   }
 
@@ -49,6 +69,7 @@ export class ValidationViewProvider
 
   dispose(): void {
     this.subscription.dispose();
+    this.trustSubscription.dispose();
     this.onDidChangeTreeDataEmitter.dispose();
   }
 }
@@ -124,13 +145,7 @@ function iconFor(summary: DiagnosticSummary | undefined): string {
 }
 
 type ValidationStatus =
-  | 'PENDING'
-  | 'PASS'
-  | 'WARN'
-  | 'FAIL'
-  | 'STALE'
-  | 'FAILED'
-  | 'RUNNING';
+  'PENDING' | 'PASS' | 'WARN' | 'FAIL' | 'STALE' | 'FAILED' | 'RUNNING';
 
 function statusFor(summary: DiagnosticSummary | undefined): ValidationStatus {
   if (!summary) {

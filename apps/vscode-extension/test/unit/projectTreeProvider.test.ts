@@ -240,10 +240,32 @@ describe('KiCadProjectTreeProvider', () => {
       uri: Uri.file('/project/demo.kicad_sch') as never
     });
 
-    expect(schematic.description).toContain('Schematic sheet');
+    expect(schematic.description).toBe('1 error');
     expect(schematic.tooltip).toContain('Schematic sheet');
     expect(schematic.tooltip).toContain('1 error');
-    expect(schematic.iconPath).toEqual(expect.objectContaining({ id: 'error' }));
+    expect(schematic.iconPath).toEqual(
+      expect.objectContaining({ id: 'error' })
+    );
+  });
+
+  it('keeps role metadata in tooltips without repeating it beside every label', () => {
+    const provider = new KiCadProjectTreeProvider();
+    const group = provider.getTreeItem({
+      label: 'Project Files',
+      type: 'folder',
+      children: [{ label: 'example.kicad_pro', type: 'file' }]
+    });
+    const file = provider.getTreeItem({
+      label: 'example.kicad_pcb',
+      type: 'pcb',
+      uri: Uri.file('/project/example.kicad_pcb') as never
+    });
+
+    expect(group.description).toBeUndefined();
+    expect(file.description).toBeUndefined();
+    expect(group.tooltip).toContain('Project Files group');
+    expect(file.tooltip).toContain('PCB layout');
+    expect(file.tooltip).toContain('No diagnostics reported');
   });
 
   it('aggregates diagnostics into project groups', () => {

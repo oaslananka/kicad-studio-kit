@@ -305,6 +305,10 @@ describe('createKiCanvasViewerHtml', () => {
       }
     });
 
+    expect(html).toContain('aria-label="Open PCB layers and nets panel"');
+    expect(html).toContain(
+      'title="Show PCB layer visibility and net highlight controls"'
+    );
     expect(html).toContain('function setToolsPanelCollapsed(collapsed)');
     expect(html).toContain("sidePanelToggleBtn.addEventListener('click'");
     expect(html).toContain('localState = { ...localState, grid: nextGrid };');
