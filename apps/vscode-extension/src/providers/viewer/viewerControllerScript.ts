@@ -426,8 +426,29 @@ export function createViewerControllerScript(): string {
             renderSurface.style.width = '100%';
             renderSurface.style.height = '100%';
           }
-          const blankCanvas = await isCanvasEffectivelyBlank(renderSurface);
+          let blankCanvas = await isCanvasEffectivelyBlank(renderSurface);
           if (generation !== viewerGeneration) return;
+          if (blankCanvas) {
+            // Some Windows/Electron renderers report a loaded KiCanvas before
+            // its first painted frame. Fit the board and allow a bounded paint
+            // interval before classifying the surface as genuinely blank.
+            // A persistently blank canvas must still enter the SVG fallback.
+            viewer.fitToScreen?.();
+            if (payload.fileType === 'board' &&
+                payload.metadata?.layers?.some((layer) => layer.name === 'Edge.Cuts')) {
+              try {
+                getKiCanvasViewer(viewer)?.zoom_to_board?.();
+              } catch {
+                // Older KiCanvas builds may lack the optional camera API.
+              }
+            }
+            const paintDeadline = Date.now() + 1600;
+            while (blankCanvas && generation === viewerGeneration && Date.now() < paintDeadline) {
+              await new Promise((resolve) => window.setTimeout(resolve, 180));
+              blankCanvas = await isCanvasEffectivelyBlank(renderSurface);
+            }
+            if (generation !== viewerGeneration) return;
+          }
           if (blankCanvas) {
             const fallbackLoaded = await recoverRendererFailure(
               'KiCanvas created a blank render surface for this file.',
