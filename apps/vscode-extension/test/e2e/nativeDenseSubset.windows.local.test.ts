@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { expect, test } from '@playwright/test';
+import { PNG } from 'pngjs';
 import type { Frame } from '@playwright/test';
 import { launchVsCodeWithFixtures } from './vscodeHarness';
 import {
@@ -23,7 +24,7 @@ const vendorBoard = path.join(
 
 // A genuine-source viewport selection (not full-board geometry) is exercised
 // in the actual VS Code custom viewer below. Do not treat this as DRC evidence.
-test('Windows genuine 12-layer PCB displays two distinct cursor pages in native KiCanvas', async () => {
+test('Windows genuine 12-layer PCB refreshes third cursor page in the same native editor', async () => {
   test.skip(
     process.platform !== 'win32' ||
       process.env.KICADSTUDIO_LOCAL_WINDOWS_ACCEPTANCE !== '1' ||
@@ -256,6 +257,95 @@ test('Windows genuine 12-layer PCB displays two distinct cursor pages in native 
       { timeout: 35_000 }
     );
     console.log('VME_ACCUMULATED_TWO_PAGES_SAME_CANVAS=PASS_PARTIAL_SNAPSHOT');
+
+    // The VS Code harness copies fixtures into session.workspacePath.
+    // Update the OPEN workspace file, not the staging copy outside VS Code.
+    const workspacePreview = path.join(
+      session.workspacePath,
+      path.basename(generatedCombined)
+    );
+    expect(fs.existsSync(workspacePreview)).toBe(true);
+    const priorWorkspaceHash = createHash('sha256')
+      .update(fs.readFileSync(workspacePreview))
+      .digest('hex');
+    const initialCanvas = await combinedViewer
+      .locator('#viewer-mount')
+      .screenshot();
+    const beforeImage = PNG.sync.read(initialCanvas);
+
+    const third = selectBoundedPcbPreview(source, {
+      viewport: { minX: 125, minY: 195, maxX: 215, maxY: 290 },
+      maxBytes: 2 * 1024 * 1024,
+      cursor: second.nextCursor,
+      continuationToken: second.continuationToken
+    });
+    const combinedThree = rebuildAccumulatedPcbPreview(source, third);
+    expect(combinedThree.included['segment']).toBe(1200);
+    expect(combinedThree.included['via']).toBe(300);
+    expect(combinedThree.text.length).toBeGreaterThan(combined.text.length);
+    fs.writeFileSync(workspacePreview, combinedThree.text, 'utf8');
+    expect(
+      createHash('sha256')
+        .update(fs.readFileSync(workspacePreview))
+        .digest('hex')
+    ).not.toBe(priorWorkspaceHash);
+
+    let changedPixels = 0;
+    await expect
+      .poll(
+        async () => {
+          for (const frame of session!.page.frames()) {
+            if (!(await frame.locator('#viewer-engine-badge').count()))
+              continue;
+            const frameTitle = await frame
+              .locator('h1')
+              .first()
+              .textContent({ timeout: 800 })
+              .catch(() => '');
+            if (!frameTitle?.includes(path.basename(generatedCombined)))
+              continue;
+            const status = await frame
+              .locator('#viewer-status')
+              .textContent({ timeout: 800 })
+              .catch(() => '');
+            if (!status?.includes('Interactive renderer loaded')) continue;
+            const canvas = await frame
+              .locator('#viewer-mount')
+              .screenshot({ timeout: 1500 })
+              .catch(() => null);
+            if (!canvas) continue;
+            const nextImage = PNG.sync.read(canvas);
+            if (
+              nextImage.width !== beforeImage.width ||
+              nextImage.height !== beforeImage.height
+            )
+              continue;
+            let total = 0;
+            for (let pixel = 0; pixel < beforeImage.data.length; pixel += 4) {
+              const delta =
+                Math.abs(beforeImage.data[pixel]! - nextImage.data[pixel]!) +
+                Math.abs(
+                  beforeImage.data[pixel + 1]! - nextImage.data[pixel + 1]!
+                ) +
+                Math.abs(
+                  beforeImage.data[pixel + 2]! - nextImage.data[pixel + 2]!
+                );
+              if (delta > 35) total += 1;
+            }
+            changedPixels = total;
+            if (total > 150) return true;
+          }
+          return false;
+        },
+        { timeout: 35_000, intervals: [500, 1000, 1500] }
+      )
+      .toBe(true);
+    expect(changedPixels).toBeGreaterThan(150);
+    console.log('VME_SAME_EDITOR_CHANGED_CANVAS_PIXELS=' + changedPixels);
+    await expect(session.page.locator('.tab.active')).toContainText(
+      path.basename(generatedCombined)
+    );
+    console.log('VME_SAME_OPEN_EDITOR_FILE_REFRESH=PASS_REAL_WORKSPACE_COPY');
 
     expect(
       createHash('sha256').update(fs.readFileSync(vendorBoard)).digest('hex')

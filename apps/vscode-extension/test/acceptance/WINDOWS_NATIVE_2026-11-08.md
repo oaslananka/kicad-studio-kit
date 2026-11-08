@@ -162,3 +162,15 @@ This is a strictly limited **local / not-UI-wired partial preview** milestone; *
 - **Tests:** 10/10 focused unit tests PASS (stable cursors, exact source/viewport/layer invalidation, source-ordered accumulation, malformed and size-budget failure), one native combined-page E2E PASS, plus existing prior genuine ERC report parity evidence. Full stable Node24, pad/zone fidelity, live same-viewer incremental updates and full native UI control matrix remain PENDING.
 
 **A1–A4 owner acceptance gates all PENDING; PR_OPEN_GATE=LOCKED.**
+
+## Correction — genuine same-open-editor third-page refresh confirmed, 2026-11-08
+
+This supersedes the **earlier apparent FAIL** reported in the source-bound snapshot section above. The failed local experiment wrote its third-page content into the original staging fixture. `launchVsCodeWithFixtures` had already copied that directory into its separate, disposable `session.workspacePath`; the **open VS Code custom editor was displaying a different copy**, so its file watcher was never expected to receive the staging-file modification. The earlier failure therefore **did not demonstrate a defect in production file watching or webview refresh**.
+
+The corrected, opt-in Windows 11 / real VS Code 1.122.0 test now writes the expanded **third-page accumulated partial snapshot** into the **actual open workspace file**. It confirms that the file SHA-256 changes, the **same custom-editor tab remains active**, the viewer reports `Interactive renderer loaded`, and the visible KiCanvas mount materially redraws. Pixel-level comparison after image decoding found **63,243 pixels** with RGB change sum greater than 35 (pass threshold 150 changed pixels). Real KiCad 10 VME Wren vendor source hash remains unchanged. The isolated native test **1/1 PASS in 19.7 seconds**; scoped Prettier/ESLint/TypeScript successful.
+
+This proves a **bounded third-page rebuild and existing file-watcher-driven refresh in one open viewer tab**. It is **not** in-memory incremental overlay or automatically driven pan/zoom/layer streaming. The preview remains a fabricated **subset of authentic source objects**, with incomplete zone fills, pads and copper/connectivity; it is not full-board engineering acceptance. No production viewer/provider/file-watcher behavior was modified.
+
+**Owner status:** A1–A4 PENDING. `PR_OPEN_GATE=LOCKED`, no PR or remote changes.
+
+Repeated same-tab test with an explicit decoded-PNG pixel-difference threshold: **1/1 PASS in 20.6 seconds**, **60,875 changed pixels** (previous run: 63,243). The open workspace copy is verified to change SHA-256, and the real vendor source hash remains unchanged. This supports a repeatable native file-watcher refresh, not a complete-board or auto-pan acceptance.
