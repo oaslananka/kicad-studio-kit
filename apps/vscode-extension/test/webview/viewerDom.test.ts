@@ -169,11 +169,26 @@ test.describe('KiCad Studio webview DOM', () => {
     await page.locator('#fit-btn').click();
     await expect(page.locator('#zoom-level')).toHaveText('100%');
 
-    await page.locator('#reference-search').fill('U12');
+    await page.locator('#reference-search').fill('MISSING');
+    await page.locator('#reference-search').press('Enter');
+    await expect(page.locator('#reference-search')).toHaveAttribute(
+      'aria-invalid',
+      'true'
+    );
+    await expect(page.locator('#viewer-status')).toContainText('not found');
+    await expect(page.locator('kicanvas-embed')).not.toHaveAttribute(
+      'selected-reference',
+      'MISSING'
+    );
+    await page.locator('#reference-search').fill('R1');
     await page.locator('#reference-search').press('Enter');
     await expect(page.locator('kicanvas-embed')).toHaveAttribute(
       'selected-reference',
-      'U12'
+      'R1'
+    );
+    await expect(page.locator('#reference-search')).not.toHaveAttribute(
+      'aria-invalid',
+      'true'
     );
     await expect
       .poll(() => readLastMessageType(page))
@@ -262,6 +277,19 @@ test.describe('KiCad Studio webview DOM', () => {
     await expect(
       page.getByRole('checkbox', { name: 'Show F.Cu' })
     ).toBeDisabled();
+    // Preset buttons must exit Solo; otherwise their state changes silently
+    // while the renderer continues showing only the focused layer.
+    await page.locator('#all-layers-btn').click();
+    await expect(page.locator('#layer-normal-btn')).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    await expect(page.locator('#layer-count')).toHaveText('5/5 visible');
+    await page.locator('#none-layers-btn').click();
+    await expect(page.locator('#layer-count')).toHaveText('0/5 visible');
+    await page.locator('#copper-layers-btn').click();
+    await expect(page.locator('#layer-count')).toHaveText('4/5 visible');
+    await page.locator('#all-layers-btn').click();
     await page.locator('#layer-normal-btn').click();
     const restored = await page.evaluate(() =>
       (window as any).__kicadMock.layers

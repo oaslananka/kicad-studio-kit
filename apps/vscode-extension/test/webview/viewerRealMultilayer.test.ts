@@ -122,6 +122,91 @@ test('real KiCanvas renders an eight-layer PCB and changes its pixels when isola
     }
   }
   expect(changedPixels).toBeGreaterThan(300);
+
+  // The actual shipped KiCanvas embed has no fitToScreen/zoomIn/zoomOut API.
+  // Verify that toolbar + keyboard commands change its real camera instead of
+  // merely updating the percentage label on our wrapper.
+  const cameraZoom = () =>
+    page.evaluate(() => {
+      const embed = document.querySelector('kicanvas-embed') as any;
+      const renderer =
+        embed?.viewer ||
+        embed?.shadowRoot?.querySelector('kc-board-app')?.viewer;
+      return renderer?.viewport?.camera?.zoom as number;
+    });
+  const fitted = await cameraZoom();
+  expect(fitted).toBeGreaterThan(0);
+  await page.locator('#zoom-in-btn').click();
+  expect(await cameraZoom()).toBeCloseTo(fitted * 1.2, 4);
+  await expect(page.locator('#zoom-level')).toHaveText('120%');
+  await page.locator('#zoom-out-btn').click();
+  expect(await cameraZoom()).toBeCloseTo(fitted, 4);
+  await expect(page.locator('#zoom-level')).toHaveText('100%');
+  await page.locator('#zoom-in-btn').focus();
+  await page.keyboard.press('+');
+  expect(await cameraZoom()).toBeCloseTo(fitted * 1.2, 4);
+  await page.keyboard.press('f');
+  expect(await cameraZoom()).toBeCloseTo(fitted, 4);
+  await expect(page.locator('#zoom-level')).toHaveText('100%');
+
+  await expect(page.locator('#layer-hint')).toContainText('Solo: In3.Cu');
+  await page.locator('#zone-fills-btn').click();
+  await expect(page.locator('#zone-fills-btn')).toHaveAttribute(
+    'aria-pressed',
+    'false'
+  );
+  expect(
+    await page.evaluate(() => {
+      const embed = document.querySelector('kicanvas-embed') as any;
+      const renderer =
+        embed?.viewer ||
+        embed?.shadowRoot?.querySelector('kc-board-app')?.viewer;
+      return [...renderer.layers.zone_layers()].every(
+        (layer: any) => layer.opacity === 0
+      );
+    })
+  ).toBe(true);
+  await page.locator('#zone-fills-btn').click();
+  await expect(page.locator('#zone-fills-btn')).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+
+  const actualGridOpacity = () =>
+    page.evaluate(() => {
+      const embed = document.querySelector('kicanvas-embed') as any;
+      const renderer =
+        embed?.viewer ||
+        embed?.shadowRoot?.querySelector('kc-board-app')?.viewer;
+      return renderer.layers.by_name(':Grid').opacity as number;
+    });
+  expect(await actualGridOpacity()).toBe(0);
+  await page.locator('#grid-toggle').click();
+  expect(await actualGridOpacity()).toBe(1);
+  await page.locator('#grid-toggle').click();
+  expect(await actualGridOpacity()).toBe(0);
+
+  const actualTheme = () =>
+    page.evaluate(() => {
+      const embed = document.querySelector('kicanvas-embed') as any;
+      const app = embed?.shadowRoot?.querySelector('kc-board-app');
+      const canvas = app?.shadowRoot
+        ?.querySelector('kc-board-viewer')
+        ?.shadowRoot?.querySelector('canvas');
+      const host = canvas?.getRootNode()?.host;
+      return {
+        theme: host?.theme as string | undefined,
+        background: host?.viewer?.theme?.background?.to_css?.() as
+          string | undefined
+      };
+    });
+  const dark = await actualTheme();
+  await page.locator('#theme-toggle').click();
+  const light = await actualTheme();
+  expect(light.theme).toBe('light');
+  expect(light.background).not.toEqual(dark.background);
+  await page.locator('#theme-toggle').click();
+  expect((await actualTheme()).theme).toBe('kicad');
 });
 
 // Larger boards use the same KiCad file structure as the validated eight-layer
@@ -342,4 +427,88 @@ test('real KiCanvas highlights named net connections, clears them, and rejects s
   await expect(page.locator('#net-feedback')).toContainText(
     'No exact net match'
   );
+});
+
+// This exercises the real bundled KiCanvas API; the DOM mock deliberately
+// cannot prove that a footprint was selected and the camera changed.
+test('real KiCanvas reference search focuses a valid footprint and rejects unknown names', async ({
+  page
+}) => {
+  await installVsCodeApiMock(page);
+  const html = createViewerHtml(
+    {
+      fileName: 'sample.kicad_pcb',
+      fileType: 'board',
+      base64: readFixtureBase64('sample.kicad_pcb'),
+      metadata: {
+        layers: ['F.Cu', 'B.Cu', 'Edge.Cuts'].map((name) => ({
+          name,
+          visible: true,
+          kind: name.endsWith('.Cu') ? 'signal' : 'user'
+        }))
+      },
+      restoreState: {
+        zoom: 1,
+        grid: false,
+        theme: 'kicad',
+        toolsPanelCollapsed: false
+      },
+      kicanvasUri: dataUri(
+        'text/javascript',
+        readAsset('media/kicanvas/kicanvas.js')
+      )
+    },
+    { surface: 'canvas' }
+  );
+  await page.route('https://studio-test.example/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: withVsCodeApiPrelude(html)
+    })
+  );
+  await page.goto('https://studio-test.example/real-reference');
+  await expect(page.locator('#viewer-status')).toHaveText(
+    'Interactive renderer loaded: sample.kicad_pcb',
+    { timeout: 30000 }
+  );
+  const camera = () =>
+    page.evaluate(() => {
+      const embed = document.querySelector('kicanvas-embed') as any;
+      const renderer =
+        embed?.viewer ||
+        embed?.shadowRoot?.querySelector('kc-board-app')?.viewer;
+      return {
+        x: renderer.viewport.camera.center.x as number,
+        y: renderer.viewport.camera.center.y as number,
+        zoom: renderer.viewport.camera.zoom as number
+      };
+    });
+  const before = await camera();
+  await page.locator('#reference-search').fill('MISSING');
+  await page.locator('#reference-search-btn').click();
+  await expect(page.locator('#reference-search')).toHaveAttribute(
+    'aria-invalid',
+    'true'
+  );
+  await expect(page.locator('#viewer-status')).toContainText('not found');
+  expect(await camera()).toEqual(before);
+
+  await page.locator('#reference-search').fill('R1');
+  await page.locator('#reference-search-btn').click();
+  await expect(page.locator('#reference-search')).not.toHaveAttribute(
+    'aria-invalid',
+    'true'
+  );
+  await expect(page.locator('#viewer-status')).toContainText(
+    'Focused reference: R1'
+  );
+  await expect(page.locator('kicanvas-embed')).toHaveAttribute(
+    'selected-reference',
+    'R1'
+  );
+  const after = await camera();
+  expect(
+    after.x !== before.x || after.y !== before.y || after.zoom !== before.zoom
+  ).toBe(true);
 });

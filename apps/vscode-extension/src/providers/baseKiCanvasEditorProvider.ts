@@ -1098,6 +1098,9 @@ function readViewerState(value: unknown): ViewerState | undefined {
     ...(focusedLayer ? { focusedLayer } : {}),
     ...(layerMode === 'normal' || layerMode === 'dim' || layerMode === 'solo'
       ? { layerMode }
+      : {}),
+    ...(typeof payload['zoneFillsVisible'] === 'boolean'
+      ? { zoneFillsVisible: payload['zoneFillsVisible'] }
       : {})
   };
 }

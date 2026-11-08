@@ -295,8 +295,15 @@ function createKiCanvasMockScript(options: {
         constructor() {
           super();
           this.viewer = {
+            board: {
+              find_footprint: (reference) =>
+                reference === 'R1' ? { reference: 'R1' } : null
+            },
             select: (reference) => {
               window.__kicadMock.selectedReference = reference;
+            },
+            zoom_to_selection: () => {
+              window.__kicadMock.fit += 1;
             },
             layers: {
               in_order: () => mockLayers,
