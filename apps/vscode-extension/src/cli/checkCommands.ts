@@ -129,16 +129,27 @@ export class KiCadCheckService {
     file: string,
     kind: 'drc' | 'erc'
   ): vscode.Diagnostic[] {
-    const data = JSON.parse(rawJson);
+    const data: unknown = JSON.parse(rawJson);
     const ast = this.parser.parse(readTextFileSync(file));
     const rows = this.collectIssueRows(data);
+    // Build the coordinate candidates once per report, not once for every
+    // diagnostic. Large KiCad projects may report hundreds of violations.
+    const candidates = this.parser
+      .findAllNodes(ast, 'at')
+      .map((node) => ({ node, coords: this.extractCoordinates(node) }))
+      .filter(
+        (
+          entry
+        ): entry is {
+          node: SNode;
+          coords: { x: number; y: number };
+        } => Boolean(entry.coords)
+      );
 
     return rows.map((row) => {
-      const range = this.findClosestRange(
-        ast,
-        Number(row['x'] ?? 0),
-        Number(row['y'] ?? 0)
-      );
+      // KiCad 10 reports issue coordinates in items[].pos. A violation is
+      // one diagnostic; its constituent item descriptions are not issues.
+      const range = this.findClosestRange(candidates, this.issuePosition(row));
       const severity = this.toSeverity(String(row['severity'] ?? 'warning'));
       const diagnostic = new vscode.Diagnostic(
         range,
@@ -146,7 +157,9 @@ export class KiCadCheckService {
         severity
       );
       diagnostic.source = `kicad-cli:${kind}`;
-      diagnostic.code = String(row['rule_name'] ?? row['rule'] ?? 'rule');
+      diagnostic.code = String(
+        row['rule_name'] ?? row['rule'] ?? row['type'] ?? 'rule'
+      );
       return diagnostic;
     });
   }
@@ -160,43 +173,81 @@ export class KiCadCheckService {
     }
 
     const record = data as Record<string, unknown>;
-    const nestedArrays = Object.values(record)
-      .filter(Array.isArray)
-      .flatMap((value) => this.collectIssueRows(value));
-
     if ('description' in record || 'message' in record) {
-      return [record, ...nestedArrays];
+      // Each KiCad violation contains nested "items" with their own
+      // descriptions; counting those as separate violations doubles or
+      // triples the Issues/Problems totals.
+      if (
+        'pos' in record &&
+        !('items' in record) &&
+        !('severity' in record) &&
+        !('type' in record)
+      ) {
+        return [];
+      }
+      return [record];
     }
 
-    return nestedArrays;
+    return Object.values(record)
+      .filter(Array.isArray)
+      .flatMap((value) => this.collectIssueRows(value));
   }
 
-  private findClosestRange(root: SNode, x: number, y: number): vscode.Range {
-    const candidates = this.parser
-      .findAllNodes(root, 'at')
-      .map((node) => ({
-        node,
-        coords: this.extractCoordinates(node)
-      }))
-      .filter(
-        (entry): entry is { node: SNode; coords: { x: number; y: number } } =>
-          Boolean(entry.coords)
-      );
+  private issuePosition(
+    row: Record<string, unknown>
+  ): { x: number; y: number } | undefined {
+    const items = row['items'];
+    if (Array.isArray(items)) {
+      for (const item of items) {
+        if (!item || typeof item !== 'object') {
+          continue;
+        }
+        const pos = (item as Record<string, unknown>)['pos'];
+        if (!pos || typeof pos !== 'object') {
+          continue;
+        }
+        const coordinate = pos as Record<string, unknown>;
+        const x = Number(coordinate['x']);
+        const y = Number(coordinate['y']);
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+          return { x, y };
+        }
+      }
+    }
 
-    if (!candidates.length) {
+    // Compatibility with older, flat diagnostic payloads.
+    if (row['x'] !== undefined && row['y'] !== undefined) {
+      const x = Number(row['x']);
+      const y = Number(row['y']);
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        return { x, y };
+      }
+    }
+    return undefined;
+  }
+
+  private findClosestRange(
+    candidates: readonly {
+      node: SNode;
+      coords: { x: number; y: number };
+    }[],
+    position: { x: number; y: number } | undefined
+  ): vscode.Range {
+    if (!position || candidates.length === 0) {
       return new vscode.Range(0, 0, 0, 1);
     }
 
     const closest = candidates.reduce((best, current) => {
       const bestScore =
-        Math.abs(best.coords.x - x) + Math.abs(best.coords.y - y);
+        Math.abs(best.coords.x - position.x) +
+        Math.abs(best.coords.y - position.y);
       const currentScore =
-        Math.abs(current.coords.x - x) + Math.abs(current.coords.y - y);
+        Math.abs(current.coords.x - position.x) +
+        Math.abs(current.coords.y - position.y);
       return currentScore < bestScore ? current : best;
     });
 
-    const parentRange = this.parser.getPosition(closest.node);
-    return parentRange;
+    return this.parser.getPosition(closest.node);
   }
 
   private extractCoordinates(
