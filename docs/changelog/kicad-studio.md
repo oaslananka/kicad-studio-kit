@@ -16,6 +16,22 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.4.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.3.0...vscode-extension-v2.4.0) (2026-11-08)
+
+
+### Features
+
+* **kicad-studio:** add read-only PCB net inspector ([#889](https://github.com/oaslananka/kicad-studio-kit/issues/889)) ([877b993](https://github.com/oaslananka/kicad-studio-kit/commit/877b99324909fec9299655da3fe46ad0165e847c))
+
+
+### Bug Fixes
+
+* **kicad-studio:** accept published BoardReadyOps 1.70 review JSON ([#891](https://github.com/oaslananka/kicad-studio-kit/issues/891)) ([e317cc3](https://github.com/oaslananka/kicad-studio-kit/commit/e317cc3d474f4c2ea968efa38c5bd5688947c75f))
+* **kicad-studio:** adopt published BoardReadyOps 1.70 contract ([e317cc3](https://github.com/oaslananka/kicad-studio-kit/commit/e317cc3d474f4c2ea968efa38c5bd5688947c75f))
+* **kicad-studio:** correct BoardReadyOps release evidence guidance ([#892](https://github.com/oaslananka/kicad-studio-kit/issues/892)) ([0c853a0](https://github.com/oaslananka/kicad-studio-kit/commit/0c853a07f0aaffd667cc71147b79963ecaf134e9))
+* **kicad-studio:** refine onboarding and restricted validation UX ([fc289c5](https://github.com/oaslananka/kicad-studio-kit/commit/fc289c533f85e073c2bc4db7e8911bf0265383e2))
+* **kicad-studio:** validate published BoardReadyOps doctor v1 contract ([#890](https://github.com/oaslananka/kicad-studio-kit/issues/890)) ([abc6ce3](https://github.com/oaslananka/kicad-studio-kit/commit/abc6ce3f7e6c1475168d12640695809d84318570))
+
 ## [2.3.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.2.1...vscode-extension-v2.3.0) (2026-11-07)
 
 
