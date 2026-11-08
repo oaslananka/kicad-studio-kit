@@ -10,6 +10,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.4.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.4.0...vscode-extension-v2.4.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* **kicad-studio:** restore PCB viewer controls and accurate net inspection ([d6a51e4](https://github.com/oaslananka/kicad-studio-kit/commit/d6a51e4d0f8fffd40ab2ac5393ff82875710dd1d))
+
 ## [2.4.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.3.0...vscode-extension-v2.4.0) (2026-11-08)
 
 
