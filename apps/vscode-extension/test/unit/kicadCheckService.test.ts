@@ -114,6 +114,36 @@ describe('KiCadCheckService KiCad 10 JSON diagnostics', () => {
       expect.objectContaining({ source: 'erc', warnings: 1, errors: 0 })
     );
   });
+  it('does not fabricate root-sheet coordinates for an unverified child-sheet source UUID', async () => {
+    const service = checkService({
+      sheets: [
+        {
+          path: '/Power/',
+          uuid_path:
+            '/11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222',
+          violations: [
+            {
+              description: 'A child power pin that cannot be mapped',
+              severity: 'error',
+              type: 'power_pin_not_driven',
+              items: [
+                {
+                  uuid: '33333333-3333-4333-8333-333333333333',
+                  pos: { x: 212, y: 234 }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    });
+    const result = await service.runERC(schematic);
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.range.start.line).toBe(0);
+    expect(result.diagnostics[0]?.relatedInformation).toBeUndefined();
+    expect(result.summary.errors).toBe(1);
+  });
+
   it('ignores KiCad ERC rule catalog descriptions while counting real violations', async () => {
     const service = checkService({
       erc: {

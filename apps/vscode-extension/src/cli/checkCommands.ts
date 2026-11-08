@@ -7,6 +7,12 @@ import { Logger } from '../utils/logger';
 import { readTextFileSync } from '../utils/fileUtils';
 import { SExpressionParser, type SNode } from '../language/sExpressionParser';
 import { KiCadCliRunner } from './kicadCliRunner';
+import { ErcSourceLocations } from './ercSourceLocations';
+
+interface ReportIssue {
+  row: Record<string, unknown>;
+  sheet?: { path: string; uuidPath: string } | undefined;
+}
 
 export class KiCadCheckService {
   constructor(
@@ -132,6 +138,9 @@ export class KiCadCheckService {
     const data: unknown = JSON.parse(rawJson);
     const ast = this.parser.parse(readTextFileSync(file));
     const rows = this.collectIssueRows(data);
+    const sourceLocations =
+      kind === 'erc' ? new ErcSourceLocations(file, this.parser) : undefined;
+    const rootUri = vscode.Uri.file(file);
     // Build the coordinate candidates once per report, not once for every
     // diagnostic. Large KiCad projects may report hundreds of violations.
     const candidates = this.parser
@@ -146,10 +155,21 @@ export class KiCadCheckService {
         } => Boolean(entry.coords)
       );
 
-    return rows.map((row) => {
+    return rows.map(({ row, sheet }) => {
       // KiCad 10 reports issue coordinates in items[].pos. A violation is
       // one diagnostic; its constituent item descriptions are not issues.
-      const range = this.findClosestRange(candidates, this.issuePosition(row));
+      const verified = sourceLocations?.resolve(sheet, row['items']);
+      const isOtherSheet =
+        verified &&
+        verified.uri.fsPath.toLowerCase() !== rootUri.fsPath.toLowerCase();
+      // An item with an explicit sheet UUID path must NEVER be projected
+      // onto unrelated root-sheet coordinates when source lookup fails.
+      const range =
+        verified && !isOtherSheet
+          ? verified.range
+          : isOtherSheet || (kind === 'erc' && sheet !== undefined)
+            ? new vscode.Range(0, 0, 0, 1)
+            : this.findClosestRange(candidates, this.issuePosition(row));
       const severity = this.toSeverity(String(row['severity'] ?? 'warning'));
       const diagnostic = new vscode.Diagnostic(
         range,
@@ -157,6 +177,15 @@ export class KiCadCheckService {
         severity
       );
       diagnostic.source = `kicad-cli:${kind}`;
+      if (verified) {
+        diagnostic.relatedInformation = [
+          {
+            location: verified,
+            message:
+              'Exact KiCad source UUID location (open related information)'
+          }
+        ];
+      }
       diagnostic.code = String(
         row['rule_name'] ?? row['rule'] ?? row['type'] ?? 'rule'
       );
@@ -164,13 +193,16 @@ export class KiCadCheckService {
     });
   }
 
-  private collectIssueRows(data: unknown): Array<Record<string, unknown>> {
+  private collectIssueRows(
+    data: unknown,
+    sheet?: ReportIssue['sheet']
+  ): ReportIssue[] {
     if (!data || typeof data !== 'object') {
       return [];
     }
 
     if (Array.isArray(data)) {
-      return data.flatMap((item) => this.collectIssueRows(item));
+      return data.flatMap((item) => this.collectIssueRows(item, sheet));
     }
 
     const record = data as Record<string, unknown>;
@@ -180,7 +212,7 @@ export class KiCadCheckService {
       ('description' in record || 'message' in record) &&
       ('severity' in record || 'items' in record)
     ) {
-      return [record];
+      return [{ row: record, sheet }];
     }
 
     // KiCad 10 reports carry a rule-description catalog alongside findings.
@@ -193,10 +225,17 @@ export class KiCadCheckService {
     ];
     const rows = issueGroups
       .filter(Array.isArray)
-      .flatMap((items) => this.collectIssueRows(items));
+      .flatMap((items) => this.collectIssueRows(items, sheet));
     if (Array.isArray(record['sheets'])) {
-      for (const sheet of record['sheets']) {
-        rows.push(...this.collectIssueRows(sheet));
+      for (const child of record['sheets']) {
+        if (!child || typeof child !== 'object') continue;
+        const entry = child as Record<string, unknown>;
+        const nextSheet =
+          typeof entry['path'] === 'string' &&
+          typeof entry['uuid_path'] === 'string'
+            ? { path: entry['path'], uuidPath: entry['uuid_path'] }
+            : undefined;
+        rows.push(...this.collectIssueRows(child, nextSheet));
       }
     }
     return rows;

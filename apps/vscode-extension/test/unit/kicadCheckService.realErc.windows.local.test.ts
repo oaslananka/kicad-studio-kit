@@ -65,6 +65,7 @@ describe('native KiCad 10 ERC report parity — isolated, opt-in', () => {
           .update(fs.readFileSync(schematic))
           .digest('hex');
         expect(isolatedHash).toBe(sourceHash);
+        let actualSheetPaths: string[] = [];
         const runner = {
           detectCli: jest.fn().mockResolvedValue({ version: '10.0.8' }),
           runWithProgress: jest
@@ -89,10 +90,13 @@ describe('native KiCad 10 ERC report parity — isolated, opt-in', () => {
                 const json = JSON.parse(
                   fs.readFileSync(reportFile!, 'utf8')
                 ) as {
-                  sheets: { violations: RealErcViolation[] }[];
+                  sheets: { path: string; violations: RealErcViolation[] }[];
                 };
                 const expected = json.sheets.flatMap(
                   (sheet) => sheet.violations ?? []
+                );
+                actualSheetPaths = json.sheets.flatMap((sheet) =>
+                  (sheet.violations ?? []).map(() => sheet.path)
                 );
                 expect(expected.length).toBeGreaterThan(20);
                 console.log(
@@ -133,6 +137,40 @@ describe('native KiCad 10 ERC report parity — isolated, opt-in', () => {
         );
         // Compare the full ordered KiCad finding tuple, including severity.
         expect(perStudio).toEqual(perActual);
+        const links = result.diagnostics.map(
+          (diagnostic) => diagnostic.relatedInformation?.[0]?.location
+        );
+        const linked = links.filter((location) => location !== undefined);
+        const linkedChild = links.filter(
+          (location, index) => location && actualSheetPaths[index] !== '/'
+        );
+        console.log(
+          'REAL_KICAD_10_ERC_UUID_LINKS=' +
+            linked.length +
+            ' CHILD_SHEET_LINKS=' +
+            linkedChild.length
+        );
+        expect(linked.length).toBe(expected.length);
+        expect(linkedChild.length).toBe(6);
+        for (let index = 0; index < links.length; index += 1) {
+          const location = links[index];
+          if (!location) continue;
+          const resolved = path.relative(isolatedDir, location.uri.fsPath);
+          expect(resolved).not.toMatch(/^\\.\\./);
+          expect(path.isAbsolute(resolved)).toBe(false);
+          const referenced = fs.readFileSync(location.uri.fsPath, 'utf8');
+          expect(
+            (expected[index]?.items ?? []).some(
+              (item) =>
+                typeof (item as { uuid?: string }).uuid === 'string' &&
+                referenced.includes((item as { uuid: string }).uuid)
+            )
+          ).toBe(true);
+          if (actualSheetPaths[index] !== '/') {
+            expect(location.uri.fsPath).not.toBe(schematic);
+            expect(location.range.start.line).toBeGreaterThan(0);
+          }
+        }
         const total =
           result.summary.errors +
           result.summary.warnings +
