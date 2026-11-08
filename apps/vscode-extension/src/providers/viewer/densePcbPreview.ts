@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 /**
  * Bounded, read-only source selection for experimental dense PCB previews.
  *
@@ -19,6 +21,8 @@ export interface PcbPreviewSelection {
   limits?: Partial<Record<PcbDrawableKind, number>>;
   /** Zero-based in-window source occurrence to start each drawable kind. */
   cursor?: Partial<Record<PcbDrawableKind, number>>;
+  /** Mandatory provenance for nonzero cursor continuations. */
+  continuationToken?: string;
 }
 
 export type PcbDrawableKind =
@@ -34,6 +38,8 @@ export interface BoundedPcbPreview {
   readonly viewportTruncated: boolean;
   /** Next stable occurrence index in this exact source, viewport and layer selection. */
   readonly nextCursor: Readonly<Record<PcbDrawableKind, number>>;
+  /** Binds nextCursor to the exact source, viewport and copper layers. */
+  readonly continuationToken: string;
   /** In-window objects left after this and prior pages, excluding unsupported zones. */
   readonly remainingAfterPage: Readonly<Record<string, number>>;
   readonly hasNextPage: boolean;
@@ -133,6 +139,23 @@ export function selectBoundedPcbPreview(
     [...layerSet].some((layer) => !/^(?:F|B|In\d+)\.Cu$/.test(layer))
   ) {
     throw new Error('Only bounded KiCad copper-layer filters are allowed.');
+  }
+
+  const continuationToken = createHash('sha256')
+    .update(source, 'utf8')
+    .update('\0')
+    .update(
+      JSON.stringify({
+        bounds: [bounds.minX, bounds.maxX, bounds.minY, bounds.maxY],
+        layers: [...layerSet].sort()
+      })
+    )
+    .digest('hex');
+  const resuming = Object.values(cursor).some((value) => value > 0);
+  if (resuming && options.continuationToken !== continuationToken) {
+    throw new Error(
+      'Preview continuation is stale: source, viewport or layers changed.'
+    );
   }
 
   const parts: string[] = [];
@@ -265,6 +288,7 @@ export function selectBoundedPcbPreview(
       (count) => count > 0
     ),
     nextCursor,
+    continuationToken,
     remainingAfterPage,
     hasNextPage: Object.values(remainingAfterPage).some((count) => count > 0),
     madeProgress,
@@ -275,6 +299,41 @@ export function selectBoundedPcbPreview(
     viewport: { ...bounds },
     layers: [...layerSet]
   };
+}
+
+/**
+ * Reconstruct a single coherent, bounded preview of every source object
+ * reached by a sequence of cursor pages. This is a testable bridge to an
+ * eventual single-canvas preview; it does NOT patch KiCanvas internals or
+ * make the region authoritative.
+ *
+ * Rebuild from the original source to preserve KiCad's expression ordering,
+ * rather than concatenating complete PCB documents or duplicating headers.
+ */
+export function rebuildAccumulatedPcbPreview(
+  source: string,
+  latestPage: BoundedPcbPreview,
+  maxBytes = 8 * 1024 * 1024
+): BoundedPcbPreview {
+  const snapshot = selectBoundedPcbPreview(source, {
+    viewport: latestPage.viewport,
+    layers: latestPage.layers,
+    maxBytes,
+    limits: latestPage.nextCursor
+  });
+  if (snapshot.continuationToken !== latestPage.continuationToken) {
+    throw new Error(
+      'Cannot rebuild a preview from a changed PCB, viewport or layer selection.'
+    );
+  }
+  for (const kind of Object.keys(DEFAULT_LIMITS) as PcbDrawableKind[]) {
+    if (snapshot.nextCursor[kind] !== latestPage.nextCursor[kind]) {
+      throw new Error(
+        'The accumulated source geometry exceeds the bounded preview budget.'
+      );
+    }
+  }
+  return snapshot;
 }
 
 function intersectsWindow(

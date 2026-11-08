@@ -1,4 +1,7 @@
-import { selectBoundedPcbPreview } from '../../src/providers/viewer/densePcbPreview';
+import {
+  rebuildAccumulatedPcbPreview,
+  selectBoundedPcbPreview
+} from '../../src/providers/viewer/densePcbPreview';
 
 const realGeometry = String.raw`(kicad_pcb
   (version 20250114)
@@ -107,16 +110,19 @@ describe('bounded genuine KiCad PCB spatial preview', () => {
       (segment (start 100 100) (end 110 110) (layer "F.Cu") (uuid "off-screen"))
     )`;
     let cursor: Partial<Record<'segment', number>> = {};
+    let firstToken = '';
     const ids: string[] = [];
     for (let pageNumber = 0; pageNumber < 3; pageNumber += 1) {
       const page = selectBoundedPcbPreview(source, {
         viewport: VIEWPORT,
         limits: { segment: 1 },
-        cursor
+        cursor,
+        continuationToken: firstToken
       });
       const match = page.text.match(/\(uuid "(s-\d+)"\)/);
       expect(match?.[1]).toBe('s-' + (pageNumber + 1));
       ids.push(match?.[1] ?? 'MISSING');
+      firstToken = page.continuationToken;
       expect(page.madeProgress).toBe(true);
       expect(page.nextCursor.segment).toBe(pageNumber + 1);
       expect(page.remainingAfterPage['segment']).toBe(2 - pageNumber);
@@ -127,7 +133,8 @@ describe('bounded genuine KiCad PCB spatial preview', () => {
     const empty = selectBoundedPcbPreview(source, {
       viewport: VIEWPORT,
       limits: { segment: 1 },
-      cursor
+      cursor,
+      continuationToken: firstToken
     });
     expect(empty.madeProgress).toBe(false);
     expect(empty.hasNextPage).toBe(false);
@@ -155,13 +162,89 @@ describe('bounded genuine KiCad PCB spatial preview', () => {
     const second = selectBoundedPcbPreview(source, {
       viewport: VIEWPORT,
       maxBytes: 4096,
-      cursor: first.nextCursor
+      cursor: first.nextCursor,
+      continuationToken: first.continuationToken
     });
     expect(second.nextCursor.segment).toBe(1);
     expect(second.remainingAfterPage['segment']).toBe(2);
     expect(second.madeProgress).toBe(false);
     expect(second.hasNextPage).toBe(true);
     expect(second.text).not.toContain('small-after');
+  });
+
+  it('rejects cursor reuse across source, viewport and layer changes', () => {
+    const first = selectBoundedPcbPreview(realGeometry, {
+      viewport: VIEWPORT,
+      limits: { segment: 1, footprint: 1 }
+    });
+    expect(first.continuationToken).toMatch(/^[a-f0-9]{64}$/);
+    const next = {
+      viewport: VIEWPORT,
+      cursor: first.nextCursor,
+      continuationToken: first.continuationToken
+    };
+    expect(() => selectBoundedPcbPreview(realGeometry, next)).not.toThrow();
+    expect(() => selectBoundedPcbPreview(realGeometry + ' ', next)).toThrow(
+      'Preview continuation is stale'
+    );
+    expect(() =>
+      selectBoundedPcbPreview(realGeometry, {
+        ...next,
+        viewport: { ...VIEWPORT, maxX: 21 }
+      })
+    ).toThrow('Preview continuation is stale');
+    expect(() =>
+      selectBoundedPcbPreview(realGeometry, {
+        ...next,
+        layers: ['B.Cu']
+      })
+    ).toThrow('Preview continuation is stale');
+    expect(() =>
+      selectBoundedPcbPreview(realGeometry, {
+        viewport: VIEWPORT,
+        cursor: first.nextCursor
+      })
+    ).toThrow('Preview continuation is stale');
+  });
+
+  it('rebuilds two cursor pages into a single source-ordered partial PCB snapshot', () => {
+    const source = `(kicad_pcb (version 20250114)
+      (layers (0 "F.Cu" signal))
+      (net 0 "")
+      (segment (start 1 1) (end 2 2) (layer "F.Cu") (uuid "s-a"))
+      (segment (start 3 3) (end 4 4) (layer "F.Cu") (uuid "s-b"))
+      (segment (start 5 5) (end 6 6) (layer "F.Cu") (uuid "s-c"))
+    )`;
+    const one = selectBoundedPcbPreview(source, {
+      viewport: VIEWPORT,
+      limits: { segment: 1 }
+    });
+    const two = selectBoundedPcbPreview(source, {
+      viewport: VIEWPORT,
+      limits: { segment: 1 },
+      cursor: one.nextCursor,
+      continuationToken: one.continuationToken
+    });
+    expect(one.text).toContain('"s-a"');
+    expect(one.text).not.toContain('"s-b"');
+    expect(two.text).not.toContain('"s-a"');
+    expect(two.text).toContain('"s-b"');
+
+    const combined = rebuildAccumulatedPcbPreview(source, two);
+    expect(combined.text).toContain('"s-a"');
+    expect(combined.text).toContain('"s-b"');
+    expect(combined.text).not.toContain('"s-c"');
+    expect(combined.text.match(/\(layers/g)).toHaveLength(1);
+    expect(combined.text.match(/\(net 0 ""\)/g)).toHaveLength(1);
+    expect(combined.nextCursor.segment).toBe(2);
+    expect(combined.complete).toBe(false);
+    expect(combined.warning).toContain('PARTIAL PREVIEW');
+    expect(() => rebuildAccumulatedPcbPreview(source + ' ', two)).toThrow(
+      'changed PCB'
+    );
+    expect(() => rebuildAccumulatedPcbPreview(source, two, 3_000)).toThrow(
+      'preview byte budget'
+    );
   });
 
   it('rejects negative and fractional offsets and preserves the original source string', () => {
