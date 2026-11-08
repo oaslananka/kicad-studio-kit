@@ -102,3 +102,17 @@ The entire nine-scenario opt-in Windows Playwright set was then run **9/9 PASS u
 - Linux small-board CLI DRC took materially longer under a memory-constrained runner; neither source file nor project repository was modified. Avoid repeating unbounded DRC work on the 8 GiB Linux host.
 
 **Owner gate:** A1–A4 all PENDING; `PR_OPEN_GATE=LOCKED`. No PR/push/merge/release/deployment or external manufacturing communication.
+
+## Large-board render bottleneck: bounded native profile and rejected recovery — 2026-11-08
+
+The genuine KiCad 10 VME Wren PCB remains a **failed A2 interactive case**, not a release acceptance. A new, opt-in and **read-only** `test/e2e/nativeDenseProfile.windows.local.test.ts` profiles webview status changes and one-second event-loop heartbeats in an isolated Windows VS Code Extension Host. One bounded profile passed as an _instrumentation run_ (not a render PASS):
+
+- Real VME source was copied to a temporary workspace; only a test-local `110 MiB` interactive threshold was set. The host tab opened after **4,076 ms**.
+- Webview heartbeat saw `Opening interactive renderer…` at approximately **1,301 ms**, `Decoding and normalizing file…` at **2,002 ms**, and `Rendering vme-wren.kicad_pcb…` at **3,000 ms** (all relative to that webview document's startup).
+- **No subsequent one-second heartbeat arrived** during the remaining **32-second bounded host observation**; only those three stage samples were logged. The native test itself completed as a valid instrumentation test in about 53 seconds. This is evidence that the KiCanvas processing stage stalled the webview event loop; it does **not** establish which individual parser/drawing operation is responsible.
+- A **single-layer F.Cu SVG export** of a disposable copy using installed native KiCad 10 CLI was stopped after a **40,073 ms** controlled process timeout; it created **no completed SVG** within that window. Original vendor PCB SHA-256 stayed unchanged. Therefore simply switching all large boards to on-demand CLI SVG is **not validated** as a quick fallback.
+- A deliberately limited host-side 30-second watchdog prototype was tested locally. Its unit controls passed (**112 viewer tests, scoped TS/ESLint PASS**) but the **real 70 MB Windows native test FAILED**: it did **not** observe the expected reloaded metadata panel within a 65-second window. **The entire watchdog production-code, unit-test and failed native-test patch was reverted.** It is neither a completed repair nor a shipping feature. The original 10 MiB metadata-only guard remains unchanged.
+
+The next engineering solution must prevent heavy full-board rendering from monopolizing the webview's JavaScript thread and should preserve genuine per-layer engineering accuracy. Investigate bounded progressive/viewport rendering or another demonstrably responsive rendering pipeline; retain the existing safe metadata-only behavior until a true native test proves improvement. Do not automatically raise the shipped threshold or count metadata/SVG export as KiCanvas interactive success.
+
+**Owner gate:** A1–A4 PENDING; PR_OPEN_GATE=LOCKED. No push, PR, merge, release, deploy, or external manufacturing data transfer.
