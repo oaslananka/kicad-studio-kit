@@ -5,6 +5,7 @@ import * as path from 'node:path';
 import { SchematicEditorProvider } from '../../src/providers/schematicEditorProvider';
 import { PcbEditorProvider } from '../../src/providers/pcbEditorProvider';
 import { ViewerStateStore } from '../../src/state/stateStores';
+import type { ViewerState } from '../../src/types';
 import {
   __setConfiguration,
   createExtensionContextMock,
@@ -21,6 +22,7 @@ type ProviderCtor = new (
     webviewPanel: vscode.WebviewPanel
   ): Promise<void>;
   dispose(): void;
+  getViewerState(uri: vscode.Uri): ViewerState | undefined;
 };
 
 function createPanel() {
@@ -340,6 +342,77 @@ describe.each([
       provider.dispose();
     });
   }
+
+  it('rejects malformed source-area coordinates while retaining safe webview selections', async () => {
+    const provider = new ContextProvider({
+      extensionUri: vscode.Uri.file('/extension')
+    } as vscode.ExtensionContext);
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+
+    const complete = { x1: 12, y1: 24, x2: 42, y2: 64 };
+    for (const invalidCoordinate of ['x1', 'y1', 'x2', 'y2'] as const) {
+      await panel.fireMessage({
+        type: 'selectionChanged',
+        payload: {
+          selectedReference: 'R1',
+          selectedArea: { ...complete, [invalidCoordinate]: 'invalid' },
+          activeLayers: ['F.Cu', 42, 'B.Cu']
+        }
+      });
+      expect(provider.getViewerState(uri)).toEqual(
+        expect.objectContaining({
+          selectedReference: 'R1',
+          activeLayers: ['F.Cu', 'B.Cu']
+        })
+      );
+      expect(provider.getViewerState(uri)?.selectedArea).toBeUndefined();
+    }
+
+    await panel.fireMessage({
+      type: 'selectionChanged',
+      payload: {
+        selectedReference: 'R2',
+        selectedArea: complete,
+        activeLayers: ['F.Cu', 'B.Cu']
+      }
+    });
+    expect(provider.getViewerState(uri)).toEqual(
+      expect.objectContaining({
+        selectedReference: 'R2',
+        selectedArea: complete,
+        activeLayers: ['F.Cu', 'B.Cu']
+      })
+    );
+
+    await panel.fireMessage({
+      type: 'viewerState',
+      payload: {
+        zoom: 2,
+        grid: false,
+        theme: 'dark',
+        selectedSheet: '/design/connector',
+        selectedArea: complete,
+        activeLayers: ['F.Cu', 'B.Cu'],
+        toolsPanelCollapsed: true,
+        focusedLayer: 'B.Cu'
+      }
+    });
+    expect(provider.getViewerState(uri)).toEqual(
+      expect.objectContaining({
+        zoom: 2,
+        selectedSheet: '/design/connector',
+        selectedArea: complete,
+        toolsPanelCollapsed: true,
+        activeLayers: ['F.Cu', 'B.Cu']
+      })
+    );
+    provider.dispose();
+  });
 
   it('watches open viewer files only and disposes the watcher when the last panel closes (#849)', async () => {
     const watcher = {
