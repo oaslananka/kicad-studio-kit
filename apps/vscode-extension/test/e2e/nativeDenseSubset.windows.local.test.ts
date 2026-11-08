@@ -5,6 +5,7 @@ import * as path from 'node:path';
 import { expect, test } from '@playwright/test';
 import type { Frame } from '@playwright/test';
 import { launchVsCodeWithFixtures } from './vscodeHarness';
+import { selectBoundedPcbPreview } from '../../src/providers/viewer/densePcbPreview';
 
 const vendorBoard = path.join(
   process.env.ProgramFiles ?? String.raw`C:\Program Files`,
@@ -17,84 +18,8 @@ const vendorBoard = path.join(
   'vme-wren.kicad_pcb'
 );
 
-// An evidence-only experiment: use exact unchanged S-expressions from a
-// genuine KiCad PCB to measure what a progressively loaded subset costs.
-// Never present the subset as a complete or fabrication-safe board.
-function sourceBoundedSample(source: string): {
-  text: string;
-  included: Record<string, number>;
-} {
-  const counts: Record<string, number> = {};
-  const parts: string[] = [];
-  const limits: Record<string, number> = {
-    footprint: 48,
-    segment: 400,
-    arc: 30,
-    via: 100,
-    gr_line: 60,
-    gr_arc: 30
-  };
-  const essential = new Set([
-    'version',
-    'generator',
-    'generator_version',
-    'general',
-    'paper',
-    'title_block',
-    'layers',
-    'setup',
-    'net',
-    'embedded_fonts'
-  ]);
-
-  let depth = 0;
-  let quoted = false;
-  let escaped = false;
-  let start = 0;
-  for (let index = 0; index < source.length; index += 1) {
-    const ch = source[index];
-    if (quoted) {
-      if (escaped) escaped = false;
-      else if (ch === '\\') escaped = true;
-      else if (ch === '"') quoted = false;
-      continue;
-    }
-    if (ch === '"') {
-      quoted = true;
-      continue;
-    }
-    if (ch === '(') {
-      if (depth === 1) start = index;
-      depth += 1;
-      continue;
-    }
-    if (ch !== ')') continue;
-    depth -= 1;
-    if (depth !== 1) continue;
-    const key = /^\(\s*([a-zA-Z0-9_]+)/.exec(
-      source.slice(start, start + 60)
-    )?.[1];
-    if (!key) continue;
-    const count = counts[key] ?? 0;
-    const limit = limits[key] ?? 0;
-    if (essential.has(key) || count < limit) {
-      parts.push(source.slice(start, index + 1));
-      counts[key] = count + 1;
-    }
-  }
-  if (depth !== 0 || quoted)
-    throw new Error('Malformed KiCad source parenthesization.');
-  if ((counts.layers ?? 0) !== 1 || (counts.footprint ?? 0) !== 48) {
-    throw new Error(
-      'Bounded genuine KiCad preview did not preserve expected source objects.'
-    );
-  }
-  return {
-    text: '(kicad_pcb\n' + parts.join('\n') + '\n)\n',
-    included: counts
-  };
-}
-
+// A genuine-source viewport selection (not full-board geometry) is exercised
+// in the actual VS Code custom viewer below. Do not treat this as DRC evidence.
 test('Windows genuine 12-layer PCB bounded source subset reaches interactive KiCanvas', async () => {
   test.skip(
     process.platform !== 'win32' ||
@@ -114,7 +39,18 @@ test('Windows genuine 12-layer PCB bounded source subset reaches interactive KiC
 
   try {
     const source = fs.readFileSync(vendorBoard, 'utf8');
-    const sample = sourceBoundedSample(source);
+    const sample = selectBoundedPcbPreview(source, {
+      viewport: { minX: 125, minY: 195, maxX: 215, maxY: 290 },
+      maxBytes: 2 * 1024 * 1024
+    });
+    expect(sample.complete).toBe(false);
+    expect(sample.warning).toContain('PARTIAL PREVIEW');
+    expect(sample.included['footprint']).toBeGreaterThan(0);
+    expect(sample.included['segment']).toBeGreaterThan(0);
+    expect(sample.included['via']).toBeGreaterThan(0);
+    expect(sample.included['net']).toBeGreaterThan(1000);
+    expect(sample.viewportTruncated).toBe(true);
+    expect(sample.omittedInViewport['segment']).toBeGreaterThan(0);
     fs.writeFileSync(generated, sample.text, 'utf8');
     console.log(
       'VME_EXACT_SOURCE_SUBSET_PREP_MS=' +
@@ -124,7 +60,13 @@ test('Windows genuine 12-layer PCB bounded source subset reaches interactive KiC
         ' SUBSET_BYTES=' +
         fs.statSync(generated).size +
         ' OBJECTS=' +
-        JSON.stringify(sample.included)
+        JSON.stringify(sample.included) +
+        ' OMITTED=' +
+        JSON.stringify(sample.omitted) +
+        ' IN_VIEW=' +
+        JSON.stringify(sample.eligibleInViewport) +
+        ' MISSED_IN_VIEW=' +
+        JSON.stringify(sample.omittedInViewport)
     );
     expect(fs.statSync(generated).size).toBeLessThan(6 * 1024 * 1024);
     session = await launchVsCodeWithFixtures({ workspaceSourcePath: base });
