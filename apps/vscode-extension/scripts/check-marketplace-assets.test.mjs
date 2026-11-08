@@ -45,6 +45,15 @@ test('#726 marketplace provenance detects other package metadata drift', (contex
   assert.throws(runMarketplaceCheck, /capture source fingerprint changed/iu);
 });
 
+test('#906 marketplace provenance tracks real KiCad 10 schematic fixture bytes', (context) => {
+  mockTextFile(
+    context,
+    '../../examples/led-basic/KICAD_TEST.kicad_sch',
+    (original) => original + '\n; evidence input changed\n'
+  );
+  assert.throws(runMarketplaceCheck, /capture source fingerprint changed/iu);
+});
+
 test('#710 marketplace checker rejects stale capture schema', (context) => {
   mockTextFile(
     context,

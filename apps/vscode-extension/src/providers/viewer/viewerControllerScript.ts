@@ -452,6 +452,10 @@ export function createViewerControllerScript(): string {
         await waitForViewerLoaded(viewer, 15000);
         if (generation !== viewerGeneration) return;
 
+        // The bundled schematic app can finish loading with a zero-sized
+        // canvas in a VS Code webview even while the containing embed is full
+        // size. Repair only that known layout before declaring KiCanvas blank.
+        repairSchematicCanvasLayout(viewer);
         const renderSurface = await waitForRenderableSurface(viewerMount, 2000);
         if (generation !== viewerGeneration) return;
         if (!renderSurface) {
@@ -1139,7 +1143,47 @@ export function createViewerControllerScript(): string {
         );
         return;
       }
-      const renderer = getKiCanvasViewer(embed);
+      const renderer = payload.fileType === 'schematic'
+        ? embed?.shadowRoot?.querySelector('kc-schematic-app')?.viewer || embed?.viewer
+        : getKiCanvasViewer(embed);
+      if (payload.fileType === 'schematic') {
+        const symbol = renderer?.schematic?.find_symbol?.(matchedSchematicReference);
+        if (!symbol || typeof renderer?.select !== 'function' ||
+            typeof renderer?.zoom_to_selection !== 'function') {
+          referenceSearchInput.removeAttribute('aria-invalid');
+          setStatus('Reference ' + matchedSchematicReference +
+            ' found in source; graphical focus is unavailable in this renderer. Open in KiCad to locate it.');
+          return;
+        }
+        try {
+          renderer.select(symbol);
+          const selection = renderer.selected;
+          if (!selection || !Number.isFinite(selection.x) ||
+              !Number.isFinite(selection.y) ||
+              !Number.isFinite(selection.w) || !Number.isFinite(selection.h) ||
+              selection.w <= 0 || selection.h <= 0) {
+            throw new Error('The renderer did not select a drawable symbol.');
+          }
+          renderer.zoom_to_selection();
+          const box = renderer.viewport?.camera?.bbox;
+          if (!box || !Number.isFinite(box.x) || !Number.isFinite(box.y) ||
+              !Number.isFinite(box.w) || !Number.isFinite(box.h) ||
+              box.x > selection.x || box.y > selection.y ||
+              box.x + box.w < selection.x + selection.w ||
+              box.y + box.h < selection.y + selection.h) {
+            throw new Error('The renderer did not focus the selected symbol.');
+          }
+          const cameraZoom = renderer.viewport?.camera?.zoom;
+          if (Number.isFinite(cameraZoom) && fittedCameraZoom > 0) {
+            localState = { ...localState, zoom: Number((cameraZoom / fittedCameraZoom).toFixed(2)) };
+            updateZoomLevel();
+          }
+        } catch {
+          setStatus('Reference ' + matchedSchematicReference +
+            ' found in source; graphical focus failed in this renderer. Open in KiCad to locate it.');
+          return;
+        }
+      }
       if (payload.fileType === 'board' && renderer?.board?.find_footprint) {
         if (!renderer.board.find_footprint(reference)) {
           referenceSearchInput.setAttribute('aria-invalid', 'true');
@@ -1175,7 +1219,7 @@ export function createViewerControllerScript(): string {
       if (payload.fileType !== 'board') applyViewerSelectionState(embed);
       postViewerState();
       setStatus(payload.fileType === 'schematic'
-        ? 'Reference ' + selectedReference + ' found in this schematic.'
+        ? 'Focused schematic reference: ' + selectedReference
         : 'Focused reference: ' + selectedReference);
       vscode.postMessage({ type: 'componentSelected', payload: { reference: selectedReference } });
     }
@@ -1501,7 +1545,36 @@ export function createViewerControllerScript(): string {
     function getKiCanvasViewer(embed) {
       // The shipped KiCanvas exposes its board viewer through the shadow-root
       // app. Keep the mock/older direct shape as a compatibility fallback.
+      // Schematic selection resolves its renderer separately only on demand.
       return embed?.viewer || embed?.shadowRoot?.querySelector('kc-board-app')?.viewer;
+    }
+
+    function repairSchematicCanvasLayout(embed) {
+      if (payload.fileType !== 'schematic') return;
+      const app = embed?.shadowRoot?.querySelector('kc-schematic-app');
+      const host = app?.shadowRoot?.querySelector('kc-schematic-viewer');
+      const canvas = host?.shadowRoot?.querySelector('canvas');
+      if (!app || !host || !canvas ||
+          !host.viewer?.renderer?.ctx2d ||
+          (canvas.clientWidth > 0 && canvas.clientHeight > 0)) {
+        return;
+      }
+      // Restrict changes to the known KiCanvas schematic renderer: do not
+      // alter board layouts or inject styles into arbitrary webview content.
+      app.style.display = 'block';
+      app.style.width = '100%';
+      app.style.height = '100%';
+      host.style.display = 'flex';
+      host.style.flex = '1 1 auto';
+      host.style.width = '100%';
+      host.style.height = '100%';
+      host.style.minHeight = '0';
+      canvas.style.display = 'block';
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      // Let KiCanvas' own resize/render lifecycle paint the new surface.
+      // Calling its drawing methods before the renderer initializes can
+      // throw while the internal canvas context is not yet available.
     }
 
     function resetNetInspector() {

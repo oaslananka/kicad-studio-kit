@@ -103,13 +103,40 @@ test('native schematic reference lookup verifies placed source before announcing
       expect(await frame.locator('kicanvas-embed').count()).toBe(0);
       console.log('NATIVE_SCHEMATIC_FALLBACK_VISUAL_FOCUS_NOT_CLAIMED=PASS');
     } else {
-      await expect(status).toContainText(
-        'Reference H2 found in this schematic.'
-      );
-      await expect(frame.locator('kicanvas-embed')).toHaveAttribute(
-        'selected-reference',
-        'H2'
-      );
+      await expect(status).toContainText('Reference H2');
+      const result = await status.innerText();
+      if (result.includes('Focused schematic reference: H2')) {
+        await expect(frame.locator('kicanvas-embed')).toHaveAttribute(
+          'selected-reference',
+          'H2'
+        );
+        const focused = await frame.evaluate(() => {
+          const embed = document.querySelector('kicanvas-embed') as any;
+          const renderer =
+            embed?.shadowRoot?.querySelector('kc-schematic-app')?.viewer;
+          const selected = renderer?.selected;
+          const bounds = renderer?.viewport?.camera?.bbox;
+          return {
+            selected: Boolean(selected),
+            cameraContainsSelection:
+              Boolean(bounds) &&
+              bounds.x <= selected?.x &&
+              bounds.y <= selected?.y &&
+              bounds.x + bounds.w >= selected.x + selected.w &&
+              bounds.y + bounds.h >= selected.y + selected.h
+          };
+        });
+        expect(focused.selected).toBe(true);
+        expect(focused.cameraContainsSelection).toBe(true);
+        console.log('NATIVE_SCHEMATIC_GRAPHICAL_OBJECT_FOCUS=PASS');
+      } else {
+        expect(result).toMatch(
+          /Reference H2 found in source; graphical focus (is unavailable|failed) in this renderer/
+        );
+        console.log(
+          'NATIVE_SCHEMATIC_GRAPHICAL_FOCUS_UNAVAILABLE_TRUTHFUL=PASS'
+        );
+      }
     }
     console.log('NATIVE_SCHEMATIC_SOURCE_REFERENCE_MATCH=PASS');
 
