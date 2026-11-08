@@ -97,6 +97,92 @@ describe('bounded genuine KiCad PCB spatial preview', () => {
     expect(preview.text).not.toContain('Local:B-Cu');
   });
 
+  it('advances stable in-window cursors without duplicate or missing track expressions', () => {
+    const source = String.raw`(kicad_pcb (version 20250114)
+      (layers (0 "F.Cu" signal) (31 "B.Cu" signal))
+      (net 0 "")
+      (segment (start 1 1) (end 2 2) (layer "F.Cu") (net 0) (uuid "s-1"))
+      (segment (start 2 2) (end 3 3) (layer "F.Cu") (net 0) (uuid "s-2"))
+      (segment (start 3 3) (end 4 4) (layer "F.Cu") (net 0) (uuid "s-3"))
+      (segment (start 100 100) (end 110 110) (layer "F.Cu") (uuid "off-screen"))
+    )`;
+    let cursor: Partial<Record<'segment', number>> = {};
+    const ids: string[] = [];
+    for (let pageNumber = 0; pageNumber < 3; pageNumber += 1) {
+      const page = selectBoundedPcbPreview(source, {
+        viewport: VIEWPORT,
+        limits: { segment: 1 },
+        cursor
+      });
+      const match = page.text.match(/\(uuid "(s-\d+)"\)/);
+      expect(match?.[1]).toBe('s-' + (pageNumber + 1));
+      ids.push(match?.[1] ?? 'MISSING');
+      expect(page.madeProgress).toBe(true);
+      expect(page.nextCursor.segment).toBe(pageNumber + 1);
+      expect(page.remainingAfterPage['segment']).toBe(2 - pageNumber);
+      expect(page.hasNextPage).toBe(pageNumber !== 2);
+      cursor = page.nextCursor;
+    }
+    expect(new Set(ids).size).toBe(3);
+    const empty = selectBoundedPcbPreview(source, {
+      viewport: VIEWPORT,
+      limits: { segment: 1 },
+      cursor
+    });
+    expect(empty.madeProgress).toBe(false);
+    expect(empty.hasNextPage).toBe(false);
+    expect(empty.nextCursor.segment).toBe(3);
+  });
+
+  it('does not advance a cursor past an oversized object and silently omit it', () => {
+    const source =
+      '(kicad_pcb (layers (0 "F.Cu" signal))' +
+      '(segment (start 1 1) (end 2 2) (layer "F.Cu") (uuid "small-before"))' +
+      '(segment (start 2 2) (end 3 3) (layer "F.Cu") ' +
+      '(description "' +
+      'x'.repeat(5000) +
+      '") (uuid "too-large"))' +
+      '(segment (start 3 3) (end 4 4) (layer "F.Cu") (uuid "small-after"))' +
+      ')';
+    const first = selectBoundedPcbPreview(source, {
+      viewport: VIEWPORT,
+      maxBytes: 4096
+    });
+    expect(first.included['segment']).toBe(1);
+    expect(first.nextCursor.segment).toBe(1);
+    expect(first.hasNextPage).toBe(true);
+    expect(first.text).not.toContain('small-after');
+    const second = selectBoundedPcbPreview(source, {
+      viewport: VIEWPORT,
+      maxBytes: 4096,
+      cursor: first.nextCursor
+    });
+    expect(second.nextCursor.segment).toBe(1);
+    expect(second.remainingAfterPage['segment']).toBe(2);
+    expect(second.madeProgress).toBe(false);
+    expect(second.hasNextPage).toBe(true);
+    expect(second.text).not.toContain('small-after');
+  });
+
+  it('rejects negative and fractional offsets and preserves the original source string', () => {
+    const original = realGeometry;
+    expect(() =>
+      selectBoundedPcbPreview(original, {
+        viewport: VIEWPORT,
+        cursor: { segment: -1 }
+      })
+    ).toThrow('cursor positions');
+    expect(() =>
+      selectBoundedPcbPreview(original, {
+        viewport: VIEWPORT,
+        cursor: { segment: 1.2 }
+      })
+    ).toThrow('cursor positions');
+    const page = selectBoundedPcbPreview(original, { viewport: VIEWPORT });
+    expect(page.complete).toBe(false);
+    expect(realGeometry).toBe(original);
+  });
+
   it('always rejects invalid or oversized preview requests', () => {
     expect(() =>
       selectBoundedPcbPreview(realGeometry, {

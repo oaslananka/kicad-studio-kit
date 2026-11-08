@@ -17,6 +17,8 @@ export interface PcbPreviewSelection {
   layers?: readonly string[];
   maxBytes?: number;
   limits?: Partial<Record<PcbDrawableKind, number>>;
+  /** Zero-based in-window source occurrence to start each drawable kind. */
+  cursor?: Partial<Record<PcbDrawableKind, number>>;
 }
 
 export type PcbDrawableKind =
@@ -30,6 +32,12 @@ export interface BoundedPcbPreview {
   readonly eligibleInViewport: Readonly<Record<string, number>>;
   readonly omittedInViewport: Readonly<Record<string, number>>;
   readonly viewportTruncated: boolean;
+  /** Next stable occurrence index in this exact source, viewport and layer selection. */
+  readonly nextCursor: Readonly<Record<PcbDrawableKind, number>>;
+  /** In-window objects left after this and prior pages, excluding unsupported zones. */
+  readonly remainingAfterPage: Readonly<Record<string, number>>;
+  readonly hasNextPage: boolean;
+  readonly madeProgress: boolean;
   readonly complete: false;
   readonly warning: string;
   readonly viewport: PcbPreviewBounds;
@@ -106,6 +114,18 @@ export function selectBoundedPcbPreview(
     }
   }
 
+  const cursor = Object.fromEntries(
+    Object.keys(DEFAULT_LIMITS).map((key) => {
+      const value = options.cursor?.[key as PcbDrawableKind] ?? 0;
+      if (!Number.isSafeInteger(value) || value < 0) {
+        throw new Error(
+          'Preview cursor positions must be nonnegative integers.'
+        );
+      }
+      return [key, value];
+    })
+  ) as Record<PcbDrawableKind, number>;
+
   const requestedLayers = options.layers ?? [];
   const layerSet = new Set(requestedLayers);
   if (
@@ -121,6 +141,7 @@ export function selectBoundedPcbPreview(
   const sourceObjects: Record<string, number> = {};
   const eligibleInViewport: Record<string, number> = {};
   let usedBytes = Buffer.byteLength('(kicad_pcb\n\n)\n');
+  let drawableBudgetExhausted = false;
   let depth = 0;
   let quoted = false;
   let escaped = false;
@@ -177,8 +198,13 @@ export function selectBoundedPcbPreview(
         continue;
       }
 
-      eligibleInViewport[key] = (eligibleInViewport[key] ?? 0) + 1;
-      if ((included[key] ?? 0) >= limits[key as PcbDrawableKind]) {
+      const index = eligibleInViewport[key] ?? 0;
+      eligibleInViewport[key] = index + 1;
+      if (
+        index < cursor[key as PcbDrawableKind] ||
+        drawableBudgetExhausted ||
+        (included[key] ?? 0) >= limits[key as PcbDrawableKind]
+      ) {
         omitted[key] = (omitted[key] ?? 0) + 1;
         continue;
       }
@@ -193,6 +219,9 @@ export function selectBoundedPcbPreview(
         );
       }
       omitted[key] = (omitted[key] ?? 0) + 1;
+      // A global page budget must yield a source-order prefix per kind.
+      // Accepting smaller later items would make cursor paging skip objects.
+      drawableBudgetExhausted = true;
       continue;
     }
     parts.push(part);
@@ -212,6 +241,19 @@ export function selectBoundedPcbPreview(
     omittedInViewport[key] = eligible - (included[key] ?? 0);
   }
 
+  const nextCursor = {} as Record<PcbDrawableKind, number>;
+  const remainingAfterPage: Record<string, number> = {};
+  let madeProgress = false;
+  for (const key of Object.keys(DEFAULT_LIMITS) as PcbDrawableKind[]) {
+    const selected = included[key] ?? 0;
+    nextCursor[key] = cursor[key] + selected;
+    madeProgress ||= selected > 0;
+    remainingAfterPage[key] = Math.max(
+      0,
+      (eligibleInViewport[key] ?? 0) - nextCursor[key]
+    );
+  }
+
   return {
     text: '(kicad_pcb\n' + parts.join('\n') + '\n)\n',
     included,
@@ -222,6 +264,10 @@ export function selectBoundedPcbPreview(
     viewportTruncated: Object.values(omittedInViewport).some(
       (count) => count > 0
     ),
+    nextCursor,
+    remainingAfterPage,
+    hasNextPage: Object.values(remainingAfterPage).some((count) => count > 0),
+    madeProgress,
     complete: false,
     warning:
       'PARTIAL PREVIEW — many source objects and all zones are omitted. ' +
