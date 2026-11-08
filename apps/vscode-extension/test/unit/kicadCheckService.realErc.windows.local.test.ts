@@ -73,11 +73,18 @@ describe('native KiCad 10 ERC report parity — isolated, opt-in', () => {
               async ({ command, cwd }: { command: string[]; cwd: string }) => {
                 expect(command.slice(0, 2)).toEqual(['sch', 'erc']);
                 expect(command).toContain('--severity-all');
+                // Native KiCad 10 on Windows took 32.41s in an isolated
+                // baseline; 35s left <3s for normal host variance.
+                // Keep a finite process limit without changing KiCad parity.
+                const startedAt = Date.now();
                 await execFileAsync(cliPath, command, {
                   cwd,
-                  timeout: 35_000,
+                  timeout: 60_000,
                   maxBuffer: 5 * 1024 * 1024
                 });
+                console.log(
+                  'REAL_KICAD_10_ERC_CLI_ELAPSED_MS=' + (Date.now() - startedAt)
+                );
                 const reportFile = command[command.indexOf('--output') + 1];
                 const json = JSON.parse(
                   fs.readFileSync(reportFile!, 'utf8')
@@ -154,6 +161,6 @@ describe('native KiCad 10 ERC report parity — isolated, opt-in', () => {
         fs.rmSync(tmp, { recursive: true, force: true });
       }
     },
-    85_000
+    100_000
   );
 });
