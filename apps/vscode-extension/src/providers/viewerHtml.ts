@@ -195,6 +195,9 @@ export function createKiCanvasViewerHtml(
           <button class="btn" id="layer-dim-btn" type="button" aria-pressed="false">Dim others</button>
           <button class="btn" id="layer-solo-btn" type="button" aria-pressed="false">Solo</button>
         </div>
+        <div class="side-actions" role="group" aria-label="Copper zone fill controls">
+          <button class="btn" id="zone-fills-btn" type="button" aria-pressed="true" title="Toggle zone fills without hiding traces, pads or vias">Hide zone fills</button>
+        </div>
         <div id="layer-list" class="layer-list"></div>
       </div>
       <div class="side-section" id="nets-section" hidden>

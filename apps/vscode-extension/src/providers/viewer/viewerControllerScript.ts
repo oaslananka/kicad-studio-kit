@@ -43,6 +43,8 @@ export function createViewerControllerScript(): string {
     const layerNormalBtn = document.getElementById('layer-normal-btn');
     const layerDimBtn = document.getElementById('layer-dim-btn');
     const layerSoloBtn = document.getElementById('layer-solo-btn');
+    const zoneFillsBtn = document.getElementById('zone-fills-btn');
+    const layerHintEl = document.getElementById('layer-hint');
     const layerCountEl = document.getElementById('layer-count');
     const netsSectionEl = document.getElementById('nets-section');
     const netCountEl = document.getElementById('net-count');
@@ -119,7 +121,10 @@ export function createViewerControllerScript(): string {
     let viewerGeneration = 0;
     let cancelPendingPreparation = null;
     let netCatalog = [];
+    let netCatalogRetries = 0;
     let highlightedNetName = '';
+    let fittedCameraZoom = null;
+    let sourceHasNamedNets = false;
     let rendererInitializing = false;
     let rendererFallbackAttempt = null;
     let rendererFallbackGeneration = 0;
@@ -131,6 +136,7 @@ export function createViewerControllerScript(): string {
       toolsPanelCollapsed: true,
       selectedSheet: 'root',
       layerMode: 'normal',
+      zoneFillsVisible: true,
       ...(payload.restoreState || {}),
       engine: payload.engine || createEngineState(payload.disabledReason ? 'metadata-only' : 'kicanvas', payload.disabledReason || undefined)
     };
@@ -174,6 +180,7 @@ export function createViewerControllerScript(): string {
       const viewer = viewerMount.querySelector('kicanvas-embed');
       if (viewer) {
         viewer.setAttribute('theme', nextTheme);
+        applyRendererTheme(viewer, nextTheme);
       } else {
         payload.fallbackBackground = '';
         updateFallbackTheme();
@@ -194,6 +201,7 @@ export function createViewerControllerScript(): string {
     layerNormalBtn?.addEventListener('click', () => setLayerMode('normal'));
     layerDimBtn?.addEventListener('click', () => setLayerMode('dim'));
     layerSoloBtn?.addEventListener('click', () => setLayerMode('solo'));
+    zoneFillsBtn?.addEventListener('click', () => setZoneFillsVisible(localState.zoneFillsVisible === false));
     netHighlightBtn?.addEventListener('click', highlightSearchedNet);
     netClearBtn?.addEventListener('click', clearNetHighlight);
     netSearchEl?.addEventListener('keydown', (event) => {
@@ -264,6 +272,9 @@ export function createViewerControllerScript(): string {
         applyViewerSelectionState(viewerMount.querySelector('kicanvas-embed'));
         renderSidebar();
         renderHopOverOverlay();
+        if (payload.fileType === 'board' && localState.engine?.kind === 'kicanvas') {
+          initializeNetInspector(viewerMount.querySelector('kicanvas-embed'));
+        }
       }
     });
 
@@ -282,6 +293,9 @@ export function createViewerControllerScript(): string {
       // immediately rather than decoding a stale board while the new one loads.
       cancelPendingPreparation?.();
       rendererInitializing = true;
+      fittedCameraZoom = null;
+      sourceHasNamedNets = false;
+      netCatalogRetries = 0;
       rendererFallbackAttempt = null;
       rendererFallbackGeneration = generation;
       rendererFallbackFailureDetail = '';
@@ -331,6 +345,8 @@ export function createViewerControllerScript(): string {
           return;
         }
         const text = prepared.text;
+        sourceHasNamedNets = payload.fileType === 'board' &&
+          /[(]net\s+[1-9][0-9]*\s+"[^"]+"/.test(text);
 
         if (isUnsupportedLegacyKiCadPcb(text, payload.fileType)) {
           showEmpty(
@@ -450,6 +466,13 @@ export function createViewerControllerScript(): string {
         }
         applyViewerState(viewer);
         applyLayerVisibility(viewer);
+        const initialCamera = getKiCanvasViewer(viewer)?.viewport?.camera;
+        if (Number.isFinite(initialCamera?.zoom) && initialCamera.zoom > 0) {
+          fittedCameraZoom = initialCamera.zoom;
+          localState = { ...localState, zoom: 1 };
+          updateZoomLevel();
+          postViewerState();
+        }
         installSelectionTracking(viewer);
         setViewerSurfaceVisible(true);
         renderHopOverOverlay();
@@ -990,14 +1013,45 @@ export function createViewerControllerScript(): string {
     function selectReferenceFromSearch() {
       const reference = String(referenceSearchInput.value || '').trim();
       if (!reference) {
+        setStatus('Enter a component reference to find.');
         return;
       }
-      localState = {
-        ...localState,
-        selectedReference: reference
-      };
-      applyViewerSelectionState(viewerMount.querySelector('kicanvas-embed'));
+      const embed = viewerMount.querySelector('kicanvas-embed');
+      const renderer = getKiCanvasViewer(embed);
+      if (payload.fileType === 'board' && renderer?.board?.find_footprint) {
+        if (!renderer.board.find_footprint(reference)) {
+          referenceSearchInput.setAttribute('aria-invalid', 'true');
+          setStatus('Reference ' + reference + ' was not found in this PCB.');
+          return;
+        }
+        try {
+          renderer.select(reference);
+          if (typeof renderer.zoom_to_selection !== 'function') {
+            throw new Error('Selection zoom is unavailable.');
+          }
+          renderer.zoom_to_selection();
+          const cameraZoom = renderer.viewport?.camera?.zoom;
+          if (Number.isFinite(cameraZoom) && fittedCameraZoom > 0) {
+            localState = {
+              ...localState,
+              zoom: Number((cameraZoom / fittedCameraZoom).toFixed(2))
+            };
+            updateZoomLevel();
+          }
+        } catch {
+          setStatus('Unable to focus reference ' + reference + ' in this renderer.');
+          return;
+        }
+      } else if (payload.fileType === 'board') {
+        setStatus('PCB reference search is unavailable in this renderer.');
+        return;
+      }
+      referenceSearchInput.removeAttribute('aria-invalid');
+      if (payload.fileType === 'board') embed?.setAttribute('selected-reference', reference);
+      localState = { ...localState, selectedReference: reference };
+      if (payload.fileType !== 'board') applyViewerSelectionState(embed);
       postViewerState();
+      setStatus('Focused reference: ' + reference);
       vscode.postMessage({ type: 'componentSelected', payload: { reference } });
     }
 
@@ -1025,15 +1079,44 @@ export function createViewerControllerScript(): string {
     }
 
     function applyViewerGridState(viewer) {
-      if (!viewer) {
-        return;
-      }
+      if (!viewer) return;
+      // Legacy/test embeds support attributes. The bundled KiCanvas does not
+      // implement show-grid; its board renderer exposes grid_opacity.
       if (localState.grid) {
         viewer.setAttribute('show-grid', 'true');
         viewer.setAttribute('grid', 'true');
       } else {
         viewer.removeAttribute('show-grid');
         viewer.removeAttribute('grid');
+      }
+      try {
+        const renderer = getKiCanvasViewer(viewer);
+        if (renderer && 'grid_opacity' in renderer) {
+          renderer.grid_opacity = localState.grid ? 1 : 0;
+        }
+      } catch {
+        // Keep fallback rendering available if KiCanvas changes its internals.
+      }
+    }
+
+    function applyRendererTheme(embed, theme) {
+      try {
+        // The published embed's theme attribute is not forwarded to its nested
+        // kc-board-viewer. Update the actual drawing host and repaint safely.
+        const surface = findRenderSurfaces(embed).find(
+          (entry) => entry instanceof HTMLCanvasElement
+        );
+        const renderHost = surface?.getRootNode()?.host;
+        if (renderHost?.tagName?.toLowerCase() !== 'kc-board-viewer') return;
+        if (renderHost.theme === theme && renderHost.viewer?.loaded) return;
+        renderHost.theme = theme;
+        if (renderHost.viewer?.loaded && typeof renderHost.update_theme === 'function') {
+          renderHost.update_theme();
+          renderHost.viewer.paint?.();
+          renderHost.viewer.draw?.();
+        }
+      } catch {
+        // Theme changes must never break the board viewer or its file data.
       }
     }
 
@@ -1085,6 +1168,7 @@ export function createViewerControllerScript(): string {
       setControlDisabled(layerNormalBtn, !layerControlsEnabled);
       setControlDisabled(layerDimBtn, !layerControlsEnabled);
       setControlDisabled(layerSoloBtn, !layerControlsEnabled);
+      setControlDisabled(zoneFillsBtn, !layerControlsEnabled);
       layerListEl.querySelectorAll('input,button').forEach((control) => {
         setControlDisabled(control, !layerControlsEnabled ||
           (localState.layerMode === 'solo' && control.tagName === 'INPUT'));
@@ -1107,6 +1191,7 @@ export function createViewerControllerScript(): string {
         };
       }
       viewer.setAttribute('theme', localState.theme || payload.theme || 'kicad');
+      applyRendererTheme(viewer, localState.theme || payload.theme || 'kicad');
       populateSheetSelect();
       if (sheetSelectEl && localState.selectedSheet) {
         sheetSelectEl.value = localState.selectedSheet;
@@ -1157,6 +1242,21 @@ export function createViewerControllerScript(): string {
         ? Number(Boolean(localState.focusedLayer))
         : localState.activeLayers.length;
       if (layerCountEl) layerCountEl.textContent = visibleCount + '/' + layers.length + ' visible';
+      if (layerHintEl) {
+        layerHintEl.textContent = mode === 'solo'
+          ? 'Solo: ' + (localState.focusedLayer || 'no layer') +
+            '. Zone fills can cover tracks; turn them off to inspect routing.'
+          : mode === 'dim'
+            ? 'Focused: ' + (localState.focusedLayer || 'no layer') +
+              '. Other visible layers are dimmed.'
+            : 'Select a layer to focus; the swatches reflect KiCanvas render colors.';
+      }
+      if (zoneFillsBtn) {
+        const zoneFillsVisible = localState.zoneFillsVisible !== false;
+        zoneFillsBtn.setAttribute('aria-pressed', zoneFillsVisible ? 'true' : 'false');
+        zoneFillsBtn.classList.toggle('is-active', zoneFillsVisible);
+        zoneFillsBtn.textContent = zoneFillsVisible ? 'Hide zone fills' : 'Show zone fills';
+      }
 
       for (const layer of layers) {
         const row = document.createElement('div');
@@ -1317,9 +1417,28 @@ export function createViewerControllerScript(): string {
         if (!netCatalog.length) {
           highlightedNetName = '';
           netSearchEl.value = '';
-          netFeedbackEl.textContent = 'No named nets found in this board.';
+          if (sourceHasNamedNets) {
+            netCountEl.textContent = 'Nets unavailable';
+            netFeedbackEl.textContent =
+              'This PCB contains named nets, but the renderer did not expose them. ' +
+              'Reload the viewer; net highlighting is unavailable until they load.';
+          } else {
+            netFeedbackEl.textContent = 'No named nets found in this board.';
+          }
+          if (sourceHasNamedNets && netCatalogRetries < 4) {
+            // A large document can finish painting before the renderer's
+            // async net catalog becomes available. Retry only for the current
+            // viewer generation, never select net numbers from an old board.
+            netCatalogRetries++;
+            const generation = viewerGeneration;
+            window.setTimeout(() => {
+              if (generation !== viewerGeneration || !embed?.isConnected) return;
+              initializeNetInspector(embed);
+            }, netCatalogRetries * 350);
+          }
           return;
         }
+        netCatalogRetries = 0;
         setControlDisabled(netSearchEl, false);
         setControlDisabled(netHighlightBtn, false);
         netSearchEl.value = highlightedNetName;
@@ -1411,6 +1530,13 @@ export function createViewerControllerScript(): string {
       postViewerState();
     }
 
+    function setZoneFillsVisible(visible) {
+      localState = { ...localState, zoneFillsVisible: Boolean(visible) };
+      applyLayerVisibility(viewerMount.querySelector('kicanvas-embed'));
+      renderSidebar();
+      postViewerState();
+    }
+
     function applyLayerVisibility(viewer) {
       if (!viewer || !Array.isArray(localState.activeLayers)) return;
       const names = new Set((payload.metadata?.layers || []).map((layer) => layer.name));
@@ -1439,7 +1565,13 @@ export function createViewerControllerScript(): string {
         } else {
           layerSet.highlight(null);
         }
-        internalViewer.draw?.();
+        if ('zone_opacity' in internalViewer) {
+          // KiCanvas exposes zone opacity as a write-only property setter,
+          // rather than a set_zone_opacity() function.
+          internalViewer.zone_opacity = localState.zoneFillsVisible === false ? 0 : 1;
+        } else {
+          internalViewer.draw?.();
+        }
       } catch {
         // Do not turn a renderer-internal API mismatch into a broken viewer.
       }
@@ -1449,6 +1581,7 @@ export function createViewerControllerScript(): string {
       const layers = payload.metadata?.layers || [];
       localState = {
         ...localState,
+        layerMode: 'normal',
         activeLayers: visible ? layers.map((layer) => layer.name) : []
       };
       renderSidebar();
@@ -1460,6 +1593,7 @@ export function createViewerControllerScript(): string {
       const layers = payload.metadata?.layers || [];
       localState = {
         ...localState,
+        layerMode: 'normal',
         activeLayers: layers
           .filter((layer) => /\.Cu$/i.test(layer.name))
           .map((layer) => layer.name)
@@ -1546,9 +1680,35 @@ export function createViewerControllerScript(): string {
     }
 
     function fitCurrentViewer() {
-      const viewer = viewerMount.querySelector('kicanvas-embed');
-      if (viewer) {
-        viewer.fitToScreen?.();
+      const embed = viewerMount.querySelector('kicanvas-embed');
+      if (embed) {
+        const renderer = getKiCanvasViewer(embed);
+        let fitted = false;
+        try {
+          if (payload.fileType === 'board' &&
+              renderer?.layers?.by_name?.('Edge.Cuts')?.bbox?.w > 0 &&
+              typeof renderer.zoom_to_board === 'function') {
+            renderer.zoom_to_board();
+            renderer.draw?.();
+            fitted = true;
+          } else if (typeof renderer?.zoom_to_page === 'function') {
+            renderer.zoom_to_page();
+            fitted = true;
+          } else if (typeof embed.fitToScreen === 'function') {
+            // Older embeds and deterministic test doubles expose this helper.
+            embed.fitToScreen();
+            fitted = true;
+          }
+        } catch {
+          setStatus('Fit is unavailable for the current PCB geometry.');
+          return;
+        }
+        if (!fitted) {
+          setStatus('Fit is unavailable in this renderer.');
+          return;
+        }
+        const cameraZoom = renderer?.viewport?.camera?.zoom;
+        if (Number.isFinite(cameraZoom) && cameraZoom > 0) fittedCameraZoom = cameraZoom;
         localState = { ...localState, zoom: 1 };
         updateZoomLevel();
         postViewerState();
@@ -1560,14 +1720,38 @@ export function createViewerControllerScript(): string {
     }
 
     function zoomCurrentViewer(direction) {
-      const viewer = viewerMount.querySelector('kicanvas-embed');
-      if (viewer) {
-        if (direction > 0) {
-          viewer.zoomIn?.();
+      const embed = viewerMount.querySelector('kicanvas-embed');
+      if (embed) {
+        const renderer = getKiCanvasViewer(embed);
+        const camera = renderer?.viewport?.camera;
+        if (Number.isFinite(camera?.zoom) && camera.zoom > 0 &&
+            typeof renderer.draw === 'function') {
+          const currentZoom = camera.zoom;
+          const factor = direction > 0 ? 1.2 : 1 / 1.2;
+          const nextZoom = Math.min(2000, Math.max(0.01, currentZoom * factor));
+          if (nextZoom === currentZoom) return;
+          try {
+            camera.zoom = nextZoom;
+            renderer.draw();
+          } catch {
+            camera.zoom = currentZoom;
+            setStatus('Zoom is unavailable in this renderer.');
+            return;
+          }
+          if (!fittedCameraZoom) fittedCameraZoom = currentZoom;
+          localState = {
+            ...localState,
+            zoom: Number((nextZoom / fittedCameraZoom).toFixed(2))
+          };
+        } else if (direction > 0 && typeof embed.zoomIn === 'function') {
+          embed.zoomIn();
           localState = { ...localState, zoom: Number((localState.zoom + 0.1).toFixed(2)) };
-        } else {
-          viewer.zoomOut?.();
+        } else if (direction < 0 && typeof embed.zoomOut === 'function') {
+          embed.zoomOut();
           localState = { ...localState, zoom: Number(Math.max(0.1, localState.zoom - 0.1).toFixed(2)) };
+        } else {
+          setStatus('Zoom is unavailable in this renderer.');
+          return;
         }
         updateZoomLevel();
         postViewerState();
@@ -2136,24 +2320,9 @@ export function createViewerControllerScript(): string {
         if (isEditableShortcutTarget(ev.target)) {
           return;
         }
-        if (ev.key === 'f' || ev.key === 'F') {
-          viewer.fitToScreen?.();
-          localState = { ...localState, zoom: 1 };
-          updateZoomLevel();
-          postViewerState();
-        }
-        if (ev.key === '+' || ev.key === '=') {
-          viewer.zoomIn?.();
-          localState = { ...localState, zoom: Number((localState.zoom + 0.1).toFixed(2)) };
-          updateZoomLevel();
-          postViewerState();
-        }
-        if (ev.key === '-') {
-          viewer.zoomOut?.();
-          localState = { ...localState, zoom: Number(Math.max(0.1, localState.zoom - 0.1).toFixed(2)) };
-          updateZoomLevel();
-          postViewerState();
-        }
+        if (ev.key === 'f' || ev.key === 'F') fitCurrentViewer();
+        if (ev.key === '+' || ev.key === '=') zoomCurrentViewer(1);
+        if (ev.key === '-') zoomCurrentViewer(-1);
         if (ev.key === 'r' || ev.key === 'R') {
           vscode.postMessage({ type: 'requestRefresh' });
         }
