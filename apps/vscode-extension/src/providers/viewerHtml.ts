@@ -133,6 +133,7 @@ export function createKiCanvasViewerHtml(
   </header>
 
   <main>
+    <div id="partial-preview-banner" role="status" aria-live="polite" hidden>PARTIAL PREVIEW — geometry, pads, zones and routes may be missing. Not for DRC, exports or manufacturing.</div>
     <div id="viewer-mount"></div>
     <div id="hop-over-overlay" class="hop-over-overlay" aria-label="KiCad 10 hop-over overlay" hidden></div>
     <div id="loading-overlay" class="overlay" role="status" aria-label="Loading file...">
@@ -174,6 +175,25 @@ export function createKiCanvasViewerHtml(
         <h2>Viewer Engine</h2>
         <div id="engine-summary" class="meta-row">${escapeHtml(initialEngine.reason ?? initialEngine.label)}</div>
       </div>
+      ${
+        options.fileType === 'board'
+          ? `<section class="side-section" id="partial-preview-section" aria-label="Large PCB partial preview" hidden>
+        <h2>Large PCB — partial preview</h2>
+        <p class="layer-help">Only a bounded, incomplete sample of real source geometry. Zones and many copper connections are omitted. Never use for DRC, exports or manufacturing.</p>
+        <div class="partial-region-grid">
+          <label for="partial-x-min">X min (mm)<input id="partial-x-min" type="number" step="any" placeholder="Auto" /></label>
+          <label for="partial-x-max">X max (mm)<input id="partial-x-max" type="number" step="any" placeholder="Auto" /></label>
+          <label for="partial-y-min">Y min (mm)<input id="partial-y-min" type="number" step="any" placeholder="Auto" /></label>
+          <label for="partial-y-max">Y max (mm)<input id="partial-y-max" type="number" step="any" placeholder="Auto" /></label>
+        </div>
+        <div class="side-actions">
+          <button class="btn btn-primary" id="partial-start-btn" type="button">Preview region</button>
+          <button class="btn" id="partial-next-btn" type="button" disabled>Load next page</button>
+        </div>
+        <p id="partial-preview-status" class="layer-help" role="status" aria-live="polite">Leave all coordinates empty to start near the first footprint.</p>
+      </section>`
+          : ''
+      }
       <div class="side-section">
         <h2>Viewer Tools</h2>
         <div class="side-actions">

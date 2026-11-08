@@ -119,8 +119,38 @@ describe('createKiCanvasViewerHtml', () => {
       'setControlDisabled(fitBtn, !engine.capabilities.fit);'
     );
     expect(html).toContain(
-      'setControlDisabled(exportPngBtn, !engine.capabilities.exportPng);'
+      'setControlDisabled(exportPngBtn, !engine.capabilities.exportPng || Boolean(payload.partialPreview));'
     );
+  });
+
+  it('shows a bounded, explicitly incomplete PCB preview control only for board viewers', () => {
+    const viewerOptions = {
+      title: 'KiCad Studio Viewer',
+      fileName: 'dense.kicad_pcb',
+      fileType: 'board' as const,
+      status: 'Opening metadata preview...',
+      cspSource: 'vscode-resource:',
+      kicanvasUri: 'vscode-resource:/media/kicanvas/kicanvas.js',
+      base64: '',
+      disabledReason:
+        'Interactive render is disabled for files larger than 10 MB.'
+    };
+    const board = createKiCanvasViewerHtml(viewerOptions);
+    expect(board).toContain('id="partial-preview-section"');
+    expect(board).toContain('id="partial-preview-banner"');
+    expect(board).toContain('PARTIAL PREVIEW');
+    expect(board).toContain('id="partial-start-btn"');
+    expect(board).toContain('id="partial-next-btn"');
+    expect(board).toContain("type: 'requestPartialPreview'");
+    expect(board).toContain(
+      '!engine.capabilities.exportSvg || Boolean(payload.partialPreview)'
+    );
+    const schematic = createKiCanvasViewerHtml({
+      ...viewerOptions,
+      fileType: 'schematic',
+      fileName: 'dense.kicad_sch'
+    });
+    expect(schematic).not.toContain('id="partial-preview-section"');
   });
 
   it('supports exporting PNG from the SVG fallback surface', () => {

@@ -133,6 +133,114 @@ describe.each([
     expect(panel.webview.html).toContain('kicanvas-source');
   });
 
+  if (_label === 'pcb') {
+    it('reads bounded partial PCB geometry without writes or export privileges', async () => {
+      const provider = new ContextProvider({
+        extensionUri: vscode.Uri.file('/extension')
+      } as vscode.ExtensionContext);
+      const panel = createPanel();
+      const uri = vscode.Uri.file(tempFile);
+      const source = `(kicad_pcb
+        (version 20250114)
+        (layers (0 "F.Cu" signal) (31 "B.Cu" signal))
+        (net 0 "")
+        (footprint "Test:Resistor" (layer "F.Cu") (at 10 10)
+          (pad "1" smd rect (at 0 0) (net 0 ""))
+        )
+        (segment (start 10 10) (end 20 20) (layer "F.Cu") (net 0))
+        (via (at 15 15) (layers "F.Cu" "B.Cu") (net 0))
+      )`.padEnd(11 * 1024 * 1024, ' ');
+      const bytes = Buffer.from(source, 'utf8');
+      (workspace.fs.stat as jest.Mock).mockResolvedValue({
+        size: bytes.length,
+        ctime: 0,
+        mtime: 2,
+        type: 1
+      });
+      (workspace.fs.readFile as jest.Mock).mockResolvedValue(bytes);
+      await provider.resolveCustomEditor(
+        { uri } as vscode.CustomDocument,
+        panel as unknown as vscode.WebviewPanel
+      );
+      expect(panel.webview.html).toContain('Metadata only');
+      await panel.fireMessage({
+        type: 'requestPartialPreview',
+        payload: {
+          action: 'start',
+          bounds: { minX: 0, maxX: 50, minY: 0, maxY: 50 }
+        }
+      });
+      expect(panel.webview.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'refresh',
+          payload: expect.objectContaining({
+            disabledReason: '',
+            partialPreview: expect.objectContaining({
+              warning: expect.stringContaining('PARTIAL PREVIEW')
+            })
+          })
+        })
+      );
+      expect(workspace.fs.writeFile).not.toHaveBeenCalled();
+      const previousCommands = (vscode.commands.executeCommand as jest.Mock)
+        .mock.calls.length;
+      await panel.fireMessage({ type: 'exportSvg' });
+      await panel.fireMessage({
+        type: 'exportPng',
+        payload: { dataUrl: 'data:image/png;base64,INVALID' }
+      });
+      expect(
+        (vscode.commands.executeCommand as jest.Mock).mock.calls.length
+      ).toBe(previousCommands);
+      expect(window.showSaveDialog).not.toHaveBeenCalled();
+
+      (panel.webview.postMessage as jest.Mock).mockClear();
+      await panel.fireMessage({
+        type: 'requestPartialPreview',
+        payload: {
+          action: 'start',
+          bounds: { minX: 0, maxX: 300, minY: 0, maxY: 50 }
+        }
+      });
+      expect(panel.webview.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'partialPreviewError',
+          payload: expect.objectContaining({
+            message: expect.stringContaining('250 x 250')
+          })
+        })
+      );
+      expect(workspace.fs.writeFile).not.toHaveBeenCalled();
+      // A normal source refresh must revoke partial-preview privileges.
+      (panel.webview.postMessage as jest.Mock).mockClear();
+      await (
+        provider as unknown as {
+          refreshDocument(uri: vscode.Uri): Promise<void>;
+        }
+      ).refreshDocument(uri);
+      expect(panel.webview.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'refresh',
+          payload: expect.objectContaining({ partialPreview: null })
+        })
+      );
+      (panel.webview.postMessage as jest.Mock).mockClear();
+      await panel.fireMessage({
+        type: 'requestPartialPreview',
+        payload: { action: 'next' }
+      });
+      expect(panel.webview.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'partialPreviewError',
+          payload: expect.objectContaining({
+            message: expect.stringContaining('Start a partial preview')
+          })
+        })
+      );
+      provider.dispose();
+    });
+  }
+
   it('watches open viewer files only and disposes the watcher when the last panel closes (#849)', async () => {
     const watcher = {
       onDidChange: jest.fn(() => ({ dispose: jest.fn() })),
@@ -1041,7 +1149,7 @@ describe.each([
     );
 
     expect(workspace.fs.readFile).toHaveBeenCalledWith(remoteUri);
-    expect(panel.webview.html).not.toContain('Interactive render is disabled');
+    expect(panel.webview.html).toContain('data-engine-kind="kicanvas"');
   });
 
   it('rejects invalid PNG export payloads from the webview bridge', async () => {

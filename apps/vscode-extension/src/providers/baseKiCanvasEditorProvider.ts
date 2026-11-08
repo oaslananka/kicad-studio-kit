@@ -10,6 +10,12 @@ import {
 } from '../constants';
 import type { ProjectContext, ViewerMetadata, ViewerState } from '../types';
 import { ViewerStateStore } from '../state/stateStores';
+import {
+  rebuildAccumulatedPcbPreview,
+  selectBoundedPcbPreview,
+  type BoundedPcbPreview,
+  type PcbPreviewBounds
+} from './viewer/densePcbPreview';
 import { bufferToBase64 } from '../utils/fileUtils';
 import {
   asNumber,
@@ -32,6 +38,8 @@ import {
 const PROGRESS_INLINE_WARNING_BYTES = 1 * 1024 * 1024;
 const LARGE_FILE_METADATA_BYTES = 512 * 1024;
 const MAX_PNG_EXPORT_BYTES = 20 * 1024 * 1024;
+// Opt-in preview can read a large source only within a finite memory budget.
+const MAX_PARTIAL_SOURCE_BYTES = 80 * 1024 * 1024;
 const PNG_SIGNATURE = '89504e470d0a1a0a';
 const VIEWER_TOOLS_PANEL_COLLAPSED_KEY =
   'kicadstudio.viewer.toolsPanelCollapsed';
@@ -64,6 +72,8 @@ interface PanelInfo {
   pendingRefresh: boolean;
   state?: ViewerState | undefined;
   releaseTimer?: NodeJS.Timeout | undefined;
+  partialPage?: BoundedPcbPreview | undefined;
+  partialBusy?: boolean;
 }
 
 type ViewerSvgFallbackProvider = (
@@ -244,6 +254,13 @@ export abstract class BaseKiCanvasEditorProvider
               document.uri
             );
           }
+          if (message.type === 'requestPartialPreview') {
+            await this.requestPartialPreview(
+              webviewPanel,
+              document.uri,
+              message.payload
+            );
+          }
           if (message.type === 'requestRefresh') {
             this.invalidateFileCache(document.uri);
             await this.refreshDocument(document.uri);
@@ -272,14 +289,20 @@ export abstract class BaseKiCanvasEditorProvider
               });
             }
           }
-          if (message.type === 'exportPng') {
+          if (
+            message.type === 'exportPng' &&
+            !this.panelInfo.get(webviewPanel)?.partialPage
+          ) {
             const payload = asRecord(message.payload);
             const dataUrl = asString(payload?.['dataUrl']);
             if (dataUrl) {
               await this.exportPngSnapshot(document.uri, dataUrl);
             }
           }
-          if (message.type === 'exportSvg') {
+          if (
+            message.type === 'exportSvg' &&
+            !this.panelInfo.get(webviewPanel)?.partialPage
+          ) {
             await vscode.commands.executeCommand(
               COMMANDS.exportViewerSvg,
               document.uri
@@ -506,10 +529,13 @@ export abstract class BaseKiCanvasEditorProvider
     this.viewerState.beginReload(uri, { project });
     this.onViewerReload?.(uri, project);
     for (const panel of visiblePanels) {
+      const info = this.panelInfo.get(panel);
+      if (info) info.partialPage = undefined;
       await panel.webview.postMessage({
         type: 'refresh',
         payload: {
           ...result.payload,
+          partialPreview: null,
           restoreState: this.withWorkspaceViewerPreferences(
             uri,
             this.panelInfo.get(panel)?.state
@@ -597,6 +623,120 @@ export abstract class BaseKiCanvasEditorProvider
     this.changeWatcherListeners = [];
     this.changeWatcher?.dispose();
     this.changeWatcher = undefined;
+  }
+
+  /**
+   * Read-only, explicit opt-in for a bounded, visibly incomplete PCB preview.
+   * Never replaces, saves, exports or manufactures the source KiCad document.
+   */
+  private async requestPartialPreview(
+    panel: vscode.WebviewPanel,
+    uri: vscode.Uri,
+    raw: unknown
+  ): Promise<void> {
+    const info = this.panelInfo.get(panel);
+    if (this.fileType !== 'board' || !info || info.partialBusy) return;
+    info.partialBusy = true;
+    try {
+      const request = asRecord(raw);
+      const action = asString(request?.['action']);
+      if (action !== 'start' && action !== 'next') {
+        throw new Error(
+          'Choose a preview region or load another bounded page.'
+        );
+      }
+      const stat = await vscode.workspace.fs.stat(uri);
+      if (
+        stat.size <= VIEWER_DEFAULT_LARGE_FILE_THRESHOLD_BYTES ||
+        stat.size > MAX_PARTIAL_SOURCE_BYTES
+      ) {
+        throw new Error(
+          'Partial preview is offered for PCB files between 10 and 80 MiB.'
+        );
+      }
+      if (this.hasUnsavedEditor(uri.toString())) {
+        throw new Error(
+          'Save open source edits before starting a read-only preview.'
+        );
+      }
+      const oldPage = info.partialPage;
+      if (action === 'next' && !oldPage) {
+        throw new Error(
+          'Start a partial preview region before loading its next page.'
+        );
+      }
+      const bytes = await vscode.workspace.fs.readFile(uri);
+      if (bytes.length !== stat.size) {
+        throw new Error('The PCB changed during preview loading. Try again.');
+      }
+      const latest = await vscode.workspace.fs.stat(uri);
+      if (latest.mtime !== stat.mtime || latest.size !== stat.size) {
+        throw new Error('The PCB changed during preview loading. Try again.');
+      }
+      const source = Buffer.from(bytes).toString('utf8');
+      const bounds =
+        action === 'next'
+          ? oldPage!.viewport
+          : readBoundedPcbViewport(request?.['bounds'], source);
+      const page = selectBoundedPcbPreview(source, {
+        viewport: bounds,
+        maxBytes: 2 * 1024 * 1024,
+        ...(action === 'next'
+          ? {
+              cursor: oldPage!.nextCursor,
+              continuationToken: oldPage!.continuationToken
+            }
+          : {})
+      });
+      if (!page.madeProgress) {
+        throw new Error(
+          'No more bounded geometry fits this region. The preview is still incomplete.'
+        );
+      }
+      const snapshot =
+        action === 'next' ? rebuildAccumulatedPcbPreview(source, page) : page;
+      const confirmed = await vscode.workspace.fs.stat(uri);
+      if (confirmed.mtime !== stat.mtime || confirmed.size !== stat.size) {
+        throw new Error('The PCB changed during preview loading. Try again.');
+      }
+      // The UI only receives geometry subsets (never the original large source).
+      const accepted = await panel.webview.postMessage({
+        type: 'refresh',
+        payload: {
+          fileName: path.basename(uri.fsPath),
+          base64: Buffer.from(snapshot.text, 'utf8').toString('base64'),
+          disabledReason: '',
+          theme: this.theme,
+          fallbackBackground: resolveViewerFallbackBackground(
+            this.fileType,
+            this.theme
+          ),
+          metadata: this.buildViewerMetadata(uri, snapshot.text),
+          restoreState: this.withWorkspaceViewerPreferences(uri, info.state),
+          partialPreview: {
+            warning: snapshot.warning,
+            viewport: snapshot.viewport,
+            included: snapshot.included,
+            remaining: snapshot.remainingAfterPage,
+            hasNextPage: page.hasNextPage
+          }
+        }
+      });
+      if (!accepted || !this.panelInfo.has(panel)) {
+        throw new Error('Preview panel is not available.');
+      }
+      info.partialPage = page;
+    } catch (error) {
+      await panel.webview.postMessage({
+        type: 'partialPreviewError',
+        payload: {
+          message:
+            error instanceof Error ? error.message : 'Partial preview failed.'
+        }
+      });
+    } finally {
+      info.partialBusy = false;
+    }
   }
 
   private async postFile(
@@ -1024,6 +1164,58 @@ async function readFilePrefix(
   }
 }
 
+function readBoundedPcbViewport(
+  input: unknown,
+  source: string
+): PcbPreviewBounds {
+  const payload = asRecord(input);
+  if (payload) {
+    const values = ['minX', 'maxX', 'minY', 'maxY'].map((key) => payload[key]);
+    if (
+      !values.every(
+        (value) => typeof value === 'number' && Number.isFinite(value)
+      )
+    ) {
+      throw new Error(
+        'Enter four finite PCB region coordinates in millimeters.'
+      );
+    }
+    const [minX, maxX, minY, maxY] = values as number[];
+    if (
+      minX === undefined ||
+      maxX === undefined ||
+      minY === undefined ||
+      maxY === undefined
+    ) {
+      throw new Error('Region coordinates are required.');
+    }
+    if (
+      minX >= maxX ||
+      minY >= maxY ||
+      maxX - minX > 250 ||
+      maxY - minY > 250
+    ) {
+      throw new Error(
+        'Choose a positive PCB region no larger than 250 x 250 mm.'
+      );
+    }
+    return { minX, maxX, minY, maxY };
+  }
+
+  // First-footprint fallback is a convenience, never a complete-board bound.
+  const origin =
+    /\(footprint\b[^\n]*[\s\S]{0,1200}?\(at\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/.exec(
+      source
+    );
+  if (!origin) throw new Error('Enter a bounded PCB region to preview.');
+  const x = Number(origin[1]);
+  const y = Number(origin[2]);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    throw new Error('Unable to determine an initial PCB footprint position.');
+  }
+  return { minX: x - 45, maxX: x + 45, minY: y - 45, maxY: y + 50 };
+}
+
 function parsePngDataUrl(value: unknown): Buffer {
   if (typeof value !== 'string') {
     throw new Error('Invalid PNG snapshot payload.');
@@ -1058,7 +1250,8 @@ const VIEWER_OUTBOUND_MESSAGE_TYPES = [
   'exportPng',
   'exportSvg',
   'componentSelected',
-  'requestSvgFallback'
+  'requestSvgFallback',
+  'requestPartialPreview'
 ];
 
 function readViewerState(value: unknown): ViewerState | undefined {

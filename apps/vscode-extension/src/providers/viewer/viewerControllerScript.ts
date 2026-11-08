@@ -53,6 +53,12 @@ export function createViewerControllerScript(): string {
     const netHighlightBtn = document.getElementById('net-highlight-btn');
     const netClearBtn = document.getElementById('net-clear-btn');
     const netFeedbackEl = document.getElementById('net-feedback');
+    const partialSection = document.getElementById('partial-preview-section');
+    const partialBanner = document.getElementById('partial-preview-banner');
+    const partialStatus = document.getElementById('partial-preview-status');
+    const partialStartBtn = document.getElementById('partial-start-btn');
+    const partialNextBtn = document.getElementById('partial-next-btn');
+    let partialBusy = false;
 
     const payload = JSON.parse(
       document.getElementById('viewer-payload').textContent || '{}'
@@ -211,6 +217,8 @@ export function createViewerControllerScript(): string {
       }
     });
     netSearchEl?.addEventListener('input', refreshNetSuggestions);
+    partialStartBtn?.addEventListener('click', () => requestPartialPreview('start'));
+    partialNextBtn?.addEventListener('click', () => requestPartialPreview('next'));
     populateSheetSelect();
     renderSidebar();
     updateEngineUi(localState.engine);
@@ -218,6 +226,57 @@ export function createViewerControllerScript(): string {
     updateZoomLevel();
     updateGridToggle();
     updateThemeToggle();
+    updatePartialPreviewUi();
+
+
+    function updatePartialPreviewUi() {
+      if (!partialSection) return;
+      const summary = payload.partialPreview;
+      const large = payload.fileType === 'board' &&
+        String(payload.disabledReason || '').includes('Interactive render is disabled');
+      partialSection.hidden = !summary && !large;
+      if (partialBanner) partialBanner.hidden = !summary;
+      if (partialStatus && summary) {
+        const missing = summary.remaining || {};
+        const bounds = summary.viewport || {};
+        partialStatus.textContent = 'PARTIAL — X ' + bounds.minX + '–' + bounds.maxX +
+          ', Y ' + bounds.minY + '–' + bounds.maxY +
+          ' mm. Not loaded in this region: ' +
+          (missing.segment || 0) + ' segments, ' +
+          (missing.via || 0) + ' vias, ' +
+          (missing.footprint || 0) + ' footprints. Zones omitted. No engineering/export certainty.';
+      }
+      setControlDisabled(partialStartBtn, partialBusy);
+      setControlDisabled(partialNextBtn, partialBusy || !summary?.hasNextPage);
+    }
+
+    function requestPartialPreview(action) {
+      if (partialBusy || !partialSection || partialSection.hidden) return;
+      let bounds;
+      if (action === 'start') {
+        const ids = ['partial-x-min', 'partial-x-max', 'partial-y-min', 'partial-y-max'];
+        const entries = ids.map((id) => document.getElementById(id)?.value.trim() || '');
+        if (entries.some(Boolean) && !entries.every(Boolean)) {
+          if (partialStatus) partialStatus.textContent = 'Enter all four region coordinates or leave all empty for automatic selection.';
+          return;
+        }
+        if (entries.every(Boolean)) {
+          const numbers = entries.map(Number);
+          if (!numbers.every(Number.isFinite)) {
+            if (partialStatus) partialStatus.textContent = 'Region coordinates must be finite numbers.';
+            return;
+          }
+          bounds = { minX: numbers[0], maxX: numbers[1], minY: numbers[2], maxY: numbers[3] };
+        }
+      }
+      partialBusy = true;
+      updatePartialPreviewUi();
+      if (partialStatus) partialStatus.textContent = 'Preparing an incomplete, bounded source preview…';
+      vscode.postMessage({
+        type: 'requestPartialPreview',
+        payload: { action, ...(bounds ? { bounds } : {}) }
+      });
+    }
 
     window.addEventListener('message', (event) => {
       const msg = event.data || {};
@@ -234,6 +293,9 @@ export function createViewerControllerScript(): string {
           payload.restoreState   = msg.payload.restoreState || payload.restoreState;
           payload.engine         = msg.payload.engine || payload.engine;
           payload.metadata       = msg.payload.metadata || undefined;
+          payload.partialPreview = msg.payload.partialPreview || null;
+          partialBusy = false;
+          updatePartialPreviewUi();
           localState             = {
             ...localState,
             theme: payload.theme || localState.theme,
@@ -247,6 +309,11 @@ export function createViewerControllerScript(): string {
           updateThemeToggle();
         }
         void initViewer();
+      }
+      if (msg.type === 'partialPreviewError') {
+        partialBusy = false;
+        updatePartialPreviewUi();
+        if (partialStatus) partialStatus.textContent = String(msg.payload?.message || 'Partial preview failed.');
       }
       if (msg.type === 'setTheme') {
         payload.theme = msg.payload?.theme || payload.theme;
@@ -1032,6 +1099,10 @@ export function createViewerControllerScript(): string {
     }
 
     function selectReferenceFromSearch() {
+      if (payload.partialPreview) {
+        setStatus('Reference search is not authoritative in a partial preview. Open in KiCad.');
+        return;
+      }
       const reference = String(referenceSearchInput.value || '').trim();
       if (!reference) {
         setStatus('Enter a component reference to find.');
@@ -1180,8 +1251,12 @@ export function createViewerControllerScript(): string {
       setControlDisabled(fitBtn, !engine.capabilities.fit);
       setControlDisabled(zoomInBtn, !engine.capabilities.zoom);
       setControlDisabled(zoomOutBtn, !engine.capabilities.zoom);
-      setControlDisabled(exportPngBtn, !engine.capabilities.exportPng);
-      setControlDisabled(exportSvgBtn, !engine.capabilities.exportSvg);
+      setControlDisabled(exportPngBtn, !engine.capabilities.exportPng || Boolean(payload.partialPreview));
+      setControlDisabled(exportSvgBtn, !engine.capabilities.exportSvg || Boolean(payload.partialPreview));
+      setControlDisabled(referenceSearchInput, Boolean(payload.partialPreview));
+      setControlDisabled(referenceSearchBtn, Boolean(payload.partialPreview));
+      setControlDisabled(netSearchEl, Boolean(payload.partialPreview));
+      setControlDisabled(netHighlightBtn, Boolean(payload.partialPreview));
       const layerControlsEnabled = Boolean(engine.capabilities.layers);
       setControlDisabled(allLayersBtn, !layerControlsEnabled);
       setControlDisabled(noneLayersBtn, !layerControlsEnabled);
@@ -1425,6 +1500,12 @@ export function createViewerControllerScript(): string {
 
     function initializeNetInspector(embed) {
       resetNetInspector();
+      if (payload.partialPreview) {
+        if (netsSectionEl) netsSectionEl.hidden = false;
+        if (netCountEl) netCountEl.textContent = 'Partial geometry';
+        if (netFeedbackEl) netFeedbackEl.textContent = 'Net tracing is unavailable in a partial preview. Open the complete board in KiCad.';
+        return;
+      }
       if (payload.fileType !== 'board') return;
       try {
         const viewer = getKiCanvasViewer(embed);
@@ -1492,6 +1573,7 @@ export function createViewerControllerScript(): string {
     }
 
     function highlightSearchedNet() {
+      if (payload.partialPreview) return;
       const value = netSearchEl?.value;
       if (!value || !value.trim() || !netCatalog.length) return;
       // Net names are case-sensitive KiCad identifiers. Only accept an exact
