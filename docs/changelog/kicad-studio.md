@@ -16,6 +16,18 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.5.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.4.1...vscode-extension-v2.5.0) (2026-11-08)
+
+
+### Features
+
+* **kicad-studio:** source-accurate ERC and bounded PCB preview ([#899](https://github.com/oaslananka/kicad-studio-kit/issues/899)) ([1a28bce](https://github.com/oaslananka/kicad-studio-kit/commit/1a28bce355682bdd874969c77852537132c7d034))
+
+
+### Bug Fixes
+
+* **kicad-studio:** restore native DRC palette discoverability ([#902](https://github.com/oaslananka/kicad-studio-kit/issues/902)) ([a8c3cba](https://github.com/oaslananka/kicad-studio-kit/commit/a8c3cbab49c46f68ee4677645eab440b3a73fb79))
+
 ## [2.4.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.4.0...vscode-extension-v2.4.1) (2026-11-08)
 
 
