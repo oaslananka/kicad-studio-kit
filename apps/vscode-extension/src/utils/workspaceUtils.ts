@@ -4,20 +4,14 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 /**
- * Returns the URI of the currently active editor resource, falling back to
- * the active tab's input URI when no text editor is focused (e.g. when a
- * custom webview editor is active).
+ * Returns the resource of the active VS Code tab. In a custom webview editor,
+ * activeTextEditor can still refer to a different, previously focused text
+ * editor; that stale URI must not override the user's visible KiCad tab.
  */
 export function getActiveResourceUri(): vscode.Uri | undefined {
-  const editorUri = vscode.window.activeTextEditor?.document.uri;
-  if (editorUri) {
-    return editorUri;
-  }
-
   const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab?.input as
-    | { uri?: vscode.Uri }
-    | undefined;
-  return activeTab?.uri;
+    { uri?: vscode.Uri } | undefined;
+  return activeTab?.uri ?? vscode.window.activeTextEditor?.document.uri;
 }
 
 /**
@@ -41,7 +35,10 @@ export async function resolveTargetFile(
     return active.fsPath;
   }
   if (options.projectRoot) {
-    const projectFile = await findFirstProjectFile(options.projectRoot, extname);
+    const projectFile = await findFirstProjectFile(
+      options.projectRoot,
+      extname
+    );
     if (projectFile) {
       return projectFile;
     }
@@ -85,7 +82,8 @@ async function collectFiles(
     currentPath !== rootPath &&
     entries.some(
       (entry) =>
-        entry.isFile() && path.extname(entry.name).toLowerCase() === '.kicad_pro'
+        entry.isFile() &&
+        path.extname(entry.name).toLowerCase() === '.kicad_pro'
     )
   ) {
     return [];
@@ -111,7 +109,10 @@ async function collectFiles(
 }
 
 function isWithinDirectory(rootPath: string, filePath: string): boolean {
-  const relative = path.relative(path.resolve(rootPath), path.resolve(filePath));
+  const relative = path.relative(
+    path.resolve(rootPath),
+    path.resolve(filePath)
+  );
   return !relative.startsWith('..') && !path.isAbsolute(relative);
 }
 
