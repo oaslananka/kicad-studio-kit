@@ -54,7 +54,7 @@ describe('KiCad 10 ERC UUID-path navigation — exact file and object', () => {
       root,
       new SExpressionParser()
     ).resolve(sheet, [{ uuid: TARGET, pos: { x: 21, y: 45 } }]);
-    expect(resolved?.uri.fsPath).toBe(child);
+    expect(resolved?.uri.fsPath).toBe(fs.realpathSync(child));
     expect(resolved?.range.start.line).toBe(3);
     expect(fs.readFileSync(child, 'utf8')).toContain(TARGET);
   });
@@ -64,7 +64,7 @@ describe('KiCad 10 ERC UUID-path navigation — exact file and object', () => {
       root,
       new SExpressionParser()
     ).resolve({ path: '/', uuidPath: `/${ROOT}` }, [{ uuid: ROOT_TARGET }]);
-    expect(resolved?.uri.fsPath).toBe(root);
+    expect(resolved?.uri.fsPath).toBe(fs.realpathSync(root));
     expect(resolved?.range.start.line).toBe(3);
   });
 
@@ -73,7 +73,7 @@ describe('KiCad 10 ERC UUID-path navigation — exact file and object', () => {
     const location = resolver.resolve({ path: '/', uuidPath: `/${ROOT}` }, [
       { uuid: TARGET, pos: { x: 21, y: 45 } }
     ]);
-    expect(location?.uri.fsPath).toBe(child);
+    expect(location?.uri.fsPath).toBe(fs.realpathSync(child));
     expect(location?.range.start.line).toBe(3);
   });
 
@@ -178,7 +178,9 @@ describe('KiCad 10 ERC UUID-path navigation — exact file and object', () => {
     expect(issue.code).toBe('power_pin_not_driven');
     expect(issue.range.start.line).toBe(0);
     expect(issue.relatedInformation).toHaveLength(1);
-    expect(issue.relatedInformation?.[0]?.location.uri.fsPath).toBe(child);
+    expect(issue.relatedInformation?.[0]?.location.uri.fsPath).toBe(
+      fs.realpathSync(child)
+    );
     expect(issue.relatedInformation?.[0]?.location.range.start.line).toBe(3);
     expect(result.summary.errors).toBe(1);
     expect(fs.readFileSync(root, 'utf8')).toContain(ROOT);
