@@ -75,6 +75,7 @@ export const COMMANDS = {
   generateDiffReport: 'kicadstudio.generateKicadDiffReport',
   openSchematic: 'kicadstudio.openSchematic',
   openPCB: 'kicadstudio.openPCB',
+  revealVerifiedErcSource: 'kicadstudio.revealVerifiedErcSource',
   openInKiCad: 'kicadstudio.openInKiCad',
   detectCli: 'kicadstudio.detectCli',
   exportGerbers: 'kicadstudio.exportGerbers',

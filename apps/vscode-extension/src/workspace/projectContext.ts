@@ -41,24 +41,31 @@ export function pickActiveProject(
     return undefined;
   }
 
+  // Explicit selections (including the persisted user preference) win.
   for (const id of [
     options.requestedProjectId,
-    options.previousActiveProjectId,
     options.persistedActiveProjectId
   ]) {
-    const match = id ? projects.find((project) => project.id === id) : undefined;
-    if (match) {
-      return cloneProjectContext(match);
-    }
+    const match = id
+      ? projects.find((project) => project.id === id)
+      : undefined;
+    if (match) return cloneProjectContext(match);
   }
 
+  // An automatically selected previous project is not an explicit preference.
+  // In multi-project workspaces the visible file determines the active
+  // project, otherwise ERC can publish findings to one project while the
+  // Validation panel is pinned to another (showing "Not run").
   const resourceProject = findProjectForResource(
     projects,
     options.activeResourcePath
   );
-  if (resourceProject) {
-    return resourceProject;
-  }
+  if (resourceProject) return resourceProject;
+
+  const previousProject = options.previousActiveProjectId
+    ? projects.find((project) => project.id === options.previousActiveProjectId)
+    : undefined;
+  if (previousProject) return cloneProjectContext(previousProject);
 
   return cloneProjectContext(projects[0]!);
 }
@@ -182,7 +189,11 @@ function shouldIgnoreFile(name: string): boolean {
 
 function isWithinDirectory(rootPath: string, filePath: string): boolean {
   const relative = path.relative(rootPath, filePath);
-  return Boolean(relative) && !relative.startsWith('..') && !path.isAbsolute(relative);
+  return (
+    Boolean(relative) &&
+    !relative.startsWith('..') &&
+    !path.isAbsolute(relative)
+  );
 }
 
 function samePath(left: string, right: string): boolean {

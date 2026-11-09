@@ -212,6 +212,33 @@ describe('multi-project workspace state', () => {
     ).toEqual(expect.objectContaining({ name: 'alpha' }));
   });
 
+  it('follows the visible schematic when a prior project was only auto-selected', async () => {
+    const root = writeProject(tempDir, 'root');
+    writeProject(tempDir, 'root/nested');
+    const projects = await discoverKiCadProjects([
+      { uri: Uri.file(tempDir) }
+    ] as never);
+    const nested = byName(projects, 'nested');
+    const rootProject = byName(projects, 'root');
+    const visible = path.join(root, 'root.kicad_sch');
+
+    expect(
+      pickActiveProject(projects, {
+        previousActiveProjectId: nested.id,
+        activeResourcePath: visible
+      })
+    ).toEqual(expect.objectContaining({ id: rootProject.id }));
+
+    // An explicit user choice survives tab switches.
+    expect(
+      pickActiveProject(projects, {
+        previousActiveProjectId: nested.id,
+        persistedActiveProjectId: nested.id,
+        activeResourcePath: visible
+      })
+    ).toEqual(expect.objectContaining({ id: nested.id }));
+  });
+
   it('keeps diagnostics isolated while two project validations finish out of order', async () => {
     const collection = createDiagnosticsCollection();
     const diagnostics = new DiagnosticStateStore(collection);
