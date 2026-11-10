@@ -172,6 +172,45 @@ describe('multi-project workspace state', () => {
     ).toBeUndefined();
   });
 
+  it('disambiguates projects with equal directory root depth by stem match', () => {
+    const sharedRoot = path.join(tempDir, 'shared');
+    const projectRadio: ProjectContext = {
+      id: 'proj-radio',
+      name: 'radio',
+      rootPath: sharedRoot,
+      projectFile: path.join(sharedRoot, 'radio.kicad_pro'),
+      workspaceFolder: tempDir
+    };
+    const projectAntenna: ProjectContext = {
+      id: 'proj-antenna',
+      name: 'antenna',
+      rootPath: sharedRoot,
+      projectFile: path.join(sharedRoot, 'antenna.kicad_pro'),
+      workspaceFolder: tempDir
+    };
+
+    expect(
+      findProjectForResource(
+        [projectRadio, projectAntenna],
+        path.join(sharedRoot, 'antenna.kicad_sch')
+      )?.name
+    ).toBe('antenna');
+
+    expect(
+      findProjectForResource(
+        [projectAntenna, projectRadio],
+        path.join(sharedRoot, 'radio.kicad_sch')
+      )?.name
+    ).toBe('radio');
+
+    expect(
+      findProjectForResource(
+        [projectRadio, projectAntenna],
+        path.join(sharedRoot, 'notes.txt')
+      )?.name
+    ).toBe('radio');
+  });
+
   it('targets the active project when live validation starts from another open project', async () => {
     const alphaRoot = writeProject(tempDir, 'alpha');
     const nestedRoot = writeProject(tempDir, 'alpha/submodule/nested');
