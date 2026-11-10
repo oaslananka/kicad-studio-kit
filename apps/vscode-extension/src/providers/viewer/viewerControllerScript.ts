@@ -45,6 +45,7 @@ export function createViewerControllerScript(): string {
     const layerSoloBtn = document.getElementById('layer-solo-btn');
     const zoneFillsBtn = document.getElementById('zone-fills-btn');
     const layerHintEl = document.getElementById('layer-hint');
+    const layerActionsEl = document.getElementById('layer-inspection-actions');
     const layerCountEl = document.getElementById('layer-count');
     const netsSectionEl = document.getElementById('nets-section');
     const netCountEl = document.getElementById('net-count');
@@ -1460,6 +1461,7 @@ export function createViewerControllerScript(): string {
       layersSection.hidden = layers.length === 0;
       tuningSection.hidden = tuningProfiles.length === 0;
       notesSection.hidden = notes.length === 0;
+      layerActionsEl.replaceChildren();
       layerListEl.innerHTML = '';
       tuningListEl.innerHTML = '';
       notesListEl.innerHTML = '';
@@ -1554,7 +1556,7 @@ export function createViewerControllerScript(): string {
             verifyInKiCadBtn.title =
               'Open this board in KiCad to inspect true inner-copper pad geometry';
             verifyInKiCadBtn.addEventListener('click', openInKiCad);
-            layerHintEl.appendChild(verifyInKiCadBtn);
+            layerActionsEl.appendChild(verifyInKiCadBtn);
           }
           // A useful inner copper layer need not contain any through-hole
           // pads. Offer the native source plot for tracks and vias too.
@@ -1571,7 +1573,7 @@ export function createViewerControllerScript(): string {
           inspectBtn.addEventListener('click', () =>
             inspectNativeCopperLayer(localState.focusedLayer, inspectBtn)
           );
-          layerHintEl.appendChild(inspectBtn);
+          layerActionsEl.appendChild(inspectBtn);
           if (partial) {
             // The whole original board is a separate, deliberate, slower
             // inspection; never silently substitute it for a bounded page.
@@ -1585,7 +1587,7 @@ export function createViewerControllerScript(): string {
             originalBtn.addEventListener('click', () =>
               inspectNativeCopperLayer(localState.focusedLayer, originalBtn, 'original')
             );
-            layerHintEl.appendChild(originalBtn);
+            layerActionsEl.appendChild(originalBtn);
           }
         }
       }

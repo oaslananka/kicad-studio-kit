@@ -1,8 +1,7 @@
 # KiCad Studio Extension
 
-KiCad Studio is the VS Code extension in `apps/vscode-extension`. It provides project discovery,
-schematic and PCB viewers, KiCad CLI validation and export commands, component/library workflows,
-MCP integration, quality gates, AI-assisted fix queues, and release-oriented manufacturing flows.
+KiCad Studio Kit is the VS Code extension for KiCad project browsing, schematic/PCB
+viewing, DRC/ERC, exports, component tools, MCP, AI-assisted fixes, and manufacturing workflows.
 
 ## Main User Paths
 

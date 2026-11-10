@@ -70,6 +70,8 @@ body.tools-collapsed aside>*{display:none}
 .layer-heading h2{margin-bottom:5px}
 .layer-count{font-size:11px;color:var(--muted);white-space:nowrap}
 .layer-help{font-size:11px;color:var(--muted);margin:0 0 10px}
+.layer-inspection-actions:not(:empty){display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}
+.layer-inspection-actions .btn{flex:0 1 auto;min-width:0;max-width:100%;white-space:normal;text-align:center}
 .layer-modes{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
 .layer-modes .btn{flex:1 1 auto}
 .layer-row{display:grid;grid-template-columns:18px 14px minmax(0,1fr);align-items:center;gap:8px;padding:5px 6px;border:1px solid transparent;border-radius:6px;font-size:12px;color:var(--text)}
