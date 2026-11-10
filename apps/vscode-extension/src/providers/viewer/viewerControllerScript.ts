@@ -59,6 +59,9 @@ export function createViewerControllerScript(): string {
     const partialStartBtn = document.getElementById('partial-start-btn');
     const partialNextBtn = document.getElementById('partial-next-btn');
     let partialBusy = false;
+    // The host can finish a native SVG after a new board/page has appeared.
+    // Never apply an old result to the newer KiCanvas source.
+    let displayedSourceRevision = 0;
 
     const payload = JSON.parse(
       document.getElementById('viewer-payload').textContent || '{}'
@@ -244,7 +247,8 @@ export function createViewerControllerScript(): string {
           ' mm. Not loaded in this region: ' +
           (missing.segment || 0) + ' segments, ' +
           (missing.via || 0) + ' vias, ' +
-          (missing.footprint || 0) + ' footprints. Zones omitted. No engineering/export certainty.';
+          (missing.arc || 0) + ' copper arcs, ' +
+          (missing.footprint || 0) + ' footprints. Zones omitted. Net continuity unverified. No engineering/export certainty.';
       }
       setControlDisabled(partialStartBtn, partialBusy);
       setControlDisabled(partialNextBtn, partialBusy || !summary?.hasNextPage);
@@ -282,6 +286,7 @@ export function createViewerControllerScript(): string {
       const msg = event.data || {};
       if (msg.type === 'load' || msg.type === 'refresh') {
         if (msg.payload && msg.payload.base64 !== undefined) {
+          displayedSourceRevision += 1;
           payload.base64         = msg.payload.base64;
           payload.disabledReason = msg.payload.disabledReason || '';
           payload.fileName       = msg.payload.fileName || payload.fileName;
@@ -377,6 +382,15 @@ export function createViewerControllerScript(): string {
       fallbackSvgScale = 1;
       fallbackAutoFocus = false;
       fallbackUserZoomed = false;
+      if (viewerMount.querySelector('kicanvas-embed')) {
+        // The bundled WebGL viewer may have an already-scheduled on_draw.
+        // Allow that frame to complete while its GL context is still alive,
+        // before detaching the old embed and disposing its renderer.
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve))
+        );
+        if (generation !== viewerGeneration) return;
+      }
       viewerMount.replaceChildren();
       clearHopOverOverlay();
       setViewerSurfaceVisible(false);
@@ -505,8 +519,7 @@ export function createViewerControllerScript(): string {
             // interval before classifying the surface as genuinely blank.
             // A persistently blank canvas must still enter the SVG fallback.
             viewer.fitToScreen?.();
-            if (payload.fileType === 'board' &&
-                payload.metadata?.layers?.some((layer) => layer.name === 'Edge.Cuts')) {
+            if (payload.fileType === 'board' && hasDrawableBoardOutline(viewer)) {
               try {
                 getKiCanvasViewer(viewer)?.zoom_to_board?.();
               } catch {
@@ -549,7 +562,7 @@ export function createViewerControllerScript(): string {
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         if (generation !== viewerGeneration) return;
         viewer.fitToScreen?.();
-        if (payload.fileType === 'board' && payload.metadata?.layers?.some((layer) => layer.name === 'Edge.Cuts')) {
+        if (payload.fileType === 'board' && hasDrawableBoardOutline(viewer)) {
           try {
             getKiCanvasViewer(viewer)?.zoom_to_board?.();
           } catch {
@@ -1010,6 +1023,65 @@ export function createViewerControllerScript(): string {
       vscode.postMessage({ type: 'openInKiCad', payload: { selectedArea: localState.selectedArea } });
     }
 
+    async function inspectNativeInnerLayer(layer, button, scope = 'partial') {
+      if (!/^In\d+\.Cu$/.test(layer) || button.disabled) return;
+      const fullOriginal = scope === 'original';
+      button.disabled = true;
+      button.textContent = 'Rendering KiCad layer...';
+      setStatus('Preparing the native KiCad ' + layer +
+        (fullOriginal ? ' full original board' : '') + ' copper plot...');
+      const requestId = 'native-inner-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+      const sourceRevision = displayedSourceRevision;
+      const svg = await new Promise((resolve) => {
+        const timeout = window.setTimeout(() => {
+          cleanup();
+          resolve(undefined);
+        }, 90000);
+        function cleanup() {
+          window.clearTimeout(timeout);
+          window.removeEventListener('message', handleMessage);
+        }
+        function handleMessage(event) {
+          const response = event.data || {};
+          if (
+            response.type !== 'nativeInnerLayerSvg' &&
+            response.type !== 'nativeInnerLayerUnavailable'
+          ) return;
+          if (response.payload?.requestId !== requestId) return;
+          cleanup();
+          resolve(response.type === 'nativeInnerLayerSvg' ? response.payload?.svg : undefined);
+        }
+        window.addEventListener('message', handleMessage);
+        vscode.postMessage({
+          type: 'requestNativeInnerLayer',
+          payload: { requestId, layer, ...(fullOriginal ? { scope: 'original' } : {}) }
+        });
+      });
+      if (!button.isConnected || sourceRevision !== displayedSourceRevision ||
+          partialBusy) return;
+      button.disabled = false;
+      button.textContent = fullOriginal
+        ? 'Inspect original layer'
+        : payload.partialPreview
+          ? 'Inspect partial layer'
+          : 'Inspect native layer';
+      if (!svg) {
+        setStatus('Native KiCad layer plot unavailable. Open the original board in KiCad to inspect copper.');
+        return;
+      }
+      try {
+        showSvgFallback(svg);
+        setEngineState('cli-svg-fallback', 'Native KiCad ' + layer + ' plot');
+        setStatus(
+          'Native KiCad ' + layer +
+          (fullOriginal ? ' FULL ORIGINAL BOARD' : payload.partialPreview ? ' PARTIAL' : '') +
+          ' plot (read-only, not DRC or net-continuity validation; use Reload to return to KiCanvas).'
+        );
+      } catch {
+        setStatus('Native layer plot could not be displayed. Open the original board in KiCad.');
+      }
+    }
+
     function postViewerState() {
       vscode.postMessage({
         type: 'viewerState',
@@ -1341,7 +1413,7 @@ export function createViewerControllerScript(): string {
       setControlDisabled(layerNormalBtn, !layerControlsEnabled);
       setControlDisabled(layerDimBtn, !layerControlsEnabled);
       setControlDisabled(layerSoloBtn, !layerControlsEnabled);
-      setControlDisabled(zoneFillsBtn, !layerControlsEnabled);
+      setControlDisabled(zoneFillsBtn, !layerControlsEnabled || Boolean(payload.partialPreview));
       layerListEl.querySelectorAll('input,button').forEach((control) => {
         setControlDisabled(control, !layerControlsEnabled ||
           (localState.layerMode === 'solo' && control.tagName === 'INPUT'));
@@ -1423,12 +1495,120 @@ export function createViewerControllerScript(): string {
             ? 'Focused: ' + (localState.focusedLayer || 'no layer') +
               '. Other visible layers are dimmed.'
             : 'Select a layer to focus; the swatches reflect KiCanvas render colors.';
+        // Bundled KiCanvas maps source *.Cu through-hole pads to outer
+        // :Pads:Front/:Pads:Back only. Do not imply that an empty inner
+        // copper layer proves there are no source pad annular rings.
+        if (
+          payload.fileType === 'board' &&
+          /^In\d+\.Cu$/i.test(localState.focusedLayer || '')
+        ) {
+          const partial = payload.partialPreview;
+          if (partial) {
+            const total = partial.omittedSourceZones;
+            const layerCount = partial.omittedZonesByLayer?.[localState.focusedLayer] ?? 0;
+            if (Number.isSafeInteger(total) && total > 0 &&
+                Number.isSafeInteger(layerCount) && layerCount >= 0) {
+              const overlapping = partial.omittedZoneOutlinesInViewportByLayer?.[
+                localState.focusedLayer
+              ];
+              const unknown = partial.unclassifiedZoneOutlinesByLayer?.[
+                localState.focusedLayer
+              ];
+              const regionEvidence = Number.isSafeInteger(overlapping) || (
+                partial.omittedZoneOutlinesInViewportByLayer &&
+                partial.unclassifiedZoneOutlinesByLayer
+              );
+              layerHintEl.textContent +=
+                ' PARTIAL: ' + layerCount + '/' + total +
+                ' omitted source zones declare ' + localState.focusedLayer +
+                (regionEvidence
+                  ? '; ' + (overlapping ?? 0) + ' source zone outlines overlap this region' +
+                    ((unknown ?? 0) > 0
+                      ? ', ' + unknown + ' cannot be classified'
+                      : '')
+                  : ' (not necessarily in this region)') +
+                '. Actual zone fills and electrical connectivity are unverified. ';
+            }
+          }
+          const renderer = getKiCanvasViewer(
+            viewerMount.querySelector('kicanvas-embed')
+          );
+          const hasInnerSourcePads = renderer?.board?.footprints?.some(
+            (footprint) =>
+              footprint.pads?.some(
+                (pad) => Array.isArray(pad.layers) && pad.layers.includes('*.Cu')
+              )
+          );
+          if (hasInnerSourcePads) {
+            layerHintEl.textContent +=
+              ' KiCanvas does not draw through-hole pad rings on inner copper. ' +
+              'Missing pad graphics here do not prove absent copper. ';
+            // Use the existing workspace-trust-gated native command. The
+            // compact action is contextual; it never alters the PCB source.
+            const verifyInKiCadBtn = document.createElement('button');
+            verifyInKiCadBtn.type = 'button';
+            verifyInKiCadBtn.id = 'inner-pad-open-kicad-btn';
+            verifyInKiCadBtn.className = 'btn';
+            verifyInKiCadBtn.textContent = 'Verify in KiCad';
+            verifyInKiCadBtn.title =
+              'Open this board in KiCad to inspect true inner-copper pad geometry';
+            verifyInKiCadBtn.addEventListener('click', openInKiCad);
+            layerHintEl.appendChild(verifyInKiCadBtn);
+          }
+          // A useful inner copper layer need not contain any through-hole
+          // pads. Offer the native source plot for tracks and vias too.
+          const inspectBtn = document.createElement('button');
+          inspectBtn.type = 'button';
+          inspectBtn.id = 'inner-pad-native-layer-btn';
+          inspectBtn.className = 'btn';
+          inspectBtn.textContent = payload.partialPreview
+            ? 'Inspect partial layer'
+            : 'Inspect native layer';
+          inspectBtn.title = payload.partialPreview
+            ? 'Read-only KiCad plot of this bounded, incomplete source preview'
+            : 'Read-only plot of this inner copper layer by your installed KiCad CLI';
+          inspectBtn.addEventListener('click', () =>
+            inspectNativeInnerLayer(localState.focusedLayer, inspectBtn)
+          );
+          layerHintEl.appendChild(inspectBtn);
+          if (partial) {
+            // The whole original board is a separate, deliberate, slower
+            // inspection; never silently substitute it for a bounded page.
+            const originalBtn = document.createElement('button');
+            originalBtn.type = 'button';
+            originalBtn.id = 'inner-pad-native-original-btn';
+            originalBtn.className = 'btn';
+            originalBtn.textContent = 'Inspect original layer';
+            originalBtn.title =
+              'Read-only full-board native KiCad plot from a temporary copy of the original PCB; may take longer. Not DRC or net validation.';
+            originalBtn.addEventListener('click', () =>
+              inspectNativeInnerLayer(localState.focusedLayer, originalBtn, 'original')
+            );
+            layerHintEl.appendChild(originalBtn);
+          }
+        }
       }
       if (zoneFillsBtn) {
+        const fillsOmitted = Boolean(payload.partialPreview);
         const zoneFillsVisible = localState.zoneFillsVisible !== false;
-        zoneFillsBtn.setAttribute('aria-pressed', zoneFillsVisible ? 'true' : 'false');
-        zoneFillsBtn.classList.toggle('is-active', zoneFillsVisible);
-        zoneFillsBtn.textContent = zoneFillsVisible ? 'Hide zone fills' : 'Show zone fills';
+        setControlDisabled(
+          zoneFillsBtn,
+          fillsOmitted || localState.engine?.capabilities?.layers === false
+        );
+        zoneFillsBtn.setAttribute(
+          'aria-pressed',
+          !fillsOmitted && zoneFillsVisible ? 'true' : 'false'
+        );
+        zoneFillsBtn.classList.toggle('is-active', !fillsOmitted && zoneFillsVisible);
+        zoneFillsBtn.textContent = fillsOmitted
+          ? 'Zone fills unavailable'
+          : zoneFillsVisible ? 'Hide zone fills' : 'Show zone fills';
+        if (fillsOmitted) {
+          zoneFillsBtn.title =
+            'All zones are omitted from this PARTIAL source preview. Open the full board in KiCad to inspect actual copper fills.';
+        } else {
+          zoneFillsBtn.removeAttribute('title');
+        }
       }
 
       for (const layer of layers) {
@@ -1540,6 +1720,15 @@ export function createViewerControllerScript(): string {
     function clearHopOverOverlay() {
       hopOverOverlay.replaceChildren();
       hopOverOverlay.hidden = true;
+    }
+
+    function hasDrawableBoardOutline(embed) {
+      // A declared Edge.Cuts layer does not guarantee any source outline
+      // geometry. A bounded partial PCB can retain its layer declaration
+      // while intentionally omitting the complete board contour.
+      const bounds = getKiCanvasViewer(embed)?.layers?.by_name?.('Edge.Cuts')?.bbox;
+      return Number.isFinite(bounds?.w) && Number.isFinite(bounds?.h) &&
+        bounds.w > 0 && bounds.h > 0;
     }
 
     function getKiCanvasViewer(embed) {
@@ -1740,6 +1929,8 @@ export function createViewerControllerScript(): string {
     }
 
     function setZoneFillsVisible(visible) {
+      // The partial source contains zero zones, regardless of saved toggle state.
+      if (payload.partialPreview) return;
       localState = { ...localState, zoneFillsVisible: Boolean(visible) };
       applyLayerVisibility(viewerMount.querySelector('kicanvas-embed'));
       renderSidebar();
