@@ -211,7 +211,7 @@ export class KiCadExportService {
   }
 
   /**
-   * Opt-in read-only inspection of a *single* genuine inner copper layer.
+   * Opt-in read-only inspection of one genuine outer or inner copper layer.
    * Copy the source to a disposable directory: KiCad can emit .kicad_prl
    * beside its input, which must never touch the user's working project.
    * This does not refill zones or claim electrical/DRC completeness.
@@ -224,7 +224,7 @@ export class KiCadExportService {
     if (
       !vscode.workspace.isTrusted ||
       resource.scheme !== 'file' ||
-      !/^In(?:[1-9]|[12]\d|30)\.Cu$/.test(layer)
+      !/^(?:F|B|In(?:[1-9]|[12]\d|30))\.Cu$/.test(layer)
     ) {
       return undefined;
     }

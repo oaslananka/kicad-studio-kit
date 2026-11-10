@@ -97,6 +97,37 @@ test('real KiCanvas renders an eight-layer PCB and changes its pixels when isola
     );
   expect(new Set(colors.slice(0, 8)).size).toBeGreaterThanOrEqual(4);
 
+  // The real copper inspection affordance must be a discoverable action,
+  // not a control inserted into the explanatory layer-hint sentence.
+  const copperActions = page.getByRole('group', {
+    name: 'Copper layer inspection'
+  });
+  await expect(
+    copperActions.getByRole('button', { name: 'Inspect native layer' })
+  ).toBeVisible();
+  await expect(page.locator('#layer-hint button')).toHaveCount(0);
+  const actionLayout = await page.evaluate(() => {
+    const hint = document.querySelector('#layer-hint')!.getBoundingClientRect();
+    const actions = document
+      .querySelector('#layer-inspection-actions')!
+      .getBoundingClientRect();
+    const side = document
+      .querySelector('#layers-section')!
+      .getBoundingClientRect();
+    return {
+      hintBottom: hint.bottom,
+      actionsTop: actions.top,
+      actionsRight: actions.right,
+      sideRight: side.right
+    };
+  });
+  expect(actionLayout.actionsTop).toBeGreaterThanOrEqual(
+    actionLayout.hintBottom
+  );
+  expect(actionLayout.actionsRight).toBeLessThanOrEqual(
+    actionLayout.sideRight + 1
+  );
+
   const canvas = page.locator('#viewer-mount');
   const before = PNG.sync.read(await canvas.screenshot());
   await page.getByRole('button', { name: 'Focus In3.Cu' }).click();

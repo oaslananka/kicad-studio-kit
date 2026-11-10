@@ -355,7 +355,7 @@ export abstract class BaseKiCanvasEditorProvider
               this.fileType !== 'board' ||
               !vscode.workspace.isTrusted ||
               !layer ||
-              !/^In(?:[1-9]|[12]\d|30)\.Cu$/.test(layer) ||
+              !/^(?:F|B|In(?:[1-9]|[12]\d|30))\.Cu$/.test(layer) ||
               (scope !== undefined && scope !== 'original') ||
               this.pendingNativeLayer.has(webviewPanel)
             ) {

@@ -140,6 +140,19 @@ describe('marketplace listing assets', () => {
       const relativePath = 'assets/screenshots/' + fileName;
       expect(readPngSize(relativePath)).toEqual({ width: 1280, height: 720 });
       expect(manifest.screenshots?.[fileName]).toBe(sha256(relativePath));
+      // The documentation gallery must show the same real captures as Marketplace.
+      const docsScreenshot = path.resolve(
+        EXTENSION_ROOT,
+        '../../docs/public/screenshots',
+        fileName
+      );
+      expect(fs.existsSync(docsScreenshot)).toBe(true);
+      expect(
+        crypto
+          .createHash('sha256')
+          .update(fs.readFileSync(docsScreenshot))
+          .digest('hex')
+      ).toBe(manifest.screenshots?.[fileName]);
     }
   });
 

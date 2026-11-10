@@ -210,6 +210,7 @@ export function createKiCanvasViewerHtml(
       <div class="side-section" id="layers-section" hidden>
         <div class="layer-heading"><h2>PCB Layers</h2><span id="layer-count" class="layer-count" aria-live="polite"></span></div>
         <p class="layer-help" id="layer-hint">Select a layer to focus; the swatches reflect KiCanvas render colors.</p>
+        <div id="layer-inspection-actions" class="layer-inspection-actions" role="group" aria-label="Copper layer inspection"></div>
         <div class="layer-modes" role="group" aria-label="Layer display mode">
           <button class="btn" id="layer-normal-btn" type="button" aria-pressed="true">Normal</button>
           <button class="btn" id="layer-dim-btn" type="button" aria-pressed="false">Dim others</button>
