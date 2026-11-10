@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
 """Read-only genuine KiCad routing parity. UUID fidelity, not electrical DRC."""
 import json
 import sys
+
 import pcbnew
 
 VIEWPORT = (125_000_000, 215_000_000, 195_000_000, 290_000_000)
@@ -188,8 +188,7 @@ def pad_and_via_contact_truth(original_board, subset_board):
                 original_to_missing["via_route"].add((uid, peer))
 
     per_category = {}
-    for category in source_kept_edges:
-        original = source_kept_edges[category]
+    for category, original in source_kept_edges.items():
         actual = actual_kept_edges[category]
         per_category[category] = {
             "original_with_both_retained": len(original),

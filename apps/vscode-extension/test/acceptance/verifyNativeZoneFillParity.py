@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
 """KiCad 10 read-only native cached fill evidence (not DRC or connectivity)."""
 import json
 import re
 import sys
-import xml.etree.ElementTree as ET
+
 import pcbnew
 
 BOUNDS = (125., 215., 195., 290.)
@@ -25,13 +24,11 @@ def overlaps(polys):
         x1, y1 = a; x2, y2 = b
         dx = x2 - x1; dy = y2 - y1
         for x in (lo_x, hi_x):
-            if dx and 0 <= (x - x1) / dx <= 1:
-                if lo_y <= y1 + (x - x1) * dy / dx <= hi_y:
-                    return True
+            if dx and 0 <= (x - x1) / dx <= 1 and lo_y <= y1 + (x - x1) * dy / dx <= hi_y:
+                return True
         for y in (lo_y, hi_y):
-            if dy and 0 <= (y - y1) / dy <= 1:
-                if lo_x <= x1 + (y - y1) * dx / dy <= hi_x:
-                    return True
+            if dy and 0 <= (y - y1) / dy <= 1 and lo_x <= x1 + (y - y1) * dx / dy <= hi_x:
+                return True
     x, y = lo_x, lo_y
     hit = False
     for i, (x2, y2) in enumerate(points):
@@ -43,21 +40,24 @@ def overlaps(polys):
 def verify_svg_contours(board, svg_path, lid):
     zones = [z for z in board.Zones() if z.GetLayerSet().Contains(lid)]
     filled_zones = [z for z in zones if z.GetFilledPolysList(lid).OutlineCount() > 0]
-    tree = ET.parse(svg_path)
-    root = tree.getroot()
+
+    with open(svg_path, "r", encoding="utf-8") as f:
+        svg_text = f.read()
 
     stroked_paths = []
     filled_pads = 0
-    for g in root.findall('.//{http://www.w3.org/2000/svg}g'):
-        style = g.attrib.get('style', '')
-        if 'fill:none' in style and 'stroke:' in style:
-            for p in g.findall('{http://www.w3.org/2000/svg}path'):
-                d = p.attrib.get('d', '')
+    for m in re.finditer(r'<g\s+([^>]*)>(.*?)</g>', svg_text, re.DOTALL):
+        attrs, body = m.group(1), m.group(2)
+        style_m = re.search(r'style="([^"]+)"', attrs)
+        style = style_m.group(1) if style_m else ""
+        if "fill:none" in style and "stroke:" in style:
+            for p in re.finditer(r'<path\s+[^>]*d="([^"]+)"', body):
+                d = p.group(1)
                 pairs = re.findall(r'(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)', d)
                 if len(pairs) >= 50:
                     stroked_paths.append([(round(float(x), 4), round(float(y), 4)) for x, y in pairs])
-        elif 'fill:' in style and 'fill:none' not in style and 'stroke:none' in style:
-            filled_pads += len(g.findall('{http://www.w3.org/2000/svg}path'))
+        elif "fill:" in style and "fill:none" not in style and "stroke:none" in style:
+            filled_pads += len(re.findall(r'<path\s+', body))
 
     zone_results = []
     total_source_points = 0
@@ -131,11 +131,11 @@ def main(original, partial, svg_path=None):
         "partial_zones": 0
     }
     if report != expected:
-        raise ValueError("Native zone fixture changed: " + json.dumps(report))
+        raise ValueError(f"Native zone fixture changed: {json.dumps(report)}")
     if svg_path:
         svg_parity = verify_svg_contours(board, svg_path, lid)
         if svg_parity["exact_path_matches"] != 5 or svg_parity["vertex_match_ratio"] < 0.998:
-            raise ValueError("SVG zone contour parity check failed: " + json.dumps(svg_parity))
+            raise ValueError(f"SVG zone contour parity check failed: {json.dumps(svg_parity)}")
         report["svg_parity"] = svg_parity
     print(json.dumps(report, sort_keys=True))
 

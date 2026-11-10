@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Read-only KiCad 10 parity reference for genuine bounded PCB previews.
 
 This opt-in native acceptance helper is deliberately independent of the
@@ -7,13 +6,12 @@ TypeScript source selector. Never use a partial preview for DRC or fabrication.
 import json
 import sys
 
-
 import pcbnew
 
 
 def pad_facts(board):
     copper_layers = [pcbnew.F_Cu] + [
-        getattr(pcbnew, "In%d_Cu" % i) for i in range(1, 31)
+        getattr(pcbnew, f"In{i}_Cu") for i in range(1, 31)
     ] + [pcbnew.B_Cu]
     result = {}
     for footprint in board.GetFootprints():
@@ -72,8 +70,7 @@ def main(paths):
         }
         if not selected or mismatches:
             raise ValueError(
-                "%s pad parity mismatch: %s of %s"
-                % (label, len(mismatches), len(selected))
+                f"{label} pad parity mismatch: {len(mismatches)} of {len(selected)}"
             )
     print(json.dumps(report, sort_keys=True))
 
@@ -81,6 +78,6 @@ def main(paths):
 if __name__ == "__main__":
     try:
         main(sys.argv[1:])
-    except Exception as error:
-        print("KiCad pad-parity acceptance failed: %s" % error, file=sys.stderr)
+    except (RuntimeError, ValueError, KeyError) as error:
+        print(f"KiCad pad-parity acceptance failed: {error}", file=sys.stderr)
         sys.exit(2)
