@@ -240,6 +240,24 @@ test('real KiCad 10 dense PCB keeps partial previews and original copper plots d
     await expect(viewer.locator('#viewer-status')).toContainText(
       'not DRC or net-continuity validation'
     );
+    // Genuine KiCad page coordinates must focus the selected 125–215 mm X,
+    // 195–290 mm Y source region; a whole-board fit cannot pass this check.
+    await expect(viewer.locator('#viewer-status')).toContainText(
+      'focused on selected source area'
+    );
+    await expect
+      .poll(
+        async () =>
+          viewer!.locator('#svg-fallback-view').evaluate((el) => el.scrollTop),
+        { timeout: 15_000 }
+      )
+      .toBeGreaterThan(0);
+    const nativePage = viewer.locator('#svg-fallback-view svg');
+    await expect(nativePage).toHaveAttribute('width', /mm$/);
+    await expect(nativePage).toHaveAttribute(
+      'viewBox',
+      /^0(?:\.0+)? 0(?:\.0+)? /
+    );
     // Outer copper must use the same explicit, user-triggered FULL
     // ORIGINAL path. No automatic full-board plot may replace PARTIAL.
     for (const outer of ['B.Cu', 'F.Cu']) {

@@ -386,7 +386,7 @@ describe('createKiCanvasViewerHtml', () => {
       'const intrinsicHeight = viewBox?.height ?? height;'
     );
     expect(html).toContain('function parseSvgViewBox(value) {');
-    expect(html).toContain('.split(new RegExp(');
+    expect(html).toContain(String.raw`.split(/[\s,]+/)`);
   });
 
   it('lets fallback fit upscale CLI SVGs whose viewBox is smaller than the viewport', () => {

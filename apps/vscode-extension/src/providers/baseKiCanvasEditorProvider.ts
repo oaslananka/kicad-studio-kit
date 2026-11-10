@@ -83,7 +83,8 @@ interface PanelInfo {
 type ViewerSvgFallbackProvider = (
   uri: vscode.Uri,
   nativeLayer?: string,
-  boundedSource?: string
+  boundedSource?: string,
+  sourcePageCoordinates?: boolean
 ) => Promise<string | undefined>;
 type ViewerProjectResolver = (uri: vscode.Uri) => ProjectContext | undefined;
 type ViewerReloadObserver = (
@@ -344,7 +345,15 @@ export abstract class BaseKiCanvasEditorProvider
                 type: svg
                   ? 'nativeInnerLayerSvg'
                   : 'nativeInnerLayerUnavailable',
-                payload: { requestId, ...(svg ? { svg } : {}) }
+                payload: {
+                  requestId,
+                  ...(svg
+                    ? {
+                        svg,
+                        ...(fullOriginal ? { boardPageCoordinates: true } : {})
+                      }
+                    : {})
+                }
               });
             };
             // Reject webview-forged commands, untrusted workspaces and
@@ -386,7 +395,8 @@ export abstract class BaseKiCanvasEditorProvider
               const svg = await this.svgFallbackProvider?.(
                 document.uri,
                 layer,
-                fullOriginal ? undefined : partial?.text
+                fullOriginal ? undefined : partial?.text,
+                fullOriginal
               );
               // An externally edited original is no longer the same source
               // whose native full-board plot the user explicitly requested.

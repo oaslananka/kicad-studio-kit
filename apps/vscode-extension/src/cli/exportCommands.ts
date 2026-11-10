@@ -219,7 +219,8 @@ export class KiCadExportService {
   async renderViewerNativeInnerCopperLayer(
     resource: vscode.Uri,
     layer: string,
-    boundedSource?: string
+    boundedSource?: string,
+    sourcePageCoordinates = false
   ): Promise<string | undefined> {
     if (
       !vscode.workspace.isTrusted ||
@@ -247,9 +248,10 @@ export class KiCadExportService {
       return undefined;
     }
     if (
-      boundedSource !== undefined &&
-      (Buffer.byteLength(boundedSource, 'utf8') > 4 * 1024 * 1024 ||
-        !boundedSource.startsWith('(kicad_pcb'))
+      (sourcePageCoordinates && boundedSource !== undefined) ||
+      (boundedSource !== undefined &&
+        (Buffer.byteLength(boundedSource, 'utf8') > 4 * 1024 * 1024 ||
+          !boundedSource.startsWith('(kicad_pcb')))
     ) {
       return undefined;
     }
@@ -289,7 +291,10 @@ export class KiCadExportService {
           '--mode-single',
           '--exclude-drawing-sheet',
           '--page-size-mode',
-          '2',
+          // Page coordinates are genuine PCB millimetres. The explicitly
+          // requested original plot can focus on a known source viewport;
+          // the normal fitted-board plot keeps its existing compact mode.
+          sourcePageCoordinates ? '0' : '2',
           '--drill-shape-opt',
           '2',
           snapshot

@@ -115,10 +115,15 @@ they are not suitable for DRC, manufacturing exports or continuity decisions.
 
 To inspect actual copper, focus **F.Cu**, **B.Cu**, or an inner layer (for example, **In2.Cu**) and select
 **Inspect original layer**. KiCad Studio requests one native KiCad SVG on a disposable
-copy of the board, without modifying the source. This is an explicit operation
-and can take longer on dense designs. The real plot is a visual aid, not proof of
-net connectivity or filled zones. Use **Open in KiCad** for authoritative editing,
-zone-fill review, DRC and manufacturing export.
+copy of the board, without modifying the source. On a supported KiCad native
+page, the plot opens focused on your selected PARTIAL region, using genuine
+KiCad page coordinates; pan or zoom to see other areas. If the selected region
+falls outside the native page, use **Open in KiCad** rather than trusting a
+cropped view. This is an explicit operation and can take longer on dense designs.
+The read-only original-source plot can show saved copper fills, but is only a
+visual aid, **not** proof of current zone refill, net connectivity, DRC or
+manufacturability. Use **Open in KiCad** for authoritative editing, zone-fill
+review, DRC and manufacturing export.
 
 ![KiCad Studio PCB viewer](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/screenshots/pcb-viewer.png)
 
