@@ -44,4 +44,24 @@ describe('KiCad native multi-sheet BOM CSV', () => {
   ])('fails closed for incompatible or malformed native BOM data', (raw) => {
     expect(() => parseNativeKiCadBomCsv(raw, false)).toThrow();
   });
+  it('handles CRLF, empty separator lines, and a final row without newline', () => {
+    const csv =
+      HEADER.replace(/\n/gu, '\r\n') +
+      '\r\n' +
+      '"U1","Controller","QFN","1","no","","","","last row"';
+    const entries = parseNativeKiCadBomCsv(csv, false);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.references).toEqual(['U1']);
+    expect(entries[0]?.description).toBe('last row');
+    expect(entries[0]?.dnp).toBe(false);
+  });
+
+  it('rejects a hierarchical BOM that returns a row with no references', () => {
+    expect(() =>
+      parseNativeKiCadBomCsv(
+        HEADER + '"","10k","R_0603","1","","","","",""\n',
+        false
+      )
+    ).toThrow('invalid component metadata');
+  });
 });
