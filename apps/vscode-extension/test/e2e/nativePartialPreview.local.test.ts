@@ -30,6 +30,8 @@ test('real KiCad 10 dense PCB keeps partial previews and original copper plots d
       process.env.KICADSTUDIO_LOCAL_WINDOWS_ACCEPTANCE === '1') ||
     (process.platform === 'linux' &&
       process.env.KICADSTUDIO_LOCAL_LINUX_ACCEPTANCE === '1');
+  // Deliberately opt-in: hosted CI has no genuine installed KiCad 10 VME
+  // Wren board or native desktop. A skip is not an A2 acceptance PASS.
   test.skip(
     !optedIn || !fs.existsSync(path.join(demoDir, boardName)),
     'Local Windows/Linux native KiCad 10 acceptance only'
