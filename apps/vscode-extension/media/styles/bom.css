@@ -38,8 +38,11 @@ body {
 
 #bom-app {
   display: grid;
-  grid-template-rows: auto auto 1fr;
-  height: 100vh;
+  /* Keep at least a real table header and row in a short VS Code view.
+     Allow the webview document to scroll instead of crushing the table to 0px. */
+  grid-template-rows: auto auto minmax(96px, 1fr);
+  min-height: 100vh;
+  height: auto;
   min-width: 0;
 }
 
@@ -245,6 +248,46 @@ td:nth-child(8) {
 
 tbody tr:hover {
   background: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.08));
+}
+
+
+/* Compact rather than hide controls when VS Code allocates a short sidebar view.
+   The table and first component stay visible without resizing other panes. */
+@media (max-height: 230px) {
+  #topbar {
+    flex-wrap: nowrap;
+    gap: 3px;
+    padding: 3px 5px;
+    overflow-x: auto;
+  }
+
+  #search {
+    flex: 1 1 65px;
+    width: auto;
+    min-width: 65px;
+    padding: 3px 4px;
+    font-size: 11px;
+  }
+
+  #topbar label {
+    gap: 2px;
+    font-size: 10px;
+  }
+
+  #topbar button {
+    padding: 2px 4px;
+    font-size: 11px;
+  }
+
+  #statsbar {
+    padding: 2px 5px;
+    min-height: 20px;
+  }
+
+  th,
+  td {
+    padding: 4px 6px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

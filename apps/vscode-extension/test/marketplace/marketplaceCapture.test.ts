@@ -211,6 +211,55 @@ async function openBomView(page: Page): Promise<void> {
       { timeout: 30000 }
     )
     .toBeGreaterThan(0);
+
+  // Verify real visibility: iframe-local viewport intersection alone is a false positive.
+  for (const frame of page.frames()) {
+    const row = frame.locator('#bom-rows tr').first();
+    if ((await row.count()) === 0) continue;
+    const rect = await row.boundingBox();
+    const table = await frame.locator('#table-wrapper').boundingBox();
+    expect(rect).not.toBeNull();
+    expect(table).not.toBeNull();
+    const intersection = (
+      a: { x: number; y: number; width: number; height: number },
+      b: { x: number; y: number; width: number; height: number }
+    ) => {
+      const x = Math.max(a.x, b.x);
+      const y = Math.max(a.y, b.y);
+      return {
+        x,
+        y,
+        width: Math.max(0, Math.min(a.x + a.width, b.x + b.width) - x),
+        height: Math.max(0, Math.min(a.y + a.height, b.y + b.height) - y)
+      };
+    };
+    let clip = { x: 0, y: 0, ...VIEWPORT };
+    for (let f = frame; f.parentFrame(); f = f.parentFrame()!) {
+      const box = await (await f.frameElement()).boundingBox();
+      expect(box).not.toBeNull();
+      clip = intersection(clip, box!);
+    }
+    clip = intersection(clip, table!);
+    const visible = intersection(clip, rect!);
+    // A BOM table is intentionally wider than a sidebar. Require an actual
+    // visible row and its actionable reference/quantity/value cells, not
+    // every horizontally scrollable column at once.
+    expect(
+      visible.height / rect!.height,
+      'First BOM component row must be fully visible vertically'
+    ).toBeGreaterThanOrEqual(0.8);
+    for (const index of [0, 1, 2]) {
+      const cell = await row.locator('td').nth(index).boundingBox();
+      expect(cell).not.toBeNull();
+      const onScreen = intersection(clip, cell!);
+      expect(
+        (onScreen.width * onScreen.height) / (cell!.width * cell!.height),
+        'BOM Reference, Qty and Value cells must be readable on screen'
+      ).toBeGreaterThanOrEqual(0.8);
+    }
+    return;
+  }
+  throw new Error('BOM rows disappeared before visibility assertion');
 }
 
 async function closeSecondarySidebar(page: Page): Promise<void> {
