@@ -139,6 +139,11 @@ describe('createKiCanvasViewerHtml', () => {
     expect(board).toContain('id="partial-preview-section"');
     expect(board).toContain('id="partial-preview-banner"');
     expect(board).toContain('PARTIAL PREVIEW');
+    expect(board).toContain('can hide real connections');
+    expect(board).toContain(
+      'Use Open in KiCad above to inspect the original board'
+    );
+    expect(board).toContain('id="open-kicad-btn"');
     expect(board).toContain('id="partial-start-btn"');
     expect(board).toContain('id="partial-next-btn"');
     expect(board).toContain("type: 'requestPartialPreview'");

@@ -109,6 +109,17 @@ When the interactive KiCanvas renderer is unavailable, the KiCad CLI SVG fallbac
 
 ### PCB Viewer
 
+For unusually large PCBs, expand the viewer tools and select a bounded **PARTIAL** region.
+PARTIAL pages may omit tracks, pads, zone geometry and electrical connections;
+they are not suitable for DRC, manufacturing exports or continuity decisions.
+
+To inspect actual inner-layer copper, focus an available inner copper layer (for example, **In2.Cu**) and select
+**Inspect original layer**. KiCad Studio requests one native KiCad SVG on a disposable
+copy of the board, without modifying the source. This is an explicit operation
+and can take longer on dense designs. The real plot is a visual aid, not proof of
+net connectivity or filled zones. Use **Open in KiCad** for authoritative editing,
+zone-fill review, DRC and manufacturing export.
+
 ![KiCad Studio PCB viewer](https://raw.githubusercontent.com/oaslananka/kicad-studio-kit/main/apps/vscode-extension/assets/screenshots/pcb-viewer.png)
 
 ### DRC Results

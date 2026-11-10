@@ -48,6 +48,8 @@ const VIEWER_TOOLS_PANEL_COLLAPSED_KEY =
 const EXTERNAL_FILE_SETTLE_MS = 120;
 // Never spin indefinitely on an external writer that never stabilizes.
 const EXTERNAL_SETTLE_RETRY_LIMIT = 2;
+// When a visible webview is temporarily unloaded, bounded message retries.
+const WEBVIEW_DELIVERY_RETRY_LIMIT = 2;
 
 interface ViewerPayload {
   fileName: string;
@@ -74,10 +76,14 @@ interface PanelInfo {
   releaseTimer?: NodeJS.Timeout | undefined;
   partialPage?: BoundedPcbPreview | undefined;
   partialBusy?: boolean;
+  /** Host-owned revision of the source actually scheduled for this panel. */
+  renderRevision: number;
 }
 
 type ViewerSvgFallbackProvider = (
-  uri: vscode.Uri
+  uri: vscode.Uri,
+  nativeLayer?: string,
+  boundedSource?: string
 ) => Promise<string | undefined>;
 type ViewerProjectResolver = (uri: vscode.Uri) => ProjectContext | undefined;
 type ViewerReloadObserver = (
@@ -96,6 +102,7 @@ export abstract class BaseKiCanvasEditorProvider
   protected abstract readonly viewerTitle: string;
 
   private readonly panels = new Map<string, Set<vscode.WebviewPanel>>();
+  private readonly pendingNativeLayer = new Set<vscode.WebviewPanel>();
   private readonly panelInfo = new Map<vscode.WebviewPanel, PanelInfo>();
   private readonly disposables: vscode.Disposable[] = [];
   private readonly refreshDebounce = new Map<string, NodeJS.Timeout>();
@@ -106,10 +113,14 @@ export abstract class BaseKiCanvasEditorProvider
     string,
     { mtimeMs: number; size: number }
   >();
-  private changeWatcher: vscode.FileSystemWatcher | undefined;
-  private changeWatcherListeners: vscode.Disposable[] = [];
+  // Exact non-recursive watchers live only while a matching editor is open.
+  private readonly fileWatchers = new Map<
+    string,
+    { watcher: vscode.FileSystemWatcher; listeners: vscode.Disposable[] }
+  >();
   private readonly pendingExternal = new Set<string>();
   private readonly settleRetries = new Map<string, number>();
+  private readonly deliveryRetries = new Map<string, number>();
   private readonly changeRevision = new Map<string, number>();
   private readonly refreshing = new Set<string>();
   private theme = vscode.workspace
@@ -322,6 +333,89 @@ export abstract class BaseKiCanvasEditorProvider
               });
             }
           }
+          if (message.type === 'requestNativeInnerLayer') {
+            const request = asRecord(message.payload);
+            const requestId = asString(request?.['requestId']);
+            const layer = asString(request?.['layer']);
+            const scope = asString(request?.['scope']);
+            if (!requestId || requestId.length > 100) return;
+            const respond = async (svg?: string): Promise<void> => {
+              await webviewPanel.webview.postMessage({
+                type: svg
+                  ? 'nativeInnerLayerSvg'
+                  : 'nativeInnerLayerUnavailable',
+                payload: { requestId, ...(svg ? { svg } : {}) }
+              });
+            };
+            // Reject webview-forged commands, untrusted workspaces and
+            // concurrent exports. Server-owned partial sources are allowed,
+            // but only their bounded text is sent to the CLI, never the
+            // original board via a partial viewer.
+            if (
+              this.fileType !== 'board' ||
+              !vscode.workspace.isTrusted ||
+              !layer ||
+              !/^In(?:[1-9]|[12]\d|30)\.Cu$/.test(layer) ||
+              (scope !== undefined && scope !== 'original') ||
+              this.pendingNativeLayer.has(webviewPanel)
+            ) {
+              await respond();
+              return;
+            }
+            const sourcePanel = this.panelInfo.get(webviewPanel);
+            // Full-board plotting while PARTIAL is an explicit user action,
+            // not a silent fallback that changes the source of an inspection.
+            const fullOriginal = scope === 'original';
+            if (
+              !sourcePanel ||
+              sourcePanel.partialBusy ||
+              (fullOriginal &&
+                (!sourcePanel.partialPage ||
+                  this.hasUnsavedEditor(document.uri.toString())))
+            ) {
+              await respond();
+              return;
+            }
+            const sourceRevision = sourcePanel.renderRevision;
+            const partial = sourcePanel.partialPage;
+            this.pendingNativeLayer.add(webviewPanel);
+            try {
+              const originalStat = fullOriginal
+                ? await vscode.workspace.fs.stat(document.uri)
+                : undefined;
+              const svg = await this.svgFallbackProvider?.(
+                document.uri,
+                layer,
+                fullOriginal ? undefined : partial?.text
+              );
+              // An externally edited original is no longer the same source
+              // whose native full-board plot the user explicitly requested.
+              const currentStat = originalStat
+                ? await vscode.workspace.fs.stat(document.uri)
+                : undefined;
+              const originalUnchanged =
+                !originalStat ||
+                (originalStat.size === currentStat?.size &&
+                  originalStat.mtime === currentStat.mtime &&
+                  !this.hasUnsavedEditor(document.uri.toString()));
+              // Native KiCad may take seconds. A new partial page, a full
+              // refresh or a closed panel revokes the old render result.
+              const current = this.panelInfo.get(webviewPanel);
+              await respond(
+                current === sourcePanel &&
+                  current.renderRevision === sourceRevision &&
+                  current.partialPage === partial &&
+                  !current.partialBusy &&
+                  originalUnchanged
+                  ? svg
+                  : undefined
+              );
+            } catch {
+              await respond();
+            } finally {
+              this.pendingNativeLayer.delete(webviewPanel);
+            }
+          }
           if (message.type === 'requestSvgFallback') {
             const payload = asRecord(message.payload);
             const requestId = asString(payload?.['requestId']);
@@ -396,6 +490,7 @@ export abstract class BaseKiCanvasEditorProvider
     }
     this.pendingExternal.add(key);
     this.settleRetries.delete(key);
+    this.deliveryRetries.delete(key);
     this.changeRevision.set(key, (this.changeRevision.get(key) ?? 0) + 1);
     if (this.hasVisiblePanel(key)) {
       this.scheduleRefresh(uri);
@@ -537,10 +632,15 @@ export abstract class BaseKiCanvasEditorProvider
     const project = this.resolveProject?.(uri);
     this.viewerState.beginReload(uri, { project });
     this.onViewerReload?.(uri, project);
+    let deliveredToAll = true;
     for (const panel of visiblePanels) {
       const info = this.panelInfo.get(panel);
-      if (info) info.partialPage = undefined;
-      await panel.webview.postMessage({
+      if (info) {
+        info.partialPage = undefined;
+        // Fail closed before dispatch, even when delivery later fails.
+        info.renderRevision += 1;
+      }
+      const delivered = await panel.webview.postMessage({
         type: 'refresh',
         payload: {
           ...result.payload,
@@ -551,7 +651,25 @@ export abstract class BaseKiCanvasEditorProvider
           )
         }
       });
+      if (!delivered) {
+        deliveredToAll = false;
+        this.markPanelRefreshPending(panel);
+      } else if (info) {
+        info.pendingRefresh = false;
+      }
     }
+    if (!deliveredToAll) {
+      // An undelivered message is not a displayed source revision. Keep
+      // the old image and retry finitely; later focus can recover.
+      this.pendingExternal.add(key);
+      const retries = this.deliveryRetries.get(key) ?? 0;
+      if (retries < WEBVIEW_DELIVERY_RETRY_LIMIT) {
+        this.deliveryRetries.set(key, retries + 1);
+        this.scheduleRefresh(uri);
+      }
+      return;
+    }
+    this.deliveryRetries.delete(key);
     this.lastRendered.set(key, {
       mtimeMs: result.fetched.mtimeMs,
       size: result.fetched.size
@@ -614,24 +732,45 @@ export abstract class BaseKiCanvasEditorProvider
     );
   }
 
-  private watchOpenViewerFiles(): void {
-    if (this.changeWatcher) return;
+  private watchOpenViewerFile(uri: vscode.Uri): void {
+    const key = uri.toString();
+    if (this.fileWatchers.has(key)) return;
+    const local = !uri.scheme || uri.scheme === 'file';
+    const folder = local
+      ? vscode.Uri.file(path.dirname(uri.fsPath))
+      : vscode.Uri.joinPath(uri, '..');
+    const fileName = path.basename(uri.fsPath);
+    // A string glob relies on ambient workspace watchers, whose event
+    // readiness can lag a newly opened fixture. Request a precise non-
+    // recursive watch while this file is actually open.
     const watcher = vscode.workspace.createFileSystemWatcher(
-      `**/*${this.fileExtension}`
+      new vscode.RelativePattern(folder, fileName)
     );
-    this.changeWatcher = watcher;
-    this.changeWatcherListeners = [
-      watcher.onDidChange((uri) => this.externalFileChanged(uri)),
-      watcher.onDidCreate((uri) => this.externalFileChanged(uri)),
-      watcher.onDidDelete((uri) => this.externalFileChanged(uri))
-    ];
+    const notify = (changed: vscode.Uri): void => {
+      if (changed.toString() === key) this.externalFileChanged(uri);
+    };
+    this.fileWatchers.set(key, {
+      watcher,
+      listeners: [
+        watcher.onDidChange(notify),
+        watcher.onDidCreate(notify),
+        watcher.onDidDelete(notify)
+      ]
+    });
+  }
+
+  private stopWatchingViewerFile(key: string): void {
+    const active = this.fileWatchers.get(key);
+    if (!active) return;
+    active.listeners.forEach((listener) => listener.dispose());
+    active.watcher.dispose();
+    this.fileWatchers.delete(key);
   }
 
   private stopWatchingViewerFiles(): void {
-    for (const listener of this.changeWatcherListeners) listener.dispose();
-    this.changeWatcherListeners = [];
-    this.changeWatcher?.dispose();
-    this.changeWatcher = undefined;
+    for (const key of this.fileWatchers.keys()) {
+      this.stopWatchingViewerFile(key);
+    }
   }
 
   /**
@@ -714,7 +853,9 @@ export abstract class BaseKiCanvasEditorProvider
       if (confirmed.mtime !== stat.mtime || confirmed.size !== stat.size) {
         throw new Error('The PCB changed during preview loading. Try again.');
       }
+      // Invalidate in-flight native plots before publishing a newer page.
       // The UI only receives geometry subsets (never the original large source).
+      info.renderRevision += 1;
       const accepted = await panel.webview.postMessage({
         type: 'refresh',
         payload: {
@@ -733,6 +874,15 @@ export abstract class BaseKiCanvasEditorProvider
             viewport: snapshot.viewport,
             included: snapshot.included,
             remaining: snapshot.remainingAfterPage,
+            // Source declaration counts, not proof of zone fill or
+            // that a declared zone intersects this viewport.
+            omittedSourceZones: snapshot.sourceObjects['zone'] ?? 0,
+            omittedZonesByLayer: snapshot.omittedZonesByLayer,
+            // Source outline intersections only, never actual zone fill.
+            omittedZoneOutlinesInViewportByLayer:
+              snapshot.omittedZoneOutlinesInViewportByLayer,
+            unclassifiedZoneOutlinesByLayer:
+              snapshot.unclassifiedZoneOutlinesByLayer,
             hasNextPage: page.hasNextPage
           }
         }
@@ -740,7 +890,9 @@ export abstract class BaseKiCanvasEditorProvider
       if (!accepted || !this.panelInfo.has(panel)) {
         throw new Error('Preview panel is not available.');
       }
-      info.partialPage = page;
+      // Keep the cursor AND the exact accumulated source that was displayed.
+      // Native one-layer plots must match the visible bounded page set.
+      info.partialPage = snapshot;
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Partial preview failed.';
@@ -944,10 +1096,11 @@ export abstract class BaseKiCanvasEditorProvider
     const set = this.panels.get(key) ?? new Set<vscode.WebviewPanel>();
     set.add(panel);
     this.panels.set(key, set);
-    this.watchOpenViewerFiles();
+    this.watchOpenViewerFile(uri);
     this.panelInfo.set(panel, {
       uri,
       pendingRefresh: false,
+      renderRevision: 0,
       state: this.withWorkspaceViewerPreferences(
         uri,
         this.viewerState.getState(uri)
@@ -962,11 +1115,13 @@ export abstract class BaseKiCanvasEditorProvider
       set.delete(panel);
       if (!set.size) {
         this.panels.delete(key);
+        this.stopWatchingViewerFile(key);
         const refresh = this.refreshDebounce.get(key);
         if (refresh) clearTimeout(refresh);
         this.refreshDebounce.delete(key);
         this.pendingExternal.delete(key);
         this.settleRetries.delete(key);
+        this.deliveryRetries.delete(key);
         this.changeRevision.delete(key);
         this.fileCache.delete(key);
         this.lastRendered.delete(key);
@@ -1280,6 +1435,7 @@ const VIEWER_OUTBOUND_MESSAGE_TYPES = [
   'exportSvg',
   'componentSelected',
   'requestSvgFallback',
+  'requestNativeInnerLayer',
   'requestPartialPreview'
 ];
 

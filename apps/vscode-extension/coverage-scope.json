@@ -76,7 +76,10 @@
       "owner": "Export orchestration tests",
       "strategy": "Focused Jest coverage protects command construction, output boundaries, and export-service orchestration.",
       "rationale": "The large process-boundary module is measured separately so its lower baseline cannot dilute or be hidden by the headline denominator.",
-      "evidence": ["test/unit/exportCommands.test.ts"]
+      "evidence": [
+        "test/unit/exportCommands.test.ts",
+        "test/unit/nativeInnerCopperService.test.ts"
+      ]
     },
     "src/providers/baseKiCanvasEditorProvider.ts": {
       "category": "explicitly-justified",
@@ -186,6 +189,7 @@
       "test/unit/activationControllers.test.ts",
       "test/unit/contextRefreshPerf.test.ts",
       "test/unit/exportCommands.test.ts",
+      "test/unit/nativeInnerCopperService.test.ts",
       "test/unit/viewerProviders.test.ts",
       "test/unit/netlistViewProvider.test.ts",
       "test/unit/projectTreeProvider.test.ts",

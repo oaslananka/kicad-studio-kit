@@ -345,6 +345,12 @@ export class Selection extends Range {
   }
 }
 
+export class RelativePattern {
+  constructor(
+    public readonly baseUri: Uri,
+    public readonly pattern: string
+  ) {}
+}
 export class Uri {
   constructor(
     public readonly fsPath: string,

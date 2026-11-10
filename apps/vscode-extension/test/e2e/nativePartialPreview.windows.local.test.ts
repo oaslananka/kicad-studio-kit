@@ -28,7 +28,9 @@ test('Windows actual dense PCB allows opt-in incomplete region pages without sou
       !fs.existsSync(path.join(demoDir, boardName)),
     'Local Windows native KiCad 10 acceptance only'
   );
-  test.setTimeout(110_000);
+  // Full native source plotting is an explicit slower user action on a
+  // 71.6-MB PCB, distinct from the fast bounded page-level inspection.
+  test.setTimeout(185_000);
 
   const original = path.join(demoDir, boardName);
   const expectedHash = sha256(original);
@@ -38,9 +40,8 @@ test('Windows actual dense PCB allows opt-in incomplete region pages without sou
   try {
     const workspaceBoard = path.join(session.workspacePath, boardName);
     expect(sha256(workspaceBoard)).toBe(expectedHash);
-    await expect(session.page.locator('.statusbar')).toContainText('MCP', {
-      timeout: 30_000
-    });
+    // The real user opens the board first. KiCad Studio's custom-editor
+    // activation may not be complete when a large workspace first appears.
     const picker = session.page.locator('.quick-input-widget');
     await session.page.keyboard.press('Control+P');
     await expect(picker).toBeVisible();
@@ -48,6 +49,9 @@ test('Windows actual dense PCB allows opt-in incomplete region pages without sou
     await expect(picker).toContainText(boardName, { timeout: 30_000 });
     await session.page.keyboard.press('Enter');
     await expect(session.page.locator('.tab.active')).toContainText(boardName);
+    await expect(session.page.locator('.statusbar')).toContainText('MCP', {
+      timeout: 60_000
+    });
 
     let viewer: Frame | undefined;
     await expect
@@ -103,26 +107,117 @@ test('Windows actual dense PCB allows opt-in incomplete region pages without sou
       'Interactive renderer loaded',
       { timeout: 45_000 }
     );
+    const remainingSegments = async (): Promise<number> => {
+      const message = await viewer!
+        .locator('#partial-preview-status')
+        .textContent();
+      const count = /Not loaded in this region:\s*(\d+) segments/.exec(
+        message ?? ''
+      )?.[1];
+      // The status briefly switches to a loading message between pages.
+      // Poll until the next genuine omission count becomes available.
+      return count === undefined ? Number.POSITIVE_INFINITY : Number(count);
+    };
+    const omittedBefore = await remainingSegments();
     await expect(viewer.locator('#partial-preview-status')).toContainText(
-      '10544 segments',
-      { timeout: 20_000 }
+      /[0-9]+ copper arcs/
     );
+    await expect(viewer.locator('#partial-preview-status')).toContainText(
+      'Net continuity unverified'
+    );
+    expect(Number.isFinite(omittedBefore)).toBe(true);
+    expect(omittedBefore).toBeGreaterThan(0);
     await expect(viewer.locator('#export-png-btn')).toBeDisabled();
     await expect(viewer.locator('#export-svg-btn')).toBeDisabled();
     await expect(viewer.locator('#reference-search')).toBeDisabled();
     await expect(viewer.locator('#net-search')).toBeDisabled();
+    // A PARTIAL snapshot has no zone objects; it must never offer a
+    // seemingly functional Show/Hide fills button.
+    const zoneToggle = viewer.locator('#zone-fills-btn');
+    await expect(zoneToggle).toBeDisabled();
+    await expect(zoneToggle).toHaveText('Zone fills unavailable');
     await expect(viewer.locator('#partial-next-btn')).toBeEnabled();
 
     await viewer.locator('#partial-next-btn').click();
-    await expect(viewer.locator('#partial-preview-status')).toContainText(
-      '10144 segments',
-      { timeout: 45_000 }
-    );
+    await expect
+      .poll(remainingSegments, { timeout: 45_000 })
+      .toBeLessThan(omittedBefore);
     await expect(viewer.locator('#viewer-status')).toContainText(
       'Interactive renderer loaded',
       { timeout: 45_000 }
     );
     await expect(viewer.locator('#partial-preview-banner')).toBeVisible();
+    await expect(viewer.locator('#partial-preview-banner')).toContainText(
+      'Use Open in KiCad above to inspect the original board'
+    );
+    const fullBoardAction = viewer.getByRole('button', {
+      name: 'Open in KiCad',
+      exact: true
+    });
+    await expect(fullBoardAction).toBeVisible();
+    await expect(fullBoardAction).toBeEnabled();
+    // Do not launch a separate 71-MB KiCad GUI from the acceptance runner:
+    // real host route uses document.uri; the webview action contract tests
+    // the actual outbound message without touching the source file.
+    await expect(viewer.locator('#partial-preview-status')).toContainText(
+      /[0-9]+ copper arcs/
+    );
+    await expect(viewer.locator('#partial-preview-status')).toContainText(
+      'Net continuity unverified'
+    );
+    await expect(zoneToggle).toBeDisabled();
+    await expect(zoneToggle).toHaveText('Zone fills unavailable');
+    // Real large-board custom editor: the native KiCad inspector must plot
+    // ONLY the accumulated bounded geometry, never launch a full-board export
+    // because a PARTIAL page happened to be in front of the user.
+    await viewer.getByRole('button', { name: 'Focus In2.Cu' }).click();
+    // Verified independently against installed pcbnew's real zone outlines:
+    // 8 In2.Cu zone definitions, 6 source outlines intersect this viewport.
+    // Of those, only four cached KiCad fills overlap this region; the
+    // source outline count must NEVER be presented as filled copper.
+    await expect(viewer.locator('#layer-hint')).toContainText(
+      '8/128 omitted source zones declare In2.Cu; 6 source zone outlines overlap this region'
+    );
+    await expect(viewer.locator('#layer-hint')).toContainText(
+      'Actual zone fills and electrical connectivity are unverified.'
+    );
+    const nativeLayer = viewer.getByRole('button', {
+      name: 'Inspect partial layer'
+    });
+    await expect(nativeLayer).toBeVisible();
+    await nativeLayer.click();
+    await expect(viewer.locator('#viewer-status')).toContainText(
+      'Native KiCad In2.Cu PARTIAL plot',
+      { timeout: 60000 }
+    );
+    await expect(viewer.locator('#svg-fallback-view')).toBeVisible();
+    await expect(viewer.locator('#partial-preview-banner')).toBeVisible();
+    const genuineShapes = await viewer
+      .locator('#svg-fallback-view svg circle, #svg-fallback-view svg path')
+      .count();
+    console.log('WINDOWS_VME_BOUNDED_NATIVE_IN2_SHAPES=' + genuineShapes);
+    expect(genuineShapes).toBeGreaterThan(0);
+    // A separate explicit click uses the *full original* board for a
+    // native In2.Cu plot; it must not silently replace the partial page.
+    const originalLayer = viewer.getByRole('button', {
+      name: 'Inspect original layer'
+    });
+    await expect(originalLayer).toBeVisible();
+    await originalLayer.click();
+    await expect(viewer.locator('#viewer-status')).toContainText(
+      'Native KiCad In2.Cu FULL ORIGINAL BOARD plot',
+      { timeout: 90_000 }
+    );
+    const allSourceShapes = await viewer
+      .locator('#svg-fallback-view svg circle, #svg-fallback-view svg path')
+      .count();
+    console.log('WINDOWS_VME_FULL_ORIGINAL_IN2_SHAPES=' + allSourceShapes);
+    expect(allSourceShapes).toBeGreaterThan(genuineShapes);
+    expect(allSourceShapes).toBeGreaterThan(1_000);
+    await expect(viewer.locator('#partial-preview-banner')).toBeVisible();
+    await expect(viewer.locator('#viewer-status')).toContainText(
+      'not DRC or net-continuity validation'
+    );
     expect(sha256(original)).toBe(expectedHash);
     expect(sha256(workspaceBoard)).toBe(expectedHash);
     console.log('WINDOWS_VME_OPT_IN_PARTIAL_UI_TWO_PAGES=PASS_READ_ONLY');

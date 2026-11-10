@@ -133,7 +133,7 @@ export function createKiCanvasViewerHtml(
   </header>
 
   <main>
-    <div id="partial-preview-banner" role="status" aria-live="polite" hidden>PARTIAL PREVIEW — geometry, pads, zones and routes may be missing. Not for DRC, exports or manufacturing.</div>
+    <div id="partial-preview-banner" role="status" aria-live="polite" hidden>PARTIAL PREVIEW — missing copper, pads and zones can hide real connections. Use Open in KiCad above to inspect the original board. Not for DRC, exports or manufacturing.</div>
     <div id="viewer-mount"></div>
     <div id="hop-over-overlay" class="hop-over-overlay" aria-label="KiCad 10 hop-over overlay" hidden></div>
     <div id="loading-overlay" class="overlay" role="status" aria-label="Loading file...">
