@@ -80,13 +80,22 @@ export function findProjectForResource(
     return undefined;
   }
   const resolvedResource = path.resolve(resourcePath);
+  const resourceStem = path
+    .basename(resolvedResource, path.extname(resolvedResource))
+    .toLowerCase();
   const candidates = projects
     .filter(
       (project) =>
         samePath(project.projectFile, resolvedResource) ||
         isWithinDirectory(project.rootPath, resolvedResource)
     )
-    .sort((left, right) => right.rootPath.length - left.rootPath.length);
+    .sort((left, right) => {
+      const depthDiff = right.rootPath.length - left.rootPath.length;
+      if (depthDiff !== 0) return depthDiff;
+      const leftMatch = left.name.toLowerCase() === resourceStem ? 1 : 0;
+      const rightMatch = right.name.toLowerCase() === resourceStem ? 1 : 0;
+      return rightMatch - leftMatch;
+    });
 
   return candidates[0] ? cloneProjectContext(candidates[0]) : undefined;
 }

@@ -119,7 +119,9 @@ function applyValidationResult(
       result.diagnostics,
       result.summary,
       {
-        project: services.projectState.findProjectForResource(uri)
+        project:
+          services.projectState.findProjectForResource(uri) ??
+          services.projectState.getActiveProject()
       }
     );
     return;
@@ -141,7 +143,9 @@ function recordValidationFailure(
   const uri = vscode.Uri.file(file);
   if (services.diagnosticState) {
     services.diagnosticState.recordValidationFailure(source, uri, error, {
-      project: services.projectState.findProjectForResource(uri)
+      project:
+        services.projectState.findProjectForResource(uri) ??
+        services.projectState.getActiveProject()
     });
     return;
   }
