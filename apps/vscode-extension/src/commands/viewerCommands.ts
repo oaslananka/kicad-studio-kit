@@ -91,6 +91,48 @@ export function registerViewerCommands(
       }
     ),
 
+    // A regular Problems-row click resolves to the custom viewer, which has
+    // no VS Code text selection. The verified ERC Validation row uses this
+    // separate, source-only route to reveal the exact UUID position.
+    vscode.commands.registerCommand(
+      COMMANDS.revealVerifiedErcSource,
+      async (resource?: vscode.Uri, range?: vscode.Range) => {
+        if (
+          resource?.scheme !== 'file' ||
+          !resource.fsPath.toLowerCase().endsWith('.kicad_sch') ||
+          !vscode.workspace.getWorkspaceFolder(resource) ||
+          !range ||
+          !Number.isSafeInteger(range.start?.line) ||
+          !Number.isSafeInteger(range.start?.character) ||
+          range.start.line < 0 ||
+          range.start.character < 0
+        ) {
+          return;
+        }
+        const document = await vscode.workspace.openTextDocument(resource);
+        const position = document.validatePosition(
+          new vscode.Position(range.start.line, range.start.character)
+        );
+        const location = new vscode.Range(
+          position.line,
+          position.character,
+          position.line,
+          position.character
+        );
+        const editor = await vscode.window.showTextDocument(document, {
+          preview: false,
+          selection: location
+        });
+        editor.selection = new vscode.Selection(
+          position.line,
+          position.character,
+          position.line,
+          position.character
+        );
+        editor.revealRange(location, vscode.TextEditorRevealType.InCenter);
+      }
+    ),
+
     vscode.commands.registerCommand(
       COMMANDS.openPCB,
       async (resource?: vscode.Uri) => {

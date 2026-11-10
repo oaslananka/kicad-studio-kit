@@ -38,6 +38,14 @@ KiCad Studio turns VS Code into a KiCad-aware engineering cockpit: project navig
 5. Run **KiCad: Run DRC** or **KiCad: Run ERC** to populate Problems and validation views.
 6. Optional: start `kicad-mcp-pro` and connect your AI client with the generated `.vscode/mcp.json` schema.
 
+After running ERC, expand **Validation → ERC** in the KiCad Studio sidebar
+to browse up to 200 findings with verified KiCad source UUIDs. Selecting one
+opens the exact file and source character position in a text editor
+(VS Code visual columns can differ on tab-indented lines). The **Problems**
+panel still opens the default schematic viewer on double-click;
+that alone does not imply exact graphical focus. Unverified or stale ERC
+locations are never offered as exact source links.
+
 ## NVIDIA Build cloud models (optional)
 
 KiCad Studio supports the NVIDIA-hosted [Build API Catalog](https://build.nvidia.com/)

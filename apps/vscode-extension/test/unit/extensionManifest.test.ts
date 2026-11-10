@@ -78,7 +78,8 @@ describe('extensionManifest', () => {
       'kicadstudio.exportTo',
       'kicadstudio.importFrom',
       'kicadstudio.importAuto',
-      'kicadstudio.exportViewerSnapshot'
+      'kicadstudio.exportViewerSnapshot',
+      'kicadstudio.revealVerifiedErcSource'
     ]);
     const unexpected = runtimeOnly.filter((id) => !expectedRuntimeOnly.has(id));
     expect(unexpected).toEqual([]);

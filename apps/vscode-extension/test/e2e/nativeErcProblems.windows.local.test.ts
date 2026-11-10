@@ -31,7 +31,7 @@ test('native Windows ERC command is visible from a real schematic custom tab and
       !fs.existsSync(path.join(demoDir, rootName)),
     'Explicitly opted-in Windows KiCad 10 local acceptance'
   );
-  test.setTimeout(180_000);
+  test.setTimeout(240_000);
   const original = path.join(demoDir, rootName);
   const originalHash = fingerprint(original);
   const session = await launchVsCodeWithFixtures({
@@ -98,6 +98,72 @@ test('native Windows ERC command is visible from a real schematic custom tab and
       body: await session.page.screenshot({ fullPage: true }),
       contentType: 'image/png'
     });
+    await session.page.getByRole('tab', { name: 'KiCad Studio' }).click();
+    console.log(
+      'NATIVE_ERC_KICAD_SIDEBAR=' +
+        JSON.stringify(
+          (
+            await session.page.locator('.sidebar').innerText({ timeout: 5000 })
+          ).slice(0, 1300)
+        )
+    );
+    await expect
+      .poll(async () => await session.page.locator('.sidebar').innerText(), {
+        timeout: 12000,
+        intervals: [300, 1000, 2000]
+      })
+      .toContain('KICAD STUDIO');
+    const sidebar = session.page.locator('.sidebar');
+    await expect
+      .poll(async () => await sidebar.innerText(), {
+        timeout: 25000,
+        intervals: [300, 1000, 2000]
+      })
+      .toContain('Project Files');
+    console.log(
+      'NATIVE_ERC_SIDEBAR_READY=' +
+        JSON.stringify((await sidebar.innerText()).slice(-800))
+    );
+    await expect(sidebar).toContainText('ERCFAIL - 5 errors, 39 warnings');
+    const ercRow = sidebar
+      .locator('.monaco-list-row')
+      .filter({ hasText: /^ERCFAIL/ })
+      .first();
+    await expect(ercRow).toBeVisible();
+    await ercRow.locator('.monaco-tl-twistie').click();
+    // The native VS Code tree virtualizes long results. Use its visible
+    // verified UUID finding instead of assuming every source row is mounted.
+    const sourceRow = sidebar
+      .getByRole('tree', { name: 'Validation' })
+      .getByRole('treeitem', { name: /Debugger\.kicad_sch:8892:2/ })
+      .first();
+    await expect(sourceRow).toBeVisible({ timeout: 15000 });
+    console.log(
+      'NATIVE_ERC_SOURCE_ROW=' + (await sourceRow.innerText()).slice(0, 300)
+    );
+    await sourceRow.click();
+    await expect(session.page.locator('.tab.active')).toContainText(
+      'Debugger.kicad_sch'
+    );
+    console.log(
+      'NATIVE_ERC_CURSOR_STATUS=' +
+        JSON.stringify(
+          (await session.page.locator('.statusbar').innerText()).slice(-500)
+        )
+    );
+    // UUID source range starts at text offset 1, immediately after a tab.
+    // VS Code's status bar uses visual columns: one tab (tabSize 4) => Col 5.
+    const sourceText = fs.readFileSync(
+      path.join(session.workspacePath, 'sch', 'Debugger.kicad_sch'),
+      'utf8'
+    );
+    expect(sourceText.split(/\r?\n/)[8891]).toMatch(/^\t\(symbol/);
+    await expect
+      .poll(async () => await session.page.locator('.statusbar').innerText(), {
+        timeout: 15000
+      })
+      .toMatch(/Ln\s+8892,\s+Col\s+5/);
+    console.log('NATIVE_ERC_EXACT_TEXT_CURSOR_8892_OFFSET_1=PASS');
     console.log('NATIVE_ERC_PROBLEMS_PANEL_VISIBLE=PASS');
   } finally {
     await session.close();

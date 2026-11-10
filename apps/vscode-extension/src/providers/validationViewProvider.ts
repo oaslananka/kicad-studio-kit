@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'node:path';
 import { COMMANDS } from '../constants';
 import { localize } from '../i18n';
 import type { DiagnosticSummary } from '../types';
@@ -10,11 +11,24 @@ export interface ValidationRow {
   summary: DiagnosticSummary | undefined;
 }
 
+interface ErcSourceFinding {
+  kind: 'verified-erc-source';
+  label: string;
+  message: string;
+  location: vscode.Location;
+}
+
+type ValidationTreeRow = ValidationRow | ErcSourceFinding;
+
+const MAX_VISIBLE_SOURCE_FINDINGS = 200;
+const EXACT_ERC_LOCATION_MESSAGE =
+  'Exact KiCad source UUID location (open related information)';
+
 export class ValidationViewProvider
-  implements vscode.TreeDataProvider<ValidationRow>, vscode.Disposable
+  implements vscode.TreeDataProvider<ValidationTreeRow>, vscode.Disposable
 {
   private readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<
-    ValidationRow | undefined
+    ValidationTreeRow | undefined
   >();
   readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
   private readonly subscription: vscode.Disposable;
@@ -29,10 +43,35 @@ export class ValidationViewProvider
     );
   }
 
-  getTreeItem(element: ValidationRow): vscode.TreeItem {
+  getTreeItem(element: ValidationTreeRow): vscode.TreeItem {
+    if ('kind' in element) {
+      const item = new vscode.TreeItem(
+        element.label,
+        vscode.TreeItemCollapsibleState.None
+      );
+      const source = element.location;
+      item.description = `${path.basename(source.uri.fsPath)}:${source.range.start.line + 1}`;
+      item.tooltip = `${element.message}\n${source.uri.fsPath}:${source.range.start.line + 1}:${source.range.start.character + 1}`;
+      item.iconPath = new vscode.ThemeIcon(
+        isWorkspaceTrusted() ? 'go-to-file' : 'lock'
+      );
+      if (isWorkspaceTrusted()) {
+        item.command = {
+          command: COMMANDS.revealVerifiedErcSource,
+          title: 'Open exact ERC source',
+          arguments: [source.uri, source.range]
+        };
+      }
+      return item;
+    }
+
+    const hasVerifiedSources =
+      element.label === 'ERC' && this.verifiedErcSources().length > 0;
     const item = new vscode.TreeItem(
       element.label,
-      vscode.TreeItemCollapsibleState.None
+      hasVerifiedSources
+        ? vscode.TreeItemCollapsibleState.Collapsed
+        : vscode.TreeItemCollapsibleState.None
     );
     const trusted = isWorkspaceTrusted();
     // Keep existing results visible, but do not advertise a runnable check
@@ -59,12 +98,45 @@ export class ValidationViewProvider
     return item;
   }
 
-  getChildren(): ValidationRow[] {
+  getChildren(element?: ValidationTreeRow): ValidationTreeRow[] {
+    if (element) {
+      if ('kind' in element) return [];
+      if (element.label === 'ERC') return this.verifiedErcSources();
+      return [];
+    }
     const snapshot = this.diagnostics.getSnapshot();
     return [
       { label: 'DRC', summary: snapshot.drc },
       { label: 'ERC', summary: snapshot.erc }
     ];
+  }
+
+  private verifiedErcSources(): ErcSourceFinding[] {
+    const latest = this.diagnostics.getLatestErcRun();
+    if (
+      !latest ||
+      this.diagnostics.getSnapshot().erc?.freshness !== 'fresh-dirty'
+    )
+      return [];
+    const findings: ErcSourceFinding[] = [];
+    for (const diagnostic of latest.diagnostics) {
+      if (diagnostic.source !== 'kicad-cli:erc') continue;
+      const source = diagnostic.relatedInformation?.find(
+        (entry) =>
+          entry.message === EXACT_ERC_LOCATION_MESSAGE &&
+          entry.location.uri.scheme === 'file' &&
+          entry.location.uri.fsPath.toLowerCase().endsWith('.kicad_sch')
+      )?.location;
+      if (!source) continue;
+      findings.push({
+        kind: 'verified-erc-source',
+        label: diagnostic.message.replace(/\s+/g, ' ').slice(0, 120),
+        message: diagnostic.message,
+        location: source
+      });
+      if (findings.length >= MAX_VISIBLE_SOURCE_FINDINGS) break;
+    }
+    return findings;
   }
 
   dispose(): void {
