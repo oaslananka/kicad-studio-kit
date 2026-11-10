@@ -30,7 +30,7 @@ test('Windows actual dense PCB allows opt-in incomplete region pages without sou
   );
   // Full native source plotting is an explicit slower user action on a
   // 71.6-MB PCB, distinct from the fast bounded page-level inspection.
-  test.setTimeout(185_000);
+  test.setTimeout(345_000);
 
   const original = path.join(demoDir, boardName);
   const expectedHash = sha256(original);
@@ -74,8 +74,12 @@ test('Windows actual dense PCB allows opt-in incomplete region pages without sou
       'Metadata only'
     );
     await expect(viewer.locator('#partial-preview-banner')).toBeHidden();
-    await viewer.locator('#side-panel-toggle').click();
     const partial = viewer.locator('#partial-preview-section');
+    // A persisted workspace may already have the tools expanded.
+    // Blindly clicking the toggle would close the user's ready panel.
+    if (!(await partial.isVisible())) {
+      await viewer.locator('#side-panel-toggle').click();
+    }
     await expect(partial).toBeVisible();
     await viewer.locator('#partial-x-min').fill('125');
     await viewer.locator('#partial-x-max').fill('425');
@@ -218,6 +222,51 @@ test('Windows actual dense PCB allows opt-in incomplete region pages without sou
     await expect(viewer.locator('#viewer-status')).toContainText(
       'not DRC or net-continuity validation'
     );
+    // Outer copper must use the same explicit, user-triggered FULL
+    // ORIGINAL path. No automatic full-board plot may replace PARTIAL.
+    for (const outer of ['B.Cu', 'F.Cu']) {
+      // The single-layer native SVG disables KiCanvas layer controls.
+      // The visible Reload Viewer action restores the interactive selector
+      // before the user explicitly requests a different source layer.
+      await viewer.getByRole('button', { name: 'Reload viewer' }).click();
+      // Reload enables layer controls before its asynchronous KiCanvas
+      // preparation completes. Only focus after the original layer viewer
+      // is actually ready, or the restoreState pass can reset selection.
+      await expect(viewer.locator('#viewer-status')).toContainText(
+        'Interactive renderer loaded',
+        { timeout: 45_000 }
+      );
+      const focus = viewer.getByRole('button', { name: 'Focus ' + outer });
+      await expect(focus).toBeEnabled({ timeout: 30_000 });
+      await focus.click();
+      await expect(focus).toHaveAttribute('aria-pressed', 'true');
+      await expect(viewer.locator('#layer-hint')).toContainText(
+        'Focused: ' + outer
+      );
+      const inspectOriginal = viewer.getByRole('button', {
+        name: 'Inspect original layer'
+      });
+      await expect(inspectOriginal).toBeVisible();
+      await expect(inspectOriginal).toBeEnabled();
+      await inspectOriginal.click();
+      await expect(viewer.locator('#viewer-status')).toContainText(
+        'Native KiCad ' + outer + ' FULL ORIGINAL BOARD plot',
+        { timeout: 90_000 }
+      );
+      const nativeOuterShapes = await viewer
+        .locator('#svg-fallback-view svg circle, #svg-fallback-view svg path')
+        .count();
+      console.log(
+        'WINDOWS_VME_FULL_ORIGINAL_' + outer + '_SHAPES=' + nativeOuterShapes
+      );
+      expect(nativeOuterShapes).toBeGreaterThan(0);
+      await expect(viewer.locator('#partial-preview-banner')).toBeVisible();
+      await expect(viewer.locator('#viewer-status')).toContainText(
+        'not DRC or net-continuity validation'
+      );
+      expect(sha256(original)).toBe(expectedHash);
+      expect(sha256(workspaceBoard)).toBe(expectedHash);
+    }
     expect(sha256(original)).toBe(expectedHash);
     expect(sha256(workspaceBoard)).toBe(expectedHash);
     console.log('WINDOWS_VME_OPT_IN_PARTIAL_UI_TWO_PAGES=PASS_READ_ONLY');

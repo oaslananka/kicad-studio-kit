@@ -1023,8 +1023,8 @@ export function createViewerControllerScript(): string {
       vscode.postMessage({ type: 'openInKiCad', payload: { selectedArea: localState.selectedArea } });
     }
 
-    async function inspectNativeInnerLayer(layer, button, scope = 'partial') {
-      if (!/^In\d+\.Cu$/.test(layer) || button.disabled) return;
+    async function inspectNativeCopperLayer(layer, button, scope = 'partial') {
+      if (!/^(?:F|B|In\d+)\.Cu$/.test(layer) || button.disabled) return;
       const fullOriginal = scope === 'original';
       button.disabled = true;
       button.textContent = 'Rendering KiCad layer...';
@@ -1500,8 +1500,9 @@ export function createViewerControllerScript(): string {
         // copper layer proves there are no source pad annular rings.
         if (
           payload.fileType === 'board' &&
-          /^In\d+\.Cu$/i.test(localState.focusedLayer || '')
+          /^(?:F|B|In\d+)\.Cu$/i.test(localState.focusedLayer || '')
         ) {
+          const isInnerLayer = /^In\d+\.Cu$/.test(localState.focusedLayer || '');
           const partial = payload.partialPreview;
           if (partial) {
             const total = partial.omittedSourceZones;
@@ -1539,7 +1540,7 @@ export function createViewerControllerScript(): string {
                 (pad) => Array.isArray(pad.layers) && pad.layers.includes('*.Cu')
               )
           );
-          if (hasInnerSourcePads) {
+          if (isInnerLayer && hasInnerSourcePads) {
             layerHintEl.textContent +=
               ' KiCanvas does not draw through-hole pad rings on inner copper. ' +
               'Missing pad graphics here do not prove absent copper. ';
@@ -1559,16 +1560,16 @@ export function createViewerControllerScript(): string {
           // pads. Offer the native source plot for tracks and vias too.
           const inspectBtn = document.createElement('button');
           inspectBtn.type = 'button';
-          inspectBtn.id = 'inner-pad-native-layer-btn';
+          inspectBtn.id = 'native-copper-layer-btn';
           inspectBtn.className = 'btn';
           inspectBtn.textContent = payload.partialPreview
             ? 'Inspect partial layer'
             : 'Inspect native layer';
           inspectBtn.title = payload.partialPreview
             ? 'Read-only KiCad plot of this bounded, incomplete source preview'
-            : 'Read-only plot of this inner copper layer by your installed KiCad CLI';
+            : 'Read-only plot of this copper layer by your installed KiCad CLI';
           inspectBtn.addEventListener('click', () =>
-            inspectNativeInnerLayer(localState.focusedLayer, inspectBtn)
+            inspectNativeCopperLayer(localState.focusedLayer, inspectBtn)
           );
           layerHintEl.appendChild(inspectBtn);
           if (partial) {
@@ -1576,13 +1577,13 @@ export function createViewerControllerScript(): string {
             // inspection; never silently substitute it for a bounded page.
             const originalBtn = document.createElement('button');
             originalBtn.type = 'button';
-            originalBtn.id = 'inner-pad-native-original-btn';
+            originalBtn.id = 'native-copper-original-btn';
             originalBtn.className = 'btn';
             originalBtn.textContent = 'Inspect original layer';
             originalBtn.title =
               'Read-only full-board native KiCad plot from a temporary copy of the original PCB; may take longer. Not DRC or net validation.';
             originalBtn.addEventListener('click', () =>
-              inspectNativeInnerLayer(localState.focusedLayer, originalBtn, 'original')
+              inspectNativeCopperLayer(localState.focusedLayer, originalBtn, 'original')
             );
             layerHintEl.appendChild(originalBtn);
           }

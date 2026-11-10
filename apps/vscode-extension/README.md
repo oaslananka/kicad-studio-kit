@@ -113,7 +113,7 @@ For unusually large PCBs, expand the viewer tools and select a bounded **PARTIAL
 PARTIAL pages may omit tracks, pads, zone geometry and electrical connections;
 they are not suitable for DRC, manufacturing exports or continuity decisions.
 
-To inspect actual inner-layer copper, focus an available inner copper layer (for example, **In2.Cu**) and select
+To inspect actual copper, focus **F.Cu**, **B.Cu**, or an inner layer (for example, **In2.Cu**) and select
 **Inspect original layer**. KiCad Studio requests one native KiCad SVG on a disposable
 copy of the board, without modifying the source. This is an explicit operation
 and can take longer on dense designs. The real plot is a visual aid, not proof of
