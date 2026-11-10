@@ -221,6 +221,25 @@ export class DiagnosticStateStore implements vscode.Disposable {
       : undefined;
   }
 
+  /** The active project's original ERC findings, including verified child URIs. */
+  getLatestErcRun(projectId?: string): LatestValidationRun | undefined {
+    // Do not show findings from another project in a multi-project workspace.
+    let latest: LatestValidationRun | undefined;
+    if (projectId) {
+      latest = this.projectDiagnostics.get(projectId)?.latestErcRun;
+    } else if (this.activeProjectId) {
+      latest = this.projectDiagnostics.get(this.activeProjectId)?.latestErcRun;
+    } else {
+      latest = this.latestErcRun;
+    }
+    return latest
+      ? {
+          file: latest.file,
+          diagnostics: [...latest.diagnostics],
+          summary: cloneSummary(latest.summary)
+        }
+      : undefined;
+  }
   getSnapshot(
     options: { projectId?: string | undefined } = {}
   ): DiagnosticStateSnapshot {

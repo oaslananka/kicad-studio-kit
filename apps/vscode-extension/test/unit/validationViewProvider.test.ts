@@ -145,4 +145,83 @@ describe('ValidationViewProvider', () => {
     expect(item.tooltip).toContain('Viewer reloaded');
     expect(item.tooltip).toContain('kicad-cli');
   });
+  it('exposes only fresh verified ERC UUID findings as clickable source rows', () => {
+    const diagnostics = new DiagnosticStateStore(createDiagnosticsCollection());
+    (diagnostics.onDidChange as jest.Mock).mockReturnValue({
+      dispose: jest.fn()
+    });
+    const provider = new ValidationViewProvider(diagnostics);
+    const root = vscode.Uri.file('/workspace/Root.kicad_sch');
+    const child = vscode.Uri.file('/workspace/Connectors.kicad_sch');
+    Object.defineProperty(child, 'scheme', { value: 'file' });
+    const sourceRange = new vscode.Range(3351, 2, 3351, 3);
+    const diagnostic = new vscode.Diagnostic(
+      new vscode.Range(0, 0, 0, 1),
+      'Input Power pin not driven by any Output Power pins',
+      vscode.DiagnosticSeverity.Error
+    );
+    diagnostic.source = 'kicad-cli:erc';
+    diagnostic.relatedInformation = [
+      {
+        message: 'Exact KiCad source UUID location (open related information)',
+        location: { uri: child, range: sourceRange }
+      }
+    ];
+    diagnostics.applyValidationResult(root, [diagnostic], {
+      file: root.fsPath,
+      source: 'erc',
+      errors: 1,
+      warnings: 0,
+      infos: 0,
+      freshness: 'fresh-dirty'
+    });
+    try {
+      const ercRow = provider.getChildren()[1]!;
+      expect(provider.getTreeItem(ercRow).collapsibleState).toBe(
+        vscode.TreeItemCollapsibleState.Collapsed
+      );
+      const sources = provider.getChildren(ercRow);
+      expect(sources).toHaveLength(1);
+      const item = provider.getTreeItem(sources[0]!);
+      expect(item.label).toContain('Input Power');
+      expect(item.description).toBe('Connectors.kicad_sch:3352');
+      expect(item.command).toEqual({
+        command: 'kicadstudio.revealVerifiedErcSource',
+        title: 'Open exact ERC source',
+        arguments: [child, sourceRange]
+      });
+
+      diagnostics.markValidationStale('erc', root, 'source changed');
+      expect(provider.getChildren(provider.getChildren()[1]!)).toEqual([]);
+    } finally {
+      provider.dispose();
+    }
+  });
+
+  it('does not link unverified ERC findings or findings from other projects', () => {
+    const diagnostics = new DiagnosticStateStore(createDiagnosticsCollection());
+    (diagnostics.onDidChange as jest.Mock).mockReturnValue({
+      dispose: jest.fn()
+    });
+    const provider = new ValidationViewProvider(diagnostics);
+    const root = vscode.Uri.file('/workspace/root.kicad_sch');
+    const unverified = new vscode.Diagnostic(
+      new vscode.Range(0, 0, 0, 1),
+      'No UUID location',
+      vscode.DiagnosticSeverity.Error
+    );
+    unverified.source = 'kicad-cli:erc';
+    diagnostics.applyValidationResult(
+      root,
+      [unverified],
+      { file: root.fsPath, source: 'erc', errors: 1, warnings: 0, infos: 0 },
+      { projectId: 'project-alpha' }
+    );
+    diagnostics.setActiveProject('project-alpha');
+    expect(provider.getChildren(provider.getChildren()[1]!)).toEqual([]);
+    diagnostics.setActiveProject('project-beta');
+    expect(diagnostics.getLatestErcRun()).toBeUndefined();
+    expect(provider.getChildren(provider.getChildren()[1]!)).toEqual([]);
+    provider.dispose();
+  });
 });
