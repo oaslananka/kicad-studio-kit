@@ -87,7 +87,9 @@ test('real 71.6 MB Windows VME Wren DRC reaches VS Code Problems without modifyi
     const markerTotal = Number(
       panelLines.find((line) => /^\d+$/.test(line.trim()))
     );
-    expect(markerTotal).toBe(478);
+    // KiCad reports 610 raw findings (41 errors + 569 warnings);
+    // 600 distinct findings are displayed in VS Code Problems.
+    expect(markerTotal).toBe(600);
     console.log('REAL_VME_DRC_WINDOWS_UNIQUE_MARKERS=' + markerTotal);
 
     // A user reviewing a schematic must be able to open the reported PCB

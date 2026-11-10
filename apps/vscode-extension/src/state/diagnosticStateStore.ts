@@ -70,7 +70,8 @@ export class DiagnosticStateStore implements vscode.Disposable {
     } else {
       this.diagnostics.set(uri, diagnostics);
     }
-    const projectId = options.project?.id ?? options.projectId;
+    const projectId =
+      options.project?.id ?? options.projectId ?? this.activeProjectId;
     const projectState = this.getOrCreateProjectDiagnostics(projectId);
     const nextSummary = normalizeDiagnosticSummary(summary, {
       uri,
@@ -124,7 +125,8 @@ export class DiagnosticStateStore implements vscode.Disposable {
     error: unknown,
     options: { project?: ProjectContext | undefined; projectId?: string } = {}
   ): DiagnosticStateSnapshot {
-    const projectId = options.project?.id ?? options.projectId;
+    const projectId =
+      options.project?.id ?? options.projectId ?? this.activeProjectId;
     const projectState = this.getOrCreateProjectDiagnostics(projectId);
     const previous =
       this.getSummaryForSource(source, projectState) ??
@@ -175,7 +177,8 @@ export class DiagnosticStateStore implements vscode.Disposable {
     reason: string,
     options: { project?: ProjectContext | undefined; projectId?: string } = {}
   ): DiagnosticStateSnapshot {
-    const projectId = options.project?.id ?? options.projectId;
+    const projectId =
+      options.project?.id ?? options.projectId ?? this.activeProjectId;
     const projectState = this.getOrCreateProjectDiagnostics(projectId);
     const previous =
       this.getSummaryForSource(source, projectState) ??

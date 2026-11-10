@@ -138,4 +138,92 @@ describe('DRC command visibility and runtime safety', () => {
       when: 'workspaceFolderCount > 0'
     });
   });
+
+  it('attaches successful validation to resource project or active project fallback', async () => {
+    resolve.mockResolvedValue('/workspace/board.kicad_pcb');
+    const applyValidationResult = jest.fn();
+    const recordValidationFailure = jest.fn();
+    const activeProject = { id: 'active-1', name: 'active' };
+    const findProjectForResource = jest
+      .fn()
+      .mockReturnValueOnce({ id: 'res-1', name: 'resource-project' })
+      .mockReturnValueOnce(undefined);
+
+    const checkService = {
+      runDRC: jest.fn().mockResolvedValue({
+        diagnostics: [],
+        summary: { source: 'drc', errors: 0, warnings: 0, infos: 0 }
+      })
+    };
+
+    registerCheckCommands({
+      projectState: {
+        getActiveProject: jest.fn().mockReturnValue(activeProject),
+        findProjectForResource
+      },
+      diagnosticState: {
+        applyValidationResult,
+        recordValidationFailure
+      },
+      checkService
+    } as unknown as CommandServices);
+
+    const entry = (commands.registerCommand as jest.Mock).mock.calls.find(
+      ([name]) => name === 'kicadstudio.runDRC'
+    );
+    const invoke = entry![1] as () => Promise<unknown>;
+
+    await invoke();
+    expect(applyValidationResult).toHaveBeenCalledWith(
+      expect.anything(),
+      [],
+      expect.objectContaining({ source: 'drc' }),
+      { project: { id: 'res-1', name: 'resource-project' } }
+    );
+
+    await invoke();
+    expect(applyValidationResult).toHaveBeenCalledWith(
+      expect.anything(),
+      [],
+      expect.objectContaining({ source: 'drc' }),
+      { project: activeProject }
+    );
+  });
+
+  it('records validation failure with fallback to active project', async () => {
+    resolve.mockResolvedValue('/workspace/board.kicad_pcb');
+    const applyValidationResult = jest.fn();
+    const recordValidationFailure = jest.fn();
+    const activeProject = { id: 'active-1', name: 'active' };
+    const findProjectForResource = jest.fn().mockReturnValue(undefined);
+
+    const checkService = {
+      runDRC: jest.fn().mockRejectedValue(new Error('CLI failed'))
+    };
+
+    registerCheckCommands({
+      projectState: {
+        getActiveProject: jest.fn().mockReturnValue(activeProject),
+        findProjectForResource
+      },
+      diagnosticState: {
+        applyValidationResult,
+        recordValidationFailure
+      },
+      checkService
+    } as unknown as CommandServices);
+
+    const entry = (commands.registerCommand as jest.Mock).mock.calls.find(
+      ([name]) => name === 'kicadstudio.runDRC'
+    );
+    const invoke = entry![1] as () => Promise<unknown>;
+
+    await invoke();
+    expect(recordValidationFailure).toHaveBeenCalledWith(
+      'drc',
+      expect.anything(),
+      expect.any(Error),
+      { project: activeProject }
+    );
+  });
 });
