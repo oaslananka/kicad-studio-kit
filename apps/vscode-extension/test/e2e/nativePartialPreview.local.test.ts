@@ -7,29 +7,35 @@ import { launchVsCodeWithFixtures } from './vscodeHarness';
 
 // Explicit local-only acceptance against an unmodified installed KiCad 10
 // 12-layer dense engineering board. No manufacturer/cloud interaction.
-const demoDir = path.join(
-  process.env.ProgramFiles ?? String.raw`C:\Program Files`,
-  'KiCad',
-  '10.0',
-  'share',
-  'kicad',
-  'demos',
-  'vme-wren'
-);
+const demoDir =
+  process.platform === 'linux'
+    ? '/usr/share/kicad/demos/vme-wren'
+    : path.join(
+        process.env.ProgramFiles ?? String.raw`C:\Program Files`,
+        'KiCad',
+        '10.0',
+        'share',
+        'kicad',
+        'demos',
+        'vme-wren'
+      );
 const boardName = 'vme-wren.kicad_pcb';
 function sha256(file: string): string {
   return createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 }
 
-test('Windows actual dense PCB allows opt-in incomplete region pages without source changes', async () => {
+test('real KiCad 10 dense PCB keeps partial previews and original copper plots distinct', async () => {
+  const optedIn =
+    (process.platform === 'win32' &&
+      process.env.KICADSTUDIO_LOCAL_WINDOWS_ACCEPTANCE === '1') ||
+    (process.platform === 'linux' &&
+      process.env.KICADSTUDIO_LOCAL_LINUX_ACCEPTANCE === '1');
   test.skip(
-    process.platform !== 'win32' ||
-      process.env.KICADSTUDIO_LOCAL_WINDOWS_ACCEPTANCE !== '1' ||
-      !fs.existsSync(path.join(demoDir, boardName)),
-    'Local Windows native KiCad 10 acceptance only'
+    !optedIn || !fs.existsSync(path.join(demoDir, boardName)),
+    'Local Windows/Linux native KiCad 10 acceptance only'
   );
   // Full native source plotting is an explicit slower user action on a
-  // 71.6-MB PCB, distinct from the fast bounded page-level inspection.
+  // large PCB, distinct from the fast bounded page-level inspection.
   test.setTimeout(345_000);
 
   const original = path.join(demoDir, boardName);
@@ -199,7 +205,7 @@ test('Windows actual dense PCB allows opt-in incomplete region pages without sou
     const genuineShapes = await viewer
       .locator('#svg-fallback-view svg circle, #svg-fallback-view svg path')
       .count();
-    console.log('WINDOWS_VME_BOUNDED_NATIVE_IN2_SHAPES=' + genuineShapes);
+    console.log('NATIVE_VME_BOUNDED_NATIVE_IN2_SHAPES=' + genuineShapes);
     expect(genuineShapes).toBeGreaterThan(0);
     // A separate explicit click uses the *full original* board for a
     // native In2.Cu plot; it must not silently replace the partial page.
@@ -215,7 +221,7 @@ test('Windows actual dense PCB allows opt-in incomplete region pages without sou
     const allSourceShapes = await viewer
       .locator('#svg-fallback-view svg circle, #svg-fallback-view svg path')
       .count();
-    console.log('WINDOWS_VME_FULL_ORIGINAL_IN2_SHAPES=' + allSourceShapes);
+    console.log('NATIVE_VME_FULL_ORIGINAL_IN2_SHAPES=' + allSourceShapes);
     expect(allSourceShapes).toBeGreaterThan(genuineShapes);
     expect(allSourceShapes).toBeGreaterThan(1_000);
     await expect(viewer.locator('#partial-preview-banner')).toBeVisible();
@@ -257,9 +263,9 @@ test('Windows actual dense PCB allows opt-in incomplete region pages without sou
         .locator('#svg-fallback-view svg circle, #svg-fallback-view svg path')
         .count();
       console.log(
-        'WINDOWS_VME_FULL_ORIGINAL_' + outer + '_SHAPES=' + nativeOuterShapes
+        'NATIVE_VME_FULL_ORIGINAL_' + outer + '_SHAPES=' + nativeOuterShapes
       );
-      expect(nativeOuterShapes).toBeGreaterThan(0);
+      expect(nativeOuterShapes).toBeGreaterThan(1_000);
       await expect(viewer.locator('#partial-preview-banner')).toBeVisible();
       await expect(viewer.locator('#viewer-status')).toContainText(
         'not DRC or net-continuity validation'
@@ -269,8 +275,8 @@ test('Windows actual dense PCB allows opt-in incomplete region pages without sou
     }
     expect(sha256(original)).toBe(expectedHash);
     expect(sha256(workspaceBoard)).toBe(expectedHash);
-    console.log('WINDOWS_VME_OPT_IN_PARTIAL_UI_TWO_PAGES=PASS_READ_ONLY');
-    await test.info().attach('windows-vme-opt-in-partial-preview', {
+    console.log('NATIVE_VME_OPT_IN_PARTIAL_UI_TWO_PAGES=PASS_READ_ONLY');
+    await test.info().attach('native-vme-opt-in-partial-preview', {
       body: await session.page.screenshot({ fullPage: true }),
       contentType: 'image/png'
     });
