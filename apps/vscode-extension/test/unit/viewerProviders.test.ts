@@ -157,7 +157,7 @@ describe.each([
           type: 'requestNativeInnerLayer',
           payload: { requestId: 'valid', layer: 'In2.Cu' }
         });
-        expect(fallback).toHaveBeenCalledWith(uri, 'In2.Cu', undefined);
+        expect(fallback).toHaveBeenCalledWith(uri, 'In2.Cu', undefined, false);
         expect(panel.webview.postMessage).toHaveBeenCalledWith({
           type: 'nativeInnerLayerSvg',
           payload: {
@@ -176,7 +176,7 @@ describe.each([
             type: 'requestNativeInnerLayer',
             payload: { requestId: 'outer-' + layer, layer }
           });
-          expect(fallback).toHaveBeenCalledWith(uri, layer, undefined);
+          expect(fallback).toHaveBeenCalledWith(uri, layer, undefined, false);
           expect(panel.webview.postMessage).toHaveBeenCalledWith({
             type: 'nativeInnerLayerSvg',
             payload: {
@@ -279,7 +279,7 @@ describe.each([
         // belongs to the original revision before simulating a writer.
         await Promise.resolve();
         await Promise.resolve();
-        expect(fallback).toHaveBeenCalledWith(uri, 'In2.Cu', undefined);
+        expect(fallback).toHaveBeenCalledWith(uri, 'In2.Cu', undefined, true);
         diskRevision = 3;
         completePlot?.('<svg id="wrong-revision"/>');
         await request;
@@ -326,7 +326,7 @@ describe.each([
           type: 'requestNativeInnerLayer',
           payload: { requestId: 'stale-full', layer: 'In2.Cu' }
         });
-        expect(fallback).toHaveBeenCalledWith(uri, 'In2.Cu', undefined);
+        expect(fallback).toHaveBeenCalledWith(uri, 'In2.Cu', undefined, false);
         await (provider as any).refreshDocument(uri);
         resolvePlot?.('<svg id="stale-full"/>');
         await fullRequest;
@@ -355,7 +355,8 @@ describe.each([
         expect(fallback).toHaveBeenCalledWith(
           uri,
           'In2.Cu',
-          '(kicad_pcb (version 1))'
+          '(kicad_pcb (version 1))',
+          false
         );
         info.partialBusy = true;
         const busyRequest = await panel.fireMessage({
@@ -616,7 +617,8 @@ describe.each([
       expect(fallback).toHaveBeenCalledWith(
         uri,
         'In2.Cu',
-        expect.stringContaining('(kicad_pcb')
+        expect.stringContaining('(kicad_pcb'),
+        false
       );
       const bounded = (fallback as jest.Mock).mock.calls[0]?.[2] as string;
       expect(Buffer.byteLength(bounded)).toBeLessThan(
@@ -639,10 +641,14 @@ describe.each([
         }
       });
       expect(fallback).toHaveBeenCalledTimes(1);
-      expect(fallback).toHaveBeenCalledWith(uri, 'In2.Cu', undefined);
+      expect(fallback).toHaveBeenCalledWith(uri, 'In2.Cu', undefined, true);
       expect(panel.webview.postMessage).toHaveBeenCalledWith({
         type: 'nativeInnerLayerSvg',
-        payload: { requestId: 'explicit-full-original', svg: '<svg/>' }
+        payload: {
+          requestId: 'explicit-full-original',
+          svg: '<svg/>',
+          boardPageCoordinates: true
+        }
       });
       fallback.mockClear();
 

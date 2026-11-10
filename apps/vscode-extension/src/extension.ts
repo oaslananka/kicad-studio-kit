@@ -171,12 +171,13 @@ export async function activate(
   );
   const pcbEditorProvider = new PcbEditorProvider(
     context,
-    async (resource, nativeLayer, boundedSource) =>
+    async (resource, nativeLayer, boundedSource, sourcePageCoordinates) =>
       nativeLayer
         ? exportService.renderViewerNativeInnerCopperLayer(
             resource,
             nativeLayer,
-            boundedSource
+            boundedSource,
+            sourcePageCoordinates
           )
         : exportService.renderViewerSvg(resource),
     viewerState,
