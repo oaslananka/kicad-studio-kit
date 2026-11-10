@@ -10,21 +10,17 @@ interface SourcePoint {
 
 // Match only a real KiCad (at <x> <y> ...) list opening. The scanner
 // handles strings/escapes/comments before trying this anchored expression.
-const NUMBER = String.raw`[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?`;
-const AT_POSITION = new RegExp(
-  String.raw`\(at[ \t\r\n]+(${NUMBER})[ \t\r\n]+(${NUMBER})(?=[\s)])`,
-  'y'
-);
+const AT_POSITION =
+  /\(at[ \t\r\n]+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)[ \t\r\n]+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)(?=[\s)])/y;
+
+const UUID_TOKEN =
+  /\((?:uuid|tstamp)[ \t\r\n]+"?([0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})"?[ \t\r\n]*\)/y;
 
 /**
  * Index genuine KiCad PCB positions and UUID object anchors without building
  * an enormous AST. A 70 MB PCB can exceed a 2 GB V8 heap when expanded.
  * Memory is proportional to real position and UUID expressions, not AST size.
  */
-const UUID_TOKEN = new RegExp(
-  String.raw`\((?:uuid|tstamp)[ \t\r\n]+"?([0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})"?[ \t\r\n]*\)`,
-  'y'
-);
 
 export class DrcSourceCoordinates {
   private readonly byX: SourcePoint[];
