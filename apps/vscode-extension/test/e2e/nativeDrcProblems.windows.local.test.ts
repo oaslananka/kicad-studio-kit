@@ -40,8 +40,28 @@ test('native Windows DRC palette runs on an authentic KiCad 10 PCB custom editor
   });
 
   try {
+    // Opening a PCB tab can precede extension-host command registration.
+    // Wait for Studio's own status contribution before testing its palette.
+    await expect(session.page.locator('.statusbar')).toContainText('MCP', {
+      timeout: 60000
+    });
     const isolated = path.join(session.workspacePath, pcbName);
     expect(sha256(isolated)).toBe(sourceHash);
+    const projectName = 'RoyalBlue54L-Feather';
+    const projectFile = path.join(
+      session.workspacePath,
+      projectName + '.kicad_pro'
+    );
+    const originalProject = path.join(demoDir, projectName + '.kicad_pro');
+    const expectedProjectHash = sha256(projectFile);
+    expect(expectedProjectHash).toBe(sha256(originalProject));
+    const sidecar = path.join(
+      session.workspacePath,
+      projectName + '.kicad_prl'
+    );
+    // If a user's existing KiCad project-local settings are present,
+    // preserve their content; otherwise DRC must not create new sidecars.
+    const sidecarBefore = fs.existsSync(sidecar) ? sha256(sidecar) : undefined;
     const board = session.page
       .locator('.explorer-folders-view')
       .getByText(pcbName, { exact: true });
@@ -75,6 +95,13 @@ test('native Windows DRC palette runs on an authentic KiCad 10 PCB custom editor
     console.log('NATIVE_DRC_PROBLEMS=PASS');
     expect(sha256(isolated)).toBe(sourceHash);
     expect(sha256(original)).toBe(sourceHash);
+    expect(sha256(projectFile)).toBe(expectedProjectHash);
+    expect(sha256(originalProject)).toBe(expectedProjectHash);
+    expect(fs.existsSync(sidecar)).toBe(sidecarBefore !== undefined);
+    if (sidecarBefore !== undefined) {
+      expect(sha256(sidecar)).toBe(sidecarBefore);
+    }
+    console.log('NATIVE_DRC_USER_PROJECT_SIDECAR_UNCHANGED=PASS');
   } finally {
     await session.close();
   }

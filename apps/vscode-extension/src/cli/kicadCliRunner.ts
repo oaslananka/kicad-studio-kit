@@ -331,14 +331,35 @@ export class KiCadCliRunner {
       ...configuredVars
     };
 
+    // KiCad 10 silently fails for --define-var NAME=, even though blank
+    // variables are valid in the native project file.
     const defineArgs = Object.entries(mergedVars)
       .filter(
         (entry): entry is [string, string] =>
-          typeof entry[0] === 'string' && typeof entry[1] === 'string'
+          typeof entry[0] === 'string' &&
+          typeof entry[1] === 'string' &&
+          entry[1].length > 0
       )
       .flatMap(([key, value]) => ['--define-var', `${key}=${value}`]);
 
-    return defineArgs.length ? [...defineArgs, ...command] : command;
+    if (defineArgs.length === 0) return command;
+    // KiCad CLI flags belong to their concrete subcommand. Prefixing
+    // --define-var before 'pcb drc' makes a real project's DRC fail
+    // (notably large boards with many text variables).
+    if ((command[0] === 'pcb' || command[0] === 'sch') && command.length >= 2) {
+      const commandPrefix =
+        command[1] === 'export' &&
+        command[2] !== undefined &&
+        !command[2].startsWith('-')
+          ? 3
+          : 2;
+      return [
+        ...command.slice(0, commandPrefix),
+        ...defineArgs,
+        ...command.slice(commandPrefix)
+      ];
+    }
+    return [...defineArgs, ...command];
   }
 
   private readProjectTextVariables(

@@ -2,12 +2,14 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
+import { LARGE_FILE_BYTES } from '../constants';
 import type { DiagnosticSummary } from '../types';
 import { Logger } from '../utils/logger';
 import { readTextFileSync } from '../utils/fileUtils';
 import { SExpressionParser, type SNode } from '../language/sExpressionParser';
 import { KiCadCliRunner } from './kicadCliRunner';
 import { ErcSourceLocations } from './ercSourceLocations';
+import { DrcSourceCoordinates } from './drcSourceCoordinates';
 
 interface ReportIssue {
   row: Record<string, unknown>;
@@ -37,10 +39,30 @@ export class KiCadCheckService {
     kind: 'drc' | 'erc',
     file: string
   ): Promise<{ diagnostics: vscode.Diagnostic[]; summary: DiagnosticSummary }> {
-    const tmpJsonFile = path.join(
-      os.tmpdir(),
-      `kicadstudio-${kind}-${Date.now()}.json`
+    // Each check gets its own disposable workspace. KiCad's PCB DRC may
+    // create a .kicad_prl beside its input even without --save-board.
+    const tempRoot = fs.mkdtempSync(
+      path.join(os.tmpdir(), `kicadstudio-${kind}-`)
     );
+    const tmpJsonFile = path.join(tempRoot, 'report.json');
+    const sourceStats: Array<{
+      file: string;
+      size: number;
+      mtimeMs: number;
+    }> = [];
+    const validateSource = (): void => {
+      for (const source of sourceStats) {
+        const current = fs.statSync(source.file);
+        if (
+          current.size !== source.size ||
+          current.mtimeMs !== source.mtimeMs
+        ) {
+          throw new Error(
+            'The KiCad project changed during DRC. Save and rerun the check.'
+          );
+        }
+      }
+    };
     const command =
       kind === 'drc'
         ? [
@@ -69,19 +91,63 @@ export class KiCadCheckService {
           ];
 
     try {
+      let checkedCwd = path.dirname(file);
+      if (kind === 'drc') {
+        if (path.extname(file).toLowerCase() !== '.kicad_pcb') {
+          throw new Error('Choose a .kicad_pcb board for DRC.');
+        }
+        const sourceDir = path.dirname(file);
+        const boardName = path.basename(file);
+        const projectName = path.basename(file, path.extname(file));
+        for (const name of [
+          boardName,
+          `${projectName}.kicad_pro`,
+          `${projectName}.kicad_dru`,
+          'fp-lib-table',
+          'sym-lib-table'
+        ]) {
+          const original = path.join(sourceDir, name);
+          if (!fs.existsSync(original)) {
+            if (name === boardName) {
+              throw new Error('The KiCad PCB no longer exists.');
+            }
+            continue;
+          }
+          const before = fs.statSync(original);
+          if (!before.isFile()) {
+            throw new Error('A KiCad project input is not a regular file.');
+          }
+          fs.copyFileSync(original, path.join(tempRoot, name));
+          const after = fs.statSync(original);
+          if (after.size !== before.size || after.mtimeMs !== before.mtimeMs) {
+            throw new Error(
+              'The KiCad project changed while preparing DRC. Try again.'
+            );
+          }
+          sourceStats.push({
+            file: original,
+            size: after.size,
+            mtimeMs: after.mtimeMs
+          });
+        }
+        checkedCwd = tempRoot;
+        command[command.length - 1] = path.join(tempRoot, boardName);
+      }
       const detected = await this.runner.detectCli(false);
       await this.runner.runWithProgress<string>({
         command,
-        cwd: path.dirname(file),
+        cwd: checkedCwd,
         progressTitle: kind === 'drc' ? 'Running DRC' : 'Running ERC'
       });
       const raw = fs.readFileSync(tmpJsonFile, 'utf8');
+      validateSource();
       const diagnostics = this.parseDiagnostics(raw, file, kind);
+      validateSource();
       return {
         diagnostics,
+        // The temporary report and input copy are deleted on completion.
+        // Do not advertise their dead paths as a usable report/CLI command.
         summary: this.summarize(file, kind, diagnostics, {
-          commandArgs: command,
-          reportPath: tmpJsonFile,
           kicadVersion: detected?.version
         })
       };
@@ -89,7 +155,7 @@ export class KiCadCheckService {
       this.logger.error(`Failed to run ${kind.toUpperCase()}`, error);
       throw error;
     } finally {
-      fs.rmSync(tmpJsonFile, { force: true });
+      fs.rmSync(tempRoot, { recursive: true, force: true });
     }
   }
 
@@ -98,8 +164,6 @@ export class KiCadCheckService {
     source: 'drc' | 'erc',
     diagnostics: vscode.Diagnostic[],
     metadata: {
-      commandArgs: string[];
-      reportPath: string;
       kicadVersion: string | undefined;
     }
   ): DiagnosticSummary {
@@ -124,8 +188,6 @@ export class KiCadCheckService {
       capturedAt: new Date().toISOString(),
       freshness: diagnostics.length > 0 ? 'fresh-dirty' : 'fresh-clean',
       origin: 'kicad-cli',
-      commandArgs: metadata.commandArgs,
-      reportPath: metadata.reportPath,
       kicadVersion: metadata.kicadVersion
     };
   }
@@ -136,24 +198,36 @@ export class KiCadCheckService {
     kind: 'drc' | 'erc'
   ): vscode.Diagnostic[] {
     const data: unknown = JSON.parse(rawJson);
-    const ast = this.parser.parse(readTextFileSync(file));
+    const sourceText = readTextFileSync(file);
     const rows = this.collectIssueRows(data);
     const sourceLocations =
       kind === 'erc' ? new ErcSourceLocations(file, this.parser) : undefined;
     const rootUri = vscode.Uri.file(file);
-    // Build the coordinate candidates once per report, not once for every
-    // diagnostic. Large KiCad projects may report hundreds of violations.
-    const candidates = this.parser
-      .findAllNodes(ast, 'at')
-      .map((node) => ({ node, coords: this.extractCoordinates(node) }))
-      .filter(
-        (
-          entry
-        ): entry is {
-          node: SNode;
-          coords: { x: number; y: number };
-        } => Boolean(entry.coords)
-      );
+    // Expanding a 71 MB PCB into an AST can exceed a 2 GB V8 heap.
+    // Every PCB uses genuine UUID source anchors; only large boards skip the
+    // AST entirely. Small-board unmatched findings keep their AST fallback.
+    const largeBoard =
+      kind === 'drc' &&
+      Buffer.byteLength(sourceText, 'utf8') > LARGE_FILE_BYTES;
+    // Index real object identities for every PCB size. Keep the existing
+    // small-board AST fallback for findings without a verified UUID.
+    const drcLocations =
+      kind === 'drc' ? new DrcSourceCoordinates(sourceText) : undefined;
+    const largeLocations = largeBoard ? drcLocations : undefined;
+    const ast = largeLocations ? undefined : this.parser.parse(sourceText);
+    const candidates = ast
+      ? this.parser
+          .findAllNodes(ast, 'at')
+          .map((node) => ({ node, coords: this.extractCoordinates(node) }))
+          .filter(
+            (
+              entry
+            ): entry is {
+              node: SNode;
+              coords: { x: number; y: number };
+            } => Boolean(entry.coords)
+          )
+      : [];
 
     return rows.map(({ row, sheet }) => {
       // KiCad 10 reports issue coordinates in items[].pos. A violation is
@@ -169,7 +243,10 @@ export class KiCadCheckService {
           ? verified.range
           : isOtherSheet || (kind === 'erc' && sheet !== undefined)
             ? new vscode.Range(0, 0, 0, 1)
-            : this.findClosestRange(candidates, this.issuePosition(row));
+            : (drcLocations?.exactUuid(row['items']) ??
+              (largeLocations
+                ? largeLocations.closest(this.issuePosition(row))
+                : this.findClosestRange(candidates, this.issuePosition(row))));
       const severity = this.toSeverity(String(row['severity'] ?? 'warning'));
       const diagnostic = new vscode.Diagnostic(
         range,

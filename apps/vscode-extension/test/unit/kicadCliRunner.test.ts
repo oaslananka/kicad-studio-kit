@@ -33,7 +33,7 @@ describe('KiCadCliRunner', () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it('prepends define-vars from settings and the sibling project file', async () => {
+  it('places define-vars after the KiCad export subcommand, not at the CLI root', async () => {
     const boardFile = path.join(tempDir, 'sample.kicad_pcb');
     const projectFile = path.join(tempDir, 'sample.kicad_pro');
     fs.writeFileSync(boardFile, '', 'utf8');
@@ -69,17 +69,13 @@ describe('KiCadCliRunner', () => {
         child.stdout.emit('data', Buffer.from('ok'));
         child.emit('close', 0);
       });
-      expect(args).toEqual(
-        expect.arrayContaining([
-          '--define-var',
-          'PROJECT_VAR=123',
-          '--define-var',
-          'USER_VAR=abc',
-          'pcb',
-          'export',
-          'gerbers'
-        ])
-      );
+      expect(args.slice(0, 3)).toEqual(['pcb', 'export', 'gerbers']);
+      expect(args.slice(3, 7)).toEqual([
+        '--define-var',
+        'PROJECT_VAR=123',
+        '--define-var',
+        'USER_VAR=abc'
+      ]);
       return child;
     });
 
@@ -93,6 +89,70 @@ describe('KiCadCliRunner', () => {
     expect(result.exitCode).toBe(0);
     expect(detector.detect).toHaveBeenCalled();
   });
+
+  it.each([
+    ['pcb', 'drc'],
+    ['sch', 'erc']
+  ])(
+    'filters blank project and settings variables when running %s %s',
+    async (kind, action) => {
+      const suffix = kind === 'pcb' ? 'pcb' : 'sch';
+      const file = path.join(tempDir, 'variable-rich.kicad_' + suffix);
+      fs.writeFileSync(file, '', 'utf8');
+      fs.writeFileSync(
+        path.join(tempDir, 'variable-rich.kicad_pro'),
+        JSON.stringify({
+          text_variables: {
+            AUTHOR: 'Real owner',
+            EMPTY_PROJECT: '',
+            VERSION: '1'
+          }
+        }),
+        'utf8'
+      );
+      __setConfiguration({
+        'kicadstudio.cli.defineVars': { VERSION: '2', EMPTY_SETTING: '' }
+      });
+      const detector = {
+        detect: jest.fn().mockResolvedValue({
+          path: '/usr/bin/kicad-cli',
+          version: '10.0.8',
+          source: 'path'
+        })
+      };
+      const spawnMock = childProcess.spawn as unknown as jest.Mock;
+      spawnMock.mockImplementation((_command: string, args: string[]) => {
+        expect(args.slice(0, 2)).toEqual([kind, action]);
+        expect(args.slice(2, 6)).toEqual([
+          '--define-var',
+          'AUTHOR=Real owner',
+          '--define-var',
+          'VERSION=2'
+        ]);
+        expect(args).not.toContain('EMPTY_PROJECT=');
+        expect(args).not.toContain('EMPTY_SETTING=');
+        expect(args.at(-1)).toBe(file);
+        const child = createChildProcessMock();
+        queueMicrotask(() => child.emit('close', 0));
+        return child;
+      });
+      const runner = new KiCadCliRunner(
+        detector as never,
+        {
+          info: jest.fn(),
+          warn: jest.fn(),
+          error: jest.fn(),
+          debug: jest.fn()
+        } as never
+      );
+      const result = await runner.run({
+        command: [kind, action, '--format', 'json', file],
+        cwd: tempDir,
+        progressTitle: 'Checking'
+      });
+      expect(result.exitCode).toBe(0);
+    }
+  );
 
   it('raises CliExitError when kicad-cli exits non-zero', async () => {
     __setConfiguration({});
@@ -349,7 +409,7 @@ describe('KiCadCliRunner', () => {
   });
 
   it('redacts absolute project paths from command and subprocess logs without changing spawned args', async () => {
-    const projectRoot = path.join(tempDir, 'project #&%+ Türkçe');
+    const projectRoot = path.join(tempDir, 'project #&%+ TÃ¼rkÃ§e');
     const boardFile = path.join(projectRoot, 'board #&%+.kicad_pcb');
     const outputDir = path.join(projectRoot, 'fab reports');
     const referenceUrl = 'https://example.test/path#board';
