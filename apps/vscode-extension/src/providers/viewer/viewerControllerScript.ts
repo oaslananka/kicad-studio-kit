@@ -56,6 +56,7 @@ export function createViewerControllerScript(): string {
     const netFeedbackEl = document.getElementById('net-feedback');
     const partialSection = document.getElementById('partial-preview-section');
     const partialBanner = document.getElementById('partial-preview-banner');
+    const partialPreviewBannerText = partialBanner?.textContent || '';
     const partialStatus = document.getElementById('partial-preview-status');
     const partialStartBtn = document.getElementById('partial-start-btn');
     const partialNextBtn = document.getElementById('partial-next-btn');
@@ -239,7 +240,11 @@ export function createViewerControllerScript(): string {
       const large = payload.fileType === 'board' &&
         String(payload.disabledReason || '').includes('Interactive render is disabled');
       partialSection.hidden = !summary && !large;
-      if (partialBanner) partialBanner.hidden = !summary;
+      if (partialBanner) {
+        partialBanner.hidden = !summary;
+        // A Reload returns from the full native plot to the bounded preview.
+        partialBanner.textContent = partialPreviewBannerText;
+      }
       if (partialStatus && summary) {
         const missing = summary.remaining || {};
         const bounds = summary.viewport || {};
@@ -362,6 +367,11 @@ export function createViewerControllerScript(): string {
     void initViewer();
     async function initViewer() {
       const generation = ++viewerGeneration;
+      // Reload can be local (no host refresh message). The native SVG is no
+      // longer the displayed surface, so restore the bounded-source warning.
+      if (partialBanner && payload.partialPreview) {
+        partialBanner.textContent = partialPreviewBannerText;
+      }
       // Preparing a large PCB can outlast a refresh. Stop the superseded worker
       // immediately rather than decoding a stale board while the new one loads.
       cancelPendingPreparation?.();
@@ -1072,6 +1082,14 @@ export function createViewerControllerScript(): string {
       }
       try {
         showSvgFallback(svg);
+        if (payload.partialPreview && partialBanner) {
+          partialBanner.textContent = fullOriginal
+            ? 'FULL ORIGINAL ' + layer + ' — This read-only native KiCad plot shows the original board. ' +
+              'The interactive preview remains partial and omits zone fills, pads and other geometry. ' +
+              'This plot is not DRC or net-continuity validation. ' +
+              'Use Reload viewer to return to the partial preview.'
+            : partialPreviewBannerText;
+        }
         setEngineState('cli-svg-fallback', 'Native KiCad ' + layer + ' plot');
         setStatus(
           'Native KiCad ' + layer +

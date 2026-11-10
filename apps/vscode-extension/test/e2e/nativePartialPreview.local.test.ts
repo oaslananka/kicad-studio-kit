@@ -203,7 +203,9 @@ test('real KiCad 10 dense PCB keeps partial previews and original copper plots d
       { timeout: 60000 }
     );
     await expect(viewer.locator('#svg-fallback-view')).toBeVisible();
-    await expect(viewer.locator('#partial-preview-banner')).toBeVisible();
+    await expect(viewer.locator('#partial-preview-banner')).toContainText(
+      'PARTIAL PREVIEW'
+    );
     const genuineShapes = await viewer
       .locator('#svg-fallback-view svg circle, #svg-fallback-view svg path')
       .count();
@@ -226,7 +228,15 @@ test('real KiCad 10 dense PCB keeps partial previews and original copper plots d
     console.log('NATIVE_VME_FULL_ORIGINAL_IN2_SHAPES=' + allSourceShapes);
     expect(allSourceShapes).toBeGreaterThan(genuineShapes);
     expect(allSourceShapes).toBeGreaterThan(1_000);
-    await expect(viewer.locator('#partial-preview-banner')).toBeVisible();
+    await expect(viewer.locator('#partial-preview-banner')).toContainText(
+      'FULL ORIGINAL In2.Cu'
+    );
+    await expect(viewer.locator('#partial-preview-banner')).toContainText(
+      'interactive preview remains partial'
+    );
+    await expect(viewer.locator('#partial-preview-banner')).toContainText(
+      'not DRC or net-continuity validation'
+    );
     await expect(viewer.locator('#viewer-status')).toContainText(
       'not DRC or net-continuity validation'
     );
@@ -243,6 +253,9 @@ test('real KiCad 10 dense PCB keeps partial previews and original copper plots d
       await expect(viewer.locator('#viewer-status')).toContainText(
         'Interactive renderer loaded',
         { timeout: 45_000 }
+      );
+      await expect(viewer.locator('#partial-preview-banner')).toContainText(
+        'PARTIAL PREVIEW'
       );
       const focus = viewer.getByRole('button', { name: 'Focus ' + outer });
       await expect(focus).toBeEnabled({ timeout: 30_000 });
@@ -268,7 +281,9 @@ test('real KiCad 10 dense PCB keeps partial previews and original copper plots d
         'NATIVE_VME_FULL_ORIGINAL_' + outer + '_SHAPES=' + nativeOuterShapes
       );
       expect(nativeOuterShapes).toBeGreaterThan(1_000);
-      await expect(viewer.locator('#partial-preview-banner')).toBeVisible();
+      await expect(viewer.locator('#partial-preview-banner')).toContainText(
+        'FULL ORIGINAL ' + outer
+      );
       await expect(viewer.locator('#viewer-status')).toContainText(
         'not DRC or net-continuity validation'
       );
