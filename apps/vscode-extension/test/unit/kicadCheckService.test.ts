@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -82,7 +84,329 @@ describe('KiCadCheckService KiCad 10 JSON diagnostics', () => {
     expect(result.summary).toEqual(
       expect.objectContaining({ source: 'drc', errors: 1, warnings: 1 })
     );
+    // A disposable DRC input/report cannot be opened or replayed after
+    // runCheck cleans its temporary directory.
+    expect(result.summary.reportPath).toBeUndefined();
+    expect(result.summary.commandArgs).toBeUndefined();
   });
+
+  it('navigates small KiCad PCB DRC findings to the matching object UUID, not a nearby footprint', async () => {
+    const uuid = '22222222-2222-4222-8222-222222222222';
+    const source = [
+      '(kicad_pcb',
+      '  (footprint "wrong-closest" (at 10 10) (uuid "11111111-1111-4111-8111-111111111111"))',
+      '  (footprint "actual-pad" (at 200 200)',
+      '    (pad "1" smd rect (at 0 0)',
+      '      (uuid "' + uuid + '")))',
+      ')'
+    ].join('\n');
+    fs.writeFileSync(board, source, 'utf8');
+    const service = checkService({
+      violations: [
+        {
+          description: 'Clearance violation on actual pad',
+          severity: 'error',
+          type: 'clearance',
+          items: [{ uuid, pos: { x: 10, y: 10 } }]
+        },
+        {
+          description: 'Unknown item falls back to nearby source coordinate',
+          severity: 'warning',
+          type: 'clearance',
+          items: [
+            {
+              uuid: '99999999-9999-4999-8999-999999999999',
+              pos: { x: 10, y: 10 }
+            }
+          ]
+        }
+      ]
+    });
+    const result = await service.runDRC(board);
+    expect(result.diagnostics).toHaveLength(2);
+    expect(result.diagnostics.map((item) => item.range.start.line)).toEqual([
+      4, 1
+    ]);
+    expect(result.summary.errors).toBe(1);
+    expect(result.summary.warnings).toBe(1);
+  });
+
+  it('runs DRC from an isolated project snapshot without writing a user project sidecar', async () => {
+    const project = path.join(workdir, 'sample.kicad_pro');
+    const rules = path.join(workdir, 'sample.kicad_dru');
+    const footprintTable = path.join(workdir, 'fp-lib-table');
+    const boardText = fs.readFileSync(board, 'utf8');
+    fs.writeFileSync(project, '{"board":{"design_settings":{}}}');
+    fs.writeFileSync(rules, '(version 1) (rule "Clearance")');
+    fs.writeFileSync(footprintTable, '(fp_lib_table)');
+    let cliRoot = '';
+    const cli = {
+      detectCli: jest.fn().mockResolvedValue({ version: '10.0.8' }),
+      runWithProgress: jest.fn(
+        async ({ command, cwd }: { command: string[]; cwd: string }) => {
+          cliRoot = cwd;
+          const pcb = command.at(-1)!;
+          const output = command[command.indexOf('--output') + 1]!;
+          expect(cwd).not.toBe(workdir);
+          expect(pcb).toBe(path.join(cwd, 'sample.kicad_pcb'));
+          expect(fs.readFileSync(pcb, 'utf8')).toBe(boardText);
+          expect(
+            fs.readFileSync(path.join(cwd, 'sample.kicad_pro'), 'utf8')
+          ).toBe(fs.readFileSync(project, 'utf8'));
+          expect(
+            fs.readFileSync(path.join(cwd, 'sample.kicad_dru'), 'utf8')
+          ).toBe(fs.readFileSync(rules, 'utf8'));
+          expect(fs.readFileSync(path.join(cwd, 'fp-lib-table'), 'utf8')).toBe(
+            fs.readFileSync(footprintTable, 'utf8')
+          );
+          expect(path.dirname(output)).toBe(cwd);
+          // Real KiCad CLI DRC can create this project-local metadata file.
+          fs.writeFileSync(path.join(cwd, 'sample.kicad_prl'), '{}');
+          fs.writeFileSync(
+            output,
+            JSON.stringify({
+              violations: [
+                {
+                  description: 'Insufficient clearance',
+                  type: 'clearance',
+                  severity: 'error',
+                  items: [{ pos: { x: 12, y: 34 } }]
+                }
+              ]
+            })
+          );
+        }
+      )
+    };
+    const service = new KiCadCheckService(
+      cli as never,
+      new SExpressionParser(),
+      { error: jest.fn() } as never
+    );
+    const result = await service.runDRC(board);
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.summary).toEqual(
+      expect.objectContaining({
+        file: board,
+        source: 'drc',
+        errors: 1,
+        warnings: 0
+      })
+    );
+    expect(fs.readFileSync(board, 'utf8')).toBe(boardText);
+    expect(fs.existsSync(path.join(workdir, 'sample.kicad_prl'))).toBe(false);
+    expect(cliRoot).not.toBe('');
+    expect(fs.existsSync(cliRoot)).toBe(false);
+  });
+
+  it('rejects stale DRC findings when project rules change while KiCad is running', async () => {
+    const project = path.join(workdir, 'sample.kicad_pro');
+    fs.writeFileSync(project, '{"version":1}');
+    let cliRoot = '';
+    const cli = {
+      detectCli: jest.fn().mockResolvedValue({ version: '10.0.8' }),
+      runWithProgress: jest.fn(
+        async ({ command, cwd }: { command: string[]; cwd: string }) => {
+          cliRoot = cwd;
+          fs.writeFileSync(
+            command[command.indexOf('--output') + 1]!,
+            '{"violations":[]}'
+          );
+          // A changed KiCad project ruleset makes the just-produced DRC
+          // report untrustworthy, even if the PCB itself is unchanged.
+          fs.writeFileSync(project, '{"version":1000}');
+        }
+      )
+    };
+    const service = new KiCadCheckService(
+      cli as never,
+      new SExpressionParser(),
+      { error: jest.fn() } as never
+    );
+    await expect(service.runDRC(board)).rejects.toThrow(
+      'The KiCad project changed during DRC'
+    );
+    expect(fs.existsSync(cliRoot)).toBe(false);
+    expect(fs.existsSync(path.join(workdir, 'sample.kicad_prl'))).toBe(false);
+  });
+
+  it('keeps ERC on the true schematic path to retain hierarchical sheets', async () => {
+    const cli = {
+      detectCli: jest.fn().mockResolvedValue({ version: '10.0.8' }),
+      runWithProgress: jest.fn(
+        async ({ command, cwd }: { command: string[]; cwd: string }) => {
+          expect(cwd).toBe(workdir);
+          expect(command.at(-1)).toBe(schematic);
+          fs.writeFileSync(
+            command[command.indexOf('--output') + 1]!,
+            '{"sheets":[]}'
+          );
+        }
+      )
+    };
+    const service = new KiCadCheckService(
+      cli as never,
+      new SExpressionParser(),
+      { error: jest.fn() } as never
+    );
+    const result = await service.runERC(schematic);
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.summary.file).toBe(schematic);
+  });
+
+  const cliPath = path.join(
+    process.env['ProgramFiles'] ?? String.raw`C:\Program Files`,
+    'KiCad',
+    '10.0',
+    'bin',
+    'kicad-cli.exe'
+  );
+  const nativeDemo = path.join(
+    process.env['ProgramFiles'] ?? String.raw`C:\Program Files`,
+    'KiCad',
+    '10.0',
+    'share',
+    'kicad',
+    'demos',
+    'royalblue54L_feather'
+  );
+  const runNative =
+    process.platform === 'win32' &&
+    process.env['KICADSTUDIO_LOCAL_WINDOWS_ACCEPTANCE'] === '1' &&
+    fs.existsSync(cliPath) &&
+    fs.existsSync(path.join(nativeDemo, 'RoyalBlue54L-Feather.kicad_pcb'));
+  (runNative ? it : it.skip)(
+    'matches actual KiCad 10 DRC JSON issues and severity on an unchanged temporary real PCB',
+    async () => {
+      const basename = 'RoyalBlue54L-Feather';
+      const boardInput = path.join(workdir, `${basename}.kicad_pcb`);
+      const projectInput = path.join(workdir, `${basename}.kicad_pro`);
+      fs.copyFileSync(
+        path.join(nativeDemo, `${basename}.kicad_pcb`),
+        boardInput
+      );
+      fs.copyFileSync(
+        path.join(nativeDemo, `${basename}.kicad_pro`),
+        projectInput
+      );
+      const hashFile = (file: string): string =>
+        createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+      const beforeBoard = hashFile(boardInput);
+      const beforeProject = hashFile(projectInput);
+      let report:
+        | {
+            violations: Array<{
+              severity: string;
+              type: string;
+              items?: Array<{ uuid?: unknown }>;
+            }>;
+            unconnected_items: Array<{
+              severity: string;
+              type: string;
+              items?: Array<{ uuid?: unknown }>;
+            }>;
+            schematic_parity: Array<{
+              severity: string;
+              type: string;
+              items?: Array<{ uuid?: unknown }>;
+            }>;
+          }
+        | undefined;
+      let disposableDir = '';
+      const cli = {
+        detectCli: jest.fn().mockResolvedValue({ version: '10.0.8' }),
+        runWithProgress: jest.fn(
+          async ({ command, cwd }: { command: string[]; cwd: string }) => {
+            disposableDir = cwd;
+            expect(command.at(-1)).not.toBe(boardInput);
+            expect(
+              fs.readFileSync(path.join(cwd, `${basename}.kicad_pro`), 'utf8')
+            ).toBe(fs.readFileSync(projectInput, 'utf8'));
+            const execution = spawnSync(cliPath, command, {
+              cwd,
+              encoding: 'utf8',
+              timeout: 120_000
+            });
+            if (execution.error || execution.status !== 0) {
+              throw new Error(
+                'Native KiCad DRC failed to execute: ' +
+                  String(execution.error ?? execution.stderr)
+              );
+            }
+            const output = command[command.indexOf('--output') + 1]!;
+            report = JSON.parse(fs.readFileSync(output, 'utf8'));
+            expect(fs.existsSync(path.join(cwd, `${basename}.kicad_prl`))).toBe(
+              true
+            );
+          }
+        )
+      };
+      const service = new KiCadCheckService(
+        cli as never,
+        new SExpressionParser(),
+        { error: jest.fn() } as never
+      );
+      const result = await service.runDRC(boardInput);
+      expect(report).toBeDefined();
+      const issues = [
+        ...(report?.violations ?? []),
+        ...(report?.unconnected_items ?? []),
+        ...(report?.schematic_parity ?? [])
+      ];
+      expect(issues.length).toBeGreaterThan(0);
+      const count = (severity: string): number =>
+        issues.filter((row) => row.severity === severity).length;
+      expect(result.diagnostics).toHaveLength(issues.length);
+      expect(result.summary.errors).toBe(count('error'));
+      expect(result.summary.warnings).toBe(count('warning'));
+      expect(result.summary.infos).toBe(
+        issues.length - count('error') - count('warning')
+      );
+      expect(result.diagnostics.map((item) => item.code)).toEqual(
+        issues.map((item) => item.type)
+      );
+      const pcbLines = fs.readFileSync(boardInput, 'utf8').split(/\r?\n/);
+      const genuineUuidRows = issues.reduce((count, issue, index) => {
+        const line = result.diagnostics[index]?.range.start.line;
+        const sourceLine =
+          typeof line === 'number' ? pcbLines[line]?.toLowerCase() : undefined;
+        if (!sourceLine || !Array.isArray(issue.items)) return count;
+        return (
+          count +
+          Number(
+            issue.items.some(
+              (item: { uuid?: unknown }) =>
+                typeof item.uuid === 'string' &&
+                sourceLine.includes(item.uuid.toLowerCase())
+            )
+          )
+        );
+      }, 0);
+      console.log(
+        'REAL_KICAD_SMALL_DRC_UUID_ROWS=' +
+          JSON.stringify({ genuineUuidRows, issues: issues.length })
+      );
+      expect(genuineUuidRows).toBe(issues.length);
+      expect(hashFile(boardInput)).toBe(beforeBoard);
+      expect(hashFile(projectInput)).toBe(beforeProject);
+      expect(fs.existsSync(path.join(workdir, `${basename}.kicad_prl`))).toBe(
+        false
+      );
+      expect(disposableDir).not.toBe('');
+      expect(fs.existsSync(disposableDir)).toBe(false);
+      console.log(
+        'REAL_KICAD_DRC_PARITY=' +
+          JSON.stringify({
+            issues: issues.length,
+            errors: result.summary.errors,
+            warnings: result.summary.warnings,
+            userProjectSidecars: 0,
+            immutable: true
+          })
+      );
+    },
+    155_000
+  );
 
   it('reads nested KiCad 10 ERC sheet violations and item coordinates', async () => {
     const service = checkService({
