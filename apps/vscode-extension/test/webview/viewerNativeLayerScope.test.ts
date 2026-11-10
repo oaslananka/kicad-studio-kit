@@ -39,17 +39,18 @@ test('labels the displayed original-layer plot and restores the partial preview 
   const refresh = () =>
     page.evaluate(
       ({ base64, layers, preview }) =>
-        window.postMessage(
-          {
-            type: 'refresh',
-            payload: {
-              fileName: 'sample.kicad_pcb',
-              base64,
-              metadata: layers,
-              partialPreview: preview
+        window.dispatchEvent(
+          new MessageEvent('message', {
+            data: {
+              type: 'refresh',
+              payload: {
+                fileName: 'sample.kicad_pcb',
+                base64,
+                metadata: layers,
+                partialPreview: preview
+              }
             }
-          },
-          '*'
+          })
         ),
       { base64: boardBase64, layers: metadata, preview: partialPreview }
     );
@@ -84,15 +85,16 @@ test('labels the displayed original-layer plot and restores the partial preview 
     const request = messages.findLast(
       (message) => message.type === 'requestNativeInnerLayer'
     );
-    window.postMessage(
-      {
-        type: 'nativeInnerLayerSvg',
-        payload: {
-          requestId: request?.payload?.requestId,
-          svg: '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M0 0 L100 100"/></svg>'
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: {
+          type: 'nativeInnerLayerSvg',
+          payload: {
+            requestId: request?.payload?.requestId,
+            svg: '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M0 0 L100 100"/></svg>'
+          }
         }
-      },
-      '*'
+      })
     );
   });
   await expect(page.locator('#svg-fallback-view')).toBeVisible();
