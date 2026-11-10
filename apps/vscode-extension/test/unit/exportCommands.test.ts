@@ -7,6 +7,8 @@ import {
   discoverGerberLayers,
   KiCadExportService
 } from '../../src/cli/exportCommands';
+import { BomParser } from '../../src/bom/bomParser';
+import { SExpressionParser } from '../../src/language/sExpressionParser';
 import { zipDirectory } from '../../src/utils/zipUtils';
 import { __setConfiguration } from './vscodeMock';
 
@@ -646,6 +648,159 @@ describe('KiCadExportService.renderViewerSvg', () => {
       (vscode.workspace.findFiles as jest.Mock).mockReset();
       (vscode.workspace.findFiles as jest.Mock).mockResolvedValue([]);
       fs.rmSync(workspaceRoot, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('KiCadExportService source selection for visible custom editors', () => {
+  it('uses the foreground schematic tab rather than a stale text editor when exporting', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'studio-export-tab-'));
+    const foreground = path.join(root, 'foreground.kicad_sch');
+    const stale = path.join(root, 'stale.kicad_sch');
+    fs.writeFileSync(foreground, '(kicad_sch)', 'utf8');
+    fs.writeFileSync(stale, '(kicad_sch)', 'utf8');
+    const mockWindow = vscode.window as unknown as {
+      activeTextEditor: { document: { uri: vscode.Uri } } | undefined;
+      tabGroups: {
+        activeTabGroup: {
+          activeTab: { input: { uri: vscode.Uri } } | undefined;
+        };
+      };
+    };
+    const previousEditor = mockWindow.activeTextEditor;
+    const previousTab = mockWindow.tabGroups.activeTabGroup.activeTab;
+    const service = new KiCadExportService(
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never
+    );
+    try {
+      mockWindow.activeTextEditor = {
+        document: { uri: vscode.Uri.file(stale) }
+      };
+      mockWindow.tabGroups.activeTabGroup.activeTab = {
+        input: { uri: vscode.Uri.file(foreground) }
+      };
+      const resolved = await (
+        service as unknown as {
+          resolveTargetFile(
+            resource: vscode.Uri | undefined,
+            expectedExtensions: string[]
+          ): Promise<string | undefined>;
+        }
+      ).resolveTargetFile(undefined, ['.kicad_sch']);
+      expect(resolved).toBe(foreground);
+    } finally {
+      mockWindow.activeTextEditor = previousEditor;
+      mockWindow.tabGroups.activeTabGroup.activeTab = previousTab;
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('KiCadExportService complete BOM source and failure handling', () => {
+  const load = (service: KiCadExportService, file: string) =>
+    (
+      service as unknown as {
+        loadBomEntries: (
+          file: string
+        ) => Promise<Array<{ references: string[] }>>;
+      }
+    ).loadBomEntries(file);
+
+  it('keeps flat schematics available without requiring a native BOM capability', async () => {
+    __setConfiguration({});
+    const file = path.resolve(__dirname, '..', 'fixtures', 'sample.kicad_sch');
+    const detector = { hasCapability: jest.fn() };
+    const service = new KiCadExportService(
+      {} as never,
+      detector as never,
+      new BomParser(new SExpressionParser()),
+      {} as never,
+      {} as never,
+      {} as never
+    );
+    const result = await load(service, file);
+    expect(result.flatMap((entry) => entry.references).sort()).toEqual([
+      'C1',
+      'R1',
+      'R2'
+    ]);
+    expect(detector.hasCapability).not.toHaveBeenCalled();
+  });
+
+  it('fails closed on hierarchical schematics without KiCad BOM support', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'studio-bom-guard-'));
+    const file = path.join(root, 'parent.kicad_sch');
+    fs.writeFileSync(
+      file,
+      '(kicad_sch (sheet (property "Sheetfile" "child.kicad_sch")))',
+      'utf8'
+    );
+    const detector = { hasCapability: jest.fn().mockResolvedValue(false) };
+    const runner = { runWithProgress: jest.fn() };
+    const service = new KiCadExportService(
+      runner as never,
+      detector as never,
+      new BomParser(new SExpressionParser()),
+      {} as never,
+      {} as never,
+      {} as never
+    );
+    try {
+      await expect(load(service, file)).rejects.toThrow(
+        'A complete multi-sheet BOM needs a compatible KiCad CLI'
+      );
+      expect(detector.hasCapability).toHaveBeenCalledWith('bom');
+      expect(runner.runWithProgress).not.toHaveBeenCalled();
+      expect(fs.readdirSync(root)).toEqual(['parent.kicad_sch']);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('reads the native hierarchical BOM and removes the temporary CLI output', async () => {
+    __setConfiguration({});
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'studio-bom-native-'));
+    const file = path.join(root, 'parent.kicad_sch');
+    fs.writeFileSync(
+      file,
+      '(kicad_sch (sheet (property "Sheetfile" "child.kicad_sch")))',
+      'utf8'
+    );
+    let temporaryCsv: string | undefined;
+    const runner = {
+      runWithProgress: jest.fn().mockImplementation(async ({ command }) => {
+        const outputIndex = command.indexOf('--output');
+        temporaryCsv = command[outputIndex + 1];
+        fs.writeFileSync(
+          temporaryCsv!,
+          '"Reference","Value","Footprint","Quantity","DNP","MPN","Manufacturer","LCSC","Description"\n' +
+            '"R1","10k","R_0603","1","","","","",""\n',
+          'utf8'
+        );
+      })
+    };
+    const service = new KiCadExportService(
+      runner as never,
+      { hasCapability: jest.fn().mockResolvedValue(true) } as never,
+      new BomParser(new SExpressionParser()),
+      {} as never,
+      {} as never,
+      {} as never
+    );
+    try {
+      expect((await load(service, file)).flatMap((e) => e.references)).toEqual([
+        'R1'
+      ]);
+      expect(temporaryCsv).toBeDefined();
+      expect(fs.existsSync(temporaryCsv!)).toBe(false);
+      expect(runner.runWithProgress).toHaveBeenCalledTimes(1);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
     }
   });
 });

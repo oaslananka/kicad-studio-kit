@@ -1409,7 +1409,7 @@
         },
         {
           "command": "kicadstudio.exportSchPs",
-          "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
+          "when": "kicadstudio.workspaceTrusted && (kicadstudio.schematicOpen || kicadstudio.hasProject)"
         },
         {
           "command": "kicadstudio.exportStats",
@@ -1465,23 +1465,23 @@
         },
         {
           "command": "kicadstudio.exportPDF",
-          "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
+          "when": "kicadstudio.workspaceTrusted && (kicadstudio.schematicOpen || kicadstudio.hasProject)"
         },
         {
           "command": "kicadstudio.exportBOMCSV",
-          "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
+          "when": "kicadstudio.workspaceTrusted && (kicadstudio.schematicOpen || kicadstudio.hasProject)"
         },
         {
           "command": "kicadstudio.exportBOMXLSX",
-          "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
+          "when": "kicadstudio.workspaceTrusted && (kicadstudio.schematicOpen || kicadstudio.hasProject)"
         },
         {
           "command": "kicadstudio.exportNetlist",
-          "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
+          "when": "kicadstudio.workspaceTrusted && (kicadstudio.schematicOpen || kicadstudio.hasProject)"
         },
         {
           "command": "kicadstudio.exportInteractiveBOM",
-          "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
+          "when": "kicadstudio.workspaceTrusted && (kicadstudio.schematicOpen || kicadstudio.hasProject)"
         },
         {
           "command": "kicadstudio.exportViewerSvg",

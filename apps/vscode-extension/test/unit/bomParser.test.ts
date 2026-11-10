@@ -104,3 +104,19 @@ describe('BomParser', () => {
     expect(entries[0]?.quantity).toBe(3);
   });
 });
+
+describe('BomParser hierarchy detection', () => {
+  it('detects real child sheet instances but not definitions or empty sheet registries', () => {
+    const parser = new BomParser(new SExpressionParser());
+    expect(
+      parser.hasSubSheets(
+        '(kicad_sch (sheet (property "Sheetfile" "child.kicad_sch")))'
+      )
+    ).toBe(true);
+    expect(
+      parser.hasSubSheets(
+        '(kicad_sch (lib_symbols (symbol "Device:R")) (sheet_instances (path "/")))'
+      )
+    ).toBe(false);
+  });
+});
