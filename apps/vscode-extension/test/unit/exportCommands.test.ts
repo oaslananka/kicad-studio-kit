@@ -950,15 +950,15 @@ describe('KiCadExportService BOM user export outcomes', () => {
       expect(state.fail).toHaveBeenCalledWith(
         'bom',
         vscode.Uri.file(file),
-        expect.any(Error)
+        'A complete multi-sheet BOM needs a compatible KiCad CLI. Configure KiCad and try again.'
       );
       expect(state.complete).not.toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalledWith(
         'BOM export failed',
-        expect.any(Error)
+        'A complete multi-sheet BOM needs a compatible KiCad CLI. Configure KiCad and try again.'
       );
       expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
-        'BOM export failed. Verify that the complete project opens in KiCad and retry.'
+        'BOM export failed. A complete multi-sheet BOM needs a compatible KiCad CLI. Configure KiCad and retry.'
       );
       expect(vscode.window.showInformationMessage).not.toHaveBeenCalled();
     } finally {

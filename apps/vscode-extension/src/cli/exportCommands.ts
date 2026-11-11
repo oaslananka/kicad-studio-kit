@@ -32,6 +32,9 @@ import {
   type ExportCommandKind
 } from './exportCommandBuilder';
 
+const INCOMPATIBLE_MULTI_SHEET_BOM_ERROR =
+  'A complete multi-sheet BOM needs a compatible KiCad CLI. Configure KiCad and try again.';
+
 export type {
   ExportCommandBuildOptions,
   ExportCommandKind
@@ -976,9 +979,7 @@ export class KiCadExportService {
     }
 
     if (!(await this.detector.hasCapability('bom'))) {
-      throw new Error(
-        'A complete multi-sheet BOM needs a compatible KiCad CLI. Configure KiCad and try again.'
-      );
+      throw new Error(INCOMPATIBLE_MULTI_SHEET_BOM_ERROR);
     }
 
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kicadstudio-bom-'));
@@ -1051,6 +1052,20 @@ export class KiCadExportService {
       );
       await this.showOutputFolder(outputDir);
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === INCOMPATIBLE_MULTI_SHEET_BOM_ERROR
+      ) {
+        this.exportState?.fail('bom', uri, INCOMPATIBLE_MULTI_SHEET_BOM_ERROR);
+        this.logger.error(
+          'BOM export failed',
+          INCOMPATIBLE_MULTI_SHEET_BOM_ERROR
+        );
+        void vscode.window.showErrorMessage(
+          'BOM export failed. A complete multi-sheet BOM needs a compatible KiCad CLI. Configure KiCad and retry.'
+        );
+        return;
+      }
       if (isBomOutputPermissionFailure(error, outputDir, outputFile)) {
         this.exportState?.fail(
           'bom',
