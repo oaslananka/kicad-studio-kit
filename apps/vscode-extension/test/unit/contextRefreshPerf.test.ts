@@ -1,6 +1,8 @@
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import * as vscode from 'vscode';
+import { CONTEXT_KEYS } from '../../src/constants';
 import {
   DesignBlockCache,
   StudioContextController,
@@ -134,6 +136,77 @@ describe('#398 context refresh performance', () => {
     afterEach(() => {
       jest.useRealTimers();
       jest.restoreAllMocks();
+    });
+
+    it('publishes active editor and trust visibility before deep discovery', () => {
+      const controller = new WorkspaceContextController(
+        {} as unknown as WorkspaceContextControllerDeps
+      );
+      const refresh = jest
+        .spyOn(controller, 'refreshContexts')
+        .mockResolvedValue(undefined);
+      const setContext = vscode.commands.executeCommand as jest.Mock;
+      setContext.mockClear();
+      const group = vscode.window.tabGroups.activeTabGroup as unknown as {
+        activeTab: { input: { uri: vscode.Uri } } | undefined;
+      };
+      const trustedWorkspace = vscode.workspace as unknown as {
+        isTrusted: boolean;
+      };
+      const previousTab = group.activeTab;
+      const previousTrusted = vscode.workspace.isTrusted;
+      try {
+        group.activeTab = {
+          input: { uri: vscode.Uri.file('/safe/project.kicad_sch') }
+        };
+        trustedWorkspace.isTrusted = true;
+        controller.scheduleContextRefresh();
+        jest.advanceTimersByTime(0);
+        expect(setContext).toHaveBeenCalledWith(
+          'setContext',
+          CONTEXT_KEYS.schematicOpen,
+          true
+        );
+        expect(setContext).toHaveBeenCalledWith(
+          'setContext',
+          CONTEXT_KEYS.pcbOpen,
+          false
+        );
+        expect(setContext).toHaveBeenCalledWith(
+          'setContext',
+          CONTEXT_KEYS.workspaceTrusted,
+          true
+        );
+        expect(refresh).not.toHaveBeenCalled();
+
+        setContext.mockClear();
+        group.activeTab = {
+          input: { uri: vscode.Uri.file('/safe/project.kicad_pcb') }
+        };
+        trustedWorkspace.isTrusted = false;
+        controller.scheduleContextRefresh();
+        jest.advanceTimersByTime(0);
+        expect(setContext).toHaveBeenCalledWith(
+          'setContext',
+          CONTEXT_KEYS.schematicOpen,
+          false
+        );
+        expect(setContext).toHaveBeenCalledWith(
+          'setContext',
+          CONTEXT_KEYS.pcbOpen,
+          true
+        );
+        expect(setContext).toHaveBeenCalledWith(
+          'setContext',
+          CONTEXT_KEYS.workspaceTrusted,
+          false
+        );
+        expect(refresh).not.toHaveBeenCalled();
+      } finally {
+        group.activeTab = previousTab;
+        trustedWorkspace.isTrusted = previousTrusted;
+        controller.dispose();
+      }
     });
 
     it('coalesces rapid schedule calls into a single refresh', () => {

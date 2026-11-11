@@ -57,6 +57,7 @@ export interface WorkspaceContextControllerDeps {
 export class WorkspaceContextController implements vscode.Disposable {
   private refreshProjectsTimer: NodeJS.Timeout | undefined;
   private contextRefreshTimer: NodeJS.Timeout | undefined;
+  private editorContextTimer: NodeJS.Timeout | undefined;
   private refreshInFlight = false;
   private refreshQueued = false;
   private allegroSupported: boolean | undefined;
@@ -85,8 +86,17 @@ export class WorkspaceContextController implements vscode.Disposable {
     }
   }
 
-  /** Debounced entry point for high-frequency UI events. */
+  /** Debounced deep refresh, but publish lightweight editor visibility first. */
   scheduleContextRefresh(): void {
+    // Do not make basic export commands wait for project discovery, AI provider
+    // initialization or KiCad CLI probing. One zero-delay task coalesces the
+    // tab/focus events from the same interaction.
+    if (!this.editorContextTimer) {
+      this.editorContextTimer = setTimeout(() => {
+        this.editorContextTimer = undefined;
+        void this.refreshEditorContexts();
+      }, 0);
+    }
     if (this.contextRefreshTimer) {
       clearTimeout(this.contextRefreshTimer);
     }
@@ -94,6 +104,27 @@ export class WorkspaceContextController implements vscode.Disposable {
       this.contextRefreshTimer = undefined;
       void this.refreshContexts();
     }, CONTEXT_REFRESH_DEBOUNCE_MS);
+  }
+
+  private async refreshEditorContexts(): Promise<void> {
+    const activeUri = getActiveResourceUri();
+    await Promise.all([
+      vscode.commands.executeCommand(
+        'setContext',
+        CONTEXT_KEYS.schematicOpen,
+        activeUri?.fsPath.endsWith('.kicad_sch') ?? false
+      ),
+      vscode.commands.executeCommand(
+        'setContext',
+        CONTEXT_KEYS.pcbOpen,
+        activeUri?.fsPath.endsWith('.kicad_pcb') ?? false
+      ),
+      vscode.commands.executeCommand(
+        'setContext',
+        CONTEXT_KEYS.workspaceTrusted,
+        isWorkspaceTrusted()
+      )
+    ]);
   }
 
   /** Drop cached capability probes (e.g. after a CLI-path/config change). */
@@ -163,16 +194,9 @@ export class WorkspaceContextController implements vscode.Disposable {
       CONTEXT_KEYS.hasProject,
       projectSnapshot.hasProject
     );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.schematicOpen,
-      activeUri?.fsPath.endsWith('.kicad_sch') ?? false
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.pcbOpen,
-      activeUri?.fsPath.endsWith('.kicad_pcb') ?? false
-    );
+    // Reconcile with the current tab, not the resource snapshot captured before
+    // potentially slow workspace/CLI discovery.
+    await this.refreshEditorContexts();
     await vscode.commands.executeCommand(
       'setContext',
       CONTEXT_KEYS.aiEnabled,
@@ -197,11 +221,6 @@ export class WorkspaceContextController implements vscode.Disposable {
       'setContext',
       CONTEXT_KEYS.allegroImportSupported,
       allegroImportSupported
-    );
-    await vscode.commands.executeCommand(
-      'setContext',
-      CONTEXT_KEYS.workspaceTrusted,
-      isWorkspaceTrusted()
     );
     await vscode.commands.executeCommand(
       'setContext',
@@ -285,6 +304,10 @@ export class WorkspaceContextController implements vscode.Disposable {
     if (this.contextRefreshTimer) {
       clearTimeout(this.contextRefreshTimer);
       this.contextRefreshTimer = undefined;
+    }
+    if (this.editorContextTimer) {
+      clearTimeout(this.editorContextTimer);
+      this.editorContextTimer = undefined;
     }
   }
 }
