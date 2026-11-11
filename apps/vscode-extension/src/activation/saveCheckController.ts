@@ -80,7 +80,7 @@ export class SaveCheckController {
         await pushStudioContext('drc');
       }
       if (result.diagnostics.length > 0) {
-        await vscode.commands.executeCommand('workbench.actions.view.problems');
+        await vscode.commands.executeCommand('workbench.action.problems.focus');
       }
     } catch (error) {
       diagnosticState.recordValidationFailure(

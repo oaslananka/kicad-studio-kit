@@ -25,7 +25,12 @@ test('current coverage scope is complete and deterministic (#528)', () => {
       .length,
     16
   );
-  assert.equal(result.inventory.ratchet.files.length, 8);
+  assert.equal(result.inventory.ratchet.files.length, 9);
+  assert.ok(
+    result.inventory.ratchet.files.includes(
+      'src/activation/saveCheckController.ts'
+    )
+  );
   assert.ok(result.inventory.summary.excludedLines > 0);
   assert.ok(result.inventory.summary.includedFiles > 0);
 

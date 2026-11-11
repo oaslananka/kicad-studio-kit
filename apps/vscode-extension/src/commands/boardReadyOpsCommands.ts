@@ -458,7 +458,7 @@ export function registerBoardReadyOpsCommands(
           );
           if (choice === 'Show Problems') {
             await vscode.commands.executeCommand(
-              'workbench.actions.view.problems'
+              'workbench.action.problems.focus'
             );
           }
         } else {
@@ -710,7 +710,7 @@ export function registerBoardReadyOpsCommands(
           );
           if (choice === 'Show Problems') {
             await vscode.commands.executeCommand(
-              'workbench.actions.view.problems'
+              'workbench.action.problems.focus'
             );
           } else if (choice === 'Verify Release Evidence') {
             await showBoardReadyOpsEvidenceState(services);

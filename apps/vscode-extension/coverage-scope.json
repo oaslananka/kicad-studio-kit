@@ -39,14 +39,15 @@
       ]
     },
     "src/activation/saveCheckController.ts": {
-      "category": "integration-owned",
-      "owner": "Editor save lifecycle",
-      "strategy": "Extension-host editor flows and activation tests own save-event registration and command availability.",
-      "rationale": "Save hooks require the VS Code workspace event loop and document lifecycle.",
+      "category": "explicitly-justified",
+      "owner": "Save-check controller unit and native acceptance tests",
+      "strategy": "Focused unit coverage exercises repeat-safe automatic DRC/ERC diagnostics, trust, errors and AI opt-in; native VS Code tests exercise the real Problems focus behavior.",
+      "rationale": "The save-event entrypoint remains VS Code-host-owned while its orchestration is deterministically testable and held to a 100% line/function coverage ratchet.",
       "evidence": [
-        "test/integration/editorFlows.test.ts",
-        "test/integration/extension.test.ts"
-      ]
+        "test/unit/saveCheckController.test.ts",
+        "test/integration/editorFlows.test.ts"
+      ],
+      "coverageMode": "targeted-ratchet"
     },
     "src/activation/studioContextController.ts": {
       "category": "explicitly-justified",
@@ -177,6 +178,7 @@
   "ratchet": {
     "files": [
       "src/activation/activationState.ts",
+      "src/activation/saveCheckController.ts",
       "src/activation/studioContextController.ts",
       "src/activation/workspaceContextController.ts",
       "src/cli/exportCommands.ts",
@@ -187,6 +189,7 @@
     ],
     "tests": [
       "test/unit/activationControllers.test.ts",
+      "test/unit/saveCheckController.test.ts",
       "test/unit/contextRefreshPerf.test.ts",
       "test/unit/exportCommands.test.ts",
       "test/unit/nativeInnerCopperService.test.ts",
