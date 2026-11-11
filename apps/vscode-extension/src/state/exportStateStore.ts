@@ -54,6 +54,19 @@ export class ExportStateStore implements vscode.Disposable {
     });
   }
 
+  cancel(
+    kind: ExportSurfaceKind,
+    resource: vscode.Uri | undefined,
+    message = 'Export cancelled by user.'
+  ): ExportStateSnapshot {
+    return this.updateSurface(kind, {
+      resource,
+      message,
+      error: undefined,
+      status: 'idle'
+    });
+  }
+
   fail(
     kind: ExportSurfaceKind,
     resource: vscode.Uri | undefined,

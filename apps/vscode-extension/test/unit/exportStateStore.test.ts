@@ -85,6 +85,26 @@ describe('export state store boundary', () => {
     });
   });
 
+  it('marks a user cancellation as idle, not a successful or failed export', () => {
+    const store = new ExportStateStore();
+    const source = vscode.Uri.file('/workspace/design.kicad_sch');
+    store.begin('bom', source, 'Exporting BOM');
+    store.cancel('bom', source, 'BOM export cancelled by user.');
+    expect(store.getSnapshot().surfaces).toEqual([
+      expect.objectContaining({
+        kind: 'bom',
+        resource: source.toString(),
+        status: 'idle',
+        message: 'BOM export cancelled by user.',
+        error: undefined
+      })
+    ]);
+    store.begin('bom', source, 'Retrying BOM');
+    expect(store.getSnapshot().surfaces[0]).toEqual(
+      expect.objectContaining({ status: 'loading', message: 'Retrying BOM' })
+    );
+  });
+
   it('normalizes non-Error failures and clears stale errors on retry', () => {
     const store = new ExportStateStore();
 
