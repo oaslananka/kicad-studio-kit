@@ -90,6 +90,43 @@ describe('KiCadCheckService KiCad 10 JSON diagnostics', () => {
     expect(result.summary.commandArgs).toBeUndefined();
   });
 
+  it('keeps separate KiCad courtyard overlap pairs visible when they share an anchor footprint', async () => {
+    const service = checkService({
+      violations: [
+        {
+          description: 'Courtyards overlap',
+          severity: 'error',
+          type: 'courtyards_overlap',
+          items: [
+            { description: 'Footprint J1', pos: { x: 12, y: 34 } },
+            { description: 'Footprint C2', pos: { x: 212, y: 234 } }
+          ]
+        },
+        {
+          description: 'Courtyards overlap',
+          severity: 'error',
+          type: 'courtyards_overlap',
+          items: [
+            { description: 'Footprint J1', pos: { x: 12, y: 34 } },
+            { description: 'Footprint L1', pos: { x: 200, y: 200 } }
+          ]
+        }
+      ]
+    });
+    const result = await service.runDRC(board);
+    expect(result.diagnostics).toHaveLength(2);
+    expect(result.diagnostics.map((item) => item.message)).toEqual([
+      'Courtyards overlap — Footprint J1 / Footprint C2',
+      'Courtyards overlap — Footprint J1 / Footprint L1'
+    ]);
+    expect(result.diagnostics[0]?.range.start.line).toBe(
+      result.diagnostics[1]?.range.start.line
+    );
+    expect(new Set(result.diagnostics.map((item) => item.message)).size).toBe(
+      2
+    );
+  });
+
   it('navigates small KiCad PCB DRC findings to the matching object UUID, not a nearby footprint', async () => {
     const uuid = '22222222-2222-4222-8222-222222222222';
     const source = [
@@ -198,6 +235,92 @@ describe('KiCadCheckService KiCad 10 JSON diagnostics', () => {
     expect(cliRoot).not.toBe('');
     expect(fs.existsSync(cliRoot)).toBe(false);
   });
+
+  it('stages referenced project-local KiCad footprint and symbol libraries for real DRC truth', async () => {
+    const localDir = path.join(workdir, 'libs');
+    const footprint = path.join(localDir, 'part.pretty', 'U1.kicad_mod');
+    const symbol = path.join(localDir, 'parts.kicad_sym');
+    fs.mkdirSync(path.dirname(footprint), { recursive: true });
+    fs.writeFileSync(footprint, '(footprint "U1")');
+    fs.writeFileSync(symbol, '(kicad_symbol_lib)');
+    fs.writeFileSync(
+      path.join(workdir, 'fp-lib-table'),
+      '(fp_lib_table (lib (name "parts")(type "KiCad")(uri "${KIPRJMOD}/libs/part.pretty")))'
+    );
+    fs.writeFileSync(
+      path.join(workdir, 'sym-lib-table'),
+      '(sym_lib_table (lib (name "parts")(type "KiCad")(uri "${KIPRJMOD}/libs/parts.kicad_sym")))'
+    );
+    let tempDir = '';
+    const cli = {
+      detectCli: jest.fn().mockResolvedValue({ version: '10.0.8' }),
+      runWithProgress: jest.fn(
+        async ({ command, cwd }: { command: string[]; cwd: string }) => {
+          tempDir = cwd;
+          expect(
+            fs.readFileSync(
+              path.join(cwd, 'libs', 'part.pretty', 'U1.kicad_mod'),
+              'utf8'
+            )
+          ).toContain('U1');
+          expect(
+            fs.readFileSync(path.join(cwd, 'libs', 'parts.kicad_sym'), 'utf8')
+          ).toContain('kicad_symbol_lib');
+          const output = command[command.indexOf('--output') + 1]!;
+          fs.writeFileSync(output, JSON.stringify({ violations: [] }));
+        }
+      )
+    };
+    const service = new KiCadCheckService(
+      cli as never,
+      new SExpressionParser(),
+      {
+        error: jest.fn()
+      } as never
+    );
+    const result = await service.runDRC(board);
+    expect(result.diagnostics).toHaveLength(0);
+    expect(fs.existsSync(tempDir)).toBe(false);
+    expect(fs.readFileSync(footprint, 'utf8')).toContain('U1');
+    expect(fs.readFileSync(symbol, 'utf8')).toContain('kicad_symbol_lib');
+  });
+
+  (process.platform === 'win32' ? it.skip : it)(
+    'rejects project-library symlinks rather than reporting incomplete DRC results',
+    async () => {
+      const localDir = path.join(workdir, 'libs');
+      fs.mkdirSync(localDir, { recursive: true });
+      const external = fs.mkdtempSync(
+        path.join(os.tmpdir(), 'outside-kicad-library-')
+      );
+      try {
+        fs.writeFileSync(
+          path.join(external, 'private.kicad_mod'),
+          '(footprint "external")'
+        );
+        fs.symlinkSync(external, path.join(localDir, 'linked.pretty'), 'dir');
+        fs.writeFileSync(
+          path.join(workdir, 'fp-lib-table'),
+          '(fp_lib_table (lib (name "linked")(type "KiCad")(uri "${KIPRJMOD}/libs/linked.pretty")))'
+        );
+        const cli = {
+          detectCli: jest.fn(),
+          runWithProgress: jest.fn()
+        };
+        const service = new KiCadCheckService(
+          cli as never,
+          new SExpressionParser(),
+          {
+            error: jest.fn()
+          } as never
+        );
+        await expect(service.runDRC(board)).rejects.toThrow('symlink');
+        expect(cli.runWithProgress).not.toHaveBeenCalled();
+      } finally {
+        fs.rmSync(external, { recursive: true, force: true });
+      }
+    }
+  );
 
   it('rejects stale DRC findings when project rules change while KiCad is running', async () => {
     const project = path.join(workdir, 'sample.kicad_pro');
