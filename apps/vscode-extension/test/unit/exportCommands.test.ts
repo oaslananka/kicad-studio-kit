@@ -1565,8 +1565,15 @@ describe('KiCadExportService non-blocking export notifications', () => {
       expect(vscode.env.openExternal).toHaveBeenCalledWith(
         vscode.Uri.file(fab)
       );
-      pendingChoices[1]?.(undefined);
-      expect(logger.warn).not.toHaveBeenCalled();
+      (vscode.env.openExternal as jest.Mock).mockRejectedValueOnce(
+        new Error('private project path must not appear in the warning')
+      );
+      pendingChoices[1]?.('Open Output Folder');
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Could not open the exported output folder.'
+      );
+      expect(logger.warn).toHaveBeenCalledTimes(1);
     } finally {
       notifications.mockImplementation(
         previousImplementation ?? (() => undefined)
