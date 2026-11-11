@@ -214,15 +214,21 @@ function buildExportPdfSch(context: ExportCommandBuildContext): string[][] {
   ];
 }
 
+function selectedBoardPlotLayers(options: ExportCommandBuildOptions): string[] {
+  // The CLI expects real untranslated layer names, never pseudo-layer ALL.
+  // Keep only native plotting layers, including actual inner copper layers.
+  const available =
+    options.gerberLayers?.filter((layer) =>
+      /^(?:(?:F|B)\.(?:Cu|SilkS|Mask|Fab)|In\d+\.Cu|Edge\.Cuts)$/.test(layer)
+    ) ?? [];
+  return available.length ? available : DEFAULT_GERBER_LAYERS;
+}
+
 function buildExportPdfPcb(context: ExportCommandBuildContext): string[][] {
   const { file, outputDir, options } = context;
   // KiCad CLI 8-10 does not recognize the pseudo-layer "ALL". Plot only
   // valid named layers from this board, including its actual inner copper.
-  const layers =
-    options.gerberLayers?.filter((layer) =>
-      /^(?:(?:F|B)\.(?:Cu|SilkS|Mask|Fab)|In\d+\.Cu|Edge\.Cuts)$/.test(layer)
-    ) ?? [];
-  const selectedLayers = layers.length ? layers : DEFAULT_GERBER_LAYERS;
+  const selectedLayers = selectedBoardPlotLayers(options);
   return [
     [
       'pcb',
@@ -247,7 +253,9 @@ function buildExport3dPdf(context: ExportCommandBuildContext): string[][] {
       'export',
       '3dpdf',
       '--output',
-      inferExportOutputPath(file, outputDir, '', '.pdf'),
+      // A schematic export can already exist as <name>.pdf. Keep the 3D
+      // document distinct from the schematic and the 2D board plot.
+      inferExportOutputPath(file, outputDir, '-3d', '.pdf'),
       ...buildCommon3dExportArgs(options, versionMajor),
       file
     ]
@@ -255,15 +263,29 @@ function buildExport3dPdf(context: ExportCommandBuildContext): string[][] {
 }
 
 function buildExportSvg(context: ExportCommandBuildContext): string[][] {
-  const { file, outputDir } = context;
+  const { file, outputDir, options, versionMajor } = context;
+  const pcb = file.endsWith('.kicad_pcb');
   return [
     [
-      file.endsWith('.kicad_sch') ? 'sch' : 'pcb',
+      pcb ? 'pcb' : 'sch',
       'export',
       'svg',
       '--output',
-      outputDir,
-      ...(file.endsWith('.kicad_pcb') ? ['--layers', 'ALL'] : []),
+      // KiCad 8 uses an output *filename*; KiCad 9+ supports --mode-multi
+      // with directory output. Preserve both public version contracts.
+      pcb && versionMajor < 9
+        ? inferExportOutputPath(file, outputDir, '', '.svg')
+        : outputDir,
+      ...(pcb
+        ? [
+            // KiCad 10 defaults to single-file SVG mode and treats --output
+            // as a filename. Explicit multi mode keeps directory semantics
+            // and gives one output file per enabled board layer.
+            ...(versionMajor >= 9 ? ['--mode-multi'] : []),
+            '--layers',
+            selectedBoardPlotLayers(options).join(',')
+          ]
+        : []),
       file
     ]
   ];

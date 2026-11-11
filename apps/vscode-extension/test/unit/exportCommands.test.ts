@@ -378,6 +378,178 @@ describe('buildCliExportCommands', () => {
     }
   });
 
+  it('keeps schematic SVG output inside its folder and never adds PCB layers', async () => {
+    jest.clearAllMocks();
+    const root = fs.mkdtempSync(path.join(process.cwd(), '.tmp-sch-svg-'));
+    __setConfiguration({
+      'kicadstudio.defaultOutputDir': path.relative(
+        process.cwd(),
+        path.join(root, 'fab')
+      )
+    });
+    const schematic = path.join(root, 'sheet.kicad_sch');
+    fs.writeFileSync(schematic, '(kicad_sch (version 20250114))');
+    const runner = { runWithProgress: jest.fn().mockResolvedValue('Done.') };
+    const detector = {
+      detect: jest.fn().mockResolvedValue({ version: '10.0.8' })
+    };
+    const logger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn()
+    };
+    const service = new KiCadExportService(
+      runner as never,
+      detector as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      logger as never
+    );
+    try {
+      await service.exportSVG(vscode.Uri.file(schematic));
+      expect(runner.runWithProgress).toHaveBeenCalledTimes(1);
+      const command = (
+        runner.runWithProgress.mock.calls[0]?.[0] as { command: string[] }
+      ).command;
+      expect(command).toEqual([
+        'sch',
+        'export',
+        'svg',
+        '--output',
+        path.join(root, 'fab'),
+        schematic
+      ]);
+      expect(logger.warn).not.toHaveBeenCalled();
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('warns and uses valid SVG layers for legacy boards without layer metadata', async () => {
+    jest.clearAllMocks();
+    const root = fs.mkdtempSync(
+      path.join(process.cwd(), '.tmp-pcb-svg-fallback-')
+    );
+    __setConfiguration({
+      'kicadstudio.defaultOutputDir': path.relative(
+        process.cwd(),
+        path.join(root, 'fab')
+      )
+    });
+    const board = path.join(root, 'legacy.kicad_pcb');
+    fs.writeFileSync(board, '(kicad_pcb (version 20211014))');
+    const runner = { runWithProgress: jest.fn().mockResolvedValue('Done.') };
+    const detector = {
+      detect: jest.fn().mockResolvedValue({ version: '10.0.8' })
+    };
+    const logger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn()
+    };
+    const service = new KiCadExportService(
+      runner as never,
+      detector as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      logger as never
+    );
+    try {
+      await service.exportSVG(vscode.Uri.file(board));
+      expect(runner.runWithProgress).toHaveBeenCalledTimes(1);
+      const command = (
+        runner.runWithProgress.mock.calls[0]?.[0] as { command: string[] }
+      ).command;
+      expect(command).toContain('--mode-multi');
+      expect(command).toContain(
+        'F.Cu,B.Cu,F.SilkS,B.SilkS,F.Mask,B.Mask,Edge.Cuts,F.Fab,B.Fab'
+      );
+      expect(command).not.toContain('ALL');
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Could not discover Gerber layers')
+      );
+      expect(vscode.window.showWarningMessage).toHaveBeenCalledWith(
+        'Could not discover board layers. Export will use the default fabrication layer set.'
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('runs SVG export through genuine board layer discovery without ALL', async () => {
+    jest.clearAllMocks();
+    const root = fs.mkdtempSync(
+      path.join(process.cwd(), '.tmp-pcb-svg-layers-')
+    );
+    __setConfiguration({
+      'kicadstudio.defaultOutputDir': path.relative(
+        process.cwd(),
+        path.join(root, 'fab')
+      )
+    });
+    const board = path.join(root, 'board.kicad_pcb');
+    fs.writeFileSync(
+      board,
+      `(kicad_pcb
+      (layers
+        (0 "F.Cu" signal)
+        (18 "In18.Cu" signal)
+        (21 "In21.Cu" signal)
+        (31 "B.Cu" signal)
+        (44 "Edge.Cuts" user)
+      )
+    )`
+    );
+    const runner = { runWithProgress: jest.fn().mockResolvedValue('Done.') };
+    const detector = {
+      detect: jest.fn().mockResolvedValue({ version: '10.0.8' })
+    };
+    const logger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn()
+    };
+    const service = new KiCadExportService(
+      runner as never,
+      detector as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      logger as never
+    );
+    try {
+      await service.exportSVG(vscode.Uri.file(board));
+      expect(runner.runWithProgress).toHaveBeenCalledTimes(1);
+      const command = (
+        runner.runWithProgress.mock.calls[0]?.[0] as { command: string[] }
+      ).command;
+      expect(command).toEqual([
+        'pcb',
+        'export',
+        'svg',
+        '--output',
+        path.join(root, 'fab'),
+        '--mode-multi',
+        '--layers',
+        'F.Cu,In18.Cu,In21.Cu,B.Cu,Edge.Cuts',
+        board
+      ]);
+      expect(command).not.toContain('ALL');
+      expect(logger.warn).not.toHaveBeenCalled();
+      expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
+        'Export completed successfully.',
+        'Open Output Folder'
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('uses a safe default Gerber layer set when discovery is unavailable', () => {
     const command = buildCliExportCommands(
       'export-gerbers',

@@ -168,7 +168,10 @@ export class KiCadExportService {
     if (!outputDir) {
       return;
     }
-    const buildOptions = await this.getBuildOptions(file);
+    const buildOptions = await this.getBuildOptions(
+      file,
+      file.endsWith('.kicad_pcb')
+    );
     const exported = await this.runCommandSequence(
       buildCliExportCommands('export-svg', file, outputDir, buildOptions),
       path.dirname(file),
