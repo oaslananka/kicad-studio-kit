@@ -49,6 +49,56 @@ describe('buildExportCommands', () => {
     ).toEqual(expect.arrayContaining(['--theme', 'kicad']));
   });
 
+  it('plots real PCB layers for PDF, keeps 32-layer inner copper, and never overwrites schematic PDF', () => {
+    const board = buildExportCommands('export-pdf-pcb', PCB, OUT, {
+      versionMajor: 10,
+      gerberLayers: [
+        'F.Cu',
+        'In18.Cu',
+        'In30.Cu',
+        'B.Cu',
+        'F.SilkS',
+        'Edge.Cuts',
+        'User.1'
+      ]
+    })[0];
+    expect(board).toEqual(
+      expect.arrayContaining([
+        'pcb',
+        'export',
+        'pdf',
+        '--output',
+        path.join(OUT, 'board-pcb.pdf'),
+        '--layers',
+        'F.Cu,In18.Cu,In30.Cu,B.Cu,F.SilkS,Edge.Cuts',
+        PCB
+      ])
+    );
+    expect(board).not.toContain('ALL');
+    const schematic = buildExportCommands(
+      'export-pdf-sch',
+      '/project/board.kicad_sch',
+      OUT,
+      { versionMajor: 10 }
+    )[0];
+    expect(schematic).toContain(path.join(OUT, 'board.pdf'));
+    expect(board).not.toContain(path.join(OUT, 'board.pdf'));
+  });
+
+  it('uses valid named PCB PDF layers when discovery is not available', () => {
+    for (const versionMajor of [8, 9, 10]) {
+      const command = buildExportCommands('export-pdf-pcb', PCB, OUT, {
+        versionMajor,
+        gerberLayers: []
+      })[0];
+      expect(command).toContain(
+        'F.Cu,B.Cu,F.SilkS,B.SilkS,F.Mask,B.Mask,Edge.Cuts,F.Fab,B.Fab'
+      );
+      expect(command).not.toContain('ALL');
+      expect(command).toContain(path.join(OUT, 'board-pcb.pdf'));
+    }
+  });
+
   it('rejects export formats before their supported KiCad release', () => {
     for (const kind of [
       'export-step',

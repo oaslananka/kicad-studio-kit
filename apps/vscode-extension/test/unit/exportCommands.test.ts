@@ -144,6 +144,18 @@ describe('buildCliExportCommands', () => {
           'F.Cu,In1.Cu,In2.Cu,B.Cu,B.SilkS,Edge.Cuts'
         ])
       );
+      expect(
+        buildCliExportCommands('export-pdf-pcb', board, root, {
+          versionMajor: 10,
+          gerberLayers
+        })[0]
+      ).toEqual(
+        expect.arrayContaining([
+          '--layers',
+          'F.Cu,In1.Cu,In2.Cu,B.Cu,B.SilkS,Edge.Cuts',
+          path.join(root, 'stackup-pcb.pdf')
+        ])
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }

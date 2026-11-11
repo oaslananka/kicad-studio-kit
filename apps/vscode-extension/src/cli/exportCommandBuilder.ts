@@ -215,16 +215,25 @@ function buildExportPdfSch(context: ExportCommandBuildContext): string[][] {
 }
 
 function buildExportPdfPcb(context: ExportCommandBuildContext): string[][] {
-  const { file, outputDir } = context;
+  const { file, outputDir, options } = context;
+  // KiCad CLI 8-10 does not recognize the pseudo-layer "ALL". Plot only
+  // valid named layers from this board, including its actual inner copper.
+  const layers =
+    options.gerberLayers?.filter((layer) =>
+      /^(?:(?:F|B)\.(?:Cu|SilkS|Mask|Fab)|In\d+\.Cu|Edge\.Cuts)$/.test(layer)
+    ) ?? [];
+  const selectedLayers = layers.length ? layers : DEFAULT_GERBER_LAYERS;
   return [
     [
       'pcb',
       'export',
       'pdf',
       '--output',
-      inferExportOutputPath(file, outputDir, '', '.pdf'),
+      // Schematic PDF already uses <project>.pdf in the same output folder.
+      // Never silently overwrite it with a different PCB document.
+      inferExportOutputPath(file, outputDir, '-pcb', '.pdf'),
       '--layers',
-      'ALL',
+      selectedLayers.join(','),
       file
     ]
   ];
