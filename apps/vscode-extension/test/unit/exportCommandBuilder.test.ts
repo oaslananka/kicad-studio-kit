@@ -111,6 +111,61 @@ describe('buildExportCommands', () => {
     }
   });
 
+  it('exports each real PCB SVG layer in multi-file mode on supported KiCad versions', () => {
+    const sourceLayers = [
+      'F.Cu',
+      'In18.Cu',
+      'In30.Cu',
+      'B.Cu',
+      'Edge.Cuts',
+      'User.1'
+    ];
+    for (const versionMajor of [9, 10]) {
+      const command = buildExportCommands('export-svg', PCB, OUT, {
+        versionMajor,
+        gerberLayers: sourceLayers
+      })[0];
+      expect(command).toEqual([
+        'pcb',
+        'export',
+        'svg',
+        '--output',
+        OUT,
+        '--mode-multi',
+        '--layers',
+        'F.Cu,In18.Cu,In30.Cu,B.Cu,Edge.Cuts',
+        PCB
+      ]);
+      expect(command).not.toContain('ALL');
+    }
+  });
+
+  it('preserves legacy PCB SVG compatibility on KiCad 8 and fails back to safe names', () => {
+    const command = buildExportCommands('export-svg', PCB, OUT, {
+      versionMajor: 8,
+      gerberLayers: ['User.1']
+    })[0];
+    expect(command).not.toContain('--mode-multi');
+    expect(command).not.toContain('ALL');
+    expect(command).toContain(path.join(OUT, 'board.svg'));
+    expect(command).not.toContain(OUT);
+    expect(command).toContain(
+      'F.Cu,B.Cu,F.SilkS,B.SilkS,F.Mask,B.Mask,Edge.Cuts,F.Fab,B.Fab'
+    );
+  });
+
+  it('keeps schematic SVG exports unchanged and names 3D PDFs separately', () => {
+    expect(
+      buildExportCommands('export-svg', SCH, OUT, { versionMajor: 10 })[0]
+    ).toEqual(['sch', 'export', 'svg', '--output', OUT, SCH]);
+    const pdf3d = buildExportCommands('export-3d-pdf', PCB, OUT, {
+      versionMajor: 10
+    })[0];
+    expect(pdf3d).toContain(path.join(OUT, 'board-3d.pdf'));
+    expect(pdf3d).not.toContain(path.join(OUT, 'board.pdf'));
+    expect(pdf3d).not.toContain(path.join(OUT, 'board-pcb.pdf'));
+  });
+
   it('rejects export formats before their supported KiCad release', () => {
     for (const kind of [
       'export-step',
