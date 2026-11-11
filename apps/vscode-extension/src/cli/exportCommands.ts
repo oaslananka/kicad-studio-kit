@@ -1051,6 +1051,18 @@ export class KiCadExportService {
       );
       await this.showOutputFolder(outputDir);
     } catch (error) {
+      if (isBomOutputPermissionFailure(error, outputDir, outputFile)) {
+        this.exportState?.fail(
+          'bom',
+          uri,
+          'The BOM output folder is not writable.'
+        );
+        this.logger.error('BOM export failed', outputDirectoryErrorCode(error));
+        void vscode.window.showErrorMessage(
+          'BOM export failed. The output folder is not writable. How to fix: choose a writable folder inside this workspace or grant write access, then retry.'
+        );
+        return;
+      }
       this.exportState?.fail('bom', uri, error);
       this.logger.error('BOM export failed', error);
       void vscode.window.showErrorMessage(
@@ -1574,4 +1586,22 @@ function outputDirectoryErrorCode(error: unknown): string {
   return error !== null && typeof error === 'object' && 'code' in error
     ? String(error.code)
     : 'validation-error';
+}
+
+/** Match actual write failures to the validated BOM output, never source-file reads. */
+function isBomOutputPermissionFailure(
+  error: unknown,
+  outputDir: string,
+  outputFile: string
+): boolean {
+  const code = outputDirectoryErrorCode(error);
+  if (code !== 'EACCES' && code !== 'EPERM') return false;
+  if (error === null || typeof error !== 'object' || !('path' in error)) {
+    return false;
+  }
+  if (typeof error.path !== 'string') return false;
+  const denied = path.resolve(error.path);
+  return (
+    denied === path.resolve(outputDir) || denied === path.resolve(outputFile)
+  );
 }
