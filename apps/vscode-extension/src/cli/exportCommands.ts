@@ -1205,15 +1205,26 @@ export class KiCadExportService {
     }
   }
 
-  private async showOutputFolder(outputDir: string): Promise<void> {
+  private showOutputFolder(outputDir: string): Promise<void> {
     const action = 'Open Output Folder';
-    const selected = await vscode.window.showInformationMessage(
-      'Export completed successfully.',
-      action
-    );
-    if (selected === action) {
-      await vscode.env.openExternal(vscode.Uri.file(outputDir));
-    }
+    // A notification can stay open until the user acts. Do not hold the
+    // export command (or the next command in a saved preset) waiting for it.
+    void Promise.resolve(
+      vscode.window.showInformationMessage(
+        'Export completed successfully.',
+        action
+      )
+    )
+      .then(async (selected) => {
+        if (selected === action) {
+          await vscode.env.openExternal(vscode.Uri.file(outputDir));
+        }
+      })
+      .catch(() => {
+        this.logger.warn('Could not open the exported output folder.');
+      });
+    // The notification remains interactive; only the export work is complete.
+    return Promise.resolve();
   }
 
   private resolveOutputDir(file: string): string {
