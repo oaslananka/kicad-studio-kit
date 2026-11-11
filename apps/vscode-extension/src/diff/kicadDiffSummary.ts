@@ -96,11 +96,17 @@ export function summarizeComponents(
   return summary;
 }
 
-function countOccurrences(text: string, token: string): number {
+function countPrimitiveNodes(text: string, name: string): number {
+  const token = `(${name}`;
   let count = 0;
   let index = text.indexOf(token);
   while (index !== -1) {
-    count += 1;
+    // KiCad writes primitive headers with either a space (compact format)
+    // or a newline (native multiline board format).
+    const next = text[index + token.length];
+    if (next !== undefined && (next === ')' || /\s/u.test(next))) {
+      count += 1;
+    }
     index = text.indexOf(token, index + token.length);
   }
   return count;
@@ -123,9 +129,9 @@ export function summarizePcb(
   beforeText: string,
   afterText: string
 ): PcbPrimitiveSummary {
-  const delta = (token: string): PrimitiveDelta => {
-    const before = countOccurrences(beforeText, token);
-    const after = countOccurrences(afterText, token);
+  const delta = (name: string): PrimitiveDelta => {
+    const before = countPrimitiveNodes(beforeText, name);
+    const after = countPrimitiveNodes(afterText, name);
     return { before, after, delta: after - before };
   };
 
@@ -143,10 +149,10 @@ export function summarizePcb(
   }
 
   return {
-    footprints: delta('(footprint '),
-    tracks: delta('(segment '),
-    vias: delta('(via '),
-    zones: delta('(zone '),
+    footprints: delta('footprint'),
+    tracks: delta('segment'),
+    vias: delta('via'),
+    zones: delta('zone'),
     tracksByLayer
   };
 }

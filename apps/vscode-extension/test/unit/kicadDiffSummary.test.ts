@@ -82,6 +82,58 @@ describe('#401 KiCad diff summary', () => {
     });
   });
 
+  describe('native multiline PCB formatting', () => {
+    it('counts actual KiCad segment/via/zone nodes and reports one removed track', () => {
+      const before = `(kicad_pcb
+  (footprint "R_0603" (layer "F.Cu"))
+  (segment
+    (start 1 1)
+    (end 2 2)
+    (width 0.2)
+    (layer "F.Cu")
+  )
+  (segment
+    (start 3 3)
+    (end 4 4)
+    (width 0.2)
+    (layer "B.Cu")
+  )
+  (via
+    (at 1 1)
+    (size 0.6)
+  )
+  (zone
+    (net 1)
+    (layer "B.Cu")
+  )
+  (segment_extra ignored)
+)`;
+      const after = before
+        .replace(/ {2}\(segment\n {4}\(start 1 1\)[\s\S]*?\n {2}\)\n/u, '')
+        .replace(/ {2}\(via\n[\s\S]*?\n {2}\)\n/u, '');
+      expect(after).not.toBe(before);
+      const p = summarizePcb(before, after);
+      expect(p.footprints).toEqual({ before: 1, after: 1, delta: 0 });
+      expect(p.tracks).toEqual({ before: 2, after: 1, delta: -1 });
+      expect(p.vias).toEqual({ before: 1, after: 0, delta: -1 });
+      expect(p.zones).toEqual({ before: 1, after: 1, delta: 0 });
+      expect(p.tracksByLayer['F.Cu']).toEqual({ before: 1, after: 0 });
+      expect(p.tracksByLayer['B.Cu']).toEqual({ before: 1, after: 1 });
+      const report = renderDiffReport(
+        buildKicadDiffSummary({
+          kind: 'pcb',
+          file: 'board.kicad_pcb',
+          beforeText: before,
+          afterText: after
+        })
+      );
+      expect(report).toContain('| Tracks | 2 → 1 (-1) |');
+      expect(report).toContain('| Vias | 1 → 0 (-1) |');
+      expect(report).toContain('| B.Cu | 1 | 1 |');
+      expect(report).toContain('| F.Cu | 1 | 0 |');
+    });
+  });
+
   describe('buildKicadDiffSummary', () => {
     it('summarizes a schematic from component diffs', () => {
       const summary = buildKicadDiffSummary({
