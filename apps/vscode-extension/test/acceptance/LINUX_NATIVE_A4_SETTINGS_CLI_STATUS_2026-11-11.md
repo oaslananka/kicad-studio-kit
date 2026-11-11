@@ -12,7 +12,7 @@
 
 ## Evidence
 
-- Native Playwright: `test/e2e/nativeA4SettingsCliStatus.local.test.ts`, **1/1 PASS (17.5s)** on the final product source. Test attaches an authentic screenshot and records `A4_NATIVE_SETTINGS_UI_CLI_INDICATOR_AND_BOM=PASS`.
+- Native Playwright: `test/e2e/nativeA4SettingsCliStatus.local.test.ts`, **1/1 PASS (15.8s on final tested behavior)** on the final product source. Test attaches an authentic screenshot and records `A4_NATIVE_SETTINGS_UI_CLI_INDICATOR_AND_BOM=PASS`.
 - Unit-level previously failing case (`cli: undefined` leaves KiCad 9 label): **RED on baseline** (1 failure / 28 other tests passing), **GREEN after fix**. Three focused status-bar / CLI detector suites: **59/59 PASS**, plus TypeScript and ESLint PASS.
 - Explicit local opt-in invocation:
 
