@@ -16,6 +16,119 @@ interface ReportIssue {
   sheet?: { path: string; uuidPath: string } | undefined;
 }
 
+function containedPath(parent: string, child: string): boolean {
+  const relative = path.relative(parent, child);
+  return Boolean(
+    relative &&
+    relative !== '..' &&
+    !relative.startsWith('..' + path.sep) &&
+    !path.isAbsolute(relative)
+  );
+}
+
+function projectLibraryRelativePath(
+  uri: string | undefined
+): string | undefined {
+  const prefix = '${KIPRJMOD}/';
+  if (!uri?.startsWith(prefix)) return undefined;
+  const relative = uri.slice(prefix.length).replace(/\\/g, '/');
+  if (
+    !relative ||
+    relative.split('/').some((part) => part === '.' || part === '..')
+  ) {
+    return undefined;
+  }
+  return relative;
+}
+
+/**
+ * Keep the disposable DRC snapshot truthful for project-local KiCad libraries.
+ * A KiCad library table copied without its KIPRJMOD paths reports fake
+ * missing-footprint findings even when the original board is valid.
+ */
+function stageLocalProjectLibraries(
+  sourceDir: string,
+  temporaryDir: string,
+  parser: SExpressionParser,
+  captureSource: (file: string) => void
+): void {
+  const sourceRoot = fs.realpathSync(sourceDir);
+  for (const tableName of ['fp-lib-table', 'sym-lib-table']) {
+    const table = path.join(sourceDir, tableName);
+    if (!fs.existsSync(table)) continue;
+    const root = parser.parse(fs.readFileSync(table, 'utf8'));
+    for (const entry of parser.findAllNodes(root, 'lib')) {
+      const relative = projectLibraryRelativePath(
+        parser.getAtomValue(entry, 'uri')
+      );
+      if (!relative) continue;
+      const candidate = path.resolve(sourceDir, relative);
+      if (!fs.existsSync(candidate)) continue;
+      const resolved = fs.realpathSync(candidate);
+      if (!containedPath(sourceRoot, resolved)) {
+        throw new Error(
+          'A project library symlink resolves outside the KiCad project.'
+        );
+      }
+      const destination = path.resolve(temporaryDir, relative);
+      if (
+        !containedPath(temporaryDir, destination) ||
+        fs.existsSync(destination)
+      ) {
+        continue;
+      }
+      const stat = fs.statSync(resolved);
+      if (!stat.isDirectory() && !stat.isFile()) continue;
+      fs.mkdirSync(path.dirname(destination), { recursive: true });
+      fs.cpSync(resolved, destination, {
+        recursive: true,
+        errorOnExist: true,
+        force: false,
+        filter: (source) => {
+          if (fs.lstatSync(source).isSymbolicLink()) {
+            throw new Error(
+              'A project library contains a symlink. Resolve it inside the project before running DRC.'
+            );
+          }
+          if (!containedPath(sourceRoot, fs.realpathSync(source))) {
+            throw new Error(
+              'A KiCad project library escapes the project directory.'
+            );
+          }
+          if (fs.statSync(source).isFile()) captureSource(source);
+          return true;
+        }
+      });
+    }
+  }
+}
+
+/**
+ * Include genuine KiCad object labels when a rule concerns multiple parts.
+ * VS Code coalesces identical message/range/code diagnostics, which hides
+ * distinct courtyard-overlap pairs sharing the same first footprint.
+ */
+function describeIssue(
+  row: Record<string, unknown>,
+  kind: 'drc' | 'erc'
+): string {
+  const summary = String(row['description'] ?? row['message'] ?? 'KiCad issue');
+  if (kind !== 'drc' || !Array.isArray(row['items'])) return summary;
+  const labels = row['items']
+    .filter(
+      (value): value is Record<string, unknown> =>
+        Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+    )
+    .map((value) =>
+      typeof value['description'] === 'string'
+        ? value['description'].trim()
+        : ''
+    )
+    .filter((value) => value.length > 0)
+    .slice(0, 3);
+  return labels.length > 1 ? `${summary} — ${labels.join(' / ')}` : summary;
+}
+
 export class KiCadCheckService {
   constructor(
     private readonly runner: KiCadCliRunner,
@@ -130,6 +243,20 @@ export class KiCadCheckService {
             mtimeMs: after.mtimeMs
           });
         }
+        stageLocalProjectLibraries(
+          sourceDir,
+          tempRoot,
+          this.parser,
+          (source) => {
+            const stat = fs.statSync(source);
+            sourceStats.push({
+              file: source,
+              size: stat.size,
+              mtimeMs: stat.mtimeMs
+            });
+          }
+        );
+        validateSource();
         checkedCwd = tempRoot;
         command[command.length - 1] = path.join(tempRoot, boardName);
       }
@@ -250,7 +377,7 @@ export class KiCadCheckService {
       const severity = this.toSeverity(String(row['severity'] ?? 'warning'));
       const diagnostic = new vscode.Diagnostic(
         range,
-        String(row['description'] ?? row['message'] ?? 'KiCad issue'),
+        describeIssue(row, kind),
         severity
       );
       diagnostic.source = `kicad-cli:${kind}`;
