@@ -597,7 +597,7 @@ describe('KiCadExportService.renderViewerSvg', () => {
       expect(vscode.env.openExternal).not.toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalledWith(
         'Resolving output directory failed',
-        expect.any(Error)
+        'validation-error'
       );
     } finally {
       fs.rmSync(workspaceRoot, { recursive: true, force: true });
@@ -994,7 +994,7 @@ describe('KiCadExportService BOM user export outcomes', () => {
         await service.exportBOMCSV(vscode.Uri.file(file));
         expect(logger.error).toHaveBeenCalledWith(
           'Resolving output directory failed',
-          expect.any(Error)
+          'validation-error'
         );
         expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
           expect.stringContaining('output directory validation failed')
@@ -1008,6 +1008,69 @@ describe('KiCadExportService BOM user export outcomes', () => {
       (vscode.workspace.findFiles as jest.Mock)
         .mockReset()
         .mockResolvedValue([]);
+    }
+  });
+});
+
+describe('KiCadExportService blocked local BOM output recovery', () => {
+  it('protects a user file, gives actionable private-safe guidance and succeeds on retry', async () => {
+    jest.clearAllMocks();
+    const root = fs.mkdtempSync(
+      path.join(process.cwd(), '.tmp-studio-bom-output-recovery-')
+    );
+    const file = path.join(root, 'controller.kicad_sch');
+    const outputDir = path.join(root, 'fab');
+    fs.writeFileSync(file, '(kicad_sch)', 'utf8');
+    fs.writeFileSync(outputDir, 'Keep my file!', 'utf8');
+    __setConfiguration({
+      'kicadstudio.defaultOutputDir': path.join(path.basename(root), 'fab')
+    });
+    const bomExporter = { exportCsv: jest.fn().mockResolvedValue(undefined) };
+    const logger = { error: jest.fn() };
+    const service = new KiCadExportService(
+      {} as never,
+      {} as never,
+      {} as never,
+      bomExporter as never,
+      {} as never,
+      logger as never
+    );
+    const entries = [{ references: ['R1'], quantity: 1 }];
+    Object.defineProperty(service, 'loadBomEntries', {
+      value: jest.fn().mockResolvedValue(entries)
+    });
+    try {
+      await service.exportBOMCSV(vscode.Uri.file(file));
+      expect(fs.readFileSync(outputDir, 'utf8')).toBe('Keep my file!');
+      expect(bomExporter.exportCsv).not.toHaveBeenCalled();
+      expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
+        expect.stringContaining('How to fix: rename or move the blocking file')
+      );
+      expect(logger.error).toHaveBeenCalledWith(
+        'Resolving output directory failed',
+        'EEXIST'
+      );
+      const message = (vscode.window.showErrorMessage as jest.Mock).mock
+        .calls[0]?.[0] as string;
+      expect(message).not.toContain(root);
+      expect(vscode.window.showInformationMessage).not.toHaveBeenCalledWith(
+        'Export completed successfully.',
+        'Open Output Folder'
+      );
+
+      fs.unlinkSync(outputDir);
+      await service.exportBOMCSV(vscode.Uri.file(file));
+      expect(bomExporter.exportCsv).toHaveBeenCalledWith(
+        entries,
+        path.join(outputDir, 'controller-bom.csv')
+      );
+      expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
+        'Export completed successfully.',
+        'Open Output Folder'
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+      __setConfiguration({});
     }
   });
 });

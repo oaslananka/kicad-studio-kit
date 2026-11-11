@@ -1146,12 +1146,11 @@ export class KiCadExportService {
     try {
       return this.resolveOutputDir(file);
     } catch (error) {
-      this.logger.error('Resolving output directory failed', error);
-      const message =
-        error instanceof Error
-          ? `${error.message}\nWhat happened: output directory validation failed.\nHow to fix: choose an output directory inside the current workspace.`
-          : 'Output directory validation failed. Choose an output directory inside the current workspace.';
-      void vscode.window.showErrorMessage(message);
+      this.logger.error(
+        'Resolving output directory failed',
+        outputDirectoryErrorCode(error)
+      );
+      void vscode.window.showErrorMessage(outputDirectoryFailureMessage(error));
       return undefined;
     }
   }
@@ -1548,4 +1547,31 @@ function collectFilesWithExtension(root: string, extension: string): string[] {
   }
 
   return files;
+}
+
+/** Make output-path failures actionable without leaking local absolute paths. */
+function outputDirectoryFailureMessage(error: unknown): string {
+  const code = outputDirectoryErrorCode(error);
+  let reason = 'Output directory could not be prepared.';
+  let recovery = 'choose an output directory inside the current workspace.';
+  if (code === 'EEXIST' || code === 'ENOTDIR') {
+    reason = 'A file is blocking the output folder.';
+    recovery =
+      'rename or move the blocking file, or choose another output folder inside this workspace.';
+  } else if (code === 'EACCES' || code === 'EPERM') {
+    reason = 'The output folder is not writable.';
+    recovery =
+      'grant write access or choose a writable folder inside this workspace.';
+  }
+  return (
+    reason +
+    '\nWhat happened: output directory validation failed.\nHow to fix: ' +
+    recovery
+  );
+}
+
+function outputDirectoryErrorCode(error: unknown): string {
+  return error !== null && typeof error === 'object' && 'code' in error
+    ? String(error.code)
+    : 'validation-error';
 }
