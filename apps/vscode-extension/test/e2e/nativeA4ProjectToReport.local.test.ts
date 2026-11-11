@@ -72,6 +72,9 @@ function refsFromCsv(file: string): Set<string> {
 }
 
 test('native A4 official KiCad project: schematic/PCB → ERC/DRC → BOM/PDF local evidence', async () => {
+  // Intentionally skip only when the real local KiCad 10 demo, GUI host or explicit
+  // opt-in is unavailable; routine CI cannot substitute a mock for native A4.
+  // Run with KICADSTUDIO_LOCAL_LINUX_ACCEPTANCE=1 on Linux. SKIP is not PASS.
   test.skip(
     process.platform !== 'linux' ||
       process.env.KICADSTUDIO_LOCAL_LINUX_ACCEPTANCE !== '1' ||

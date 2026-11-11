@@ -12,50 +12,93 @@ const HEADERS = [
   'Description'
 ] as const;
 
+interface CsvState {
+  rows: string[][];
+  row: string[];
+  cell: string;
+  quoted: boolean;
+  afterQuote: boolean;
+}
+
+function readQuotedCharacter(
+  state: CsvState,
+  input: string,
+  index: number
+): number {
+  if (input[index] !== '"') {
+    state.cell += input[index];
+    return index;
+  }
+  if (input[index + 1] === '"') {
+    state.cell += '"';
+    return index + 1;
+  }
+  state.quoted = false;
+  state.afterQuote = true;
+  return index;
+}
+
+function consumeDelimiter(
+  state: CsvState,
+  input: string,
+  index: number
+): number {
+  const char = input[index];
+  state.row.push(state.cell);
+  state.cell = '';
+  state.afterQuote = false;
+  if (char === ',') return index;
+
+  if (state.row.length > 1 || state.row[0] !== '') {
+    state.rows.push(state.row);
+  }
+  state.row = [];
+  return char === '\r' && input[index + 1] === '\n' ? index + 1 : index;
+}
+
+function readUnquotedCharacter(
+  state: CsvState,
+  input: string,
+  index: number
+): number {
+  const char = input[index];
+  if (char === ',' || char === '\n' || char === '\r') {
+    return consumeDelimiter(state, input, index);
+  }
+  if (char === '"') {
+    if (state.cell === '' && !state.afterQuote) {
+      state.quoted = true;
+      return index;
+    }
+    throw new Error('KiCad BOM has malformed CSV quoting.');
+  }
+  if (state.afterQuote) {
+    throw new Error('KiCad BOM has malformed CSV quoting.');
+  }
+  state.cell += char;
+  return index;
+}
+
 function parseCsv(text: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let cell = '';
-  let quoted = false;
-  let afterQuote = false;
+  const state: CsvState = {
+    rows: [],
+    row: [],
+    cell: '',
+    quoted: false,
+    afterQuote: false
+  };
   const input = text.replace(/^\uFEFF/, '');
   for (let i = 0; i < input.length; i++) {
-    const char = input[i];
-    if (quoted) {
-      if (char === '"') {
-        if (input[i + 1] === '"') {
-          cell += '"';
-          i++;
-        } else {
-          quoted = false;
-          afterQuote = true;
-        }
-      } else {
-        cell += char;
-      }
-    } else if (char === ',' || char === '\n' || char === '\r') {
-      row.push(cell);
-      cell = '';
-      afterQuote = false;
-      if (char !== ',') {
-        if (row.length > 1 || row[0] !== '') rows.push(row);
-        row = [];
-        if (char === '\r' && input[i + 1] === '\n') i++;
-      }
-    } else if (char === '"' && cell === '' && !afterQuote) {
-      quoted = true;
-    } else if (afterQuote || char === '"') {
-      throw new Error('KiCad BOM has malformed CSV quoting.');
-    } else {
-      cell += char;
-    }
+    i = state.quoted
+      ? readQuotedCharacter(state, input, i)
+      : readUnquotedCharacter(state, input, i);
   }
-  if (quoted) throw new Error('KiCad BOM has an unterminated CSV field.');
-  if (cell !== '' || row.length) {
-    row.push(cell);
-    rows.push(row);
+  if (state.quoted) throw new Error('KiCad BOM has an unterminated CSV field.');
+  if (state.cell !== '' || state.row.length) {
+    state.row.push(state.cell);
+    state.rows.push(state.row);
   }
-  return rows;
+  return state.rows;
 }
 
 /** Validate native KiCad BOM data before it reaches user-facing CSV/XLSX. */
