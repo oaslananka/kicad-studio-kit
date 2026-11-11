@@ -17,6 +17,12 @@ module.exports = {
       functions: 100,
       lines: 100
     },
+    'src/activation/saveCheckController.ts': {
+      statements: 100,
+      branches: 85,
+      functions: 100,
+      lines: 100
+    },
     'src/activation/studioContextController.ts': {
       statements: -16,
       branches: -42,

@@ -36,7 +36,7 @@ export function registerCheckCommands(
           void services.fixQueueProvider.refresh().catch(() => undefined);
           if (result.diagnostics.length > 0) {
             await vscode.commands.executeCommand(
-              'workbench.actions.view.problems'
+              'workbench.action.problems.focus'
             );
             const provider = await services.aiProviders.getProvider();
             if (provider?.isConfigured()) {
@@ -80,7 +80,7 @@ export function registerCheckCommands(
           applyValidationResult(services, file, result);
           if (result.diagnostics.length > 0) {
             await vscode.commands.executeCommand(
-              'workbench.actions.view.problems'
+              'workbench.action.problems.focus'
             );
           }
         } catch (error) {

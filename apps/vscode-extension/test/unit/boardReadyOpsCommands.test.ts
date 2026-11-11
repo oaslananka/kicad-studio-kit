@@ -940,7 +940,7 @@ describe('BoardReadyOps commands', () => {
       'Show Problems'
     );
     expect(commands.executeCommand).toHaveBeenCalledWith(
-      'workbench.actions.view.problems'
+      'workbench.action.problems.focus'
     );
   });
 

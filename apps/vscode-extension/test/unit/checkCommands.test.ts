@@ -62,6 +62,41 @@ describe('ERC command visibility and runtime safety', () => {
     );
   });
 
+  it('focuses rather than toggles Problems after ERC diagnostics arrive', async () => {
+    resolve.mockResolvedValue('/workspace/board.kicad_sch');
+    const diagnostic = { message: 'Power pin not driven' };
+    const checkService = {
+      runERC: jest.fn().mockResolvedValue({
+        diagnostics: [diagnostic],
+        summary: {
+          file: '/workspace/board.kicad_sch',
+          source: 'erc',
+          errors: 1,
+          warnings: 0,
+          infos: 0
+        }
+      })
+    };
+    registerCheckCommands({
+      projectState: {
+        getActiveProject: jest.fn(),
+        findProjectForResource: jest.fn()
+      },
+      diagnosticState: { applyValidationResult: jest.fn() },
+      checkService
+    } as unknown as CommandServices);
+    const entry = (commands.registerCommand as jest.Mock).mock.calls.find(
+      ([name]) => name === 'kicadstudio.runERC'
+    );
+    await (entry![1] as () => Promise<unknown>)();
+    expect(commands.executeCommand).toHaveBeenCalledWith(
+      'workbench.action.problems.focus'
+    );
+    expect(commands.executeCommand).not.toHaveBeenCalledWith(
+      'workbench.actions.view.problems'
+    );
+  });
+
   it('contributes ERC without a fragile palette context expression', () => {
     expect(
       manifest.contributes.menus.commandPalette.find(
@@ -137,6 +172,45 @@ describe('DRC command visibility and runtime safety', () => {
       command: 'kicadstudio.runDRC',
       when: 'workspaceFolderCount > 0'
     });
+  });
+
+  it('focuses rather than toggles Problems after DRC diagnostics arrive', async () => {
+    resolve.mockResolvedValue('/workspace/board.kicad_pcb');
+    const checkService = {
+      runDRC: jest.fn().mockResolvedValue({
+        diagnostics: [{ message: 'Courtyard overlap' }],
+        summary: {
+          file: '/workspace/board.kicad_pcb',
+          source: 'drc',
+          errors: 1,
+          warnings: 0,
+          infos: 0
+        }
+      })
+    };
+    registerCheckCommands({
+      projectState: {
+        getActiveProject: jest.fn(),
+        findProjectForResource: jest.fn()
+      },
+      diagnosticState: { applyValidationResult: jest.fn() },
+      checkService,
+      setLatestDrcRun: jest.fn(),
+      qualityGateProvider: { scheduleDrcRefresh: jest.fn() },
+      fixQueueProvider: { refresh: jest.fn().mockResolvedValue(undefined) },
+      aiProviders: { getProvider: jest.fn().mockResolvedValue(undefined) },
+      pushStudioContext: jest.fn().mockResolvedValue(undefined)
+    } as unknown as CommandServices);
+    const entry = (commands.registerCommand as jest.Mock).mock.calls.find(
+      ([name]) => name === 'kicadstudio.runDRC'
+    );
+    await (entry![1] as () => Promise<unknown>)();
+    expect(commands.executeCommand).toHaveBeenCalledWith(
+      'workbench.action.problems.focus'
+    );
+    expect(commands.executeCommand).not.toHaveBeenCalledWith(
+      'workbench.actions.view.problems'
+    );
   });
 
   it('attaches successful validation to resource project or active project fallback', async () => {
