@@ -205,7 +205,8 @@ export class KiCadCliRunner {
           reject(
             this.normalizeError(
               error,
-              redactCliArgs(command, sensitiveCliPaths).join(' ')
+              redactCliArgs(command, sensitiveCliPaths).join(' '),
+              signal
             )
           )
         );
@@ -292,12 +293,22 @@ export class KiCadCliRunner {
     };
   }
 
-  private normalizeError(error: unknown, command: string): Error {
+  private normalizeError(
+    error: unknown,
+    command: string,
+    signal?: AbortSignal
+  ): Error {
     if (error instanceof KiCadCliTimeoutError) {
       return error;
     }
     if (error instanceof Error && /ENOENT/i.test(error.message)) {
       return new KiCadCliNotFoundError();
+    }
+    // Node's native AbortError is not guaranteed to share this realm's
+    // Error prototype. Trust the actual aborted signal before inspecting
+    // the child-process error, preserving cancellation vs timeout reasons.
+    if (signal?.aborted && signal.reason instanceof Error) {
+      return signal.reason;
     }
     if (error instanceof Error && error.name === 'AbortError') {
       if (error.cause instanceof Error) {

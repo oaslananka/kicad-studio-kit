@@ -15,6 +15,8 @@ import { validateQualityGatePolicy } from "./check-quality-gate-policy.mjs";
 
 const FILES = [
   ".github/quality-gates.json",
+  ".github/keys/sonarsource-scanner-public.asc",
+  ".github/scripts/run-signed-sonar-scanner.sh",
   ".github/rulesets/main.json",
   "codecov.yml",
   "sonar-project.properties",
@@ -170,20 +172,60 @@ test("#706 Sonar workflow refuses unguarded token use on fork PRs", () => {
   }
 });
 
-test("#706 Sonar scanner pins an immutable action SHA", () => {
+test("#706 Sonar scanner refuses to omit detached signature verification", () => {
+  const root = fixture();
+  try {
+    const filePath = path.join(
+      root,
+      ".github/scripts/run-signed-sonar-scanner.sh",
+    );
+    writeFileSync(
+      filePath,
+      readFileSync(filePath, "utf8").replace("--verify", "--list-keys"),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud scanner must use the pinned official SonarSource/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#706 Sonar scanner refuses an altered vendored signing key", () => {
+  const root = fixture();
+  try {
+    const filePath = path.join(
+      root,
+      ".github/keys/sonarsource-scanner-public.asc",
+    );
+    writeFileSync(
+      filePath,
+      readFileSync(filePath, "utf8") + "\n# unsigned extra data\n",
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud scanner must use the pinned official SonarSource/iu,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#706 Sonar scanner refuses missing Sonar secrets or a bypassed runner", () => {
   const root = fixture();
   try {
     const filePath = path.join(root, ".github/workflows/sonarcloud.yml");
     writeFileSync(
       filePath,
       readFileSync(filePath, "utf8").replace(
-        /sonarqube-scan-action@[a-f0-9]{40}/u,
-        "sonarqube-scan-action@v8",
+        "run: bash .github/scripts/run-signed-sonar-scanner.sh",
+        "run: echo skipping-signed-scanner",
       ),
     );
     assert.match(
       validateQualityGatePolicy(root).join("\n"),
-      /SonarCloud scanner must pin a commit/iu,
+      /SonarCloud scanner must use the pinned official SonarSource/iu,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });

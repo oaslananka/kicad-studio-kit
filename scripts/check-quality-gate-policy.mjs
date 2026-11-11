@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -289,16 +290,53 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
     );
   }
 
-  const scanner = steps.find((step) =>
-    String(step.uses ?? "").startsWith("SonarSource/sonarqube-scan-action@"),
+  // The official action uses a live HKPS keyserver; if that network path
+  // stalls, security scanning must not silently skip signature verification.
+  // Accept only the pinned, detached-GPG-verified SonarSource CLI with a
+  // vendored public key. Missing or changed trust roots fail closed.
+  const scanner = steps.find(
+    (step) => step.name === "Upload analysis and LCOV to SonarQube Cloud",
   );
+  const scannerScriptPath = path.join(
+    repoRoot,
+    ".github/scripts/run-signed-sonar-scanner.sh",
+  );
+  const signerPath = path.join(
+    repoRoot,
+    ".github/keys/sonarsource-scanner-public.asc",
+  );
+  const scannerSource = existsSync(scannerScriptPath)
+    ? readFileSync(scannerScriptPath, "utf8")
+    : "";
+  const signerDigest = existsSync(signerPath)
+    ? createHash("sha256").update(readFileSync(signerPath)).digest("hex")
+    : "";
+  const requiredScannerInvariants = [
+    "set -euo pipefail",
+    "version=8.1.0.6389",
+    "expected_master_fingerprint=679F1EE92B19609DE816FDE81DB198F93525EC1A",
+    "expected_archive_sha256=bb8f709f9cb73352f8d1260a3b3c506c0f41146754bc630762c126d795499d0b",
+    "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/",
+    "sha256sum --check --status",
+    "gpg --batch --status-fd 3",
+    "--verify",
+    "VALIDSIG",
+    "SONAR_HOST_URL",
+  ];
   if (
-    !/^SonarSource\/sonarqube-scan-action@[a-f0-9]{40}$/u.test(
-      String(scanner?.uses ?? ""),
-    ) ||
-    scanner?.env?.SONAR_TOKEN !== "${{ secrets.SONAR_TOKEN }}"
+    scanner?.run !== "bash .github/scripts/run-signed-sonar-scanner.sh" ||
+    scanner?.shell !== "bash" ||
+    scanner?.uses !== undefined ||
+    scanner?.env?.SONAR_TOKEN !== "${{ secrets.SONAR_TOKEN }}" ||
+    signerDigest !==
+      "eafbbec3ef8d62b91a38b438171a888081751525eb2f6640900d7f63be60cc97" ||
+    requiredScannerInvariants.some(
+      (invariant) => !scannerSource.includes(invariant),
+    )
   ) {
-    errors.push("SonarCloud scanner must pin a commit and use SONAR_TOKEN");
+    errors.push(
+      "SonarCloud scanner must use the pinned official SonarSource SHA-256 and detached GPG signature, with guarded SONAR_TOKEN",
+    );
   }
 }
 

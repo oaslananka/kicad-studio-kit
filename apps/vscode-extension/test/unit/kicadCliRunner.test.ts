@@ -854,6 +854,45 @@ describe('KiCadCliRunner', () => {
     await expect(pending).rejects.toBeInstanceOf(KiCadCliCancelledError);
   });
 
+  it('prefers the real user cancel reason over a generic native AbortError', async () => {
+    __setConfiguration({});
+    const detector = {
+      detect: jest.fn().mockResolvedValue({
+        path: '/usr/bin/kicad-cli',
+        version: '10.0.8',
+        versionLabel: 'KiCad 10.0.8',
+        source: 'path'
+      })
+    };
+    const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
+    const controller = new AbortController();
+    (childProcess.spawn as unknown as jest.Mock).mockImplementation(
+      (_cmd: string, _args: string[], options: { signal: AbortSignal }) => {
+        const child = createChildProcessMock();
+        options.signal.addEventListener('abort', () => {
+          child.emit(
+            'error',
+            Object.assign(new Error('The operation was aborted'), {
+              name: 'AbortError',
+              cause: new Error('AbortError: The operation was aborted')
+            })
+          );
+        });
+        return child;
+      }
+    );
+    const runner = new KiCadCliRunner(detector as never, logger as never);
+    const pending = runner.run({
+      command: ['pcb', 'drc', 'board.kicad_pcb'],
+      cwd: tempDir,
+      progressTitle: 'Run native DRC',
+      signal: controller.signal
+    });
+    await Promise.resolve();
+    controller.abort(new KiCadCliCancelledError());
+    await expect(pending).rejects.toBeInstanceOf(KiCadCliCancelledError);
+  });
+
   it('cancels all tracked commands when cancelAll is invoked', async () => {
     __setConfiguration({});
     const detector = {
