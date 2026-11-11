@@ -168,6 +168,45 @@ describe('KiCadCliDetector', () => {
     expect((await detector.detect())?.version).toBe('9.0.2');
   });
 
+  it('does not cache a stale CLI probe after the user changes settings', async () => {
+    const detector = new KiCadCliDetector() as any;
+    const oldPath = 'C:\\KiCad\\bin\\kicad-cli.exe';
+    const newPath = 'C:\\KiCad10\\bin\\kicad-cli.exe';
+    let finishOld!: (result: unknown) => void;
+    detector.validateCandidate = jest
+      .fn()
+      .mockImplementation((candidate: string) =>
+        candidate === oldPath
+          ? new Promise((resolve) => {
+              finishOld = resolve;
+            })
+          : Promise.resolve(
+              candidate === newPath
+                ? {
+                    path: newPath,
+                    version: '10.0.8',
+                    versionLabel: 'KiCad 10.0.8',
+                    source: 'settings'
+                  }
+                : undefined
+            )
+      );
+
+    const previous = detector.detect();
+    __setConfiguration({ 'kicadstudio.kicadCliPath': newPath });
+    detector.clearCache();
+    const current = await detector.detect();
+    finishOld({
+      path: oldPath,
+      version: '9.0.0',
+      versionLabel: 'KiCad 9.0.0',
+      source: 'settings'
+    });
+    expect(await previous).toBeUndefined();
+    expect(current?.version).toBe('10.0.8');
+    expect((await detector.detect())?.version).toBe('10.0.8');
+  });
+
   it('returns the cached detect result without revalidating', async () => {
     const detector = new KiCadCliDetector() as any;
     detector.validateCandidate = jest.fn().mockResolvedValue({

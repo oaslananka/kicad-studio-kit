@@ -67,6 +67,7 @@ import { QualityGateProvider } from './providers/qualityGateProvider';
 import { SchematicEditorProvider } from './providers/schematicEditorProvider';
 import { ValidationViewProvider } from './providers/validationViewProvider';
 import { KiCadStatusBar } from './statusbar/kicadStatusBar';
+import { makeCliRefresh } from './statusbar/cliStatusRefresh';
 import {
   DiagnosticStateStore,
   ExportStateStore,
@@ -117,6 +118,7 @@ export async function activate(
   const cliRunner = new KiCadCliRunner(cliDetector, logger);
   const importService = new KiCadImportService(cliRunner, cliDetector, logger);
   const statusBar = new KiCadStatusBar(context);
+  const refreshCli = makeCliRefresh(cliDetector, statusBar, isWorkspaceTrusted);
   const projectState = new ProjectStateStore();
   const viewerState = new ViewerStateStore();
   const mcpState = new McpStateStore();
@@ -441,6 +443,7 @@ export async function activate(
         event.affectsConfiguration(SETTINGS.pcmThirdPartyDir)
       ) {
         cliDetector.clearCache();
+        if (event.affectsConfiguration(SETTINGS.cliPath)) refreshCli();
         workspaceContext.invalidateProbeCache();
         activationState.aiHealthy = undefined;
         workspaceContext.scheduleContextRefresh();
@@ -561,17 +564,11 @@ export async function activate(
     studioContext.buildStudioContext()
   );
 
-  if (isWorkspaceTrusted()) {
-    void cliDetector.detect().then((cli) => {
-      statusBar.update({ cli });
-    });
-  }
+  if (isWorkspaceTrusted()) refreshCli();
   if (typeof vscode.workspace.onDidGrantWorkspaceTrust === 'function') {
     context.subscriptions.push(
       vscode.workspace.onDidGrantWorkspaceTrust(() => {
-        void cliDetector.detect().then((cli) => {
-          statusBar.update({ cli });
-        });
+        refreshCli();
         void workspaceContext.refreshContexts();
         void mcpActivation.refreshMcpState();
       })

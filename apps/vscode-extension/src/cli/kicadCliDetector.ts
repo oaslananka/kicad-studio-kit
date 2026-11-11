@@ -148,6 +148,7 @@ export function getCliCandidates(
 
 export class KiCadCliDetector {
   private detected: DetectedKiCadCli | undefined;
+  private cacheGeneration = 0;
   private readonly capabilityCache = new Map<string, boolean>();
   private readonly helpCache = new Map<string, string | undefined>();
   private warnedWorkspaceConfiguredPath = false;
@@ -156,6 +157,7 @@ export class KiCadCliDetector {
     if (this.detected) {
       return this.detected;
     }
+    const generation = this.cacheGeneration;
 
     const configuredPath = vscode.workspace
       .getConfiguration()
@@ -169,6 +171,7 @@ export class KiCadCliDetector {
         candidate,
         candidate === configuredPath ? 'settings' : 'common-path'
       );
+      if (generation !== this.cacheGeneration) return undefined;
       if (resolved) {
         this.detected = resolved;
         return resolved;
@@ -178,12 +181,14 @@ export class KiCadCliDetector {
     const fromPath = this.findOnPath();
     if (fromPath) {
       const resolved = await this.validateCandidate(fromPath, 'path');
+      if (generation !== this.cacheGeneration) return undefined;
       if (resolved) {
         this.detected = resolved;
         return resolved;
       }
     }
 
+    if (generation !== this.cacheGeneration) return undefined;
     if (notifyOnMissing) {
       const selected = await vscode.window.showErrorMessage(
         'KiCad CLI (kicad-cli) was not found.',
@@ -211,6 +216,7 @@ export class KiCadCliDetector {
   }
 
   clearCache(): void {
+    this.cacheGeneration += 1;
     this.detected = undefined;
     this.capabilityCache.clear();
     this.helpCache.clear();
