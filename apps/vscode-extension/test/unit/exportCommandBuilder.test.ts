@@ -36,7 +36,7 @@ describe('buildExportCommands', () => {
         '--units',
         'inch',
         '--output',
-        path.join(OUT, 'board.xml')
+        path.join(OUT, 'board.zip')
       ])
     );
     expect(
@@ -47,6 +47,23 @@ describe('buildExportCommands', () => {
         OPTIONS
       )[0]
     ).toEqual(expect.arrayContaining(['--theme', 'kicad']));
+  });
+
+  it('uses a ZIP filename for compressed IPC-2581 XML instead of a misleading .xml suffix', () => {
+    const command = buildExportCommands('export-ipc2581', PCB, OUT, {
+      versionMajor: 10,
+      ipcVersion: 'C',
+      ipcUnits: 'mm'
+    })[0];
+    expect(command).toEqual(
+      expect.arrayContaining([
+        'ipc2581',
+        '--compress',
+        '--output',
+        path.join(OUT, 'board.zip')
+      ])
+    );
+    expect(command).not.toContain(path.join(OUT, 'board.xml'));
   });
 
   it('plots real PCB layers for PDF, keeps 32-layer inner copper, and never overwrites schematic PDF', () => {

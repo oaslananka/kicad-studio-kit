@@ -299,7 +299,8 @@ function buildExportIpc2581(context: ExportCommandBuildContext): string[][] {
       'export',
       'ipc2581',
       '--output',
-      inferExportOutputPath(file, outputDir, '', '.xml'),
+      // --compress generates a ZIP archive containing the IPC-2581 XML.
+      inferExportOutputPath(file, outputDir, '', '.zip'),
       '--version',
       ipcVersion,
       '--units',
