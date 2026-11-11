@@ -894,6 +894,70 @@ describe('KiCadExportService.renderViewerSvg', () => {
     fs.rmSync(workspaceRoot, { recursive: true, force: true });
   });
 
+  it('explains PLY export failure from an older OCCT build and offers local alternatives', async () => {
+    jest.clearAllMocks();
+    const root = fs.mkdtempSync(
+      path.join(process.cwd(), '.tmp-ply-occt-guidance-')
+    );
+    const board = path.join(root, 'board.kicad_pcb');
+    fs.writeFileSync(board, '(kicad_pcb)', 'utf8');
+    __setConfiguration({ 'kicadstudio.defaultOutputDir': 'fab' });
+    const runner = {
+      runWithProgress: jest.fn().mockRejectedValue(
+        new CliExitError({
+          command: 'pcb export ply --output /private/project/model.ply',
+          code: 2,
+          stdout: '',
+          stderr:
+            'KiCad command failed.\nPLY export is not supported before OCCT 7.7.0\n** Error writing PLY file. **'
+        })
+      )
+    };
+    const detector = {
+      detect: jest.fn().mockResolvedValue({
+        path: '/usr/bin/kicad-cli',
+        version: '10.0.8'
+      }),
+      hasCapability: jest.fn().mockResolvedValue(true)
+    };
+    const logger = {
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn()
+    };
+    const service = new KiCadExportService(
+      runner as never,
+      detector as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      logger as never
+    );
+    try {
+      await service.export3DPLY(vscode.Uri.file(board));
+      expect(runner.runWithProgress).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: expect.arrayContaining(['pcb', 'export', 'ply'])
+        })
+      );
+      const messages = (vscode.window.showErrorMessage as jest.Mock).mock.calls;
+      expect(messages).toHaveLength(1);
+      const message = messages[0]?.[0] as string;
+      expect(message).toContain('OCCT 7.7.0');
+      expect(message).toContain('STL');
+      expect(message).toContain('GLB');
+      expect(message).not.toContain('/private/project/');
+      expect(message).not.toContain('confirm kicad-cli is installed');
+      expect(vscode.window.showInformationMessage).not.toHaveBeenCalledWith(
+        'Export completed successfully.',
+        'Open Output Folder'
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('stops failed exports without showing a false success action', async () => {
     jest.clearAllMocks();
     __setConfiguration({

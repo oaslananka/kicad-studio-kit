@@ -1191,8 +1191,13 @@ export class KiCadExportService {
       return true;
     } catch (error) {
       this.logger.error(title, error);
-      const message =
-        error instanceof Error
+      const plyRequiresNewerOcct =
+        title === 'Exporting 3D PLY' &&
+        error instanceof CliExitError &&
+        /PLY export is not supported before OCCT 7\.7\.0/i.test(error.stderr);
+      const message = plyRequiresNewerOcct
+        ? 'PLY export is unavailable in this KiCad installation: its Open CASCADE (OCCT) library is older than 7.7.0. Use a KiCad build with OCCT 7.7.0 or newer, or export 3D Model (STL) or (GLB) instead.'
+        : error instanceof Error
           ? `${error.message}\nWhat happened: the export command failed.\nHow to fix: confirm kicad-cli is installed and the target file opens in KiCad.`
           : 'The export command failed. Confirm kicad-cli is installed and the target file opens in KiCad.';
       void vscode.window.showErrorMessage(message);
