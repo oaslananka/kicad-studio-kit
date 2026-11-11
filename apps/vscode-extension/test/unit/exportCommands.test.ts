@@ -1482,6 +1482,101 @@ describe('KiCadExportService BOM user export outcomes', () => {
   });
 });
 
+describe('KiCadExportService non-blocking export notifications', () => {
+  it('runs both PDF exports without waiting for a user to dismiss the first success notification', async () => {
+    jest.clearAllMocks();
+    const root = fs.mkdtempSync(
+      path.join(process.cwd(), '.tmp-pdf-preset-notification-')
+    );
+    const schematic = path.join(root, 'board.kicad_sch');
+    const pcb = path.join(root, 'board.kicad_pcb');
+    fs.writeFileSync(schematic, '(kicad_sch)', 'utf8');
+    fs.writeFileSync(
+      pcb,
+      '(kicad_pcb (layers (0 "F.Cu" signal) (31 "B.Cu" signal) (44 "Edge.Cuts" user)))',
+      'utf8'
+    );
+    __setConfiguration({
+      'kicadstudio.defaultOutputDir': path.relative(
+        process.cwd(),
+        path.join(root, 'fab')
+      )
+    });
+    const notifications = vscode.window.showInformationMessage as jest.Mock;
+    const previousImplementation = notifications.getMockImplementation();
+    const pendingChoices: Array<(choice: string | undefined) => void> = [];
+    notifications.mockImplementation(
+      () =>
+        new Promise<string | undefined>((resolve) => {
+          pendingChoices.push(resolve);
+        })
+    );
+    const runner = {
+      runWithProgress: jest.fn(async ({ command }: { command: string[] }) => {
+        const destination = command[command.indexOf('--output') + 1];
+        if (!destination) {
+          throw new Error('Missing output target');
+        }
+        fs.mkdirSync(path.dirname(destination), { recursive: true });
+        fs.writeFileSync(
+          destination,
+          '%PDF-1.7\nreal command completed',
+          'utf8'
+        );
+        return 'Done.';
+      })
+    };
+    const detector = {
+      detect: jest.fn().mockResolvedValue({ version: '10.0.8' })
+    };
+    const logger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn()
+    };
+    const service = new KiCadExportService(
+      runner as never,
+      detector as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      logger as never
+    );
+    try {
+      // Neither notification promise resolves until the user clicks/dismisses
+      // it. A saved PDF Pack must not block at the first completed export.
+      await service.exportPDF(vscode.Uri.file(schematic));
+      await service.exportPCBPDF(vscode.Uri.file(pcb));
+      expect(runner.runWithProgress).toHaveBeenCalledTimes(2);
+      expect(pendingChoices).toHaveLength(2);
+      const fab = path.join(root, 'fab');
+      expect(fs.readFileSync(path.join(fab, 'board.pdf'), 'utf8')).toContain(
+        '%PDF-1.7'
+      );
+      expect(
+        fs.readFileSync(path.join(fab, 'board-pcb.pdf'), 'utf8')
+      ).toContain('%PDF-1.7');
+      expect(vscode.env.openExternal).not.toHaveBeenCalled();
+
+      // The action still works later, after both exports have finished.
+      pendingChoices[0]?.('Open Output Folder');
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      expect(vscode.env.openExternal).toHaveBeenCalledWith(
+        vscode.Uri.file(fab)
+      );
+      pendingChoices[1]?.(undefined);
+      expect(logger.warn).not.toHaveBeenCalled();
+    } finally {
+      notifications.mockImplementation(
+        previousImplementation ?? (() => undefined)
+      );
+      fs.rmSync(root, { recursive: true, force: true });
+      __setConfiguration({});
+    }
+  });
+});
+
 describe('KiCadExportService blocked local BOM output recovery', () => {
   it('protects a user file, gives actionable private-safe guidance and succeeds on retry', async () => {
     jest.clearAllMocks();
