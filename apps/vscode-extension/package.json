@@ -1794,36 +1794,36 @@
     "keybindings": [
       {
         "command": "kicadstudio.runDRC",
-        "key": "ctrl+shift+d",
-        "mac": "cmd+shift+d",
+        "key": "ctrl+k ctrl+shift+d",
+        "mac": "cmd+k cmd+shift+d",
         "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
       },
       {
         "command": "kicadstudio.runERC",
-        "key": "ctrl+shift+e",
-        "mac": "cmd+shift+e",
+        "key": "ctrl+k ctrl+shift+e",
+        "mac": "cmd+k cmd+shift+e",
         "when": "kicadstudio.workspaceTrusted && kicadstudio.schematicOpen"
       },
       {
         "command": "kicadstudio.exportGerbers",
-        "key": "ctrl+shift+g",
-        "mac": "cmd+shift+g",
+        "key": "ctrl+k ctrl+shift+g",
+        "mac": "cmd+k cmd+shift+g",
         "when": "kicadstudio.workspaceTrusted && kicadstudio.pcbOpen"
       },
       {
         "command": "kicadstudio.searchLibrarySymbol",
-        "key": "ctrl+shift+k ctrl+shift+s",
-        "mac": "cmd+shift+k cmd+shift+s"
+        "key": "ctrl+k ctrl+shift+s",
+        "mac": "cmd+k cmd+shift+s"
       },
       {
         "command": "kicadstudio.searchLibraryFootprint",
-        "key": "ctrl+shift+k ctrl+shift+f",
-        "mac": "cmd+shift+k cmd+shift+f"
+        "key": "ctrl+k ctrl+shift+f",
+        "mac": "cmd+k cmd+shift+f"
       },
       {
         "command": "kicadstudio.openSettings",
-        "key": "ctrl+shift+k ctrl+shift+,",
-        "mac": "cmd+shift+k cmd+shift+,"
+        "key": "ctrl+k ctrl+shift+,",
+        "mac": "cmd+k cmd+shift+,"
       }
     ],
     "configuration": {
