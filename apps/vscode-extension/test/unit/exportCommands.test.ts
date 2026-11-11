@@ -161,6 +161,223 @@ describe('buildCliExportCommands', () => {
     }
   });
 
+  it('runs PCB PDF through real board-layer discovery, not the invalid ALL pseudo-layer', async () => {
+    jest.clearAllMocks();
+    const root = fs.mkdtempSync(
+      path.join(process.cwd(), '.tmp-pdf-inner-layers-')
+    );
+    __setConfiguration({
+      'kicadstudio.defaultOutputDir': path.relative(
+        process.cwd(),
+        path.join(root, 'fab')
+      )
+    });
+    const board = path.join(root, 'inner.kicad_pcb');
+    fs.writeFileSync(
+      board,
+      `(kicad_pcb
+      (layers
+        (0 "F.Cu" signal)
+        (18 "In18.Cu" signal)
+        (21 "In21.Cu" signal)
+        (31 "B.Cu" signal)
+        (44 "Edge.Cuts" user)
+      )
+    )`
+    );
+    const runner = { runWithProgress: jest.fn().mockResolvedValue('Done.') };
+    const detector = {
+      detect: jest.fn().mockResolvedValue({ version: '10.0.8' })
+    };
+    const logger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn()
+    };
+    const service = new KiCadExportService(
+      runner as never,
+      detector as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      logger as never
+    );
+    try {
+      await service.exportPCBPDF(vscode.Uri.file(board));
+      expect(runner.runWithProgress).toHaveBeenCalledTimes(1);
+      expect(runner.runWithProgress).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: expect.arrayContaining([
+            'pcb',
+            'export',
+            'pdf',
+            '--layers',
+            'F.Cu,In18.Cu,In21.Cu,B.Cu,Edge.Cuts',
+            '--output',
+            path.join(root, 'fab', 'inner-pcb.pdf'),
+            board
+          ])
+        })
+      );
+      const command = (
+        runner.runWithProgress.mock.calls[0]?.[0] as { command: string[] }
+      ).command;
+      expect(command).not.toContain('ALL');
+      expect(logger.warn).not.toHaveBeenCalled();
+      expect(vscode.window.showWarningMessage).not.toHaveBeenCalled();
+      expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
+        'Export completed successfully.',
+        'Open Output Folder'
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('uses a valid named PCB PDF fallback when board layer metadata is absent', async () => {
+    jest.clearAllMocks();
+    const root = fs.mkdtempSync(
+      path.join(process.cwd(), '.tmp-pdf-layers-fallback-')
+    );
+    __setConfiguration({
+      'kicadstudio.defaultOutputDir': path.relative(
+        process.cwd(),
+        path.join(root, 'fab')
+      )
+    });
+    const board = path.join(root, 'legacy.kicad_pcb');
+    fs.writeFileSync(board, '(kicad_pcb (version 20211014))');
+    const runner = { runWithProgress: jest.fn().mockResolvedValue('Done.') };
+    const detector = {
+      detect: jest.fn().mockResolvedValue({ version: '10.0.8' })
+    };
+    const logger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn()
+    };
+    const service = new KiCadExportService(
+      runner as never,
+      detector as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      logger as never
+    );
+    try {
+      await service.exportPCBPDF(vscode.Uri.file(board));
+      expect(runner.runWithProgress).toHaveBeenCalledTimes(1);
+      const command = (
+        runner.runWithProgress.mock.calls[0]?.[0] as { command: string[] }
+      ).command;
+      expect(command).toContain(
+        'F.Cu,B.Cu,F.SilkS,B.SilkS,F.Mask,B.Mask,Edge.Cuts,F.Fab,B.Fab'
+      );
+      expect(command).not.toContain('ALL');
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Could not discover Gerber layers')
+      );
+      expect(vscode.window.showWarningMessage).toHaveBeenCalledWith(
+        'Could not discover board layers. Export will use the default fabrication layer set.'
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps Gerber, drill and schematic PDF paths distinct with proper layer discovery', async () => {
+    jest.clearAllMocks();
+    const root = fs.mkdtempSync(
+      path.join(process.cwd(), '.tmp-pdf-gerber-regression-')
+    );
+    __setConfiguration({
+      'kicadstudio.defaultOutputDir': path.relative(
+        process.cwd(),
+        path.join(root, 'fab')
+      )
+    });
+    const board = path.join(root, 'sample.kicad_pcb');
+    const schematic = path.join(root, 'sample.kicad_sch');
+    fs.writeFileSync(
+      board,
+      `(kicad_pcb
+       (layers
+         (0 "F.Cu" signal)
+         (1 "In1.Cu" signal)
+         (31 "B.Cu" signal)
+         (44 "Edge.Cuts" user)
+       )
+    )`
+    );
+    fs.writeFileSync(schematic, '(kicad_sch (version 20250114))');
+    const runner = { runWithProgress: jest.fn().mockResolvedValue('Done.') };
+    const detector = {
+      detect: jest.fn().mockResolvedValue({ version: '10.0.8' })
+    };
+    const logger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn()
+    };
+    const service = new KiCadExportService(
+      runner as never,
+      detector as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      logger as never
+    );
+    try {
+      await service.exportGerbers(vscode.Uri.file(board));
+      await service.exportGerbersWithDrill(vscode.Uri.file(board));
+      await service.exportPDF(vscode.Uri.file(schematic));
+      expect(runner.runWithProgress).toHaveBeenCalledTimes(4);
+      const commands = runner.runWithProgress.mock.calls.map(
+        ([call]: [{ command: string[] }]) => call.command
+      );
+      expect(commands[0]).toEqual(
+        expect.arrayContaining([
+          'pcb',
+          'export',
+          'gerbers',
+          '--layers',
+          'F.Cu,In1.Cu,B.Cu,Edge.Cuts',
+          board
+        ])
+      );
+      expect(commands[1]).toEqual(
+        expect.arrayContaining([
+          'pcb',
+          'export',
+          'gerbers',
+          '--layers',
+          'F.Cu,In1.Cu,B.Cu,Edge.Cuts',
+          board
+        ])
+      );
+      expect(commands[2]).toEqual(
+        expect.arrayContaining(['pcb', 'export', 'drill', board])
+      );
+      expect(commands[3]).toEqual(
+        expect.arrayContaining([
+          'sch',
+          'export',
+          'pdf',
+          '--output',
+          path.join(root, 'fab', 'sample.pdf'),
+          schematic
+        ])
+      );
+      expect(logger.warn).not.toHaveBeenCalled();
+      expect(vscode.window.showWarningMessage).not.toHaveBeenCalled();
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('uses a safe default Gerber layer set when discovery is unavailable', () => {
     const command = buildCliExportCommands(
       'export-gerbers',

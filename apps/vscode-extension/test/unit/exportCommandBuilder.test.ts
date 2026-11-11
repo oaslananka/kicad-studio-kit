@@ -85,6 +85,18 @@ describe('buildExportCommands', () => {
     expect(board).not.toContain(path.join(OUT, 'board.pdf'));
   });
 
+  it('falls back when a discovered board has only unsupported names', () => {
+    const command = buildExportCommands('export-pdf-pcb', PCB, OUT, {
+      versionMajor: 10,
+      gerberLayers: ['User.1', 'Dwgs.User', 'F.Courtyard']
+    })[0];
+    expect(command).not.toContain('ALL');
+    expect(command).not.toContain('User.1');
+    expect(command).toContain(
+      'F.Cu,B.Cu,F.SilkS,B.SilkS,F.Mask,B.Mask,Edge.Cuts,F.Fab,B.Fab'
+    );
+  });
+
   it('uses valid named PCB PDF layers when discovery is not available', () => {
     for (const versionMajor of [8, 9, 10]) {
       const command = buildExportCommands('export-pdf-pcb', PCB, OUT, {
