@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import { CLI_TIMEOUT_MS, SETTINGS } from '../constants';
 import {
   CliExitError,
+  KiCadCliCancelledError,
   KiCadCliNotFoundError,
   KiCadCliTimeoutError
 } from '../errors';
@@ -67,9 +68,7 @@ export class KiCadCliRunner {
       async (progress, token) => {
         const progressAbort = new AbortController();
         token.onCancellationRequested(() =>
-          progressAbort.abort(
-            new Error(`KiCad command cancelled: ${options.command.join(' ')}`)
-          )
+          progressAbort.abort(new KiCadCliCancelledError())
         );
         const result = await this.run<T>({
           ...options,

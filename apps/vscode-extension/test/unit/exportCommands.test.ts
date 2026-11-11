@@ -3,6 +3,11 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import {
+  CliExitError,
+  KiCadCliCancelledError,
+  KiCadCliNotFoundError
+} from '../../src/errors';
+import {
   buildCliExportCommands,
   discoverGerberLayers,
   KiCadExportService
@@ -1178,6 +1183,208 @@ describe('KiCadExportService real BOM permission failures', () => {
         'BOM export failed. Verify that the complete project opens in KiCad and retry.'
       );
       expect(bomExporter.exportCsv).not.toHaveBeenCalled();
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+      __setConfiguration({});
+    }
+  });
+});
+
+describe('KiCadExportService vanished CLI after successful detection', () => {
+  it('explains the missing executable and retries without changing user files', async () => {
+    jest.clearAllMocks();
+    const root = fs.mkdtempSync(
+      path.join(process.cwd(), '.tmp-studio-vanished-cli-')
+    );
+    const file = path.join(root, 'controller.kicad_sch');
+    fs.writeFileSync(file, '(kicad_sch)', 'utf8');
+    __setConfiguration({
+      'kicadstudio.defaultOutputDir': path.join(path.basename(root), 'fab')
+    });
+    const entries = [{ references: ['R1'], quantity: 1 }];
+    const bomExporter = { exportCsv: jest.fn().mockResolvedValue(undefined) };
+    const state = { begin: jest.fn(), complete: jest.fn(), fail: jest.fn() };
+    const logger = { error: jest.fn() };
+    const service = new KiCadExportService(
+      {} as never,
+      {} as never,
+      {} as never,
+      bomExporter as never,
+      {} as never,
+      logger as never,
+      state as never
+    );
+    const read = jest
+      .fn()
+      .mockRejectedValueOnce(new KiCadCliNotFoundError())
+      .mockResolvedValueOnce(entries);
+    Object.defineProperty(service, 'loadBomEntries', { value: read });
+    try {
+      await service.exportBOMCSV(vscode.Uri.file(file));
+      expect(bomExporter.exportCsv).not.toHaveBeenCalled();
+      expect(state.fail).toHaveBeenCalledWith(
+        'bom',
+        vscode.Uri.file(file),
+        'Configured KiCad CLI executable is unavailable.'
+      );
+      expect(state.complete).not.toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalledWith(
+        'BOM export failed',
+        'CLI_NOT_FOUND'
+      );
+      expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'How to fix: restore the configured KiCad CLI path'
+        )
+      );
+      const message = (vscode.window.showErrorMessage as jest.Mock).mock
+        .calls[0]?.[0] as string;
+      expect(message).not.toContain(root);
+      expect(vscode.window.showInformationMessage).not.toHaveBeenCalled();
+
+      await service.exportBOMCSV(vscode.Uri.file(file));
+      expect(read).toHaveBeenCalledTimes(2);
+      expect(bomExporter.exportCsv).toHaveBeenCalledWith(
+        entries,
+        path.join(root, 'fab', 'controller-bom.csv')
+      );
+      expect(state.complete).toHaveBeenCalledTimes(1);
+      expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
+        'Export completed successfully.',
+        'Open Output Folder'
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+      __setConfiguration({});
+    }
+  });
+
+  it('cleans failed partial CLI results and succeeds after the user retries', async () => {
+    jest.clearAllMocks();
+    const root = fs.mkdtempSync(
+      path.join(process.cwd(), '.tmp-studio-partial-cli-')
+    );
+    const file = path.join(root, 'controller.kicad_sch');
+    fs.writeFileSync(file, '(kicad_sch)', 'utf8');
+    __setConfiguration({
+      'kicadstudio.defaultOutputDir': path.join(path.basename(root), 'fab')
+    });
+    const exporter = { exportCsv: jest.fn().mockResolvedValue(undefined) };
+    const state = { begin: jest.fn(), complete: jest.fn(), fail: jest.fn() };
+    const logger = { error: jest.fn() };
+    const entries = [{ references: ['R1'], quantity: 1 }];
+    const service = new KiCadExportService(
+      {} as never,
+      {} as never,
+      {} as never,
+      exporter as never,
+      {} as never,
+      logger as never,
+      state as never
+    );
+    const read = jest
+      .fn()
+      .mockRejectedValueOnce(
+        new CliExitError({
+          command:
+            'sch export bom --output ' + path.join(root, 'sensitive.csv'),
+          code: 19,
+          stdout: 'partial',
+          stderr: 'interrupted'
+        })
+      )
+      .mockResolvedValueOnce(entries);
+    Object.defineProperty(service, 'loadBomEntries', { value: read });
+    try {
+      await service.exportBOMCSV(vscode.Uri.file(file));
+      expect(exporter.exportCsv).not.toHaveBeenCalled();
+      expect(state.complete).not.toHaveBeenCalled();
+      expect(state.fail).toHaveBeenCalledWith(
+        'bom',
+        vscode.Uri.file(file),
+        'KiCad CLI stopped before completing the BOM export.'
+      );
+      expect(logger.error).toHaveBeenCalledWith(
+        'BOM export failed',
+        'CLI_EXIT_19'
+      );
+      expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
+        expect.stringContaining('No final BOM file was saved.')
+      );
+      const message = (vscode.window.showErrorMessage as jest.Mock).mock
+        .calls[0]?.[0] as string;
+      expect(message).not.toContain(root);
+      expect(vscode.window.showInformationMessage).not.toHaveBeenCalled();
+
+      await service.exportBOMCSV(vscode.Uri.file(file));
+      expect(exporter.exportCsv).toHaveBeenCalledWith(
+        entries,
+        path.join(root, 'fab', 'controller-bom.csv')
+      );
+      expect(state.complete).toHaveBeenCalledTimes(1);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+      __setConfiguration({});
+    }
+  });
+
+  it('treats user cancellation as neutral and allows a successful retry', async () => {
+    jest.clearAllMocks();
+    const root = fs.mkdtempSync(
+      path.join(process.cwd(), '.tmp-studio-user-cancel-')
+    );
+    const file = path.join(root, 'controller.kicad_sch');
+    fs.writeFileSync(file, '(kicad_sch)', 'utf8');
+    __setConfiguration({
+      'kicadstudio.defaultOutputDir': path.join(path.basename(root), 'fab')
+    });
+    const exporter = { exportCsv: jest.fn().mockResolvedValue(undefined) };
+    const state = {
+      begin: jest.fn(),
+      complete: jest.fn(),
+      fail: jest.fn(),
+      cancel: jest.fn()
+    };
+    const logger = { error: jest.fn(), info: jest.fn() };
+    const entries = [{ references: ['R1'], quantity: 1 }];
+    const service = new KiCadExportService(
+      {} as never,
+      {} as never,
+      {} as never,
+      exporter as never,
+      {} as never,
+      logger as never,
+      state as never
+    );
+    Object.defineProperty(service, 'loadBomEntries', {
+      value: jest
+        .fn()
+        .mockRejectedValueOnce(new KiCadCliCancelledError())
+        .mockResolvedValueOnce(entries)
+    });
+    try {
+      await service.exportBOMCSV(vscode.Uri.file(file));
+      expect(exporter.exportCsv).not.toHaveBeenCalled();
+      expect(state.fail).not.toHaveBeenCalled();
+      expect(state.complete).not.toHaveBeenCalled();
+      expect(state.cancel).toHaveBeenCalledWith(
+        'bom',
+        vscode.Uri.file(file),
+        'BOM export cancelled by user.'
+      );
+      expect(logger.error).not.toHaveBeenCalled();
+      expect(logger.info).toHaveBeenCalledWith('BOM export cancelled by user.');
+      expect(vscode.window.showErrorMessage).not.toHaveBeenCalled();
+      expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
+        'BOM export cancelled. No new BOM file was saved. You can retry.'
+      );
+
+      await service.exportBOMCSV(vscode.Uri.file(file));
+      expect(exporter.exportCsv).toHaveBeenCalledWith(
+        entries,
+        path.join(root, 'fab', 'controller-bom.csv')
+      );
+      expect(state.complete).toHaveBeenCalledTimes(1);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
       __setConfiguration({});

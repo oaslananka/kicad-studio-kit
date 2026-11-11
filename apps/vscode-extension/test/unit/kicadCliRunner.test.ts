@@ -7,7 +7,12 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { EventEmitter } from 'node:events';
 import * as childProcess from 'node:child_process';
-import { CliExitError, KiCadCliNotFoundError } from '../../src/errors';
+import * as vscode from 'vscode';
+import {
+  CliExitError,
+  KiCadCliCancelledError,
+  KiCadCliNotFoundError
+} from '../../src/errors';
 import { KiCadCliRunner } from '../../src/cli/kicadCliRunner';
 import { __setConfiguration } from './vscodeMock';
 
@@ -780,6 +785,73 @@ describe('KiCadCliRunner', () => {
         signal: externalAbort.signal
       })
     ).rejects.toThrow('external cancel');
+  });
+
+  it('propagates a native progress cancellation as a typed path-safe user action', async () => {
+    __setConfiguration({});
+    const detector = {
+      detect: jest.fn().mockResolvedValue({
+        path: '/usr/bin/kicad-cli',
+        version: '10.0.8',
+        versionLabel: 'KiCad 10.0.8',
+        source: 'settings'
+      })
+    };
+    const logger = {
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn()
+    };
+    let cancelHandler: (() => void) | undefined;
+    (vscode.window.withProgress as jest.Mock).mockImplementationOnce(
+      (
+        _options: unknown,
+        run: (progress: unknown, token: unknown) => Promise<unknown>
+      ) =>
+        run(
+          { report: jest.fn() },
+          {
+            onCancellationRequested: (callback: () => void) => {
+              cancelHandler = callback;
+              return { dispose: jest.fn() };
+            }
+          }
+        )
+    );
+    (childProcess.spawn as unknown as jest.Mock).mockImplementation(
+      (_command: string, _args: string[], options: { signal: AbortSignal }) => {
+        const child = createChildProcessMock();
+        options.signal.addEventListener('abort', () => {
+          child.emit(
+            'error',
+            Object.assign(new Error('aborted'), {
+              name: 'AbortError',
+              cause: options.signal.reason
+            })
+          );
+        });
+        return child;
+      }
+    );
+
+    const runner = new KiCadCliRunner(detector as never, logger as never);
+    const pending = runner.runWithProgress<string>({
+      command: [
+        'sch',
+        'export',
+        'bom',
+        '--output',
+        path.join(tempDir, 'private.csv'),
+        'project.kicad_sch'
+      ],
+      cwd: tempDir,
+      progressTitle: 'Collecting the complete multi-sheet BOM'
+    });
+    await Promise.resolve();
+    expect(cancelHandler).toBeDefined();
+    cancelHandler!();
+    await expect(pending).rejects.toBeInstanceOf(KiCadCliCancelledError);
   });
 
   it('cancels all tracked commands when cancelAll is invoked', async () => {

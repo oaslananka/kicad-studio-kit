@@ -7,6 +7,14 @@ export class KiCadCliNotFoundError extends Error {
   }
 }
 
+/** Distinguish an intentional user cancel from a CLI failure. */
+export class KiCadCliCancelledError extends Error {
+  constructor() {
+    super('KiCad CLI command cancelled by user.');
+    this.name = 'KiCadCliCancelledError';
+  }
+}
+
 export class KiCadCliTimeoutError extends Error {
   constructor(command: string, timeoutMs: number) {
     super(`kicad-cli command '${command}' timed out after ${timeoutMs}ms`);

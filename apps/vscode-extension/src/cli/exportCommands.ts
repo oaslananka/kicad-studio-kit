@@ -3,6 +3,11 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { COMMANDS, SETTINGS } from '../constants';
+import {
+  CliExitError,
+  KiCadCliCancelledError,
+  KiCadCliNotFoundError
+} from '../errors';
 import { BomExporter } from '../bom/bomExporter';
 import { BomParser } from '../bom/bomParser';
 import { parseNativeKiCadBomCsv } from '../bom/nativeBomCsv';
@@ -1052,38 +1057,79 @@ export class KiCadExportService {
       );
       await this.showOutputFolder(outputDir);
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === INCOMPATIBLE_MULTI_SHEET_BOM_ERROR
-      ) {
-        this.exportState?.fail('bom', uri, INCOMPATIBLE_MULTI_SHEET_BOM_ERROR);
-        this.logger.error(
-          'BOM export failed',
-          INCOMPATIBLE_MULTI_SHEET_BOM_ERROR
-        );
-        void vscode.window.showErrorMessage(
-          'BOM export failed. A complete multi-sheet BOM needs a compatible KiCad CLI. Configure KiCad and retry.'
-        );
-        return;
-      }
-      if (isBomOutputPermissionFailure(error, outputDir, outputFile)) {
-        this.exportState?.fail(
-          'bom',
-          uri,
-          'The BOM output folder is not writable.'
-        );
-        this.logger.error('BOM export failed', outputDirectoryErrorCode(error));
-        void vscode.window.showErrorMessage(
-          'BOM export failed. The output folder is not writable. How to fix: choose a writable folder inside this workspace or grant write access, then retry.'
-        );
-        return;
-      }
-      this.exportState?.fail('bom', uri, error);
-      this.logger.error('BOM export failed', error);
-      void vscode.window.showErrorMessage(
-        'BOM export failed. Verify that the complete project opens in KiCad and retry.'
-      );
+      this.handleBomExportFailure(error, uri, outputDir, outputFile);
     }
+  }
+
+  private handleBomExportFailure(
+    error: unknown,
+    uri: vscode.Uri,
+    outputDir: string,
+    outputFile: string
+  ): void {
+    if (error instanceof KiCadCliCancelledError) {
+      this.exportState?.cancel('bom', uri, 'BOM export cancelled by user.');
+      this.logger.info('BOM export cancelled by user.');
+      void vscode.window.showInformationMessage(
+        'BOM export cancelled. No new BOM file was saved. You can retry.'
+      );
+      return;
+    }
+    if (error instanceof KiCadCliNotFoundError) {
+      this.exportState?.fail(
+        'bom',
+        uri,
+        'Configured KiCad CLI executable is unavailable.'
+      );
+      this.logger.error('BOM export failed', 'CLI_NOT_FOUND');
+      void vscode.window.showErrorMessage(
+        'BOM export failed. KiCad CLI executable is no longer available. How to fix: restore the configured KiCad CLI path or configure a valid KiCad CLI, then retry.'
+      );
+      return;
+    }
+    if (
+      error instanceof Error &&
+      error.message === INCOMPATIBLE_MULTI_SHEET_BOM_ERROR
+    ) {
+      this.exportState?.fail('bom', uri, INCOMPATIBLE_MULTI_SHEET_BOM_ERROR);
+      this.logger.error(
+        'BOM export failed',
+        INCOMPATIBLE_MULTI_SHEET_BOM_ERROR
+      );
+      void vscode.window.showErrorMessage(
+        'BOM export failed. A complete multi-sheet BOM needs a compatible KiCad CLI. Configure KiCad and retry.'
+      );
+      return;
+    }
+    if (error instanceof CliExitError) {
+      this.exportState?.fail(
+        'bom',
+        uri,
+        'KiCad CLI stopped before completing the BOM export.'
+      );
+      this.logger.error('BOM export failed', 'CLI_EXIT_' + error.code);
+      void vscode.window.showErrorMessage(
+        'BOM export failed. KiCad CLI stopped before completing the export. No final BOM file was saved. Check the KiCad project and CLI configuration, then retry.'
+      );
+      return;
+    }
+    if (isBomOutputPermissionFailure(error, outputDir, outputFile)) {
+      this.exportState?.fail(
+        'bom',
+        uri,
+        'The BOM output folder is not writable.'
+      );
+      this.logger.error('BOM export failed', outputDirectoryErrorCode(error));
+      void vscode.window.showErrorMessage(
+        'BOM export failed. The output folder is not writable. How to fix: choose a writable folder inside this workspace or grant write access, then retry.'
+      );
+      return;
+    }
+    this.exportState?.fail('bom', uri, error);
+    this.logger.error('BOM export failed', error);
+    void vscode.window.showErrorMessage(
+      'BOM export failed. Verify that the complete project opens in KiCad and retry.'
+    );
   }
 
   private async runCliExport(
