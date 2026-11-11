@@ -499,7 +499,12 @@ function buildExportVrml(context: ExportCommandBuildContext): string[][] {
       'vrml',
       '--output',
       inferExportOutputPath(file, outputDir, '', '.wrl'),
-      ...buildCommon3dExportArgs(options, versionMajor),
+      // VRML has a different KiCad CLI contract from STEP/GLB/STL: no
+      // --include-* flags, --subst-models, --board-only or STEP optimisation.
+      // Passing the shared 3D flags makes a valid VRML export fail outright.
+      ...(options.noUnspecified && versionMajor >= 10
+        ? ['--no-unspecified']
+        : []),
       ...build3dVariantArgs('export-vrml', options.variant, versionMajor),
       file
     ]

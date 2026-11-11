@@ -187,6 +187,56 @@ describe('buildExportCommands', () => {
     }
   });
 
+  it('uses only KiCad VRML-supported options and preserves the variant on KiCad 10', () => {
+    const options = {
+      versionMajor: 10,
+      variant: 'Assembly-B',
+      includeTracks: true,
+      includePads: true,
+      includeZones: true,
+      includeInnerCopper: true,
+      includeSilkscreen: true,
+      includeSoldermask: true,
+      substModels: true,
+      noOptimizeStep: true,
+      boardOnly: true,
+      translateDNP: true,
+      noUnspecified: true
+    };
+    const command = buildExportCommands('export-vrml', PCB, OUT, options)[0];
+    expect(command).toEqual([
+      'pcb',
+      'export',
+      'vrml',
+      '--output',
+      path.join(OUT, 'board.wrl'),
+      '--no-unspecified',
+      '--variant',
+      'Assembly-B',
+      PCB
+    ]);
+    expect(command).not.toContain('--include-tracks');
+    expect(command).not.toContain('--subst-models');
+    expect(command).not.toContain('--no-optimize-step');
+  });
+
+  it('keeps KiCad 8 VRML compatible without 10-only options', () => {
+    const command = buildExportCommands('export-vrml', PCB, OUT, {
+      versionMajor: 8,
+      variant: 'Assembly-B',
+      boardOnly: true,
+      noUnspecified: true
+    })[0];
+    expect(command).toEqual([
+      'pcb',
+      'export',
+      'vrml',
+      '--output',
+      path.join(OUT, 'board.wrl'),
+      PCB
+    ]);
+  });
+
   it('applies structured 3D options and version-aware variants', () => {
     const modern = buildExportCommands('export-step', PCB, OUT, {
       versionMajor: 10,
