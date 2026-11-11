@@ -12,6 +12,13 @@ export function createViewerControllerScript(): string {
     const errorDetail    = document.getElementById('error-detail');
     const emptyEl        = document.getElementById('empty-overlay');
     const emptyTitleEl   = document.getElementById('empty-title');
+    const emptyExplanationEl = document.getElementById('empty-explanation');
+    const emptyGuidanceEl = document.getElementById('empty-guidance');
+    const largePcbActionsEl = document.getElementById('large-pcb-actions');
+    const largePcbRegionBtn = document.getElementById('large-pcb-region-btn');
+    const largePcbOpenBtn = document.getElementById('large-pcb-open-btn');
+    const defaultEmptyExplanation = emptyExplanationEl?.textContent || '';
+    const defaultEmptyGuidance = emptyGuidanceEl?.textContent || '';
     const safePreviewEl  = document.getElementById('safe-preview');
     const viewerMount    = document.getElementById('viewer-mount');
     const hopOverOverlay = document.getElementById('hop-over-overlay');
@@ -225,6 +232,13 @@ export function createViewerControllerScript(): string {
     netSearchEl?.addEventListener('input', refreshNetSuggestions);
     partialStartBtn?.addEventListener('click', () => requestPartialPreview('start'));
     partialNextBtn?.addEventListener('click', () => requestPartialPreview('next'));
+    largePcbRegionBtn?.addEventListener('click', () => {
+      if (!partialSection || partialSection.hidden) return;
+      setToolsPanelCollapsed(false);
+      partialSection.scrollIntoView({ block: 'nearest' });
+      requestPartialPreview('start');
+    });
+    largePcbOpenBtn?.addEventListener('click', openInKiCad);
     populateSheetSelect();
     renderSidebar();
     updateEngineUi(localState.engine);
@@ -258,6 +272,7 @@ export function createViewerControllerScript(): string {
           (missing.footprint || 0) + ' footprints. Zones omitted. Net continuity unverified. No engineering/export certainty.';
       }
       setControlDisabled(partialStartBtn, partialBusy);
+      setControlDisabled(largePcbRegionBtn, partialBusy);
       setControlDisabled(partialNextBtn, partialBusy || !summary?.hasNextPage);
     }
 
@@ -414,8 +429,14 @@ export function createViewerControllerScript(): string {
 
       try {
         if (payload.disabledReason) {
+          const isOversizedPcb = payload.fileType === 'board' &&
+            payload.disabledReason.includes('Interactive render is disabled');
           setEngineState('metadata-only', payload.disabledReason);
-          showEmpty(payload.disabledReason, '');
+          showEmpty(
+            payload.disabledReason, '',
+            isOversizedPcb ? 'Large PCB — preview paused' : undefined,
+            isOversizedPcb
+          );
           return;
         }
 
@@ -2744,11 +2765,22 @@ export function createViewerControllerScript(): string {
       setStatus('⚠ ' + (title || 'Error'));
     }
 
-    function showEmpty(message, preview, title) {
+    function showEmpty(message, preview, title, isOversizedPcb = false) {
       setViewerSurfaceVisible(false);
       hideAll();
       emptyEl.hidden = false;
       if (emptyTitleEl) emptyTitleEl.textContent = title || 'No drawable objects yet';
+      if (emptyExplanationEl) {
+        emptyExplanationEl.textContent = isOversizedPcb
+          ? message
+          : defaultEmptyExplanation;
+      }
+      if (emptyGuidanceEl) {
+        emptyGuidanceEl.textContent = isOversizedPcb
+          ? 'Your board is not empty. Preview a small, incomplete read-only region, or open the full design in KiCad. Partial previews must not be used for DRC, export, or manufacturing.'
+          : defaultEmptyGuidance;
+      }
+      if (largePcbActionsEl) largePcbActionsEl.hidden = !isOversizedPcb;
       if (safePreviewEl) {
         safePreviewEl.textContent = preview || '';
         safePreviewEl.hidden = !preview;
