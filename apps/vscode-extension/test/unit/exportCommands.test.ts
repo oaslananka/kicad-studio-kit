@@ -1074,3 +1074,113 @@ describe('KiCadExportService blocked local BOM output recovery', () => {
     }
   });
 });
+
+describe('KiCadExportService real BOM permission failures', () => {
+  it('identifies output EACCES without revealing the folder and succeeds after repair', async () => {
+    jest.clearAllMocks();
+    const root = fs.mkdtempSync(
+      path.join(process.cwd(), '.tmp-studio-bom-permission-')
+    );
+    const file = path.join(root, 'controller.kicad_sch');
+    const outDir = path.join(root, 'fab');
+    const outFile = path.join(outDir, 'controller-bom.csv');
+    fs.writeFileSync(file, '(kicad_sch)', 'utf8');
+    __setConfiguration({
+      'kicadstudio.defaultOutputDir': path.join(path.basename(root), 'fab')
+    });
+    const denied = Object.assign(
+      new Error('EACCES: permission denied, open ' + outFile),
+      {
+        code: 'EACCES',
+        path: outFile
+      }
+    );
+    const bomExporter = {
+      exportCsv: jest
+        .fn()
+        .mockRejectedValueOnce(denied)
+        .mockResolvedValue(undefined)
+    };
+    const state = { begin: jest.fn(), complete: jest.fn(), fail: jest.fn() };
+    const logger = { error: jest.fn() };
+    const service = new KiCadExportService(
+      {} as never,
+      {} as never,
+      {} as never,
+      bomExporter as never,
+      {} as never,
+      logger as never,
+      state as never
+    );
+    Object.defineProperty(service, 'loadBomEntries', {
+      value: jest.fn().mockResolvedValue([{ references: ['R1'], quantity: 1 }])
+    });
+    try {
+      await service.exportBOMCSV(vscode.Uri.file(file));
+      expect(state.complete).not.toHaveBeenCalled();
+      expect(state.fail).toHaveBeenCalledWith(
+        'bom',
+        vscode.Uri.file(file),
+        'The BOM output folder is not writable.'
+      );
+      expect(logger.error).toHaveBeenCalledWith('BOM export failed', 'EACCES');
+      expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
+        expect.stringContaining('How to fix: choose a writable folder')
+      );
+      const notification = (vscode.window.showErrorMessage as jest.Mock).mock
+        .calls[0][0] as string;
+      expect(notification).not.toContain(root);
+      expect(vscode.window.showInformationMessage).not.toHaveBeenCalled();
+
+      await service.exportBOMCSV(vscode.Uri.file(file));
+      expect(bomExporter.exportCsv).toHaveBeenCalledTimes(2);
+      expect(state.complete).toHaveBeenCalledTimes(1);
+      expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
+        'Export completed successfully.',
+        'Open Output Folder'
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+      __setConfiguration({});
+    }
+  });
+
+  it('does not confuse a schematic source read denial with an output write denial', async () => {
+    jest.clearAllMocks();
+    const root = fs.mkdtempSync(
+      path.join(process.cwd(), '.tmp-studio-bom-source-denied-')
+    );
+    const file = path.join(root, 'controller.kicad_sch');
+    fs.writeFileSync(file, '(kicad_sch)', 'utf8');
+    __setConfiguration({
+      'kicadstudio.defaultOutputDir': path.join(path.basename(root), 'fab')
+    });
+    const sourceError = Object.assign(new Error('EACCES while reading input'), {
+      code: 'EACCES',
+      path: file
+    });
+    const bomExporter = { exportCsv: jest.fn() };
+    const logger = { error: jest.fn() };
+    const service = new KiCadExportService(
+      {} as never,
+      {} as never,
+      {} as never,
+      bomExporter as never,
+      {} as never,
+      logger as never
+    );
+    Object.defineProperty(service, 'loadBomEntries', {
+      value: jest.fn().mockRejectedValue(sourceError)
+    });
+    try {
+      await service.exportBOMCSV(vscode.Uri.file(file));
+      expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
+        'BOM export failed. Verify that the complete project opens in KiCad and retry.'
+      );
+      expect(bomExporter.exportCsv).not.toHaveBeenCalled();
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+      __setConfiguration({});
+    }
+  });
+});
