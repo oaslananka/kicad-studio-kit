@@ -209,6 +209,18 @@ describe('#398 context refresh performance', () => {
       }
     });
 
+    it('cancels pending fast editor visibility updates on disposal', () => {
+      const controller = new WorkspaceContextController(
+        {} as unknown as WorkspaceContextControllerDeps
+      );
+      const setContext = vscode.commands.executeCommand as jest.Mock;
+      setContext.mockClear();
+      controller.scheduleContextRefresh();
+      controller.dispose();
+      jest.runOnlyPendingTimers();
+      expect(setContext).not.toHaveBeenCalled();
+    });
+
     it('coalesces rapid schedule calls into a single refresh', () => {
       const controller = new WorkspaceContextController(
         {} as unknown as WorkspaceContextControllerDeps

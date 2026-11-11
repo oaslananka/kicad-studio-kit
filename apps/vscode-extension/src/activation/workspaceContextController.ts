@@ -91,12 +91,10 @@ export class WorkspaceContextController implements vscode.Disposable {
     // Do not make basic export commands wait for project discovery, AI provider
     // initialization or KiCad CLI probing. One zero-delay task coalesces the
     // tab/focus events from the same interaction.
-    if (!this.editorContextTimer) {
-      this.editorContextTimer = setTimeout(() => {
-        this.editorContextTimer = undefined;
-        void this.refreshEditorContexts();
-      }, 0);
-    }
+    this.editorContextTimer ??= setTimeout(() => {
+      this.editorContextTimer = undefined;
+      void this.refreshEditorContexts();
+    }, 0);
     if (this.contextRefreshTimer) {
       clearTimeout(this.contextRefreshTimer);
     }

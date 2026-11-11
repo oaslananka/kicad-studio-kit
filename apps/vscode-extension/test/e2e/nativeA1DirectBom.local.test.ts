@@ -10,6 +10,8 @@ const schematic = 'RoyalBlue54L-Feather.kicad_sch';
 const cli = '/usr/bin/kicad-cli';
 
 test('native A1: BOM is discoverable immediately after a schematic opens', async () => {
+  // Intentionally skipped in generic CI: the authentic KiCad 10 installation,
+  // native VS Code GUI and explicit opt-in are unavailable there. SKIP is NOT PASS.
   test.skip(
     process.platform !== 'linux' ||
       process.env.KICADSTUDIO_LOCAL_LINUX_ACCEPTANCE !== '1' ||
