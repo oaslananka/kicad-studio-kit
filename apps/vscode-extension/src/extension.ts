@@ -117,6 +117,22 @@ export async function activate(
   const cliRunner = new KiCadCliRunner(cliDetector, logger);
   const importService = new KiCadImportService(cliRunner, cliDetector, logger);
   const statusBar = new KiCadStatusBar(context);
+  // A CLI path change should be visible immediately, including when the new
+  // path is invalid. Ignore older async detections after subsequent changes.
+  let cliStatusRequest = 0;
+  const refreshCliStatus = (): void => {
+    const request = ++cliStatusRequest;
+    statusBar.update({ cli: undefined });
+    if (!isWorkspaceTrusted()) return;
+    void cliDetector
+      .detect()
+      .then((cli) => {
+        if (request === cliStatusRequest) statusBar.update({ cli });
+      })
+      .catch(() => {
+        if (request === cliStatusRequest) statusBar.update({ cli: undefined });
+      });
+  };
   const projectState = new ProjectStateStore();
   const viewerState = new ViewerStateStore();
   const mcpState = new McpStateStore();
@@ -441,6 +457,9 @@ export async function activate(
         event.affectsConfiguration(SETTINGS.pcmThirdPartyDir)
       ) {
         cliDetector.clearCache();
+        if (event.affectsConfiguration(SETTINGS.cliPath)) {
+          refreshCliStatus();
+        }
         workspaceContext.invalidateProbeCache();
         activationState.aiHealthy = undefined;
         workspaceContext.scheduleContextRefresh();
@@ -561,17 +580,11 @@ export async function activate(
     studioContext.buildStudioContext()
   );
 
-  if (isWorkspaceTrusted()) {
-    void cliDetector.detect().then((cli) => {
-      statusBar.update({ cli });
-    });
-  }
+  if (isWorkspaceTrusted()) refreshCliStatus();
   if (typeof vscode.workspace.onDidGrantWorkspaceTrust === 'function') {
     context.subscriptions.push(
       vscode.workspace.onDidGrantWorkspaceTrust(() => {
-        void cliDetector.detect().then((cli) => {
-          statusBar.update({ cli });
-        });
+        refreshCliStatus();
         void workspaceContext.refreshContexts();
         void mcpActivation.refreshMcpState();
       })

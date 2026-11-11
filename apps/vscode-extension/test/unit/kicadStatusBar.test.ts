@@ -99,6 +99,40 @@ describe('KiCadStatusBar', () => {
       bar.dispose();
     });
 
+    it('clears an old CLI and shows the replacement without changing other surfaces', () => {
+      const bar = makeBar();
+      bar.update({
+        cli: {
+          path: '/fake/kicad9',
+          version: '9.0.0',
+          versionLabel: 'KiCad 9.0.0',
+          source: 'settings'
+        },
+        activeProjectName: 'alpha'
+      });
+      expect(item(0).text).toContain('9.0.0');
+      bar.update({ cli: undefined });
+      expect(item(0).text).toContain('warning');
+      expect(item(0).text).not.toContain('9.0.0');
+      expect(item(0).tooltip).toContain('kicad-cli not found');
+      expect(projectItem().text).toContain('alpha');
+
+      bar.update({
+        cli: {
+          path: '/usr/bin/kicad-cli',
+          version: '10.0.8',
+          versionLabel: 'KiCad 10.0.8',
+          source: 'settings'
+        }
+      });
+      expect(item(0).text).toContain('10.0.8');
+      expect(item(0).text).not.toContain('9.0.0');
+      expect(item(0).tooltip).toContain('/usr/bin/kicad-cli');
+      expect(item(0).backgroundColor).toBeUndefined();
+      expect(projectItem().text).toContain('alpha');
+      bar.dispose();
+    });
+
     it('shows version label when cli is detected', () => {
       const bar = makeBar();
       bar.update({
