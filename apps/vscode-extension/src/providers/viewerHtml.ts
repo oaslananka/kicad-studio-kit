@@ -158,14 +158,19 @@ export function createKiCanvasViewerHtml(
     <div id="empty-overlay" class="overlay" hidden>
       <div class="card">
         <h2 id="empty-title">No drawable objects yet</h2>
-        <p>
+        <p id="empty-explanation">
           ${
             options.fileType === 'board'
               ? 'This PCB file does not contain any footprints, tracks, zones, or graphics that KiCanvas can render.'
               : 'This schematic file does not contain any symbols, wires, labels, or other drawable objects yet.'
           }
         </p>
-        <p>Add components in KiCad, save the file, and the viewer will refresh automatically.</p>
+        <p id="empty-guidance">Add components in KiCad, save the file, and the viewer will refresh automatically.</p>
+        ${
+          options.fileType === 'board'
+            ? '<div id="large-pcb-actions" class="actions" hidden><button class="btn btn-primary" id="large-pcb-region-btn" type="button">Preview a small region</button><button class="btn" id="large-pcb-open-btn" type="button">Open full board in KiCad</button></div>'
+            : ''
+        }
         <div id="safe-preview" aria-label="File source preview (first 3000 chars)"></div>
       </div>
     </div>

@@ -11,5 +11,13 @@ describe('createViewerControllerScript', () => {
     expect(source).toContain("vscode.postMessage({ type: 'ready'");
     expect(source).not.toContain('<script');
     expect(() => new Script(source)).not.toThrow();
+    expect(source).toContain('largePcbRegionBtn?.addEventListener');
+    expect(source).toContain("requestPartialPreview('start')");
+    expect(source).toContain('isOversizedPcb');
+    expect(source).toContain('Your board is not empty.');
+    expect(source).toContain('largePcbActionsEl.hidden = !isOversizedPcb');
+    expect(source).toContain(
+      "isOversizedPcb ? 'Large PCB — preview paused' : undefined"
+    );
   });
 });

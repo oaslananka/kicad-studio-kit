@@ -145,6 +145,12 @@ describe('createKiCanvasViewerHtml', () => {
     );
     expect(board).toContain('id="open-kicad-btn"');
     expect(board).toContain('id="partial-start-btn"');
+    expect(board).toContain('id="empty-explanation"');
+    expect(board).toContain('id="empty-guidance"');
+    expect(board).toContain('id="large-pcb-actions"');
+    expect(board).toContain('id="large-pcb-region-btn"');
+    expect(board).toContain('Preview a small region');
+    expect(board).toContain('id="large-pcb-open-btn"');
     expect(board).toContain('id="partial-next-btn"');
     expect(board).toContain("type: 'requestPartialPreview'");
     expect(board).toContain(
@@ -156,6 +162,8 @@ describe('createKiCanvasViewerHtml', () => {
       fileName: 'dense.kicad_sch'
     });
     expect(schematic).not.toContain('id="partial-preview-section"');
+    expect(schematic).not.toContain('id="large-pcb-actions"');
+    expect(schematic).not.toContain('id="large-pcb-region-btn"');
   });
 
   it('supports exporting PNG from the SVG fallback surface', () => {
