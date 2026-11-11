@@ -157,3 +157,21 @@ test('keeps exactly four task-oriented primary views without removing advanced v
     )
   );
 });
+
+test('makes core schematic exports discoverable for an active project even when a custom-tab context lags', () => {
+  const palette = paletteMap();
+  for (const command of [
+    'kicadstudio.exportPDF',
+    'kicadstudio.exportBOMCSV',
+    'kicadstudio.exportBOMXLSX',
+    'kicadstudio.exportNetlist',
+    'kicadstudio.exportInteractiveBOM',
+    'kicadstudio.exportSchPs'
+  ]) {
+    assert.equal(
+      palette.get(command),
+      'kicadstudio.workspaceTrusted && (kicadstudio.schematicOpen || kicadstudio.hasProject)',
+      `${command} must be discoverable when the active project is known`
+    );
+  }
+});

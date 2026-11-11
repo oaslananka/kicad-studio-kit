@@ -18,6 +18,14 @@ interface RawBomRow {
 export class BomParser {
   constructor(private readonly parser: SExpressionParser) {}
 
+  hasSubSheets(text: string): boolean {
+    const root = this.parser.parse(text);
+    const schematic = this.parser.findNode(root, 'kicad_sch') ?? root;
+    return (schematic.children ?? []).some(
+      (node) => this.getTag(node) === 'sheet'
+    );
+  }
+
   parse(textOrNode: string | SNode, groupIdentical?: boolean): BomEntry[] {
     const root =
       typeof textOrNode === 'string'

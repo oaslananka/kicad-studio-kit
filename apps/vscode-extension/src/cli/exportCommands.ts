@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import { COMMANDS, SETTINGS } from '../constants';
 import { BomExporter } from '../bom/bomExporter';
 import { BomParser } from '../bom/bomParser';
+import { parseNativeKiCadBomCsv } from '../bom/nativeBomCsv';
 import type { ExportPreset } from '../types';
 import {
   ensureDirectory,
@@ -19,6 +20,7 @@ import {
   resolveWorkspaceOutputDir
 } from '../utils/pathUtils';
 import { Logger } from '../utils/logger';
+import { getActiveResourceUri } from '../utils/workspaceUtils';
 import { zipDirectory } from '../utils/zipUtils';
 import { KiCadCliDetector } from './kicadCliDetector';
 import { ExportPresetStore } from './exportPresets';
@@ -659,7 +661,7 @@ export class KiCadExportService {
       return;
     }
     const outputFile = inferOutputPath(file, outputDir, '-ibom', '.html');
-    const entries = this.bomParser.parse(readTextFileSync(file));
+    const entries = await this.loadBomEntries(file);
     await this.bomExporter.exportInteractiveHtml(entries, outputFile);
     await this.showOutputFolder(outputDir);
   }
@@ -868,7 +870,7 @@ export class KiCadExportService {
 
     const schematicFile = await this.findSiblingSchematic(pcbFile);
     if (schematicFile) {
-      const entries = this.bomParser.parse(readTextFileSync(schematicFile));
+      const entries = await this.loadBomEntries(schematicFile);
       await this.bomExporter.exportCsv(
         entries,
         path.join(stagingDir, `${path.parse(pcbFile).name}-bom.csv`)
@@ -966,24 +968,69 @@ export class KiCadExportService {
     }
   }
 
+  /** KiCad CLI owns hierarchy truth. The offline parser is safe only for a flat schematic. */
+  private async loadBomEntries(file: string) {
+    const text = readTextFileSync(file);
+    if (!this.bomParser.hasSubSheets(text)) {
+      return this.bomParser.parse(text);
+    }
+
+    if (!(await this.detector.hasCapability('bom'))) {
+      throw new Error(
+        'A complete multi-sheet BOM needs a compatible KiCad CLI. Configure KiCad and try again.'
+      );
+    }
+
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kicadstudio-bom-'));
+    const temporaryBom = path.join(tempDir, 'complete.csv');
+    try {
+      await this.runner.runWithProgress<string>({
+        command: [
+          'sch',
+          'export',
+          'bom',
+          '--output',
+          temporaryBom,
+          '--fields',
+          'Reference,Value,Footprint,QUANTITY,DNP,MPN,Manufacturer,LCSC,Description',
+          '--labels',
+          'Reference,Value,Footprint,Quantity,DNP,MPN,Manufacturer,LCSC,Description',
+          file
+        ],
+        cwd: path.dirname(file),
+        progressTitle: 'Collecting the complete multi-sheet BOM'
+      });
+      const raw = fs.readFileSync(temporaryBom, 'utf8');
+      const groupIdentical = vscode.workspace
+        .getConfiguration()
+        .get<boolean>(SETTINGS.bomGroupIdentical, true);
+      const entries = parseNativeKiCadBomCsv(raw, groupIdentical);
+      if (entries.length === 0) {
+        throw new Error(
+          'KiCad returned an empty multi-sheet BOM; export stopped.'
+        );
+      }
+      return entries;
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  }
+
   private async exportBomInternal(
     resource: vscode.Uri | undefined,
     format: 'csv' | 'xlsx'
   ): Promise<void> {
     const file = await this.resolveTargetFile(resource, ['.kicad_sch']);
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     const outputDir = this.tryResolveOutputDir(file);
-    if (!outputDir) {
-      return;
-    }
-    const entries = this.bomParser.parse(readTextFileSync(file));
-    const outputFile =
-      format === 'csv'
-        ? inferOutputPath(file, outputDir, '-bom', '.csv')
-        : inferOutputPath(file, outputDir, '-bom', '.xlsx');
+    if (!outputDir) return;
+    const outputFile = inferOutputPath(
+      file,
+      outputDir,
+      '-bom',
+      format === 'csv' ? '.csv' : '.xlsx'
+    );
     const uri = vscode.Uri.file(file);
     this.exportState?.begin(
       'bom',
@@ -991,21 +1038,25 @@ export class KiCadExportService {
       `Exporting BOM ${format.toUpperCase()}.`
     );
     try {
+      const entries = await this.loadBomEntries(file);
       if (format === 'csv') {
         await this.bomExporter.exportCsv(entries, outputFile);
       } else {
         await this.bomExporter.exportXlsx(entries, outputFile);
       }
+      this.exportState?.complete(
+        'bom',
+        uri,
+        `BOM ${format.toUpperCase()} exported.`
+      );
+      await this.showOutputFolder(outputDir);
     } catch (error) {
       this.exportState?.fail('bom', uri, error);
-      throw error;
+      this.logger.error('BOM export failed', error);
+      void vscode.window.showErrorMessage(
+        'BOM export failed. Verify that the complete project opens in KiCad and retry.'
+      );
     }
-    this.exportState?.complete(
-      'bom',
-      uri,
-      `BOM ${format.toUpperCase()} exported.`
-    );
-    await this.showOutputFolder(outputDir);
   }
 
   private async runCliExport(
@@ -1260,23 +1311,15 @@ export class KiCadExportService {
       candidates.push(resource.fsPath);
     }
 
-    const activeUri = vscode.window.activeTextEditor?.document.uri;
+    // The visible custom editor is authoritative. VS Code may retain a stale
+    // activeTextEditor pointing at another schematic while a PCB/schematic
+    // webview is the active tab, so never export that unrelated document.
+    const activeUri = getActiveResourceUri();
     if (
       activeUri?.fsPath &&
       expectedExtensions.includes(path.extname(activeUri.fsPath))
     ) {
       candidates.push(activeUri.fsPath);
-    }
-
-    const customUri = (
-      vscode.window.tabGroups.activeTabGroup.activeTab?.input as
-        { uri?: vscode.Uri } | undefined
-    )?.uri;
-    if (
-      customUri?.fsPath &&
-      expectedExtensions.includes(path.extname(customUri.fsPath))
-    ) {
-      candidates.push(customUri.fsPath);
     }
 
     if (!candidates.length) {
