@@ -88,10 +88,12 @@ function parseCsv(text: string): string[][] {
     afterQuote: false
   };
   const input = text.replace(/^\uFEFF/, '');
-  for (let i = 0; i < input.length; i++) {
-    i = state.quoted
-      ? readQuotedCharacter(state, input, i)
-      : readUnquotedCharacter(state, input, i);
+  let index = 0;
+  while (index < input.length) {
+    const consumedIndex = state.quoted
+      ? readQuotedCharacter(state, input, index)
+      : readUnquotedCharacter(state, input, index);
+    index = consumedIndex + 1;
   }
   if (state.quoted) throw new Error('KiCad BOM has an unterminated CSV field.');
   if (state.cell !== '' || state.row.length) {
