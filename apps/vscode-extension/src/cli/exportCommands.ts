@@ -1152,7 +1152,9 @@ export class KiCadExportService {
     this.exportState?.begin(surfaceKind, uri, title);
     const buildOptions = await this.getBuildOptions(
       file,
-      kind === 'export-gerbers' || kind === 'export-gerbers-with-drill'
+      kind === 'export-gerbers' ||
+        kind === 'export-gerbers-with-drill' ||
+        kind === 'export-pdf-pcb'
     );
     const exported = await this.runCommandSequence(
       buildCliExportCommands(kind, file, outputDir, buildOptions),
@@ -1484,7 +1486,7 @@ export class KiCadExportService {
         `Could not discover Gerber layers for ${file}; using the safe default fabrication layer set.`
       );
       void vscode.window.showWarningMessage(
-        'Could not discover board layers. Gerber export will use the default fabrication layer set.'
+        'Could not discover board layers. Export will use the default fabrication layer set.'
       );
     }
     const variant = file ? readActiveVariantFromProjectFile(file) : undefined;

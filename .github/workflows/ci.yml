@@ -144,12 +144,31 @@ jobs:
             apps/vscode-extension/test-results/junit.xml
           if-no-files-found: warn
           retention-days: 7
-      - name: Use runner Chrome with Playwright Linux dependencies
+      - name: Verify preinstalled Linux Chrome is runnable by Playwright
         if: runner.os == 'Linux'
-        timeout-minutes: 6
+        timeout-minutes: 2
         run: |
-          corepack pnpm --filter kicadstudiokit exec playwright install-deps chromium
+          # ubuntu-24.04 hosted runners already ship Chrome and its OS libraries.
+          # An unconditional playwright install-deps forces apt update and can
+          # fail or hang on runner-mirror DNS despite a working browser.
+          # Fail closed with an actual Playwright launch, never skip browser QA.
           google-chrome --version
+          corepack pnpm --filter kicadstudiokit exec node - <<'NODE'
+          const { chromium } = require('@playwright/test');
+          (async () => {
+            const browser = await chromium.launch({ channel: 'chrome', headless: true });
+            try {
+              const page = await browser.newPage();
+              await page.goto('data:text/html,<title>Chrome Playwright Smoke</title>');
+              if ((await page.title()) !== 'Chrome Playwright Smoke') {
+                throw new Error('Preinstalled Chrome failed its Playwright smoke test');
+              }
+              console.log('Preinstalled Chrome Playwright smoke PASS');
+            } finally {
+              await browser.close();
+            }
+          })().catch((error) => { console.error(error); process.exitCode = 1; });
+          NODE
           echo "KICADSTUDIO_PLAYWRIGHT_CHANNEL=chrome" >> "$GITHUB_ENV"
       - name: Use runner Chrome for Playwright macOS tests
         if: runner.os == 'macOS'
