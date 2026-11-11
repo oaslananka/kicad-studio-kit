@@ -123,6 +123,9 @@ jobs:
           grep -q '^SF:apps/vscode-extension/scripts/check-marketplace-assets.js' "$script_lcov"
           echo "Verified headline Jest, critical Jest, and Node c8 LCOV source-file entries"
       - name: Upload analysis and LCOV to SonarQube Cloud
-        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+        shell: bash
+        # Preserve SHA-256 + vendor GPG signature verification without depending
+        # on the live Ubuntu HKPS keyserver, which can hang hosted runners.
+        run: bash .github/scripts/run-signed-sonar-scanner.sh
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
