@@ -34,9 +34,7 @@ export function validatePublishedBoardReadyOpsFindingsSchema(
 }
 
 async function main() {
-  const contract = parseYaml(
-    fs.readFileSync(new URL("../compatibility.yaml", import.meta.url), "utf8"),
-  );
+  const contract = parseYaml(fs.readFileSync("compatibility.yaml", "utf8"));
   const expected =
     contract?.supportAxes?.boardReadyOps?.reports?.findingsSchema;
   let raw = "";
