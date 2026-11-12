@@ -113,9 +113,7 @@ export class KiCadLibraryIndexer implements vscode.Disposable {
   private findSymbolLibraries(): string[] {
     return this.collectFiles('.kicad_sym', [
       process.env['KICAD_SYMBOL_DIR'],
-      process.env['PROGRAMFILES']
-        ? path.join(process.env['PROGRAMFILES'], 'KiCad')
-        : undefined,
+      ...this.findWindowsInstalledLibraries('symbols'),
       '/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols',
       '/usr/share/kicad/symbols',
       '/usr/local/share/kicad/symbols',
@@ -128,9 +126,7 @@ export class KiCadLibraryIndexer implements vscode.Disposable {
   private findFootprintLibraries(): string[] {
     return this.collectFiles('.kicad_mod', [
       process.env['KICAD_FOOTPRINT_DIR'],
-      process.env['PROGRAMFILES']
-        ? path.join(process.env['PROGRAMFILES'], 'KiCad')
-        : undefined,
+      ...this.findWindowsInstalledLibraries('footprints'),
       '/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints',
       '/usr/share/kicad/footprints',
       '/usr/local/share/kicad/footprints',
@@ -138,6 +134,50 @@ export class KiCadLibraryIndexer implements vscode.Disposable {
         (folder) => folder.uri.fsPath
       ) ?? [])
     ]);
+  }
+
+  /**
+   * KiCad for Windows stores libraries below a versioned install directory.
+   * Walk directly from its symbols/footprints roots rather than performing a
+   * shallow scan of Program Files, which misses both standard layouts.
+   */
+  private findWindowsInstalledLibraries(
+    kind: 'symbols' | 'footprints'
+  ): string[] {
+    const result: string[] = [];
+    for (const programFiles of [
+      process.env['PROGRAMFILES'],
+      process.env['ProgramFiles(x86)']
+    ]) {
+      if (!programFiles) {
+        continue;
+      }
+      const installRoot = path.join(programFiles, 'KiCad');
+      let versions: fs.Dirent[];
+      try {
+        versions = fs.readdirSync(installRoot, { withFileTypes: true });
+      } catch {
+        continue;
+      }
+      versions
+        .filter((entry) => entry.isDirectory())
+        .sort((a, b) =>
+          b.name.localeCompare(a.name, undefined, { numeric: true })
+        )
+        .forEach((entry) => {
+          const libraryRoot = path.join(
+            installRoot,
+            entry.name,
+            'share',
+            'kicad',
+            kind
+          );
+          if (fs.existsSync(libraryRoot)) {
+            result.push(libraryRoot);
+          }
+        });
+    }
+    return result;
   }
 
   private collectFiles(

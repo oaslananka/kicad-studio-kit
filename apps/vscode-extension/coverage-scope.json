@@ -147,16 +147,6 @@
         "test/a11y/accessibilityConformance.test.ts"
       ]
     },
-    "src/library/libraryIndexer.ts": {
-      "category": "integration-owned",
-      "owner": "KiCad library filesystem integration",
-      "strategy": "Component search and language-model tool tests exercise the indexer through its consumers; host integration owns workspace discovery.",
-      "rationale": "The indexer traverses external KiCad library roots and persistent workspace state.",
-      "evidence": [
-        "test/unit/componentSearch.test.ts",
-        "test/unit/languageModelTools.test.ts"
-      ]
-    },
     "src/library/librarySearchProvider.ts": {
       "category": "integration-owned",
       "owner": "Library search webview integration",
