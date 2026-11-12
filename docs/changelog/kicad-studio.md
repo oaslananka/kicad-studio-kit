@@ -16,6 +16,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.6.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.6.1...vscode-extension-v2.6.2) (2026-11-12)
+
+
+### Bug Fixes
+
+* **kicad-studio:** preserve live PCB and schematic preview ([#955](https://github.com/oaslananka/kicad-studio-kit/issues/955)) ([#956](https://github.com/oaslananka/kicad-studio-kit/issues/956)) ([27c42b8](https://github.com/oaslananka/kicad-studio-kit/commit/27c42b85d7f37bbed9c04c4bff811127ea9e18b8))
+
 ## [2.6.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.6.0...vscode-extension-v2.6.1) (2026-11-12)
 
 
