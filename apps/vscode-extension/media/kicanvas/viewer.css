@@ -48,6 +48,7 @@ main{position:relative;overflow:hidden;background:var(--bg);min-width:0;min-heig
 #viewer-mount::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity .12s ease;background-image:linear-gradient(var(--vscode-editorWidget-border,var(--border)) 1px,transparent 1px),linear-gradient(90deg,var(--vscode-editorWidget-border,var(--border)) 1px,transparent 1px);background-size:20px 20px}
 body.grid-visible #viewer-mount::before{opacity:.24}
 #viewer-mount.is-hidden{visibility:hidden}
+.viewer-last-good-frame{position:absolute;inset:0 var(--sidebar-active-width) 0 0;z-index:5;width:calc(100% - var(--sidebar-active-width));height:100%;pointer-events:none}
 .hop-over-overlay{position:absolute;inset:0 var(--sidebar-active-width) 0 0;z-index:3;pointer-events:none}
 .hop-over-marker{position:absolute;width:34px;height:22px;transform:translate(-50%,-50%);border:0;background:transparent;padding:0;pointer-events:auto;cursor:help}
 .hop-over-arc{display:block;width:30px;height:16px;border-top:3px solid #f59e0b;border-radius:999px 999px 0 0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}

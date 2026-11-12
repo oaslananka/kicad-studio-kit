@@ -148,6 +148,7 @@ export function createViewerControllerScript(): string {
     let fallbackUserZoomed = false;
     let fallbackResizeHandler = null;
     let viewerGeneration = 0;
+    let activeRefreshFrame = null;
     let cancelPendingPreparation = null;
     let netCatalog = [];
     let netCatalogRetries = 0;
@@ -363,7 +364,7 @@ export function createViewerControllerScript(): string {
           updateGridToggle();
           updateThemeToggle();
         }
-        void initViewer();
+        void initViewer(msg.type === 'refresh');
       }
       if (msg.type === 'partialPreviewError') {
         partialBusy = false;
@@ -409,9 +410,78 @@ export function createViewerControllerScript(): string {
       handleRendererRuntimeFailure('Runtime error', reason);
     });
 
+    // Only one WebGL renderer exists at a time. A short-lived, bounded
+    // canvas keeps the last rendered frame visible during a file update.
+    function capturePreviousFrame(viewer) {
+      try {
+        const surface = findRenderSurfaces(viewer)
+          .filter((item) => item instanceof HTMLCanvasElement && item.width && item.height)
+          .sort((a, b) => b.width * b.height - a.width * a.height)[0];
+        if (!surface) return null;
+        const rect = viewer.getBoundingClientRect();
+        const width = Math.min(1280, Math.floor(rect.width));
+        const height = Math.min(720, Math.floor(rect.height));
+        if (width <= 0 || height <= 0) return null;
+        const frame = document.createElement('canvas');
+        frame.width = width;
+        frame.height = height;
+        frame.className = 'viewer-last-good-frame';
+        frame.setAttribute('role', 'img');
+        frame.setAttribute('aria-label', 'Previous drawing — updating preview');
+        const ctx = frame.getContext('2d', { alpha: false });
+        if (!ctx) return null;
+        ctx.drawImage(surface, 0, 0, width, height);
+        return frame;
+      } catch {
+        // Some WebGL drivers deny readback. Never retain a full-sized buffer.
+        return null;
+      }
+    }
+
     void initViewer();
-    async function initViewer() {
+    async function initViewer(isSourceRefresh = false) {
       const generation = ++viewerGeneration;
+      const previousViewer = viewerMount.querySelector('kicanvas-embed');
+      const visiblePrevious = Boolean(
+        previousViewer && !viewerMount.classList.contains('is-hidden')
+      );
+      const heldFrame = activeRefreshFrame?.isConnected ? activeRefreshFrame : null;
+      const preserve = Boolean(
+        isSourceRefresh && (visiblePrevious || heldFrame) &&
+        document.visibilityState !== 'hidden' &&
+        !payload.disabledReason && payload.base64 &&
+        payload.base64.length <= 2 * 1024 * 1024
+      );
+      // A newer save can arrive between old-frame capture and first paint.
+      // Reuse the same bounded snapshot rather than allocating another.
+      if (!preserve) {
+        activeRefreshFrame?.remove();
+        activeRefreshFrame = null;
+      }
+      let previousFrame = preserve ? heldFrame : null;
+      const progress = (detail) => {
+        if (preserve) {
+          setStatus('Updating preview… ' + detail);
+        } else {
+          showLoading(detail);
+        }
+      };
+      const showStale = (reason) => {
+        if (!preserve || generation !== viewerGeneration) return false;
+        const originalVisible = Boolean(
+          visiblePrevious && previousViewer?.isConnected &&
+          !viewerMount.classList.contains('is-hidden')
+        );
+        const frameVisible = Boolean(previousFrame?.isConnected);
+        if (!originalVisible && !frameVisible) return false;
+        rendererInitializing = false;
+        setViewerSurfaceVisible(originalVisible);
+        hideAll();
+        const kind = originalVisible ? 'previous preview' : 'previous snapshot';
+        if (frameVisible) previousFrame.setAttribute('aria-label', 'Previous drawing — update failed, source may have changed');
+        setStatus('⚠ Update failed — showing ' + kind + '. ' + String(reason).slice(0, 150));
+        return true;
+      };
       // Reload can be local (no host refresh message). The native SVG is no
       // longer the displayed surface, so restore the bounded-source warning.
       if (partialBanner && payload.partialPreview) {
@@ -427,8 +497,10 @@ export function createViewerControllerScript(): string {
       rendererFallbackAttempt = null;
       rendererFallbackGeneration = generation;
       rendererFallbackFailureDetail = '';
-      clearKeyboardShortcuts();
-      clearFallbackResizeHandler();
+      if (!preserve) {
+        clearKeyboardShortcuts();
+        clearFallbackResizeHandler();
+      }
       fallbackSvgDataUrl = '';
       fallbackSvgElement = null;
       fallbackOriginalRegion = null;
@@ -439,7 +511,7 @@ export function createViewerControllerScript(): string {
       fallbackSvgScale = 1;
       fallbackAutoFocus = false;
       fallbackUserZoomed = false;
-      if (viewerMount.querySelector('kicanvas-embed')) {
+      if (!preserve && viewerMount.querySelector('kicanvas-embed')) {
         // The bundled WebGL viewer may have an already-scheduled on_draw.
         // Allow that frame to complete while its GL context is still alive,
         // before detaching the old embed and disposing its renderer.
@@ -448,13 +520,17 @@ export function createViewerControllerScript(): string {
         );
         if (generation !== viewerGeneration) return;
       }
-      viewerMount.replaceChildren();
-      clearHopOverOverlay();
-      setViewerSurfaceVisible(false);
-      hideAll();
-      showLoading('Waiting for KiCanvas…');
-      setEngineUiState('kicanvas');
-      resetNetInspector();
+      if (preserve) {
+        progress('Preparing latest source…');
+      } else {
+        viewerMount.replaceChildren();
+        clearHopOverOverlay();
+        setViewerSurfaceVisible(false);
+        hideAll();
+        showLoading('Waiting for KiCanvas…');
+        setEngineUiState('kicanvas');
+        resetNetInspector();
+      }
 
       try {
         if (payload.disabledReason) {
@@ -480,12 +556,14 @@ export function createViewerControllerScript(): string {
 
         let prepared;
         try {
-          showLoading('Decoding and normalizing file…');
+          progress('Decoding and normalizing file…');
           prepared = await prepareKiCanvasText(payload.base64, payload.fileType, generation);
           if (generation !== viewerGeneration || !prepared) return;
         } catch (err) {
           if (generation !== viewerGeneration) return;
-          showError('Decode error', String(err), 'Could not decode the base64 file payload.');
+          if (!showStale('Source decoding failed.')) {
+            showError('Decode error', String(err), 'Could not decode the base64 file payload.');
+          }
           return;
         }
         const text = prepared.text;
@@ -493,6 +571,7 @@ export function createViewerControllerScript(): string {
           /[(]net\s+(?:[1-9][0-9]*\s+)?"[^"]+"/.test(text);
 
         if (isUnsupportedLegacyKiCadPcb(text, payload.fileType)) {
+          if (showStale('Updated PCB uses an unsupported legacy file format.')) return;
           showEmpty(
             'This PCB uses KiCad 5 legacy module format. KiCanvas may render tracks but cannot reliably render legacy footprints and pads. Open the board in KiCad 6 or newer, save it once to convert the file, then reopen it here.',
             text.slice(0, 3000),
@@ -503,13 +582,13 @@ export function createViewerControllerScript(): string {
 
         const probablyEmpty = !hasDrawableObjects(text, payload.fileType);
 
-        showLoading('Waiting for KiCanvas element definitions…');
+        progress('Waiting for renderer…');
         await waitForDefinition('kicanvas-embed', 8000);
         if (generation !== viewerGeneration) return;
         await waitForDefinition('kicanvas-source', 8000);
         if (generation !== viewerGeneration) return;
 
-        showLoading('Mounting viewer…');
+        progress('Mounting viewer…');
         const renderText = prepared.renderText;
 
         const viewer = document.createElement('kicanvas-embed');
@@ -523,9 +602,30 @@ export function createViewerControllerScript(): string {
         source.textContent = renderText;
 
         viewer.appendChild(source);
-        viewerMount.replaceChildren(viewer);
+        if (preserve) {
+          if (!previousFrame && visiblePrevious) {
+            previousFrame = capturePreviousFrame(previousViewer);
+          }
+          viewerMount.replaceChildren();
+          if (previousFrame && !previousFrame.isConnected) {
+            viewerMount.parentElement?.appendChild(previousFrame);
+          }
+          activeRefreshFrame = previousFrame;
+          setViewerSurfaceVisible(false);
+          clearKeyboardShortcuts();
+          clearFallbackResizeHandler();
+          clearHopOverOverlay();
+          resetNetInspector();
+          // Release the old GL context and its scheduled draw before mounting
+          // the replacement. At most one live WebGL renderer is retained.
+          await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+          if (generation !== viewerGeneration) return;
+          viewerMount.appendChild(viewer);
+        } else {
+          viewerMount.replaceChildren(viewer);
+        }
 
-        showLoading('Rendering ' + escapeHtml(payload.fileName) + '…');
+        progress('Rendering latest revision…');
         await waitForViewerLoaded(viewer, 15000);
         if (generation !== viewerGeneration) return;
 
@@ -533,9 +633,10 @@ export function createViewerControllerScript(): string {
         // canvas in a VS Code webview even while the containing embed is full
         // size. Repair only that known layout before declaring KiCanvas blank.
         repairSchematicCanvasLayout(viewer);
-        const renderSurface = await waitForRenderableSurface(viewerMount, 2000);
+        const renderSurface = await waitForRenderableSurface(viewer, 2000);
         if (generation !== viewerGeneration) return;
         if (!renderSurface) {
+          if (showStale('The updated renderer did not produce a drawing.')) return;
           const fallbackLoaded = await recoverRendererFailure(
             'KiCanvas reported success but did not create a drawable render surface.',
             generation
@@ -597,6 +698,7 @@ export function createViewerControllerScript(): string {
             if (generation !== viewerGeneration) return;
           }
           if (blankCanvas) {
+            if (showStale('The updated drawing remained blank.')) return;
             const fallbackLoaded = await recoverRendererFailure(
               'KiCanvas created a blank render surface for this file.',
               generation
@@ -643,6 +745,9 @@ export function createViewerControllerScript(): string {
         }
         installSelectionTracking(viewer);
         setViewerSurfaceVisible(true);
+        previousFrame?.remove();
+        if (activeRefreshFrame === previousFrame) activeRefreshFrame = null;
+        previousFrame = null;
         renderHopOverOverlay();
         hideAll();
         installKeyboardShortcuts(viewer);
@@ -654,6 +759,7 @@ export function createViewerControllerScript(): string {
 
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err || 'Unknown error');
+        if (showStale(message)) return;
         const fallbackLoaded = await recoverRendererFailure(message, generation);
         if (fallbackLoaded || generation !== viewerGeneration) {
           return;
