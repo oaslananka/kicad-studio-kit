@@ -175,6 +175,7 @@ jobs:
           for attempt in 1 2 3 4 5; do
             final_pr_head="$(gh pr view "$RELEASE_PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq '.headRefOid')"
             if [[ "$final_pr_head" = "$final_branch_head" ]]; then break; fi
+            echo "Waiting for canonical PR head convergence (attempt $attempt/5)"
             sleep 2
           done
           test "$final_pr_head" = "$final_branch_head"
