@@ -10,6 +10,53 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.6.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.5.0...vscode-extension-v2.6.0) (2026-11-12)
+
+
+### Features
+
+* **kicad-studio:** inspect genuine inner copper on dense boards ([#910](https://github.com/oaslananka/kicad-studio-kit/issues/910)) ([4b7a3fb](https://github.com/oaslananka/kicad-studio-kit/commit/4b7a3fbe1c80f6705789118db4a6ca0fb63852ab))
+* **kicad-studio:** inspect real F.Cu and B.Cu on demand ([#911](https://github.com/oaslananka/kicad-studio-kit/issues/911)) ([f5b7871](https://github.com/oaslananka/kicad-studio-kit/commit/f5b787116fbf62ea840417010691642460782877))
+
+
+### Bug Fixes
+
+* **kicad-studio:** clarify safe large PCB regional preview ([#931](https://github.com/oaslananka/kicad-studio-kit/issues/931)) ([26497ed](https://github.com/oaslananka/kicad-studio-kit/commit/26497ed72080764cec9cd4341a7278ec5796050d))
+* **kicad-studio:** distinguish original and partial copper inspection ([#914](https://github.com/oaslananka/kicad-studio-kit/issues/914)) ([60ac0e8](https://github.com/oaslananka/kicad-studio-kit/commit/60ac0e84eb5be8ba29b713cdac16af07660ab2dc))
+* **kicad-studio:** explain incompatible BOM CLI in native export ([a0ac884](https://github.com/oaslananka/kicad-studio-kit/commit/a0ac884f889e504997510ae07a94a03449144d36))
+* **kicad-studio:** explain incompatible multi-sheet BOM CLI ([#925](https://github.com/oaslananka/kicad-studio-kit/issues/925)) ([a0ac884](https://github.com/oaslananka/kicad-studio-kit/commit/a0ac884f889e504997510ae07a94a03449144d36))
+* **kicad-studio:** explain PLY OCCT runtime incompatibility ([#937](https://github.com/oaslananka/kicad-studio-kit/issues/937)) ([0ecdc82](https://github.com/oaslananka/kicad-studio-kit/commit/0ecdc82b605bed15ba002ff730dfcef404b28582))
+* **kicad-studio:** export PCB PDFs using actual board layers ([#934](https://github.com/oaslananka/kicad-studio-kit/issues/934)) ([1097629](https://github.com/oaslananka/kicad-studio-kit/commit/10976293ff6c266d7776ed558b5e4a2cbfb5063b))
+* **kicad-studio:** focus original copper plots on verified source region ([#917](https://github.com/oaslananka/kicad-studio-kit/issues/917)) ([1f8c4a0](https://github.com/oaslananka/kicad-studio-kit/commit/1f8c4a041a4221fdb375668eb848d0a2f7559548))
+* **kicad-studio:** focus real schematic symbols in KiCanvas ([#907](https://github.com/oaslananka/kicad-studio-kit/issues/907)) ([01af72e](https://github.com/oaslananka/kicad-studio-kit/commit/01af72ee6402062c20a1ddd02fea8d544e9eb57e))
+* **kicad-studio:** guide and verify native BOM output recovery ([#922](https://github.com/oaslananka/kicad-studio-kit/issues/922)) ([c4f6d5c](https://github.com/oaslananka/kicad-studio-kit/commit/c4f6d5c5b7a0a1ec19b451ccc27571e61f6feeb0))
+* **kicad-studio:** guide BOM export after permission denial ([#924](https://github.com/oaslananka/kicad-studio-kit/issues/924)) ([052a20e](https://github.com/oaslananka/kicad-studio-kit/commit/052a20ebfa701a36da92d26684de581378d1e5a6))
+* **kicad-studio:** guide users when PLY needs newer OCCT ([0ecdc82](https://github.com/oaslananka/kicad-studio-kit/commit/0ecdc82b605bed15ba002ff730dfcef404b28582))
+* **kicad-studio:** keep BOM rows visible in short VS Code panes ([#915](https://github.com/oaslananka/kicad-studio-kit/issues/915)) ([da624d7](https://github.com/oaslananka/kicad-studio-kit/commit/da624d70d845e61e61740be0367ae919aab3d308))
+* **kicad-studio:** keep Problems visible across repeated checks ([#930](https://github.com/oaslananka/kicad-studio-kit/issues/930)) ([2db94d1](https://github.com/oaslananka/kicad-studio-kit/commit/2db94d16014f6f2ce3c0f8a8da1a5b64712e3099))
+* **kicad-studio:** let users choose active variants from command palette ([d9e2492](https://github.com/oaslananka/kicad-studio-kit/commit/d9e2492cad9b58b8a09b578c8b643735c0786207))
+* **kicad-studio:** name compressed IPC-2581 export as ZIP ([#938](https://github.com/oaslananka/kicad-studio-kit/issues/938)) ([e076942](https://github.com/oaslananka/kicad-studio-kit/commit/e0769429cf412eae808865ee23bff102902a260f))
+* **kicad-studio:** name compressed IPC-2581 output as ZIP ([e076942](https://github.com/oaslananka/kicad-studio-kit/commit/e0769429cf412eae808865ee23bff102902a260f))
+* **kicad-studio:** navigate verified ERC findings to exact source ([#908](https://github.com/oaslananka/kicad-studio-kit/issues/908)) ([9f079cc](https://github.com/oaslananka/kicad-studio-kit/commit/9f079cc263c738cf8cc9935a0f1e204b54df2da3))
+* **kicad-studio:** preserve native VS Code keyboard shortcuts ([#932](https://github.com/oaslananka/kicad-studio-kit/issues/932)) ([ef243a0](https://github.com/oaslananka/kicad-studio-kit/commit/ef243a01b71feba97999f6acaae9ac3b6e100b6f))
+* **kicad-studio:** preserve real project libraries and DRC issue identity ([bd7dde6](https://github.com/oaslananka/kicad-studio-kit/commit/bd7dde6b70f4a9de5780636633875bec30dcc793))
+* **kicad-studio:** preserve real project libraries in DRC diagnostics ([#929](https://github.com/oaslananka/kicad-studio-kit/issues/929)) ([bd7dde6](https://github.com/oaslananka/kicad-studio-kit/commit/bd7dde6b70f4a9de5780636633875bec30dcc793))
+* **kicad-studio:** prove native cached zone-fill contour parity in original copper plots ([#918](https://github.com/oaslananka/kicad-studio-kit/issues/918)) ([1231a6c](https://github.com/oaslananka/kicad-studio-kit/commit/1231a6c6fafab984b1f42f622cb2ec091cbe8479))
+* **kicad-studio:** recover BOM after CLI loss, interruption and cancel ([#926](https://github.com/oaslananka/kicad-studio-kit/issues/926)) ([c0cae5a](https://github.com/oaslananka/kicad-studio-kit/commit/c0cae5a60e6166bcdb7a75dbc72de116202b24a6))
+* **kicad-studio:** recover from real BOM output permission denial ([052a20e](https://github.com/oaslananka/kicad-studio-kit/commit/052a20ebfa701a36da92d26684de581378d1e5a6))
+* **kicad-studio:** refresh CLI status after Settings repair ([#928](https://github.com/oaslananka/kicad-studio-kit/issues/928)) ([2d588f9](https://github.com/oaslananka/kicad-studio-kit/commit/2d588f99c65e484b30f8ceeb0534d193562d0ed1))
+* **kicad-studio:** resolve active project validation state and native DRC count parity ([#919](https://github.com/oaslananka/kicad-studio-kit/issues/919)) ([68ffc02](https://github.com/oaslananka/kicad-studio-kit/commit/68ffc02696ea2ed92ba0bdcdba45d24a29e22c4b))
+* **kicad-studio:** restore hierarchical BOM export in native A4 flow ([#921](https://github.com/oaslananka/kicad-studio-kit/issues/921)) ([948a539](https://github.com/oaslananka/kicad-studio-kit/commit/948a539eb9320de2fd592ac2c9ce4ccc8d3128dc))
+* **kicad-studio:** restore KiCad 10 nets and native CLI cancellation ([#933](https://github.com/oaslananka/kicad-studio-kit/issues/933)) ([a688778](https://github.com/oaslananka/kicad-studio-kit/commit/a6887780c3f4a657a229f44c4b0625e9d409ffa3))
+* **kicad-studio:** restore native DRC and exact PCB source navigation ([#909](https://github.com/oaslananka/kicad-studio-kit/issues/909)) ([9544bc8](https://github.com/oaslananka/kicad-studio-kit/commit/9544bc867fcec7b5cb7b5667728073365b415ae9))
+* **kicad-studio:** restore PCB SVG layer exports and separate 3D PDFs ([#935](https://github.com/oaslananka/kicad-studio-kit/issues/935)) ([6d6fdf3](https://github.com/oaslananka/kicad-studio-kit/commit/6d6fdf330f0d741a81c3178f922f4923db7f9a7f))
+* **kicad-studio:** select active assembly variant from Command Palette ([#942](https://github.com/oaslananka/kicad-studio-kit/issues/942)) ([d9e2492](https://github.com/oaslananka/kicad-studio-kit/commit/d9e2492cad9b58b8a09b578c8b643735c0786207))
+* **kicad-studio:** show BOM exports on first schematic open ([#923](https://github.com/oaslananka/kicad-studio-kit/issues/923)) ([fa8c14d](https://github.com/oaslananka/kicad-studio-kit/commit/fa8c14da438a78d3d73ae08cede459f692259c71))
+* **kicad-studio:** unblock export presets and correct PCB diff reports ([#939](https://github.com/oaslananka/kicad-studio-kit/issues/939)) ([e770f7b](https://github.com/oaslananka/kicad-studio-kit/commit/e770f7bef4b59ce0c7f9d14281dae1896af8e6bf))
+* **kicad-studio:** use VRML-compatible CLI flags ([#936](https://github.com/oaslananka/kicad-studio-kit/issues/936)) ([ede2bf8](https://github.com/oaslananka/kicad-studio-kit/commit/ede2bf8e6ef0dc429820db0d0c6233b78fd53b78))
+* **kicad-studio:** use VRML-compatible export flags ([ede2bf8](https://github.com/oaslananka/kicad-studio-kit/commit/ede2bf8e6ef0dc429820db0d0c6233b78fd53b78))
+* **kicad-studio:** validate schematic references before claiming focus ([#906](https://github.com/oaslananka/kicad-studio-kit/issues/906)) ([504077c](https://github.com/oaslananka/kicad-studio-kit/commit/504077cef98f583f703d344d1bb0263c24298df9))
+
 ## [2.5.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.4.1...vscode-extension-v2.5.0) (2026-11-08)
 
 
