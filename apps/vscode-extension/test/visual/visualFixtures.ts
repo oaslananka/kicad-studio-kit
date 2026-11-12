@@ -80,6 +80,9 @@ export const VISUAL_FIXTURES: readonly VisualFixture[] = [
   }),
   viewerFixture({
     id: 'large-schematic-issue-17-dark-canvas-fit',
+    // CI proves this fallback SVG includes Windows-specific text rasterization.
+    // Only this genuine Windows fixture baseline is platform-specific.
+    platformSnapshots: ['win32'],
     fileType: 'schematic',
     fallbackSvg: schematicSvg('large'),
     mockOptions: { surface: 'none' },
