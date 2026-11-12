@@ -182,25 +182,42 @@ export class VariantProvider implements vscode.TreeDataProvider<VariantTreeNode>
     this.refresh();
   }
 
-  async setActive(variant: KiCadVariant): Promise<void> {
+  async setActive(variant?: KiCadVariant): Promise<void> {
     const projectFile = await this.ensureProjectFile();
     if (!projectFile) {
       return;
     }
 
     const document = readVariantDocument(projectFile);
-    const variants = normalizeVariants(document).map((item) => ({
+    const availableVariants = normalizeVariants(document);
+    const selectedName =
+      variant?.name ??
+      (await vscode.window.showQuickPick(
+        availableVariants.map((item) => item.name),
+        {
+          title: 'Set active KiCad variant',
+          placeHolder: 'Choose an assembly variant'
+        }
+      ));
+    if (
+      !selectedName ||
+      !availableVariants.some((item) => item.name === selectedName)
+    ) {
+      return;
+    }
+
+    const variants = availableVariants.map((item) => ({
       ...item,
-      isDefault: item.name === variant.name
+      isDefault: item.name === selectedName
     }));
-    document['activeVariant'] = variant.name;
+    document['activeVariant'] = selectedName;
     document['variants'] = serializeVariants(variants);
     fs.writeFileSync(
       projectFile,
       `${JSON.stringify(document, null, 2)}\n`,
       'utf8'
     );
-    await this.syncActiveVariantToMcp(variant.name);
+    await this.syncActiveVariantToMcp(selectedName);
     this.refresh();
   }
 
