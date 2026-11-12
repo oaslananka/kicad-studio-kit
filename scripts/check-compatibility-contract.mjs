@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import semver from "semver";
 import { parse as parseYaml } from "yaml";
 
 import { validateKiCad11Readiness } from "./lib/kicad-11-readiness-dashboard.mjs";
@@ -564,11 +565,60 @@ function validateMcpProtocolAxis({ compatibility, protocol }) {
 
 function validateBoardReadyOpsAxis({ boardReadyOps, publishedArtifacts }) {
   const errors = [];
+  const tested = boardReadyOps.testedAgainst?.version;
+  const latest = publishedArtifacts.boardReadyOpsVersion;
+  const range = boardReadyOps.required;
+  const stable = (value) =>
+    typeof value === "string" &&
+    semver.valid(value) === value &&
+    semver.prerelease(value) === null;
+
   if (boardReadyOps.package !== "boardreadyops") {
     errors.push("supportAxes.boardReadyOps.package must be boardreadyops");
   }
   if (boardReadyOps.testedAgainst?.registry !== "npm") {
     errors.push("supportAxes.boardReadyOps.testedAgainst.registry must be npm");
+  }
+  if (!stable(tested)) {
+    errors.push(
+      "supportAxes.boardReadyOps.testedAgainst must be an exact stable version",
+    );
+  } else if (
+    boardReadyOps.testedAgainst.source !==
+    "https://www.npmjs.com/package/boardreadyops/v/" + tested
+  ) {
+    errors.push(
+      "supportAxes.boardReadyOps.testedAgainst.source must match tested version",
+    );
+  }
+  if (typeof range !== "string" || !semver.validRange(range)) {
+    errors.push(
+      "supportAxes.boardReadyOps.required must be a valid semver range",
+    );
+  } else {
+    if (stable(tested) && !semver.satisfies(tested, range)) {
+      errors.push(
+        "supportAxes.boardReadyOps.testedAgainst is outside supported range",
+      );
+    }
+    // Publication is NOT consumer acceptance. The pinned testedAgainst value
+    // records the last explicitly accepted version; live canary independently
+    // verifies the current npm CLI and findings schema before this validation.
+    if (latest !== undefined) {
+      if (!stable(latest)) {
+        errors.push(
+          "supportAxes.boardReadyOps published version must be exact stable semver",
+        );
+      } else if (!semver.satisfies(latest, range)) {
+        errors.push(
+          "supportAxes.boardReadyOps published version is outside supported range",
+        );
+      } else if (stable(tested) && semver.lt(latest, tested)) {
+        errors.push(
+          "supportAxes.boardReadyOps published version is older than testedAgainst",
+        );
+      }
+    }
   }
   if (boardReadyOps.reports?.findingsSchema !== 1) {
     errors.push("supportAxes.boardReadyOps.reports.findingsSchema must be 1");
@@ -576,15 +626,6 @@ function validateBoardReadyOpsAxis({ boardReadyOps, publishedArtifacts }) {
   if (boardReadyOps.reports?.evidenceBundleSchema !== 2) {
     errors.push(
       "supportAxes.boardReadyOps.reports.evidenceBundleSchema must be 2",
-    );
-  }
-  if (
-    publishedArtifacts.boardReadyOpsVersion &&
-    boardReadyOps.testedAgainst?.version !==
-      publishedArtifacts.boardReadyOpsVersion
-  ) {
-    errors.push(
-      `supportAxes.boardReadyOps.testedAgainst.version must match published artifact ${publishedArtifacts.boardReadyOpsVersion}`,
     );
   }
   return errors;

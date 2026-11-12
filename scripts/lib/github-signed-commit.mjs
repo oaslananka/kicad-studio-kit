@@ -184,7 +184,7 @@ export async function appendReleaseBranchCommit({
 }) {
   assertRepositorySlug(repository);
   assertBranchName(branch);
-  assertReleaseShadowBranchName(branch);
+  assertReleaseAppendBranchName(branch);
   assertOid(expectedHeadOid, "expectedHeadOid");
   if (typeof createCommit !== "function") {
     throw new TypeError("createCommit must be a function");
@@ -264,6 +264,16 @@ function assertReleaseBranchName(branch) {
   }
 }
 
+function assertReleaseAppendBranchName(branch) {
+  // The upstream generator remains the only visible release pull request.
+  // Do not widen this exception to arbitrary refs that merely share a prefix.
+  if (
+    branch === "release-please--branches--main--components--vscode-extension"
+  ) {
+    return;
+  }
+  assertReleaseShadowBranchName(branch);
+}
 function assertReleaseShadowBranchName(branch) {
   if (!/^release-please\/branches\/[^/]+\/components\/[^/]+$/u.test(branch)) {
     throw new Error(

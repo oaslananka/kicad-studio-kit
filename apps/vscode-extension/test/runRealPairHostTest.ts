@@ -17,7 +17,7 @@ async function main(): Promise<void> {
   );
   const vscodeExecutablePath = await downloadVsCodeWithRetry(
     '1.122.0',
-    downloadAndUnzipVSCode
+    (version) => downloadAndUnzipVSCode({ version, timeout: 120_000 })
   );
   const userDataDir = await mkdtemp(
     path.join(tmpdir(), 'kicadstudio-real-pair-user-')

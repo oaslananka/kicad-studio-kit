@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { parse as parseYaml } from "yaml";
+import { validatePublishedBoardReadyOpsFindingsSchema } from "./verify-published-boardreadyops-schema.mjs";
 
 import {
   validateCompatibilityAxes,
@@ -94,9 +96,11 @@ test("#621 embedded support axes reject BoardReadyOps required-range drift", () 
 });
 
 test("#621 embedded support axes reject BoardReadyOps contract drift", () => {
+  const testedVersion =
+    compatibility.supportAxes.boardReadyOps.testedAgainst.version;
   const driftedSource = matrixSource.replace(
-    "testedAgainst: '1.71.0'",
-    "testedAgainst: '1.36.0'",
+    "testedAgainst: '" + testedVersion + "'",
+    "testedAgainst: '0.0.0'",
   );
   assert.notEqual(driftedSource, matrixSource);
   assert.match(
@@ -201,8 +205,152 @@ test("#621 rejects stale published BoardReadyOps contract evidence", () => {
       compatibility,
       publishedArtifacts: { boardReadyOpsVersion: "99.0.0" },
     }).join("\n"),
-    /boardReadyOps.*testedAgainst.*99\.0\.0/iu,
+    /boardReadyOps.*outside supported range/iu,
   );
+});
+
+test("#962 newly published compatible BoardReadyOps does not erase accepted testedAgainst evidence", () => {
+  const accepted =
+    compatibility.supportAxes.boardReadyOps.testedAgainst.version;
+  const latest = `${accepted.split(".")[0]}.${Number(accepted.split(".")[1]) + 1}.0`;
+  assert.notEqual(
+    latest,
+    accepted,
+    "fixture must represent an independent newer release",
+  );
+  assert.deepEqual(
+    validateCompatibilityAxes({
+      compatibility,
+      publishedArtifacts: { boardReadyOpsVersion: latest },
+    }),
+    [],
+  );
+  assert.equal(
+    compatibility.supportAxes.boardReadyOps.testedAgainst.version,
+    accepted,
+  );
+});
+
+test("#962 rejects published BoardReadyOps rollback and unsupported or invalid versions", () => {
+  for (const [latest, expected] of [
+    ["1.70.0", /boardReadyOps.*older than.*testedAgainst/iu],
+    ["2.0.0", /boardReadyOps.*outside.*supported/iu],
+    ["1.72.0-rc.1", /boardReadyOps.*stable/iu],
+    ["garbage", /boardReadyOps.*stable/iu],
+  ]) {
+    assert.match(
+      validateCompatibilityAxes({
+        compatibility,
+        publishedArtifacts: { boardReadyOpsVersion: latest },
+      }).join("\n"),
+      expected,
+      latest,
+    );
+  }
+});
+
+test("#962 live BoardReadyOps canary verifies the exact published CLI and findings schema", () => {
+  const workflow = parseYaml(
+    fs.readFileSync(".github/workflows/cross-repo-compatibility.yml", "utf8"),
+  );
+  const steps = workflow.jobs.canary.steps;
+  const canary = steps.find(
+    (step) =>
+      step.name === "Canary published BoardReadyOps CLI and findings schema",
+  );
+  assert.ok(canary, "the published BoardReadyOps schema smoke must run");
+  assert.match(canary.run, /npm exec --yes --package=/u);
+  assert.match(canary.run, /boardreadyops --version/u);
+  assert.match(canary.run, /boardreadyops schema findings/u);
+  assert.match(canary.run, /EXPECTED_SCHEMA_VERSION="\$expected_schema"/u);
+  assert.match(canary.run, /compatibility.yaml/u);
+  assert.match(
+    canary.run,
+    /node scripts\/verify-published-boardreadyops-schema\.mjs/u,
+  );
+  assert.match(canary.run, /boardreadyops schema findings/u);
+  const verify = steps.find(
+    (step) =>
+      step.name ===
+      "Run check:compatibility-contract (compatibility contract validation)",
+  );
+  assert.ok(verify, "the existing full compatibility gate is still required");
+  assert.ok(steps.indexOf(canary) < steps.indexOf(verify));
+});
+
+test("#962 published findings schema verification requires canonical identity and version", () => {
+  const version =
+    compatibility.supportAxes.boardReadyOps.reports.findingsSchema;
+  const schema = {
+    $id:
+      "https://github.com/oaslananka/boardreadyops/schemas/findings-v" +
+      version +
+      ".json",
+    properties: { schemaVersion: { const: version } },
+  };
+  assert.deepEqual(
+    validatePublishedBoardReadyOpsFindingsSchema(schema, version),
+    [],
+  );
+  assert.match(
+    validatePublishedBoardReadyOpsFindingsSchema(
+      {
+        ...schema,
+        $id: "https://evil.invalid/findings-v" + version + ".json",
+      },
+      version,
+    ).join("\n"),
+    /schema ID differs/u,
+  );
+  assert.match(
+    validatePublishedBoardReadyOpsFindingsSchema(
+      {
+        ...schema,
+        properties: { schemaVersion: { const: 999 } },
+      },
+      version,
+    ).join("\n"),
+    /schema version differs/u,
+  );
+  assert.match(
+    validatePublishedBoardReadyOpsFindingsSchema(null, version).join("\n"),
+    /not a JSON object/u,
+  );
+});
+
+test("#962 published schema verifier CLI passes the canonical schema and fails closed on drift", () => {
+  const version =
+    compatibility.supportAxes.boardReadyOps.reports.findingsSchema;
+  const schema = {
+    $id:
+      "https://github.com/oaslananka/boardreadyops/schemas/findings-v" +
+      version +
+      ".json",
+    properties: { schemaVersion: { const: version } },
+  };
+  const verifier = path.resolve(
+    "scripts/verify-published-boardreadyops-schema.mjs",
+  );
+  const valid = spawnSync(process.execPath, [verifier], {
+    encoding: "utf8",
+    input: JSON.stringify(schema),
+    env: { ...process.env, EXPECTED_SCHEMA_VERSION: String(version) },
+    timeout: 10000,
+  });
+  assert.equal(valid.status, 0, valid.stderr);
+  assert.match(valid.stdout, /schema matches Studio v/u);
+
+  const invalid = spawnSync(process.execPath, [verifier], {
+    encoding: "utf8",
+    input: JSON.stringify({
+      ...schema,
+      $id: "https://invalid.example/schema.json",
+    }),
+    env: { ...process.env, EXPECTED_SCHEMA_VERSION: String(version) },
+    timeout: 10000,
+  });
+  assert.equal(invalid.status, 1);
+  assert.match(invalid.stderr, /schema ID differs from Studio contract/u);
 });
 
 test("#621 keeps protocol activation separate from product semver compatibility", () => {

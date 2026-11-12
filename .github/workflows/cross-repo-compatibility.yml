@@ -53,15 +53,6 @@ defaults:
 
 jobs:
   canary:
-    # Release Please makes a short-lived, partial generator PR before the fully
-    # synchronized GitHub-signed release shadow. Only that exact owner-created
-    # in-repository generator is excluded; signed PRs and forks remain checked.
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.head_ref != 'release-please--branches--main--components--vscode-extension' ||
-      github.event.pull_request.head.repo.full_name != github.repository ||
-      github.event.pull_request.user.login != 'oaslananka'
-    name: canary
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -287,6 +278,25 @@ jobs:
           set -euo pipefail
           tested="$(node scripts/check-published-mcp-peer.mjs)"
           echo "tested_version=$tested" >> "$GITHUB_OUTPUT"
+
+      # A newer compatible release is not automatically the explicitly
+      # accepted testedAgainst version. Smoke its real published CLI/schema.
+      - name: Canary published BoardReadyOps CLI and findings schema
+        env:
+          BOARDREADYOPS_PUBLISHED_VERSION: ${{ steps.boardreadyops-check.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$BOARDREADYOPS_PUBLISHED_VERSION"
+          actual="$(npm exec --yes --package="boardreadyops@$version" -- boardreadyops --version)"
+          if [[ "$actual" != "$version" ]]; then
+            echo "::error::Published BoardReadyOps CLI version does not match resolved npm release" >&2
+            exit 1
+          fi
+          expected_schema="$(node -e 'const fs=require("node:fs"); const yaml=require("yaml"); const contract=yaml.parse(fs.readFileSync("compatibility.yaml","utf8")); process.stdout.write(String(contract.supportAxes.boardReadyOps.reports.findingsSchema))')"
+          npm exec --yes --package="boardreadyops@$version" -- boardreadyops schema findings |
+            EXPECTED_SCHEMA_VERSION="$expected_schema" node scripts/verify-published-boardreadyops-schema.mjs
+          echo "::notice::Published BoardReadyOps $version CLI and findings schema smoke PASS; testedAgainst stays explicitly accepted"
 
       - name: Run check:compatibility-contract (compatibility contract validation)
         env:

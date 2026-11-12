@@ -302,3 +302,35 @@ test("release branch rewrite rejects stale heads and rolls back commit failures"
   );
   assert.deepEqual(calls, ["a".repeat(40), "b".repeat(40)]);
 });
+
+test("canonical Release Please generator supports a signed compare-and-swap append", async () => {
+  const canonical =
+    "release-please--branches--main--components--vscode-extension";
+  let input;
+  const result = await signedCommitHelpers.appendReleaseBranchCommit({
+    repository: "oaslananka/kicad-studio-kit",
+    branch: canonical,
+    expectedHeadOid: "4".repeat(40),
+    headline: "chore(repo): sync release surfaces",
+    changes: [{ path: "docs/versions.md", contents: Buffer.from("2.6.4\n") }],
+    createCommit: async (request) => {
+      input = request.variables.input;
+      return { oid: "5".repeat(40) };
+    },
+  });
+  assert.deepEqual(result, { oid: "5".repeat(40) });
+  assert.equal(input.branch.branchName, canonical);
+  assert.equal(input.expectedHeadOid, "4".repeat(40));
+  await assert.rejects(
+    signedCommitHelpers.appendReleaseBranchCommit({
+      repository: "oaslananka/kicad-studio-kit",
+      branch: "release-please--branches--other--components--vscode-extension",
+      expectedHeadOid: "4".repeat(40),
+      headline: "chore(repo): sync release surfaces",
+      changes: [{ path: "docs/versions.md", contents: Buffer.from("2.6.4\n") }],
+      createCommit: async () =>
+        assert.fail("must reject unsafe branch before mutation"),
+    }),
+    /signed release branches|canonical Release Please/u,
+  );
+});

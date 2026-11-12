@@ -52,24 +52,24 @@ corepack pnpm run docs:generate
 `apps/vscode-extension/package.json`; `docs:generate` refreshes the generated
 docs tables. Release Please owns the changelog and manifest.
 
-Release Please proposes only `package.json`, the manifest, and the changelog.
-`.github/workflows/release-please.yml` restores those three files onto the
-**current `main`** before running `release:surface` and `docs:generate`.
-The generated tree is committed through GitHub's signed-commit API to a separate
-release PR; the temporary generator is then closed and its branch deleted.
-If an existing signed release PR conflicts with `main`, the workflow creates a
-new verified signed PR on current `main` and closes the obsolete PR only after
-signature and ancestry checks pass. An unchanged generator proposal is still
-reconciled. No release PR is merged as part of this synchronization.
+Release Please owns the versioned package.json, the manifest, and the changelog.
+The canonical generator branch
+(release-please--branches--main--components--vscode-extension) now owns the
+ONE visible release PR. The same PR also receives README, compatibility.yaml,
+compatibilityMatrix.ts, and generated support/version documentation updates.
 
-When a conflict replacement carries the suffix `-r<run-id>`, Release Please
-does not recognize it as a canonical release PR after merge. The same Release
-Please workflow has an idempotent recovery path: only a **merged, same-repo,
-GitHub-verified** signed release shadow matching the manifest, package version,
-and changelog may create the missing GitHub Release on the exact merge commit.
-Existing tags must match that commit; otherwise the workflow fails closed.
-Ordinary Release Please PRs continue to use upstream release tagging. The
-published GitHub Release triggers the unchanged Marketplace/Open VSX workflow.
+On a trusted main push, the workflow resolves the existing PR even if Release
+Please reports no changed proposal, validates exact head SHA, owner, and
+ancestry against current main, then generates derived files on the canonical
+branch and appends a GitHub-verified commit using expected-head compare-and-swap.
+If the branch moves or goes stale, the job fails closed rather than overwriting
+it. It does not create a shadow PR, close a valid generator PR, or force a ref.
+
+All required CI, Sonar and release readiness checks run against that one PR.
+On protected squash merge, the standard Release Please action creates the
+component tag and GitHub Release; the verified GitHub merge preserves the
+owner identity. Historical signed-shadow verification tests remain as prior
+release evidence but no longer create or publish any release artifacts.
 
 `check:release-surface` also runs inside `corepack pnpm run check:version`, so CI
 fails on README or release-surface drift on every pull request. Marketplace and

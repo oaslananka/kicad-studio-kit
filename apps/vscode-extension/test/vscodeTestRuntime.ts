@@ -79,6 +79,15 @@ export function resolveVsCodeTestSuite(
 }
 
 function isTransientDownloadError(error: unknown): boolean {
+  // @vscode/test-electron 3.1.0 rejects non-200 release metadata responses
+  // as this exact string. Limit retries to the VS Code download boundary.
+  if (error === 'Failed to get JSON') {
+    return true;
+  }
+  // The same endpoint can briefly return non-JSON content from its CDN.
+  if (error instanceof SyntaxError) {
+    return true;
+  }
   if (!error || typeof error !== 'object') {
     return false;
   }
@@ -91,6 +100,18 @@ function isTransientDownloadError(error: unknown): boolean {
   if (
     typeof candidate.code === 'string' &&
     TRANSIENT_VSCODE_DOWNLOAD_CODES.has(candidate.code)
+  ) {
+    return true;
+  }
+  // @vscode/test-electron 3.1.0 reports its 15-second HTTP abort as a
+  // TimeoutError with no .code. Treat only that exact network request as
+  // transient; an unrelated test timeout is still terminal.
+  if (
+    error instanceof Error &&
+    error.name === 'TimeoutError' &&
+    /^@vscode\/test-electron request timeout out after \d+ms$/u.test(
+      error.message
+    )
   ) {
     return true;
   }
