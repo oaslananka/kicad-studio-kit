@@ -79,6 +79,15 @@ export function resolveVsCodeTestSuite(
 }
 
 function isTransientDownloadError(error: unknown): boolean {
+  // @vscode/test-electron 3.1.0 rejects non-200 release metadata responses
+  // as this exact string. Limit retries to the VS Code download boundary.
+  if (error === 'Failed to get JSON') {
+    return true;
+  }
+  // The same endpoint can briefly return non-JSON content from its CDN.
+  if (error instanceof SyntaxError) {
+    return true;
+  }
   if (!error || typeof error !== 'object') {
     return false;
   }

@@ -262,6 +262,8 @@ test("#962 live BoardReadyOps canary verifies the exact published CLI and findin
   assert.match(canary.run, /npm exec --yes --package=/u);
   assert.match(canary.run, /boardreadyops --version/u);
   assert.match(canary.run, /boardreadyops schema findings/u);
+  assert.match(canary.run, /EXPECTED_SCHEMA_VERSION="\$expected_schema"/u);
+  assert.match(canary.run, /compatibility.yaml/u);
   assert.match(
     canary.run,
     /node scripts\/verify-published-boardreadyops-schema\.mjs/u,
@@ -332,6 +334,7 @@ test("#962 published schema verifier CLI passes the canonical schema and fails c
   const valid = spawnSync(process.execPath, [verifier], {
     encoding: "utf8",
     input: JSON.stringify(schema),
+    env: { ...process.env, EXPECTED_SCHEMA_VERSION: String(version) },
     timeout: 10000,
   });
   assert.equal(valid.status, 0, valid.stderr);
@@ -343,6 +346,7 @@ test("#962 published schema verifier CLI passes the canonical schema and fails c
       ...schema,
       $id: "https://invalid.example/schema.json",
     }),
+    env: { ...process.env, EXPECTED_SCHEMA_VERSION: String(version) },
     timeout: 10000,
   });
   assert.equal(invalid.status, 1);

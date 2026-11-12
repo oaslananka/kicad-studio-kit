@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 
-import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { parse as parseYaml } from "yaml";
 
 export function validatePublishedBoardReadyOpsFindingsSchema(
   schema,
@@ -34,9 +32,9 @@ export function validatePublishedBoardReadyOpsFindingsSchema(
 }
 
 async function main() {
-  const contract = parseYaml(fs.readFileSync("compatibility.yaml", "utf8"));
-  const expected =
-    contract?.supportAxes?.boardReadyOps?.reports?.findingsSchema;
+  // The trusted workflow reads canonical compatibility.yaml and passes the
+  // expected version. No filesystem path or external JSON selects the contract.
+  const expected = Number(process.env.EXPECTED_SCHEMA_VERSION);
   let raw = "";
   for await (const chunk of process.stdin) {
     raw += chunk;

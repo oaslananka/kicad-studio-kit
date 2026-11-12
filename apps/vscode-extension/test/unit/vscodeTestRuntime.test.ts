@@ -110,6 +110,30 @@ describe('VS Code test runtime', () => {
     ).rejects.toBe(unrelated);
     expect(download).toHaveBeenCalledTimes(1);
   });
+  it('#962 retries temporary VS Code release API failures with a bounded budget', async () => {
+    for (const transient of [
+      'Failed to get JSON',
+      new SyntaxError('Unexpected JSON token')
+    ]) {
+      const download = jest
+        .fn<Promise<string>, [string]>()
+        .mockRejectedValueOnce(transient)
+        .mockResolvedValue('/tmp/vscode');
+      const delays: number[] = [];
+      await expect(
+        downloadVsCodeWithRetry('1.122.0', download, {
+          attempts: 2,
+          baseDelayMs: 1,
+          sleep: async (delay) => {
+            delays.push(delay);
+          }
+        })
+      ).resolves.toBe('/tmp/vscode');
+      expect(download).toHaveBeenCalledTimes(2);
+      expect(delays).toEqual([1]);
+    }
+  });
+
   it('selects the dedicated canary host suite only when requested', () => {
     expect(resolveVsCodeTestSuite({})).toBe('suite');
     expect(
