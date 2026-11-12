@@ -315,6 +315,10 @@ describe('createKiCanvasViewerHtml', () => {
     });
 
     expect(html).toContain('id="viewer-toolbar"');
+    expect(html).toContain('id="viewer-toolbar-toggle"');
+    expect(html).toContain('aria-controls="viewer-toolbar"');
+    expect(html).toContain('aria-expanded="true"');
+
     expect(html).toContain('id="side-panel-toggle"');
     expect(html).toContain('aria-controls="viewer-side-panel"');
     expect(html).toContain('id="viewer-side-panel"');

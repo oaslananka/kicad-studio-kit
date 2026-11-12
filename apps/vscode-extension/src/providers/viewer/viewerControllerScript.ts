@@ -42,6 +42,8 @@ export function createViewerControllerScript(): string {
     const fitBtn = document.getElementById('fit-btn');
     const zoomInBtn = document.getElementById('zoom-in-btn');
     const zoomOutBtn = document.getElementById('zoom-out-btn');
+    const viewerToolbarEl = document.getElementById('viewer-toolbar');
+    const toolbarToggleBtn = document.getElementById('viewer-toolbar-toggle');
     const exportMenuEl = document.getElementById('export-menu');
     const exportPngBtn = document.getElementById('export-png-btn');
     const exportSvgBtn = document.getElementById('export-svg-btn');
@@ -161,6 +163,7 @@ export function createViewerControllerScript(): string {
       grid: false,
       theme: payload.theme || 'kicad',
       toolsPanelCollapsed: true,
+      toolbarCollapsed: false,
       selectedSheet: 'root',
       layerMode: 'normal',
       zoneFillsVisible: true,
@@ -189,6 +192,11 @@ export function createViewerControllerScript(): string {
     zoomInBtn.addEventListener('click', () => zoomCurrentViewer(1));
     zoomOutBtn.addEventListener('click', () => zoomCurrentViewer(-1));
     sidePanelToggleBtn.addEventListener('click', () => setToolsPanelCollapsed(!localState.toolsPanelCollapsed));
+    toolbarToggleBtn.addEventListener('click', () => {
+      localState = { ...localState, toolbarCollapsed: !localState.toolbarCollapsed };
+      applyToolbarCollapsed();
+      postViewerState();
+    });
     sheetSelectEl.addEventListener('change', () => {
       localState = { ...localState, selectedSheet: sheetSelectEl.value };
       applyViewerSelectionState(viewerMount.querySelector('kicanvas-embed'));
@@ -251,11 +259,22 @@ export function createViewerControllerScript(): string {
     renderSidebar();
     updateEngineUi(localState.engine);
     applyToolsPanelCollapsed(localState.toolsPanelCollapsed);
+    applyToolbarCollapsed();
     updateZoomLevel();
     updateGridToggle();
     updateThemeToggle();
     updatePartialPreviewUi();
 
+
+    function applyToolbarCollapsed() {
+      const collapsed = Boolean(localState.toolbarCollapsed);
+      viewerToolbarEl.hidden = collapsed;
+      toolbarToggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      toolbarToggleBtn.setAttribute('aria-label', collapsed ? t('Show tools') : t('Hide tools'));
+      toolbarToggleBtn.textContent = collapsed ? t('Show tools') : t('Hide tools');
+      toolbarToggleBtn.title = collapsed ? t('Show viewer toolbar') : t('Hide viewer toolbar');
+      if (collapsed) closeExportMenu();
+    }
 
     function updatePartialPreviewUi() {
       if (!partialSection) return;
@@ -339,6 +358,7 @@ export function createViewerControllerScript(): string {
           };
           populateSheetSelect();
           applyToolsPanelCollapsed(localState.toolsPanelCollapsed);
+    applyToolbarCollapsed();
           updateZoomLevel();
           updateGridToggle();
           updateThemeToggle();
@@ -363,6 +383,7 @@ export function createViewerControllerScript(): string {
           ...(payload.restoreState || {})
         };
         applyToolsPanelCollapsed(localState.toolsPanelCollapsed);
+    applyToolbarCollapsed();
         updateZoomLevel();
         updateGridToggle();
         updateThemeToggle();

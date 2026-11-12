@@ -1465,6 +1465,7 @@ function readViewerState(value: unknown): ViewerState | undefined {
   const activeLayers = readStringArray(payload['activeLayers']);
   const engine = readViewerEngineState(payload['engine']);
   const toolsPanelCollapsed = payload['toolsPanelCollapsed'];
+  const toolbarCollapsed = payload['toolbarCollapsed'];
   const focusedLayer = asString(payload['focusedLayer']);
   const layerMode = payload['layerMode'];
   return {
@@ -1474,6 +1475,7 @@ function readViewerState(value: unknown): ViewerState | undefined {
     ...(typeof toolsPanelCollapsed === 'boolean'
       ? { toolsPanelCollapsed }
       : {}),
+    ...(typeof toolbarCollapsed === 'boolean' ? { toolbarCollapsed } : {}),
     ...(engine ? { engine } : {}),
     ...(typeof payload['selectedReference'] === 'string'
       ? { selectedReference: payload['selectedReference'] }

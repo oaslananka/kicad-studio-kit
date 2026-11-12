@@ -99,7 +99,12 @@ export function createKiCanvasViewerHtml(
 </head>
 <body>
   <header>
-    <h1>${escapeHtml(options.title)}: ${escapeHtml(options.fileName)}</h1>
+    <div class="viewer-heading">
+      <h1>${escapeHtml(options.title)}: ${escapeHtml(options.fileName)}</h1>
+      <span id="viewer-engine-badge" class="engine-badge" data-engine-kind="${escapeAttr(initialEngine.kind)}" title="${escapeAttr(initialEngine.reason ?? initialEngine.label)}">${escapeHtml(initialEngine.label)}</span>
+      <span id="viewer-status">${escapeHtml(options.status)}</span>
+      <button class="btn viewer-toolbar-toggle" id="viewer-toolbar-toggle" type="button" aria-controls="viewer-toolbar" aria-expanded="true" aria-label="Hide tools">Hide tools</button>
+    </div>
     <div class="viewer-toolbar" id="viewer-toolbar" role="toolbar" aria-label="Viewer tools">
       <button class="btn btn-primary" id="reload-btn" type="button" aria-label="Reload viewer">Reload Viewer</button>
       <button class="btn" id="open-kicad-btn" type="button" aria-label="Open in KiCad">Open in KiCad</button>
@@ -128,8 +133,6 @@ export function createKiCanvasViewerHtml(
       </details>
       <button class="btn compact-btn" id="side-panel-toggle" type="button" aria-controls="viewer-side-panel" aria-expanded="false" aria-label="${options.fileType === 'board' ? 'Open PCB layers and nets panel' : 'Open viewer tools panel'}" title="${options.fileType === 'board' ? 'Show PCB layer visibility and net highlight controls' : 'Show viewer tools and metadata'}">Panel</button>
     </div>
-    <span id="viewer-engine-badge" class="engine-badge" data-engine-kind="${escapeAttr(initialEngine.kind)}" title="${escapeAttr(initialEngine.reason ?? initialEngine.label)}">${escapeHtml(initialEngine.label)}</span>
-    <span id="viewer-status">${escapeHtml(options.status)}</span>
   </header>
 
   <main>
