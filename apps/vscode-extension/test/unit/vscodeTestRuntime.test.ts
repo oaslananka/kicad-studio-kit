@@ -75,6 +75,41 @@ describe('VS Code test runtime', () => {
     expect(download).toHaveBeenCalledTimes(3);
   });
 
+  it('#962 retries only the exact @vscode/test-electron request TimeoutError', async () => {
+    const timeout = Object.assign(
+      new Error('@vscode/test-electron request timeout out after 15000ms'),
+      { name: 'TimeoutError' }
+    );
+    const download = jest
+      .fn<Promise<string>, [string]>()
+      .mockRejectedValueOnce(timeout)
+      .mockResolvedValue('/tmp/vscode');
+    const delays: number[] = [];
+
+    await expect(
+      downloadVsCodeWithRetry('1.122.0', download, {
+        attempts: 2,
+        baseDelayMs: 10,
+        sleep: async (delay) => {
+          delays.push(delay);
+        }
+      })
+    ).resolves.toBe('/tmp/vscode');
+    expect(download).toHaveBeenCalledTimes(2);
+    expect(delays).toEqual([10]);
+
+    const unrelated = Object.assign(new Error('Project assertion timed out'), {
+      name: 'TimeoutError'
+    });
+    download.mockReset().mockRejectedValue(unrelated);
+    await expect(
+      downloadVsCodeWithRetry('1.122.0', download, {
+        attempts: 3,
+        baseDelayMs: 0
+      })
+    ).rejects.toBe(unrelated);
+    expect(download).toHaveBeenCalledTimes(1);
+  });
   it('selects the dedicated canary host suite only when requested', () => {
     expect(resolveVsCodeTestSuite({})).toBe('suite');
     expect(

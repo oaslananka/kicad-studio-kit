@@ -20,7 +20,7 @@ async function main(): Promise<void> {
   const workspacePath = path.resolve(__dirname, '..', '..', 'test', 'fixtures');
   const vscodeExecutablePath = await downloadVsCodeWithRetry(
     resolveVsCodeTestVersion(),
-    downloadAndUnzipVSCode
+    (version) => downloadAndUnzipVSCode({ version, timeout: 120_000 })
   );
   const userDataDir = await mkdtemp(
     path.join(tmpdir(), 'kicadstudio-vscode-user-')
