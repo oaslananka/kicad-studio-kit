@@ -61,6 +61,10 @@ artifacts.
 | MCP protocol       | source active `2026-07-28`; activation `active`                                                         | Protocol activation is independent from server semver and remains gated by ADR 0008 evidence.                             |
 | BoardReadyOps      | required `>=1.2.0 <2.0.0`; tested against npm `1.71.1`; findings schema `1`; evidence bundle schema `2` | npm is the published-artifact source. Upgrade the CLI when the detected version is outside the supported range.           |
 
+**BoardReadyOps:** testedAgainst records the last accepted CLI, not npm latest.
+The live canary checks the latest stable CLI, findings schema, supported range and
+registry rollback. Passing a canary does not approve a new testedAgainst.
+
 This split is deliberate: Studio can continue to offer CLI/viewer workflows for a
 KiCad line even when the installed MCP server is unsupported, and an MCP server
 version can remain in-range while the peer negotiates an incompatible protocol revision.

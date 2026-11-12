@@ -203,8 +203,72 @@ test("#621 rejects stale published BoardReadyOps contract evidence", () => {
       compatibility,
       publishedArtifacts: { boardReadyOpsVersion: "99.0.0" },
     }).join("\n"),
-    /boardReadyOps.*testedAgainst.*99\.0\.0/iu,
+    /boardReadyOps.*outside supported range/iu,
   );
+});
+
+test("#962 newly published compatible BoardReadyOps does not erase accepted testedAgainst evidence", () => {
+  const accepted =
+    compatibility.supportAxes.boardReadyOps.testedAgainst.version;
+  const latest = `${accepted.split(".")[0]}.${Number(accepted.split(".")[1]) + 1}.0`;
+  assert.notEqual(
+    latest,
+    accepted,
+    "fixture must represent an independent newer release",
+  );
+  assert.deepEqual(
+    validateCompatibilityAxes({
+      compatibility,
+      publishedArtifacts: { boardReadyOpsVersion: latest },
+    }),
+    [],
+  );
+  assert.equal(
+    compatibility.supportAxes.boardReadyOps.testedAgainst.version,
+    accepted,
+  );
+});
+
+test("#962 rejects published BoardReadyOps rollback and unsupported or invalid versions", () => {
+  for (const [latest, expected] of [
+    ["1.70.0", /boardReadyOps.*older than.*testedAgainst/iu],
+    ["2.0.0", /boardReadyOps.*outside.*supported/iu],
+    ["1.72.0-rc.1", /boardReadyOps.*stable/iu],
+    ["garbage", /boardReadyOps.*stable/iu],
+  ]) {
+    assert.match(
+      validateCompatibilityAxes({
+        compatibility,
+        publishedArtifacts: { boardReadyOpsVersion: latest },
+      }).join("\n"),
+      expected,
+      latest,
+    );
+  }
+});
+
+test("#962 live BoardReadyOps canary verifies the exact published CLI and findings schema", () => {
+  const workflow = parseYaml(
+    fs.readFileSync(".github/workflows/cross-repo-compatibility.yml", "utf8"),
+  );
+  const steps = workflow.jobs.canary.steps;
+  const canary = steps.find(
+    (step) =>
+      step.name === "Canary published BoardReadyOps CLI and findings schema",
+  );
+  assert.ok(canary, "the published BoardReadyOps schema smoke must run");
+  assert.match(canary.run, /npm exec --yes --package=/u);
+  assert.match(canary.run, /boardreadyops --version/u);
+  assert.match(canary.run, /boardreadyops schema findings/u);
+  assert.match(canary.run, /EXPECTED_SCHEMA_VERSION/u);
+  assert.match(canary.run, /Published BoardReadyOps findings schema differs/u);
+  const verify = steps.find(
+    (step) =>
+      step.name ===
+      "Run check:compatibility-contract (compatibility contract validation)",
+  );
+  assert.ok(verify, "the existing full compatibility gate is still required");
+  assert.ok(steps.indexOf(canary) < steps.indexOf(verify));
 });
 
 test("#621 keeps protocol activation separate from product semver compatibility", () => {
