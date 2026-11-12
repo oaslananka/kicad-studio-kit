@@ -773,6 +773,11 @@ export function createViewerControllerScript(): string {
     }
 
     function handleRendererRuntimeFailure(title, reason) {
+      // Disposing the previous WebGL context can dispatch an asynchronous
+      // global error during a valid, snapshotted refresh. The awaited new
+      // renderer performs its own load/paint validation and fallback; starting
+      // a competing SVG recovery here would open a blocking loading overlay.
+      if (rendererInitializing && activeRefreshFrame?.isConnected) return;
       if (!rendererInitializing || localState.engine?.kind !== 'kicanvas') {
         showError(title, reason, '');
         return;

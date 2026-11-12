@@ -386,3 +386,73 @@ test('oversized refreshes avoid duplicating the renderer or reading back a full 
   await expect(page.locator('.viewer-last-good-frame')).toHaveCount(0);
   await expect(page.locator('#loading-overlay')).toBeVisible();
 });
+
+test('discarding the previous WebGL renderer never opens a blocking fallback overlay', async ({
+  page
+}) => {
+  const source = readFixtureBase64('sample.kicad_pcb');
+  await installVsCodeApiMock(page);
+  await setViewerContent(page, {
+    fileName: 'sample.kicad_pcb',
+    fileType: 'board',
+    base64: source
+  });
+  await expect(page.locator('#viewer-status')).toContainText(
+    'Interactive renderer loaded:'
+  );
+  await page.evaluate(() => {
+    const mount = document.querySelector('#viewer-mount');
+    const overlay = document.querySelector('#loading-overlay');
+    if (!mount || !overlay) throw new Error('Viewer not mounted');
+    const state = {
+      disposalEventSent: false,
+      blockingOverlayEvents: 0
+    };
+    Object.assign(window, { __oldRendererDisposal: state });
+    new MutationObserver(() => {
+      if (!(overlay as HTMLElement).hidden) state.blockingOverlayEvents++;
+    }).observe(overlay, { attributes: true, attributeFilter: ['hidden'] });
+    const original = mount.replaceChildren.bind(mount);
+    mount.replaceChildren = (...children) => {
+      const hadOldRenderer = Boolean(mount.querySelector('kicanvas-embed'));
+      original(...children);
+      if (hadOldRenderer && children.length === 0 && !state.disposalEventSent) {
+        state.disposalEventSent = true;
+        queueMicrotask(() =>
+          window.dispatchEvent(
+            new ErrorEvent('error', {
+              message: 'Detached previous WebGL context'
+            })
+          )
+        );
+      }
+    };
+  });
+  await sendRefresh(page, source, 'board');
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window & {
+              __oldRendererDisposal?: { disposalEventSent: boolean };
+            }
+          ).__oldRendererDisposal?.disposalEventSent ?? false
+      )
+    )
+    .toBe(true);
+  await expect(page.locator('#viewer-status')).toContainText(
+    'Interactive renderer loaded:',
+    { timeout: 15000 }
+  );
+  const blockingOverlays = await page.evaluate(
+    () =>
+      (
+        window as Window & {
+          __oldRendererDisposal?: { blockingOverlayEvents: number };
+        }
+      ).__oldRendererDisposal?.blockingOverlayEvents
+  );
+  expect(blockingOverlays).toBe(0);
+  await expect(page.locator('.viewer-last-good-frame')).toHaveCount(0);
+});
