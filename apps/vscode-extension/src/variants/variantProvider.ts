@@ -507,7 +507,9 @@ function diffOverrides(
   for (const item of right) {
     const previous = index.get(item.reference);
     if (!previous) {
-      changes.push(`Added in target: ${item.reference}`);
+      changes.push(
+        `${item.reference}: override added in target (${describeOverride(item)})`
+      );
       continue;
     }
     if (previous.enabled !== item.enabled) {
@@ -528,9 +530,25 @@ function diffOverrides(
     index.delete(item.reference);
   }
   for (const remaining of index.values()) {
-    changes.push(`Removed in target: ${remaining.reference}`);
+    changes.push(
+      `${remaining.reference}: override removed from target (was ${describeOverride(remaining)})`
+    );
   }
   return changes;
+}
+
+function describeOverride(override: VariantOverride): string {
+  const details: string[] = [];
+  if (!override.enabled) {
+    details.push('disabled / DNP');
+  }
+  if (override.valueOverride !== undefined) {
+    details.push('value=' + override.valueOverride);
+  }
+  if (override.footprintOverride !== undefined) {
+    details.push('footprint=' + override.footprintOverride);
+  }
+  return details.join(', ') || 'enabled';
 }
 
 function diffComponents(
@@ -602,6 +620,7 @@ function renderBomDiffHtml(
 <body>
   <h1>${variantBomDiffTitle}</h1>
   <div class="meta">${escapeHtml(left.name)} -> ${escapeHtml(right.name)}</div>
+  <div class="meta">This compares saved variant overrides, not the generated KiCad BOM.</div>
   <ul>${rows}</ul>
 </body>
 </html>`;

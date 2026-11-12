@@ -278,6 +278,87 @@ describe('VariantProvider', () => {
     );
   });
 
+  it('describes introduced target overrides without claiming DNP parts were added', async () => {
+    fs.writeFileSync(
+      projectFile,
+      JSON.stringify({
+        variants: [
+          { name: 'Default', isDefault: true, componentOverrides: [] },
+          {
+            name: 'QA Lite',
+            isDefault: false,
+            componentOverrides: [
+              { reference: 'R1', enabled: false },
+              { reference: 'C1', enabled: true, valueOverride: 'QA-100nF' }
+            ]
+          }
+        ]
+      }),
+      'utf8'
+    );
+    const provider = new VariantProvider();
+    (window.showQuickPick as jest.Mock)
+      .mockResolvedValueOnce('Default')
+      .mockResolvedValueOnce('QA Lite');
+
+    await provider.diffBom();
+
+    const html = (
+      (window.createWebviewPanel as jest.Mock).mock.results.at(-1)?.value as {
+        webview: { html: string };
+      }
+    ).webview.html;
+    expect(html).toContain('R1: override added in target (disabled / DNP)');
+    expect(html).toContain('C1: override added in target (value=QA-100nF)');
+    expect(html).not.toContain('Added in target: R1');
+    expect(html).toContain(
+      'This compares saved variant overrides, not the generated KiCad BOM.'
+    );
+  });
+
+  it('explains removed target overrides and escapes user supplied values', async () => {
+    fs.writeFileSync(
+      projectFile,
+      JSON.stringify({
+        variants: [
+          {
+            name: 'QA Lite',
+            isDefault: true,
+            componentOverrides: [
+              { reference: 'R1', enabled: false },
+              {
+                reference: 'C1',
+                enabled: true,
+                valueOverride: '<img src=x onerror=alert(1)>'
+              }
+            ]
+          },
+          { name: 'Default', isDefault: false, componentOverrides: [] }
+        ]
+      }),
+      'utf8'
+    );
+    const provider = new VariantProvider();
+    (window.showQuickPick as jest.Mock)
+      .mockResolvedValueOnce('QA Lite')
+      .mockResolvedValueOnce('Default');
+
+    await provider.diffBom();
+
+    const html = (
+      (window.createWebviewPanel as jest.Mock).mock.results.at(-1)?.value as {
+        webview: { html: string };
+      }
+    ).webview.html;
+    expect(html).toContain(
+      'R1: override removed from target (was disabled / DNP)'
+    );
+    expect(html).toContain(
+      'C1: override removed from target (was value=&lt;img src=x onerror=alert(1)&gt;)'
+    );
+    expect(html).not.toContain('<img src=x onerror=');
+  });
+
   it('reports when selected variants have no BOM override differences', async () => {
     fs.writeFileSync(
       projectFile,
