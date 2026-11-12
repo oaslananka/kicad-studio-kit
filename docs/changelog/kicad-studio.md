@@ -16,6 +16,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.6.3](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.6.2...vscode-extension-v2.6.3) (2026-11-12)
+
+
+### Bug Fixes
+
+* **kicad-studio:** prevent blocking fallback on renderer handoff ([#959](https://github.com/oaslananka/kicad-studio-kit/issues/959)) ([a10df73](https://github.com/oaslananka/kicad-studio-kit/commit/a10df73f8a9ee92dc11e6981f3cf7fd3fdb033a8))
+
 ## [2.6.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.6.1...vscode-extension-v2.6.2) (2026-11-12)
 
 
