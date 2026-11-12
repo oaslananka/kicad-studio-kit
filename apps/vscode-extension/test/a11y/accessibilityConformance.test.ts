@@ -179,7 +179,15 @@ describe('WCAG 2.1 AA webview conformance gate', () => {
         };
       });
 
-      expect(styles.headerHeight).toBeLessThanOrEqual(42);
+      // With the accessible disclosure, the expanded controls use a clear
+      // two-row header. The compact state remains <= 44px in webview tests.
+      expect(styles.headerHeight).toBeGreaterThanOrEqual(60);
+      expect(styles.headerHeight).toBeLessThanOrEqual(96);
+      const toggle = page.locator('#viewer-toolbar-toggle');
+      expect(await toggle.getAttribute('aria-controls')).toBe('viewer-toolbar');
+      expect(await toggle.getAttribute('aria-expanded')).toBe('true');
+      // This theme-only fixture uses a minimal button stylesheet; the real
+      // shipped, wide disclosure target is measured by Playwright webview tests.
       expect(styles.reload.backgroundImage).toBe('none');
       expect(styles.reload.backgroundColor).toBe(hexToRgb(theme.tokens.button));
       expect(styles.reload.color).toBe(hexToRgb(theme.tokens.buttonText));
@@ -374,6 +382,7 @@ function webviewSurfaces(): WebviewSurface[] {
         }
       }),
       expectedFocusOrder: [
+        '#viewer-toolbar-toggle',
         '#reload-btn',
         '#open-kicad-btn',
         '#fit-btn',
@@ -412,6 +421,7 @@ function webviewSurfaces(): WebviewSurface[] {
         }
       }),
       expectedFocusOrder: [
+        '#viewer-toolbar-toggle',
         '#reload-btn',
         '#open-kicad-btn',
         '#fit-btn',

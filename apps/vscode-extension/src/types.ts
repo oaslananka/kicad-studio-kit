@@ -53,6 +53,7 @@ export interface ViewerState {
   grid: boolean;
   theme: string;
   toolsPanelCollapsed?: boolean | undefined;
+  toolbarCollapsed?: boolean | undefined;
   engine?: ViewerEngineState | undefined;
   selectedReference?: string | undefined;
   selectedSheet?: string | undefined;

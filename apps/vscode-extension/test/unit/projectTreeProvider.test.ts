@@ -85,6 +85,23 @@ describe('KiCadProjectTreeProvider', () => {
     );
   });
 
+  it('keeps expandable project groups as navigation rather than implicit actions', () => {
+    const provider = new KiCadProjectTreeProvider();
+    const item = provider.getTreeItem({
+      label: 'Schematic Sheets',
+      type: 'folder',
+      children: [
+        {
+          label: 'sheet.kicad_sch',
+          type: 'schematic',
+          uri: Uri.file('/demo/sheet.kicad_sch') as never
+        }
+      ]
+    });
+    expect(item.collapsibleState).not.toBe(0);
+    expect(item.command).toBeUndefined();
+  });
+
   it('uses distinct icons and open commands for KiCad file types', () => {
     const provider = new KiCadProjectTreeProvider();
 

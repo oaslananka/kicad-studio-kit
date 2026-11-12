@@ -312,10 +312,21 @@ async function assertToolbarHierarchy(page: Page): Promise<void> {
       exportTop: exportMenu.getBoundingClientRect().top
     };
   });
-  expect(metrics.headerHeight).toBeLessThanOrEqual(HEADER_MAX_HEIGHT);
+  // The user can now fold a two-row toolbar to recover the compact header.
+  expect(metrics.headerHeight).toBeLessThanOrEqual(96);
   expect(Math.abs(metrics.exportTop - metrics.toolbarTop)).toBeLessThanOrEqual(
     2
   );
+  const toggle = page.locator('#viewer-toolbar-toggle');
+  await expect(toggle).toBeVisible();
+  await toggle.click();
+  await expect(page.locator('#viewer-toolbar')).toBeHidden();
+  const collapsedHeight = await page
+    .locator('header')
+    .evaluate((el) => el.getBoundingClientRect().height);
+  expect(collapsedHeight).toBeLessThanOrEqual(HEADER_MAX_HEIGHT);
+  await toggle.click();
+  await expect(page.locator('#viewer-toolbar')).toBeVisible();
 }
 
 async function assertExpandedPanelLeavesCanvasRoom(page: Page): Promise<void> {
