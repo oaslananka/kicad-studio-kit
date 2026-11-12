@@ -50,7 +50,6 @@ module.exports = {
     '!src/providers/netlistViewProvider.ts',
     '!src/providers/projectTreeProvider.ts',
     '!src/providers/viewerHtml.ts',
-    '!src/library/libraryIndexer.ts',
     '!src/library/librarySearchProvider.ts',
     '!src/tasks/**/*.ts'
   ],
