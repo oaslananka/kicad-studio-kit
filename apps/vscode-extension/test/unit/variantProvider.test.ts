@@ -11,6 +11,7 @@ describe('VariantProvider', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (window.showQuickPick as jest.Mock).mockReset();
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kicadstudio-variants-'));
     projectFile = path.join(tempDir, 'variants.kicad_pro');
     fs.writeFileSync(
@@ -104,12 +105,50 @@ describe('VariantProvider', () => {
       variants: Array<{ name: string; isDefault: boolean }>;
     };
     expect(saved.activeVariant).toBe('No-RF');
+    expect(window.showQuickPick).not.toHaveBeenCalled();
     expect(
       saved.variants.find((item) => item.name === 'No-RF')?.isDefault
     ).toBe(true);
     expect(
       saved.variants.find((item) => item.name === 'Default')?.isDefault
     ).toBe(false);
+  });
+
+  it('opens a variant chooser when invoked from the command palette without a tree item', async () => {
+    const provider = new VariantProvider();
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce('No-RF');
+
+    // The command palette supplies no tree-item argument.
+    await provider.setActive();
+
+    expect(window.showQuickPick).toHaveBeenCalledWith(
+      ['Default', 'No-RF'],
+      expect.objectContaining({ title: 'Set active KiCad variant' })
+    );
+    const saved = JSON.parse(fs.readFileSync(projectFile, 'utf8')) as {
+      activeVariant: string;
+    };
+    expect(saved.activeVariant).toBe('No-RF');
+  });
+
+  it('does not change active variant if the command palette chooser is cancelled', async () => {
+    const provider = new VariantProvider();
+    const before = fs.readFileSync(projectFile, 'utf8');
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
+
+    await provider.setActive();
+
+    expect(fs.readFileSync(projectFile, 'utf8')).toBe(before);
+  });
+
+  it('ignores a stale variant selection without modifying the project', async () => {
+    const provider = new VariantProvider();
+    const before = fs.readFileSync(projectFile, 'utf8');
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce('Missing');
+
+    await provider.setActive();
+
+    expect(fs.readFileSync(projectFile, 'utf8')).toBe(before);
   });
 
   it('syncs the active variant to MCP when a client is provided', async () => {
