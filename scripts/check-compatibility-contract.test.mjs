@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { parse as parseYaml } from "yaml";
+import { validatePublishedBoardReadyOpsFindingsSchema } from "./verify-published-boardreadyops-schema.mjs";
 
 import {
   validateCompatibilityAxes,
@@ -260,8 +262,11 @@ test("#962 live BoardReadyOps canary verifies the exact published CLI and findin
   assert.match(canary.run, /npm exec --yes --package=/u);
   assert.match(canary.run, /boardreadyops --version/u);
   assert.match(canary.run, /boardreadyops schema findings/u);
-  assert.match(canary.run, /EXPECTED_SCHEMA_VERSION/u);
-  assert.match(canary.run, /Published BoardReadyOps findings schema differs/u);
+  assert.match(
+    canary.run,
+    /node scripts\/verify-published-boardreadyops-schema\.mjs/u,
+  );
+  assert.match(canary.run, /boardreadyops schema findings/u);
   const verify = steps.find(
     (step) =>
       step.name ===
@@ -269,6 +274,79 @@ test("#962 live BoardReadyOps canary verifies the exact published CLI and findin
   );
   assert.ok(verify, "the existing full compatibility gate is still required");
   assert.ok(steps.indexOf(canary) < steps.indexOf(verify));
+});
+
+test("#962 published findings schema verification requires canonical identity and version", () => {
+  const version =
+    compatibility.supportAxes.boardReadyOps.reports.findingsSchema;
+  const schema = {
+    $id:
+      "https://github.com/oaslananka/boardreadyops/schemas/findings-v" +
+      version +
+      ".json",
+    properties: { schemaVersion: { const: version } },
+  };
+  assert.deepEqual(
+    validatePublishedBoardReadyOpsFindingsSchema(schema, version),
+    [],
+  );
+  assert.match(
+    validatePublishedBoardReadyOpsFindingsSchema(
+      {
+        ...schema,
+        $id: "https://evil.invalid/findings-v" + version + ".json",
+      },
+      version,
+    ).join("\n"),
+    /schema ID differs/u,
+  );
+  assert.match(
+    validatePublishedBoardReadyOpsFindingsSchema(
+      {
+        ...schema,
+        properties: { schemaVersion: { const: 999 } },
+      },
+      version,
+    ).join("\n"),
+    /schema version differs/u,
+  );
+  assert.match(
+    validatePublishedBoardReadyOpsFindingsSchema(null, version).join("\n"),
+    /not a JSON object/u,
+  );
+});
+
+test("#962 published schema verifier CLI passes the canonical schema and fails closed on drift", () => {
+  const version =
+    compatibility.supportAxes.boardReadyOps.reports.findingsSchema;
+  const schema = {
+    $id:
+      "https://github.com/oaslananka/boardreadyops/schemas/findings-v" +
+      version +
+      ".json",
+    properties: { schemaVersion: { const: version } },
+  };
+  const verifier = path.resolve(
+    "scripts/verify-published-boardreadyops-schema.mjs",
+  );
+  const valid = spawnSync(process.execPath, [verifier], {
+    encoding: "utf8",
+    input: JSON.stringify(schema),
+    timeout: 10000,
+  });
+  assert.equal(valid.status, 0, valid.stderr);
+  assert.match(valid.stdout, /schema matches Studio v/u);
+
+  const invalid = spawnSync(process.execPath, [verifier], {
+    encoding: "utf8",
+    input: JSON.stringify({
+      ...schema,
+      $id: "https://invalid.example/schema.json",
+    }),
+    timeout: 10000,
+  });
+  assert.equal(invalid.status, 1);
+  assert.match(invalid.stderr, /schema ID differs from Studio contract/u);
 });
 
 test("#621 keeps protocol activation separate from product semver compatibility", () => {

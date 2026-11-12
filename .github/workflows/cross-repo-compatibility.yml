@@ -293,19 +293,8 @@ jobs:
             echo "::error::Published BoardReadyOps CLI version does not match resolved npm release" >&2
             exit 1
           fi
-          expected_schema="$(node -e 'const fs = require("node:fs"); const yaml = require("yaml"); const c = yaml.parse(fs.readFileSync("compatibility.yaml", "utf8")); process.stdout.write(String(c.supportAxes.boardReadyOps.reports.findingsSchema))')"
           npm exec --yes --package="boardreadyops@$version" -- boardreadyops schema findings |
-            EXPECTED_SCHEMA_VERSION="$expected_schema" node --input-type=module -e '
-              let raw = "";
-              for await (const chunk of process.stdin) raw += chunk;
-              const schema = JSON.parse(raw);
-              const version = Number(process.env.EXPECTED_SCHEMA_VERSION);
-              if (!Number.isInteger(version) ||
-                  schema.properties?.schemaVersion?.const !== version ||
-                  !String(schema.$id ?? "").endsWith("/findings-v" + version + ".json")) {
-                throw new Error("Published BoardReadyOps findings schema differs from Studio contract");
-              }
-            '
+            node scripts/verify-published-boardreadyops-schema.mjs
           echo "::notice::Published BoardReadyOps $version CLI and findings schema smoke PASS; testedAgainst stays explicitly accepted"
 
       - name: Run check:compatibility-contract (compatibility contract validation)
