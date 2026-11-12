@@ -334,3 +334,55 @@ test('refreshes arriving as the old frame is captured do not leave stale pixels'
   await expect(page.locator('kicanvas-embed')).toHaveCount(1);
   await expect(page.locator('#loading-overlay')).toBeHidden();
 });
+
+test('an inactive editor skips the retained-frame path to avoid background GPU work', async ({
+  page
+}) => {
+  const source = readFixtureBase64('sample.kicad_pcb');
+  await installVsCodeApiMock(page);
+  await setViewerContent(page, {
+    fileName: 'sample.kicad_pcb',
+    fileType: 'board',
+    base64: source
+  });
+  await expect(page.locator('#viewer-status')).toContainText(
+    'Interactive renderer loaded:'
+  );
+  await pausePreparation(page);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden'
+    });
+  });
+  await sendRefresh(page, source, 'board');
+  await expect.poll(() => workers(page)).toBe(1);
+  await expect(page.locator('kicanvas-embed')).toHaveCount(0);
+  await expect(page.locator('.viewer-last-good-frame')).toHaveCount(0);
+  await expect(page.locator('#loading-overlay')).toBeVisible();
+});
+
+test('oversized refreshes avoid duplicating the renderer or reading back a full frame', async ({
+  page
+}) => {
+  const source = readFixtureBase64('sample.kicad_pcb');
+  const veryLargeSource = Buffer.from(
+    Buffer.from(source, 'base64').toString('utf8') + ' '.repeat(1_800_000)
+  ).toString('base64');
+  expect(veryLargeSource.length).toBeGreaterThan(2 * 1024 * 1024);
+  await installVsCodeApiMock(page);
+  await setViewerContent(page, {
+    fileName: 'sample.kicad_pcb',
+    fileType: 'board',
+    base64: source
+  });
+  await expect(page.locator('#viewer-status')).toContainText(
+    'Interactive renderer loaded:'
+  );
+  await pausePreparation(page);
+  await sendRefresh(page, veryLargeSource, 'board');
+  await expect.poll(() => workers(page)).toBe(1);
+  await expect(page.locator('kicanvas-embed')).toHaveCount(0);
+  await expect(page.locator('.viewer-last-good-frame')).toHaveCount(0);
+  await expect(page.locator('#loading-overlay')).toBeVisible();
+});
