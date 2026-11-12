@@ -82,6 +82,31 @@ describe('installed Windows KiCad library discovery', () => {
     ]);
   });
 
+  it('prefers the newest numeric KiCad version when multiple versions are installed', async () => {
+    const olderSymbols = path.join(
+      tempRoot,
+      'KiCad',
+      '9.0',
+      'share',
+      'kicad',
+      'symbols'
+    );
+    fs.mkdirSync(olderSymbols, { recursive: true });
+    fs.writeFileSync(
+      path.join(olderSymbols, 'QA_InstalledOlder.kicad_sym'),
+      '(kicad_symbol_lib\n  (symbol "QA_WindowSymbol"\n  )\n)\n'
+    );
+
+    const indexer = new KiCadLibraryIndexer(
+      createExtensionContextMock() as unknown as vscode.ExtensionContext
+    );
+    await indexer.indexAll();
+    const installed = indexer.searchSymbols('QA_WindowSymbol');
+    expect(installed).toHaveLength(2);
+    expect(installed[0]?.libraryPath).toContain(path.join('KiCad', '10.0'));
+    expect(installed[1]?.libraryPath).toContain(path.join('KiCad', '9.0'));
+  });
+
   it('discovers libraries in Program Files (x86) when the primary install root is missing', async () => {
     const x86Root = path.join(tempRoot, 'x86');
     const symbolsDir = path.join(
