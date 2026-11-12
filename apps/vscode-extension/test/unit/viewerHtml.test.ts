@@ -62,9 +62,7 @@ describe('createKiCanvasViewerHtml', () => {
       disabledReason: ''
     });
 
-    expect(html).toContain(
-      'await waitForRenderableSurface(viewerMount, 2000);'
-    );
+    expect(html).toContain('await waitForRenderableSurface(viewer, 2000);');
     expect(html).toContain(
       'Interactive renderer stayed blank. Requesting SVG fallback…'
     );
@@ -315,6 +313,10 @@ describe('createKiCanvasViewerHtml', () => {
     });
 
     expect(html).toContain('id="viewer-toolbar"');
+    expect(html).toContain('id="viewer-toolbar-toggle"');
+    expect(html).toContain('aria-controls="viewer-toolbar"');
+    expect(html).toContain('aria-expanded="true"');
+
     expect(html).toContain('id="side-panel-toggle"');
     expect(html).toContain('aria-controls="viewer-side-panel"');
     expect(html).toContain('id="viewer-side-panel"');
@@ -506,7 +508,13 @@ describe('createKiCanvasViewerHtml', () => {
       disabledReason: ''
     });
 
-    expect(html).toContain("showLoading('Decoding and normalizing file…');");
+    // First paint may show a loading overlay; subsequent file changes keep
+    // the old source on screen while the new source is prepared.
+    expect(html).toContain("progress('Decoding and normalizing file…');");
+    expect(html).toContain('if (preserve) {');
+    expect(html).toContain("setStatus('Updating preview… ' + detail);");
+    expect(html).toContain('showLoading(detail);');
+    expect(html).toContain('capturePreviousFrame(previousViewer)');
     expect(html).toContain(
       'prepared = await prepareKiCanvasText(payload.base64, payload.fileType, generation);'
     );

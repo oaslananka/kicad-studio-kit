@@ -237,6 +237,55 @@ describe('VariantProvider', () => {
     );
   });
 
+  it('reserves expandable variant rows for disclosure rather than changing active variant', () => {
+    const provider = new VariantProvider();
+    const expandable = provider.getTreeItem({
+      name: 'Assembly-A',
+      isDefault: false,
+      componentOverrides: [{ reference: 'R1', enabled: false }]
+    });
+    const leaf = provider.getTreeItem({
+      name: 'Default',
+      isDefault: true,
+      componentOverrides: []
+    });
+
+    expect(expandable.collapsibleState).toBe(
+      vscode.TreeItemCollapsibleState.Expanded
+    );
+    expect(expandable.command).toBeUndefined();
+    expect(expandable.tooltip).toMatch(/expand/i);
+    expect(leaf.command).toBeUndefined();
+    expect(expandable.contextValue).toBe('variant');
+    expect(leaf.contextValue).toBe('variant-default');
+  });
+
+  it('exposes explicit Set Active Variant actions on variant tree rows', () => {
+    const manifest = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf8')
+    ) as {
+      contributes: {
+        menus: Record<
+          string,
+          Array<{ command: string; when: string; group: string }>
+        >;
+        commands: Array<{ command: string; icon?: string }>;
+      };
+    };
+    const action = manifest.contributes.menus['view/item/context']?.find(
+      (entry) => entry.command === 'kicadstudio.variant.setActive'
+    );
+    expect(action?.when).toContain('view == kicadstudio.variants');
+    expect(action?.when).toContain('viewItem');
+    expect(action?.when).toContain('kicadstudio.workspaceTrusted');
+    expect(action?.group).toMatch(/^inline/);
+    expect(
+      manifest.contributes.commands.find(
+        (entry) => entry.command === 'kicadstudio.variant.setActive'
+      )?.icon
+    ).toBe('$(check)');
+  });
+
   it('shows a helpful message when comparing BOMs without enough variants', async () => {
     fs.writeFileSync(
       projectFile,

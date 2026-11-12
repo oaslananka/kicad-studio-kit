@@ -2,7 +2,7 @@
   "name": "kicadstudiokit",
   "displayName": "%kicadstudio.displayName%",
   "description": "%kicadstudio.description%",
-  "version": "2.6.0",
+  "version": "2.6.2",
   "publisher": "oaslananka",
   "engines": {
     "vscode": "^1.101.0",
@@ -938,7 +938,8 @@
       {
         "command": "kicadstudio.variant.setActive",
         "title": "%kicadstudio.contributes.commands.70.title%",
-        "category": "%kicadstudio.contributes.commands.70.category%"
+        "category": "%kicadstudio.contributes.commands.70.category%",
+        "icon": "$(check)"
       },
       {
         "command": "kicadstudio.variant.diffBom",
@@ -1217,12 +1218,12 @@
         {
           "command": "kicadstudio.tasks.open",
           "when": "view == kicadstudio.projectTree",
-          "group": "navigation@1"
+          "group": "2_manage@0"
         },
         {
           "when": "view == kicadstudio.projectTree",
           "command": "kicadstudio.openSettings",
-          "group": "navigation"
+          "group": "2_manage@1"
         },
         {
           "when": "view == kicadstudio.projectTree",
@@ -1232,12 +1233,12 @@
         {
           "when": "view == kicadstudio.projectTree && kicadstudio.hasProject",
           "command": "kicadstudio.selectActiveProject",
-          "group": "navigation"
+          "group": "2_manage@2"
         },
         {
           "when": "view == kicadstudio.variants",
           "command": "kicadstudio.variant.refresh",
-          "group": "navigation"
+          "group": "2_manage@1"
         },
         {
           "when": "view == kicadstudio.variants",
@@ -1252,7 +1253,7 @@
         {
           "when": "view == kicadstudio.fixQueue",
           "command": "kicadstudio.fixQueue.applyAll",
-          "group": "navigation"
+          "group": "2_manage@1"
         },
         {
           "when": "view == kicadstudio.qualityGate",
@@ -1267,12 +1268,12 @@
         {
           "when": "view == kicadstudio.drcRules && kicadstudio.workspaceTrusted",
           "command": "kicadstudio.drcRule.createDefault",
-          "group": "navigation"
+          "group": "2_manage@1"
         },
         {
           "when": "view == kicadstudio.drcRules && kicadstudio.workspaceTrusted",
           "command": "kicadstudio.drcRule.importTemplate",
-          "group": "navigation"
+          "group": "2_manage@2"
         },
         {
           "when": "view == kicadstudio.library",
@@ -1282,15 +1283,20 @@
         {
           "when": "view == kicadstudio.library",
           "command": "kicadstudio.pcm.filter",
-          "group": "navigation"
+          "group": "2_tools@1"
         },
         {
           "when": "view == kicadstudio.library && kicadstudio.workspaceTrusted",
           "command": "kicadstudio.pcm.updateAll",
-          "group": "navigation"
+          "group": "2_tools@2"
         }
       ],
       "view/item/context": [
+        {
+          "when": "view == kicadstudio.variants && (viewItem == variant || viewItem == variant-default) && kicadstudio.workspaceTrusted && kicadstudio.hasVariants",
+          "command": "kicadstudio.variant.setActive",
+          "group": "inline@1"
+        },
         {
           "when": "view == kicadstudio.qualityGate && viewItem =~ /^qualityGate-/ && kicadstudio.workspaceTrusted",
           "command": "kicadstudio.qualityGate.runThis",

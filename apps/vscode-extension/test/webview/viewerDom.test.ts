@@ -60,6 +60,116 @@ test.describe('KiCad Studio webview DOM', () => {
     );
   });
 
+  test('keeps a prominent keyboard-accessible toolbar disclosure and readable title', async ({
+    page
+  }) => {
+    await page.setViewportSize({ width: 1180, height: 760 });
+    await installVsCodeApiMock(page);
+    await setViewerContent(page, {
+      fileName: 'sample.kicad_pcb',
+      fileType: 'board',
+      base64: readFixtureBase64('sample.kicad_pcb')
+    });
+    const button = page.locator('#viewer-toolbar-toggle');
+    const title = page.locator('header h1');
+    await expect(button).toBeVisible();
+    await expect(button).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#viewer-toolbar')).toBeVisible();
+    expect((await button.boundingBox())?.width).toBeGreaterThanOrEqual(86);
+    expect((await title.boundingBox())?.width).toBeGreaterThan(140);
+
+    await button.focus();
+    await page.keyboard.press('Enter');
+    await expect(button).toHaveAttribute('aria-expanded', 'false');
+    await expect(button).toHaveText('Show tools');
+    await expect(page.locator('#viewer-toolbar')).toBeHidden();
+    await expect(button).toBeFocused();
+
+    await page.keyboard.press('Space');
+    await expect(button).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#viewer-toolbar')).toBeVisible();
+
+    await page.setViewportSize({ width: 650, height: 540 });
+    await expect(button).toBeInViewport();
+    await expect(title).toBeInViewport();
+    expect((await button.boundingBox())?.width).toBeGreaterThanOrEqual(86);
+  });
+
+  test('restores the last chosen toolbar disclosure and closes open popovers', async ({
+    page
+  }) => {
+    await installVsCodeApiMock(page);
+    await setViewerContent(page, {
+      fileName: 'sample.kicad_pcb',
+      fileType: 'board',
+      base64: readFixtureBase64('sample.kicad_pcb')
+    });
+    await page.locator('#export-menu-toggle').click();
+    await expect(page.locator('#export-png-btn')).toBeVisible();
+    await page.locator('#viewer-toolbar-toggle').click();
+    await expect(page.locator('#viewer-toolbar')).toBeHidden();
+    const state = await page.evaluate(() => {
+      const events =
+        (
+          window as Window & {
+            __vscodeMessages?: Array<{
+              type?: string;
+              payload?: { toolbarCollapsed?: boolean };
+            }>;
+          }
+        ).__vscodeMessages ?? [];
+      return events.filter((event) => event.type === 'viewerState').at(-1)
+        ?.payload;
+    });
+    expect(state?.toolbarCollapsed).toBe(true);
+
+    await setViewerContent(page, {
+      fileName: 'sample.kicad_pcb',
+      fileType: 'board',
+      base64: readFixtureBase64('sample.kicad_pcb'),
+      restoreState: {
+        zoom: 1,
+        grid: false,
+        theme: 'kicad',
+        toolbarCollapsed: true
+      }
+    });
+    const toggle = page.locator('#viewer-toolbar-toggle');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('#viewer-toolbar')).toBeHidden();
+    await toggle.click();
+    await expect(page.locator('#viewer-toolbar')).toBeVisible();
+    await expect(page.locator('#export-png-btn')).toBeHidden();
+  });
+
+  test('uses theme-aware layer panel surfaces instead of a fixed dark gradient', async ({
+    page
+  }) => {
+    await installVsCodeApiMock(page);
+    await setViewerContent(page, {
+      fileName: 'sample.kicad_pcb',
+      fileType: 'board',
+      theme: 'light',
+      base64: readFixtureBase64('sample.kicad_pcb'),
+      metadata: {
+        layers: [{ name: 'F.Cu', kind: 'signal', visible: true }]
+      }
+    });
+    await page.locator('#side-panel-toggle').click();
+    const surface = await page
+      .locator('#viewer-side-panel')
+      .evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          backgroundColor: style.backgroundColor,
+          backgroundImage: style.backgroundImage
+        };
+      });
+    expect(surface.backgroundImage).toBe('none');
+    const channel = Number(surface.backgroundColor.match(/\d+/)?.[0] ?? '0');
+    expect(channel).toBeGreaterThan(190);
+  });
+
   test('keeps Fit, Export, and Panel accessible in a narrow editor', async ({
     page
   }) => {

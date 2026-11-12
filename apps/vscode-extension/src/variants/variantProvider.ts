@@ -38,11 +38,11 @@ class VariantTreeItem extends vscode.TreeItem {
     this.iconPath = new vscode.ThemeIcon(
       variant.isDefault ? 'star-full' : 'symbol-namespace'
     );
-    this.command = {
-      command: COMMANDS.setActiveVariant,
-      title: 'Set Active Variant',
-      arguments: [variant]
-    };
+    // Disclosure and activation are separate actions: clicking a variant with
+    // overrides must not change the active assembly configuration.
+    this.tooltip = variant.componentOverrides.length
+      ? 'Expand or collapse to inspect overrides. Use Set Active Variant to activate.'
+      : 'Use Set Active Variant to activate.';
   }
 }
 
