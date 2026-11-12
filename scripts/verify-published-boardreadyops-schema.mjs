@@ -34,9 +34,8 @@ export function validatePublishedBoardReadyOpsFindingsSchema(
 }
 
 async function main() {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const contract = parseYaml(
-    fs.readFileSync(path.join(root, "compatibility.yaml"), "utf8"),
+    fs.readFileSync(new URL("../compatibility.yaml", import.meta.url), "utf8"),
   );
   const expected =
     contract?.supportAxes?.boardReadyOps?.reports?.findingsSchema;
