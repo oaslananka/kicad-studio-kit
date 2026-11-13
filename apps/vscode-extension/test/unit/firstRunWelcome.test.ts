@@ -1,4 +1,4 @@
-import { COMMANDS, EXTENSION_ID } from '../../src/constants';
+import { COMMANDS, CONTEXT_KEYS } from '../../src/constants';
 import { showFirstRunWelcome } from '../../src/commands/firstRunWelcome';
 import { commands, window } from './vscodeMock';
 
@@ -44,17 +44,50 @@ describe('first-run welcome', () => {
     expect(message).toContain('MCP and AI are optional');
   });
 
-  it('opens the real VS Code walkthrough from the secondary option', async () => {
+  it('opens the real VS Code walkthrough without completing a missing project', async () => {
     (window.showInformationMessage as jest.Mock).mockResolvedValueOnce(
       'Guided Tour'
     );
     await showFirstRunWelcome({ hasProject: false, workspaceTrusted: false });
-    expect(commands.executeCommand).toHaveBeenCalledWith(
+    expect(commands.executeCommand).toHaveBeenNthCalledWith(
+      1,
       'workbench.action.openWalkthrough',
-      `${EXTENSION_ID}#kicadstudio.gettingStarted`
+      expect.stringContaining('#kicadstudio.gettingStarted')
+    );
+    expect(commands.executeCommand).toHaveBeenNthCalledWith(
+      2,
+      'setContext',
+      CONTEXT_KEYS.walkthroughProjectReady,
+      false
     );
   });
 
+  it.each([true, false])(
+    'completes the first-run project step for an existing project, trust=%s',
+    async (workspaceTrusted) => {
+      (window.showInformationMessage as jest.Mock).mockResolvedValueOnce(
+        'Guided Tour'
+      );
+      await showFirstRunWelcome({ hasProject: true, workspaceTrusted });
+
+      expect(commands.executeCommand).toHaveBeenNthCalledWith(
+        1,
+        'workbench.action.openWalkthrough',
+        expect.stringContaining('#kicadstudio.gettingStarted')
+      );
+      expect(commands.executeCommand).toHaveBeenNthCalledWith(
+        2,
+        'setContext',
+        CONTEXT_KEYS.walkthroughProjectReady,
+        true
+      );
+      expect(commands.executeCommand).not.toHaveBeenCalledWith(
+        'setContext',
+        CONTEXT_KEYS.hasProject,
+        false
+      );
+    }
+  );
   it.each(['Maybe Later', undefined])(
     'does nothing when dismissed: %s',
     async (choice) => {

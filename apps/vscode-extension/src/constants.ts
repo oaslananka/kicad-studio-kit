@@ -189,6 +189,7 @@ export const COMMANDS = {
 } as const;
 export const CONTEXT_KEYS = {
   hasProject: 'kicadstudio.hasProject',
+  walkthroughProjectReady: 'kicadstudio.walkthroughProjectReady',
   schematicOpen: 'kicadstudio.schematicOpen',
   pcbOpen: 'kicadstudio.pcbOpen',
   aiEnabled: 'kicadstudio.aiEnabled',

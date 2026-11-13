@@ -119,17 +119,18 @@ test.describe('KiCad Studio marketplace captures', () => {
         'KiCad: Run Design Rule Check (DRC)',
         true
       );
-      // The old global body-text check could remain "Not run" because a
-      // hidden/background summary was stale even after the real CLI ran.
-      // The Problems entries establish the user-visible DRC result instead.
+      // Open the native Problems panel explicitly. Some Windows VS Code hosts
+      // do not auto-reveal it while the DRC command is still finishing.
+      // The actual kicad-cli findings, not panel visibility, prove the result.
+      await session.page.keyboard.press('Control+Shift+M');
       const problemsPanel = session.page.locator('.markers-panel');
-      await expect(problemsPanel).toBeVisible({ timeout: 120000 });
+      await expect(problemsPanel).toBeVisible({ timeout: 10000 });
       await expect(
         problemsPanel
           .locator('.monaco-list-row')
           .filter({ hasText: 'kicad-cli:drc' })
           .first()
-      ).toBeVisible({ timeout: 60000 });
+      ).toBeVisible({ timeout: 180000 });
       await capture(session, 'drc-results.png');
 
       await session.page.keyboard.press('Control+Shift+M');
