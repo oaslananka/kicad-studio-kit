@@ -30,48 +30,48 @@ class KiCadTreeItem extends vscode.TreeItem {
         node.source === 'cloud'
           ? 'Sign in or choose granted projects'
           : 'Open a folder on this computer';
-      this.command = {
-        command:
-          node.source === 'cloud'
-            ? COMMANDS.cloudProjects
-            : 'workbench.action.files.openFolder',
-        title: node.label
-      };
-      return;
     }
-
-    if (
-      node.project &&
-      node.uri &&
-      hasExtension(node.uri.fsPath, '.kicad_pro')
-    ) {
-      this.command = {
-        command: COMMANDS.selectActiveProject,
-        title: `Set Active Project: ${node.project.name}`,
-        arguments: [node]
-      };
-    } else if (
-      node.uri &&
-      (node.type === 'schematic' ||
-        node.type === 'pcb' ||
-        node.type === 'drc-rule' ||
-        node.type === 'file' ||
-        node.type === 'jobset')
-    ) {
-      this.command = {
-        command:
-          node.type === 'schematic'
-            ? COMMANDS.openSchematic
-            : node.type === 'pcb'
-              ? COMMANDS.openPCB
-              : node.type === 'jobset'
-                ? COMMANDS.runJobset
-                : 'vscode.open',
-        title: node.label,
-        arguments: [node.uri]
-      };
+    const command = commandForProjectTreeNode(node);
+    if (command) {
+      this.command = command;
     }
   }
+}
+
+function commandForProjectTreeNode(
+  node: ProjectTreeNode
+): vscode.Command | undefined {
+  if (node.type === 'project-source') {
+    return {
+      command:
+        node.source === 'cloud'
+          ? COMMANDS.cloudProjects
+          : 'workbench.action.files.openFolder',
+      title: node.label
+    };
+  }
+  if (node.project && node.uri && hasExtension(node.uri.fsPath, '.kicad_pro')) {
+    return {
+      command: COMMANDS.selectActiveProject,
+      title: `Set Active Project: ${node.project.name}`,
+      arguments: [node]
+    };
+  }
+  if (
+    !node.uri ||
+    !['schematic', 'pcb', 'drc-rule', 'file', 'jobset'].includes(node.type)
+  ) {
+    return undefined;
+  }
+  const command =
+    node.type === 'schematic'
+      ? COMMANDS.openSchematic
+      : node.type === 'pcb'
+        ? COMMANDS.openPCB
+        : node.type === 'jobset'
+          ? COMMANDS.runJobset
+          : 'vscode.open';
+  return { command, title: node.label, arguments: [node.uri] };
 }
 
 export class KiCadProjectTreeProvider implements vscode.TreeDataProvider<ProjectTreeNode> {

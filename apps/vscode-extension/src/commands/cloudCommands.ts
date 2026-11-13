@@ -51,6 +51,29 @@ function cloudProjectItem(
   };
 }
 
+async function handleCloudProjectDiscoveryError(error: unknown): Promise<void> {
+  let message = 'Cloud is unavailable.';
+  if (error instanceof CloudUnauthorizedError) {
+    message = 'Cloud session expired or access was revoked. Sign in again.';
+  } else if (error instanceof Error) {
+    message = error.message;
+  }
+  const actionLabel =
+    error instanceof CloudPermissionError
+      ? 'Manage Cloud Access'
+      : 'Sign in to Cloud';
+  const action = await vscode.window.showWarningMessage(
+    message,
+    actionLabel,
+    'Cancel'
+  );
+  if (action === 'Manage Cloud Access') {
+    await vscode.env.openExternal(cloudManageAccessUri());
+  } else if (action === 'Sign in to Cloud') {
+    await vscode.commands.executeCommand(COMMANDS.cloudSignIn);
+  }
+}
+
 export function registerCloudCommands(
   extensionContext: vscode.ExtensionContext
 ): vscode.Disposable[] {
@@ -62,26 +85,7 @@ export function registerCloudCommands(
     try {
       inventory = await cloud.listAuthorizedProjects();
     } catch (error) {
-      let message = 'Cloud is unavailable.';
-      if (error instanceof CloudUnauthorizedError) {
-        message = 'Cloud session expired or access was revoked. Sign in again.';
-      } else if (error instanceof Error) {
-        message = error.message;
-      }
-      const actionLabel =
-        error instanceof CloudPermissionError
-          ? 'Manage Cloud Access'
-          : 'Sign in to Cloud';
-      const action = await vscode.window.showWarningMessage(
-        message,
-        actionLabel,
-        'Cancel'
-      );
-      if (action === 'Manage Cloud Access') {
-        await vscode.env.openExternal(cloudManageAccessUri());
-      } else if (action === 'Sign in to Cloud') {
-        await vscode.commands.executeCommand(COMMANDS.cloudSignIn);
-      }
+      await handleCloudProjectDiscoveryError(error);
       return;
     }
 
