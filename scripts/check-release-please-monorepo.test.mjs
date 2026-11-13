@@ -94,6 +94,28 @@ test("#797 unchanged release PR reuses its identity and rejects stale heads", ()
   assert.match(resolve.run, /active=false/u);
   assert.match(resolve.run, /active=true/u);
   assert.match(resolve.run, /RELEASE_PR_JSON/u);
+  assert.match(
+    resolve.env.RELEASE_PRS_CREATED,
+    /steps\.release\.outputs\.prs_created/u,
+  );
+  // An unchanged release proposal remains open on root-only pushes.
+  // No upstream PR output must skip enrichment, not disable the ancestry gate.
+  assert.match(
+    resolve.run,
+    /Expected at most one open Release Please generator PR/u,
+  );
+  const noopGuard = resolve.run.indexOf('if [[ -z "$RELEASE_PR_JSON" ]]');
+  const openPrHeadRead = resolve.run.indexOf('RELEASE_PR_HEAD="$(gh pr view');
+  assert.ok(noopGuard >= 0 && noopGuard < openPrHeadRead);
+  assert.match(
+    resolve.run,
+    /if \[\[ "\$RELEASE_PRS_CREATED" == "true" \]\]; then[\s\S]*?exit 1/u,
+  );
+  assert.match(
+    resolve.run,
+    /Release Please did not update a proposal; existing PR preserved[\s\S]*?active=false[\s\S]*?exit 0/u,
+  );
+  assert.match(resolve.run, /if \[\[ -n "\$RELEASE_PR_JSON" \]\]; then/u);
   assert.match(verify.run, /refusing stale generated surfaces/u);
   assert.match(append.run, /gh pr view "\$RELEASE_PR_NUMBER"/u);
   assert.match(append.run, /--onto-head/u);
