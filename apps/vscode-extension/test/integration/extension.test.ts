@@ -205,23 +205,23 @@ suite('Extension Integration', () => {
       ],
       [
         'kicadstudio.exportPDF',
-        ['kicadstudio.workspaceTrusted', 'kicadstudio.schematicOpen']
+        ['isWorkspaceTrusted', 'workspaceFolderCount > 0']
       ],
       [
         'kicadstudio.exportBOMCSV',
-        ['kicadstudio.workspaceTrusted', 'kicadstudio.schematicOpen']
+        ['isWorkspaceTrusted', 'workspaceFolderCount > 0']
       ],
       [
         'kicadstudio.exportBOMXLSX',
-        ['kicadstudio.workspaceTrusted', 'kicadstudio.schematicOpen']
+        ['isWorkspaceTrusted', 'workspaceFolderCount > 0']
       ],
       [
         'kicadstudio.exportNetlist',
-        ['kicadstudio.workspaceTrusted', 'kicadstudio.schematicOpen']
+        ['isWorkspaceTrusted', 'workspaceFolderCount > 0']
       ],
       [
         'kicadstudio.exportInteractiveBOM',
-        ['kicadstudio.workspaceTrusted', 'kicadstudio.schematicOpen']
+        ['isWorkspaceTrusted', 'workspaceFolderCount > 0']
       ],
       ['kicadstudio.runDRC', ['workspaceFolderCount > 0']],
       ['kicadstudio.runERC', ['workspaceFolderCount > 0']],
