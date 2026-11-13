@@ -364,6 +364,18 @@ describe('task-oriented command hub', () => {
       ])
     );
   });
+  it('does not expose fabrication navigation in an untrusted workspace', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() =>
+      taskContext({ workspaceTrusted: false, pcbOpen: false })
+    );
+
+    await handler(COMMANDS.openReleaseTasks)();
+
+    expect(window.showQuickPick).not.toHaveBeenCalled();
+    expect(workspace.findFiles).not.toHaveBeenCalled();
+    expect(commands.executeCommand).not.toHaveBeenCalled();
+  });
   it('does nothing when a Quick Pick is cancelled', async () => {
     (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
 
