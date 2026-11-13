@@ -34,7 +34,8 @@ export class KiCadCliRunner {
 
   async run<T>(options: CliRunOptions): Promise<CliResult<T>> {
     this.validateRunOptions(options);
-    const detected = await this.detector.detect(true);
+    // Do not keep progress open while waiting for an installation-help choice.
+    const detected = await this.detector.detect(false);
     if (!detected) {
       throw new KiCadCliNotFoundError();
     }
