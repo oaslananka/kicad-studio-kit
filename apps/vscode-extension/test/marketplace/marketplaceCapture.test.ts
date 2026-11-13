@@ -35,6 +35,8 @@ const DEMO_WORKSPACE = path.resolve(
 
 test.describe('KiCad Studio marketplace captures', () => {
   test('captures real extension host product surfaces', async () => {
+    // First-run native KiCad DRC may need to initialize footprint libraries.
+    test.setTimeout(420000);
     // Prepare the real multi-project fixture before launching VS Code. The
     // Quick Open index need not notice files added after startup on Windows.
     const captureSource = fs.mkdtempSync(
@@ -78,10 +80,21 @@ test.describe('KiCad Studio marketplace captures', () => {
 
     try {
       await session.page.setViewportSize(VIEWPORT);
+
       await waitForCommand(session.page, 'KiCad Studio: Open Task Hub');
       await dismissWelcomeNotification(session.page);
       await closeSecondarySidebar(session.page);
 
+      // Open a real KiCad file through Explorer before capturing the project
+      // tree: VS Code's Quick Open can return zero results for these extensions
+      // despite the files already being visible in the native Explorer.
+      await openWorkspaceFile(session.page, 'KICAD_TEST.kicad_sch');
+      await session.page.keyboard.press('Control+W');
+      // The Explorer file list becomes visible before the extension finishes
+      // activating and discovers the project. Capture only a ready project.
+      await expect(
+        session.page.getByRole('button', { name: /Active KiCad project:/u })
+      ).toBeVisible({ timeout: 90000 });
       await openKiCadStudioSidebar(session.page);
       await expect(session.page.locator('body')).toContainText('KiCad Project');
       await capture(session, 'project-tree.png');
@@ -110,7 +123,7 @@ test.describe('KiCad Studio marketplace captures', () => {
       // hidden/background summary was stale even after the real CLI ran.
       // The Problems entries establish the user-visible DRC result instead.
       const problemsPanel = session.page.locator('.markers-panel');
-      await expect(problemsPanel).toBeVisible({ timeout: 60000 });
+      await expect(problemsPanel).toBeVisible({ timeout: 120000 });
       await expect(
         problemsPanel
           .locator('.monaco-list-row')
@@ -313,14 +326,17 @@ async function openKiCadStudioSidebar(page: Page): Promise<void> {
 }
 
 async function openWorkspaceFile(page: Page, fileName: string): Promise<void> {
-  const quickInput = page.locator('.quick-input-widget');
-  await page.keyboard.press('Control+P');
-  await expect(quickInput).toBeVisible({ timeout: 5000 });
-  const input = quickInput.locator('input');
-  await input.fill(fileName);
-  await expect(quickInput).toContainText(fileName, { timeout: 5000 });
-  await page.keyboard.press('Enter');
-  await expect(quickInput).toBeHidden({ timeout: 5000 });
+  // Open an actual workspace file using the native Explorer UI instead of
+  // depending on the Quick Open index (which may omit KiCad file extensions).
+  await page.keyboard.press('Control+Shift+E');
+  const entry = page
+    .locator('.explorer-folders-view .monaco-list-row')
+    .filter({
+      hasText: fileName
+    })
+    .first();
+  await expect(entry).toBeVisible({ timeout: 30000 });
+  await entry.dblclick();
 }
 
 async function showPcbLayerPanel(page: Page): Promise<void> {

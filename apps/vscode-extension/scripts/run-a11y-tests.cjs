@@ -70,7 +70,7 @@ function runAccessibilityTests() {
       '--detectOpenHandles',
       '--coverage=false',
       '--testMatch',
-      '<rootDir>/test/a11y/**/*.test.ts'
+      '**/test/a11y/**/*.test.ts'
     ],
     {
       cwd: extensionRoot,

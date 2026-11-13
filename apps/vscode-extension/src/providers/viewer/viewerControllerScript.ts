@@ -149,6 +149,7 @@ export function createViewerControllerScript(): string {
     let fallbackResizeHandler = null;
     let viewerGeneration = 0;
     let activeRefreshFrame = null;
+    let pendingSvgRefresh = null;
     let cancelPendingPreparation = null;
     let netCatalog = [];
     let netCatalogRetries = 0;
@@ -441,6 +442,40 @@ export function createViewerControllerScript(): string {
     void initViewer();
     async function initViewer(isSourceRefresh = false) {
       const generation = ++viewerGeneration;
+      // At most one live SVG refresh listener and timeout may exist.
+      pendingSvgRefresh?.abort();
+      pendingSvgRefresh = null;
+      // KiCad CLI SVG may be the only functioning renderer for a schematic.
+      // Preserve its live surface and camera until the new SVG is validated.
+      if (isSourceRefresh && payload.fileType === 'schematic' &&
+          fallbackSvgWrapper?.isConnected &&
+          !viewerMount.classList.contains('is-hidden') &&
+          document.visibilityState !== 'hidden' &&
+          !payload.disabledReason && payload.base64 &&
+          payload.base64.length <= 2 * 1024 * 1024) {
+        const previousViewport = captureFallbackViewport();
+        const controller = new AbortController();
+        pendingSvgRefresh = controller;
+        setStatus('Updating schematic preview…');
+        try {
+          const svg = await requestSvgFallback('Schematic source updated', controller.signal);
+          if (generation !== viewerGeneration) return;
+          if (!svg) {
+            setStatus('Update failed — showing previous schematic preview (stale).');
+            return;
+          }
+          showSvgFallback(svg, undefined, previousViewport);
+          setEngineState('cli-svg-fallback', 'Native KiCad schematic plot');
+          setStatus('CLI SVG fallback loaded: ' + payload.fileName);
+        } catch {
+          if (generation === viewerGeneration) {
+            setStatus('Update failed — showing previous schematic preview (stale).');
+          }
+        } finally {
+          if (pendingSvgRefresh === controller) pendingSvgRefresh = null;
+        }
+        return;
+      }
       const previousViewer = viewerMount.querySelector('kicanvas-embed');
       const visiblePrevious = Boolean(
         previousViewer && !viewerMount.classList.contains('is-hidden')

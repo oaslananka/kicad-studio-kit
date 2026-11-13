@@ -918,6 +918,56 @@ describe.each([
     provider.dispose();
   });
 
+  it('ignores saved files unrelated to an open viewer (#964)', async () => {
+    const provider = new ContextProvider(
+      createExtensionContextMock() as unknown as vscode.ExtensionContext
+    );
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    const onSave = (workspace.onDidSaveTextDocument as jest.Mock).mock.calls.at(
+      -1
+    )?.[0];
+    expect(onSave).toBeDefined();
+
+    panel.webview.postMessage.mockClear();
+    onSave({
+      uri: vscode.Uri.file(tempFile + '.txt'),
+      fileName: tempFile + '.txt'
+    });
+    await jest.advanceTimersByTimeAsync(800);
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+    expect(workspace.fs.readFile).toHaveBeenCalledTimes(1);
+    provider.dispose();
+  });
+
+  it('keeps the existing viewer when saved-file auto-refresh is disabled (#964)', async () => {
+    __setConfiguration({ 'kicadstudio.viewer.autoRefresh': false });
+    const provider = new ContextProvider(
+      createExtensionContextMock() as unknown as vscode.ExtensionContext
+    );
+    const panel = createPanel();
+    const uri = vscode.Uri.file(tempFile);
+    await provider.resolveCustomEditor(
+      { uri } as vscode.CustomDocument,
+      panel as unknown as vscode.WebviewPanel
+    );
+    const onSave = (workspace.onDidSaveTextDocument as jest.Mock).mock.calls.at(
+      -1
+    )?.[0];
+    expect(onSave).toBeDefined();
+
+    panel.webview.postMessage.mockClear();
+    onSave({ uri, fileName: tempFile });
+    await jest.advanceTimersByTimeAsync(800);
+    expect(panel.webview.postMessage).not.toHaveBeenCalled();
+    expect(workspace.fs.readFile).toHaveBeenCalledTimes(1);
+    provider.dispose();
+  });
+
   it('retains the last good image during incomplete writes and recovers on atomic replacement (#849)', async () => {
     let changed: ((uri: vscode.Uri) => void) | undefined;
     let created: ((uri: vscode.Uri) => void) | undefined;

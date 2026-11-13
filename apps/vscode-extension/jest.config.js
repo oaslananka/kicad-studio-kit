@@ -53,8 +53,5 @@ module.exports = {
     '!src/library/librarySearchProvider.ts',
     '!src/tasks/**/*.ts'
   ],
-  testMatch: [
-    '<rootDir>/test/unit/**/*.test.ts',
-    '<rootDir>/test/marketplace-assets.test.ts'
-  ]
+  testMatch: ['**/test/unit/**/*.test.ts', '**/test/marketplace-assets.test.ts']
 };
