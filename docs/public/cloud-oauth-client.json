@@ -1,0 +1,14 @@
+{
+  "client_id": "https://oaslananka.github.io/kicad-studio-kit/cloud-oauth-client.json",
+  "client_name": "KiCad Studio Kit for VS Code",
+  "redirect_uris": [
+    "vscode://oaslananka.kicadstudiokit/cloud-auth",
+    "vscode-insiders://oaslananka.kicadstudiokit/cloud-auth"
+  ],
+  "application_type": "native",
+  "token_endpoint_auth_method": "none",
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "scope": "openid profile offline_access projects:read",
+  "client_uri": "https://oaslananka.github.io/kicad-studio-kit/"
+}

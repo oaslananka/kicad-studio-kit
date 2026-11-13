@@ -468,6 +468,18 @@
     "kicadstudio.boardReadyOps.reviewEvidence": {
       "task": "review",
       "surface": "contextual"
+    },
+    "kicadstudio.cloud.signIn": {
+      "task": "automate",
+      "surface": "hub"
+    },
+    "kicadstudio.cloud.projects": {
+      "task": "automate",
+      "surface": "hub"
+    },
+    "kicadstudio.cloud.signOut": {
+      "task": "automate",
+      "surface": "hub"
     }
   }
 }

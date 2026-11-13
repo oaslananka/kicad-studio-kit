@@ -14,6 +14,7 @@ release-quality checks to MCP clients. The source lives exclusively at KiCad MCP
 | Deploy with Docker, systemd, tunnels, or reverse proxies | [Deployment](deployment.md)                                    |
 | Validate server-info and capabilities                    | [API reference](api-reference.md)                              |
 | Connect to the VS Code extension                         | [KiCad Studio integration](../integration/kicad-studio-mcp.md) |
+| Optionally discover your Cloud projects in Studio        | [Cloud Connected Studio](cloud-connected-studio.md)            |
 
 ## Source Files
 

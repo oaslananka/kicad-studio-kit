@@ -3,7 +3,7 @@
 Machine-maintained from `apps/vscode-extension/package.json` and `package.nls.json`.
 Refresh with `corepack pnpm run docs:generate`.
 
-Total contributed commands: 117.
+Total contributed commands: 120.
 
 | Command ID | Title | Category |
 | --- | --- | --- |
@@ -124,3 +124,6 @@ Total contributed commands: 117.
 | `kicadstudio.tasks.release` | KiCad Studio: Fabrication Release | KiCad Studio |
 | `kicadstudio.tasks.automate` | KiCad Studio: Automate Project | KiCad Studio |
 | `kicadstudio.tasks.maintain` | KiCad Studio: Maintain Workspace | KiCad Studio |
+| `kicadstudio.cloud.signIn` | KiCad Studio: Connect to Cloud | KiCad Studio Cloud |
+| `kicadstudio.cloud.projects` | KiCad Studio: Cloud Projects | KiCad Studio Cloud |
+| `kicadstudio.cloud.signOut` | KiCad Studio: Sign Out of Cloud | KiCad Studio Cloud |

@@ -215,8 +215,25 @@ export const TASK_GROUPS: readonly TaskGroup[] = [
     label: 'Automate',
     description: 'Configure MCP and AI-assisted project workflows',
     placeholder: 'Automate — choose an MCP or AI workflow',
-    availability: 'project',
+    availability: 'always',
     actions: [
+      {
+        label: 'Connect to Cloud',
+        description:
+          'Optionally sign in and discover authorized remote projects',
+        command: COMMANDS.cloudSignIn
+      },
+      {
+        label: 'Cloud Projects',
+        description:
+          'Choose a remote project without changing your local project',
+        command: COMMANDS.cloudProjects
+      },
+      {
+        label: 'Sign out of Cloud',
+        description: 'Clear this Studio Cloud session only',
+        command: COMMANDS.cloudSignOut
+      },
       {
         label: 'Set up MCP integration',
         description: 'Generate the workspace MCP configuration',
