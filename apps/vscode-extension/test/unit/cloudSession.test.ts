@@ -152,4 +152,124 @@ describe('Cloud session lifecycle (VS Code SecretStorage only)', () => {
     );
     expect(contract.listCloudInventory).not.toHaveBeenCalled();
   });
+  it('drops corrupt persisted credentials rather than displaying a signed-in account', async () => {
+    await context.secrets.store(
+      'kicadstudio.cloud.oauth.session.v1',
+      '<invalid>'
+    );
+    expect(await controller.isSignedIn()).toBe(false);
+    expect(context.secrets.delete).toHaveBeenCalledWith(
+      'kicadstudio.cloud.oauth.session.v1'
+    );
+  });
+
+  it('refreshes an expiring session and passes the installed client version to MCP', async () => {
+    await context.secrets.store(
+      'kicadstudio.cloud.oauth.session.v1',
+      JSON.stringify({ ...tokens, expiresAt: 1 })
+    );
+    const updated = {
+      ...tokens,
+      accessToken: 'ROTATED',
+      expiresAt: Date.now() + 600000
+    };
+    (contract.refreshCloudToken as jest.Mock).mockResolvedValueOnce(updated);
+    (contract.listCloudInventory as jest.Mock).mockResolvedValueOnce({
+      devices: [],
+      projects: []
+    });
+    await controller.listAuthorizedProjects();
+    expect(contract.discoverCloudOAuth).toHaveBeenCalledTimes(1);
+    expect(contract.refreshCloudToken).toHaveBeenCalledWith(discovery, {
+      ...tokens,
+      expiresAt: 1
+    });
+    expect(context.secrets.store).toHaveBeenCalledWith(
+      'kicadstudio.cloud.oauth.session.v1',
+      JSON.stringify(updated)
+    );
+    expect(contract.listCloudInventory).toHaveBeenCalledWith(
+      updated,
+      expect.any(Function),
+      '2.8.1'
+    );
+  });
+
+  it('retries a single unauthorized Cloud inventory call after refresh', async () => {
+    await context.secrets.store(
+      'kicadstudio.cloud.oauth.session.v1',
+      JSON.stringify(tokens)
+    );
+    const updated = { ...tokens, accessToken: 'ROTATED' };
+    (contract.refreshCloudToken as jest.Mock).mockResolvedValueOnce(updated);
+    (contract.listCloudInventory as jest.Mock)
+      .mockRejectedValueOnce(new contract.CloudUnauthorizedError())
+      .mockResolvedValueOnce({ devices: [], projects: [] });
+    expect(await controller.listAuthorizedProjects()).toEqual({
+      devices: [],
+      projects: []
+    });
+    expect(contract.listCloudInventory).toHaveBeenCalledTimes(2);
+    expect(contract.refreshCloudToken).toHaveBeenCalledTimes(1);
+    expect(context.secrets.delete).not.toHaveBeenCalled();
+  });
+
+  it('clears revoked credentials if the refreshed Cloud request is still unauthorized', async () => {
+    await context.secrets.store(
+      'kicadstudio.cloud.oauth.session.v1',
+      JSON.stringify(tokens)
+    );
+    (contract.refreshCloudToken as jest.Mock).mockResolvedValueOnce(tokens);
+    (contract.listCloudInventory as jest.Mock)
+      .mockRejectedValueOnce(new contract.CloudUnauthorizedError())
+      .mockRejectedValueOnce(new contract.CloudUnauthorizedError());
+    await expect(controller.listAuthorizedProjects()).rejects.toBeInstanceOf(
+      contract.CloudUnauthorizedError
+    );
+    expect(contract.listCloudInventory).toHaveBeenCalledTimes(2);
+    expect(context.secrets.delete).toHaveBeenCalledWith(
+      'kicadstudio.cloud.oauth.session.v1'
+    );
+  });
+
+  it('ignores an unrelated VS Code URI but fails on an OAuth issuer mismatch', async () => {
+    const login = controller.signIn();
+    for (let i = 0; i < 6; i += 1) await Promise.resolve();
+    handler.handleUri({
+      scheme: 'vscode',
+      authority: 'unrelated.extension',
+      path: '/cloud-auth',
+      query: 'state=random-state&code=attacker'
+    } as vscode.Uri);
+    expect(contract.redeemCloudCode).not.toHaveBeenCalled();
+    handler.handleUri({
+      scheme: 'vscode',
+      authority: 'oaslananka.kicadstudiokit',
+      path: '/cloud-auth',
+      query: 'state=random-state&iss=https%3A%2F%2Fevil.invalid&code=attacker'
+    } as vscode.Uri);
+    await expect(login).rejects.toThrow('unexpected authorization issuer');
+    expect(context.secrets.store).not.toHaveBeenCalled();
+  });
+
+  it('does not keep a pending session when VS Code cannot launch the browser', async () => {
+    (env.openExternal as jest.Mock).mockResolvedValueOnce(false);
+    await expect(controller.signIn()).rejects.toThrow(
+      'could not open the Cloud sign-in browser'
+    );
+    expect(context.secrets.store).not.toHaveBeenCalled();
+  });
+
+  it('stops an explicit OAuth denial and leaves no login credentials', async () => {
+    const login = controller.signIn();
+    for (let i = 0; i < 6; i += 1) await Promise.resolve();
+    handler.handleUri({
+      scheme: 'vscode',
+      authority: 'oaslananka.kicadstudiokit',
+      path: '/cloud-auth',
+      query: 'state=random-state&error=access_denied'
+    } as vscode.Uri);
+    await expect(login).rejects.toThrow('cancelled or denied');
+    expect(context.secrets.store).not.toHaveBeenCalled();
+  });
 });
