@@ -57,6 +57,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.doppler_release.outputs.RELEASE_PLEASE_TOKEN }}
           RELEASE_PR_JSON: ${{ steps.release.outputs.pr }}
+          RELEASE_PRS_CREATED: ${{ steps.release.outputs.prs_created }}
         shell: bash
         run: |
           set -euo pipefail
@@ -74,13 +75,20 @@ jobs:
             echo "Expected at most one open Release Please generator PR" >&2
             exit 1
           fi
-          if [[ "${#generator_prs[@]}" -eq 0 ]]; then
-            if [[ -n "$RELEASE_PR_JSON" ]]; then
-              echo "Release Please reported a PR but the expected generator branch is absent" >&2
+          # Existing proposals remain open even for unrelated root-only pushes.
+          # If upstream made no change, do not enrich an old proposal head.
+          if [[ -z "$RELEASE_PR_JSON" ]]; then
+            if [[ "$RELEASE_PRS_CREATED" == "true" ]]; then
+              echo "Release Please reported changed PRs without the expected PR payload" >&2
               exit 1
             fi
+            echo "Release Please did not update a proposal; existing PR preserved"
             echo "active=false" >> "$GITHUB_OUTPUT"
             exit 0
+          fi
+          if [[ "${#generator_prs[@]}" -eq 0 ]]; then
+            echo "Release Please reported a PR but the expected generator branch is absent" >&2
+            exit 1
           fi
           RELEASE_PR_NUMBER="${generator_prs[0]}"
           RELEASE_PR_HEAD="$(gh pr view "$RELEASE_PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
