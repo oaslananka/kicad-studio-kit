@@ -6,24 +6,24 @@ import {
 import { CloudUnauthorizedError } from '../mcp/cloudOAuthContract';
 import { COMMANDS } from '../constants';
 
+function describeProjectAvailability(
+  available: boolean,
+  reason?: string
+): string {
+  if (available) {
+    return 'Cloud read operations may be available with owner approval';
+  }
+  if (reason === 'cloud_read_not_enabled') {
+    return 'Cloud read access is disabled for this project';
+  }
+  return 'No live remote design operation is available';
+}
+
 export function registerCloudCommands(
   extensionContext: vscode.ExtensionContext
 ): vscode.Disposable[] {
   const cloud = new CloudSessionController(extensionContext);
   extensionContext.subscriptions.push(cloud);
-
-  function describeProjectAvailability(
-    available: boolean,
-    reason?: string
-  ): string {
-    if (available) {
-      return 'Cloud read operations may be available with owner approval';
-    }
-    if (reason === 'cloud_read_not_enabled') {
-      return 'Cloud read access is disabled for this project';
-    }
-    return 'No live remote design operation is available';
-  }
 
   async function showProjects(): Promise<void> {
     let inventory: Awaited<ReturnType<typeof cloud.listAuthorizedProjects>>;
