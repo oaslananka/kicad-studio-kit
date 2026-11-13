@@ -209,7 +209,38 @@ test('focuses the authentic original copper plot on its selected source region',
     name: 'Inspect original layer'
   });
   await expect(originalAgain).toBeVisible();
+  const previousRequestId = await page.evaluate(() => {
+    const messages =
+      (
+        window as Window & {
+          __vscodeMessages?: Array<{
+            type?: string;
+            payload?: { requestId?: string };
+          }>;
+        }
+      ).__vscodeMessages ?? [];
+    return messages.findLast((m) => m.type === 'requestNativeInnerLayer')
+      ?.payload?.requestId;
+  });
   await originalAgain.click();
+  // The previous request is still present in the mock host message history.
+  // Wait for this click's new request before returning its SVG; otherwise a
+  // slow macOS renderer can receive a stale response that it must reject.
+  await page.waitForFunction((previousId) => {
+    const messages =
+      (
+        window as Window & {
+          __vscodeMessages?: Array<{
+            type?: string;
+            payload?: { requestId?: string };
+          }>;
+        }
+      ).__vscodeMessages ?? [];
+    const latest = messages.findLast(
+      (m) => m.type === 'requestNativeInnerLayer'
+    )?.payload?.requestId;
+    return Boolean(latest && latest !== previousId);
+  }, previousRequestId);
   await page.evaluate(() => {
     const messages =
       (
