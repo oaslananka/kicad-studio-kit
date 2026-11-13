@@ -11,6 +11,7 @@ import {
   maskApiKey,
   type AiSecretProvider
 } from '../utils/secrets';
+import { CLOUD_SESSION_SLOT, CLOUD_SELECTION_KEY } from '../mcp/cloudSession';
 import type { CommandServices } from './types';
 
 /**
@@ -69,6 +70,8 @@ export function registerSecretCommands(
       await services.aiProviders.clearAllApiKeys();
       await services.context.secrets.delete(AI_SECRET_KEY_LEGACY);
       await services.context.secrets.delete(OCTOPART_SECRET_KEY);
+      await services.context.secrets.delete(CLOUD_SESSION_SLOT);
+      await services.context.globalState.update(CLOUD_SELECTION_KEY, undefined);
       void vscode.window.showInformationMessage(
         'Stored KiCad Studio secrets cleared.'
       );
@@ -85,9 +88,11 @@ export function registerSecretCommands(
       );
       const octopartSecret =
         await services.context.secrets.get(OCTOPART_SECRET_KEY);
+      const cloudToken = await services.context.secrets.get(CLOUD_SESSION_SLOT);
       const configured = [
         ...aiSecrets,
-        octopartSecret ? 'Octopart/Nexar key' : undefined
+        octopartSecret ? 'Octopart/Nexar key' : undefined,
+        cloudToken ? 'Cloud account session' : undefined
       ].filter(Boolean);
       void vscode.window.showInformationMessage(
         configured.length

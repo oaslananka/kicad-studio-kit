@@ -4,6 +4,7 @@ import { registerExportPickerCommands } from './exportPickerCommands';
 import { registerCheckCommands } from './checkCommands';
 import { registerAiCommands } from './aiCommands';
 import { registerMcpCommands } from './mcpCommands';
+import { registerCloudCommands } from './cloudCommands';
 import { registerMcpLogCommands } from './mcpLogCommands';
 import { registerQualityGateCommands } from './qualityGateCommands';
 import { registerSecretCommands } from './secretCommands';
@@ -33,6 +34,7 @@ export function registerAllCommands(
     ...registerCheckCommands(services),
     ...registerAiCommands(extensionContext, services),
     ...registerMcpCommands(extensionContext, services),
+    ...registerCloudCommands(extensionContext),
     ...registerMcpLogCommands(services),
     ...registerQualityGateCommands(services),
     ...registerSecretCommands(services),

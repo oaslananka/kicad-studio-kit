@@ -126,6 +126,9 @@ describe('task-oriented command hub', () => {
           taskCommand: 'workbench.action.files.openFolder'
         }),
         expect.objectContaining({
+          taskCommand: COMMANDS.openAutomateTasks
+        }),
+        expect.objectContaining({
           taskCommand: COMMANDS.openMaintainTasks
         })
       ],
@@ -133,6 +136,31 @@ describe('task-oriented command hub', () => {
         placeHolder: 'Open a KiCad project to start, or configure the workspace'
       })
     );
+  });
+
+  it('offers optional Cloud sign-in without a local KiCad project', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() =>
+      taskContext({
+        hasProject: false,
+        mcpAvailable: false,
+        mcpConnected: false
+      })
+    );
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce({
+      command: COMMANDS.cloudSignIn
+    });
+    await handler(COMMANDS.openAutomateTasks)();
+    expect(window.showQuickPick).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: 'Connect to Cloud',
+          command: COMMANDS.cloudSignIn
+        })
+      ]),
+      expect.any(Object)
+    );
+    expect(commands.executeCommand).toHaveBeenCalledWith(COMMANDS.cloudSignIn);
   });
 
   it('opens the folder picker from the first-run task hub without requiring MCP', async () => {

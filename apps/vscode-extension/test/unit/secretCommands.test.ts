@@ -1,4 +1,8 @@
 import { COMMANDS, OCTOPART_SECRET_KEY, SETTINGS } from '../../src/constants';
+import {
+  CLOUD_SESSION_SLOT,
+  CLOUD_SELECTION_KEY
+} from '../../src/mcp/cloudSession';
 import { registerSecretCommands } from '../../src/commands/secretCommands';
 import {
   commands,
@@ -118,6 +122,11 @@ describe('registerSecretCommands', () => {
 
       expect(services.aiProviders.clearAllApiKeys).toHaveBeenCalled();
       expect(ctx.secrets.delete).toHaveBeenCalledWith(OCTOPART_SECRET_KEY);
+      expect(ctx.secrets.delete).toHaveBeenCalledWith(CLOUD_SESSION_SLOT);
+      expect(ctx.globalState.update).toHaveBeenCalledWith(
+        CLOUD_SELECTION_KEY,
+        undefined
+      );
     });
   });
 

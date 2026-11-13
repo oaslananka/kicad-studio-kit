@@ -89,6 +89,7 @@
     }
   },
   "activationEvents": [
+    "onUri",
     "workspaceContains:**/*.kicad_pro",
     "workspaceContains:**/*.kicad_jobset",
     "workspaceContains:**/*.kicad_sch",
@@ -1182,6 +1183,21 @@
         "title": "%kicadstudio.contributes.commands.taskHub.maintain.title%",
         "category": "%kicadstudio.contributes.commands.taskHub.category%",
         "icon": "$(tools)"
+      },
+      {
+        "command": "kicadstudio.cloud.signIn",
+        "title": "%kicadstudio.contributes.commands.cloud.signIn.title%",
+        "category": "%kicadstudio.contributes.commands.cloud.category%"
+      },
+      {
+        "command": "kicadstudio.cloud.projects",
+        "title": "%kicadstudio.contributes.commands.cloud.projects.title%",
+        "category": "%kicadstudio.contributes.commands.cloud.category%"
+      },
+      {
+        "command": "kicadstudio.cloud.signOut",
+        "title": "%kicadstudio.contributes.commands.cloud.signOut.title%",
+        "category": "%kicadstudio.contributes.commands.cloud.category%"
       }
     ],
     "menus": {
@@ -1531,6 +1547,18 @@
         },
         {
           "command": "kicadstudio.setupMcpIntegration",
+          "when": "false"
+        },
+        {
+          "command": "kicadstudio.cloud.signIn",
+          "when": "false"
+        },
+        {
+          "command": "kicadstudio.cloud.projects",
+          "when": "false"
+        },
+        {
+          "command": "kicadstudio.cloud.signOut",
           "when": "false"
         },
         {
