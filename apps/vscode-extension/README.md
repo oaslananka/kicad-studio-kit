@@ -72,8 +72,10 @@ explicitly attached KiCad context to that provider. See the
 
 ## Cloud Projects (Optional)
 
-From the **Automate** section of **KiCad Studio: Open Task Hub**, choose
-**Connect to Cloud** to sign in with read-only project discovery. Choose an
+Open **KiCad Studio: Open Task Hub**, then choose **Local Projects** or
+**Cloud Projects**. A fresh workspace also exposes these choices in the Studio
+sidebar. Cloud sign-in is optional; **Automate ? Connect to Cloud** remains
+available for account setup with read-only project discovery. Choose an
 authorized device/project under **Cloud Projects**; this does not upload KiCad
 files, switch your active local project, or enable remote editing. Local
 projects and offline workflows continue without a Cloud account.

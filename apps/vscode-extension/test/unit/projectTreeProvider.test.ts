@@ -51,6 +51,41 @@ describe('KiCadProjectTreeProvider', () => {
     }
   });
 
+  it('shows actionable local and optional Cloud sources on an empty VS Code window', async () => {
+    workspace.workspaceFolders = undefined as never;
+    const provider = new KiCadProjectTreeProvider();
+    const entries = await provider.getChildren();
+    expect(entries.map((entry) => entry.label)).toEqual([
+      'Local Projects',
+      'Cloud Projects'
+    ]);
+    const local = provider.getTreeItem(entries[0]!);
+    const cloud = provider.getTreeItem(entries[1]!);
+    expect(local.command?.command).toBe('workbench.action.files.openFolder');
+    expect(cloud.command?.command).toBe('kicadstudio.cloud.projects');
+    expect(local.iconPath).toEqual(
+      expect.objectContaining({ id: 'folder-opened' })
+    );
+    expect(cloud.iconPath).toEqual(expect.objectContaining({ id: 'cloud' }));
+    expect(local.tooltip).toContain('Open a local KiCad project folder');
+    expect(cloud.tooltip).toContain('no local project changes');
+  });
+
+  it('offers source choices in an empty folder but never inserts phantom KiCad projects', async () => {
+    tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'kicadstudio-empty-start-')
+    );
+    workspace.workspaceFolders = [{ uri: Uri.file(tempDir) }] as never;
+    const provider = new KiCadProjectTreeProvider();
+    const roots = await provider.getChildren();
+    expect(roots.map((entry) => entry.label)).toEqual([
+      'Local Projects',
+      'Cloud Projects',
+      path.basename(tempDir)
+    ]);
+    expect(roots[2]?.children).toEqual([]);
+  });
+
   it('groups core KiCad files by semantic project role', async () => {
     tempDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'kicadstudio-project-tree-')

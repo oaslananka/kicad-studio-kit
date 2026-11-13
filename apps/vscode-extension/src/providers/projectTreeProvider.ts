@@ -25,6 +25,21 @@ class KiCadTreeItem extends vscode.TreeItem {
     this.tooltip = tooltipForNode(node, diagnostics);
     this.iconPath = new vscode.ThemeIcon(iconForNode(node, diagnostics));
 
+    if (node.type === 'project-source') {
+      this.description =
+        node.source === 'cloud'
+          ? 'Sign in or choose granted projects'
+          : 'Open a folder on this computer';
+      this.command = {
+        command:
+          node.source === 'cloud'
+            ? COMMANDS.cloudProjects
+            : 'workbench.action.files.openFolder',
+        title: node.label
+      };
+      return;
+    }
+
     if (
       node.project &&
       node.uri &&
@@ -89,6 +104,20 @@ export class KiCadProjectTreeProvider implements vscode.TreeDataProvider<Project
       roots.push(await this.buildWorkspaceNode(folder.uri.fsPath));
     }
 
+    // Never leave the Studio sidebar empty on a fresh VS Code window.
+    // Existing KiCad workspaces keep their familiar project hierarchy.
+    const hasLocalDesign = roots.some((root) =>
+      root.children?.some((group) =>
+        ['Project Files', 'Schematic Sheets', 'PCB'].includes(group.label)
+      )
+    );
+    if (!hasLocalDesign) {
+      return [
+        { label: 'Local Projects', type: 'project-source', source: 'local' },
+        { label: 'Cloud Projects', type: 'project-source', source: 'cloud' },
+        ...roots
+      ];
+    }
     return roots;
   }
 
@@ -324,6 +353,10 @@ function diagnosticSummary(diagnostics: TreeDiagnostics): string | undefined {
 
 function roleForNode(node: ProjectTreeNode): string {
   switch (node.type) {
+    case 'project-source':
+      return node.source === 'cloud'
+        ? 'Optional Cloud project discovery; no local project changes'
+        : 'Open a local KiCad project folder';
     case 'project':
       return 'KiCad workspace';
     case 'schematic':
@@ -381,6 +414,8 @@ function iconForNode(
   }
 
   switch (node.type) {
+    case 'project-source':
+      return node.source === 'cloud' ? 'cloud' : 'folder-opened';
     case 'project':
       return 'repo';
     case 'schematic':
