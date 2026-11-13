@@ -61,21 +61,32 @@ async function openTaskHub(getContext: TaskHubContextProvider): Promise<void> {
     description: group.description,
     taskCommand: group.command
   }));
-  // A new user without a project must not land on a maintenance-only menu.
-  if (!context.hasProject) {
-    availableGroups.unshift({
-      label: '$(folder-opened) Open a KiCad project',
+  // Project source comes before task categories. This works without KiCad,
+  // a workspace, an account or network access during extension activation.
+  availableGroups.unshift(
+    {
+      label: '$(folder-opened) Local Projects',
+      description: context.hasProject
+        ? 'Choose an active KiCad project in this workspace'
+        : 'Open a folder with KiCad project, PCB or schematic files',
+      taskCommand: context.hasProject
+        ? COMMANDS.selectActiveProject
+        : OPEN_PROJECT_COMMAND
+    },
+    {
+      label: '$(cloud) Cloud Projects',
       description:
-        'Choose a folder containing KiCad project, PCB, or schematic files',
-      taskCommand: OPEN_PROJECT_COMMAND
-    });
-  }
+        'Optional account and authorized project discovery; local files stay here',
+      taskCommand: COMMANDS.cloudProjects
+    }
+  );
   const selection = await vscode.window.showQuickPick<TaskGroupQuickPickItem>(
     availableGroups,
     {
+      title: 'KiCad Studio - Projects and Tasks',
       placeHolder: context.hasProject
-        ? 'Choose what you want to do with this KiCad project'
-        : 'Open a KiCad project to start, or configure the workspace',
+        ? 'Choose a local or Cloud project source, or a project task'
+        : 'Start with Local Projects or optional Cloud Projects',
       matchOnDescription: true
     }
   );

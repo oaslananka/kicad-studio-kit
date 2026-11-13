@@ -81,7 +81,7 @@ describe('task-oriented command hub', () => {
         })
       ]),
       expect.objectContaining({
-        placeHolder: 'Choose what you want to do with this KiCad project'
+        placeHolder: 'Choose a local or Cloud project source, or a project task'
       })
     );
     expect(commands.executeCommand).toHaveBeenCalledWith(
@@ -122,8 +122,12 @@ describe('task-oriented command hub', () => {
     expect(window.showQuickPick).toHaveBeenCalledWith(
       [
         expect.objectContaining({
-          label: expect.stringContaining('Open a KiCad project'),
+          label: expect.stringContaining('Local Projects'),
           taskCommand: 'workbench.action.files.openFolder'
+        }),
+        expect.objectContaining({
+          label: expect.stringContaining('Cloud Projects'),
+          taskCommand: COMMANDS.cloudProjects
         }),
         expect.objectContaining({
           taskCommand: COMMANDS.openAutomateTasks
@@ -133,7 +137,7 @@ describe('task-oriented command hub', () => {
         })
       ],
       expect.objectContaining({
-        placeHolder: 'Open a KiCad project to start, or configure the workspace'
+        placeHolder: 'Start with Local Projects or optional Cloud Projects'
       })
     );
   });
@@ -163,13 +167,52 @@ describe('task-oriented command hub', () => {
     expect(commands.executeCommand).toHaveBeenCalledWith(COMMANDS.cloudSignIn);
   });
 
+  it('shows Local and Cloud sources ahead of tasks in a populated project workspace', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() => taskContext({ hasProject: true }));
+    await handler(COMMANDS.openTaskHub)();
+    const items = (window.showQuickPick as jest.Mock).mock.calls[0][0];
+    expect(items.slice(0, 2)).toEqual([
+      expect.objectContaining({
+        label: '$(folder-opened) Local Projects',
+        taskCommand: COMMANDS.selectActiveProject
+      }),
+      expect.objectContaining({
+        label: '$(cloud) Cloud Projects',
+        taskCommand: COMMANDS.cloudProjects
+      })
+    ]);
+    expect(items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ taskCommand: COMMANDS.openReviewTasks }),
+        expect.objectContaining({ taskCommand: COMMANDS.openValidateTasks })
+      ])
+    );
+  });
+
+  it('opens optional Cloud project discovery directly from an empty first-run Task Hub', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() => taskContext({ hasProject: false }));
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce({
+      label: '$(cloud) Cloud Projects',
+      taskCommand: COMMANDS.cloudProjects
+    });
+    await handler(COMMANDS.openTaskHub)();
+    expect(commands.executeCommand).toHaveBeenCalledWith(
+      COMMANDS.cloudProjects
+    );
+    expect(commands.executeCommand).not.toHaveBeenCalledWith(
+      'workbench.action.files.openFolder'
+    );
+  });
+
   it('opens the folder picker from the first-run task hub without requiring MCP', async () => {
     jest.clearAllMocks();
     registerTaskHubCommands(() =>
       taskContext({ hasProject: false, mcpConnected: false, aiEnabled: false })
     );
     (window.showQuickPick as jest.Mock).mockResolvedValueOnce({
-      label: '$(folder-opened) Open a KiCad project',
+      label: '$(folder-opened) Local Projects',
       taskCommand: 'workbench.action.files.openFolder'
     });
 

@@ -10,14 +10,17 @@ discovery flow. It does **not** upload or synchronize KiCad design files.
 
 ## Connect and select a project
 
-1. In VS Code, open **KiCad Studio: Open Task Hub** and choose **Automate**.
-   This entry is available even if you have not opened a local KiCad project.
-2. Choose **Connect to Cloud**. Studio checks the live Cloud OAuth metadata
+1. In VS Code, open **KiCad Studio: Open Task Hub** and choose
+   **Cloud Projects** directly. An empty Studio sidebar also offers
+   **Local Projects** and **Cloud Projects**, without requiring a workspace.
+   If you have not connected an account, choose **Sign in to Cloud**.
+2. The **Connect to Cloud** action is also available under **Automate**. Studio checks the live Cloud OAuth metadata
    and its public client registration before opening your system browser.
 3. Sign in with a supported Cloud identity and approve the read-only
    `projects:read` scope. Return to VS Code via the authorization callback.
 4. Under **Cloud Projects**, choose from the projects the current account has
-   explicitly granted to this OAuth client. If no project is granted, use
+   explicitly granted to this OAuth client. Studio shows the device name,
+   online/offline state and connector status without implying edit access. If no project is granted, use
    **Manage Cloud Access** to review the owner's grants.
 
 A Cloud project is selected by an opaque remote ID, **not** by changing the

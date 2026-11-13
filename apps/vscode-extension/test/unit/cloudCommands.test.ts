@@ -1,5 +1,8 @@
 import { COMMANDS } from '../../src/constants';
-import { CloudUnauthorizedError } from '../../src/mcp/cloudOAuthContract';
+import {
+  CloudPermissionError,
+  CloudUnauthorizedError
+} from '../../src/mcp/cloudOAuthContract';
 import { registerCloudCommands } from '../../src/commands/cloudCommands';
 import {
   commands,
@@ -126,9 +129,13 @@ describe('optional Cloud account commands (local-first)', () => {
         expect(items).toEqual([
           expect.objectContaining({
             label: '$(circuit-board) Demo PCB',
-            description: 'Connector offline',
-            detail: 'No live remote design operation is available',
+            description: 'Laptop - Device offline - Connector offline',
+            detail: 'Reconnect this device in Cloud before remote operations',
             project: offlineProject
+          }),
+          expect.objectContaining({
+            label: '$(shield) Manage Cloud Access',
+            manageAccess: true
           })
         ]);
         return items[0];
@@ -145,7 +152,7 @@ describe('optional Cloud account commands (local-first)', () => {
 
   it('reports an online connector distinctly from an authorized remote design operation', async () => {
     mockCloud.listAuthorizedProjects.mockResolvedValueOnce({
-      devices: [],
+      devices: [{ id: 'device-1', name: 'Desktop', connected: true }],
       projects: [
         {
           ...offlineProject,
@@ -161,16 +168,55 @@ describe('optional Cloud account commands (local-first)', () => {
     expect(window.showQuickPick).toHaveBeenCalledWith(
       [
         expect.objectContaining({
-          description: 'Connector online',
+          description: 'Desktop - Device online - Connector online',
           detail: 'Cloud read access is disabled for this project'
         }),
         expect.objectContaining({
-          detail: 'Cloud read operations may be available with owner approval'
+          detail: 'Connector offline - check device and Cloud permissions'
+        }),
+        expect.objectContaining({
+          label: '$(shield) Manage Cloud Access',
+          manageAccess: true
         })
       ],
-      expect.objectContaining({ matchOnDescription: true })
+      expect.objectContaining({
+        matchOnDescription: true,
+        matchOnDetail: true
+      })
     );
     expect(mockCloud.selectRemoteProject).not.toHaveBeenCalled();
+  });
+
+  it('offers direct Cloud grant management without selecting or mutating a local project', async () => {
+    mockCloud.listAuthorizedProjects.mockResolvedValueOnce({
+      devices: [],
+      projects: [offlineProject]
+    });
+    (window.showQuickPick as jest.Mock).mockImplementationOnce(async (items) =>
+      items.find((item: { manageAccess?: boolean }) => item.manageAccess)
+    );
+    await handler(COMMANDS.cloudProjects)();
+    expect(env.openExternal).toHaveBeenCalledTimes(1);
+    expect(mockCloud.selectRemoteProject).not.toHaveBeenCalled();
+  });
+
+  it('takes a permission-denied account directly to grant management, not re-login', async () => {
+    mockCloud.listAuthorizedProjects.mockRejectedValueOnce(
+      new CloudPermissionError()
+    );
+    (window.showWarningMessage as jest.Mock).mockResolvedValueOnce(
+      'Manage Cloud Access'
+    );
+    await handler(COMMANDS.cloudProjects)();
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Cloud access was denied'),
+      'Manage Cloud Access',
+      'Cancel'
+    );
+    expect(env.openExternal).toHaveBeenCalledTimes(1);
+    expect(commands.executeCommand).not.toHaveBeenCalledWith(
+      COMMANDS.cloudSignIn
+    );
   });
 
   it('does nothing when a user cancels selection or declines management', async () => {
