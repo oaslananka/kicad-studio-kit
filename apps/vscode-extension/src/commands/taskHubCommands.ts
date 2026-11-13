@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'node:path';
 import { COMMANDS } from '../constants';
 import {
   TASK_GROUPS,
@@ -15,7 +16,8 @@ interface TaskGroupQuickPickItem extends vscode.QuickPickItem {
 }
 
 interface TaskActionQuickPickItem extends vscode.QuickPickItem {
-  readonly command: TaskGroup['actions'][number]['command'];
+  readonly command?: TaskGroup['actions'][number]['command'];
+  readonly openBoardForFabrication?: true;
 }
 
 export type TaskHubContextProvider = () =>
@@ -83,34 +85,93 @@ async function openTaskHub(getContext: TaskHubContextProvider): Promise<void> {
   }
 }
 
-async function openTaskGroup(
-  group: TaskGroup,
+async function openBoardForFabrication(
   getContext: TaskHubContextProvider
 ): Promise<void> {
-  const context = await getContext();
+  // Use only boards inside the current workspace; navigating to an action
+  // must never generate fabrication files or bypass release approval gates.
+  const boards = await vscode.workspace.findFiles(
+    '**/*.kicad_pcb',
+    '**/{.git,node_modules,dist,build,backups}/**',
+    100
+  );
+  if (!boards.length) {
+    void vscode.window.showInformationMessage(
+      'No .kicad_pcb file was found in this workspace. Open a folder containing a KiCad board first.'
+    );
+    return;
+  }
+
+  const selected =
+    boards.length === 1
+      ? boards[0]
+      : (
+          await vscode.window.showQuickPick(
+            boards.map((uri) => {
+              const folder = vscode.workspace.getWorkspaceFolder(uri);
+              return {
+                label: path.basename(uri.fsPath),
+                description: folder
+                  ? path.relative(folder.uri.fsPath, uri.fsPath)
+                  : path.basename(uri.fsPath),
+                uri
+              };
+            }),
+            { placeHolder: 'Choose a PCB for fabrication outputs' }
+          )
+        )?.uri;
+  if (!selected) {
+    return;
+  }
+
+  await vscode.commands.executeCommand('vscode.open', selected);
+  await openTaskGroup(getTaskGroup('release'), getContext, true);
+}
+async function openTaskGroup(
+  group: TaskGroup,
+  getContext: TaskHubContextProvider,
+  boardJustOpened = false
+): Promise<void> {
+  const discoveredContext = await getContext();
+  const context = boardJustOpened
+    ? { ...discoveredContext, pcbOpen: true }
+    : discoveredContext;
   if (!isAvailable(group.availability, context)) {
     return;
   }
 
+  const actions: TaskActionQuickPickItem[] = group.actions
+    .filter(
+      (action) =>
+        isAvailable(action.availability, context) &&
+        meetsRequirements(action.requirements, context)
+    )
+    .map((action) => ({
+      label: action.label,
+      description: action.description,
+      command: action.command
+    }));
+
+  if (group.id === 'release' && !context.pcbOpen) {
+    actions.unshift({
+      label: 'Open PCB for fabrication',
+      description:
+        'Choose a board to unlock Gerber and manufacturing package exports',
+      openBoardForFabrication: true
+    });
+  }
+
   const selection = await vscode.window.showQuickPick<TaskActionQuickPickItem>(
-    group.actions
-      .filter(
-        (action) =>
-          isAvailable(action.availability, context) &&
-          meetsRequirements(action.requirements, context)
-      )
-      .map((action) => ({
-        label: action.label,
-        description: action.description,
-        command: action.command
-      })),
+    actions,
     {
       placeHolder: group.placeholder,
       matchOnDescription: true
     }
   );
 
-  if (selection) {
+  if (selection?.openBoardForFabrication) {
+    await openBoardForFabrication(getContext);
+  } else if (selection?.command) {
     await vscode.commands.executeCommand(selection.command);
   }
 }

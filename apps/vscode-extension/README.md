@@ -84,6 +84,8 @@ On a **new workspace**, the sidebar starts with four task-oriented areas: **KiCa
 | Automate            | **KiCad Studio: Automate Project**    | Configure MCP, AI chat, design intent, profiles, and fix queues                            |
 | Maintain            | **KiCad Studio: Maintain Workspace**  | Manage KiCad CLI detection, settings, libraries, packages, credentials, logs, and feedback |
 
+From **Guided Tour → Fabrication Release**, select **Open Fabrication Release**. If no PCB is open, choose **Open PCB for fabrication**: KiCad Studio opens the only workspace board, or lets you choose one if the workspace contains several. The Fabrication Release menu then offers the available Gerber and manufacturing-package actions. Opening a board does **not** generate or approve manufacturing outputs; exports remain separate, workspace-trusted operations. MCP and AI are optional for local exports.
+
 ## Feature Matrix
 
 | Workflow                 | KiCad Studio                                                                                         | Engineering value                                                              |

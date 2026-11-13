@@ -5,7 +5,7 @@ import {
   type TaskHubContext
 } from '../../src/commands/taskHubCatalog';
 import { registerTaskHubCommands } from '../../src/commands/taskHubCommands';
-import { commands, window } from './vscodeMock';
+import { commands, window, workspace, Uri } from './vscodeMock';
 
 jest.mock('vscode', () => jest.requireActual('./vscodeMock'), {
   virtual: true
@@ -228,6 +228,154 @@ describe('task-oriented command hub', () => {
     );
   });
 
+  it('guides a user without an active PCB directly to their workspace board', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() =>
+      taskContext({ pcbOpen: false, schematicOpen: false, mcpConnected: false })
+    );
+    const board = Uri.file('/workspace/demo/board.kicad_pcb');
+    (workspace.findFiles as jest.Mock).mockResolvedValueOnce([board]);
+    (window.showQuickPick as jest.Mock).mockImplementationOnce(async (items) =>
+      items.find(
+        (item: { openBoardForFabrication?: boolean }) =>
+          item.openBoardForFabrication
+      )
+    );
+
+    await handler(COMMANDS.openReleaseTasks)();
+
+    expect(window.showQuickPick).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: expect.stringContaining('Open PCB for fabrication'),
+          openBoardForFabrication: true
+        })
+      ]),
+      expect.any(Object)
+    );
+    expect(workspace.findFiles).toHaveBeenCalled();
+    expect(commands.executeCommand).toHaveBeenCalledWith('vscode.open', board);
+    expect(window.showQuickPick).toHaveBeenCalledTimes(2);
+    expect(commands.executeCommand).not.toHaveBeenCalledWith(
+      COMMANDS.exportManufacturingPackage
+    );
+  });
+
+  it('lets users choose among several workspace PCBs', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() => taskContext({ pcbOpen: false }));
+    const boards = [
+      Uri.file('/workspace/first/board.kicad_pcb'),
+      Uri.file('/workspace/second/board.kicad_pcb')
+    ];
+    (workspace.findFiles as jest.Mock).mockResolvedValueOnce(boards);
+    (window.showQuickPick as jest.Mock)
+      .mockImplementationOnce(async (items) =>
+        items.find(
+          (item: { openBoardForFabrication?: boolean }) =>
+            item.openBoardForFabrication
+        )
+      )
+      .mockImplementationOnce(async (items) => items[1]);
+
+    await handler(COMMANDS.openReleaseTasks)();
+
+    expect(window.showQuickPick).toHaveBeenCalledTimes(3);
+    const releaseActions = (window.showQuickPick as jest.Mock).mock.calls[2][0];
+    expect(releaseActions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          command: COMMANDS.exportManufacturingPackage
+        }),
+        expect.objectContaining({ command: COMMANDS.exportGerbersWithDrill })
+      ])
+    );
+    expect(commands.executeCommand).toHaveBeenCalledWith(
+      'vscode.open',
+      boards[1]
+    );
+    expect(commands.executeCommand).not.toHaveBeenCalledWith(
+      'vscode.open',
+      boards[0]
+    );
+  });
+
+  it('does not open or export a board when selection is cancelled', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() => taskContext({ pcbOpen: false }));
+    (workspace.findFiles as jest.Mock).mockResolvedValueOnce([
+      Uri.file('/workspace/a/a.kicad_pcb'),
+      Uri.file('/workspace/b/b.kicad_pcb')
+    ]);
+    (window.showQuickPick as jest.Mock)
+      .mockImplementationOnce(async (items) =>
+        items.find(
+          (item: { openBoardForFabrication?: boolean }) =>
+            item.openBoardForFabrication
+        )
+      )
+      .mockResolvedValueOnce(undefined);
+
+    await handler(COMMANDS.openReleaseTasks)();
+
+    expect(commands.executeCommand).not.toHaveBeenCalled();
+  });
+
+  it('explains when no workspace PCB exists instead of claiming an export', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() => taskContext({ pcbOpen: false }));
+    (workspace.findFiles as jest.Mock).mockResolvedValueOnce([]);
+    (window.showQuickPick as jest.Mock).mockImplementationOnce(async (items) =>
+      items.find(
+        (item: { openBoardForFabrication?: boolean }) =>
+          item.openBoardForFabrication
+      )
+    );
+
+    await handler(COMMANDS.openReleaseTasks)();
+
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining('.kicad_pcb')
+    );
+    expect(commands.executeCommand).not.toHaveBeenCalled();
+  });
+
+  it('keeps normal release actions when a PCB is already active', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() =>
+      taskContext({ pcbOpen: true, mcpConnected: false })
+    );
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
+
+    await handler(COMMANDS.openReleaseTasks)();
+
+    const items = (window.showQuickPick as jest.Mock).mock.calls[0][0];
+    expect(items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          command: COMMANDS.exportManufacturingPackage
+        }),
+        expect.objectContaining({ command: COMMANDS.exportGerbersWithDrill })
+      ])
+    );
+    expect(items).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ openBoardForFabrication: true })
+      ])
+    );
+  });
+  it('does not expose fabrication navigation in an untrusted workspace', async () => {
+    jest.clearAllMocks();
+    registerTaskHubCommands(() =>
+      taskContext({ workspaceTrusted: false, pcbOpen: false })
+    );
+
+    await handler(COMMANDS.openReleaseTasks)();
+
+    expect(window.showQuickPick).not.toHaveBeenCalled();
+    expect(workspace.findFiles).not.toHaveBeenCalled();
+    expect(commands.executeCommand).not.toHaveBeenCalled();
+  });
   it('does nothing when a Quick Pick is cancelled', async () => {
     (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
 
