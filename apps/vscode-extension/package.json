@@ -2203,7 +2203,8 @@
               "image": "assets/screenshots/project-tree.png"
             },
             "completionEvents": [
-              "onContext:kicadstudio.hasProject"
+              "onContext:kicadstudio.hasProject",
+              "onContext:kicadstudio.walkthroughProjectReady"
             ]
           },
           {

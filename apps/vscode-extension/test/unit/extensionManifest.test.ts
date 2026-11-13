@@ -140,6 +140,10 @@ describe('extensionManifest', () => {
       'kicadstudio.step.configureAi',
       'kicadstudio.step.ai'
     ]);
+    expect(steps[0]?.completionEvents).toEqual([
+      'onContext:kicadstudio.hasProject',
+      'onContext:kicadstudio.walkthroughProjectReady'
+    ]);
     expect(steps[3]?.completionEvents).toEqual([
       'onCommand:kicadstudio.runDRC',
       'onCommand:kicadstudio.runERC'
