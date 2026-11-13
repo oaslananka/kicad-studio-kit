@@ -74,6 +74,17 @@ async function handleCloudProjectDiscoveryError(error: unknown): Promise<void> {
   }
 }
 
+async function showCloudSignedOutRecovery(): Promise<void> {
+  const action = await vscode.window.showInformationMessage(
+    'Sign in to Cloud to browse your authorized devices and projects. Local KiCad Studio works without a Cloud account.',
+    'Sign in to Cloud',
+    'Cancel'
+  );
+  if (action === 'Sign in to Cloud') {
+    await vscode.commands.executeCommand(COMMANDS.cloudSignIn);
+  }
+}
+
 export function registerCloudCommands(
   extensionContext: vscode.ExtensionContext
 ): vscode.Disposable[] {
@@ -83,6 +94,10 @@ export function registerCloudCommands(
   async function showProjects(): Promise<void> {
     let inventory: Awaited<ReturnType<typeof cloud.listAuthorizedProjects>>;
     try {
+      if (!(await cloud.isSignedIn())) {
+        await showCloudSignedOutRecovery();
+        return;
+      }
       inventory = await cloud.listAuthorizedProjects();
     } catch (error) {
       await handleCloudProjectDiscoveryError(error);

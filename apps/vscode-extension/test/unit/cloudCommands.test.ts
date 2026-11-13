@@ -51,8 +51,9 @@ function handler(commandId: string): () => Promise<void> {
 describe('optional Cloud account commands (local-first)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCloud.isSignedIn.mockReset();
     const context = createExtensionContextMock();
-    mockCloud.isSignedIn.mockResolvedValue(false);
+    mockCloud.isSignedIn.mockResolvedValue(true);
     mockCloud.signIn.mockResolvedValue(undefined);
     mockCloud.signOut.mockResolvedValue(undefined);
     mockCloud.selectRemoteProject.mockResolvedValue(undefined);
@@ -81,8 +82,9 @@ describe('optional Cloud account commands (local-first)', () => {
   });
 
   it('first-time login opens account authorization then shows a truthful empty inventory', async () => {
+    mockCloud.isSignedIn.mockResolvedValueOnce(false);
     await handler(COMMANDS.cloudSignIn)();
-    expect(mockCloud.isSignedIn).toHaveBeenCalledTimes(1);
+    expect(mockCloud.isSignedIn).toHaveBeenCalledTimes(2);
     expect(mockCloud.signIn).toHaveBeenCalledTimes(1);
     expect(mockCloud.listAuthorizedProjects).toHaveBeenCalledTimes(1);
     expect(window.showInformationMessage).toHaveBeenCalledWith(
@@ -90,6 +92,32 @@ describe('optional Cloud account commands (local-first)', () => {
       'Manage Cloud Access'
     );
     expect(mockCloud.selectRemoteProject).not.toHaveBeenCalled();
+  });
+
+  it('explains a first-time signed-out Cloud choice without claiming expired credentials', async () => {
+    mockCloud.isSignedIn.mockResolvedValueOnce(false);
+    (window.showInformationMessage as jest.Mock).mockResolvedValueOnce(
+      undefined
+    );
+    await handler(COMMANDS.cloudProjects)();
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining('without a Cloud account'),
+      'Sign in to Cloud',
+      'Cancel'
+    );
+    expect(window.showWarningMessage).not.toHaveBeenCalled();
+    expect(mockCloud.listAuthorizedProjects).not.toHaveBeenCalled();
+    expect(commands.executeCommand).not.toHaveBeenCalled();
+  });
+
+  it('begins Cloud authorization only after a signed-out user chooses Sign in', async () => {
+    mockCloud.isSignedIn.mockResolvedValueOnce(false);
+    (window.showInformationMessage as jest.Mock).mockResolvedValueOnce(
+      'Sign in to Cloud'
+    );
+    await handler(COMMANDS.cloudProjects)();
+    expect(commands.executeCommand).toHaveBeenCalledWith(COMMANDS.cloudSignIn);
+    expect(mockCloud.listAuthorizedProjects).not.toHaveBeenCalled();
   });
 
   it('does not redundantly sign in when an account session is already stored', async () => {
@@ -287,6 +315,7 @@ describe('optional Cloud account commands (local-first)', () => {
   });
 
   it('surfaces login failure without leaking token or modifying local files', async () => {
+    mockCloud.isSignedIn.mockResolvedValueOnce(false);
     mockCloud.signIn.mockRejectedValueOnce(
       new Error('OAuth metadata missing.')
     );

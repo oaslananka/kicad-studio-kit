@@ -13,10 +13,10 @@
   "sourceFingerprint": "8ab5258ef828680ce82c1a245814ce9231e78088e8884ff646358d3f1fceda56",
   "screenshots": {
     "project-tree.png": "74c4f722b07248fcd1f98696bf3f32c1254225a37f2415b538d68bba6186bc9c",
-    "schematic-viewer.png": "b32e0f933b7e2ada06daacf452177b485e4b60ee36e7523964b43105057384ca",
-    "pcb-viewer.png": "9a4fbb995d73758c529b63739e81d6f4fb8ccd5694d2e3a0b0205314c411b8c1",
+    "schematic-viewer.png": "b5056633af4ba3252d4810044dea53ce9112f02ef76c97a32a4383efacca780d",
+    "pcb-viewer.png": "c82dddf624ac93ad1611b479866774441793aced467863fc94ef7584067751fb",
     "drc-results.png": "bb378a03470b1ac6fdb99bd83521cfd33e6747afb8709ab93117e46626454a7d",
-    "bom-table.png": "5b1702d1fed1eadab0e0e86c1aad138c69eb6eb52762d20b4152c37556730c34",
+    "bom-table.png": "411d58eb23625905072434bed557e49b8c52244a5bc8ef6fdd76206154c305e7",
     "mcp-tools-dashboard.png": "4cbe06c3c8a9be50e5ea7831df82e8f99bed42791bbdd80a3106bf967190c95e"
   }
 }
