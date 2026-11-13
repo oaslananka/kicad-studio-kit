@@ -110,8 +110,9 @@ export function createViewerControllerFallbackScript(): string {
         return;
       }
 
+      // Toolbar uses +1 for zoom in; wheel deltas use negative values.
       stepFallbackZoom(
-        direction,
+        -direction,
         fallbackSvgWrapper.clientWidth / 2,
         fallbackSvgWrapper.clientHeight / 2
       );
@@ -130,8 +131,12 @@ export function createViewerControllerFallbackScript(): string {
       return true;
     }
 
-    function requestSvgFallback(reason) {
+    function requestSvgFallback(reason, signal) {
       return new Promise((resolve) => {
+        if (signal?.aborted) {
+          resolve(undefined);
+          return;
+        }
         const requestId = 'svg-fallback-' + Date.now() + '-' + Math.random().toString(16).slice(2);
         const timeout = window.setTimeout(() => {
           cleanup();
@@ -141,6 +146,12 @@ export function createViewerControllerFallbackScript(): string {
         function cleanup() {
           window.clearTimeout(timeout);
           window.removeEventListener('message', handleMessage);
+          signal?.removeEventListener('abort', onAbort);
+        }
+
+        function onAbort() {
+          cleanup();
+          resolve(undefined);
         }
 
         function handleMessage(event) {
@@ -156,6 +167,7 @@ export function createViewerControllerFallbackScript(): string {
         }
 
         window.addEventListener('message', handleMessage);
+        signal?.addEventListener('abort', onAbort, { once: true });
         vscode.postMessage({
           type: 'requestSvgFallback',
           payload: {
@@ -166,7 +178,49 @@ export function createViewerControllerFallbackScript(): string {
       });
     }
 
-    function showSvgFallback(svgText, originalRegion) {
+    function captureFallbackViewport() {
+      if (!fallbackSvgWrapper || !fallbackSvgStage || !fallbackSvgSize ||
+          !Number.isFinite(fallbackSvgScale) || fallbackSvgScale <= 0) return null;
+      const width = fallbackSvgSize.width * fallbackSvgScale;
+      const height = fallbackSvgSize.height * fallbackSvgScale;
+      const offsetX = Math.max(0, (fallbackSvgStage.clientWidth - width) / 2);
+      const offsetY = Math.max(0, (fallbackSvgStage.clientHeight - height) / 2);
+      return {
+        pageFit: !fallbackAutoFocus && !fallbackUserZoomed,
+        ratio: fallbackSvgFitScale > 0 ? fallbackSvgScale / fallbackSvgFitScale : 1,
+        centerX: clamp((fallbackSvgWrapper.scrollLeft +
+          fallbackSvgWrapper.clientWidth / 2 - offsetX) / width, 0, 1),
+        centerY: clamp((fallbackSvgWrapper.scrollTop +
+          fallbackSvgWrapper.clientHeight / 2 - offsetY) / height, 0, 1),
+        autoFocus: fallbackAutoFocus,
+        userZoomed: fallbackUserZoomed
+      };
+    }
+
+    function restoreFallbackViewport(viewport) {
+      if (!viewport || viewport.pageFit) {
+        fitSvgFallback(true, false);
+        return;
+      }
+      fallbackSvgFitScale = pageFallbackFitScale();
+      fallbackSvgScale = clamp(fallbackSvgFitScale * viewport.ratio,
+        Math.max(fallbackSvgFitScale * 0.5, 0.05), getFallbackMaxZoomScale());
+      fallbackAutoFocus = viewport.autoFocus;
+      fallbackUserZoomed = viewport.userZoomed;
+      applyFallbackSvgScale(false);
+      const width = fallbackSvgSize.width * fallbackSvgScale;
+      const height = fallbackSvgSize.height * fallbackSvgScale;
+      const offsetX = Math.max(0, (fallbackSvgStage.clientWidth - width) / 2);
+      const offsetY = Math.max(0, (fallbackSvgStage.clientHeight - height) / 2);
+      fallbackSvgWrapper.scrollLeft = clamp(offsetX + width * viewport.centerX -
+        fallbackSvgWrapper.clientWidth / 2, 0,
+        Math.max(0, fallbackSvgWrapper.scrollWidth - fallbackSvgWrapper.clientWidth));
+      fallbackSvgWrapper.scrollTop = clamp(offsetY + height * viewport.centerY -
+        fallbackSvgWrapper.clientHeight / 2, 0,
+        Math.max(0, fallbackSvgWrapper.scrollHeight - fallbackSvgWrapper.clientHeight));
+    }
+
+    function showSvgFallback(svgText, originalRegion, previousViewport) {
       const preparedSvg = prepareSvgFallback(svgText);
       if (!preparedSvg) {
         throw new Error('The fallback SVG could not be normalized for responsive rendering.');
@@ -190,7 +244,11 @@ export function createViewerControllerFallbackScript(): string {
       viewerMount.replaceChildren(wrapper);
       renderHopOverOverlay();
       requestAnimationFrame(() => {
-        fitSvgFallback(true, true);
+        if (previousViewport) {
+          restoreFallbackViewport(previousViewport);
+        } else {
+          fitSvgFallback(true, true);
+        }
       });
       setViewerSurfaceVisible(true);
       hideAll();
