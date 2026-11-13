@@ -211,13 +211,11 @@ function parseTokenPayload(
   if (!Number.isFinite(expiresIn) || expiresIn <= 0 || expiresIn > 86400) {
     throw new Error('Cloud token lifetime is unsupported.');
   }
+  const refreshToken =
+    nonempty(value['refresh_token']) || previous?.refreshToken;
   return {
     accessToken,
-    ...(nonempty(value['refresh_token'])
-      ? { refreshToken: String(value['refresh_token']) }
-      : previous?.refreshToken
-        ? { refreshToken: previous.refreshToken }
-        : {}),
+    ...(refreshToken ? { refreshToken } : {}),
     expiresAt: Date.now() + Math.floor(expiresIn * 1000),
     scope
   };
@@ -425,7 +423,7 @@ export async function listCloudInventory(
   const deviceItems = devicesData['devices'];
   const projectItems = projectsData['projects'];
   if (!Array.isArray(deviceItems) || !Array.isArray(projectItems)) {
-    throw new Error('Cloud returned an invalid project catalog.');
+    throw new TypeError('Cloud returned an invalid project catalog.');
   }
   const devices = deviceItems.map((item): CloudDevice => {
     const d = record(item);

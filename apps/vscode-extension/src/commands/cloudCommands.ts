@@ -12,17 +12,30 @@ export function registerCloudCommands(
   const cloud = new CloudSessionController(extensionContext);
   extensionContext.subscriptions.push(cloud);
 
+  function describeProjectAvailability(
+    available: boolean,
+    reason?: string
+  ): string {
+    if (available) {
+      return 'Cloud read operations may be available with owner approval';
+    }
+    if (reason === 'cloud_read_not_enabled') {
+      return 'Cloud read access is disabled for this project';
+    }
+    return 'No live remote design operation is available';
+  }
+
   async function showProjects(): Promise<void> {
     let inventory: Awaited<ReturnType<typeof cloud.listAuthorizedProjects>>;
     try {
       inventory = await cloud.listAuthorizedProjects();
     } catch (error) {
-      const message =
-        error instanceof CloudUnauthorizedError
-          ? 'Cloud session expired or access was revoked. Sign in again.'
-          : error instanceof Error
-            ? error.message
-            : 'Cloud is unavailable.';
+      let message = 'Cloud is unavailable.';
+      if (error instanceof CloudUnauthorizedError) {
+        message = 'Cloud session expired or access was revoked. Sign in again.';
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
       const action = await vscode.window.showWarningMessage(
         message,
         'Sign in to Cloud',
@@ -53,15 +66,11 @@ export function registerCloudCommands(
         description: project.connectorConnected
           ? 'Connector online'
           : 'Connector offline',
-        detail: project.available
-          ? 'Cloud read operations may be available with owner approval'
-          : project.reason === 'cloud_read_not_enabled'
-            ? 'Cloud read access is disabled for this project'
-            : 'No live remote design operation is available',
+        detail: describeProjectAvailability(project.available, project.reason),
         project
       })),
       {
-        title: 'Cloud Projects — authorized account',
+        title: 'Cloud Projects - authorized account',
         placeHolder:
           'Select a remote project (does not replace your local project)',
         matchOnDescription: true
