@@ -108,16 +108,17 @@ describe('Flatpak Support', () => {
       source: 'common-path'
     });
 
-    (childProcess.spawnSync as unknown as jest.Mock).mockReturnValue({
-      status: 0,
-      stdout: 'Usage: ...',
-      stderr: ''
-    });
+    (childProcess.execFile as unknown as jest.Mock).mockImplementation(
+      (_bin, _args, _options, callback) => {
+        process.nextTick(() => callback(null, 'Usage: ...', ''));
+        return { pid: 1 };
+      }
+    );
 
     const hasBom = await detector.hasCapability('bom');
     expect(hasBom).toBe(true);
 
-    expect(childProcess.spawnSync).toHaveBeenCalledWith(
+    expect(childProcess.execFile).toHaveBeenCalledWith(
       'flatpak',
       [
         'run',
@@ -128,7 +129,8 @@ describe('Flatpak Support', () => {
         'bom',
         '--help'
       ],
-      expect.anything()
+      expect.anything(),
+      expect.any(Function)
     );
   });
 
@@ -142,16 +144,19 @@ describe('Flatpak Support', () => {
       source: 'common-path'
     });
 
-    (childProcess.spawnSync as unknown as jest.Mock).mockReturnValue({
-      status: 0,
-      stdout: 'Usage: kicad-cli pcb export 3dpdf [options]',
-      stderr: ''
-    });
+    (childProcess.execFile as unknown as jest.Mock).mockImplementation(
+      (_bin, _args, _options, callback) => {
+        process.nextTick(() =>
+          callback(null, 'Usage: kicad-cli pcb export 3dpdf [options]', '')
+        );
+        return { pid: 1 };
+      }
+    );
 
     const help = await detector.getCommandHelp(['pcb', 'export', '3dpdf']);
     expect(help).toContain('3dpdf');
 
-    expect(childProcess.spawnSync).toHaveBeenCalledWith(
+    expect(childProcess.execFile).toHaveBeenCalledWith(
       'flatpak',
       [
         'run',
@@ -162,7 +167,8 @@ describe('Flatpak Support', () => {
         '3dpdf',
         '--help'
       ],
-      expect.anything()
+      expect.anything(),
+      expect.any(Function)
     );
   });
 });

@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { execFile, spawnSync } from 'node:child_process';
 import * as vscode from 'vscode';
 import {
   CLI_CAPABILITY_COMMANDS,
@@ -20,6 +20,7 @@ import { normalizeUserPath } from '../utils/pathUtils';
 
 const SYNC_PROBE_TIMEOUT_MS = 5_000;
 const SYNC_PROBE_MAX_BUFFER = 1024 * 1024;
+const MAX_CONCURRENT_CAPABILITY_PROBES = 6;
 const STATUS_MENU_CAPABILITY_COMMANDS = [
   'drc',
   'erc',
@@ -247,12 +248,13 @@ export class KiCadCliDetector {
       ...CLI_CAPABILITY_COMMANDS[command],
       '--help'
     ];
-    const result = spawnSync(detected.path, args, syncProbeOptions());
-    const supported =
-      result.status === 0 ||
-      /Usage:/i.test(`${result.stdout}\n${result.stderr}`);
-    this.capabilityCache.set(command, supported);
-    return supported;
+    const generation = this.cacheGeneration;
+    const result = await probeCliHelp(detected.path, args);
+    if (generation !== this.cacheGeneration) {
+      return false;
+    }
+    this.capabilityCache.set(command, result.supported);
+    return result.supported;
   }
 
   async commandHelpIncludes(
@@ -276,14 +278,16 @@ export class KiCadCliDetector {
       return this.helpCache.get(key);
     }
 
-    const result = spawnSync(
-      detected.path,
-      [...(detected.args ?? []), ...command, '--help'],
-      syncProbeOptions()
-    );
-    const help = `${result.stdout}\n${result.stderr}`;
-    const supported = result.status === 0 || /Usage:/i.test(help);
-    const normalized = supported ? help : undefined;
+    const generation = this.cacheGeneration;
+    const result = await probeCliHelp(detected.path, [
+      ...(detected.args ?? []),
+      ...command,
+      '--help'
+    ]);
+    const normalized = result.supported ? result.output : undefined;
+    if (generation !== this.cacheGeneration) {
+      return undefined;
+    }
     this.helpCache.set(key, normalized);
     return normalized;
   }
@@ -296,13 +300,29 @@ export class KiCadCliDetector {
       return undefined;
     }
 
-    const [commandResults, variantOption, allegroImport] = await Promise.all([
-      Promise.all(
-        STATUS_MENU_CAPABILITY_COMMANDS.map(
-          async (command) =>
-            [command, await this.hasCapability(command)] as const
-        )
-      ),
+    // Real CLI help probes are expensive. Limit native process concurrency
+    // and avoid synchronous calls that freeze the VS Code extension host.
+    const commandResults: Array<readonly [KiCadCliCapabilityName, boolean]> =
+      [];
+    for (
+      let start = 0;
+      start < STATUS_MENU_CAPABILITY_COMMANDS.length;
+      start += MAX_CONCURRENT_CAPABILITY_PROBES
+    ) {
+      const batch = STATUS_MENU_CAPABILITY_COMMANDS.slice(
+        start,
+        start + MAX_CONCURRENT_CAPABILITY_PROBES
+      );
+      commandResults.push(
+        ...(await Promise.all(
+          batch.map(
+            async (command) =>
+              [command, await this.hasCapability(command)] as const
+          )
+        ))
+      );
+    }
+    const [variantOption, allegroImport] = await Promise.all([
       this.commandHelpIncludes(['sch', 'export', 'pdf'], /--variant\b/),
       this.commandHelpIncludes(['pcb', 'import'], /\ballegro\b/i)
     ]);
@@ -482,6 +502,43 @@ export class KiCadCliDetector {
       'KiCad Studio is using a workspace-level kicad-cli path override. Only use workspace overrides for repositories you trust.'
     );
   }
+}
+
+async function probeCliHelp(
+  executable: string,
+  args: string[]
+): Promise<{ supported: boolean; output: string }> {
+  return new Promise((resolve) => {
+    execFile(
+      executable,
+      args,
+      {
+        encoding: 'utf8',
+        timeout: SYNC_PROBE_TIMEOUT_MS,
+        maxBuffer: SYNC_PROBE_MAX_BUFFER,
+        windowsHide: true,
+        shell: false
+      },
+      (error, stdout, stderr) => {
+        const output = String(stdout ?? '') + '\n' + String(stderr ?? '');
+        if (!error) {
+          resolve({ supported: true, output });
+          return;
+        }
+        const failure = error as Error & {
+          killed?: boolean;
+          signal?: string | null;
+        };
+        // Partial Usage text from an interrupted or oversized probe must
+        // never be treated as proof of a supported CLI command.
+        const aborted =
+          failure.killed === true ||
+          Boolean(failure.signal) ||
+          /maxBuffer|ETIMEDOUT/i.test(failure.message);
+        resolve({ supported: !aborted && /Usage:/i.test(output), output });
+      }
+    );
+  });
 }
 
 function syncProbeOptions(): {

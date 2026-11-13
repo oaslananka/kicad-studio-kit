@@ -1,5 +1,6 @@
 jest.mock('node:child_process', () => ({
-  spawnSync: jest.fn()
+  spawnSync: jest.fn(),
+  execFile: jest.fn()
 }));
 
 jest.mock('node:fs', () => {
@@ -231,24 +232,24 @@ describe('KiCadCliDetector', () => {
       versionLabel: 'KiCad 9.0.1',
       source: 'settings'
     });
-    const spawnSyncMock = childProcess.spawnSync as unknown as jest.Mock;
-    spawnSyncMock.mockReturnValue({
-      status: 0,
-      stdout: '',
-      stderr: ''
-    } as never);
-
+    const execFileMock = childProcess.execFile as unknown as jest.Mock;
+    execFileMock.mockImplementation((_bin, _args, _opts, callback) => {
+      process.nextTick(() => callback(null, 'Usage: kicad-cli', ''));
+      return { pid: 1 };
+    });
     await expect(detector.hasCapability('bom')).resolves.toBe(true);
     await expect(detector.hasCapability('bom')).resolves.toBe(true);
-
-    expect(spawnSyncMock).toHaveBeenCalledTimes(1);
-    expect(spawnSyncMock).toHaveBeenCalledWith(
+    expect(execFileMock).toHaveBeenCalledTimes(1);
+    expect(execFileMock).toHaveBeenCalledWith(
       'C:\\KiCad\\bin\\kicad-cli.exe',
       expect.any(Array),
       expect.objectContaining({
         timeout: 5000,
-        maxBuffer: 1024 * 1024
-      })
+        maxBuffer: 1024 * 1024,
+        shell: false,
+        windowsHide: true
+      }),
+      expect.any(Function)
     );
   });
 
@@ -260,21 +261,24 @@ describe('KiCadCliDetector', () => {
       versionLabel: 'KiCad 10.0.1',
       source: 'settings'
     });
-    const spawnSyncMock = childProcess.spawnSync as unknown as jest.Mock;
-    spawnSyncMock.mockReturnValue({
-      status: 0,
-      stdout: 'Usage: kicad-cli pcb import --format pads|altium|geda',
-      stderr: ''
-    } as never);
-
+    const execFileMock = childProcess.execFile as unknown as jest.Mock;
+    execFileMock.mockImplementation((_bin, _args, _opts, callback) => {
+      process.nextTick(() =>
+        callback(
+          null,
+          'Usage: kicad-cli pcb import --format pads|altium|geda',
+          ''
+        )
+      );
+      return { pid: 1 };
+    });
     await expect(
       detector.commandHelpIncludes(['pcb', 'import'], /\bgeda\b/i)
     ).resolves.toBe(true);
     await expect(detector.getCommandHelp(['pcb', 'import'])).resolves.toContain(
       '--format'
     );
-
-    expect(spawnSyncMock).toHaveBeenCalledTimes(1);
+    expect(execFileMock).toHaveBeenCalledTimes(1);
   });
 
   it('validates real candidates and rejects broken binaries gracefully', async () => {
@@ -397,6 +401,98 @@ describe('KiCadCliDetector', () => {
       ['pcb', 'import'],
       /\ballegro\b/i
     );
+  });
+
+  it('probes capabilities without blocking the extension host with spawnSync', async () => {
+    const detector = new KiCadCliDetector() as any;
+    detector.detect = jest.fn().mockResolvedValue({
+      path: '/usr/bin/kicad-cli',
+      version: '10.0.8',
+      versionLabel: 'KiCad 10.0.8',
+      source: 'settings'
+    });
+    const sync = childProcess.spawnSync as jest.Mock;
+    sync.mockReturnValue({ status: 0, stdout: 'Usage: kicad-cli', stderr: '' });
+    const asynchronous = childProcess.execFile as unknown as jest.Mock;
+    asynchronous.mockImplementation((_path, _args, _options, callback) => {
+      process.nextTick(() => callback(null, 'Usage: kicad-cli', ''));
+      return { pid: 1 };
+    });
+    await expect(detector.hasCapability('bom')).resolves.toBe(true);
+    expect(asynchronous).toHaveBeenCalledTimes(1);
+    expect(sync).not.toHaveBeenCalled();
+  });
+
+  it('fails closed on timed-out probes even when partial help contains Usage', async () => {
+    const detector = new KiCadCliDetector() as any;
+    detector.detect = jest.fn().mockResolvedValue({
+      path: '/usr/bin/kicad-cli',
+      version: '10.0.8',
+      versionLabel: 'KiCad 10.0.8',
+      source: 'settings'
+    });
+    (childProcess.execFile as unknown as jest.Mock).mockImplementation(
+      (_bin, _args, _opts, callback) => {
+        const error = Object.assign(new Error('command timed out'), {
+          killed: true,
+          signal: 'SIGTERM'
+        });
+        process.nextTick(() => callback(error, 'Usage: partial', ''));
+        return { pid: 1 };
+      }
+    );
+    await expect(detector.hasCapability('bom')).resolves.toBe(false);
+    await expect(
+      detector.getCommandHelp(['pcb', 'import'])
+    ).resolves.toBeUndefined();
+  });
+
+  it('ignores a capability result that arrives after the cache is invalidated', async () => {
+    const detector = new KiCadCliDetector() as any;
+    detector.detect = jest.fn().mockResolvedValue({
+      path: '/usr/bin/kicad-cli',
+      version: '10.0.8',
+      versionLabel: 'KiCad 10.0.8',
+      source: 'settings'
+    });
+    let complete:
+      ((error: null, stdout: string, stderr: string) => void) | undefined;
+    (childProcess.execFile as unknown as jest.Mock).mockImplementation(
+      (_bin, _args, _opts, callback) => {
+        complete = callback;
+        return { pid: 1 };
+      }
+    );
+    const pending = detector.hasCapability('bom');
+    await Promise.resolve();
+    expect(complete).toBeDefined();
+    detector.clearCache();
+    complete?.(null, 'Usage: stale binary', '');
+    await expect(pending).resolves.toBe(false);
+    expect(detector.capabilityCache.has('bom')).toBe(false);
+  });
+
+  it('limits concurrent status-menu help probes instead of starting all at once', async () => {
+    const detector = new KiCadCliDetector() as any;
+    detector.detect = jest.fn().mockResolvedValue({
+      path: '/usr/bin/kicad-cli',
+      version: '10.0.8',
+      versionLabel: 'KiCad 10.0.8',
+      source: 'settings'
+    });
+    let active = 0;
+    let peak = 0;
+    detector.hasCapability = jest.fn().mockImplementation(async () => {
+      active += 1;
+      peak = Math.max(peak, active);
+      await new Promise<void>((resolve) => setTimeout(resolve, 8));
+      active -= 1;
+      return true;
+    });
+    detector.commandHelpIncludes = jest.fn().mockResolvedValue(false);
+    await detector.getCapabilitySnapshot();
+    expect(peak).toBeGreaterThan(1);
+    expect(peak).toBeLessThanOrEqual(6);
   });
 
   it('deriveCommandVersionStatus returns correct status strings', () => {
