@@ -66,7 +66,16 @@ export async function launchVsCodeWithFixtures(
 
   const executablePath = await downloadVsCodeWithRetry(
     VSCODE_VERSION,
-    (version) => downloadAndUnzipVSCode({ version, timeout: 120_000 })
+    (version) =>
+      downloadAndUnzipVSCode({
+        version,
+        timeout: 120_000,
+        // Native Windows test worktrees may be nested deeply enough that
+        // VS Code's bundled rg.exe exceeds MAX_PATH and fails to spawn.
+        ...(process.platform === 'win32'
+          ? { cachePath: path.join(os.tmpdir(), 'kicadstudio-vscode-test') }
+          : {})
+      })
   );
   const remoteDebuggingPort = await getFreePort();
   const env = { ...process.env };
