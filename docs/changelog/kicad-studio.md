@@ -16,6 +16,27 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.6.3...vscode-extension-v2.7.0) (2026-11-13)
+
+
+### Features
+
+* **kicad-studio:** connect to authorized Cloud projects ([#980](https://github.com/oaslananka/kicad-studio-kit/issues/980)) ([#987](https://github.com/oaslananka/kicad-studio-kit/issues/987)) ([be505f2](https://github.com/oaslananka/kicad-studio-kit/commit/be505f2a7a6b614294e419ce008a70acef0243db))
+* **kicad-studio:** expose local and Cloud project sources ([#981](https://github.com/oaslananka/kicad-studio-kit/issues/981)) ([#988](https://github.com/oaslananka/kicad-studio-kit/issues/988)) ([58d9e4d](https://github.com/oaslananka/kicad-studio-kit/commit/58d9e4d6eeee6b9e8f8fd7cb2db5bf663f5b9d5a))
+
+
+### Bug Fixes
+
+* **kicad-studio:** clarify first-time Cloud sign-in recovery ([#981](https://github.com/oaslananka/kicad-studio-kit/issues/981)) ([#989](https://github.com/oaslananka/kicad-studio-kit/issues/989)) ([95dd8d9](https://github.com/oaslananka/kicad-studio-kit/commit/95dd8d95f3e0abb95339c7a0c01ea850883b025d))
+* **kicad-studio:** complete existing-project Guided Tour progress ([#979](https://github.com/oaslananka/kicad-studio-kit/issues/979)) ([158434b](https://github.com/oaslananka/kicad-studio-kit/commit/158434b29c1ac20d56237813de3a4e49f6ede3e4))
+* **kicad-studio:** expose schematic exports on first open ([#968](https://github.com/oaslananka/kicad-studio-kit/issues/968)) ([43f0d78](https://github.com/oaslananka/kicad-studio-kit/commit/43f0d78b387d1fc330c67710e080e7a12fca5eed))
+* **kicad-studio:** fail promptly when KiCad CLI is missing ([#975](https://github.com/oaslananka/kicad-studio-kit/issues/975)) ([0214d92](https://github.com/oaslananka/kicad-studio-kit/commit/0214d92c9f0dc8f2f0bf2fca5e94e738ab4cfc7d))
+* **kicad-studio:** fail promptly when KiCad executable is unavailable ([0214d92](https://github.com/oaslananka/kicad-studio-kit/commit/0214d92c9f0dc8f2f0bf2fca5e94e738ab4cfc7d))
+* **kicad-studio:** guide PCB selection before fabrication exports ([#977](https://github.com/oaslananka/kicad-studio-kit/issues/977)) ([3480b25](https://github.com/oaslananka/kicad-studio-kit/commit/3480b250b9b92ed712604a7f82e008c05291fd94)), closes [#976](https://github.com/oaslananka/kicad-studio-kit/issues/976)
+* **kicad-studio:** keep CLI capability status responsive ([#973](https://github.com/oaslananka/kicad-studio-kit/issues/973)) ([37688d7](https://github.com/oaslananka/kicad-studio-kit/commit/37688d71a8d314318ba8bc3d0b9648be13dd72ab)), closes [#972](https://github.com/oaslananka/kicad-studio-kit/issues/972)
+* **kicad-studio:** preserve schematic SVG viewport on save ([#965](https://github.com/oaslananka/kicad-studio-kit/issues/965)) ([1fe9abf](https://github.com/oaslananka/kicad-studio-kit/commit/1fe9abf28467e2500be0a9251063fb6710784918))
+* **repo:** maintain one verified Release Please pull request ([#962](https://github.com/oaslananka/kicad-studio-kit/issues/962)) ([ca71a9c](https://github.com/oaslananka/kicad-studio-kit/commit/ca71a9ce13c1161cd41c4894a4ab6cb55bd8ce59))
+
 ## [2.6.3](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.6.2...vscode-extension-v2.6.3) (2026-11-12)
 
 
