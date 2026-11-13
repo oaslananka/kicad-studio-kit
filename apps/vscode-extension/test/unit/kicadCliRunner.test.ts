@@ -483,10 +483,17 @@ describe('KiCadCliRunner', () => {
     expect(logOutput).toContain(referenceUrl);
   });
 
-  it('fails fast when no kicad-cli installation can be detected', async () => {
+  it('fails promptly without waiting for a missing-CLI installation prompt', async () => {
     __setConfiguration({});
+    const detector = {
+      detect: jest.fn((notifyOnMissing: boolean) =>
+        notifyOnMissing
+          ? new Promise<undefined>(() => undefined)
+          : Promise.resolve(undefined)
+      )
+    };
     const runner = new KiCadCliRunner(
-      { detect: jest.fn().mockResolvedValue(undefined) } as never,
+      detector as never,
       {
         info: jest.fn(),
         warn: jest.fn(),
@@ -495,13 +502,16 @@ describe('KiCadCliRunner', () => {
       } as never
     );
 
-    await expect(
-      runner.run({
-        command: ['pcb', 'drc', 'board.kicad_pcb'],
-        cwd: tempDir,
-        progressTitle: 'DRC'
-      })
-    ).rejects.toBeInstanceOf(KiCadCliNotFoundError);
+    const run = runner.run({
+      command: ['pcb', 'drc', 'board.kicad_pcb'],
+      cwd: tempDir,
+      progressTitle: 'DRC'
+    });
+
+    // A user's open "Download KiCad" dialog must never block DRC progress.
+    expect(detector.detect).toHaveBeenCalledWith(false);
+    await expect(run).rejects.toBeInstanceOf(KiCadCliNotFoundError);
+    expect(childProcess.spawn).not.toHaveBeenCalled();
   });
 
   it('rejects unsafe child-process arguments before spawning', async () => {
