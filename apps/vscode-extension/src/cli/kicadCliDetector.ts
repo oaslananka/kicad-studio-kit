@@ -303,25 +303,28 @@ export class KiCadCliDetector {
     // Real CLI help probes are expensive. Limit native process concurrency
     // and avoid synchronous calls that freeze the VS Code extension host.
     const commandResults: Array<readonly [KiCadCliCapabilityName, boolean]> =
-      [];
-    for (
-      let start = 0;
-      start < STATUS_MENU_CAPABILITY_COMMANDS.length;
-      start += MAX_CONCURRENT_CAPABILITY_PROBES
-    ) {
-      const batch = STATUS_MENU_CAPABILITY_COMMANDS.slice(
-        start,
-        start + MAX_CONCURRENT_CAPABILITY_PROBES
-      );
-      commandResults.push(
-        ...(await Promise.all(
-          batch.map(
-            async (command) =>
-              [command, await this.hasCapability(command)] as const
+      new Array(STATUS_MENU_CAPABILITY_COMMANDS.length);
+    let nextCommandIndex = 0;
+    const probeNext = async (): Promise<void> => {
+      const index = nextCommandIndex++;
+      const command = STATUS_MENU_CAPABILITY_COMMANDS[index];
+      if (!command) {
+        return;
+      }
+      commandResults[index] = [command, await this.hasCapability(command)];
+      await probeNext();
+    };
+    await Promise.all(
+      Array.from(
+        {
+          length: Math.min(
+            MAX_CONCURRENT_CAPABILITY_PROBES,
+            STATUS_MENU_CAPABILITY_COMMANDS.length
           )
-        ))
-      );
-    }
+        },
+        () => probeNext()
+      )
+    );
     const [variantOption, allegroImport] = await Promise.all([
       this.commandHelpIncludes(['sch', 'export', 'pdf'], /--variant\b/),
       this.commandHelpIncludes(['pcb', 'import'], /\ballegro\b/i)
