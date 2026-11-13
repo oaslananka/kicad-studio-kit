@@ -44,6 +44,7 @@ describe('Cloud session lifecycle (VS Code SecretStorage only)', () => {
       })
     });
     (env.openExternal as jest.Mock).mockResolvedValue(true);
+    (env.asExternalUri as jest.Mock).mockImplementation(async (uri) => uri);
     (contract.discoverCloudOAuth as jest.Mock).mockResolvedValue(discovery);
     (contract.createAuthorizationRequest as jest.Mock).mockReturnValue({
       state: 'random-state',
@@ -99,6 +100,89 @@ describe('Cloud session lifecycle (VS Code SecretStorage only)', () => {
       JSON.stringify(tokens)
     );
     expect(context.globalState.update).not.toHaveBeenCalled();
+  });
+
+  it('routes a real callback to its originating VS Code window without changing the registered redirect', async () => {
+    const registered = 'vscode://oaslananka.kicadstudiokit/cloud-auth';
+    (env.asExternalUri as jest.Mock).mockResolvedValueOnce(
+      vscode.Uri.parse(registered + '?windowId=14')
+    );
+    (contract.createAuthorizationRequest as jest.Mock).mockReturnValueOnce({
+      state: 'a'.repeat(32),
+      verifier: 'random-verifier',
+      url:
+        'https://kicad-mcp-pro.oaslananka.dev/api/auth/oauth2/authorize?' +
+        new URLSearchParams({ redirect_uri: registered, state: 'a'.repeat(32) })
+    });
+    const originatingHandler = handler;
+    const login = controller.signIn();
+    for (
+      let i = 0;
+      i < 20 && !(env.openExternal as jest.Mock).mock.calls.length;
+      i += 1
+    ) {
+      await Promise.resolve();
+    }
+    const opened = new URL(
+      String((env.openExternal as jest.Mock).mock.calls[0]?.[0])
+    );
+    expect(opened.searchParams.get('redirect_uri')).toBe(registered);
+    const state = opened.searchParams.get('state');
+    expect(state).toBe('a'.repeat(32) + '.w14');
+
+    let otherHandler: { handleUri(uri: vscode.Uri): void } | undefined;
+    (
+      window as unknown as { registerUriHandler: jest.Mock }
+    ).registerUriHandler = jest.fn((value) => {
+      otherHandler = value;
+      return { dispose: jest.fn() };
+    });
+    const otherWindow = new CloudSessionController(
+      context as unknown as vscode.ExtensionContext
+    );
+    try {
+      const original = {
+        scheme: 'vscode',
+        authority: 'oaslananka.kicadstudiokit',
+        path: '/cloud-auth',
+        query: new URLSearchParams({
+          state: state!,
+          code: 'ONE_TIME_CODE'
+        }).toString()
+      } as vscode.Uri;
+
+      otherHandler!.handleUri({
+        ...original,
+        query: original.query + '&_studio_forwarded=1'
+      } as vscode.Uri);
+      expect(env.openExternal).toHaveBeenCalledTimes(1);
+      otherHandler!.handleUri(original);
+      expect(env.openExternal).toHaveBeenCalledTimes(2);
+      const forwarded = new URL(
+        String((env.openExternal as jest.Mock).mock.calls[1]?.[0])
+      );
+      expect(forwarded.protocol).toBe('vscode:');
+      expect(forwarded.host).toBe('oaslananka.kicadstudiokit');
+      expect(forwarded.pathname).toBe('/cloud-auth');
+      expect(forwarded.searchParams.get('windowId')).toBe('14');
+      expect(forwarded.searchParams.get('code')).toBe('ONE_TIME_CODE');
+      expect(forwarded.searchParams.get('_studio_forwarded')).toBe('1');
+
+      originatingHandler.handleUri({
+        ...original,
+        query: forwarded.search.slice(1)
+      } as vscode.Uri);
+      await login;
+      expect(contract.redeemCloudCode).toHaveBeenCalledWith(
+        discovery,
+        'ONE_TIME_CODE',
+        'random-verifier',
+        registered
+      );
+      expect(await controller.isSignedIn()).toBe(true);
+    } finally {
+      otherWindow.dispose();
+    }
   });
 
   it('keeps remote project identity out of the local project and clears both on logout', async () => {
