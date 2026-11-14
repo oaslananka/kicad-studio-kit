@@ -218,7 +218,8 @@ export const env = {
   clipboard: {
     writeText: jest.fn()
   },
-  openExternal: jest.fn()
+  openExternal: jest.fn(),
+  asExternalUri: jest.fn(async (uri: Uri) => uri)
 };
 
 export const l10n = {

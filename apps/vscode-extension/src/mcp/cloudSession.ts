@@ -17,6 +17,35 @@ import {
 export const CLOUD_SESSION_SLOT = 'kicadstudio.cloud.oauth.session.v1';
 export const CLOUD_SELECTION_KEY = 'kicadstudio.cloud.selectedRemoteProjectId';
 
+// The OAuth redirect URI stays exactly as registered with Cloud. The routing
+// hint lives in the opaque state and is used only by the local VS Code host.
+const WINDOW_STATE = /^([\w-]{32})\.w(\d{1,9})$/u;
+const WINDOW_ID = /^\d{1,9}$/u;
+const RELAY_MARKER = '_studio_forwarded';
+
+async function stateForWindow(
+  callback: string,
+  state: string
+): Promise<string> {
+  const external = await vscode.env.asExternalUri(vscode.Uri.parse(callback));
+  const parsed = new URL(external.toString());
+  // VS Code URI serialization encodes the query's "=" (e.g. windowId%3D14).
+  // Read the Uri.query field, not URL.searchParams on its serialized form.
+  const target = new URLSearchParams(external.query ?? parsed.search).get(
+    'windowId'
+  );
+  if (
+    !target ||
+    !WINDOW_ID.test(target) ||
+    parsed.protocol !== new URL(callback).protocol ||
+    parsed.host !== new URL(callback).host ||
+    parsed.pathname !== new URL(callback).pathname
+  ) {
+    return state;
+  }
+  return `${state}.w${target}`;
+}
+
 interface PendingAuthorization {
   state: string;
   resolve: (code: string) => void;
@@ -42,7 +71,6 @@ export class CloudSessionController implements vscode.Disposable {
 
   private handleCallback(uri: vscode.Uri): void {
     const pending = this.pending;
-    if (!pending) return;
     const expected = callbackUriForScheme(vscode.env.uriScheme);
     const parsed = new URL(expected);
     if (
@@ -53,7 +81,28 @@ export class CloudSessionController implements vscode.Disposable {
       return;
     }
     const params = new URLSearchParams(uri.query);
-    if (params.get('state') !== pending.state) {
+    const state = params.get('state');
+    if (state !== pending?.state) {
+      // VS Code may deliver a system URI to a different open window. Route
+      // it back at most once; only the origin window holds the PKCE verifier.
+      // Never modify the registered redirect_uri sent to Cloud.
+      const target = WINDOW_STATE.exec(state ?? '')?.[2];
+      if (
+        !target ||
+        params.has(RELAY_MARKER) ||
+        params.has('windowId') ||
+        (!params.has('code') && !params.has('error'))
+      ) {
+        return;
+      }
+      params.set('windowId', target);
+      params.set(RELAY_MARKER, '1');
+      // Keep the scheme/authority/path fixed, regardless of callback input.
+      void Promise.resolve(
+        vscode.env.openExternal(
+          vscode.Uri.parse(`${expected}?${params.toString()}`)
+        )
+      ).catch(() => undefined);
       return;
     }
     if (params.get('iss') && params.get('iss') !== this.metadata?.issuer) {
@@ -80,19 +129,24 @@ export class CloudSessionController implements vscode.Disposable {
     const metadata = await discoverCloudOAuth(callback);
     this.metadata = metadata;
     const request = createAuthorizationRequest(metadata, callback);
+    // asExternalUri supplies the windowId used by VS Code's own URI router.
+    // Encode it in OAuth's opaque state, not the strict redirect URI.
+    const state = await stateForWindow(callback, request.state);
+    const url = new URL(request.url);
+    url.searchParams.set('state', state);
     const codePromise = new Promise<string>((resolve, reject) => {
       const timeout = setTimeout(
         () => reject(new Error('Cloud sign-in timed out. Please try again.')),
         180000
       );
-      this.pending = { state: request.state, resolve, reject, timeout };
+      this.pending = { state, resolve, reject, timeout };
     });
     // A browser launch failure must not leave an unobserved authorization
     // promise to reject later when its timer fires.
     void codePromise.catch(() => undefined);
     try {
       const opened = await vscode.env.openExternal(
-        vscode.Uri.parse(request.url)
+        vscode.Uri.parse(url.toString())
       );
       if (!opened) {
         throw new Error('VS Code could not open the Cloud sign-in browser.');
