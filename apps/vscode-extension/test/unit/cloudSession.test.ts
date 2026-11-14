@@ -104,9 +104,10 @@ describe('Cloud session lifecycle (VS Code SecretStorage only)', () => {
 
   it('routes a real callback to its originating VS Code window without changing the registered redirect', async () => {
     const registered = 'vscode://oaslananka.kicadstudiokit/cloud-auth';
-    (env.asExternalUri as jest.Mock).mockResolvedValueOnce(
-      vscode.Uri.parse(registered + '?windowId=14')
-    );
+    // Native Uri.toString() encodes "=" as "%3D", but Uri.query does not.
+    const external = vscode.Uri.parse(registered + '?windowId%3D14');
+    Object.assign(external, { query: 'windowId=14' });
+    (env.asExternalUri as jest.Mock).mockResolvedValueOnce(external);
     (contract.createAuthorizationRequest as jest.Mock).mockReturnValueOnce({
       state: 'a'.repeat(32),
       verifier: 'random-verifier',

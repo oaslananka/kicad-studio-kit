@@ -29,7 +29,11 @@ async function stateForWindow(
 ): Promise<string> {
   const external = await vscode.env.asExternalUri(vscode.Uri.parse(callback));
   const parsed = new URL(external.toString());
-  const target = parsed.searchParams.get('windowId');
+  // VS Code URI serialization encodes the query's "=" (e.g. windowId%3D14).
+  // Read the Uri.query field, not URL.searchParams on its serialized form.
+  const target = new URLSearchParams(external.query ?? parsed.search).get(
+    'windowId'
+  );
   if (
     !target ||
     !WINDOW_ID.test(target) ||
