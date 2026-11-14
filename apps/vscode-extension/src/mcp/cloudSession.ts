@@ -19,8 +19,8 @@ export const CLOUD_SELECTION_KEY = 'kicadstudio.cloud.selectedRemoteProjectId';
 
 // The OAuth redirect URI stays exactly as registered with Cloud. The routing
 // hint lives in the opaque state and is used only by the local VS Code host.
-const WINDOW_STATE = /^([A-Za-z0-9_-]{32})\.w([0-9]{1,9})$/u;
-const WINDOW_ID = /^[0-9]{1,9}$/u;
+const WINDOW_STATE = /^([\w-]{32})\.w(\d{1,9})$/u;
+const WINDOW_ID = /^\d{1,9}$/u;
 const RELAY_MARKER = '_studio_forwarded';
 
 async function stateForWindow(
@@ -78,7 +78,7 @@ export class CloudSessionController implements vscode.Disposable {
     }
     const params = new URLSearchParams(uri.query);
     const state = params.get('state');
-    if (!pending || state !== pending.state) {
+    if (state !== pending?.state) {
       // VS Code may deliver a system URI to a different open window. Route
       // it back at most once; only the origin window holds the PKCE verifier.
       // Never modify the registered redirect_uri sent to Cloud.
