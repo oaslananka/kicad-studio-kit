@@ -1,4 +1,4 @@
-> Historical review: license metadata is now GPL-3.0-only; consult [LICENSING.md](../../LICENSING.md) for current terms.
+> Historical review: license metadata is now GPL-3.0-only; consult [LICENSING.md](https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSING.md) for current terms.
 
 # REUSE, SPDX, and NOTICE Assessment
 
