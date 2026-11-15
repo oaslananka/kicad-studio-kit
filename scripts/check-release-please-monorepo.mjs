@@ -405,6 +405,20 @@ export function requiresLocalCommitSubjectValidation(branch) {
   return branch === "main" || branch === "";
 }
 
+export function validateLocalBranchCommitScopes(repoRoot) {
+  const commits = listLocalBranchCommits(repoRoot);
+  const localBranch = git(
+    repoRoot,
+    ["symbolic-ref", "--quiet", "--short", "HEAD"],
+    {
+      allowFailure: true,
+    },
+  ).trim();
+  return validateCommitScopeCoverage(commits, {
+    validateSubjects: requiresLocalCommitSubjectValidation(localBranch),
+  });
+}
+
 function main() {
   const errors = [];
   errors.push(...validateRepositoryPolicy(REPO_ROOT).errors);
@@ -422,15 +436,7 @@ function main() {
       }),
     );
   } else {
-    const commits = listLocalBranchCommits(REPO_ROOT);
-    const localBranch = git(REPO_ROOT, ["symbolic-ref", "--quiet", "--short", "HEAD"], {
-      allowFailure: true,
-    }).trim();
-    errors.push(
-      ...validateCommitScopeCoverage(commits, {
-        validateSubjects: requiresLocalCommitSubjectValidation(localBranch),
-      }),
-    );
+    errors.push(...validateLocalBranchCommitScopes(REPO_ROOT));
   }
 
   if (errors.length > 0) {

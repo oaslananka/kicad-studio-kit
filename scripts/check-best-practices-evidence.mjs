@@ -79,7 +79,6 @@ export function validateBestPracticesEvidence(root = repoRoot) {
   const docsConfig = readFromRoot("docs/.vitepress/config.mts");
   const questionnaire = readFromRoot("docs/best-practices-questionnaire.md");
   const contributing = readFromRoot("CONTRIBUTING.md");
-  const prTemplate = readFromRoot(".github/PULL_REQUEST_TEMPLATE.md");
   const extensionPackage = JSON.parse(
     readFromRoot("apps/vscode-extension/package.json"),
   );
@@ -176,10 +175,7 @@ export function validateBestPracticesEvidence(root = repoRoot) {
     requireIncludes("docs/best-practices-evidence.md", evidence, phrase);
   }
 
-  for (const phrase of [
-    "No CLA",
-    "test:dynamic-analysis",
-  ]) {
+  for (const phrase of ["No CLA", "test:dynamic-analysis"]) {
     requireIncludes("CONTRIBUTING.md", contributing, phrase);
   }
   assert.equal(
