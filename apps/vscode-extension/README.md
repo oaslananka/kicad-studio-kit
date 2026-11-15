@@ -13,7 +13,7 @@
 [![Open VSX](https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX)](https://open-vsx.org/extension/oaslananka/kicadstudiokit)
 [![Open VSX Downloads](https://img.shields.io/open-vsx/dt/oaslananka/kicadstudiokit?label=Open%20VSX%20downloads)](https://open-vsx.org/extension/oaslananka/kicadstudiokit)
 [![VS Marketplace](https://img.shields.io/badge/VS%20Marketplace-install-007ACC)](https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit)
-[![License](https://img.shields.io/badge/license-MIT-2ea44f)](https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-GPL-3.0-only-2ea44f)](https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE)
 
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-sponsor-EA4AAA?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/oaslananka)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/oaslananka)
@@ -208,7 +208,7 @@ corepack pnpm --filter kicadstudiokit exec vsce ls --tree --no-dependencies
 
 ## License
 
-Current project-authored source is licensed under the MIT License, including
+Current project-authored source is licensed under GNU GPL v3.0, including
 commercial use under its terms. Previously published PolyForm releases retain
 their original licensing terms. See the repository licensing guide:
 https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSING.md

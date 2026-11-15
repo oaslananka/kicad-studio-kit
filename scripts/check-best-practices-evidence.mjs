@@ -106,20 +106,20 @@ export function validateBestPracticesEvidence(root = repoRoot) {
   const rootPackage = JSON.parse(readFromRoot("package.json"));
   const coverageThreshold = validateCoveragePolicy(root);
 
-  assert.equal(rootPackage.license, "MIT");
-  assert.equal(extensionPackage.license, "MIT");
+  assert.equal(rootPackage.license, "GPL-3.0-only");
+  assert.equal(extensionPackage.license, "GPL-3.0-only");
   for (const workspace of [
     "packages/kicad-fixtures",
     "packages/test-harness",
   ]) {
     assert.equal(
       JSON.parse(readFromRoot(workspace + "/package.json")).license,
-      "MIT",
+      "GPL-3.0-only",
     );
   }
-  const mitNotice = readFromRoot("LICENSE");
-  assert.match(mitNotice, /^MIT License\n\nCopyright \(c\) 2026 oaslananka\n/u);
-  assert.equal(readFromRoot("apps/vscode-extension/LICENSE"), mitNotice);
+  const gplNotice = readFromRoot("LICENSE");
+  assert.match(gplNotice, /GNU GENERAL PUBLIC LICENSE/u);
+  assert.equal(readFromRoot("apps/vscode-extension/LICENSE"), gplNotice);
 
   requireIncludes(
     "README.md",
@@ -177,23 +177,11 @@ export function validateBestPracticesEvidence(root = repoRoot) {
   }
 
   for (const phrase of [
-    "Developer Certificate of Origin",
-    "developercertificate.org",
-    "git commit -s",
+    "No CLA",
     "test:dynamic-analysis",
   ]) {
     requireIncludes("CONTRIBUTING.md", contributing, phrase);
   }
-  requireIncludes(
-    ".github/PULL_REQUEST_TEMPLATE.md",
-    prTemplate,
-    "Developer Certificate of Origin sign-off",
-  );
-  requireIncludes(
-    ".github/PULL_REQUEST_TEMPLATE.md",
-    prTemplate,
-    "no separate CLA needed for MIT contributions",
-  );
   assert.equal(
     extensionPackage.scripts?.["test:dynamic-analysis"],
     "pnpm run test:security && pnpm run test:webview && pnpm run test:a11y",

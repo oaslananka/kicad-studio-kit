@@ -38,14 +38,6 @@ Use one of the release-policy scopes that matches the changed surface:
 
 If an existing PR has legacy commit subjects, fix the PR title and repository files through normal non-destructive updates. Do not force-push or rewrite existing PR history just to satisfy metadata policy. Durable/default-branch commit validation remains strict.
 
-## DCO sign-off
-
-Non-trivial contributions should include a Developer Certificate of Origin sign-off:
-
-```bash
-git commit -s -m "docs(repo): improve maturity evidence"
-```
-
 ## PR evidence
 
 The PR description must include commands run, skipped checks with reasons, and any manual follow-up required.

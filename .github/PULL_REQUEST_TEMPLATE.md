@@ -101,6 +101,4 @@ Evidence links/notes:
 - [ ] CHANGELOG entry (if user-visible)
 - [ ] Docs updated (if user-visible)
 - [ ] No new committed secrets or build artifacts
-- [ ] Developer Certificate of Origin sign-off is present on non-trivial commits (`git commit -s`) or not applicable with rationale
-- [ ] Non-trivial contributions include DCO sign-off or a documented, justified exception (no separate CLA needed for MIT contributions)
 - [ ] Meets the [Definition of Done](../docs/architecture/definition-of-done.md) for this change type; not-applicable items are justified

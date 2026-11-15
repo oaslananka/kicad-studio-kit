@@ -8,7 +8,7 @@ Repository: `oaslananka/kicad-studio-kit`
 Audit date: 2026-07-20
 Mode: Live GitHub evidence reconciliation + implementation PR
 Historical target: OpenSSF Best Practices Silver / Solo-maintainer Professional OSS (MIT-licensed period)
-Current licensing (2026-11-04 update): MIT; PolyForm applied only to historical releases
+Current licensing: GPL-3.0-only; MIT and PolyForm applied to earlier releases
 
 ## Executive summary
 
@@ -32,7 +32,7 @@ Rationale:
 
 ## Target maturity level
 
-**Historical: OpenSSF Best Practices Silver / Solo-maintainer Professional OSS. Current: MIT open-source licensing; live badge status remains unverified.**
+**Historical: OpenSSF Best Practices Silver / Solo-maintainer Professional OSS. Current: GPL-3.0-only open-source licensing; live badge status remains unverified.**
 
 Silver was the final OpenSSF Best Practices target during the MIT-licensed period. Current licensing is not an OSI-approved open-source license, so the badge material is retained as historical evidence; the underlying security and quality controls remain active.
 
@@ -69,7 +69,7 @@ Silver was the final OpenSSF Best Practices target during the MIT-licensed perio
 | Code-Review            | Partial | The active ruleset enforces pull requests and CI but intentionally requires zero approvals; independent human-review history remains limited by the solo-maintainer model. |
 | Maintained             | Passed  | Recent release and push activity exist.                                                                                                                                    |
 | Security-Policy        | Passed  | `SECURITY.md`.                                                                                                                                                             |
-| License                | Current | MIT for current project-authored source; historical releases retain the grants applicable when distributed.                                                                |
+| License                | Current | GPL-3.0-only for current project-authored source; historical releases retain the grants applicable when distributed.                                                                |
 | CI-Tests               | Passed  | `ci.yml`, product checks, docs, package, integration, a11y, visual, and release checks exist.                                                                              |
 | Dependency-Update-Tool | Passed  | Renovate and GitHub-native dependency alert/update configuration exist.                                                                                                    |
 | Pinned-Dependencies    | Passed  | GitHub Actions are digest-pinned; lockfile is committed.                                                                                                                   |
@@ -142,7 +142,7 @@ The repository already has extensive architecture, release, testing, compatibili
 | Release frequency             | Partial        | Recent release exists; sustainable cadence needs more history.                                                                                         |
 | Bus factor                    | Missing        | Current evidence points to a single primary maintainer; continuity remains documented through governance and release procedures.                       |
 | Documentation discoverability | Passed         | Docs site and Diátaxis seed pages exist.                                                                                                               |
-| Change acceptance process     | Passed         | CONTRIBUTING, PR template, ADR policy, DCO.                                                                                                            |
+| Change acceptance process     | Passed         | CONTRIBUTING, PR template, ADR policy; no DCO required.                                                                                                            |
 
 ## License/legal maturity
 

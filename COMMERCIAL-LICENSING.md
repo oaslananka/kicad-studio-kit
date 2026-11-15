@@ -1,13 +1,12 @@
 # Historical Commercial Licensing Notice
 
-> **Superseded on 2026-11-04.** Current project-authored source is
-> [MIT-licensed](LICENSE), allowing commercial reuse under the MIT terms
-> without a separate commercial agreement.
+Current project-authored source is licensed under [GNU GPL v3.0](LICENSE)
+(GPL-3.0-only). Commercial use is permitted under that license without obtaining a
+separate commercial software license.
 
-Between 2026-09-14 and the MIT restoration, project-authored source was
-distributed under PolyForm Noncommercial 1.0.0. That historical license did
-not authorize commercial use without separate permission.
+Some earlier versions were released with different licensing terms, including
+PolyForm Noncommercial. Those historical releases retain their original
+terms. Third-party components keep their own applicable licenses.
 
-This document records the earlier policy, not a restriction on current
-MIT-licensed code. Earlier release artifacts retain their original grants.
-Third-party components retain their own license terms; see [Licensing](LICENSING.md).
+This document records historical licensing information only and does not add
+restrictions to the current GNU license.

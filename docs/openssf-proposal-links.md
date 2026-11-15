@@ -1,6 +1,6 @@
 # OpenSSF Proposal Links
 
-These links preserve evidence from the MIT-licensed OpenSSF Best Practices period and remain useful for Scorecard/security maintenance. The PolyForm period (2026-09-14 to 2026-11-04) is historical; current source is MIT-licensed. The earlier BadgeApp status remains historical until its live status is independently reverified.
+These links preserve evidence from the MIT-licensed OpenSSF Best Practices period and remain useful for Scorecard/security maintenance. The PolyForm period (2026-09-14 to 2026-11-04) is historical; current source is GPL-3.0-only. The earlier BadgeApp status remains historical until its live status is independently reverified.
 
 ## BadgeApp
 

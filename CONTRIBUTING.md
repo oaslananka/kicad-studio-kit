@@ -77,25 +77,12 @@ For most pull requests, start with focused checks and paste the exact command ou
 
 Complete the review-evidence section using the vendor-neutral [review evidence policy](docs/architecture/review-evidence-policy.md). A quota, capacity, rate-limit, authentication, or other availability notice is not a completed review. Triage every bot and agent artifact and record compensating evidence when an automated reviewer is unavailable for a medium/high-risk change.
 
-## Developer Certificate of Origin
+## Contribution licensing
 
-By contributing a non-trivial change, you certify the [Developer Certificate of
-Origin 1.1](https://developercertificate.org/). Add a `Signed-off-by` trailer
-to every commit:
-
-```bash
-git commit -s
-```
-
-The sign-off means that you wrote the contribution or otherwise have the right
-to submit it. Pull requests with non-trivial code, test, documentation, CI, or
-release-process changes must include signed-off commits or document why the DCO
-requirement is not applicable.
-
-Contributions are submitted under the project's current MIT License.
-Non-trivial changes require DCO sign-off; a separate Contributor License
-Agreement is not required for ordinary MIT-licensed contributions. See
-[CONTRIBUTOR-LICENSING.md](CONTRIBUTOR-LICENSING.md).
+Contributions are proposed using regular GitHub pull requests under the
+[GNU GPL v3.0](LICENSE). No CLA, DCO sign-off, `Signed-off-by` trailer,
+`git commit -s`, or copyright assignment is required. Contributors retain
+their copyright and must have the right to submit their work.
 
 ## Architecture Decision Records
 

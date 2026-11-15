@@ -16,8 +16,8 @@ This reference summarizes the repository standards that contributors and maintai
 | File                 | Purpose                                                            |
 | -------------------- | ------------------------------------------------------------------ |
 | `README.md`          | Project overview, install, validation, product boundaries.         |
-| `LICENSE`            | Current MIT License (earlier PolyForm releases remain historical). |
-| `CONTRIBUTING.md`    | Contribution process, DCO, ADR expectations.                       |
+| `LICENSE`            | Current GPL-3.0-only License (earlier PolyForm releases remain historical). |
+| `CONTRIBUTING.md`    | Contribution process, licensing, ADR expectations.                       |
 | `CODE_OF_CONDUCT.md` | Contributor behavior standards.                                    |
 | `SECURITY.md`        | Private vulnerability reporting.                                   |
 | `SUPPORT.md`         | Support channels and response goals.                               |
@@ -32,7 +32,7 @@ This reference summarizes the repository standards that contributors and maintai
 2. Keep the PR single-purpose.
 3. Complete the PR template.
 4. Include tests or explain why not applicable.
-5. Use Conventional Commits and DCO sign-off for non-trivial work.
+5. Use Conventional Commits; no DCO sign-off or CLA is required.
 6. Use ADRs for architecture, release, security, compatibility, and product-boundary changes.
 
 ## Status vocabulary

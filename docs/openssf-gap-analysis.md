@@ -8,7 +8,7 @@ Review date: 2026-08-02
 
 ## Summary
 
-Passing and Silver were achieved during the original MIT-licensed period. Source distributed from 2026-09-14 through the licensing restoration on 2026-11-04 used PolyForm Noncommercial 1.0.0. Current source is MIT-licensed again. This historical analysis preserves Silver evidence but does not assert a renewed live BadgeApp status.
+Passing and Silver were achieved during the original MIT-licensed period. Source distributed from 2026-09-14 through the licensing restoration on 2026-11-04 used PolyForm Noncommercial 1.0.0. Current source is GPL-3.0-only; MIT and PolyForm were previous licensing periods. This historical analysis preserves Silver evidence but does not assert a renewed live BadgeApp status.
 
 ## Passing readiness
 

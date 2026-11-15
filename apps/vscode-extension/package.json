@@ -60,7 +60,7 @@
   "sponsor": {
     "url": "https://github.com/sponsors/oaslananka"
   },
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "main": "./dist/extension.js",
   "extensionKind": [
     "workspace"
