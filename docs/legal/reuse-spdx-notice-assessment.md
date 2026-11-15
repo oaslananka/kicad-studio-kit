@@ -1,3 +1,5 @@
+> Historical review: license metadata is now GPL-3.0-only; consult [LICENSING.md](https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSING.md) for current terms.
+
 # REUSE, SPDX, and NOTICE Assessment
 
 Audit baseline: 2026-09-14

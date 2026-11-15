@@ -13,13 +13,10 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
   <a href="https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit"><img src="https://api.scorecard.dev/projects/github.com/oaslananka/kicad-studio-kit/badge" alt="OpenSSF Scorecard"></a>
 </p>
 
-[![GitGem](https://gitgem.org/api/badge/github/oaslananka/kicad-studio-kit.svg)](https://gitgem.org/github/oaslananka/kicad-studio-kit)
 
 <p>
   <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/badge/VS%20Marketplace-install-007ACC" alt="Install from Visual Studio Marketplace"></a>
   <a href="https://open-vsx.org/extension/oaslananka/kicadstudiokit"><img src="https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX" alt="Open VSX version"></a>
-  <a href="https://open-vsx.org/extension/oaslananka/kicadstudiokit"><img src="https://img.shields.io/open-vsx/dt/oaslananka/kicadstudiokit?label=Open%20VSX%20downloads" alt="Total Open VSX downloads"></a>
-  <a href="https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44f" alt="MIT license"></a>
   <a href="https://oaslananka.github.io/kicad-studio-kit/"><img src="https://img.shields.io/badge/docs-site-blue" alt="Documentation site"></a>
 </p>
 
@@ -31,9 +28,18 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
   <a href="https://deepwiki.com/oaslananka/kicad-studio-kit">Ask DeepWiki</a>
 </p>
 
-<p>
-  <a href="https://github.com/sponsors/oaslananka"><img src="https://img.shields.io/badge/GitHub%20Sponsors-sponsor-EA4AAA?logo=githubsponsors&logoColor=white" alt="Sponsor on GitHub"></a>
-  <a href="https://www.buymeacoffee.com/oaslananka"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black" alt="Support on Buy Me a Coffee"></a>
+
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--only-blue" alt="GPL-3.0-only license" /></a>
+  <a href="https://open-vsx.org/extension/oaslananka/kicadstudiokit"><img src="https://img.shields.io/open-vsx/dt/oaslananka/kicadstudiokit?label=total%20downloads" alt="Open VSX total downloads" /></a>
+  <a href="https://gitgem.org/github/oaslananka/kicad-studio-kit"><img src="https://gitgem.org/api/badge/github/oaslananka/kicad-studio-kit.svg" alt="GitGem" /></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/sponsors/oaslananka"><img src="https://img.shields.io/badge/GitHub-Sponsors-ea4aaa?logo=githubsponsors" alt="GitHub Sponsors" /></a>
+  <a href="https://www.buymeacoffee.com/oaslananka"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support-ffdd00?logo=buymeacoffee&amp;logoColor=black" alt="Buy Me a Coffee" /></a>
+  <a href="https://github.com/oaslananka/kicad-studio-kit"><img src="https://img.shields.io/github/stars/oaslananka/kicad-studio-kit?label=Stars&amp;color=8e65d3" alt="Stars" /></a>
 </p>
 
 </div>
@@ -74,7 +80,7 @@ container image, and MCP Registry listing — lives in
 **Historical OpenSSF Best Practices Silver:** The
 [Silver evidence](docs/best-practices-evidence.md) is preserved for traceability,
 not presented as a current badge. Current project-authored source is
-[MIT-licensed](LICENSE), following the November 2026 restoration of MIT terms.
+[GPL-3.0-only licensed](LICENSE) for current project-authored source.
 Past PolyForm-licensed releases retain their original grant; badge status is
 not automatically reinstated by a license change. Security and release
 controls remain independently enforced.
@@ -193,4 +199,4 @@ opening a pull request.
 
 ## License
 
-Current KiCad Studio Kit project-authored source is licensed under the [MIT License](LICENSE), including commercial reuse under its terms. Existing releases retain the license applicable when they were distributed. Third-party code retains its own license; see [LICENSING.md](LICENSING.md).
+Current KiCad Studio Kit project-authored source is licensed under [GNU GPL v3.0](LICENSE), including commercial use under its terms. Third-party code retains its own license; see [LICENSING.md](LICENSING.md).

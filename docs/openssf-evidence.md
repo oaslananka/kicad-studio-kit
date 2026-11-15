@@ -9,20 +9,20 @@ This file is a concise evidence map for OpenSSF Best Practices and Scorecard rea
 | Project                | KiCad Studio Kit                                                           |
 | Repository             | `https://github.com/oaslananka/kicad-studio-kit`                           |
 | Product                | VS Code extension: `oaslananka.kicadstudiokit`                             |
-| License                | Current: MIT; historical: MIT and PolyForm periods                         |
+| License                | Current: GPL-3.0-only; historical: MIT and PolyForm periods                         |
 | Best Practices project | `https://www.bestpractices.dev/projects/13405`                             |
 | Declared badge target  | Historical MIT-period Silver evidence                                      |
 | Scorecard viewer       | `https://scorecard.dev/viewer/?uri=github.com/oaslananka/kicad-studio-kit` |
 
 ## OpenSSF Best Practices evidence
 
-Silver was achieved in the original MIT period. Following the historical PolyForm interval, current project-authored source returned to MIT on 2026-11-04. Historic Silver evidence remains useful, but a current badge status must be independently verified; security and release controls continue independently.
+Silver was achieved in the original MIT period. Following the historical PolyForm interval, current project-authored source later transitioned to GPL-3.0-only. Historic Silver evidence remains useful, but a current badge status must be independently verified; security and release controls continue independently.
 
 | Area                  | Status       | Evidence                                                                                                                     |
 | --------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
 | Identification        | Passed       | `README.md`, `CANONICAL.md`, `package.json`.                                                                                 |
-| FLOSS license         | Current      | Current `LICENSE` is MIT. The PolyForm-licensed release period is preserved as history.                                      |
-| Contribution process  | Passed       | `CONTRIBUTING.md`, PR template, DCO section.                                                                                 |
+| FLOSS license         | Current      | Current `LICENSE` is GPL-3.0-only. The PolyForm-licensed release period is preserved as history.                                      |
+| Contribution process  | Passed       | `CONTRIBUTING.md`, PR template, standard contribution licensing (no DCO).                                                                                 |
 | Code of Conduct       | Passed       | `CODE_OF_CONDUCT.md`.                                                                                                        |
 | Security reporting    | Passed       | `SECURITY.md`, GitHub Security Advisory link.                                                                                |
 | Build and install     | Passed       | `README.md`, `docs/tutorials/getting-started.md`, `docs/devcontainer.md`.                                                    |
@@ -42,7 +42,7 @@ Silver was achieved in the original MIT period. Following the historical PolyFor
 | Code-Review            | `.github/CODEOWNERS`, `.github/PULL_REQUEST_TEMPLATE.md`, active ruleset                          | Partial; PR/CI enforcement is active, while independent approval is intentionally unavailable in the solo-maintainer model. |
 | CI-Tests               | `.github/workflows/ci.yml`                                                                        | Passed.                                                                                                                     |
 | Security-Policy        | `SECURITY.md`                                                                                     | Passed.                                                                                                                     |
-| License                | `LICENSE`, `LICENSING.md`                                                                         | Current project source is MIT; earlier release artifacts retain their original grants.                                      |
+| License                | `LICENSE`, `LICENSING.md`                                                                         | Current project source is GPL-3.0-only; earlier release artifacts retain their original grants.                                      |
 | SAST                   | `.github/workflows/codeql.yml`                                                                    | Passed.                                                                                                                     |
 | Token-Permissions      | workflow-level `permissions: contents: read` plus job-level elevation                             | Passed.                                                                                                                     |
 | Dangerous-Workflow     | Pinned actions and no new risky triggers in this PR                                               | Partial; keep reviewing release workflows.                                                                                  |

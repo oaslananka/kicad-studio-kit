@@ -82,7 +82,7 @@ integrations and their credentials before enabling them.
 
 ## License and Support
 
-Current project-authored source is licensed under the **MIT License**,
+Current project-authored source is licensed under **GNU GPL v3.0**,
 including commercial reuse under its terms. Historical releases retain
 the licenses originally published with them. Third-party materials have
 their own licenses and notices.

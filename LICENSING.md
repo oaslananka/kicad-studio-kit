@@ -1,28 +1,31 @@
 # Licensing
 
-Current KiCad Studio Kit project-authored source code is licensed under the
-[MIT License](LICENSE). MIT permits commercial and noncommercial use,
-modification, redistribution and sublicensing, subject to the license notice
-conditions. No separate commercial agreement is required for MIT-licensed code.
+Project-authored source code in the current revision is licensed under the
+[GNU General Public License v3.0 (GPL-3.0-only)](LICENSE).
 
-## Historical releases
+Copyright © 2026 Osman Aslan (GitHub: [oaslananka](https://github.com/oaslananka)).
+This notice does not replace or remove copyright held by contributors or third parties.
 
-Revisions released under MIT retain those terms. Releases distributed under
-PolyForm Noncommercial 1.0.0 during the historical source-available period
-retain the licenses that applied to those artifacts. Restoring MIT for current
-source does not retroactively change past release grants.
-[Historical commercial licensing](COMMERCIAL-LICENSING.md) is retained for
-traceability, not as a condition for the current MIT-licensed source.
-
-## Third-party material
-
-Third-party dependencies and bundled components retain their own licenses.
-The bundled KiCanvas viewer retains its upstream MIT notice at
-`apps/vscode-extension/media/kicanvas/NOTICE.txt`.
-License metadata and notices must be preserved on redistribution.
+Commercial use is permitted under the GNU license, subject to its terms.
+Distributing covered software has source-sharing obligations. For software
+licensed under AGPL, modified versions used to serve users over a network
+also have source-offer obligations as described in the complete license text.
 
 ## Contributions
 
-See [Contributor Licensing](CONTRIBUTOR-LICENSING.md) and
-[Contributing](CONTRIBUTING.md) for the MIT contribution policy and Developer
-Certificate of Origin (DCO) sign-off requirement.
+Contributions can be proposed with ordinary GitHub pull requests. No separate
+contributor agreement (CLA), Developer Certificate of Origin (DCO) sign-off,
+or copyright assignment is required. Contributors keep copyright to their work
+and must have the rights needed to submit it under GPL-3.0-only.
+
+## Previously released material
+
+Older revisions and previously distributed artifacts may have used MIT
+or other licenses. Their original notices and permissions remain applicable
+to those historical artifacts.
+
+## Third-party material
+
+Dependencies, vendored material, fixtures, and embedded third-party assets retain
+their own applicable notices and licenses. Refer to repository-specific third-party
+notices, attribution files, and dependency metadata.

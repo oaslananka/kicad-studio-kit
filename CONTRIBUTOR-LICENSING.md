@@ -1,17 +1,11 @@
-# Contributor Licensing Policy
+# Contributor Licensing
 
-KiCad Studio Kit welcomes issues, forks and pull requests.
+Contributions to project-authored code are welcomed under
+[GNU GPL v3.0](LICENSE) (GPL-3.0-only) through ordinary GitHub pull requests.
 
-Contributions intentionally submitted for inclusion in project-authored code
-are licensed under the current [MIT License](LICENSE). Contributors retain
-copyright to their contributions unless separately agreed otherwise.
+Contributors retain their own copyright and confirm they have the right to
+submit the contribution under GPL-3.0-only. There is **no** Contributor License
+Agreement (CLA), DCO sign-off, `Signed-off-by` trailer, external registration,
+or copyright assignment requirement.
 
-Non-trivial contributions require Developer Certificate of Origin (DCO)
-sign-off with `git commit -s`; contributors must have the rights to
-submit their work under MIT. A Contributor License Agreement (CLA) is
-**not required** for ordinary MIT-licensed contributions. Quality, provenance
-and pull-request review requirements remain in place.
-
-The former mandatory CLA policy supported historical commercial/noncommercial
-dual-path licensing and is superseded. Third-party dependencies keep their
-respective upstream licenses.
+Preserve attribution and license notices for included third-party material.

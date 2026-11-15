@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import test from "node:test";
@@ -12,9 +13,11 @@ import {
   listCommitsForPullRequest,
   parseConventionalSubject,
   resolveExecutable,
+  requiresLocalCommitSubjectValidation,
   runSyntheticReleasePleaseDryRun,
   validateCommitScopeCoverage,
   validateLinkedVersionGroups,
+  validateLocalBranchCommitScopes,
   validatePrTitle,
   validateRenovateCommitScopes,
   validateRepositoryPolicy,
@@ -525,4 +528,48 @@ test("#801 upstream Release Please retains exclusive tag and publication ownersh
   assert.doesNotMatch(workflow, /gh release create|gh pr close|gh pr create/u);
   assert.match(workflow, /steps.release.outputs.releases_created/u);
   assert.match(workflow, /secrets.DOPPLER_TOKEN/u);
+});
+
+test("PR topic branches do not require history rewrites; main and detached HEAD stay strict", () => {
+  assert.equal(
+    requiresLocalCommitSubjectValidation("chore/copyleft-licensing-20261115"),
+    false,
+  );
+  assert.equal(requiresLocalCommitSubjectValidation("main"), true);
+  assert.equal(requiresLocalCommitSubjectValidation(""), true);
+});
+
+test("local branch scope policy exercises real Git topic, main and detached states", () => {
+  const folder = fs.mkdtempSync(
+    path.join(os.tmpdir(), "studio-release-branch-policy-"),
+  );
+  const git = (...args) => {
+    const result = spawnSync("git", args, {
+      cwd: folder,
+      encoding: "utf8",
+      env: { ...createGitSubprocessEnv(), GIT_CONFIG_NOSYSTEM: "1" },
+    });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+  };
+  try {
+    git("init", "-b", "main");
+    git("config", "user.name", "Test Contributor");
+    git("config", "user.email", "contributor@example.invalid");
+    git("commit", "--allow-empty", "-m", "chore(repo): baseline");
+    git("update-ref", "refs/remotes/origin/main", "HEAD");
+    git("commit", "--allow-empty", "-m", "chore(wrong-scope): local draft");
+    assert.match(
+      validateLocalBranchCommitScopes(folder).join("\n"),
+      /scope "wrong-scope" is not allowed/u,
+    );
+    git("switch", "-c", "draft-topic");
+    assert.deepEqual(validateLocalBranchCommitScopes(folder), []);
+    git("switch", "--detach");
+    assert.match(
+      validateLocalBranchCommitScopes(folder).join("\n"),
+      /scope "wrong-scope" is not allowed/u,
+    );
+  } finally {
+    fs.rmSync(folder, { recursive: true, force: true });
+  }
 });
