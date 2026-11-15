@@ -17,7 +17,6 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
 <p>
   <a href="https://marketplace.visualstudio.com/items?itemName=oaslananka.kicadstudiokit"><img src="https://img.shields.io/badge/VS%20Marketplace-install-007ACC" alt="Install from Visual Studio Marketplace"></a>
   <a href="https://open-vsx.org/extension/oaslananka/kicadstudiokit"><img src="https://img.shields.io/open-vsx/v/oaslananka/kicadstudiokit?label=Open%20VSX" alt="Open VSX version"></a>
-  <a href="https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-GPL-3.0-only-2ea44f" alt="GPL-3.0-only license"></a>
   <a href="https://oaslananka.github.io/kicad-studio-kit/"><img src="https://img.shields.io/badge/docs-site-blue" alt="Documentation site"></a>
 </p>
 
@@ -30,9 +29,9 @@ Extension-side MCP discovery, configuration, compatibility metadata, and user ex
 </p>
 
 
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL-3.0-only-blue" alt="GPL-3.0-only license" /></a>
 
 <p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--only-blue" alt="GPL-3.0-only license" /></a>
   <a href="https://open-vsx.org/extension/oaslananka/kicadstudiokit"><img src="https://img.shields.io/open-vsx/dt/oaslananka/kicadstudiokit?label=total%20downloads" alt="Open VSX total downloads" /></a>
   <a href="https://gitgem.org/github/oaslananka/kicad-studio-kit"><img src="https://gitgem.org/api/badge/github/oaslananka/kicad-studio-kit.svg" alt="GitGem" /></a>
 </p>

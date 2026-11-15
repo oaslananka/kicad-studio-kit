@@ -65,7 +65,7 @@ test('validatePackage rejects stale project license metadata', () => {
         runVsce: false,
         validatePackageFiles: false
       }),
-    /extension license must be MIT/
+    /extension license must be GPL-3.0-only/
   );
 });
 test('validatePackage rejects the deleted Marketplace package name', () => {

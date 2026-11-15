@@ -45,7 +45,7 @@ test("README groups funding, downloads, GitGem and historical Silver truthfully"
   for (const badge of [
     "img.shields.io/badge/VS%20Marketplace-install",
     "open-vsx/dt/oaslananka/kicadstudiokit",
-    "img.shields.io/badge/license-GPL-3.0-only-2ea44f",
+    "img.shields.io/badge/license-GPL--3.0--only-blue",
     "img.shields.io/badge/GitHub-Sponsors",
     "img.shields.io/badge/Buy%20Me%20a%20Coffee-Support",
   ]) {

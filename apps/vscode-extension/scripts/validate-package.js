@@ -82,7 +82,11 @@ function validateStaticMetadata({ root, repoRoot, pkg, fail }) {
     'extension package name must be kicadstudiokit',
     fail
   );
-  check(pkg.license === 'MIT', 'extension license must be MIT', fail);
+  check(
+    pkg.license === 'GPL-3.0-only',
+    'extension license must be GPL-3.0-only',
+    fail
+  );
   check(
     pkg.engines?.vscode === '^1.101.0',
     'VS Code engine drifted unexpectedly',
