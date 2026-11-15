@@ -1,0 +1,33 @@
+---
+title: "Architecture"
+---
+
+KiCad Studio Kit is the VS Code extension repository for KiCad Studio. It owns the
+extension (`apps/vscode-extension`), private shared test infrastructure, examples,
+governance docs, and the extension-side MCP integration contract. The KiCad MCP Pro
+server is developed and released separately in
+[KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) — see
+[ADR 0009](/adr/0009-split-kicad-mcp-pro-into-separate-repository).
+
+## Core Architecture Docs
+
+- [Repository structure](/architecture/repo-structure)
+- [Product boundaries](/architecture/product-boundaries)
+- [VS Code extension hotspot map](/architecture/vscode-hotspots)
+- [Release model](/architecture/release-model)
+- [Branch protection](/architecture/branch-protection)
+- [GitHub Actions permissions](/architecture/actions-permissions)
+- [Definition of done](/architecture/definition-of-done)
+- [Protocol change checklist](/architecture/protocol-change-checklist)
+- [Review evidence policy](/architecture/review-evidence-policy)
+- [Governance board model](/architecture/governance-board)
+- [M0 completion audit](/architecture/m0-completion-audit)
+- [Testing strategy](/architecture/testing-strategy)
+
+## Cross-Product References
+
+- [KiCad Studio and MCP integration](/integration/kicad-studio-mcp)
+- [Support matrix](/support-matrix)
+- [Threat model](/security/threat-model)
+- [Reusable workflows](/reusable-workflows)
+- [Dependency lifecycle](/dependency-lifecycle)

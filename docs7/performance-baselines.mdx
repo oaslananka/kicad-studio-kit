@@ -1,0 +1,156 @@
+---
+title: "Performance Baselines"
+---
+
+OASLANA-124 defines one performance budget catalog for KiCad Studio Kit:
+[`performance/baselines.json`](https://github.com/oaslananka/kicad-studio-kit/blob/main/performance/baselines.json). Benchmark
+producers emit measurement JSON against that catalog, then
+`scripts/check-performance-budgets.mjs` reports drift and rejects performance
+regressions before they merge.
+
+## Budget Policy
+
+The catalog uses one tolerance policy for every metric:
+
+| Measurement result        | Checker behavior                                      |
+| ------------------------- | ----------------------------------------------------- |
+| At or below 110% baseline | Pass.                                                 |
+| Above 110% baseline       | Report a drift warning in the budget result artifact. |
+| Above 120% baseline       | Fail the budget check.                                |
+
+Measured data must name a catalog metric, keep its unit, and carry a positive
+value. CI-required metrics fail closed when a producer does not emit them.
+
+## Reference Environment
+
+PR enforcement uses the GitHub-hosted `ubuntu-24.04` x64 runner from
+`.github/workflows/ci.yml` as the reference machine. That lane reads the
+repository-pinned Node version from `.node-version` and the MCP Python toolchain
+selection from the [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository.
+
+The catalog still records platform-specific activation budgets for Windows and
+macOS/Linux because those budgets are product requirements. Cross-platform
+benchmark producers added by OASLANA-46 should capture their runner identity in
+their artifacts before they set another metric to `ciRequired`.
+
+The current catalog covers these surfaces:
+
+| Surface      | Metrics                                                                       |
+| ------------ | ----------------------------------------------------------------------------- |
+| Activation   | Cold Windows, cold POSIX, and warm extension activation                       |
+| Project scan | Single-project, medium workspace, and large workspace scan                    |
+| Viewer       | Schematic first render, PCB first render, large PCB first render, and reload  |
+| Validation   | Clean DRC, medium DRC, clean ERC, and cancellation response                   |
+| Export       | Export cancellation response                                                  |
+| BOM/netlist  | Large schematic BOM parse and large netlist S-expression parse                |
+| MCP          | `tools/list`, medium-board `pcb_get_board_summary`, and session establishment |
+| Memory       | Idle extension memory and memory with a viewer open                           |
+
+OASLANA-46 makes the POSIX activation, project scan, viewer render,
+validation cancellation, BOM parse, netlist parse, export cancellation, and MCP
+`tools/list` metrics CI-required. Any missing CI-required metric fails the
+budget job before the pull request can merge.
+
+## Local Checks
+
+Validate catalog shape and checker behavior with:
+
+```bash
+corepack pnpm run check:performance-budgets
+```
+
+Run the full performance lane used by CI with:
+
+```bash
+corepack pnpm --filter kicadstudiokit run test:perf
+```
+
+Create the same extension and MCP measurements emitted by CI and evaluate
+their combined budget report with:
+
+```bash
+KICAD_EXTENSION_PERFORMANCE_MEASUREMENTS_JSON=performance-results/extension-performance.json \
+  corepack pnpm --filter kicadstudiokit run test:perf
+node scripts/check-performance-budgets.mjs \
+  --measurements performance-results/extension-performance.json \
+  --output performance-results/budget-report.json
+```
+
+The benchmark producer writes sample values so reviewers can distinguish one
+outlier from a repeatable shift. The budget report stores the measured value,
+baseline, statistic, warning limit, failure limit, and pass/warn/fail status for
+each measured metric.
+
+## CI Evidence
+
+`.github/workflows/ci.yml` runs the `performance-budgets` job on every pull
+request and on pushes to `main` when the performance lane is in scope. Its
+reference environment is the GitHub-hosted `ubuntu-24.04` runner listed in the
+catalog.
+
+`.github/workflows/performance-nightly.yml` runs the same benchmark producer and
+budget check on a nightly schedule (and on demand via `workflow_dispatch`) so a
+major regression is detected even when no pull request touches the performance
+lane. The nightly run uploads `performance-nightly-artifacts` for 14 days and
+fails when a measured metric crosses the 20 percent failure budget.
+
+The job uploads `performance-budget-artifacts` for 14 days:
+
+| Artifact path                                    | Contents                                                |
+| ------------------------------------------------ | ------------------------------------------------------- |
+| `performance-results/extension-performance.json` | Raw extension host, viewer, parser, and cancel samples. |
+| `performance-results/mcp-tools-list.json`        | Raw MCP samples and the p95 measurement.                |
+| `performance-results/budget-report.json`         | Budget thresholds and checker result for each metric.   |
+
+Keep reports from the relevant PR when investigating drift. Trend dashboards
+can consume the same JSON without coupling the producer to a hosted service.
+
+## Baseline Changes
+
+Update a baseline only with measurement evidence from the same surface and
+state why the new budget is intentional in the PR. Prefer implementation fixes
+when a code change crosses the 20 percent failure budget.
+
+When a new producer becomes PR-required:
+
+1. Add or update its metric in `performance/baselines.json`.
+2. Emit the schema version, metric ID, unit, statistic, samples, and value from
+   the producer.
+3. Set `ciRequired` only after the PR workflow actually emits the measurement.
+4. Keep the workflow artifact path stable so comparisons remain scriptable.
+
+## Bundle and Documentation Load Baselines
+
+Issue #531 records optional bundle measurements separately from the runtime
+latency catalog. These values are enforced by
+`apps/vscode-extension/scripts/check-bundle-size.js` and
+`scripts/check-docs-bundle-size.mjs`.
+
+The 2026-07-23 pinned validation-host measurement produced:
+
+| Artifact                     |         Raw |           Gzip |         Brotli | Load behavior                       |
+| ---------------------------- | ----------: | -------------: | -------------: | ----------------------------------- |
+| `dist/extension.js`          |   742,064 B |      203,353 B |      164,251 B | Initial extension activation        |
+| `dist/exceljs.js`            |   461,338 B |      117,896 B |      101,205 B | Loaded only for XLSX export         |
+| `media/kicanvas/kicanvas.js` |   471,937 B |      111,397 B |       92,468 B | Loaded by viewer surfaces           |
+| VitePress local-search index |   603,787 B |      135,850 B |      106,656 B | Loaded only when local search opens |
+| VitePress framework chunk    |   110,329 B |       43,633 B |       39,265 B | Shared documentation runtime        |
+| `kicadstudiokit-1.9.5.vsix`  | 1,724,081 B | not applicable | not applicable | Installable package                 |
+
+The narrow ExcelJS Workbook entry reduced the spreadsheet chunk from 825,685
+bytes to 461,338 bytes, a 44.1 percent raw reduction. The initial extension
+chunk stayed effectively unchanged, confirming that spreadsheet code remains
+outside activation. The packaged VSIX fell from the observed 1.74 MB validation
+artifact to 1.64 MB as reported by `vsce`.
+
+VitePress local search excludes `docs/superpowers/**` implementation records and
+rendered code blocks. That reduced the search chunk from 833,243 bytes to
+603,787 bytes, a 27.5 percent raw reduction, while keeping product,
+compatibility, architecture, release, and user guidance searchable. The search
+index has a measured 625,000-byte limit; every other documentation JavaScript
+chunk retains the 500,000-byte limit. A build fails if either boundary is
+crossed or the local-search chunk disappears.
+
+Re-measure these values after dependency or documentation-corpus changes. Do not
+raise a limit without recording raw, gzip, and Brotli evidence and explaining
+why a further split would reduce usability or increase runtime complexity.

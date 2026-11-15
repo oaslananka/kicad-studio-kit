@@ -1,0 +1,31 @@
+---
+title: "KiCad Studio Extension"
+---
+
+KiCad Studio Kit is the VS Code extension for KiCad project browsing, schematic/PCB
+viewing, DRC/ERC, exports, component tools, MCP, AI-assisted fixes, and manufacturing workflows.
+
+## Main User Paths
+
+| Workflow                                                       | Documentation                         |
+| -------------------------------------------------------------- | ------------------------------------- |
+| Open and inspect KiCad projects                                | [Views](/extension/views)                     |
+| Run command palette actions                                    | [Commands](/extension/commands)               |
+| Configure CLI paths, viewers, exports, MCP, telemetry, and PCM | [Settings](/extension/settings)               |
+| Resolve local setup and runtime issues                         | [Troubleshooting](/extension/troubleshooting) |
+| Understand privacy and telemetry behavior                      | [Telemetry](/telemetry)          |
+| Review accessibility target                                    | [Accessibility](/accessibility)  |
+
+## Source Files
+
+- Extension manifest: `apps/vscode-extension/package.json`
+- Runtime entrypoint: `apps/vscode-extension/src/extension.ts`
+- MCP adapter: `apps/vscode-extension/src/mcp/`
+- Commands: `apps/vscode-extension/src/commands/`
+- Webviews and providers: `apps/vscode-extension/src/providers/`
+
+Generated command, setting, and view reference pages are refreshed with:
+
+```bash
+corepack pnpm run docs:generate
+```

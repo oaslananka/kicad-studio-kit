@@ -1,0 +1,20 @@
+---
+title: "Agent Onboarding"
+---
+
+This section centralizes the instructions and client configuration surfaces used by
+coding agents and MCP-capable clients that work with KiCad Studio Kit.
+
+## Start Here
+
+- Repository agent rules: `AGENTS.md`
+- Claude Code MCP example: `examples/mcp-clients/claude-code.mcp.example.json`
+- GitHub Copilot instructions: `.github/copilot-instructions.md`
+- MCP client setup matrix: [Client Configurations](/agents/client-configs)
+- Codex support model: [Codex Support](/agents/codex-support)
+
+## Default Safety Model
+
+Use `readonly` MCP operating mode and a focused profile such as `pcb_only` for onboarding,
+triage, review, and code-agent workflows. Broader tool surfaces are opt-in and should be
+documented in the PR when used.

@@ -1,0 +1,149 @@
+---
+title: "Agent MCP Client Configurations"
+---
+
+KiCad MCP Pro supports local stdio and Streamable HTTP MCP transports. The canonical
+copyable examples live under `examples/mcp-clients/`.
+
+Replace `/absolute/path/to/your/kicad-project` with the target KiCad project directory.
+Use an absolute path unless the client-specific documentation says workspace variables are
+expanded in MCP config files.
+
+## Setup Matrix
+
+| Client                     | Config file                                      | Transport       | Example                                                                       | Notes                                                                                |
+| -------------------------- | ------------------------------------------------ | --------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| VS Code and GitHub Copilot | `.vscode/mcp.json` or user profile MCP config    | stdio           | `.vscode/mcp.example.json` and `examples/mcp-clients/vscode.mcp.example.json` | VS Code uses top-level `servers`. Copilot Agent mode uses the same MCP server setup. |
+| Codex CLI / IDE extension  | `~/.codex/config.toml` or trusted project config | stdio           | `examples/mcp-clients/codex.config.example.toml`                              | This is Codex as an external MCP client, not the VS Code extension provider enum.    |
+| Claude Code                | `.mcp.json`                                      | stdio           | `examples/mcp-clients/claude-code.mcp.example.json`                           | Project-scoped config is shareable after replacing paths.                            |
+| Claude Desktop             | `claude_desktop_config.json`                     | stdio           | `examples/mcp-clients/claude-desktop.config.example.json`                     | Keep user-local credentials out of this repo.                                        |
+| Cursor                     | `.cursor/mcp.json` or `~/.cursor/mcp.json`       | stdio           | `examples/mcp-clients/cursor.mcp.example.json`                                | Cursor reads MCP config from `mcp.json` locations.                                   |
+| Gemini CLI                 | `~/.gemini/settings.json`                        | stdio           | `examples/mcp-clients/gemini.settings.example.json`                           | The example leaves `trust` false so tools still require confirmation.                |
+| Generic stdio client       | Client-specific                                  | stdio           | `examples/mcp-clients/generic-stdio.mcp.example.json`                         | Use this for clients that accept the common `mcpServers` shape.                      |
+| Generic HTTP client        | Client-specific                                  | Streamable HTTP | `examples/mcp-clients/generic-http.mcp.example.json`                          | Start the local HTTP server separately on `127.0.0.1`.                               |
+
+## Destination Paths
+
+Copy the example into the client-owned config file. Do not rename an example file into a
+live config inside this repository unless it is the documented workspace config for your
+own project.
+The Windows paths use `%USERPROFILE%` and `%APPDATA%` conventions used on Windows 11 and
+current supported Windows releases.
+
+| Client                     | Linux/macOS destination                                                                                          | Windows destination                                                          |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| VS Code and GitHub Copilot | `<project>/.vscode/mcp.json`, or the user-profile config opened by `MCP: Open User Configuration`                | `<project>\.vscode\mcp.json`, or the user-profile config opened from VS Code |
+| Codex CLI / IDE extension  | `~/.codex/config.toml`, or a trusted `<project>/.codex/config.toml`                                              | `%USERPROFILE%\.codex\config.toml`, or `<project>\.codex\config.toml`        |
+| Claude Code                | `<project>/.mcp.json`, or use `claude mcp add --scope project`                                                   | `<project>\.mcp.json`, or use `claude mcp add --scope project`               |
+| Claude Desktop             | macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`; Linux users should use Claude Code MCP | `%APPDATA%\Claude\claude_desktop_config.json`                                |
+| Cursor                     | `<project>/.cursor/mcp.json` or `~/.cursor/mcp.json`                                                             | `<project>\.cursor\mcp.json` or `%USERPROFILE%\.cursor\mcp.json`             |
+| Gemini CLI                 | `~/.gemini/settings.json` or `<project>/.gemini/settings.json`                                                   | `%USERPROFILE%\.gemini\settings.json` or `<project>\.gemini\settings.json`   |
+| Generic stdio client       | The client's MCP config file                                                                                     | The client's MCP config file                                                 |
+| Generic HTTP client        | The client's remote/HTTP MCP config file                                                                         | The client's remote/HTTP MCP config file                                     |
+
+## Recommended Environment
+
+```text
+KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project
+KICAD_MCP_PROFILE=pcb_only
+KICAD_MCP_OPERATING_MODE=readonly
+```
+
+`KICAD_MCP_PROFILE` narrows the tool categories. `KICAD_MCP_OPERATING_MODE` is the risk
+gate applied after the profile. Keep onboarding configs in `readonly`; switch modes only
+when the workflow explicitly needs a broader tool surface.
+
+## CLI Setup Commands
+
+Use these commands when a client supports registering MCP servers from its CLI. Use the
+checked-in example files instead for clients that only read JSON or TOML config files.
+
+### Linux/macOS
+
+```bash
+codex mcp add kicad \
+  --env KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
+  --env KICAD_MCP_PROFILE=pcb_only \
+  --env KICAD_MCP_OPERATING_MODE=readonly \
+  -- uvx kicad-mcp-pro
+
+claude mcp add --transport stdio --scope project \
+  --env KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
+  --env KICAD_MCP_PROFILE=pcb_only \
+  --env KICAD_MCP_OPERATING_MODE=readonly \
+  kicad -- uvx kicad-mcp-pro
+
+gemini mcp add --scope project --transport stdio \
+  -e KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
+  -e KICAD_MCP_PROFILE=pcb_only \
+  -e KICAD_MCP_OPERATING_MODE=readonly \
+  kicad uvx kicad-mcp-pro
+```
+
+### Windows PowerShell
+
+```powershell
+codex mcp add kicad `
+  --env 'KICAD_MCP_PROJECT_DIR=C:\absolute\path\to\your\kicad-project' `
+  --env 'KICAD_MCP_PROFILE=pcb_only' `
+  --env 'KICAD_MCP_OPERATING_MODE=readonly' `
+  -- uvx kicad-mcp-pro
+
+claude mcp add --transport stdio --scope project `
+  --env 'KICAD_MCP_PROJECT_DIR=C:\absolute\path\to\your\kicad-project' `
+  --env 'KICAD_MCP_PROFILE=pcb_only' `
+  --env 'KICAD_MCP_OPERATING_MODE=readonly' `
+  kicad -- uvx kicad-mcp-pro
+
+gemini mcp add --scope project --transport stdio `
+  -e 'KICAD_MCP_PROJECT_DIR=C:\absolute\path\to\your\kicad-project' `
+  -e 'KICAD_MCP_PROFILE=pcb_only' `
+  -e 'KICAD_MCP_OPERATING_MODE=readonly' `
+  kicad uvx kicad-mcp-pro
+```
+
+## HTTP Startup
+
+For HTTP clients, start the server outside the client:
+
+### Linux/macOS
+
+```bash
+KICAD_MCP_PROJECT_DIR=/absolute/path/to/your/kicad-project \
+KICAD_MCP_PROFILE=pcb_only \
+KICAD_MCP_OPERATING_MODE=readonly \
+uvx kicad-mcp-pro --transport http --host 127.0.0.1 --port 3334
+```
+
+### Windows PowerShell
+
+```powershell
+$Env:KICAD_MCP_PROJECT_DIR = 'C:\absolute\path\to\your\kicad-project'
+$Env:KICAD_MCP_PROFILE = 'pcb_only'
+$Env:KICAD_MCP_OPERATING_MODE = 'readonly'
+uvx kicad-mcp-pro --transport http --host 127.0.0.1 --port 3334
+```
+
+Then configure the client URL as:
+
+```text
+http://127.0.0.1:3334/mcp
+```
+
+Do not bind local MCP HTTP to `0.0.0.0` as an onboarding default. If a remote deployment is
+needed, document the network boundary, authentication model, and operating mode in the PR.
+Set `KICAD_MCP_AUTH_TOKEN` only when HTTP binds outside loopback or crosses a tunnel or
+remote network boundary. In that case, configure the client to send the same value as a
+bearer token and keep the token in local environment or secret storage, never in a checked-in
+example.
+
+## Source References
+
+The config shapes were checked against the current client documentation on 2026-05-26:
+
+- VS Code MCP configuration reference: [https://code.vscode.dev/docs/copilot/customization/mcp-servers](https://code.vscode.dev/docs/copilot/customization/mcp-servers)
+- OpenAI Codex configuration reference: [https://developers.openai.com/codex/config-reference](https://developers.openai.com/codex/config-reference)
+- Claude Code MCP configuration: [https://docs.anthropic.com/en/docs/claude-code/mcp](https://docs.anthropic.com/en/docs/claude-code/mcp)
+- Cursor MCP documentation: [https://docs.cursor.com/context/mcp](https://docs.cursor.com/context/mcp)
+- Gemini CLI MCP server documentation: [https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/mcp-server.md](https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/mcp-server.md)
+- MCP transport specification: [https://modelcontextprotocol.io/specification/2025-06-18/basic/transports](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports)

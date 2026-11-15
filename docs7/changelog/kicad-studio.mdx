@@ -1,0 +1,787 @@
+---
+title: "KiCad Studio Changelog"
+---
+
+Source: `apps/vscode-extension/CHANGELOG.md`
+
+All notable changes to the KiCad Studio VS Code extension will be documented in
+this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this extension adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+Comparison links will be added after the first public component tags are
+published.
+
+## [2.6.3](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.6.2...vscode-extension-v2.6.3) (2026-11-12)
+
+
+### Bug Fixes
+
+* **kicad-studio:** prevent blocking fallback on renderer handoff ([#959](https://github.com/oaslananka/kicad-studio-kit/issues/959)) ([a10df73](https://github.com/oaslananka/kicad-studio-kit/commit/a10df73f8a9ee92dc11e6981f3cf7fd3fdb033a8))
+
+## [2.6.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.6.1...vscode-extension-v2.6.2) (2026-11-12)
+
+
+### Bug Fixes
+
+* **kicad-studio:** preserve live PCB and schematic preview ([#955](https://github.com/oaslananka/kicad-studio-kit/issues/955)) ([#956](https://github.com/oaslananka/kicad-studio-kit/issues/956)) ([27c42b8](https://github.com/oaslananka/kicad-studio-kit/commit/27c42b85d7f37bbed9c04c4bff811127ea9e18b8))
+
+## [2.6.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.6.0...vscode-extension-v2.6.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **kicad-studio:** clarify sidebar disclosure and compact view actions ([#952](https://github.com/oaslananka/kicad-studio-kit/issues/952)) ([de6c7f4](https://github.com/oaslananka/kicad-studio-kit/commit/de6c7f4ebf2fa4af1cd4fb387179d472b46e7860))
+
+## [2.6.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.5.0...vscode-extension-v2.6.0) (2026-11-12)
+
+
+### Features
+
+* **kicad-studio:** inspect genuine inner copper on dense boards ([#910](https://github.com/oaslananka/kicad-studio-kit/issues/910)) ([4b7a3fb](https://github.com/oaslananka/kicad-studio-kit/commit/4b7a3fbe1c80f6705789118db4a6ca0fb63852ab))
+* **kicad-studio:** inspect real F.Cu and B.Cu on demand ([#911](https://github.com/oaslananka/kicad-studio-kit/issues/911)) ([f5b7871](https://github.com/oaslananka/kicad-studio-kit/commit/f5b787116fbf62ea840417010691642460782877))
+
+
+### Bug Fixes
+
+* **kicad-studio:** clarify safe large PCB regional preview ([#931](https://github.com/oaslananka/kicad-studio-kit/issues/931)) ([26497ed](https://github.com/oaslananka/kicad-studio-kit/commit/26497ed72080764cec9cd4341a7278ec5796050d))
+* **kicad-studio:** discover versioned Windows KiCad libraries ([#948](https://github.com/oaslananka/kicad-studio-kit/issues/948)) ([61246d0](https://github.com/oaslananka/kicad-studio-kit/commit/61246d0b00496b9e4765772650c463f248ea2fb3))
+* **kicad-studio:** distinguish original and partial copper inspection ([#914](https://github.com/oaslananka/kicad-studio-kit/issues/914)) ([60ac0e8](https://github.com/oaslananka/kicad-studio-kit/commit/60ac0e84eb5be8ba29b713cdac16af07660ab2dc))
+* **kicad-studio:** explain DNP and value changes in variant BOM diff ([#945](https://github.com/oaslananka/kicad-studio-kit/issues/945)) ([1809e06](https://github.com/oaslananka/kicad-studio-kit/commit/1809e0644bd57d42580cd7249bcd076a15f0d354))
+* **kicad-studio:** explain incompatible BOM CLI in native export ([a0ac884](https://github.com/oaslananka/kicad-studio-kit/commit/a0ac884f889e504997510ae07a94a03449144d36))
+* **kicad-studio:** explain incompatible multi-sheet BOM CLI ([#925](https://github.com/oaslananka/kicad-studio-kit/issues/925)) ([a0ac884](https://github.com/oaslananka/kicad-studio-kit/commit/a0ac884f889e504997510ae07a94a03449144d36))
+* **kicad-studio:** explain PLY OCCT runtime incompatibility ([#937](https://github.com/oaslananka/kicad-studio-kit/issues/937)) ([0ecdc82](https://github.com/oaslananka/kicad-studio-kit/commit/0ecdc82b605bed15ba002ff730dfcef404b28582))
+* **kicad-studio:** export PCB PDFs using actual board layers ([#934](https://github.com/oaslananka/kicad-studio-kit/issues/934)) ([1097629](https://github.com/oaslananka/kicad-studio-kit/commit/10976293ff6c266d7776ed558b5e4a2cbfb5063b))
+* **kicad-studio:** focus original copper plots on verified source region ([#917](https://github.com/oaslananka/kicad-studio-kit/issues/917)) ([1f8c4a0](https://github.com/oaslananka/kicad-studio-kit/commit/1f8c4a041a4221fdb375668eb848d0a2f7559548))
+* **kicad-studio:** focus real schematic symbols in KiCanvas ([#907](https://github.com/oaslananka/kicad-studio-kit/issues/907)) ([01af72e](https://github.com/oaslananka/kicad-studio-kit/commit/01af72ee6402062c20a1ddd02fea8d544e9eb57e))
+* **kicad-studio:** guide and verify native BOM output recovery ([#922](https://github.com/oaslananka/kicad-studio-kit/issues/922)) ([c4f6d5c](https://github.com/oaslananka/kicad-studio-kit/commit/c4f6d5c5b7a0a1ec19b451ccc27571e61f6feeb0))
+* **kicad-studio:** guide BOM export after permission denial ([#924](https://github.com/oaslananka/kicad-studio-kit/issues/924)) ([052a20e](https://github.com/oaslananka/kicad-studio-kit/commit/052a20ebfa701a36da92d26684de581378d1e5a6))
+* **kicad-studio:** guide users when PLY needs newer OCCT ([0ecdc82](https://github.com/oaslananka/kicad-studio-kit/commit/0ecdc82b605bed15ba002ff730dfcef404b28582))
+* **kicad-studio:** keep BOM rows visible in short VS Code panes ([#915](https://github.com/oaslananka/kicad-studio-kit/issues/915)) ([da624d7](https://github.com/oaslananka/kicad-studio-kit/commit/da624d70d845e61e61740be0367ae919aab3d308))
+* **kicad-studio:** keep Problems visible across repeated checks ([#930](https://github.com/oaslananka/kicad-studio-kit/issues/930)) ([2db94d1](https://github.com/oaslananka/kicad-studio-kit/commit/2db94d16014f6f2ce3c0f8a8da1a5b64712e3099))
+* **kicad-studio:** let users choose active variants from command palette ([d9e2492](https://github.com/oaslananka/kicad-studio-kit/commit/d9e2492cad9b58b8a09b578c8b643735c0786207))
+* **kicad-studio:** make variant BOM differences truthful ([1809e06](https://github.com/oaslananka/kicad-studio-kit/commit/1809e0644bd57d42580cd7249bcd076a15f0d354))
+* **kicad-studio:** name compressed IPC-2581 export as ZIP ([#938](https://github.com/oaslananka/kicad-studio-kit/issues/938)) ([e076942](https://github.com/oaslananka/kicad-studio-kit/commit/e0769429cf412eae808865ee23bff102902a260f))
+* **kicad-studio:** name compressed IPC-2581 output as ZIP ([e076942](https://github.com/oaslananka/kicad-studio-kit/commit/e0769429cf412eae808865ee23bff102902a260f))
+* **kicad-studio:** navigate verified ERC findings to exact source ([#908](https://github.com/oaslananka/kicad-studio-kit/issues/908)) ([9f079cc](https://github.com/oaslananka/kicad-studio-kit/commit/9f079cc263c738cf8cc9935a0f1e204b54df2da3))
+* **kicad-studio:** preserve native VS Code keyboard shortcuts ([#932](https://github.com/oaslananka/kicad-studio-kit/issues/932)) ([ef243a0](https://github.com/oaslananka/kicad-studio-kit/commit/ef243a01b71feba97999f6acaae9ac3b6e100b6f))
+* **kicad-studio:** preserve real project libraries and DRC issue identity ([bd7dde6](https://github.com/oaslananka/kicad-studio-kit/commit/bd7dde6b70f4a9de5780636633875bec30dcc793))
+* **kicad-studio:** preserve real project libraries in DRC diagnostics ([#929](https://github.com/oaslananka/kicad-studio-kit/issues/929)) ([bd7dde6](https://github.com/oaslananka/kicad-studio-kit/commit/bd7dde6b70f4a9de5780636633875bec30dcc793))
+* **kicad-studio:** prove native cached zone-fill contour parity in original copper plots ([#918](https://github.com/oaslananka/kicad-studio-kit/issues/918)) ([1231a6c](https://github.com/oaslananka/kicad-studio-kit/commit/1231a6c6fafab984b1f42f622cb2ec091cbe8479))
+* **kicad-studio:** recover BOM after CLI loss, interruption and cancel ([#926](https://github.com/oaslananka/kicad-studio-kit/issues/926)) ([c0cae5a](https://github.com/oaslananka/kicad-studio-kit/commit/c0cae5a60e6166bcdb7a75dbc72de116202b24a6))
+* **kicad-studio:** recover from real BOM output permission denial ([052a20e](https://github.com/oaslananka/kicad-studio-kit/commit/052a20ebfa701a36da92d26684de581378d1e5a6))
+* **kicad-studio:** refresh CLI status after Settings repair ([#928](https://github.com/oaslananka/kicad-studio-kit/issues/928)) ([2d588f9](https://github.com/oaslananka/kicad-studio-kit/commit/2d588f99c65e484b30f8ceeb0534d193562d0ed1))
+* **kicad-studio:** resolve active project validation state and native DRC count parity ([#919](https://github.com/oaslananka/kicad-studio-kit/issues/919)) ([68ffc02](https://github.com/oaslananka/kicad-studio-kit/commit/68ffc02696ea2ed92ba0bdcdba45d24a29e22c4b))
+* **kicad-studio:** restore hierarchical BOM export in native A4 flow ([#921](https://github.com/oaslananka/kicad-studio-kit/issues/921)) ([948a539](https://github.com/oaslananka/kicad-studio-kit/commit/948a539eb9320de2fd592ac2c9ce4ccc8d3128dc))
+* **kicad-studio:** restore KiCad 10 nets and native CLI cancellation ([#933](https://github.com/oaslananka/kicad-studio-kit/issues/933)) ([a688778](https://github.com/oaslananka/kicad-studio-kit/commit/a6887780c3f4a657a229f44c4b0625e9d409ffa3))
+* **kicad-studio:** restore native DRC and exact PCB source navigation ([#909](https://github.com/oaslananka/kicad-studio-kit/issues/909)) ([9544bc8](https://github.com/oaslananka/kicad-studio-kit/commit/9544bc867fcec7b5cb7b5667728073365b415ae9))
+* **kicad-studio:** restore PCB SVG layer exports and separate 3D PDFs ([#935](https://github.com/oaslananka/kicad-studio-kit/issues/935)) ([6d6fdf3](https://github.com/oaslananka/kicad-studio-kit/commit/6d6fdf330f0d741a81c3178f922f4923db7f9a7f))
+* **kicad-studio:** select active assembly variant from Command Palette ([#942](https://github.com/oaslananka/kicad-studio-kit/issues/942)) ([d9e2492](https://github.com/oaslananka/kicad-studio-kit/commit/d9e2492cad9b58b8a09b578c8b643735c0786207))
+* **kicad-studio:** show BOM exports on first schematic open ([#923](https://github.com/oaslananka/kicad-studio-kit/issues/923)) ([fa8c14d](https://github.com/oaslananka/kicad-studio-kit/commit/fa8c14da438a78d3d73ae08cede459f692259c71))
+* **kicad-studio:** unblock export presets and correct PCB diff reports ([#939](https://github.com/oaslananka/kicad-studio-kit/issues/939)) ([e770f7b](https://github.com/oaslananka/kicad-studio-kit/commit/e770f7bef4b59ce0c7f9d14281dae1896af8e6bf))
+* **kicad-studio:** use VRML-compatible CLI flags ([#936](https://github.com/oaslananka/kicad-studio-kit/issues/936)) ([ede2bf8](https://github.com/oaslananka/kicad-studio-kit/commit/ede2bf8e6ef0dc429820db0d0c6233b78fd53b78))
+* **kicad-studio:** use VRML-compatible export flags ([ede2bf8](https://github.com/oaslananka/kicad-studio-kit/commit/ede2bf8e6ef0dc429820db0d0c6233b78fd53b78))
+* **kicad-studio:** validate schematic references before claiming focus ([#906](https://github.com/oaslananka/kicad-studio-kit/issues/906)) ([504077c](https://github.com/oaslananka/kicad-studio-kit/commit/504077cef98f583f703d344d1bb0263c24298df9))
+
+## [2.5.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.4.1...vscode-extension-v2.5.0) (2026-11-08)
+
+
+### Features
+
+* **kicad-studio:** source-accurate ERC and bounded PCB preview ([#899](https://github.com/oaslananka/kicad-studio-kit/issues/899)) ([1a28bce](https://github.com/oaslananka/kicad-studio-kit/commit/1a28bce355682bdd874969c77852537132c7d034))
+
+
+### Bug Fixes
+
+* **kicad-studio:** restore native DRC palette discoverability ([#902](https://github.com/oaslananka/kicad-studio-kit/issues/902)) ([a8c3cba](https://github.com/oaslananka/kicad-studio-kit/commit/a8c3cbab49c46f68ee4677645eab440b3a73fb79))
+
+## [2.4.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.4.0...vscode-extension-v2.4.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* **kicad-studio:** restore PCB viewer controls and accurate net inspection ([d6a51e4](https://github.com/oaslananka/kicad-studio-kit/commit/d6a51e4d0f8fffd40ab2ac5393ff82875710dd1d))
+
+## [2.4.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.3.0...vscode-extension-v2.4.0) (2026-11-08)
+
+
+### Features
+
+* **kicad-studio:** add read-only PCB net inspector ([#889](https://github.com/oaslananka/kicad-studio-kit/issues/889)) ([877b993](https://github.com/oaslananka/kicad-studio-kit/commit/877b99324909fec9299655da3fe46ad0165e847c))
+
+
+### Bug Fixes
+
+* **kicad-studio:** accept published BoardReadyOps 1.70 review JSON ([#891](https://github.com/oaslananka/kicad-studio-kit/issues/891)) ([e317cc3](https://github.com/oaslananka/kicad-studio-kit/commit/e317cc3d474f4c2ea968efa38c5bd5688947c75f))
+* **kicad-studio:** adopt published BoardReadyOps 1.70 contract ([e317cc3](https://github.com/oaslananka/kicad-studio-kit/commit/e317cc3d474f4c2ea968efa38c5bd5688947c75f))
+* **kicad-studio:** correct BoardReadyOps release evidence guidance ([#892](https://github.com/oaslananka/kicad-studio-kit/issues/892)) ([0c853a0](https://github.com/oaslananka/kicad-studio-kit/commit/0c853a07f0aaffd667cc71147b79963ecaf134e9))
+* **kicad-studio:** refine onboarding and restricted validation UX ([fc289c5](https://github.com/oaslananka/kicad-studio-kit/commit/fc289c533f85e073c2bc4db7e8911bf0265383e2))
+* **kicad-studio:** validate published BoardReadyOps doctor v1 contract ([#890](https://github.com/oaslananka/kicad-studio-kit/issues/890)) ([abc6ce3](https://github.com/oaslananka/kicad-studio-kit/commit/abc6ce3f7e6c1475168d12640695809d84318570))
+
+## [2.3.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.2.1...vscode-extension-v2.3.0) (2026-11-07)
+
+
+### Features
+
+* **kicad-studio:** improve multilayer PCB inspection and rendering ([ea96a88](https://github.com/oaslananka/kicad-studio-kit/commit/ea96a8802b381cae46670c5dffec929cf923ff45))
+
+
+### Bug Fixes
+
+* **kicad-studio:** cancel stale PCB preparation on refresh ([2cff53a](https://github.com/oaslananka/kicad-studio-kit/commit/2cff53ac2263a021318d4c491f7c8203c5cbb23f))
+
+## [2.2.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.2.0...vscode-extension-v2.2.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* **kicad-studio:** restore MIT licensing and refresh repository badges ([#874](https://github.com/oaslananka/kicad-studio-kit/issues/874)) ([3c2746c](https://github.com/oaslananka/kicad-studio-kit/commit/3c2746c27c664e0d13349a364c34da77d5fe1b76))
+
+## [2.2.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.1.2...vscode-extension-v2.2.0) (2026-11-04)
+
+
+### Features
+
+* **kicad-studio:** support NVIDIA Build cloud models with API keys ([#871](https://github.com/oaslananka/kicad-studio-kit/issues/871)) ([0860d25](https://github.com/oaslananka/kicad-studio-kit/commit/0860d2597b1c019adca65f3dce0f2bd530f328ff))
+
+## [2.1.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.1.1...vscode-extension-v2.1.2) (2026-10-31)
+
+
+### Bug Fixes
+
+* **repo:** patch security dependencies, remove CodSpeed, and align MCP canary ([f805b95](https://github.com/oaslananka/kicad-studio-kit/commit/f805b95fec4591bd0cb43e7c8d08d68df8a5489d))
+* **repo:** remove CodSpeed and patch security and MCP compatibility ([#859](https://github.com/oaslananka/kicad-studio-kit/issues/859)) ([f805b95](https://github.com/oaslananka/kicad-studio-kit/commit/f805b95fec4591bd0cb43e7c8d08d68df8a5489d))
+
+## [2.1.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.1.0...vscode-extension-v2.1.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **kicad-studio:** expose sponsor and support links in marketplace ([#853](https://github.com/oaslananka/kicad-studio-kit/issues/853)) ([#854](https://github.com/oaslananka/kicad-studio-kit/issues/854)) ([5b74436](https://github.com/oaslananka/kicad-studio-kit/commit/5b7443646ceda97ce303da37c922ae1e3a427383))
+
+## [2.1.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.0.2...vscode-extension-v2.1.0) (2026-10-26)
+
+
+### Features
+
+* **kicad-studio:** low-overhead external PCB and schematic live refresh ([#849](https://github.com/oaslananka/kicad-studio-kit/issues/849)) ([#850](https://github.com/oaslananka/kicad-studio-kit/issues/850)) ([411ebc3](https://github.com/oaslananka/kicad-studio-kit/commit/411ebc34d2a51065254263764563297dfac3e2f6))
+
+
+### Bug Fixes
+
+* **deps:** remediate October 2026 OSV advisories ([#845](https://github.com/oaslananka/kicad-studio-kit/issues/845)) ([748beca](https://github.com/oaslananka/kicad-studio-kit/commit/748beca0e97dd363e0737b6596d5533c7efdb2c9))
+* **kicad-studio:** enforce strict BoardReadyOps review JSON schema ([#623](https://github.com/oaslananka/kicad-studio-kit/issues/623)) ([#847](https://github.com/oaslananka/kicad-studio-kit/issues/847)) ([2005179](https://github.com/oaslananka/kicad-studio-kit/commit/200517904528e86a0bb761e9dbecf8f22ba3fc66))
+* **kicad-studio:** pin manufacturing readiness to discovered CLI version ([23ebe55](https://github.com/oaslananka/kicad-studio-kit/commit/23ebe5514eecb47b51beb71eeabe6e2ddab8b169))
+* **kicad-studio:** pin manufacturing readiness to discovered CLI version ([#623](https://github.com/oaslananka/kicad-studio-kit/issues/623)) ([#848](https://github.com/oaslananka/kicad-studio-kit/issues/848)) ([23ebe55](https://github.com/oaslananka/kicad-studio-kit/commit/23ebe5514eecb47b51beb71eeabe6e2ddab8b169))
+* **kicad-studio:** reject undeclared review JSON fields ([2005179](https://github.com/oaslananka/kicad-studio-kit/commit/200517904528e86a0bb761e9dbecf8f22ba3fc66))
+
+## [2.0.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.0.1...vscode-extension-v2.0.2) (2026-10-21)
+
+
+### Bug Fixes
+
+* **kicad-studio:** expose on-demand MCP health recheck ([#834](https://github.com/oaslananka/kicad-studio-kit/issues/834)) ([a09616f](https://github.com/oaslananka/kicad-studio-kit/commit/a09616f781c54153cce4f42ede4d392dcbd4b6f1))
+* **kicad-studio:** prefer compatible installed uv MCP over older global CLI ([#835](https://github.com/oaslananka/kicad-studio-kit/issues/835)) ([df8550c](https://github.com/oaslananka/kicad-studio-kit/commit/df8550c5882212750c7fc43c94ee623b04738c99))
+* **kicad-studio:** prefer verified uv tool MCP executable ([df8550c](https://github.com/oaslananka/kicad-studio-kit/commit/df8550c5882212750c7fc43c94ee623b04738c99))
+* **kicad-studio:** recheck MCP health on demand ([a09616f](https://github.com/oaslananka/kicad-studio-kit/commit/a09616f781c54153cce4f42ede4d392dcbd4b6f1))
+
+## [2.0.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.0.0...vscode-extension-v2.0.1) (2026-10-20)
+
+
+### Bug Fixes
+
+* **kicad-studio:** detect installed MCP CLI and separate sidebar actions ([#821](https://github.com/oaslananka/kicad-studio-kit/issues/821)) ([92299a7](https://github.com/oaslananka/kicad-studio-kit/commit/92299a7745093a22007f171af0ca427fc717e7f8))
+* **kicad-studio:** enforce English-only extension UI ([#824](https://github.com/oaslananka/kicad-studio-kit/issues/824)) ([48a16d6](https://github.com/oaslananka/kicad-studio-kit/commit/48a16d62683118083de93f57e7bf5db486d8e6e1))
+
+## [2.0.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.17.1...vscode-extension-v2.0.0) (2026-10-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **kicad-studio:** Studio MCP now uses final 2026-07-28 stateless discovery and requires kicad-mcp-pro >=4.3.0. The published 1.17.1 extension retains the 2025 server range; release remains separately controlled.
+
+### Features
+
+* **kicad-studio:** activate verified MCP 2026 protocol ([#817](https://github.com/oaslananka/kicad-studio-kit/issues/817)) ([5eed33a](https://github.com/oaslananka/kicad-studio-kit/commit/5eed33a246ecb25f42c5e563fc8b3e3234049c27))
+
+
+### Bug Fixes
+
+* **kicad-studio:** make first run project-first and AI optional ([643efd4](https://github.com/oaslananka/kicad-studio-kit/commit/643efd454bf0a3714fa52b09fa2034a4522f1459))
+* **kicad-studio:** prioritize project-first onboarding and real product screenshots ([#803](https://github.com/oaslananka/kicad-studio-kit/issues/803)) ([643efd4](https://github.com/oaslananka/kicad-studio-kit/commit/643efd454bf0a3714fa52b09fa2034a4522f1459))
+* **repo:** consume mature MCP schema v2 without activating 2026 ([#806](https://github.com/oaslananka/kicad-studio-kit/issues/806)) ([0cef33a](https://github.com/oaslananka/kicad-studio-kit/commit/0cef33a3180d1b6ef388ebe3f07b251b702a6bda))
+
+## [1.17.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.17.0...vscode-extension-v1.17.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* **kicad-studio:** bound MCP response-body timeouts and block 2026 SSE fallback ([#788](https://github.com/oaslananka/kicad-studio-kit/issues/788)) ([2464034](https://github.com/oaslananka/kicad-studio-kit/commit/24640340ffa37bf542379590200b444568895adb))
+* **repo:** refresh published MCP Pro tested pair to 4.3.0 ([d523fdd](https://github.com/oaslananka/kicad-studio-kit/commit/d523fdd0bae0fe80a83a62d5c51bbaedb86c911c))
+* **repo:** sync published KiCad MCP Pro 4.3.0 tested pair ([#794](https://github.com/oaslananka/kicad-studio-kit/issues/794)) ([d523fdd](https://github.com/oaslananka/kicad-studio-kit/commit/d523fdd0bae0fe80a83a62d5c51bbaedb86c911c))
+
+## [1.17.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.16.0...vscode-extension-v1.17.0) (2026-10-10)
+
+
+### Features
+
+* **kicad-studio:** stage fail-closed BoardReadyOps review evidence workflow ([#775](https://github.com/oaslananka/kicad-studio-kit/issues/775)) ([8be89b1](https://github.com/oaslananka/kicad-studio-kit/commit/8be89b1f50429e1da41b74bef6f5cb99e3a8110e))
+
+
+### Bug Fixes
+
+* **kicad-studio:** close BoardReadyOps progress before user review ([#772](https://github.com/oaslananka/kicad-studio-kit/issues/772)) ([59b9b17](https://github.com/oaslananka/kicad-studio-kit/commit/59b9b1707c406dcf519f15d9bcbd5430e47b5ff6))
+* **kicad-studio:** finish BoardReadyOps progress before user decisions ([59b9b17](https://github.com/oaslananka/kicad-studio-kit/commit/59b9b1707c406dcf519f15d9bcbd5430e47b5ff6))
+* **kicad-studio:** reject malformed MCP 2026 discovery before activation ([f9ca41b](https://github.com/oaslananka/kicad-studio-kit/commit/f9ca41b06d26d8db9333d7932a1d9a6cf7e7a9b3))
+* **kicad-studio:** validate final MCP 2026 discovery before schema v2 migration ([#786](https://github.com/oaslananka/kicad-studio-kit/issues/786)) ([f9ca41b](https://github.com/oaslananka/kicad-studio-kit/commit/f9ca41b06d26d8db9333d7932a1d9a6cf7e7a9b3))
+
+## [1.16.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.4...vscode-extension-v1.16.0) (2026-10-10)
+
+
+### Features
+
+* **kicad-studio:** focus schematic fallback and simplify task sidebar ([b125398](https://github.com/oaslananka/kicad-studio-kit/commit/b125398acfc9b8d636676ac2bcf9c48694773bf4))
+* **kicad-studio:** focus schematic fallback and simplify task sidebar ([#770](https://github.com/oaslananka/kicad-studio-kit/issues/770)) ([b125398](https://github.com/oaslananka/kicad-studio-kit/commit/b125398acfc9b8d636676ac2bcf9c48694773bf4))
+* **kicad-studio:** stage fail-closed 2026 stateless client wire adapter ([#762](https://github.com/oaslananka/kicad-studio-kit/issues/762)) ([ed992af](https://github.com/oaslananka/kicad-studio-kit/commit/ed992afeb34088403975c9cc861d98e0795654ec)), closes [#492](https://github.com/oaslananka/kicad-studio-kit/issues/492)
+
+
+### Bug Fixes
+
+* **kicad-studio:** exclude unplaced symbols from manufacturing BOM ([b614985](https://github.com/oaslananka/kicad-studio-kit/commit/b614985f8b36f9a496fc756cd3795cfec8a429b8))
+* **kicad-studio:** fail closed on contradictory BoardReadyOps evidence ([#755](https://github.com/oaslananka/kicad-studio-kit/issues/755)) ([ea8cc9b](https://github.com/oaslananka/kicad-studio-kit/commit/ea8cc9b1b4ceadaa17254efcd99e6abb2aa9dacc))
+* **kicad-studio:** fail closed on contradictory BoardReadyOps verdicts ([#752](https://github.com/oaslananka/kicad-studio-kit/issues/752)) ([5ce1880](https://github.com/oaslananka/kicad-studio-kit/commit/5ce1880948e12d4d9fbb21f1ec8d4ce9dcd731f9))
+* **kicad-studio:** keep viewer actions accessible in split editors ([#768](https://github.com/oaslananka/kicad-studio-kit/issues/768)) ([4c51808](https://github.com/oaslananka/kicad-studio-kit/commit/4c5180823e525c5b255d099f40a9471940abfc26))
+* **kicad-studio:** prevent cross-project BoardReadyOps report leakage ([#759](https://github.com/oaslananka/kicad-studio-kit/issues/759)) ([bbd9cf6](https://github.com/oaslananka/kicad-studio-kit/commit/bbd9cf6de48435dd8bfc4fd35fd6925fa1305350))
+* **kicad-studio:** reject contradictory BoardReadyOps evidence verdicts ([ea8cc9b](https://github.com/oaslananka/kicad-studio-kit/commit/ea8cc9b1b4ceadaa17254efcd99e6abb2aa9dacc))
+* **kicad-studio:** reject contradictory BoardReadyOps plan verdicts ([16d4459](https://github.com/oaslananka/kicad-studio-kit/commit/16d44590d438d5a304a1f9bae6b696968878b152))
+* **kicad-studio:** reject contradictory BoardReadyOps plan verdicts ([#757](https://github.com/oaslananka/kicad-studio-kit/issues/757)) ([16d4459](https://github.com/oaslananka/kicad-studio-kit/commit/16d44590d438d5a304a1f9bae6b696968878b152))
+* **kicad-studio:** reject contradictory BoardReadyOps run verdicts ([5ce1880](https://github.com/oaslananka/kicad-studio-kit/commit/5ce1880948e12d4d9fbb21f1ec8d4ce9dcd731f9))
+* **kicad-studio:** restore CSP-safe BOM and netlist webview states ([#766](https://github.com/oaslananka/kicad-studio-kit/issues/766)) ([ca59c7e](https://github.com/oaslananka/kicad-studio-kit/commit/ca59c7ece54c193dfb97adba03bd2212d234e0a5))
+* **kicad-studio:** restore KiCad-native BOM parity ([#764](https://github.com/oaslananka/kicad-studio-kit/issues/764)) ([b614985](https://github.com/oaslananka/kicad-studio-kit/commit/b614985f8b36f9a496fc756cd3795cfec8a429b8))
+* **kicad-studio:** scope BoardReadyOps readiness reports to active project ([bbd9cf6](https://github.com/oaslananka/kicad-studio-kit/commit/bbd9cf6de48435dd8bfc4fd35fd6925fa1305350))
+
+## [1.15.4](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.3...vscode-extension-v1.15.4) (2026-10-09)
+
+
+### Bug Fixes
+
+* **kicad-studio:** confine BoardReadyOps remediation plan paths ([#623](https://github.com/oaslananka/kicad-studio-kit/issues/623)) ([#744](https://github.com/oaslananka/kicad-studio-kit/issues/744)) ([9c63c12](https://github.com/oaslananka/kicad-studio-kit/commit/9c63c122f996e923799fa97988d418af461aeb13))
+* **kicad-studio:** secure BoardReadyOps execution and resolve CI security drift ([#748](https://github.com/oaslananka/kicad-studio-kit/issues/748)) ([45bbef1](https://github.com/oaslananka/kicad-studio-kit/commit/45bbef1ff3892a6f9e49d6f2106f6a3c53ca429a))
+
+## [1.15.3](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.2...vscode-extension-v1.15.3) (2026-10-08)
+
+
+### Bug Fixes
+
+* **kicad-studio:** confine BoardReadyOps diagnostic paths to project ([#623](https://github.com/oaslananka/kicad-studio-kit/issues/623)) ([#741](https://github.com/oaslananka/kicad-studio-kit/issues/741)) ([1573b29](https://github.com/oaslananka/kicad-studio-kit/commit/1573b29742b3e59e5cb1ac1419fc0555adbb2e4a))
+
+## [1.15.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.1...vscode-extension-v1.15.2) (2026-10-08)
+
+
+### Bug Fixes
+
+* **docs:** align MCP support summary with contract ([#736](https://github.com/oaslananka/kicad-studio-kit/issues/736)) ([#737](https://github.com/oaslananka/kicad-studio-kit/issues/737)) ([75b3c22](https://github.com/oaslananka/kicad-studio-kit/commit/75b3c2218a11feb967c60770a82a8b3488a13f34))
+* **repo:** align published MCP 4.0.2 compatibility evidence ([#722](https://github.com/oaslananka/kicad-studio-kit/issues/722)) ([#723](https://github.com/oaslananka/kicad-studio-kit/issues/723)) ([55110fb](https://github.com/oaslananka/kicad-studio-kit/commit/55110fb71ee0b4b8679eca0b7699350736e3af9d))
+* **repo:** exclude release version from marketplace capture provenance ([dcd8a04](https://github.com/oaslananka/kicad-studio-kit/commit/dcd8a04013e2c479dc50180c233bc956678719de)), closes [#726](https://github.com/oaslananka/kicad-studio-kit/issues/726)
+* **repo:** keep marketplace provenance stable on release version bumps ([#726](https://github.com/oaslananka/kicad-studio-kit/issues/726)) ([#727](https://github.com/oaslananka/kicad-studio-kit/issues/727)) ([dcd8a04](https://github.com/oaslananka/kicad-studio-kit/commit/dcd8a04013e2c479dc50180c233bc956678719de))
+
+## [1.15.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.15.0...vscode-extension-v1.15.1) (2026-09-30)
+
+
+### Licensing
+
+* **repo:** transition current project-authored source from MIT to PolyForm Noncommercial 1.0.0 ([#693](https://github.com/oaslananka/kicad-studio-kit/issues/693)); revisions already published under MIT retain their MIT grants, and commercial use of current source requires a separate written license (see [LICENSING.md](https://github.com/oaslananka/kicad-studio-kit/blob/main/LICENSING.md) and [COMMERCIAL-LICENSING.md](https://github.com/oaslananka/kicad-studio-kit/blob/main/COMMERCIAL-LICENSING.md)).
+
+### Bug Fixes
+
+* **repo:** repair security and compatibility baselines ([#695](https://github.com/oaslananka/kicad-studio-kit/issues/695)) ([67954b0](https://github.com/oaslananka/kicad-studio-kit/commit/67954b0429cf95434d9aa20e44678aacab3ecd1d))
+
+## [1.15.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.14.0...vscode-extension-v1.15.0) (2026-08-31)
+
+
+### Features
+
+* **kicad-studio:** gate manufacturing release on BoardReadyOps ([#682](https://github.com/oaslananka/kicad-studio-kit/issues/682)) ([b1b086d](https://github.com/oaslananka/kicad-studio-kit/commit/b1b086d8d77d67318f9cce6ee9598f75b24ea01f))
+
+## [1.14.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.13.1...vscode-extension-v1.14.0) (2026-08-31)
+
+
+### Features
+
+* **kicad-studio:** surface BoardReadyOps evidence state ([8f63711](https://github.com/oaslananka/kicad-studio-kit/commit/8f63711d685c3a33d134f53447c210eb2d1da38a))
+
+## [1.13.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.13.0...vscode-extension-v1.13.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* **kicad-studio:** align readiness findings contract ([c6e5340](https://github.com/oaslananka/kicad-studio-kit/commit/c6e5340ccad4eada5a00a8446e0c52e5fdfe427f))
+* **kicad-studio:** validate BoardReadyOps readiness contract ([2b8bcba](https://github.com/oaslananka/kicad-studio-kit/commit/2b8bcbae88cf98da67677675ce73cd960c33f6f6))
+
+## [1.13.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.12.0...vscode-extension-v1.13.0) (2026-08-31)
+
+
+### Features
+
+* **kicad-studio:** surface BoardReadyOps remediation plan ([#671](https://github.com/oaslananka/kicad-studio-kit/issues/671)) ([0697858](https://github.com/oaslananka/kicad-studio-kit/commit/06978580abf0e647314eef1134a8c105c1fa7fde))
+
+## [1.12.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.11.1...vscode-extension-v1.12.0) (2026-08-31)
+
+
+### Features
+
+* **kicad-studio:** gate BoardReadyOps readiness by contract ([d4a150b](https://github.com/oaslananka/kicad-studio-kit/commit/d4a150b0f2ca3f8c511880701dd41ed055519766))
+* **kicad-studio:** gate BoardReadyOps readiness by contract ([f9c822b](https://github.com/oaslananka/kicad-studio-kit/commit/f9c822b249cdaead5cb402d820c57f32c24d881a))
+
+## [1.11.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.11.0...vscode-extension-v1.11.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* **kicad-studio:** harden empty-state actions ([b8ad5c7](https://github.com/oaslananka/kicad-studio-kit/commit/b8ad5c770794218a8b702ec35c91e15f03e8c033))
+* **kicad-studio:** preserve netlist loading state ([62b93b9](https://github.com/oaslananka/kicad-studio-kit/commit/62b93b9519ea3e87e7f48c58edd0814d652c856d))
+
+## [1.11.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.5...vscode-extension-v1.11.0) (2026-08-31)
+
+
+### Features
+
+* **kicad-studio:** negotiate advertised MCP profiles ([f697f51](https://github.com/oaslananka/kicad-studio-kit/commit/f697f51a7e611aef2a5f5bb36785e19cbde63f87))
+* **kicad-studio:** negotiate advertised MCP profiles ([348f0e8](https://github.com/oaslananka/kicad-studio-kit/commit/348f0e8cc74732ed79abf6292951700d8281e1b6))
+
+## [1.10.5](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.4...vscode-extension-v1.10.5) (2026-08-30)
+
+
+### Bug Fixes
+
+* **kicad-studio:** retry transient VS Code host downloads ([#658](https://github.com/oaslananka/kicad-studio-kit/issues/658)) ([2470061](https://github.com/oaslananka/kicad-studio-kit/commit/247006136ae1ceab8baae43c6e96e9cfba3e9b52))
+* **kicad-studio:** unify MCP bootstrap flow ([#653](https://github.com/oaslananka/kicad-studio-kit/issues/653)) ([fb91bce](https://github.com/oaslananka/kicad-studio-kit/commit/fb91bce660456dcad8eae2feed757cdf8a7e9f87))
+
+## [1.10.4](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.3...vscode-extension-v1.10.4) (2026-08-30)
+
+
+### Bug Fixes
+
+* **kicad-studio:** align MCP profile contract ([#648](https://github.com/oaslananka/kicad-studio-kit/issues/648)) ([a1111ed](https://github.com/oaslananka/kicad-studio-kit/commit/a1111ed90904040032424e42c16a074f93023357))
+
+## [1.10.3](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.2...vscode-extension-v1.10.3) (2026-08-30)
+
+
+### Bug Fixes
+
+* **kicad-studio:** recover viewer renderer failures automatically ([#640](https://github.com/oaslananka/kicad-studio-kit/issues/640)) ([b2198ed](https://github.com/oaslananka/kicad-studio-kit/commit/b2198ed5be53adff0ff6965ddd2948e8dfca11db))
+
+## [1.10.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.1...vscode-extension-v1.10.2) (2026-08-30)
+
+
+### Bug Fixes
+
+* **kicad-studio:** make MCP installer Python-aware ([#630](https://github.com/oaslananka/kicad-studio-kit/issues/630)) ([4c373f6](https://github.com/oaslananka/kicad-studio-kit/commit/4c373f6496ae5d7dc01dc3f506e48413e8c4490c))
+* **kicad-studio:** sync Marketplace MCP compatibility ([#638](https://github.com/oaslananka/kicad-studio-kit/issues/638)) ([0917e9f](https://github.com/oaslananka/kicad-studio-kit/commit/0917e9fd7be4f37368227fa8b1962cb8113a423f))
+
+## [1.10.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.10.0...vscode-extension-v1.10.1) (2026-08-02)
+
+
+### Bug Fixes
+
+* **deps:** update dependency semver to v7.8.5 ([#587](https://github.com/oaslananka/kicad-studio-kit/issues/587)) ([d02ee49](https://github.com/oaslananka/kicad-studio-kit/commit/d02ee494bf788f6e45f32c2491265bcca62fb97c))
+
+## [1.10.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.9.7...vscode-extension-v1.10.0) (2026-07-28)
+
+
+### Features
+
+* **kicad-studio:** organize task-oriented command surface ([d1dddfd](https://github.com/oaslananka/kicad-studio-kit/commit/d1dddfd0a5acd1bcd211a206a4d44a68571b9654)), closes [#498](https://github.com/oaslananka/kicad-studio-kit/issues/498)
+
+## [1.9.7](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.9.6...vscode-extension-v1.9.7) (2026-07-27)
+
+
+### Bug Fixes
+
+* **kicad-studio:** bound PCM archive extraction ([263b3f4](https://github.com/oaslananka/kicad-studio-kit/commit/263b3f431f69b026525b7ef816dff05919d1645b)), closes [#563](https://github.com/oaslananka/kicad-studio-kit/issues/563)
+
+## [1.9.6](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.9.5...vscode-extension-v1.9.6) (2026-07-26)
+
+
+### Performance Improvements
+
+* **repo:** reduce oversized extension and documentation chunks ([#545](https://github.com/oaslananka/kicad-studio-kit/issues/545)) ([d451a89](https://github.com/oaslananka/kicad-studio-kit/commit/d451a89daacd0c9ee0472a8a603cf7b07803bc71))
+
+## [1.9.5](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.9.4...vscode-extension-v1.9.5) (2026-07-21)
+
+
+### Bug Fixes
+
+* **kicad-studio:** validate shipped documentation links ([#499](https://github.com/oaslananka/kicad-studio-kit/issues/499)) ([824d95d](https://github.com/oaslananka/kicad-studio-kit/commit/824d95da0c5bb83cb9021e7eacaa3b15641fd860))
+
+## [1.9.4](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.9.3...vscode-extension-v1.9.4) (2026-06-30)
+
+
+### Bug Fixes
+
+* **repo:** improve marketplace status surfaces and docs deploy retry ([#467](https://github.com/oaslananka/kicad-studio-kit/issues/467)) ([ff3c434](https://github.com/oaslananka/kicad-studio-kit/commit/ff3c434281bafa5709842c8ce7dc80af44fb14ef))
+
+## [1.9.3](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.9.2...vscode-extension-v1.9.3) (2026-06-30)
+
+
+### Bug Fixes
+
+* **kicad-studio:** show trust badges in marketplace readme ([#465](https://github.com/oaslananka/kicad-studio-kit/issues/465)) ([e15efb4](https://github.com/oaslananka/kicad-studio-kit/commit/e15efb4a2390453fffd8d9fa9958ecce83796491))
+
+## [1.9.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.9.1...vscode-extension-v1.9.2) (2026-06-30)
+
+
+### Bug Fixes
+
+* **kicad-studio:** polish marketplace readme layout ([#462](https://github.com/oaslananka/kicad-studio-kit/issues/462)) ([9e78721](https://github.com/oaslananka/kicad-studio-kit/commit/9e78721b7e0c8a3fcb707429fce3e7b2cdc66ae4))
+
+## [1.9.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.9.0...vscode-extension-v1.9.1) (2026-06-30)
+
+
+### Bug Fixes
+
+* **kicad-studio:** use hosted readme images ([#459](https://github.com/oaslananka/kicad-studio-kit/issues/459)) ([6a541c6](https://github.com/oaslananka/kicad-studio-kit/commit/6a541c6bbabad146b40111679eba28da800a5b79))
+
+## [1.9.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.8.1...vscode-extension-v1.9.0) (2026-06-22)
+
+
+### Features
+
+* **kicad-studio:** add a Fabrication Release Wizard with validated manufacturing bundles ([#433](https://github.com/oaslananka/kicad-studio-kit/issues/433)) ([c3d366c](https://github.com/oaslananka/kicad-studio-kit/commit/c3d366c0b305364ddc4e3897c70a69c459011600))
+* **kicad-studio:** add component intelligence and BOM risk scoring ([#429](https://github.com/oaslananka/kicad-studio-kit/issues/429)) ([a5cfcff](https://github.com/oaslananka/kicad-studio-kit/commit/a5cfcff425cb5df194e5cab4ce6b90fe97ae4761)), closes [#403](https://github.com/oaslananka/kicad-studio-kit/issues/403)
+* **kicad-studio:** add explicit active project selection for multi-root workspaces ([#425](https://github.com/oaslananka/kicad-studio-kit/issues/425)) ([2547fc8](https://github.com/oaslananka/kicad-studio-kit/commit/2547fc8e26a28468b6594ede7905b5a3e0c23e27)), closes [#407](https://github.com/oaslananka/kicad-studio-kit/issues/407)
+* **kicad-studio:** add rules-as-code policy packs for KiCad projects ([#428](https://github.com/oaslananka/kicad-studio-kit/issues/428)) ([b62f4e7](https://github.com/oaslananka/kicad-studio-kit/commit/b62f4e79014895787476d97f3631fc80ebf7eb86))
+* **kicad-studio:** add structural KiCad diff report for local and PR review ([#427](https://github.com/oaslananka/kicad-studio-kit/issues/427)) ([0ce4c29](https://github.com/oaslananka/kicad-studio-kit/commit/0ce4c295b7de1a7b4f02489af43a7e926d0d3943)), closes [#401](https://github.com/oaslananka/kicad-studio-kit/issues/401)
+* **kicad-studio:** document clear capability modes for assistant tools ([#436](https://github.com/oaslananka/kicad-studio-kit/issues/436)) ([4604371](https://github.com/oaslananka/kicad-studio-kit/commit/4604371913485ae2ab7909cbd940d060ea4c95b7)), closes [#406](https://github.com/oaslananka/kicad-studio-kit/issues/406)
+* **kicad-studio:** premium sidebar density, status colors, and onboarding ([#447](https://github.com/oaslananka/kicad-studio-kit/issues/447)) ([e9332bf](https://github.com/oaslananka/kicad-studio-kit/commit/e9332bf8b1f23acbd5d7bc3c23b04c69fe3c9f77))
+* **kicad-studio:** promote BoardReadyOps into a release readiness scorecard ([#430](https://github.com/oaslananka/kicad-studio-kit/issues/430)) ([a85896e](https://github.com/oaslananka/kicad-studio-kit/commit/a85896e3facd7b236d858fe6989a63803de7117e))
+
+
+### Bug Fixes
+
+* **kicad-studio:** default generated MCP config to least privilege ([#446](https://github.com/oaslananka/kicad-studio-kit/issues/446)) ([7647ed8](https://github.com/oaslananka/kicad-studio-kit/commit/7647ed82e15544af846f41f1efc8041b8fbafec1))
+* **kicad-studio:** make sidebar MCP UX project-aware and actionable ([#445](https://github.com/oaslananka/kicad-studio-kit/issues/445)) ([46c044c](https://github.com/oaslananka/kicad-studio-kit/commit/46c044c706cb4e9e9dc5f41ef06f4edb226ea55d))
+
+
+### Performance Improvements
+
+* **kicad-studio:** debounce and cache workspace context refreshes ([#432](https://github.com/oaslananka/kicad-studio-kit/issues/432)) ([575c08f](https://github.com/oaslananka/kicad-studio-kit/commit/575c08f2b9805829232f356353639d78bb20a3bc))
+
+## [1.8.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.8.0...vscode-extension-v1.8.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* **kicad-studio:** drop proposed MCP API and raise engine floor to 1.101 ([#385](https://github.com/oaslananka/kicad-studio-kit/issues/385)) ([e08dd3a](https://github.com/oaslananka/kicad-studio-kit/commit/e08dd3aca373866cc84db19a6c1e46789f34a7a9))
+* **kicad-studio:** tidy command palette gating and add editor context menu ([#383](https://github.com/oaslananka/kicad-studio-kit/issues/383)) ([76e94d7](https://github.com/oaslananka/kicad-studio-kit/commit/76e94d7d8a4d8726a2d269e0a6f3d05d04b96c2b))
+
+## [1.8.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.7.0...vscode-extension-v1.8.0) (2026-06-14)
+
+
+### Features
+
+* **compat:** add release compatibility matrix ([f35ba2d](https://github.com/oaslananka/kicad-studio-kit/commit/f35ba2d34327a51890ad702cba7b188f10597a4b))
+* **extension:** enrich workflow sidebars ([ba3a250](https://github.com/oaslananka/kicad-studio-kit/commit/ba3a250cebc11794997540ff8bb2971a22a97a1f))
+* **extension:** polish sidebar workflow affordances ([9f41d2f](https://github.com/oaslananka/kicad-studio-kit/commit/9f41d2f996396dc72a19c1803b47a2eac3f95bf2))
+* **kicad-mcp-pro:** implement empty project quality gates and ipc lifecycle transition checks ([82047b2](https://github.com/oaslananka/kicad-studio-kit/commit/82047b27629d40482bb1865560650835b8b07282))
+* **kicad-studio/kicad-mcp-pro:** add doctor diagnostics ([88dca0c](https://github.com/oaslananka/kicad-studio-kit/commit/88dca0cc015a24d50b8d8b2db948783be68240ff)), closes [#74](https://github.com/oaslananka/kicad-studio-kit/issues/74)
+* **kicad-studio/kicad-mcp-pro:** add KiCad IPC capability gating ([835e488](https://github.com/oaslananka/kicad-studio-kit/commit/835e48820404ad93c24b8cfd66bb68710ef2983c))
+* **kicad-studio/kicad-mcp-pro:** add KiCad IPC capability gating ([c81db7a](https://github.com/oaslananka/kicad-studio-kit/commit/c81db7ac31b275be1d667d12eb61cdb96ad03cd7))
+* **kicad-studio/kicad-mcp-pro:** add localization infrastructure ([49f949e](https://github.com/oaslananka/kicad-studio-kit/commit/49f949e7dc4914a8a4fc58486eca388694da1a60))
+* **kicad-studio/kicad-mcp-pro:** add localization infrastructure ([fbe63e0](https://github.com/oaslananka/kicad-studio-kit/commit/fbe63e0d156e6d044cc5b515e1919b51ea86581e))
+* **kicad-studio/kicad-mcp-pro:** add monorepo dev doctor ([7766750](https://github.com/oaslananka/kicad-studio-kit/commit/77667509d6ffef1e9c5779b63701b95c39433939))
+* **kicad-studio/kicad-mcp-pro:** add monorepo dev doctor ([11f2168](https://github.com/oaslananka/kicad-studio-kit/commit/11f2168c9482daeceff89f74806b21697d4fc9df))
+* **kicad-studio/kicad-mcp-pro:** add operating modes ([2cd849a](https://github.com/oaslananka/kicad-studio-kit/commit/2cd849a050e0119cd9ec7bb02463b3e37ff0a35a)), closes [#73](https://github.com/oaslananka/kicad-studio-kit/issues/73)
+* **kicad-studio/kicad-mcp-pro:** add opt-in privacy-safe reporting ([55ca498](https://github.com/oaslananka/kicad-studio-kit/commit/55ca498d881d30cb725e532b6200bccefe3662e0))
+* **kicad-studio/kicad-mcp-pro:** add opt-in privacy-safe reporting ([4d0e902](https://github.com/oaslananka/kicad-studio-kit/commit/4d0e902d938fa196a9d9c4c4468c918f7205b2b7))
+* **kicad-studio/kicad-mcp-pro:** add product release provenance evidence ([#195](https://github.com/oaslananka/kicad-studio-kit/issues/195)) ([e2caccd](https://github.com/oaslananka/kicad-studio-kit/commit/e2caccd5663e394585b017554305ef0954b62d66))
+* **kicad-studio/kicad-mcp-pro:** add shared protocol schemas package ([684ef9f](https://github.com/oaslananka/kicad-studio-kit/commit/684ef9fd9b8363914120a7228fa8cbf82e65d4db)), closes [#53](https://github.com/oaslananka/kicad-studio-kit/issues/53)
+* **kicad-studio/kicad-mcp-pro:** add STEPZ and XAO exports ([b098507](https://github.com/oaslananka/kicad-studio-kit/commit/b098507762c456a875a4525108ab7eea58a60172)), closes [#232](https://github.com/oaslananka/kicad-studio-kit/issues/232)
+* **kicad-studio/kicad-mcp-pro:** implement empty project onboarding quality gates and ipc lifecycle transition checks ([0627370](https://github.com/oaslananka/kicad-studio-kit/commit/06273709440056e9bcdf76d339f84d1829097edb))
+* **kicad-studio:** 9 new export formats, v1.4.1 alignment, manifest check script ([c9085cb](https://github.com/oaslananka/kicad-studio-kit/commit/c9085cbb8f9f73212cee59372c7ebf18077fd0de))
+* **kicad-studio:** add .kicad_prl and .kicad_wks language support ([#313](https://github.com/oaslananka/kicad-studio-kit/issues/313)) ([b95391d](https://github.com/oaslananka/kicad-studio-kit/commit/b95391d03f0b1f8cc68a59b1cfb7839bf65fe1cb))
+* **kicad-studio:** add AI provider secret vault ([4097f3f](https://github.com/oaslananka/kicad-studio-kit/commit/4097f3feb06292eda1d6cc5c56747ccaf5d99830))
+* **kicad-studio:** add AI provider secret vault ([22d9143](https://github.com/oaslananka/kicad-studio-kit/commit/22d9143730bad89ec3aea3975017bd39630997a8))
+* **kicad-studio:** add BoardReadyOps command stubs ([#271](https://github.com/oaslananka/kicad-studio-kit/issues/271)) ([6ee4e61](https://github.com/oaslananka/kicad-studio-kit/commit/6ee4e61f07f86e35644b5dfc7032ecf247e4d4f1))
+* **kicad-studio:** add diagnostic freshness model ([60baed9](https://github.com/oaslananka/kicad-studio-kit/commit/60baed9acc73a58c7adfa5884126cb5fcf8fc496))
+* **kicad-studio:** add inline component search view ([e40622c](https://github.com/oaslananka/kicad-studio-kit/commit/e40622c13123679880eb595b2a8f5685cb168ad2))
+* **kicad-studio:** add inline component search view ([9b36be1](https://github.com/oaslananka/kicad-studio-kit/commit/9b36be1039a8617ed2678a4a4a8211e6c67ffef4))
+* **kicad-studio:** add MCP compatibility dashboard ([f0a2adb](https://github.com/oaslananka/kicad-studio-kit/commit/f0a2adb4f6200257e20ad865ebba1d843ca11092))
+* **kicad-studio:** add MCP compatibility dashboard ([004e488](https://github.com/oaslananka/kicad-studio-kit/commit/004e4887ad31949a365523ba379c3ec15261ade1))
+* **kicad-studio:** add PCM library management ([fdd5323](https://github.com/oaslananka/kicad-studio-kit/commit/fdd5323b69a757aef1382995c74f8d10c4848acf))
+* **kicad-studio:** add PCM library management ([4df04e3](https://github.com/oaslananka/kicad-studio-kit/commit/4df04e39fde4f43204faa864a3e6b44db7980797))
+* **kicad-studio:** add pre-commit hooks, VSIX tag build, coverage PR comment, E2E in CI ([#312](https://github.com/oaslananka/kicad-studio-kit/issues/312)) ([edc1b0b](https://github.com/oaslananka/kicad-studio-kit/commit/edc1b0b2f65933ab21991c2d3e8791d9bc623df8))
+* **kicad-studio:** add settings migration framework ([1fbbe7f](https://github.com/oaslananka/kicad-studio-kit/commit/1fbbe7f6df0c66483c2ffc74b4c29486396fda27))
+* **kicad-studio:** add settings migration framework ([239755b](https://github.com/oaslananka/kicad-studio-kit/commit/239755be6a4102c05fef59b9929fc9de793f71d3))
+* **kicad-studio:** add SPICE/Gerber/Drill/Worksheet grammars, update DRC with KiCad 10+ constraints ([f25bf7a](https://github.com/oaslananka/kicad-studio-kit/commit/f25bf7afa7dc913ec1e77fd94823cab1c5dc8272))
+* **kicad-studio:** add Turkish (tr) localization ([6e6bc09](https://github.com/oaslananka/kicad-studio-kit/commit/6e6bc098ec24098597f2dbc6776e5e35111e850a))
+* **kicad-studio:** add viewer engine state ([633fc29](https://github.com/oaslananka/kicad-studio-kit/commit/633fc297bbf37fba6acb5610f0b28238890519a7))
+* **kicad-studio:** add viewer engine state ([7138bf9](https://github.com/oaslananka/kicad-studio-kit/commit/7138bf9203820a76e14f596aa2bc4a63e894d56d))
+* **kicad-studio:** complete prompt spec - Phase A-E, screenshots, manifest, CI gates, security hardening ([a43e305](https://github.com/oaslananka/kicad-studio-kit/commit/a43e30505ca8151c312cf4047396a0d1e796fe93))
+* **kicad-studio:** downgrade vscode engine and improve mcp sidebar UX ([#316](https://github.com/oaslananka/kicad-studio-kit/issues/316)) ([257019b](https://github.com/oaslananka/kicad-studio-kit/commit/257019b417a5889b7196936ee84f3d562b43f2cd))
+* **kicad-studio:** gate Allegro import workflow ([eac6edc](https://github.com/oaslananka/kicad-studio-kit/commit/eac6edc20628e882f55698c6684ba8b8dba40a2b))
+* **kicad-studio:** gate Allegro import workflow ([f1bf39b](https://github.com/oaslananka/kicad-studio-kit/commit/f1bf39b9834d87c298cd3d90d8d6915dd2536c48))
+* **kicad-studio:** isolate multi-project workspace state ([26124d7](https://github.com/oaslananka/kicad-studio-kit/commit/26124d719a0330ef3ef90afe034a22f115c21f5f))
+* **kicad-studio:** isolate multi-project workspace state ([96cb313](https://github.com/oaslananka/kicad-studio-kit/commit/96cb313479aafb9c3b4d08c4cf2ad48c82ae9fbe))
+* **kicad-studio:** surface KiCad support matrix ([5dbdee8](https://github.com/oaslananka/kicad-studio-kit/commit/5dbdee8b54f470c6a1cba0ca0254c9940e22625a))
+* **mcp:** add BoardReadyOps tree node and fix TS errors in mcpToolsProvider ([3c566b7](https://github.com/oaslananka/kicad-studio-kit/commit/3c566b744e31ff2ec963e201963f01360cc44026))
+* **mcp:** add server info capabilities contract ([759ef3a](https://github.com/oaslananka/kicad-studio-kit/commit/759ef3ae7c18d6c0f87eb1049ccc80d743eb3bc9))
+* **repo:** add shared kicad fixtures package ([a858483](https://github.com/oaslananka/kicad-studio-kit/commit/a8584830316c5d9fc0386e1877eaa18c026022ef)), closes [#54](https://github.com/oaslananka/kicad-studio-kit/issues/54)
+* **repo:** establish beta feedback program ([3d49ce9](https://github.com/oaslananka/kicad-studio-kit/commit/3d49ce99adab11bb1d7e959fb0591ced9d9f2557))
+* **repo:** establish beta feedback program ([7723d43](https://github.com/oaslananka/kicad-studio-kit/commit/7723d4328d43ecffed8d42ce12cd48a8ad63835b))
+* **repo:** remove packages/mcp-npm from monorepo ([#286](https://github.com/oaslananka/kicad-studio-kit/issues/286) Phase 2, PR 3) ([3231265](https://github.com/oaslananka/kicad-studio-kit/commit/3231265e62342d7f2b25f655f74a9475f5d79ea9))
+* **studio:** add mcp tool adapter layer ([73acdc0](https://github.com/oaslananka/kicad-studio-kit/commit/73acdc09827fd18261581cb6af686b73619f91dd))
+* **studio:** centralize extension state stores ([76eb2cd](https://github.com/oaslananka/kicad-studio-kit/commit/76eb2cd31778bebeb255dbfd07e3139b99eff596)), closes [#69](https://github.com/oaslananka/kicad-studio-kit/issues/69)
+* **vscode-extension:** integrate real BoardReadyOps check command ([#311](https://github.com/oaslananka/kicad-studio-kit/issues/311)) ([4237063](https://github.com/oaslananka/kicad-studio-kit/commit/4237063b342677dbdde1ff0469bfdc67b5186006))
+
+
+### Bug Fixes
+
+* **extension:** clear stale diagnostics by canonical path ([30d91ea](https://github.com/oaslananka/kicad-studio-kit/commit/30d91ea46922d045a2756ea9aec697b966466ec6))
+* keep release preparation checks stable ([66123b7](https://github.com/oaslananka/kicad-studio-kit/commit/66123b7f1b10e6c4cdf81291aaecfa7a6fb0682a))
+* **kicad-studio/kicad-mcp-pro:** mark KiCad 9.x deprecated ([11fb19a](https://github.com/oaslananka/kicad-studio-kit/commit/11fb19a6aceb7932fd200077bc97082c725f61fb))
+* **kicad-studio/kicad-mcp-pro:** mark KiCad 9.x deprecated ([11fb19a](https://github.com/oaslananka/kicad-studio-kit/commit/11fb19a6aceb7932fd200077bc97082c725f61fb))
+* **kicad-studio/kicad-mcp-pro:** mark KiCad 9.x deprecated ([c421156](https://github.com/oaslananka/kicad-studio-kit/commit/c42115697dab897d2bbc9ae5fb20853ebf62cf04))
+* **kicad-studio/kicad-mcp-pro:** raise public compatibility floors ([98283a7](https://github.com/oaslananka/kicad-studio-kit/commit/98283a7374fcd666c392044e95aafb0c330d896e)), closes [#209](https://github.com/oaslananka/kicad-studio-kit/issues/209)
+* **kicad-studio/kicad-mcp-pro:** reset extension marketplace identity ([2f907a1](https://github.com/oaslananka/kicad-studio-kit/commit/2f907a14c9b28b8d9c80f6581409f24ed53e66d0))
+* **kicad-studio/kicad-mcp-pro:** reset extension marketplace identity ([11f3fd0](https://github.com/oaslananka/kicad-studio-kit/commit/11f3fd0e99bdaf761e99dc733a9a8b8c26fc403f))
+* **kicad-studio:** address 6 Gemini code review issues ([aed0572](https://github.com/oaslananka/kicad-studio-kit/commit/aed0572453c3cdcb9223742ebbb97cd8df6b6d47))
+* **kicad-studio:** address accessibility review feedback ([0cc0f69](https://github.com/oaslananka/kicad-studio-kit/commit/0cc0f692382c4cda599eea34979fb8d987f87b62))
+* **kicad-studio:** address component search review feedback ([561d83f](https://github.com/oaslananka/kicad-studio-kit/commit/561d83ff33cf0c4f41e3f044301fc232f8f8fa06))
+* **kicad-studio:** AI Chat scroll anchoring and long-response rendering jank ([#264](https://github.com/oaslananka/kicad-studio-kit/issues/264)) ([bff52bb](https://github.com/oaslananka/kicad-studio-kit/commit/bff52bb45edd5144ede9affec9ebc300762e13c5))
+* **kicad-studio:** align Codex provider support ([484f739](https://github.com/oaslananka/kicad-studio-kit/commit/484f739ce3e77ae4682a8577553ee963d1cdd268))
+* **kicad-studio:** align marketplace version checks ([39fb2f9](https://github.com/oaslananka/kicad-studio-kit/commit/39fb2f916fe6f12d2927be34972e62319b1f263c)), closes [#320](https://github.com/oaslananka/kicad-studio-kit/issues/320)
+* **kicad-studio:** align viewer toolbar with VS Code themes ([80f1d5c](https://github.com/oaslananka/kicad-studio-kit/commit/80f1d5c20ccea670e949ebccd2f7274a5b325ebc)), closes [#18](https://github.com/oaslananka/kicad-studio-kit/issues/18)
+* **kicad-studio:** clarify project tree roles ([f6f5a2f](https://github.com/oaslananka/kicad-studio-kit/commit/f6f5a2f91ec8394f3ef0f7e3d4144a33c442a5aa)), closes [#21](https://github.com/oaslananka/kicad-studio-kit/issues/21)
+* **kicad-studio:** compact viewer tools panel ([#156](https://github.com/oaslananka/kicad-studio-kit/issues/156)) ([3270fb4](https://github.com/oaslananka/kicad-studio-kit/commit/3270fb47920481e5baa732c78334022cdf2fdf81))
+* **kicad-studio:** declare mcpConfigurationProvider in enabledApiProposals ([#333](https://github.com/oaslananka/kicad-studio-kit/issues/333)) ([4f1018e](https://github.com/oaslananka/kicad-studio-kit/commit/4f1018ed3ac7592a0cc334b814c88b22ced42a1b))
+* **kicad-studio:** escape PCM library table backslashes ([19254b5](https://github.com/oaslananka/kicad-studio-kit/commit/19254b51290ef480fae9b9e3530ab3b80d3e07d1))
+* **kicad-studio:** fail closed on import support probes ([0cbbb0d](https://github.com/oaslananka/kicad-studio-kit/commit/0cbbb0d20e63ad1fd695077d0206c89925f1ea66))
+* **kicad-studio:** let fallback viewer fit schematic ([edd71e7](https://github.com/oaslananka/kicad-studio-kit/commit/edd71e74159308302163f274590420696dd10a79)), closes [#17](https://github.com/oaslananka/kicad-studio-kit/issues/17)
+* **kicad-studio:** polish sidebar workflow states ([78ad7dc](https://github.com/oaslananka/kicad-studio-kit/commit/78ad7dce44ca912984203475a127a32df8045735))
+* **kicad-studio:** repair extension listing media links and stale version text ([#261](https://github.com/oaslananka/kicad-studio-kit/issues/261)) ([5527985](https://github.com/oaslananka/kicad-studio-kit/commit/5527985ea7956711ffd91a514d6e18e9da2377c9))
+* **kicad-studio:** resolve vscode extension runtime UI and degraded MCP bugs ([4167232](https://github.com/oaslananka/kicad-studio-kit/commit/4167232ebfc8a7b5160ac627a5ec57f673f25980))
+* **kicad-studio:** Runtime UI and MCP degraded-mode handling ([#250](https://github.com/oaslananka/kicad-studio-kit/issues/250), [#249](https://github.com/oaslananka/kicad-studio-kit/issues/249)) ([#255](https://github.com/oaslananka/kicad-studio-kit/issues/255)) ([feacf6b](https://github.com/oaslananka/kicad-studio-kit/commit/feacf6ba24a79f7cccde22a691422d8958ed77ab))
+* **kicad-studio:** separate quality gates docs links from executable gate actions ([#263](https://github.com/oaslananka/kicad-studio-kit/issues/263)) ([7aed494](https://github.com/oaslananka/kicad-studio-kit/commit/7aed49456aea85a010eaea9b019594b437267118))
+* make extension formatting portable ([a64af89](https://github.com/oaslananka/kicad-studio-kit/commit/a64af89c4aefeba3c5f6664f660b617234d9a71c))
+* **repo:** address beta program review feedback ([521aef0](https://github.com/oaslananka/kicad-studio-kit/commit/521aef069c36f67617df591fc1fe5374c8014d56))
+* **repo:** align displayName with Marketplace listing (KiCad Studio Kit) ([939654a](https://github.com/oaslananka/kicad-studio-kit/commit/939654abb064a5c6623a91cff91d6721f1316502))
+* **repo:** align runtime support policy ([#305](https://github.com/oaslananka/kicad-studio-kit/issues/305)) ([f09e9ae](https://github.com/oaslananka/kicad-studio-kit/commit/f09e9ae81611cd519a49111789fdee92f5fdb9e1))
+* **repo:** align sub-package pnpm version policy ([#284](https://github.com/oaslananka/kicad-studio-kit/issues/284)) ([238664e](https://github.com/oaslananka/kicad-studio-kit/commit/238664e361eda53875bd65291c9f379d1581397c))
+* **repo:** remove packages/mcp-server from monorepo (moved to KiCad MCP Pro) ([#303](https://github.com/oaslananka/kicad-studio-kit/issues/303)) ([59c9716](https://github.com/oaslananka/kicad-studio-kit/commit/59c971605bc2e4451a622276a992af8d4f5a5fcc))
+* **repo:** trigger fresh CI ([483ab04](https://github.com/oaslananka/kicad-studio-kit/commit/483ab043b6fed6314734c23d14a024249e116376))
+* **repo:** use import.meta.resolve instead of require.resolve in ESM docs script ([9714e60](https://github.com/oaslananka/kicad-studio-kit/commit/9714e60b39d812d940ca327d48c6b5e9cef6d9d9))
+* **repo:** verify registry VSIX payload content ([#345](https://github.com/oaslananka/kicad-studio-kit/issues/345)) ([9307179](https://github.com/oaslananka/kicad-studio-kit/commit/930717970288c03dfc60bca1bddb51efd67a5b0d)), closes [#344](https://github.com/oaslananka/kicad-studio-kit/issues/344)
+* **security:** make python audit gate deterministic ([5350ec8](https://github.com/oaslananka/kicad-studio-kit/commit/5350ec818e1b8d9c1a17aeec744a612a50c73044))
+
+## [1.7.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.6.2...vscode-extension-v1.7.0) (2026-06-14)
+
+### Features
+
+- **kicad-studio:** add Turkish (tr) localization ([6e6bc09](https://github.com/oaslananka/kicad-studio-kit/commit/6e6bc09eb5301503fd6c4ad1de857a43a1c02967))
+
+### Bug Fixes
+
+- **kicad-studio:** add --allow-all-proposed-apis to vsce publish command ([d587d63](https://github.com/oaslananka/kicad-studio-kit/commit/d587d635f4f6e04405e2f988a2145e39e1e2c29e))
+- **kicad-studio:** trigger publish-extension after release ([ca6319d](https://github.com/oaslananka/kicad-studio-kit/commit/ca6319dec63aa2debc68dcdd91b275a7b5290bb0))
+- **kicad-studio:** clean up workflow and script dead references, auto-generate docs after release ([9005d14](https://github.com/oaslananka/kicad-studio-kit/commit/9005d1498e4e82f58e14e77d78f975b1371e52f6))
+- **repo:** verify registry VSIX payload content ([#345](https://github.com/oaslananka/kicad-studio-kit/issues/345)) ([9307179](https://github.com/oaslananka/kicad-studio-kit/commit/9307179bf4431f450a7a7f9a7d14b9e88d00a779))
+- **repo:** harden release publishing and evidence recovery ([#343](https://github.com/oaslananka/kicad-studio-kit/issues/343)) ([6fe3fd7](https://github.com/oaslananka/kicad-studio-kit/commit/6fe3fd71ad7b90cd5cf2572061eabfd60823ab52))
+
+### Miscellaneous Chores
+
+- **repo:** apply fleet standards ([be4eac3](https://github.com/oaslananka/kicad-studio-kit/commit/be4eac34e4a6e459fa6c0cc5f6f43521aed628a1))
+- **repo:** complete fleet audit remediation ([8f90735](https://github.com/oaslananka/kicad-studio-kit/commit/8f907351a74ce6df61755adb4a6255777a2311e9))
+
+### Tests
+
+- **kicad-studio:** raise coverage thresholds and add mcpClient per-file gate ([621a0cf](https://github.com/oaslananka/kicad-studio-kit/commit/621a0cf4ce448c10cb7009d3c23c57d8ceb1a1c6))
+
+## [1.6.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.6.1...vscode-extension-v1.6.2) (2026-06-09)
+
+### Bug Fixes
+
+- **kicad-studio:** declare mcpConfigurationProvider in enabledApiProposals ([#333](https://github.com/oaslananka/kicad-studio-kit/issues/333)) ([4f1018e](https://github.com/oaslananka/kicad-studio-kit/commit/4f1018ed3ac7592a0cc334b814c88b22ced42a1b))
+
+## [1.6.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.6.0...vscode-extension-v1.6.1) (2026-06-07)
+
+### Bug Fixes
+
+- **repo:** trigger fresh CI ([483ab04](https://github.com/oaslananka/kicad-studio-kit/commit/483ab043b6fed6314734c23d14a024249e116376))
+
+## [1.6.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.5.0...vscode-extension-v1.6.0) (2026-06-07)
+
+### Features
+
+- **kicad-studio:** complete prompt spec - Phase A-E, screenshots, manifest, CI gates, security hardening ([a43e305](https://github.com/oaslananka/kicad-studio-kit/commit/a43e30505ca8151c312cf4047396a0d1e796fe93))
+
+### Bug Fixes
+
+- **kicad-studio:** address 6 Gemini code review issues ([aed0572](https://github.com/oaslananka/kicad-studio-kit/commit/aed0572453c3cdcb9223742ebbb97cd8df6b6d47))
+
+## [1.5.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.4.1...vscode-extension-v1.5.0) (2026-06-06)
+
+### Features
+
+- **kicad-studio:** 9 new export formats, v1.4.1 alignment, manifest check script ([c9085cb](https://github.com/oaslananka/kicad-studio-kit/commit/c9085cbb8f9f73212cee59372c7ebf18077fd0de))
+
+## [1.4.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.4.0...vscode-extension-v1.4.1) (2026-06-05)
+
+### Bug Fixes
+
+- **kicad-studio:** align marketplace version checks ([39fb2f9](https://github.com/oaslananka/kicad-studio-kit/commit/39fb2f916fe6f12d2927be34972e62319b1f263c)), closes [#320](https://github.com/oaslananka/kicad-studio-kit/issues/320)
+
+## [1.4.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.3.0...vscode-extension-v1.4.0) (2026-06-04)
+
+### Features
+
+- **kicad-studio:** downgrade vscode engine and improve mcp sidebar UX ([#316](https://github.com/oaslananka/kicad-studio-kit/issues/316)) ([257019b](https://github.com/oaslananka/kicad-studio-kit/commit/257019b417a5889b7196936ee84f3d562b43f2cd))
+
+## [1.3.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.2.0...vscode-extension-v1.3.0) (2026-06-04)
+
+### Features
+
+- **kicad-studio:** add .kicad_prl and .kicad_wks language support ([#313](https://github.com/oaslananka/kicad-studio-kit/issues/313)) ([b95391d](https://github.com/oaslananka/kicad-studio-kit/commit/b95391d03f0b1f8cc68a59b1cfb7839bf65fe1cb))
+- **kicad-studio:** add SPICE/Gerber/Drill/Worksheet grammars, update DRC with KiCad 10+ constraints ([f25bf7a](https://github.com/oaslananka/kicad-studio-kit/commit/f25bf7afa7dc913ec1e77fd94823cab1c5dc8272))
+
+### Bug Fixes
+
+- **repo:** align displayName with Marketplace listing (KiCad Studio Kit) ([939654a](https://github.com/oaslananka/kicad-studio-kit/commit/939654abb064a5c6623a91cff91d6721f1316502))
+
+## [1.1.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v1.0.0...vscode-extension-v1.1.0) (2026-05-27)
+
+### Features
+
+- **compat:** add release compatibility matrix ([f35ba2d](https://github.com/oaslananka/kicad-studio-kit/commit/f35ba2d34327a51890ad702cba7b188f10597a4b))
+- **extension:** enrich workflow sidebars ([ba3a250](https://github.com/oaslananka/kicad-studio-kit/commit/ba3a250cebc11794997540ff8bb2971a22a97a1f))
+- **extension:** polish sidebar workflow affordances ([9f41d2f](https://github.com/oaslananka/kicad-studio-kit/commit/9f41d2f996396dc72a19c1803b47a2eac3f95bf2))
+- **kicad-studio/kicad-mcp-pro:** add doctor diagnostics ([88dca0c](https://github.com/oaslananka/kicad-studio-kit/commit/88dca0cc015a24d50b8d8b2db948783be68240ff)), closes [#74](https://github.com/oaslananka/kicad-studio-kit/issues/74)
+- **kicad-studio/kicad-mcp-pro:** add KiCad IPC capability gating ([835e488](https://github.com/oaslananka/kicad-studio-kit/commit/835e48820404ad93c24b8cfd66bb68710ef2983c))
+- **kicad-studio/kicad-mcp-pro:** add KiCad IPC capability gating ([c81db7a](https://github.com/oaslananka/kicad-studio-kit/commit/c81db7ac31b275be1d667d12eb61cdb96ad03cd7))
+- **kicad-studio/kicad-mcp-pro:** add localization infrastructure ([49f949e](https://github.com/oaslananka/kicad-studio-kit/commit/49f949e7dc4914a8a4fc58486eca388694da1a60))
+- **kicad-studio/kicad-mcp-pro:** add localization infrastructure ([fbe63e0](https://github.com/oaslananka/kicad-studio-kit/commit/fbe63e0d156e6d044cc5b515e1919b51ea86581e))
+- **kicad-studio/kicad-mcp-pro:** add monorepo dev doctor ([7766750](https://github.com/oaslananka/kicad-studio-kit/commit/77667509d6ffef1e9c5779b63701b95c39433939))
+- **kicad-studio/kicad-mcp-pro:** add monorepo dev doctor ([11f2168](https://github.com/oaslananka/kicad-studio-kit/commit/11f2168c9482daeceff89f74806b21697d4fc9df))
+- **kicad-studio/kicad-mcp-pro:** add operating modes ([2cd849a](https://github.com/oaslananka/kicad-studio-kit/commit/2cd849a050e0119cd9ec7bb02463b3e37ff0a35a)), closes [#73](https://github.com/oaslananka/kicad-studio-kit/issues/73)
+- **kicad-studio/kicad-mcp-pro:** add opt-in privacy-safe reporting ([55ca498](https://github.com/oaslananka/kicad-studio-kit/commit/55ca498d881d30cb725e532b6200bccefe3662e0))
+- **kicad-studio/kicad-mcp-pro:** add opt-in privacy-safe reporting ([4d0e902](https://github.com/oaslananka/kicad-studio-kit/commit/4d0e902d938fa196a9d9c4c4468c918f7205b2b7))
+- **kicad-studio/kicad-mcp-pro:** add product release provenance evidence ([#195](https://github.com/oaslananka/kicad-studio-kit/issues/195)) ([e2caccd](https://github.com/oaslananka/kicad-studio-kit/commit/e2caccd5663e394585b017554305ef0954b62d66))
+- **kicad-studio/kicad-mcp-pro:** add shared protocol schemas package ([684ef9f](https://github.com/oaslananka/kicad-studio-kit/commit/684ef9fd9b8363914120a7228fa8cbf82e65d4db)), closes [#53](https://github.com/oaslananka/kicad-studio-kit/issues/53)
+- **kicad-studio/kicad-mcp-pro:** add STEPZ and XAO exports ([b098507](https://github.com/oaslananka/kicad-studio-kit/commit/b098507762c456a875a4525108ab7eea58a60172)), closes [#232](https://github.com/oaslananka/kicad-studio-kit/issues/232)
+- **kicad-studio:** add AI provider secret vault ([4097f3f](https://github.com/oaslananka/kicad-studio-kit/commit/4097f3feb06292eda1d6cc5c56747ccaf5d99830))
+- **kicad-studio:** add AI provider secret vault ([22d9143](https://github.com/oaslananka/kicad-studio-kit/commit/22d9143730bad89ec3aea3975017bd39630997a8))
+- **kicad-studio:** add diagnostic freshness model ([60baed9](https://github.com/oaslananka/kicad-studio-kit/commit/60baed9acc73a58c7adfa5884126cb5fcf8fc496))
+- **kicad-studio:** add inline component search view ([e40622c](https://github.com/oaslananka/kicad-studio-kit/commit/e40622c13123679880eb595b2a8f5685cb168ad2))
+- **kicad-studio:** add inline component search view ([9b36be1](https://github.com/oaslananka/kicad-studio-kit/commit/9b36be1039a8617ed2678a4a4a8211e6c67ffef4))
+- **kicad-studio:** add MCP compatibility dashboard ([f0a2adb](https://github.com/oaslananka/kicad-studio-kit/commit/f0a2adb4f6200257e20ad865ebba1d843ca11092))
+- **kicad-studio:** add MCP compatibility dashboard ([004e488](https://github.com/oaslananka/kicad-studio-kit/commit/004e4887ad31949a365523ba379c3ec15261ade1))
+- **kicad-studio:** add PCM library management ([fdd5323](https://github.com/oaslananka/kicad-studio-kit/commit/fdd5323b69a757aef1382995c74f8d10c4848acf))
+- **kicad-studio:** add PCM library management ([4df04e3](https://github.com/oaslananka/kicad-studio-kit/commit/4df04e39fde4f43204faa864a3e6b44db7980797))
+- **kicad-studio:** add settings migration framework ([1fbbe7f](https://github.com/oaslananka/kicad-studio-kit/commit/1fbbe7f6df0c66483c2ffc74b4c29486396fda27))
+- **kicad-studio:** add settings migration framework ([239755b](https://github.com/oaslananka/kicad-studio-kit/commit/239755be6a4102c05fef59b9929fc9de793f71d3))
+- **kicad-studio:** add viewer engine state ([633fc29](https://github.com/oaslananka/kicad-studio-kit/commit/633fc297bbf37fba6acb5610f0b28238890519a7))
+- **kicad-studio:** add viewer engine state ([7138bf9](https://github.com/oaslananka/kicad-studio-kit/commit/7138bf9203820a76e14f596aa2bc4a63e894d56d))
+- **kicad-studio:** gate Allegro import workflow ([eac6edc](https://github.com/oaslananka/kicad-studio-kit/commit/eac6edc20628e882f55698c6684ba8b8dba40a2b))
+- **kicad-studio:** gate Allegro import workflow ([f1bf39b](https://github.com/oaslananka/kicad-studio-kit/commit/f1bf39b9834d87c298cd3d90d8d6915dd2536c48))
+- **kicad-studio:** isolate multi-project workspace state ([26124d7](https://github.com/oaslananka/kicad-studio-kit/commit/26124d719a0330ef3ef90afe034a22f115c21f5f))
+- **kicad-studio:** isolate multi-project workspace state ([96cb313](https://github.com/oaslananka/kicad-studio-kit/commit/96cb313479aafb9c3b4d08c4cf2ad48c82ae9fbe))
+- **kicad-studio:** surface KiCad support matrix ([5dbdee8](https://github.com/oaslananka/kicad-studio-kit/commit/5dbdee8b54f470c6a1cba0ca0254c9940e22625a))
+- **mcp:** add server info capabilities contract ([759ef3a](https://github.com/oaslananka/kicad-studio-kit/commit/759ef3ae7c18d6c0f87eb1049ccc80d743eb3bc9))
+- **repo:** add shared kicad fixtures package ([a858483](https://github.com/oaslananka/kicad-studio-kit/commit/a8584830316c5d9fc0386e1877eaa18c026022ef)), closes [#54](https://github.com/oaslananka/kicad-studio-kit/issues/54)
+- **repo:** establish beta feedback program ([3d49ce9](https://github.com/oaslananka/kicad-studio-kit/commit/3d49ce99adab11bb1d7e959fb0591ced9d9f2557))
+- **repo:** establish beta feedback program ([7723d43](https://github.com/oaslananka/kicad-studio-kit/commit/7723d4328d43ecffed8d42ce12cd48a8ad63835b))
+- **studio:** add mcp tool adapter layer ([73acdc0](https://github.com/oaslananka/kicad-studio-kit/commit/73acdc09827fd18261581cb6af686b73619f91dd))
+- **studio:** centralize extension state stores ([76eb2cd](https://github.com/oaslananka/kicad-studio-kit/commit/76eb2cd31778bebeb255dbfd07e3139b99eff596)), closes [#69](https://github.com/oaslananka/kicad-studio-kit/issues/69)
+
+### Bug Fixes
+
+- **extension:** clear stale diagnostics by canonical path ([30d91ea](https://github.com/oaslananka/kicad-studio-kit/commit/30d91ea46922d045a2756ea9aec697b966466ec6))
+- keep release preparation checks stable ([66123b7](https://github.com/oaslananka/kicad-studio-kit/commit/66123b7f1b10e6c4cdf81291aaecfa7a6fb0682a))
+- **kicad-studio/kicad-mcp-pro:** mark KiCad 9.x deprecated ([11fb19a](https://github.com/oaslananka/kicad-studio-kit/commit/11fb19a6aceb7932fd200077bc97082c725f61fb))
+- **kicad-studio/kicad-mcp-pro:** mark KiCad 9.x deprecated ([11fb19a](https://github.com/oaslananka/kicad-studio-kit/commit/11fb19a6aceb7932fd200077bc97082c725f61fb))
+- **kicad-studio/kicad-mcp-pro:** mark KiCad 9.x deprecated ([c421156](https://github.com/oaslananka/kicad-studio-kit/commit/c42115697dab897d2bbc9ae5fb20853ebf62cf04))
+- **kicad-studio/kicad-mcp-pro:** raise public compatibility floors ([98283a7](https://github.com/oaslananka/kicad-studio-kit/commit/98283a7374fcd666c392044e95aafb0c330d896e)), closes [#209](https://github.com/oaslananka/kicad-studio-kit/issues/209)
+- **kicad-studio/kicad-mcp-pro:** reset extension marketplace identity ([2f907a1](https://github.com/oaslananka/kicad-studio-kit/commit/2f907a14c9b28b8d9c80f6581409f24ed53e66d0))
+- **kicad-studio/kicad-mcp-pro:** reset extension marketplace identity ([11f3fd0](https://github.com/oaslananka/kicad-studio-kit/commit/11f3fd0e99bdaf761e99dc733a9a8b8c26fc403f))
+- **kicad-studio:** address accessibility review feedback ([0cc0f69](https://github.com/oaslananka/kicad-studio-kit/commit/0cc0f692382c4cda599eea34979fb8d987f87b62))
+- **kicad-studio:** address component search review feedback ([561d83f](https://github.com/oaslananka/kicad-studio-kit/commit/561d83ff33cf0c4f41e3f044301fc232f8f8fa06))
+- **kicad-studio:** align Codex provider support ([484f739](https://github.com/oaslananka/kicad-studio-kit/commit/484f739ce3e77ae4682a8577553ee963d1cdd268))
+- **kicad-studio:** align viewer toolbar with VS Code themes ([80f1d5c](https://github.com/oaslananka/kicad-studio-kit/commit/80f1d5c20ccea670e949ebccd2f7274a5b325ebc)), closes [#18](https://github.com/oaslananka/kicad-studio-kit/issues/18)
+- **kicad-studio:** clarify project tree roles ([f6f5a2f](https://github.com/oaslananka/kicad-studio-kit/commit/f6f5a2f91ec8394f3ef0f7e3d4144a33c442a5aa)), closes [#21](https://github.com/oaslananka/kicad-studio-kit/issues/21)
+- **kicad-studio:** compact viewer tools panel ([#156](https://github.com/oaslananka/kicad-studio-kit/issues/156)) ([3270fb4](https://github.com/oaslananka/kicad-studio-kit/commit/3270fb47920481e5baa732c78334022cdf2fdf81))
+- **kicad-studio:** escape PCM library table backslashes ([19254b5](https://github.com/oaslananka/kicad-studio-kit/commit/19254b51290ef480fae9b9e3530ab3b80d3e07d1))
+- **kicad-studio:** fail closed on import support probes ([0cbbb0d](https://github.com/oaslananka/kicad-studio-kit/commit/0cbbb0d20e63ad1fd695077d0206c89925f1ea66))
+- **kicad-studio:** let fallback viewer fit schematic ([edd71e7](https://github.com/oaslananka/kicad-studio-kit/commit/edd71e74159308302163f274590420696dd10a79)), closes [#17](https://github.com/oaslananka/kicad-studio-kit/issues/17)
+- **kicad-studio:** polish sidebar workflow states ([78ad7dc](https://github.com/oaslananka/kicad-studio-kit/commit/78ad7dce44ca912984203475a127a32df8045735))
+- make extension formatting portable ([a64af89](https://github.com/oaslananka/kicad-studio-kit/commit/a64af89c4aefeba3c5f6664f660b617234d9a71c))
+- **repo:** address beta program review feedback ([521aef0](https://github.com/oaslananka/kicad-studio-kit/commit/521aef069c36f67617df591fc1fe5374c8014d56))
+- **security:** make python audit gate deterministic ([5350ec8](https://github.com/oaslananka/kicad-studio-kit/commit/5350ec818e1b8d9c1a17aeec744a612a50c73044))
+
+## [Unreleased]
+
+### Added
+
+- **CLI capability metadata registry**: Centralized `CLI_CAPABILITY_METADATA`
+  table covering all 35 CLI commands with category, minimum version, and
+  human-readable description; snapshot expanded from 11 to 26 probed commands
+  with `commandMinVersion` / `commandVersionStatus` fields.
+- **Extended feature support**: 7 new capability-gated features — 3D exports,
+  2D schematic exports, 2D PCB exports, manufacturing formats, pick-and-place,
+  footprint/symbol exports, and PCB import — with per-feature version checks.
+- **Import auto-detect format**: Added `auto` format to PCB import list; CLI
+  `--format` is omitted when auto mode is active, and a dedicated
+  `kicadstudio.importAuto` command is registered.
+- **Jobset UX enhancements**: Output directory picker with project-aware
+  defaults, sibling `.kicad_pro` auto-detection via `findSiblingProjectFile`,
+  success/failure notifications with "Open Output Folder" action, and
+  `kicadstudio.jobset.stopOnError` setting.
+- **Variant-aware export plumbing**: Active variant is read from `.kicad_pro`
+  and threaded through `ExportCommandBuildOptions` → `buildCliExportCommands`
+  → `build3dVariantArgs()`; `--variant` is only emitted when the CLI version
+  is ≥ 10.
+- **Consolidated QuickPick commands**: `kicadstudio.exportTo` (35 export
+  formats grouped by category: Schematic 2D, PCB 2D, Manufacturing, 3D
+  Models, Documentation, BOM/Netlist, Other) and `kicadstudio.importFrom` (10
+
+- **Debounced project scan watcher**: File system watcher for `.kicad_pro`
+  files with 500 ms debounce that refreshes contexts, project tree, and
+  variant tree when KiCad projects are created or deleted.
+- Surfaced KiCad 8.x, 9.x, and 10.0.x compatibility state in the status
+  bar/menu with feature-level capability probe results.
+- Added explicit KiCanvas/CLI SVG fallback/metadata-only viewer engine state,
+  toolbar engine badges, unsupported-control disabling, and regression coverage
+  for fallback diagnostics.
+
+### Changed
+
+- **Workspace Trust enforcement audit**: Verified all 40+ export, import,
+  and jobset commands are gated by `registerTrustedCommand()`; CLI detection,
+  MCP connection, and context bridge already check `isWorkspaceTrusted()`.
+- **Path security audit**: Confirmed `resolveWorkspaceOutputDir()` uses
+  `realpathSync.native` + `assertPathInside()` to block path traversal and
+  symlink escape; CLI binary normalization also resolves symlinks.
+- **Remote MCP endpoint security**: `validateEndpoint()` in `mcpClient.ts`
+  rejects non-loopback hosts unless `kicadstudio.mcp.allowRemoteEndpoint` is
+  explicitly enabled (default: off).
+- **Context bridge privacy audit**: `ContextBridge` validated — only file
+  paths, project metadata, DRC messages, viewer state, and variant names are
+  transmitted; no PII sent; debounce per trigger reason.
+- Clarified Codex support as an external MCP client workflow, removed it from the
+  direct extension provider settings, and migrated legacy
+  `kicadstudio.ai.provider=codex` selections to GitHub Copilot.
+- Restyled the KiCanvas viewer toolbar with VS Code theme tokens, compact
+  spacing, and a single primary reload action for dark, light, and high-contrast
+  themes.
+
+### Deprecated
+
+- Marked KiCad 9.x as a deprecated best-effort compatibility line in status
+  surfaces now that upstream active maintenance has ended.
+
+## [1.0.0] - 2026-05-20
+
+### Added
+
+- Released the baseline KiCad Studio extension from the canonical monorepo.

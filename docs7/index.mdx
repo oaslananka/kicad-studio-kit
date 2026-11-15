@@ -1,0 +1,136 @@
+---
+title: "KiCad Studio Kit"
+description: "Searchable documentation for the KiCad Studio VS Code extension and kicad-mcp-pro."
+---
+
+<CardGroup cols={2}>
+  <Card title="Install" icon="download" href="/install">
+    Install the KiCad Studio VS Code extension from the Marketplace or Open VSX.
+  </Card>
+  <Card title="Getting Started" icon="rocket" href="/getting-started">
+    Your first KiCad Studio project, from install to the PCB viewer.
+  </Card>
+  <Card title="Extension Docs" icon="puzzle-piece" href="/extension/index">
+    Commands, views, and settings generated from the extension manifest.
+  </Card>
+  <Card title="MCP Docs" icon="server" href="/mcp/index">
+    Tool catalog, transport, and deployment for kicad-mcp-pro.
+  </Card>
+</CardGroup>
+
+KiCad Studio Kit is the VS Code extension repository for KiCad Studio
+workflows: extension-side MCP discovery, configuration, compatibility metadata,
+and user experience. The MCP server is developed and released separately, in
+[KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/). See
+[ADR 0009](/adr/0009-split-kicad-mcp-pro-into-separate-repository) and the
+[repository structure](/architecture/repo-structure).
+
+Open KiCad Studio PCB and schematic previews can refresh automatically when
+external tools save the underlying design files, without relying on MCP.
+[Live viewer refresh](/extension/live-viewer-refresh) documents the event-driven
+behavior, resource limits, unsaved-edit safeguards and limitations.
+
+<Frame caption="KiCad Studio PCB viewer">
+  <img src="/images/pcb-viewer.png" alt="KiCad Studio PCB viewer" />
+</Frame>
+
+## What this repository contains
+
+- the KiCad Studio VS Code extension (`apps/vscode-extension`) — the only released product here;
+- private shared test infrastructure (`packages/test-harness`, `packages/kicad-fixtures`);
+- the extension-side MCP integration contract and compatibility metadata.
+
+The KiCad MCP Pro server (`kicad-mcp-pro`) — its Python source, npm launcher,
+container image, and MCP Registry listing — lives in
+[KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/).
+
+## Repository maturity and standards
+
+**Historical OpenSSF Best Practices Silver:** the
+[Silver evidence](/best-practices-evidence) is preserved for traceability, not
+presented as a current badge. Current project-authored source is GPL-3.0-only
+licensed. Past PolyForm-licensed releases retain their original grant; badge
+status is not automatically reinstated by a license change. Security and release
+controls remain independently enforced.
+
+## Version baseline
+
+This repository's local release surface is:
+
+- VS Code extension: `oaslananka.kicadstudiokit` (`2.6.3`)
+
+The Python package `kicad-mcp-pro`, container image, and MCP Registry listing
+are released from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/).
+
+## KiCad compatibility
+
+KiCad Studio Kit treats KiCad `10.0.x` as the primary tested line, keeps KiCad
+`9.x` as deprecated best-effort compatibility after upstream EOL, and keeps
+KiCad `8.x` as deprecated file-level compatibility. The canonical matrix, tested
+patch versions, CI coverage level, and feature gates are maintained in the
+[support matrix](/support-matrix) and `compatibility.yaml`.
+
+## Local validation
+
+```powershell
+corepack enable
+corepack pnpm run dev:doctor
+corepack pnpm install --frozen-lockfile
+corepack pnpm --dir apps/vscode-extension exec playwright install chromium
+corepack pnpm run check:forbidden-refs
+corepack pnpm run check:version
+corepack pnpm --filter kicadstudiokit run check
+corepack pnpm --filter kicadstudiokit run package
+```
+
+Product-scoped entrypoints are available from the root:
+
+```powershell
+corepack pnpm run check:kicad-studio
+
+corepack pnpm --dir packages/test-harness run check
+corepack pnpm run check:protocol-schemas
+corepack pnpm run check:compatibility-contract
+corepack pnpm run check:dev-doctor
+```
+
+Python/MCP server checks run from the
+[KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/) repository. For a
+reproducible VS Code Dev Containers or GitHub Codespaces environment, use the
+checked-in [devcontainer configuration](/devcontainer). For a least-privilege
+VPS without a container daemon, use the checked-in
+[rootless validation-host profile](/validation-host).
+
+## Architecture
+
+- [Repository structure](/architecture/repo-structure)
+- [Product boundaries](/architecture/product-boundaries)
+- [Release model](/architecture/release-model)
+- [Testing strategy](/testing-strategy)
+- [Dev container](/devcontainer)
+- [Rootless validation host](/validation-host)
+- [KiCad fixture corpus](/kicad-fixture-corpus)
+- [Integration model](/integration/kicad-studio-mcp)
+- [Agent onboarding](/agents/index)
+- [MCP client config examples](https://github.com/oaslananka/kicad-studio-kit/tree/main/examples/mcp-clients)
+
+## Publishing
+
+Publishing is handled by GitHub Actions workflows under `.github/workflows`.
+External setup for environments, marketplace secrets, and trusted publishers is
+documented in [publishing](/publishing). The structured preview (beta) program
+and tester feedback loop for the stable `1.x` line are documented in
+[beta program](/beta-program).
+
+## Maintenance
+
+Dependency update policy, dashboard triage, and security-update handling are
+documented in [dependency lifecycle](/dependency-lifecycle). Compatibility
+support states and release gates are documented in the
+[support matrix](/support-matrix). Telemetry and error reporting are opt-in,
+disabled by default, and documented in [telemetry](/telemetry).
+
+## Contributing
+
+Read [contributing](/contributing) and run `corepack pnpm run check` before
+opening a pull request.

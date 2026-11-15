@@ -1,0 +1,236 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "KiCad Studio Kit",
+  "colors": {
+    "primary": "#0e639c",
+    "light": "#3a9bd9",
+    "dark": "#0a4b73"
+  },
+  "logo": "/images/icon.png",
+  "favicon": "/images/icon.png",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Start",
+        "pages": [
+          "index",
+          "getting-started",
+          "install",
+          "faq",
+          "versions",
+          "support-matrix",
+          "compatibility/kicad-10-0-5-feature-parity",
+          "compatibility/kicad-11-readiness-dashboard",
+          "compatibility/kicad-10-to-11-migration",
+          "compatibility/kicad-10-0-7-feature-parity",
+          "compatibility/runtime-policy"
+        ]
+      },
+      {
+        "group": "Extension",
+        "pages": [
+          "extension/index",
+          "extension/views",
+          "extension/commands",
+          "extension/settings",
+          "board-ready-ops",
+          "extension/troubleshooting",
+          "accessibility",
+          "ux-review-1.0",
+          "telemetry",
+          "extension/live-viewer-refresh"
+        ]
+      },
+      {
+        "group": "Workflows",
+        "pages": [
+          "workflows/manufacturing-export",
+          "workflows/review-diff"
+        ]
+      },
+      {
+        "group": "MCP",
+        "pages": [
+          "mcp/index",
+          "mcp/tools",
+          "mcp/transport",
+          "mcp/deployment",
+          "mcp/api-reference",
+          "deployment/docker",
+          "integration/kicad-studio-mcp",
+          "mcp/cloud-connected-studio"
+        ]
+      },
+      {
+        "group": "Agents",
+        "pages": [
+          "agents/index",
+          "agents/client-configs",
+          "agents/codex-support"
+        ]
+      },
+      {
+        "group": "Architecture",
+        "pages": [
+          "architecture",
+          "architecture/repo-structure",
+          "architecture/product-boundaries",
+          "architecture/vscode-hotspots",
+          "architecture/release-model",
+          "architecture/branch-protection",
+          "architecture/definition-of-done",
+          "testing-strategy",
+          "architecture/governance-board",
+          "architecture/migration-phases",
+          "architecture/m0-completion-audit",
+          "architecture/protocol-change-checklist",
+          "architecture/actions-permissions",
+          "architecture/history-safe-pr-metadata-policy-design",
+          "architecture/history-safe-pr-metadata-policy-implementation-plan",
+          "architecture/index",
+          "architecture/review-evidence-policy",
+          "architecture/testing-strategy"
+        ]
+      },
+      {
+        "group": "Decision Records",
+        "pages": [
+          "adr/index",
+          "adr/0001-monorepo-two-products",
+          "adr/0002-mcp-contract-first-integration",
+          "adr/0003-independent-release-model",
+          "adr/0004-no-direct-cross-product-imports",
+          "adr/0005-kicad-version-support-policy",
+          "adr/0006-vscode-web-compatibility",
+          "adr/0007-agent-onboarding-config-pack",
+          "adr/0008-mcp-2026-07-28-protocol-upgrade",
+          "adr/0009-split-kicad-mcp-pro-into-separate-repository",
+          "adr/0010-source-available-commercial-licensing",
+          "adr/0000-template",
+          "adr/0011-restore-mit-licensing"
+        ]
+      },
+      {
+        "group": "Release",
+        "pages": [
+          "publishing",
+          "EMERGENCY-RELEASE-FLOW",
+          "RELEASE-COORDINATION",
+          "release",
+          "beta-program",
+          "ga-readiness",
+          "dependency-lifecycle",
+          "security",
+          "changelog/index",
+          "changelog/kicad-mcp-pro",
+          "changelog/kicad-studio",
+          "changelog/root"
+        ]
+      },
+      {
+        "group": "Contribute",
+        "pages": [
+          "contributing",
+          "devcontainer",
+          "contributors",
+          "kicad-fixture-corpus",
+          "performance-baselines",
+          "best-practices-evidence",
+          "best-practices-questionnaire",
+          "protocol-schemas",
+          "reusable-workflows",
+          "development/coding-standards",
+          "development/commit-conventions",
+          "development/dependency-management",
+          "development/release-process",
+          "development/testing-policy"
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "ai-capability-modes",
+          "best-practices-status",
+          "bom-risk",
+          "integration",
+          "openssf-evidence",
+          "openssf-gap-analysis",
+          "openssf-proposal-links",
+          "policies",
+          "reference/repository-standards",
+          "release-candidate-checklist",
+          "repo-maturity-report",
+          "validation-host"
+        ]
+      },
+      {
+        "group": "Evidence",
+        "pages": [
+          "evidence/kicad-10-0-4/2026-07-21/summary",
+          "evidence/kicad-10-0-5-rc1/2026-07-21/summary",
+          "evidence/kicad-10-0-5/2026-07-26/summary",
+          "evidence/kicad-10-0-7/2026-10-20/summary",
+          "evidence/mcp-2026-07-28/2026-07-27-preflight",
+          "evidence/mcp-2026-07-28/2026-09-04-review",
+          "evidence/mcp-2026-07-28/2026-10-10-staged-client-wire-adapter",
+          "evidence/mcp-2026-07-28/2026-10-20-activation-readiness",
+          "evidence/mcp-2026-07-28/2026-10-25-published-4.4.0-tested-pair",
+          "evidence/mcp-2026-07-28/2026-11-04-published-4.6.1-tested-pair",
+          "evidence/mcp-2026-07-28/2026-11-04-published-4.7.0-tested-pair"
+        ]
+      },
+      {
+        "group": "Explanation",
+        "pages": [
+          "explanation/architecture"
+        ]
+      },
+      {
+        "group": "How-to guides",
+        "pages": [
+          "how-to/run-local-quality-gates"
+        ]
+      },
+      {
+        "group": "Legal",
+        "pages": [
+          "legal/reuse-spdx-notice-assessment"
+        ]
+      },
+      {
+        "group": "Maintainers",
+        "pages": [
+          "maintainers/agent-pr-review-runbook"
+        ]
+      },
+      {
+        "group": "Security",
+        "pages": [
+          "security/assurance-case",
+          "security/github-security-settings",
+          "security/input-validation",
+          "security/release-integrity",
+          "security/threat-model"
+        ]
+      },
+      {
+        "group": "Tutorials",
+        "pages": [
+          "tutorials/getting-started"
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/oaslananka/kicad-studio-kit"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/oaslananka/kicad-studio-kit"
+    }
+  }
+}
