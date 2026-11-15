@@ -12,6 +12,7 @@ import {
   listCommitsForPullRequest,
   parseConventionalSubject,
   resolveExecutable,
+  requiresLocalCommitSubjectValidation,
   runSyntheticReleasePleaseDryRun,
   validateCommitScopeCoverage,
   validateLinkedVersionGroups,
@@ -525,4 +526,11 @@ test("#801 upstream Release Please retains exclusive tag and publication ownersh
   assert.doesNotMatch(workflow, /gh release create|gh pr close|gh pr create/u);
   assert.match(workflow, /steps.release.outputs.releases_created/u);
   assert.match(workflow, /secrets.DOPPLER_TOKEN/u);
+});
+
+
+test("PR topic branches do not require history rewrites; main and detached HEAD stay strict", () => {
+  assert.equal(requiresLocalCommitSubjectValidation("chore/copyleft-licensing-20261115"), false);
+  assert.equal(requiresLocalCommitSubjectValidation("main"), true);
+  assert.equal(requiresLocalCommitSubjectValidation(""), true);
 });

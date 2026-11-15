@@ -399,6 +399,12 @@ export function parseReleasePleaseDryRun(output) {
   };
 }
 
+// The squash PR title is authoritative for topic branches; default-branch
+// and detached-head validation remain strict.
+export function requiresLocalCommitSubjectValidation(branch) {
+  return branch === "main" || branch === "";
+}
+
 function main() {
   const errors = [];
   errors.push(...validateRepositoryPolicy(REPO_ROOT).errors);
@@ -417,7 +423,14 @@ function main() {
     );
   } else {
     const commits = listLocalBranchCommits(REPO_ROOT);
-    errors.push(...validateCommitScopeCoverage(commits));
+    const localBranch = git(REPO_ROOT, ["symbolic-ref", "--quiet", "--short", "HEAD"], {
+      allowFailure: true,
+    }).trim();
+    errors.push(
+      ...validateCommitScopeCoverage(commits, {
+        validateSubjects: requiresLocalCommitSubjectValidation(localBranch),
+      }),
+    );
   }
 
   if (errors.length > 0) {
