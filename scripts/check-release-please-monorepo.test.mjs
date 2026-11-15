@@ -555,9 +555,7 @@ test("local branch scope policy exercises real Git topic, main and detached stat
     git("init", "-b", "main");
     git("config", "user.name", "Test Contributor");
     git("config", "user.email", "contributor@example.invalid");
-    fs.writeFileSync(path.join(folder, "sample.txt"), "baseline");
-    git("add", "sample.txt");
-    git("commit", "-m", "chore(repo): baseline");
+    git("commit", "--allow-empty", "-m", "chore(repo): baseline");
     git("update-ref", "refs/remotes/origin/main", "HEAD");
     git("commit", "--allow-empty", "-m", "chore(wrong-scope): local draft");
     assert.match(
