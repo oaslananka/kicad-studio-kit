@@ -547,7 +547,7 @@ test("local branch scope policy exercises real Git topic, main and detached stat
     const result = spawnSync("git", args, {
       cwd: folder,
       encoding: "utf8",
-      env: { ...process.env, GIT_CONFIG_NOSYSTEM: "1" },
+      env: { ...createGitSubprocessEnv(), GIT_CONFIG_NOSYSTEM: "1" },
     });
     assert.equal(result.status, 0, result.stderr || result.stdout);
   };
