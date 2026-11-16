@@ -12,12 +12,11 @@
     "dependencies",
     "dependency-lifecycle"
   ],
-  "dependencyDashboard": true,
-  "dependencyDashboardTitle": "Dependency Dashboard",
-  "dependencyDashboardLabels": [
-    "dependencies",
-    "dependency-lifecycle"
-  ],
+  "dependencyDashboard": {
+    "enabled": true,
+    "title": "Dependency Dashboard",
+    "labels": ["dependencies", "dependency-lifecycle"]
+  },
   "schedule": [
     "before 6am on monday"
   ],
