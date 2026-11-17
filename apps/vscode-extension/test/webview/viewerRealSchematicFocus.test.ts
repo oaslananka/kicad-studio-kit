@@ -124,7 +124,7 @@ test('real bundled KiCanvas renders a KiCad 10 schematic and focuses a verified 
         type: 'focusReference',
         payload: { reference: 'D1' }
       },
-      '*'
+      window.location.origin
     )
   );
   await expect(page.locator('#viewer-status')).toHaveText(

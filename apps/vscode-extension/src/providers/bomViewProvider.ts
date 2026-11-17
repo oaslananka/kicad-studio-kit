@@ -286,7 +286,7 @@ export class BomViewProvider
       return files
         .map((uri) => uri.fsPath)
         .filter((file) => belongsToProject(file))
-        .sort()[0];
+        .sort((left, right) => left.localeCompare(right))[0];
     }
 
     // For a loose schematic without a project, preserve file-first behavior.

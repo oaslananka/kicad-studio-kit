@@ -166,6 +166,109 @@ describe('BomViewProvider project identity and readiness', () => {
     expect(workspace.openTextDocument).not.toHaveBeenCalled();
   });
 
+  it('finds the alphabetically first valid schematic only in the selected project', async () => {
+    const harness = viewHarness();
+    provider.resolveWebviewView(harness.view);
+    fs.rmSync(path.join(beta.rootPath, 'beta.kicad_sch'));
+    for (const name of ['z-sheet', 'a-sheet']) {
+      fs.writeFileSync(
+        path.join(beta.rootPath, name + '.kicad_sch'),
+        '(kicad_sch (symbol (property "Reference" "' +
+          name +
+          '") (property "Value" "10k")))'
+      );
+    }
+    (workspace.findFiles as jest.Mock).mockResolvedValue([
+      Uri.file(path.join(beta.rootPath, 'z-sheet.kicad_sch')),
+      Uri.file(path.join(alpha.rootPath, 'alpha.kicad_sch')),
+      Uri.file(path.join(beta.rootPath, 'a-sheet.kicad_sch'))
+    ]);
+    projectState.update({ activeProject: beta });
+    await provider.refresh();
+
+    const messages = harness.postMessage.mock.calls.map(([message]) => message);
+    const data = messages
+      .filter((message) => message.type === 'setData')
+      .at(-1);
+    expect(data?.payload?.entries).toEqual([
+      expect.objectContaining({ references: ['a-sheet'] })
+    ]);
+    expect(workspace.findFiles).toHaveBeenCalledWith(
+      '**/*.kicad_sch',
+      '**/node_modules/**',
+      1000
+    );
+  });
+
+  it('never substitutes another project BOM when the selected project has no schematic', async () => {
+    const harness = viewHarness();
+    provider.resolveWebviewView(harness.view);
+    fs.rmSync(path.join(beta.rootPath, 'beta.kicad_sch'));
+    projectState.update({ activeProject: beta });
+    harness.postMessage.mockClear();
+    await provider.refresh();
+
+    const last = harness.postMessage.mock.calls.at(-1)?.[0];
+    expect(last).toEqual(
+      expect.objectContaining({
+        type: 'setStatus',
+        payload: expect.objectContaining({
+          status: 'message',
+          text: expect.stringContaining('Open a .kicad_sch schematic')
+        })
+      })
+    );
+    expect(await provider.exportJsonForCurrentFile()).toBeUndefined();
+  });
+
+  it('supports an explicitly opened loose schematic when no project is selected', async () => {
+    const harness = viewHarness();
+    provider.resolveWebviewView(harness.view);
+    projectState.update({ activeProject: undefined });
+    window.activeTextEditor = {
+      document: { fileName: path.join(beta.rootPath, 'beta.kicad_sch') }
+    } as never;
+    harness.postMessage.mockClear();
+    await provider.refresh();
+
+    const data = harness.postMessage.mock.calls
+      .map(([message]) => message)
+      .filter((message) => message.type === 'setData')
+      .at(-1);
+    expect(data?.payload?.entries).toEqual([
+      expect.objectContaining({ references: ['C9'] })
+    ]);
+  });
+
+  it('ignores a delayed file scan from an earlier project selection', async () => {
+    const harness = viewHarness();
+    provider.resolveWebviewView(harness.view);
+    fs.rmSync(path.join(beta.rootPath, 'beta.kicad_sch'));
+    projectState.update({ activeProject: beta });
+    let resolveFiles:
+      ((files: ReturnType<typeof Uri.file>[]) => void) | undefined;
+    (workspace.findFiles as jest.Mock).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveFiles = resolve;
+        })
+    );
+    const outdated = provider.refresh();
+    projectState.update({ activeProject: alpha });
+    harness.postMessage.mockClear();
+    const current = provider.refresh();
+    await current;
+    resolveFiles?.([Uri.file(path.join(beta.rootPath, 'older.kicad_sch'))]);
+    await outdated;
+
+    const data = harness.postMessage.mock.calls
+      .map(([message]) => message)
+      .filter((message) => message.type === 'setData');
+    expect(data.at(-1)?.payload?.entries).toEqual([
+      expect.objectContaining({ references: ['R1'] })
+    ]);
+  });
+
   it('resends current BOM state when the webview script announces readiness', async () => {
     const harness = viewHarness();
     provider.resolveWebviewView(harness.view);
