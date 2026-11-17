@@ -117,5 +117,23 @@ test('real bundled KiCanvas renders a KiCad 10 schematic and focuses a verified 
   expect(focused.camera!.y + focused.camera!.h).toBeGreaterThanOrEqual(
     focused.selected!.y + focused.selected!.h
   );
+  // BOM selection can use the same verified viewer search/focus pathway.
+  await page.evaluate(() =>
+    window.postMessage(
+      {
+        type: 'focusReference',
+        payload: { reference: 'D1' }
+      },
+      '*'
+    )
+  );
+  await expect(page.locator('#viewer-status')).toHaveText(
+    'Focused schematic reference: D1'
+  );
+  await expect(page.locator('kicanvas-embed')).toHaveAttribute(
+    'selected-reference',
+    'D1'
+  );
+
   console.log('REAL_SCHEMATIC_KICANVAS_OBJECT_CAMERA_FOCUS=PASS');
 });

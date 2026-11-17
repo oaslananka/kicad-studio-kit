@@ -26,10 +26,7 @@ class KiCadTreeItem extends vscode.TreeItem {
     this.iconPath = new vscode.ThemeIcon(iconForNode(node, diagnostics));
 
     if (node.type === 'project-source') {
-      this.description =
-        node.source === 'cloud'
-          ? 'Sign in or choose granted projects'
-          : 'Open a folder on this computer';
+      this.description = 'Open a folder on this computer';
     }
     const command = commandForProjectTreeNode(node);
     if (command) {
@@ -43,10 +40,7 @@ function commandForProjectTreeNode(
 ): vscode.Command | undefined {
   if (node.type === 'project-source') {
     return {
-      command:
-        node.source === 'cloud'
-          ? COMMANDS.cloudProjects
-          : 'workbench.action.files.openFolder',
+      command: 'workbench.action.files.openFolder',
       title: node.label
     };
   }
@@ -114,7 +108,6 @@ export class KiCadProjectTreeProvider implements vscode.TreeDataProvider<Project
     if (!hasLocalDesign) {
       return [
         { label: 'Local Projects', type: 'project-source', source: 'local' },
-        { label: 'Cloud Projects', type: 'project-source', source: 'cloud' },
         ...roots
       ];
     }
@@ -354,9 +347,7 @@ function diagnosticSummary(diagnostics: TreeDiagnostics): string | undefined {
 function roleForNode(node: ProjectTreeNode): string {
   switch (node.type) {
     case 'project-source':
-      return node.source === 'cloud'
-        ? 'Optional Cloud project discovery; no local project changes'
-        : 'Open a local KiCad project folder';
+      return 'Open a local KiCad project folder';
     case 'project':
       return 'KiCad workspace';
     case 'schematic':
@@ -415,7 +406,7 @@ function iconForNode(
 
   switch (node.type) {
     case 'project-source':
-      return node.source === 'cloud' ? 'cloud' : 'folder-opened';
+      return 'folder-opened';
     case 'project':
       return 'repo';
     case 'schematic':

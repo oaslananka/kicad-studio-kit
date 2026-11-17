@@ -156,7 +156,6 @@ export async function activate(
   };
   const treeProvider = new KiCadProjectTreeProvider();
   const validationViewProvider = new ValidationViewProvider(diagnosticState);
-  const bomViewProvider = new BomViewProvider(context, parser, exportState);
   const netlistViewProvider = new NetlistViewProvider(
     context,
     parser,
@@ -170,6 +169,13 @@ export async function activate(
     viewerState,
     (resource) => projectState.findProjectForResource(resource),
     markViewerDiagnosticsStale
+  );
+  const bomViewProvider = new BomViewProvider(
+    context,
+    parser,
+    exportState,
+    projectState,
+    (uri, reference) => schematicEditorProvider.focusReference(uri, reference)
   );
   const pcbEditorProvider = new PcbEditorProvider(
     context,

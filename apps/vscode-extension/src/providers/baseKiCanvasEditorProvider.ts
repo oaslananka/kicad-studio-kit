@@ -103,6 +103,8 @@ export abstract class BaseKiCanvasEditorProvider
   protected abstract readonly viewerTitle: string;
 
   private readonly panels = new Map<string, Set<vscode.WebviewPanel>>();
+  private readonly readyPanels = new WeakSet<vscode.WebviewPanel>();
+  private readonly pendingReferenceFocus = new Map<string, string>();
   private readonly pendingNativeLayer = new Set<vscode.WebviewPanel>();
   private readonly panelInfo = new Map<vscode.WebviewPanel, PanelInfo>();
   private readonly disposables: vscode.Disposable[] = [];
@@ -195,6 +197,31 @@ export abstract class BaseKiCanvasEditorProvider
     return this.viewerState.getState(uri);
   }
 
+  async focusReference(uri: vscode.Uri, reference: string): Promise<boolean> {
+    if (
+      this.fileType !== 'schematic' ||
+      !reference.trim() ||
+      reference.length > 128
+    ) {
+      return false;
+    }
+    const key = uri.toString();
+    const panels = this.panels.get(key);
+    if (!panels?.size) {
+      return false;
+    }
+    const panel = [...panels].find((entry) => entry.visible) ?? [...panels][0]!;
+    panel.reveal(vscode.ViewColumn.Active);
+    if (!this.readyPanels.has(panel)) {
+      this.pendingReferenceFocus.set(key, reference.trim());
+      return true;
+    }
+    return panel.webview.postMessage({
+      type: 'focusReference',
+      payload: { reference: reference.trim() }
+    });
+  }
+
   protected buildViewerMetadata(
     _uri: vscode.Uri,
     _text: string
@@ -259,6 +286,19 @@ export abstract class BaseKiCanvasEditorProvider
         webviewPanel.webview.onDidReceiveMessage(async (message: unknown) => {
           if (!hasType(message, VIEWER_OUTBOUND_MESSAGE_TYPES)) {
             return;
+          }
+          if (message.type === 'ready') {
+            this.readyPanels.add(webviewPanel);
+            const reference = this.pendingReferenceFocus.get(
+              document.uri.toString()
+            );
+            if (reference) {
+              this.pendingReferenceFocus.delete(document.uri.toString());
+              await webviewPanel.webview.postMessage({
+                type: 'focusReference',
+                payload: { reference }
+              });
+            }
           }
           if (message.type === 'openInKiCad') {
             await vscode.commands.executeCommand(
@@ -1120,10 +1160,12 @@ export abstract class BaseKiCanvasEditorProvider
 
   private untrackPanel(uri: vscode.Uri, panel: vscode.WebviewPanel): void {
     const key = uri.toString();
+    this.readyPanels.delete(panel);
     const set = this.panels.get(key);
     if (set) {
       set.delete(panel);
       if (!set.size) {
+        this.pendingReferenceFocus.delete(key);
         this.panels.delete(key);
         this.stopWatchingViewerFile(key);
         const refresh = this.refreshDebounce.get(key);
@@ -1437,6 +1479,7 @@ function parsePngDataUrl(value: unknown): Buffer {
 }
 
 const VIEWER_OUTBOUND_MESSAGE_TYPES = [
+  'ready',
   'openInKiCad',
   'requestRefresh',
   'viewerState',

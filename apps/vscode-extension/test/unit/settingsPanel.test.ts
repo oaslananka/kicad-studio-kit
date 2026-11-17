@@ -150,6 +150,44 @@ describe('settings webview', () => {
     expect(html).toContain("type: 'requestApiKeyStatus'");
   });
 
+  it('guides unavailable actions and opens viewer-specific settings', async () => {
+    const html = buildSettingsHtml({
+      webview: { cspSource: 'vscode-resource:' } as vscode.Webview,
+      state: {
+        settings: {},
+        aiKeyStored: false,
+        octopartKeyStored: false,
+        ai: { provider: 'none', configured: false },
+        boardReadyOps: { installed: false, healthy: false, toolCount: 0 },
+        viewer: {
+          status: 'ready',
+          engines: ['CLI SVG fallback (cli-svg-fallback)'],
+          openCount: 1
+        }
+      }
+    });
+    expect(html).toContain("byId('test-ai-key').disabled = !ai.configured");
+    expect(html).toContain(
+      "byId('run-boardreadyops').disabled = !boardReadyOps.installed"
+    );
+    expect(html).toContain("type: 'openViewerSettings'");
+    expect(html).toContain('Limited — SVG fallback');
+
+    const context = createExtensionContextMock();
+    const panelMock = createPanelMock();
+    const services = createServices();
+    (vscode.window.createWebviewPanel as jest.Mock).mockReturnValue(
+      panelMock.panel
+    );
+    KiCadSettingsPanel.createOrShow(context as never, services as never);
+    await panelMock.send({ type: 'openViewerSettings' });
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
+      'workbench.action.openSettings',
+      '@ext:oaslananka.kicadstudiokit viewer'
+    );
+  });
+
   it('embeds the canonical MCP integration documentation URL (#488)', () => {
     const html = buildSettingsHtml({
       webview: { cspSource: 'vscode-resource:' } as vscode.Webview,

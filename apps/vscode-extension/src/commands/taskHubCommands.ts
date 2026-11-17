@@ -61,32 +61,23 @@ async function openTaskHub(getContext: TaskHubContextProvider): Promise<void> {
     description: group.description,
     taskCommand: group.command
   }));
-  // Project source comes before task categories. This works without KiCad,
-  // a workspace, an account or network access during extension activation.
-  availableGroups.unshift(
-    {
-      label: '$(folder-opened) Local Projects',
-      description: context.hasProject
-        ? 'Choose an active KiCad project in this workspace'
-        : 'Open a folder with KiCad project, PCB or schematic files',
-      taskCommand: context.hasProject
-        ? COMMANDS.selectActiveProject
-        : OPEN_PROJECT_COMMAND
-    },
-    {
-      label: '$(cloud) Cloud Projects',
-      description:
-        'Optional account and authorized project discovery; local files stay here',
-      taskCommand: COMMANDS.cloudProjects
-    }
-  );
+  // Local project selection comes first, without an account or network.
+  availableGroups.unshift({
+    label: '$(folder-opened) Local Projects',
+    description: context.hasProject
+      ? 'Choose an active KiCad project in this workspace'
+      : 'Open a folder with KiCad project, PCB or schematic files',
+    taskCommand: context.hasProject
+      ? COMMANDS.selectActiveProject
+      : OPEN_PROJECT_COMMAND
+  });
   const selection = await vscode.window.showQuickPick<TaskGroupQuickPickItem>(
     availableGroups,
     {
       title: 'KiCad Studio - Projects and Tasks',
       placeHolder: context.hasProject
-        ? 'Choose a local or Cloud project source, or a project task'
-        : 'Start with Local Projects or optional Cloud Projects',
+        ? 'Choose a local project or a project task'
+        : 'Start with a local KiCad project or choose a task',
       matchOnDescription: true
     }
   );

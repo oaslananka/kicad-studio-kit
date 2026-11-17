@@ -135,6 +135,40 @@ describe.each([
     expect(panel.webview.html).toContain('kicanvas-source');
   });
 
+  if (_label === 'schematic') {
+    it('routes BOM reference focusing to the graphical viewer after it is ready', async () => {
+      const provider = new ContextProvider(
+        createExtensionContextMock() as unknown as vscode.ExtensionContext
+      );
+      const panel = createPanel();
+      const uri = vscode.Uri.file(tempFile);
+      await provider.resolveCustomEditor(
+        { uri } as vscode.CustomDocument,
+        panel as unknown as vscode.WebviewPanel
+      );
+      const visual = provider as unknown as {
+        focusReference(
+          resource: vscode.Uri,
+          reference: string
+        ): Promise<boolean>;
+      };
+      expect(await visual.focusReference(uri, 'R1')).toBe(true);
+      expect(panel.webview.postMessage).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'focusReference' })
+      );
+      await panel.fireMessage({
+        type: 'ready',
+        payload: { fileName: path.basename(tempFile) }
+      });
+      expect(panel.webview.postMessage).toHaveBeenCalledWith({
+        type: 'focusReference',
+        payload: { reference: 'R1' }
+      });
+      expect(panel.reveal).toHaveBeenCalled();
+      provider.dispose();
+    });
+  }
+
   if (_label === 'pcb') {
     it('allows only trusted, validated native copper requests from a full viewer', async () => {
       const fallback = jest.fn(async (_resource: vscode.Uri, layer?: string) =>

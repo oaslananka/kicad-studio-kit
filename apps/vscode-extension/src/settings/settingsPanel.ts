@@ -14,6 +14,7 @@ import { buildSettingsHtml, type SettingsViewState } from './settingsHtml';
 const SETTINGS_PANEL_MESSAGE_TYPES = [
   'ready',
   'openNativeSettings',
+  'openViewerSettings',
   'setAiKey',
   'clearAiKey',
   'testAiKey',
@@ -130,6 +131,14 @@ export class KiCadSettingsPanel implements vscode.Disposable {
       await vscode.commands.executeCommand(
         'workbench.action.openSettings',
         '@ext:oaslananka.kicadstudiokit'
+      );
+      return;
+    }
+
+    if (message.type === 'openViewerSettings') {
+      await vscode.commands.executeCommand(
+        'workbench.action.openSettings',
+        '@ext:oaslananka.kicadstudiokit viewer'
       );
       return;
     }

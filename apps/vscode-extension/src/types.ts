@@ -250,7 +250,7 @@ export interface ProjectTreeNode {
     | 'folder'
     | 'drc-rule'
     | 'project-source';
-  source?: 'local' | 'cloud' | undefined;
+  source?: 'local' | undefined;
   uri?: vscode.Uri | undefined;
   project?: ProjectContext | undefined;
   children?: ProjectTreeNode[] | undefined;
