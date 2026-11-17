@@ -65,6 +65,7 @@ jobs:
               scripts/check-branch-protection-gates.test.mjs \
               scripts/check-codecov-policy.test.mjs \
               scripts/check-pnpm-supply-chain.test.mjs \
+              scripts/verify-picomatch-mitigation.test.mjs \
               scripts/prepare-sonar-lcov.test.mjs \
               scripts/check-compatibility-contract.test.mjs \
               scripts/check-published-mcp-profiles.test.mjs \
@@ -108,6 +109,7 @@ jobs:
           grep -q '^SF:scripts/check-branch-protection-gates.mjs' "$script_lcov"
           grep -q '^SF:scripts/check-codecov-policy.mjs' "$script_lcov"
           grep -q '^SF:scripts/check-pnpm-supply-chain.mjs' "$script_lcov"
+          grep -q '^SF:scripts/verify-picomatch-mitigation.mjs' "$script_lcov"
           grep -q '^SF:scripts/prepare-sonar-lcov.mjs' "$script_lcov"
           grep -q '^SF:scripts/check-compatibility-contract.mjs' "$script_lcov"
           grep -q '^SF:scripts/check-retired-dependency-evidence.mjs' "$script_lcov"

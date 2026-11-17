@@ -1,0 +1,44 @@
+diff --git a/lib/parse.js b/lib/parse.js
+index caa2b86aa5a567df33cef4bda3c7a97794f439f8..1ee1ef3c9e2e053d641a7525f6353a1ca1e36915 100644
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -280,6 +280,15 @@
+   return depth;
+ };
+ 
++// For a single branch of literals and stars, a star can absorb any further
++// repetitions of that branch. Keep paths, quoting and other glob/regex syntax
++// out of this rewrite: they need their own analysis.
++const isSelfRepeatingStarBranch = branch => {
++  return branch.includes('*') &&
++    !branch.includes('**') &&
++    !/[\\/"?()[\]{}|!+@]/.test(branch);
++};
++
+ const analyzeRepeatedExtglob = (body, options) => {
+   if (options.maxExtglobRecursion === false) {
+     return { risky: false };
+@@ -313,6 +322,12 @@
+     }
+   }
+ 
++  if (branches.length === 1 && isSelfRepeatingStarBranch(branches[0])) {
++    // Collapsing changes repeated captures. Use the existing literal fallback
++    // instead of exposing a backtracking expression in capture mode.
++    return options.capture === true ? { risky: true } : { risky: false, collapse: true };
++  }
++
+   return { risky: false };
+ };
+ 
+@@ -536,6 +551,10 @@
+       return;
+     }
+ 
++    if (analysis.collapse === true && (token.type === 'plus' || token.type === 'star')) {
++      token.close = token.type === 'plus' ? ')' : ')?';
++    }
++
+     let output = token.close + (opts.capture ? ')' : '');
+     let rest;
+ 
