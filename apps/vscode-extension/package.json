@@ -1416,7 +1416,7 @@
         },
         {
           "command": "kicadstudio.exportSchPs",
-          "when": "isWorkspaceTrusted && workspaceFolderCount > 0"
+          "when": "kicadstudio.workspaceTrusted && workspaceFolderCount > 0"
         },
         {
           "command": "kicadstudio.exportStats",
@@ -1472,23 +1472,23 @@
         },
         {
           "command": "kicadstudio.exportPDF",
-          "when": "isWorkspaceTrusted && workspaceFolderCount > 0"
+          "when": "kicadstudio.workspaceTrusted && workspaceFolderCount > 0"
         },
         {
           "command": "kicadstudio.exportBOMCSV",
-          "when": "isWorkspaceTrusted && workspaceFolderCount > 0"
+          "when": "kicadstudio.workspaceTrusted && workspaceFolderCount > 0"
         },
         {
           "command": "kicadstudio.exportBOMXLSX",
-          "when": "isWorkspaceTrusted && workspaceFolderCount > 0"
+          "when": "kicadstudio.workspaceTrusted && workspaceFolderCount > 0"
         },
         {
           "command": "kicadstudio.exportNetlist",
-          "when": "isWorkspaceTrusted && workspaceFolderCount > 0"
+          "when": "kicadstudio.workspaceTrusted && workspaceFolderCount > 0"
         },
         {
           "command": "kicadstudio.exportInteractiveBOM",
-          "when": "isWorkspaceTrusted && workspaceFolderCount > 0"
+          "when": "kicadstudio.workspaceTrusted && workspaceFolderCount > 0"
         },
         {
           "command": "kicadstudio.exportViewerSvg",
