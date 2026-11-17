@@ -93,3 +93,7 @@ overrides:
   source-map-js: ">=1.2.2"
   "@vue/server-renderer": ">=3.5.42"
   "@vscode/vsce": "4.0.0"
+
+patchedDependencies:
+  picomatch@2.3.2: patches/picomatch@2.3.2.patch
+  picomatch@4.0.7: patches/picomatch@4.0.7.patch

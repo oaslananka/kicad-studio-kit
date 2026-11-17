@@ -8,8 +8,8 @@ cd "$REPO_ROOT"
 echo "==> pre-commit"
 uvx --no-build --from pre-commit==4.6.0 pre-commit run --all-files
 
-echo "==> pnpm audit"
-corepack pnpm audit --audit-level high
+echo "==> verified dependency audit"
+node scripts/verify-picomatch-mitigation.mjs --audit
 
 echo "==> gitleaks"
 if ! command -v gitleaks >/dev/null 2>&1; then

@@ -18,7 +18,7 @@ sections that follow give the detail for each lane.
 | Development-container configuration    | Trivy v0.72.0 configuration-only scan in the required `Security` workflow on pull requests, pushes, weekly, and manual runs       | HIGH/CRITICAL misconfigurations fail `security`; SARIF is published under `trivy-devcontainer`   |
 | Secret scanning                        | `Gitleaks` workflow on every pull request plus the local security gate; GitHub secret scanning with push protection stays enabled | A new secret-scanning alert blocks release until triaged                                         |
 | Dependency review                      | `Security` workflow `dependency-review` job on pull requests                                                                      | New `high`+ dependency additions block the pull request                                          |
-| Dependency audit                       | `Security` workflow `pnpm audit --audit-level high`                                                                               | High-severity advisories fail the check                                                          |
+| Dependency audit                       | `Security` workflow `verify-picomatch-mitigation.mjs --audit`                                                                     | High-severity advisories fail the check                                                          |
 | Supply-chain policy                    | `check:supply-chain` (`minimumReleaseAge`, `blockExoticSubdeps`)                                                                  | Untrusted or too-new transitive dependencies fail CI                                             |
 | Repository health                      | `Scorecard` workflow (OSSF) publishing to code scanning                                                                           | Findings are tracked, not auto-blocking                                                          |
 | Dependency updates                     | Renovate for version bumps; repository-level GitHub security alerts and automated GitHub Actions security updates                 | Reviewed through the dependency lanes                                                            |
@@ -116,10 +116,13 @@ Gitleaks, dependency-review, and custom Semgrep gates.
   prototype-sensitive keys, and pnpm/Renovate enforce the seven-day cooldown
   plus no-downgrade trust policy.
 
-Do not add another mandatory broad SAST, SCA, or secret scanner solely to repeat
-these categories. CodeQL owns broad SAST, custom Semgrep owns repository
-invariants, OSV/dependency review/pnpm audit own dependency evidence, and
-Gitleaks plus GitHub push protection own committed secrets.
+Avoid duplicate scanners: CodeQL owns broad SAST, Semgrep repository
+invariants, OSV/dependency review/pnpm audit dependencies, and Gitleaks plus
+GitHub push protection secrets.
+
+`GHSA-fc5q-39xc-vjpf`: temporary 2.3.2/4.0.7 source patches; unsafe
+captures match literally. Raw audit still flags the advisory. Recheck by
+2027-02-17 (#999).
 
 ## Alert Triage
 

@@ -5,3 +5,6 @@
 *.jpeg binary
 *.png binary
 *.vsix binary
+
+# Unified diff context lines are intentionally single spaces.
+patches/*.patch whitespace=-blank-at-eol,-blank-at-eof

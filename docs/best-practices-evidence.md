@@ -1,3 +1,7 @@
+---
+search: false
+---
+
 # OpenSSF Best Practices Evidence
 
 This page is the evidence register for the OpenSSF Best Practices project at
