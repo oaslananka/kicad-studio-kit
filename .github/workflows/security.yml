@@ -63,7 +63,11 @@ jobs:
       - run: corepack pnpm run security:workflows
       - run: corepack pnpm run test:semgrep-rules
       - run: corepack pnpm run security:semgrep
-      - run: corepack pnpm audit --audit-level high
+      # The upstream registry still reports this high-severity advisory for both
+      # locally patched versions; validate patch integrity and ReDoS regressions
+      # before evaluating all advisories with a narrowly scoped, expiring exception.
+      - run: node --test scripts/verify-picomatch-mitigation.test.mjs
+      - run: node scripts/verify-picomatch-mitigation.mjs --audit
       - name: Scan development container misconfigurations
         id: trivy-devcontainer
         continue-on-error: true

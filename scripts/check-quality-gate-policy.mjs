@@ -256,6 +256,7 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
         command.includes("scripts/check-branch-protection-gates.test.mjs") &&
         command.includes("scripts/check-codecov-policy.test.mjs") &&
         command.includes("scripts/check-pnpm-supply-chain.test.mjs") &&
+        command.includes("scripts/verify-picomatch-mitigation.test.mjs") &&
         command.includes("scripts/create-github-signed-commit.test.mjs") &&
         command.includes("scripts/check-release-surface.test.mjs") &&
         command.includes("scripts/prepare-sonar-lcov.test.mjs") &&
@@ -279,6 +280,7 @@ function validateSonarCiCoverage(repoRoot, sonar, errors) {
       command.includes("SF:scripts/check-branch-protection-gates.mjs") &&
       command.includes("SF:scripts/check-codecov-policy.mjs") &&
       command.includes("SF:scripts/check-pnpm-supply-chain.mjs") &&
+      command.includes("SF:scripts/verify-picomatch-mitigation.mjs") &&
       command.includes("SF:scripts/check-retired-dependency-evidence.mjs") &&
       command.includes("SF:scripts/verify-npm-release.mjs") &&
       command.includes("SF:scripts/check-signed-shadow-release.mjs")

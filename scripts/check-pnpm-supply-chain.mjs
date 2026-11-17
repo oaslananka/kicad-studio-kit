@@ -232,7 +232,8 @@ function validateSecurityWorkflow(errors, workflow) {
   for (const phrase of [
     "pull_request:",
     "schedule:",
-    "corepack pnpm audit --audit-level high",
+    "node --test scripts/verify-picomatch-mitigation.test.mjs",
+    "node scripts/verify-picomatch-mitigation.mjs --audit",
   ]) {
     assertCondition(
       errors,

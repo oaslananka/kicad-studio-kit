@@ -1,0 +1,78 @@
+diff --git a/lib/parse.js b/lib/parse.js
+index 29207512c60183b4bb9bf5112be3b9b5f4a9a9fd..fc49dd3cd2aa91b75df6c8bce33a73da698a1d4c 100644
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -270,6 +270,49 @@
+   return chars;
+ };
+ 
++const isSelfRepeatingStarBranch = branch => {
++  let escaped = false;
++  let bracket = false;
++  let star = false;
++
++  for (let i = 0; i < branch.length; i++) {
++    const ch = branch[i];
++
++    if (escaped === true) {
++      escaped = false;
++      continue;
++    }
++
++    if (ch === '\\') {
++      escaped = true;
++      continue;
++    }
++
++    if (bracket === true) {
++      if (ch === ']') bracket = false;
++      continue;
++    }
++
++    if (ch === '[') {
++      bracket = true;
++      continue;
++    }
++
++    if (/[/(){}|!+@]/.test(ch)) {
++      return false;
++    }
++
++    if (ch === '*') {
++      if (branch[i + 1] === '*') {
++        return false;
++      }
++      star = true;
++    }
++  }
++
++  return star && !escaped && !bracket;
++};
++
+ const repeatedExtglobRecursion = pattern => {
+   let depth = 0;
+   let value = pattern.trim();
+@@ -343,6 +386,12 @@
+       : { risky: true };
+   }
+ 
++  if (branches.length === 1 && isSelfRepeatingStarBranch(branches[0])) {
++    // Capturing repeated inner stars cannot be safely collapsed without changing captures.
++    // Match the 2.x safety policy: fail closed via the existing literal fallback.
++    return options.capture === true ? { risky: true } : { risky: false, collapse: true };
++  }
++
+   return { risky: false };
+ };
+ 
+@@ -565,6 +614,10 @@
+       return;
+     }
+ 
++    if (analysis.collapse === true && (token.type === 'plus' || token.type === 'star')) {
++      token.close = token.type === 'plus' ? ')' : ')?';
++    }
++
+     let output = token.close + (opts.capture ? ')' : '');
+     let rest;
+ 

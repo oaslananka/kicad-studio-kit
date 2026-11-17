@@ -96,7 +96,8 @@ function createFixture(overrides = {}) {
         "  schedule:",
         '    - cron: "23 3 * * 1"',
         "steps:",
-        "  - run: corepack pnpm audit --audit-level high",
+        "  - run: node --test scripts/verify-picomatch-mitigation.test.mjs",
+        "  - run: node scripts/verify-picomatch-mitigation.mjs --audit",
         "",
       ].join("\n"),
   );
@@ -112,6 +113,25 @@ test("fixture with expected supply-chain settings passes", () => {
   const repoRoot = createFixture();
   try {
     assert.deepEqual(validatePnpmSupplyChain(repoRoot), []);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("required security job cannot fall back to a raw unaudited patch exception", () => {
+  const repoRoot = createFixture({
+    securityWorkflow: [
+      "on:",
+      "  pull_request:",
+      "  schedule:",
+      "  - run: corepack pnpm audit --audit-level high",
+    ].join("\n"),
+  });
+  try {
+    assert.deepEqual(validatePnpmSupplyChain(repoRoot), [
+      "security.yml must include node --test scripts/verify-picomatch-mitigation.test.mjs",
+      "security.yml must include node scripts/verify-picomatch-mitigation.mjs --audit",
+    ]);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
   }

@@ -8,8 +8,8 @@ Set-Location -LiteralPath $repoRoot
 Write-Host '==> pre-commit'
 uvx --no-build --from pre-commit==4.6.0 pre-commit run --all-files
 
-Write-Host '==> pnpm audit'
-corepack pnpm audit --audit-level high
+Write-Host '==> verified dependency audit'
+node scripts/verify-picomatch-mitigation.mjs --audit
 
 Write-Host '==> gitleaks'
 $gitleaks = Get-Command gitleaks -ErrorAction SilentlyContinue
