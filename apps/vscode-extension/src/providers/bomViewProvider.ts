@@ -9,7 +9,7 @@ import { SExpressionParser } from '../language/sExpressionParser';
 import { readTextFileSync } from '../utils/fileUtils';
 import { asRecord, asString, hasType } from '../utils/webviewMessages';
 import { createNonce } from '../utils/nonce';
-import type { ExportStateStore } from '../state/stateStores';
+import type { ExportStateStore, ProjectStateStore } from '../state/stateStores';
 
 export class BomViewProvider
   implements vscode.WebviewViewProvider, vscode.Disposable
@@ -20,15 +20,23 @@ export class BomViewProvider
   private readonly disposables: vscode.Disposable[] = [];
   private currentFile: string | undefined;
   private _refreshTimer: NodeJS.Timeout | undefined = undefined;
+  private refreshVersion = 0;
+  private activeProjectId: string | undefined;
   /** URI of the last schematic opened in the custom viewer (webview panel). */
   private _lastViewedSchematicUri?: vscode.Uri;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     parser: SExpressionParser,
-    private readonly exportState?: ExportStateStore | undefined
+    private readonly exportState?: ExportStateStore | undefined,
+    private readonly projectState?: ProjectStateStore | undefined,
+    private readonly focusSchematicReference?: (
+      uri: vscode.Uri,
+      reference: string
+    ) => Promise<boolean>
   ) {
     this.bomParser = new BomParser(parser);
+    this.activeProjectId = projectState?.getActiveProject()?.id;
     this.disposables.push(
       vscode.window.onDidChangeActiveTextEditor(() =>
         this.scheduleRefresh(200)
@@ -37,7 +45,18 @@ export class BomViewProvider
         if (doc.fileName.endsWith('.kicad_sch')) {
           this.scheduleRefresh(0);
         }
-      })
+      }),
+      ...(projectState
+        ? [
+            projectState.onDidChange((state) => {
+              const nextProjectId = state.activeProject?.id;
+              if (nextProjectId !== this.activeProjectId) {
+                this.activeProjectId = nextProjectId;
+                this.scheduleRefresh(0);
+              }
+            })
+          ]
+        : [])
     );
   }
 
@@ -80,12 +99,18 @@ export class BomViewProvider
     webviewView.webview.onDidReceiveMessage(async (message: unknown) => {
       if (
         !hasType(message, [
+          'ready',
           'exportCsv',
           'exportXlsx',
           'rowSelected',
           'openReviewTasks'
         ])
       ) {
+        return;
+      }
+      if (message.type === 'ready') {
+        // Initial messages may precede the webview's message listener.
+        void this.refresh();
         return;
       }
       if (message.type === 'exportCsv') {
@@ -109,7 +134,13 @@ export class BomViewProvider
   }
 
   async refresh(): Promise<void> {
+    const version = ++this.refreshVersion;
+    this.currentFile = undefined;
+    this.manager.setLoading();
     const file = await this.findSchematicFile();
+    if (version !== this.refreshVersion) {
+      return; // A newer project/schematic selection has taken precedence.
+    }
     if (!file) {
       this.exportState?.complete('bom', undefined, 'No schematic opened.');
       this.manager.setStatus(
@@ -120,10 +151,9 @@ export class BomViewProvider
     }
     const uri = vscode.Uri.file(file);
     this.exportState?.begin('bom', uri, 'Loading Bill of Materials.');
-    this.manager.setLoading();
-    this.currentFile = file;
     try {
       const entries = this.bomParser.parse(readTextFileSync(file));
+      this.currentFile = file;
       this.manager.setEntries(entries);
       this.exportState?.complete(
         'bom',
@@ -159,6 +189,13 @@ export class BomViewProvider
     if (!file) {
       return;
     }
+    if (
+      this.focusSchematicReference &&
+      (await this.focusSchematicReference(vscode.Uri.file(file), reference))
+    ) {
+      return;
+    }
+    // A missing/closed graphical viewer still has a source-navigation fallback.
     const document = await vscode.workspace.openTextDocument(file);
     const editor = await vscode.window.showTextDocument(document, {
       preview: false
@@ -220,17 +257,45 @@ export class BomViewProvider
   }
 
   private async findSchematicFile(): Promise<string | undefined> {
-    // 1. Active text editor (highest priority — user is editing the file directly).
     const active = vscode.window.activeTextEditor?.document;
-    if (active?.fileName.endsWith('.kicad_sch')) {
-      return active.fileName;
+    const activeFile = active?.fileName.endsWith('.kicad_sch')
+      ? active.fileName
+      : undefined;
+    const viewedFile = this._lastViewedSchematicUri?.fsPath;
+    const project = this.projectState?.getActiveProject();
+
+    if (project) {
+      const belongsToProject = (file: string): boolean =>
+        this.projectState?.findProjectForResource(file)?.id === project.id;
+      // Selection is authoritative: do not show another project's BOM merely
+      // because its schematic tab was active most recently.
+      const projectSchematic = path.join(
+        project.rootPath,
+        path.basename(project.projectFile, '.kicad_pro') + '.kicad_sch'
+      );
+      for (const file of [activeFile, viewedFile, projectSchematic]) {
+        if (file && belongsToProject(file) && fs.existsSync(file)) {
+          return file;
+        }
+      }
+      const files = await vscode.workspace.findFiles(
+        '**/*.kicad_sch',
+        '**/node_modules/**',
+        1000
+      );
+      return files
+        .map((uri) => uri.fsPath)
+        .filter((file) => belongsToProject(file))
+        .sort((left, right) => left.localeCompare(right))[0];
     }
-    // 2. Schematic viewer webview panel — set via setSchematicUri() from the
-    //    SchematicEditorProvider.onDidActivate event.
-    if (this._lastViewedSchematicUri) {
-      return this._lastViewedSchematicUri.fsPath;
+
+    // For a loose schematic without a project, preserve file-first behavior.
+    if (activeFile) {
+      return activeFile;
     }
-    // 3. Fallback: first .kicad_sch file found in the workspace.
+    if (viewedFile) {
+      return viewedFile;
+    }
     const files = await vscode.workspace.findFiles(
       '**/*.kicad_sch',
       '**/node_modules/**',

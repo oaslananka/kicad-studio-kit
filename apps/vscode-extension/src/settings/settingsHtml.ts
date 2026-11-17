@@ -131,14 +131,21 @@ export function buildSettingsHtml(options: SettingsHtmlOptions): string {
       const aiStatus = ai.healthy === true ? 'Healthy' : ai.healthy === false ? 'Connection failed' : ai.configured ? 'Configured, not tested' : 'Not configured';
       byId('ai-health-label').textContent = aiStatus;
       byId('ai-health-detail').textContent = (ai.provider && ai.provider !== 'none' ? 'Provider: ' + ai.provider + '. ' : '') + (state.aiKeyStored ? 'SecretStorage credential present.' : 'No SecretStorage credential present.');
+      byId('test-ai-key').disabled = !ai.configured;
+      byId('test-ai-key').title = ai.configured ? 'Test the configured AI connection' : 'Configure an AI provider to test its connection';
+      byId('clear-ai-key').disabled = !state.aiKeyStored;
+      byId('clear-ai-key').title = state.aiKeyStored ? 'Clear the stored AI credential' : 'No stored AI credential to clear';
       const mcp = state.mcp || {};
       byId('mcp-health-label').textContent = mcp.connected ? 'Connected at last check' : mcp.available ? 'Available, disconnected' : 'Unavailable';
       byId('mcp-health-detail').textContent = [mcp.version ? 'Version ' + mcp.version : '', mcp.profile ? 'profile ' + mcp.profile : '', mcp.compat ? 'compatibility ' + mcp.compat : '', mcp.kind || '', mcp.connected ? 'Recheck to verify current availability' : 'Last known server details may be cached'].filter(Boolean).join(' · ') || 'Configure or start kicad-mcp-pro to enable MCP capabilities.';
       const boardReadyOps = state.boardReadyOps || {};
       byId('boardreadyops-health-label').textContent = boardReadyOps.installed ? (boardReadyOps.healthy ? 'Healthy' : 'Needs attention') : 'Unavailable';
       byId('boardreadyops-health-detail').textContent = [boardReadyOps.version ? 'Version ' + boardReadyOps.version : '', typeof boardReadyOps.toolCount === 'number' ? boardReadyOps.toolCount + ' rules' : '', boardReadyOps.message || ''].filter(Boolean).join(' · ') || 'Install BoardReadyOps or refresh health after opening a trusted workspace.';
+      byId('run-boardreadyops').disabled = !boardReadyOps.installed;
+      byId('run-boardreadyops').title = boardReadyOps.installed ? 'Run the configured BoardReadyOps checks' : 'Install or configure BoardReadyOps first';
       const viewer = state.viewer || { status: 'idle', engines: [], openCount: 0 };
-      byId('viewer-health-label').textContent = viewer.status === 'error' ? 'Error' : viewer.status === 'ready' ? 'Ready' : viewer.status === 'loading' ? 'Loading' : 'Idle';
+      const fallbackActive = (viewer.engines || []).some((engine) => String(engine).toLowerCase().includes('fallback'));
+      byId('viewer-health-label').textContent = viewer.status === 'error' ? 'Error' : viewer.status === 'ready' && fallbackActive ? 'Limited — SVG fallback' : viewer.status === 'ready' ? 'Ready' : viewer.status === 'loading' ? 'Loading' : 'Idle';
       byId('viewer-health-detail').textContent = viewer.error || [(viewer.engines || []).join(', '), viewer.openCount ? viewer.openCount + ' open viewer' + (viewer.openCount === 1 ? '' : 's') : 'No open viewer'].filter(Boolean).join(' · ');
       byId('octopart-key-status').textContent = state.octopartKeyStored ? 'Octopart/Nexar credential is stored in SecretStorage.' : 'No Octopart/Nexar credential is stored.';
     }
@@ -150,7 +157,7 @@ export function buildSettingsHtml(options: SettingsHtmlOptions): string {
     byId('refresh-boardreadyops').addEventListener('click', () => vscode.postMessage({ type: 'refreshBoardReadyOps' }));
     byId('run-boardreadyops').addEventListener('click', () => vscode.postMessage({ type: 'runBoardReadyOpsCheck' }));
     byId('open-boardreadyops-docs').addEventListener('click', () => vscode.postMessage({ type: 'openBoardReadyOpsDocs' }));
-    byId('open-viewer-settings').addEventListener('click', () => vscode.postMessage({ type: 'openNativeSettings' }));
+    byId('open-viewer-settings').addEventListener('click', () => vscode.postMessage({ type: 'openViewerSettings' }));
     byId('clear-all-secrets').addEventListener('click', () => vscode.postMessage({ type: 'clearAllSecrets' }));
     byId('retry-mcp').addEventListener('click', () => { setToast('Checking MCP connection...'); vscode.postMessage({ type: 'retryMcp' }); });
     byId('open-mcp-docs').addEventListener('click', () => vscode.postMessage({ type: 'openExternalLink', href: ${mcpIntegrationDocsUrlJson} }));

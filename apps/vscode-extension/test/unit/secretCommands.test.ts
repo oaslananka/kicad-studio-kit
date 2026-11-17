@@ -1,8 +1,7 @@
 import { COMMANDS, OCTOPART_SECRET_KEY, SETTINGS } from '../../src/constants';
-import {
-  CLOUD_SESSION_SLOT,
-  CLOUD_SELECTION_KEY
-} from '../../src/mcp/cloudSession';
+// Retired slot names remain clearable via Clear All Secrets.
+const CLOUD_SESSION_SLOT = 'kicadstudio.cloud.oauth.session.v1';
+const CLOUD_SELECTION_KEY = 'kicadstudio.cloud.selectedRemoteProjectId';
 import { registerSecretCommands } from '../../src/commands/secretCommands';
 import {
   commands,

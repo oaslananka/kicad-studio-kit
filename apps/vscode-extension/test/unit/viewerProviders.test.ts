@@ -135,6 +135,106 @@ describe.each([
     expect(panel.webview.html).toContain('kicanvas-source');
   });
 
+  if (_label === 'schematic') {
+    it('routes BOM reference focusing to the graphical viewer after it is ready', async () => {
+      const provider = new ContextProvider(
+        createExtensionContextMock() as unknown as vscode.ExtensionContext
+      );
+      const panel = createPanel();
+      const uri = vscode.Uri.file(tempFile);
+      await provider.resolveCustomEditor(
+        { uri } as vscode.CustomDocument,
+        panel as unknown as vscode.WebviewPanel
+      );
+      const visual = provider as unknown as {
+        focusReference(
+          resource: vscode.Uri,
+          reference: string
+        ): Promise<boolean>;
+      };
+      expect(await visual.focusReference(uri, 'R1')).toBe(true);
+      expect(panel.webview.postMessage).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'focusReference' })
+      );
+      await panel.fireMessage({
+        type: 'ready',
+        payload: { fileName: path.basename(tempFile) }
+      });
+      expect(panel.webview.postMessage).toHaveBeenCalledWith({
+        type: 'focusReference',
+        payload: { reference: 'R1' }
+      });
+      expect(panel.reveal).toHaveBeenCalled();
+      provider.dispose();
+    });
+  }
+
+  if (_label === 'schematic') {
+    it('rejects unknown viewers and invalid BOM reference focus requests', async () => {
+      const provider = new ContextProvider(
+        createExtensionContextMock() as unknown as vscode.ExtensionContext
+      );
+      const uri = vscode.Uri.file(tempFile);
+      const visual = provider as unknown as {
+        focusReference(
+          resource: vscode.Uri,
+          reference: string
+        ): Promise<boolean>;
+      };
+
+      // No graphical viewer is open: callers must be allowed to use a fallback.
+      expect(await visual.focusReference(uri, 'R1')).toBe(false);
+
+      const panel = createPanel();
+      await provider.resolveCustomEditor(
+        { uri } as vscode.CustomDocument,
+        panel as unknown as vscode.WebviewPanel
+      );
+      for (const reference of ['', '  ', 'R'.repeat(129)]) {
+        expect(await visual.focusReference(uri, reference)).toBe(false);
+      }
+      expect(panel.webview.postMessage).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'focusReference' })
+      );
+
+      panel.fireDispose();
+      expect(await visual.focusReference(uri, 'R1')).toBe(false);
+      provider.dispose();
+    });
+
+    it('focuses an already loaded schematic even when its panel was hidden', async () => {
+      const provider = new ContextProvider(
+        createExtensionContextMock() as unknown as vscode.ExtensionContext
+      );
+      const uri = vscode.Uri.file(tempFile);
+      const panel = createPanel();
+      await provider.resolveCustomEditor(
+        { uri } as vscode.CustomDocument,
+        panel as unknown as vscode.WebviewPanel
+      );
+      await panel.fireMessage({
+        type: 'ready',
+        payload: { fileName: path.basename(tempFile) }
+      });
+      panel.visible = false;
+      const visual = provider as unknown as {
+        focusReference(
+          resource: vscode.Uri,
+          reference: string
+        ): Promise<boolean>;
+      };
+
+      expect(await visual.focusReference(uri, 'R5')).toBe(true);
+      expect(panel.reveal).toHaveBeenCalled();
+      expect(panel.webview.postMessage).toHaveBeenCalledWith({
+        type: 'focusReference',
+        payload: { reference: 'R5' }
+      });
+      panel.fireDispose();
+      provider.dispose();
+    });
+  }
+
   if (_label === 'pcb') {
     it('allows only trusted, validated native copper requests from a full viewer', async () => {
       const fallback = jest.fn(async (_resource: vscode.Uri, layer?: string) =>

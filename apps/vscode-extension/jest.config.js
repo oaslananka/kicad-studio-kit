@@ -45,7 +45,6 @@ module.exports = {
     '!src/activation/**/*.ts',
     '!src/cli/exportCommands.ts',
     '!src/providers/baseKiCanvasEditorProvider.ts',
-    '!src/providers/bomViewProvider.ts',
     '!src/providers/diffEditorProvider.ts',
     '!src/providers/netlistViewProvider.ts',
     '!src/providers/projectTreeProvider.ts',

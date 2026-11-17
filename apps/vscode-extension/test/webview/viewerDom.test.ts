@@ -1163,6 +1163,49 @@ test.describe('KiCad Studio webview DOM', () => {
     await expect(page.locator('#btn-export-csv')).toBeEnabled();
   });
 
+  test('disables BOM exports after switching from loaded data to no schematic', async ({
+    page
+  }) => {
+    await installVsCodeApiMock(page);
+    await setWebviewContent(page, createBomHtml());
+    await page.evaluate(() =>
+      window.postMessage(
+        {
+          type: 'setData',
+          payload: {
+            entries: [
+              {
+                references: ['R1'],
+                quantity: 1,
+                value: '10k',
+                footprint: 'R_0603',
+                dnp: false
+              }
+            ],
+            summary: { totalComponents: 1, uniqueValues: 1 }
+          }
+        },
+        '*'
+      )
+    );
+    await expect(page.locator('#btn-export-csv')).toBeEnabled();
+    await page.evaluate(() =>
+      window.postMessage(
+        {
+          type: 'setStatus',
+          payload: {
+            status: 'message',
+            text: 'No schematic in the selected project.'
+          }
+        },
+        '*'
+      )
+    );
+    await expect(page.locator('#bom-empty')).toBeVisible();
+    await expect(page.locator('#btn-export-csv')).toBeDisabled();
+    await expect(page.locator('#btn-export-xlsx')).toBeDisabled();
+  });
+
   test('offers a keyboard-accessible Review action for BOM prerequisites', async ({
     page
   }) => {

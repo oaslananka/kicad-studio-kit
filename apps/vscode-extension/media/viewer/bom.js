@@ -47,6 +47,8 @@
   }
 
   function showEmpty(message, action) {
+    // A project switch or parse error must never leave the old export enabled.
+    entries = [];
     rowsEl.replaceChildren();
     emptyMessage.textContent = message;
     canOpenReviewTasks = action === 'openReviewTasks';
@@ -241,4 +243,6 @@
       target?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
   });
+  // Re-send current data after the webview installs its message listener.
+  vscode.postMessage({ type: 'ready' });
 })();

@@ -192,6 +192,11 @@ async function invokeCommand(
 ): Promise<void> {
   const quickInput = page.locator('.quick-input-widget');
   await page.keyboard.press('Control+Shift+P');
+  if (!(await quickInput.isVisible())) {
+    // Webview focus can keep the shortcut from reaching the workbench.
+    // Use VS Code's visible Quick Access button instead of a hidden API.
+    await page.getByRole('button', { name: 'Open Quick Access' }).click();
+  }
   await expect(quickInput).toBeVisible({ timeout: 5000 });
   const input = quickInput.locator('input');
   await input.fill('');
@@ -455,6 +460,9 @@ async function hideTransientUi(page: Page): Promise<void> {
   // the screenshot's sensitive-content assertion.
   const palette = page.locator('.quick-input-widget');
   await page.keyboard.press('Control+Shift+P');
+  if (!(await palette.isVisible())) {
+    await page.getByRole('button', { name: 'Open Quick Access' }).click();
+  }
   await expect(palette).toBeVisible({ timeout: 5000 });
   await palette
     .locator('input')
@@ -512,7 +520,7 @@ function writeCaptureManifest(): void {
         viewport: VIEWPORT,
         theme: 'Default Dark Modern',
         fixture: 'test/fixtures/benchmark_projects/pass_i2c_sensor_hub',
-        vscodeVersion: '1.122.0',
+        vscodeVersion: getCaptureVsCodeVersion(),
         kicadVersion,
         sourceContractVersion: sourceContract.version,
         sourceFingerprint,
@@ -523,6 +531,24 @@ function writeCaptureManifest(): void {
     ) + '\n',
     'utf8'
   );
+}
+
+function getCaptureVsCodeVersion(): string {
+  const localExecutable = process.env['KICADSTUDIO_TEST_VSCODE_EXECUTABLE'];
+  if (!localExecutable) {
+    return '1.122.0';
+  }
+  const version =
+    execFileSync(localExecutable, ['--version'], {
+      encoding: 'utf8',
+      timeout: 10000
+    })
+      .trim()
+      .split(/\r?\n/u)[0] ?? '';
+  if (!/^\d+\.\d+\.\d+$/u.test(version)) {
+    throw new Error('Cannot confirm local VS Code capture host version.');
+  }
+  return version;
 }
 
 function hashFiles(root: string, relativePaths: string[]): string {

@@ -81,7 +81,7 @@ describe('task-oriented command hub', () => {
         })
       ]),
       expect.objectContaining({
-        placeHolder: 'Choose a local or Cloud project source, or a project task'
+        placeHolder: 'Choose a local project or a project task'
       })
     );
     expect(commands.executeCommand).toHaveBeenCalledWith(
@@ -112,97 +112,56 @@ describe('task-oriented command hub', () => {
     );
   });
 
-  it('filters task groups that are unavailable in the current workspace', async () => {
+  it('shows only the local project source in a fresh workspace', async () => {
     jest.clearAllMocks();
     registerTaskHubCommands(() => taskContext({ hasProject: false }));
-    (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
-
     await handler(COMMANDS.openTaskHub)();
-
-    expect(window.showQuickPick).toHaveBeenCalledWith(
-      [
-        expect.objectContaining({
-          label: expect.stringContaining('Local Projects'),
-          taskCommand: 'workbench.action.files.openFolder'
-        }),
-        expect.objectContaining({
-          label: expect.stringContaining('Cloud Projects'),
-          taskCommand: COMMANDS.cloudProjects
-        }),
-        expect.objectContaining({
-          taskCommand: COMMANDS.openAutomateTasks
-        }),
-        expect.objectContaining({
-          taskCommand: COMMANDS.openMaintainTasks
-        })
-      ],
-      expect.objectContaining({
-        placeHolder: 'Start with Local Projects or optional Cloud Projects'
-      })
-    );
+    const entries = (window.showQuickPick as jest.Mock).mock.calls[0][0];
+    expect(entries.map((entry: { label: string }) => entry.label)).toEqual([
+      expect.stringContaining('Local Projects'),
+      expect.stringContaining('Automate'),
+      expect.stringContaining('Maintain')
+    ]);
+    expect(entries[0].taskCommand).toBe('workbench.action.files.openFolder');
+    expect(
+      entries.some((entry: { label: string }) => /cloud/i.test(entry.label))
+    ).toBe(false);
   });
 
-  it('offers optional Cloud sign-in without a local KiCad project', async () => {
+  it('keeps local MCP automation without Cloud commands', async () => {
     jest.clearAllMocks();
-    registerTaskHubCommands(() =>
-      taskContext({
-        hasProject: false,
-        mcpAvailable: false,
-        mcpConnected: false
-      })
-    );
-    (window.showQuickPick as jest.Mock).mockResolvedValueOnce({
-      command: COMMANDS.cloudSignIn
-    });
+    registerTaskHubCommands(() => taskContext({ hasProject: false }));
     await handler(COMMANDS.openAutomateTasks)();
-    expect(window.showQuickPick).toHaveBeenCalledWith(
+    const entries = (window.showQuickPick as jest.Mock).mock.calls[0][0];
+    expect(entries).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          label: 'Connect to Cloud',
-          command: COMMANDS.cloudSignIn
-        })
-      ]),
-      expect.any(Object)
+        expect.objectContaining({ command: COMMANDS.setupMcpIntegration })
+      ])
     );
-    expect(commands.executeCommand).toHaveBeenCalledWith(COMMANDS.cloudSignIn);
+    expect(
+      entries.some((entry: { label: string }) => /cloud/i.test(entry.label))
+    ).toBe(false);
   });
 
-  it('shows Local and Cloud sources ahead of tasks in a populated project workspace', async () => {
+  it('shows the local project source ahead of other tasks', async () => {
     jest.clearAllMocks();
     registerTaskHubCommands(() => taskContext({ hasProject: true }));
     await handler(COMMANDS.openTaskHub)();
-    const items = (window.showQuickPick as jest.Mock).mock.calls[0][0];
-    expect(items.slice(0, 2)).toEqual([
+    const entries = (window.showQuickPick as jest.Mock).mock.calls[0][0];
+    expect(entries[0]).toEqual(
       expect.objectContaining({
         label: '$(folder-opened) Local Projects',
         taskCommand: COMMANDS.selectActiveProject
-      }),
-      expect.objectContaining({
-        label: '$(cloud) Cloud Projects',
-        taskCommand: COMMANDS.cloudProjects
       })
-    ]);
-    expect(items).toEqual(
+    );
+    expect(
+      entries.some((entry: { label: string }) => /cloud/i.test(entry.label))
+    ).toBe(false);
+    expect(entries).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ taskCommand: COMMANDS.openReviewTasks }),
         expect.objectContaining({ taskCommand: COMMANDS.openValidateTasks })
       ])
-    );
-  });
-
-  it('opens optional Cloud project discovery directly from an empty first-run Task Hub', async () => {
-    jest.clearAllMocks();
-    registerTaskHubCommands(() => taskContext({ hasProject: false }));
-    (window.showQuickPick as jest.Mock).mockResolvedValueOnce({
-      label: '$(cloud) Cloud Projects',
-      taskCommand: COMMANDS.cloudProjects
-    });
-    await handler(COMMANDS.openTaskHub)();
-    expect(commands.executeCommand).toHaveBeenCalledWith(
-      COMMANDS.cloudProjects
-    );
-    expect(commands.executeCommand).not.toHaveBeenCalledWith(
-      'workbench.action.files.openFolder'
     );
   });
 

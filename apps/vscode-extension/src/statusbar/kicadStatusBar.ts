@@ -94,8 +94,8 @@ export class KiCadStatusBar implements vscode.Disposable {
     activeVariant?: string | undefined;
   }): void {
     this.cli = 'cli' in update ? update.cli : this.cli;
-    this.drc = update.drc ?? this.drc;
-    this.erc = update.erc ?? this.erc;
+    this.drc = 'drc' in update ? update.drc : this.drc;
+    this.erc = 'erc' in update ? update.erc : this.erc;
     this.aiConfigured = update.aiConfigured ?? this.aiConfigured;
     this.aiHealthy = update.aiHealthy ?? this.aiHealthy;
     this.mcpAvailable = update.mcpAvailable ?? this.mcpAvailable;

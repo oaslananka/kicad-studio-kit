@@ -70,19 +70,6 @@ inference. Selecting a remote AI provider transmits the prompt and
 explicitly attached KiCad context to that provider. See the
 [FAQ](../../docs/faq.md#do-i-need-to-set-up-an-api-key-for-ai-features).
 
-## Cloud Projects (Optional)
-
-Open **KiCad Studio: Open Task Hub**, then choose **Local Projects** or
-**Cloud Projects**. A fresh workspace also exposes these choices in the Studio
-sidebar. Cloud sign-in is optional; **Automate ? Connect to Cloud** remains
-available for account setup with read-only project discovery. Choose an
-authorized device/project under **Cloud Projects**; this does not upload KiCad
-files, switch your active local project, or enable remote editing. Local
-projects and offline workflows continue without a Cloud account.
-
-See the [Cloud Connected Studio guide](../../docs/mcp/cloud-connected-studio.md)
-for permissions, offline handling and sign-out.
-
 ## Task-Oriented Workflows
 
 Open **KiCad Studio: Open Task Hub** from the Command Palette or use the task button in the **KiCad Project** view title. Existing command IDs remain available, while the primary workflows are grouped around the engineering outcome you need.

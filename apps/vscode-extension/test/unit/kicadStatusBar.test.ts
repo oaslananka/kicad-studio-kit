@@ -241,6 +241,42 @@ describe('KiCadStatusBar', () => {
     });
   });
 
+  it('clears previous project validation counters on explicit missing results', () => {
+    const bar = makeBar();
+    bar.update({
+      activeProjectName: 'demo',
+      drc: makeDrc({ warnings: 11 }),
+      erc: makeErc({ errors: 80 })
+    });
+    expect(item(1).text).toContain('11');
+    expect(item(2).text).toContain('80');
+
+    item(1).hide.mockClear();
+    item(2).hide.mockClear();
+    bar.update({
+      activeProjectName: 'CH224A',
+      drc: undefined,
+      erc: undefined
+    });
+
+    expect(projectItem().text).toContain('CH224A');
+    expect(bar.getSnapshot().drc).toBeUndefined();
+    expect(bar.getSnapshot().erc).toBeUndefined();
+    expect(item(1).hide).toHaveBeenCalledTimes(1);
+    expect(item(2).hide).toHaveBeenCalledTimes(1);
+    bar.dispose();
+  });
+
+  it('does not clear validation results when updating unrelated status', () => {
+    const bar = makeBar();
+    bar.update({ drc: makeDrc({ warnings: 2 }), erc: makeErc({ errors: 3 }) });
+    bar.update({ aiConfigured: true });
+
+    expect(bar.getSnapshot().drc?.warnings).toBe(2);
+    expect(bar.getSnapshot().erc?.errors).toBe(3);
+    bar.dispose();
+  });
+
   describe('ERC item (index 2)', () => {
     it('hides ERC when it has not been run', () => {
       const bar = makeBar();

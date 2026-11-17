@@ -64,19 +64,28 @@ export async function launchVsCodeWithFixtures(
   }
   writeUserSettings(userDataDir, settings);
 
-  const executablePath = await downloadVsCodeWithRetry(
-    VSCODE_VERSION,
-    (version) =>
+  // Reuse an explicitly selected, locally installed VS Code in native QA.
+  // CI remains pinned to the release download without this optional setting.
+  const localExecutable = process.env['KICADSTUDIO_TEST_VSCODE_EXECUTABLE'];
+  if (
+    localExecutable &&
+    (!path.isAbsolute(localExecutable) || !fs.existsSync(localExecutable))
+  ) {
+    throw new Error(
+      'Local VS Code test executable must be an existing absolute path.'
+    );
+  }
+  const executablePath =
+    localExecutable ||
+    (await downloadVsCodeWithRetry(VSCODE_VERSION, (version) =>
       downloadAndUnzipVSCode({
         version,
         timeout: 120_000,
-        // Native Windows test worktrees may be nested deeply enough that
-        // VS Code's bundled rg.exe exceeds MAX_PATH and fails to spawn.
         ...(process.platform === 'win32'
           ? { cachePath: path.join(os.tmpdir(), 'kicadstudio-vscode-test') }
           : {})
       })
-  );
+    ));
   const remoteDebuggingPort = await getFreePort();
   const env = { ...process.env };
   delete env.ELECTRON_RUN_AS_NODE;

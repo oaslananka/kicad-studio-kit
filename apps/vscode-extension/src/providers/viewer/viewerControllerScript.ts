@@ -367,6 +367,14 @@ export function createViewerControllerScript(): string {
         }
         void initViewer(msg.type === 'refresh');
       }
+      if (msg.type === 'focusReference' && payload.fileType === 'schematic') {
+        const reference = msg.payload?.reference;
+        if (typeof reference === 'string' && reference.trim().length > 0 &&
+            reference.length <= 128) {
+          referenceSearchInput.value = reference.trim();
+          selectReferenceFromSearch();
+        }
+      }
       if (msg.type === 'partialPreviewError') {
         partialBusy = false;
         updatePartialPreviewUi();

@@ -93,17 +93,6 @@
         "test/security/securityRegression.test.ts"
       ]
     },
-    "src/providers/bomViewProvider.ts": {
-      "category": "integration-owned",
-      "owner": "BOM webview lifecycle",
-      "strategy": "Extension-host registration plus webview, accessibility, and visual fixture lanes protect the shipped BOM surface.",
-      "rationale": "The provider lifecycle depends on VS Code WebviewView resolution; generated HTML behavior is tested at the surface boundary.",
-      "evidence": [
-        "test/integration/extension.test.ts",
-        "test/a11y/accessibilityConformance.test.ts",
-        "test/visual/visualFixtures.ts"
-      ]
-    },
     "src/providers/diffEditorProvider.ts": {
       "category": "integration-owned",
       "owner": "Visual diff custom editor",
