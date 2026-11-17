@@ -156,14 +156,18 @@ test("Renovate semantic commit scopes stay inside the repository contract", () =
       ],
     }),
     [
-      'renovate.json packageRules[0] semanticCommitScope "node-runtime" is not allowed; use kicad-studio, kicad-mcp-pro, repo, deps, docs, superpowers, .gitignore',
-      'renovate.json packageRules[1] semanticCommitScope "root-tooling" is not allowed; use kicad-studio, kicad-mcp-pro, repo, deps, docs, superpowers, .gitignore',
+      'renovate.json packageRules[0] semanticCommitScope "node-runtime" is not allowed; use kicad-studio, kicad-mcp-pro, repo, config, deps, docs, superpowers, .gitignore',
+      'renovate.json packageRules[1] semanticCommitScope "root-tooling" is not allowed; use kicad-studio, kicad-mcp-pro, repo, config, deps, docs, superpowers, .gitignore',
     ],
   );
 });
 
 test("PR title lint accepts only documented product release scopes", () => {
   assert.deepEqual(validatePrTitle("ci(repo): enforce release split"), []);
+  assert.deepEqual(
+    validatePrTitle("chore(config): migrate Renovate config"),
+    [],
+  );
   assert.deepEqual(
     validatePrTitle("feat(kicad-studio): add viewer export"),
     [],
@@ -278,7 +282,7 @@ test("default-branch commit subject validation remains strict", () => {
       },
     ]),
     [
-      "abcdef2 subject must include a scope: kicad-studio, kicad-mcp-pro, repo, deps, docs, superpowers, .gitignore",
+      "abcdef2 subject must include a scope: kicad-studio, kicad-mcp-pro, repo, config, deps, docs, superpowers, .gitignore",
     ],
   );
 });

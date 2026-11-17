@@ -87,6 +87,43 @@ test("#728 disabling Renovate dependency dashboard fails closed", () => {
     );
   });
 });
+test("Renovate config migration preserves the enabled dependency dashboard", () => {
+  usingFixture((root) => {
+    mutateJson(root, "renovate.json", (config) => {
+      config.dependencyDashboard = {
+        enabled: true,
+        title: "Dependency Dashboard",
+        labels: ["dependencies", "dependency-lifecycle"],
+      };
+      delete config.dependencyDashboardTitle;
+      delete config.dependencyDashboardLabels;
+    });
+    assert.deepEqual(validateDependencyAutomationPolicy(root), []);
+  });
+});
+
+test("repository governance accepts the migrated Renovate dashboard", () => {
+  const output = execFileSync(
+    process.execPath,
+    ["scripts/check-repo-governance.mjs"],
+    { cwd: process.cwd(), encoding: "utf8" },
+  );
+  assert.match(output, /Repository governance check passed/);
+});
+
+test("Renovate migrated dependency dashboard cannot be disabled", () => {
+  usingFixture((root) => {
+    mutateJson(root, "renovate.json", (config) => {
+      config.dependencyDashboard = { enabled: false };
+    });
+    assert.ok(
+      validateDependencyAutomationPolicy(root).some((error) =>
+        error.includes("dependencyDashboard"),
+      ),
+    );
+  });
+});
+
 test("#728 root check cannot silently drop automation policy", () => {
   usingFixture((root) => {
     mutateJson(root, "package.json", (pkg) => {
