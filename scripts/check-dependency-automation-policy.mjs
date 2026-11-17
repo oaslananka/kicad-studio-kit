@@ -118,8 +118,13 @@ export function validateDependencyAutomationPolicy(root = repoRoot) {
     );
   }
   const renovate = readJson(root, "renovate.json", errors);
-  if (renovate.dependencyDashboard !== true)
+  const dashboard = renovate.dependencyDashboard;
+  if (
+    dashboard !== true &&
+    !(dashboard && typeof dashboard === "object" && dashboard.enabled === true)
+  ) {
     errors.push("Renovate dependencyDashboard must stay enabled");
+  }
   if (renovate.vulnerabilityAlerts?.enabled !== true)
     errors.push("Renovate vulnerabilityAlerts must stay enabled");
   validateRenovateAutoMerge(renovate, errors);

@@ -128,6 +128,7 @@ Release Please derives product changelogs from Conventional Commits. Because the
 - `kicad-studio` for `apps/vscode-extension`.
 - `kicad-mcp-pro` for KiCad MCP Pro (source in separate repository).
 - `repo` for repository governance, documentation, workflow, and shared release policy changes.
+- `config` for repository configuration migrations (including Renovate schema updates).
 - `docs` for documentation-only changes (changelogs, README, architecture docs, spec documents).
 - `superpowers` for cross-cutting capability or spec-design documentation.
 - `.gitignore` for `.gitignore` file changes (single-file repo governance).

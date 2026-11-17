@@ -40,12 +40,18 @@ function validateRenovate() {
     renovate.$schema === "https://docs.renovatebot.com/renovate-schema.json",
     "renovate.json must use the official Renovate JSON schema",
   );
+  const dashboard = renovate.dependencyDashboard;
   requireCondition(
-    renovate.dependencyDashboard === true,
+    dashboard === true ||
+      (dashboard &&
+        typeof dashboard === "object" &&
+        dashboard.enabled === true),
     "renovate.json must enable the Dependency Dashboard",
   );
   requireCondition(
-    renovate.dependencyDashboardTitle === "Dependency Dashboard",
+    dashboard && typeof dashboard === "object"
+      ? dashboard.title === "Dependency Dashboard"
+      : renovate.dependencyDashboardTitle === "Dependency Dashboard",
     "renovate.json must keep the configured Dependency Dashboard title",
   );
   requireCondition(

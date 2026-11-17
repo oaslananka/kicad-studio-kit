@@ -15,6 +15,7 @@ const ALLOWED_SCOPES = [
   "kicad-studio",
   "kicad-mcp-pro",
   "repo",
+  "config",
   "deps",
   "docs",
   "superpowers",
