@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { assessAudit } from "./verify-picomatch-mitigation.mjs";
+import {
+  assessAudit,
+  runAudit,
+  verifyFilesAndLock,
+  verifyRuntime,
+} from "./verify-picomatch-mitigation.mjs";
 
 const affected = {
   id: 1247710,
@@ -85,4 +90,91 @@ test("security entrypoints use mitigated auditing while preserving a raw registr
     );
     assert.doesNotMatch(script, /(?:corepack )?pnpm audit --audit-level high/u);
   }
+});
+
+test("frozen installation retains both source patches and bounded matching", () => {
+  const installed = verifyFilesAndLock();
+  assert.deepEqual(
+    installed.map((entry) => entry.version),
+    ["2.3.2", "4.0.7"],
+  );
+  assert.doesNotThrow(() => verifyRuntime(installed));
+});
+
+function runWithReport(advisories, status, override = {}) {
+  const messages = [];
+  const execute = (executable, args, options) => {
+    assert.equal(executable, process.execPath);
+    assert.match(args[0], /corepack\.js$/u);
+    assert.deepEqual(args.slice(1), [
+      "pnpm",
+      "audit",
+      "--audit-level",
+      "high",
+      "--json",
+    ]);
+    assert.equal(options.encoding, "utf8");
+    assert.equal(options.timeout, 120_000);
+    return { status, stdout: JSON.stringify(report(advisories)), stderr: "" };
+  };
+  runAudit({
+    date: "2026-11-18",
+    execute,
+    log: (line) => messages.push(line),
+    ...override,
+  });
+  return messages;
+}
+
+test("audits via the selected Node runtime, accepting a clean result", () => {
+  const messages = runWithReport({}, 0);
+  assert.equal(messages.length, 1);
+  assert.match(messages[0], /no other HIGH\/CRITICAL/u);
+});
+
+test("reports the sole patched advisory without disguising registry status", () => {
+  const messages = runWithReport({ 1247710: affected }, 1);
+  assert.equal(messages.length, 2);
+  assert.match(messages[1], /NOT an upstream fix/u);
+});
+
+test("fails if audit reports unknown high risks or inconsistent status", () => {
+  const other = { ...affected, github_advisory_id: "GHSA-unpatched" };
+  assert.throws(() => runWithReport({ unknown: other }, 1), /Unmitigated/u);
+  assert.throws(() => runWithReport({}, 1), /failed without a recognized/u);
+  assert.throws(
+    () => runWithReport({ 1247710: affected }, 0),
+    /failed without a recognized/u,
+  );
+});
+
+test("fails closed on unavailable or malformed audit output", () => {
+  assert.throws(() => runWithReport({}, 2), /failed operationally/u);
+  assert.throws(
+    () =>
+      runWithReport({}, 1, {
+        execute: () => ({ status: 1, stdout: "malformed", stderr: "" }),
+      }),
+    /no valid JSON/u,
+  );
+  assert.throws(
+    () =>
+      runWithReport({}, 1, {
+        execute: () => ({ status: null, error: new Error("audit timeout") }),
+      }),
+    /audit could not complete/u,
+  );
+});
+
+test("expires the temporary exception without running the audit", () => {
+  assert.throws(
+    () =>
+      runWithReport({}, 0, {
+        date: "2027-02-18",
+        execute: () => {
+          throw new Error("Must not execute expired audit");
+        },
+      }),
+    /expired/u,
+  );
 });

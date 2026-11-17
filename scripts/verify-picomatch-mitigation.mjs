@@ -5,8 +5,8 @@
 // https://github.com/micromatch/picomatch/pull/237 (4.x)
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { execFileSync, spawnSync } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import YAML from "yaml";
@@ -166,14 +166,41 @@ export function verifyRuntime(entries) {
   }
 }
 
-export function runAudit() {
+function corepackScriptPath() {
+  // Do not resolve a mutable PATH command when executing a security audit.
+  // Corepack ships with the approved Node runtime on both platforms.
+  const nodeDir = path.dirname(process.execPath);
+  const script =
+    process.platform === "win32"
+      ? path.join(nodeDir, "node_modules", "corepack", "dist", "corepack.js")
+      : path.resolve(
+          nodeDir,
+          "..",
+          "lib",
+          "node_modules",
+          "corepack",
+          "dist",
+          "corepack.js",
+        );
   assert(
-    new Date().toISOString().slice(0, 10) <= REVIEW_UNTIL,
+    existsSync(script),
+    "Corepack must exist beside the selected Node runtime",
+  );
+  return script;
+}
+
+export function runAudit({
+  date = new Date().toISOString().slice(0, 10),
+  execute = spawnSync,
+  log = console.log,
+} = {}) {
+  assert(
+    date <= REVIEW_UNTIL,
     `Temporary ${ADVISORY} patch exception expired; reassess and remove if upstream fixed`,
   );
-  const result = spawnSync(
-    "corepack",
-    ["pnpm", "audit", "--audit-level", "high", "--json"],
+  const result = execute(
+    process.execPath,
+    [corepackScriptPath(), "pnpm", "audit", "--audit-level", "high", "--json"],
     {
       cwd: ROOT,
       encoding: "utf8",
@@ -203,11 +230,11 @@ export function runAudit() {
       "pnpm audit failed without a recognized mitigated advisory",
     );
   }
-  console.log(
+  log(
     `Security audit evaluated: ${mitigated} explicitly verified, locally patched ${ADVISORY} advisory; no other HIGH/CRITICAL advisories.`,
   );
   if (mitigated) {
-    console.log(
+    log(
       `NOTICE: The registry still classifies picomatch 2.3.2 and 4.0.7 as vulnerable. This is a reviewed, temporary SOURCE mitigation, NOT an upstream fix. Re-review by ${REVIEW_UNTIL}.`,
     );
   }

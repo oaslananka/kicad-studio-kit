@@ -547,3 +547,25 @@ test("#796 Sonar must measure the published npm release verifier", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("#999 Sonar cannot omit picomatch mitigation regression coverage", () => {
+  const root = fixture();
+  try {
+    const workflowPath = path.join(root, ".github/workflows/sonarcloud.yml");
+    const original = readFileSync(workflowPath, "utf8");
+    assert.match(original, /scripts\/verify-picomatch-mitigation\.test\.mjs/u);
+    writeFileSync(
+      workflowPath,
+      original.replace(
+        "scripts/verify-picomatch-mitigation.test.mjs",
+        "scripts/omitted-mitigation-coverage.test.mjs",
+      ),
+    );
+    assert.match(
+      validateQualityGatePolicy(root).join("\n"),
+      /SonarCloud must discover the pnpm-pinned c8 CLI/u,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
