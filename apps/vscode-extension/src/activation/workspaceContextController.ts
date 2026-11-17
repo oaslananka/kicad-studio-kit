@@ -207,6 +207,11 @@ export class WorkspaceContextController implements vscode.Disposable {
     );
     await vscode.commands.executeCommand(
       'setContext',
+      CONTEXT_KEYS.cliDetected,
+      Boolean(cli)
+    );
+    await vscode.commands.executeCommand(
+      'setContext',
       CONTEXT_KEYS.kicad10Plus,
       kicadVersionMajor >= 10
     );

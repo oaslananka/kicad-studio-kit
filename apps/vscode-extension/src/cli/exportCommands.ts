@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { COMMANDS, SETTINGS } from '../constants';
+import { COMMANDS, CONTEXT_KEYS, SETTINGS } from '../constants';
 import {
   CliExitError,
   KiCadCliCancelledError,
@@ -913,6 +913,14 @@ export class KiCadExportService {
 
     const zipFile = path.join(rootOutputDir, `${packageName}.zip`);
     await zipDirectory(stagingDir, zipFile);
+    // Only completed, non-empty local packages count as walkthrough progress.
+    if (fs.existsSync(zipFile) && fs.statSync(zipFile).size > 0) {
+      await vscode.commands.executeCommand(
+        'setContext',
+        CONTEXT_KEYS.walkthroughManufacturingExported,
+        true
+      );
+    }
     await this.showOutputFolder(rootOutputDir);
   }
 

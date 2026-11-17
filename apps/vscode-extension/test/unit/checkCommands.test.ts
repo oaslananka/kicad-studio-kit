@@ -60,6 +60,11 @@ describe('ERC command visibility and runtime safety', () => {
     expect(window.showWarningMessage).toHaveBeenCalledWith(
       expect.stringContaining('No KiCad schematic found')
     );
+    expect(commands.executeCommand).not.toHaveBeenCalledWith(
+      'setContext',
+      'kicadstudio.walkthroughValidationComplete',
+      true
+    );
   });
 
   it('focuses rather than toggles Problems after ERC diagnostics arrive', async () => {
@@ -91,6 +96,11 @@ describe('ERC command visibility and runtime safety', () => {
     await (entry![1] as () => Promise<unknown>)();
     expect(commands.executeCommand).toHaveBeenCalledWith(
       'workbench.action.problems.focus'
+    );
+    expect(commands.executeCommand).toHaveBeenCalledWith(
+      'setContext',
+      'kicadstudio.walkthroughValidationComplete',
+      true
     );
     expect(commands.executeCommand).not.toHaveBeenCalledWith(
       'workbench.actions.view.problems'
@@ -161,6 +171,11 @@ describe('DRC command visibility and runtime safety', () => {
     expect(window.showWarningMessage).toHaveBeenCalledWith(
       expect.stringContaining('No KiCad PCB found')
     );
+    expect(commands.executeCommand).not.toHaveBeenCalledWith(
+      'setContext',
+      'kicadstudio.walkthroughValidationComplete',
+      true
+    );
   });
 
   it('contributes DRC with the stable folder-count palette context', () => {
@@ -207,6 +222,11 @@ describe('DRC command visibility and runtime safety', () => {
     await (entry![1] as () => Promise<unknown>)();
     expect(commands.executeCommand).toHaveBeenCalledWith(
       'workbench.action.problems.focus'
+    );
+    expect(commands.executeCommand).toHaveBeenCalledWith(
+      'setContext',
+      'kicadstudio.walkthroughValidationComplete',
+      true
     );
     expect(commands.executeCommand).not.toHaveBeenCalledWith(
       'workbench.actions.view.problems'

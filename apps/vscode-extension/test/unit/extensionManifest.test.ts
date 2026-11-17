@@ -144,10 +144,21 @@ describe('extensionManifest', () => {
       'onContext:kicadstudio.hasProject',
       'onContext:kicadstudio.walkthroughProjectReady'
     ]);
-    expect(steps[3]?.completionEvents).toEqual([
-      'onCommand:kicadstudio.runDRC',
-      'onCommand:kicadstudio.runERC'
+    expect(steps.map((step) => step.completionEvents)).toEqual([
+      [
+        'onContext:kicadstudio.hasProject',
+        'onContext:kicadstudio.walkthroughProjectReady'
+      ],
+      ['onContext:kicadstudio.schematicOpen'],
+      ['onContext:kicadstudio.cliDetected'],
+      ['onContext:kicadstudio.walkthroughValidationComplete'],
+      ['onContext:kicadstudio.walkthroughManufacturingExported'],
+      ['onContext:kicadstudio.hasVariants'],
+      ['onContext:kicadstudio.mcpConnected'],
+      ['onContext:kicadstudio.aiEnabled'],
+      ['onCommand:kicadstudio.openAiChat']
     ]);
+
     const base = path.resolve(__dirname, '..', '..');
     for (const language of ['package.nls.json']) {
       const strings = JSON.parse(
@@ -165,6 +176,12 @@ describe('extensionManifest', () => {
         }
         expect(fs.existsSync(path.join(base, step.media.image))).toBe(true);
       });
+      expect(
+        strings['kicadstudio.contributes.walkthroughs.0.steps.4.description']
+      ).toContain('command:kicadstudio.exportManufacturingPackage');
+      expect(
+        strings['kicadstudio.contributes.walkthroughs.0.steps.4.description']
+      ).not.toContain('command:kicadstudio.tasks.release');
       const optionalSteps = steps.slice(5);
       for (let index = 0; index < optionalSteps.length; index++) {
         const titleKey = `kicadstudio.contributes.walkthroughs.0.steps.${index + 5}.title`;

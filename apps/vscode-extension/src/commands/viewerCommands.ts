@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {
   COMMANDS,
+  CONTEXT_KEYS,
   PCB_EDITOR_VIEW_TYPE,
   SCHEMATIC_EDITOR_VIEW_TYPE
 } from '../constants';
@@ -177,6 +178,11 @@ export function registerViewerCommands(
       async () => {
         const cli = await services.cliDetector.detect(true);
         services.statusBar.update({ cli });
+        await vscode.commands.executeCommand(
+          'setContext',
+          CONTEXT_KEYS.cliDetected,
+          Boolean(cli)
+        );
       },
       'Detect kicad-cli'
     ),
