@@ -33,7 +33,7 @@ describe('multi-sheet versioned visual diff sources', () => {
       mainText('sch/part.kicad_sch'),
       'beforeText',
       (file) => {
-        expect(file).toBe(child);
+        expect(file).toBe(fs.realpathSync(child));
         return {
           beforeText: '(kicad_sch (version 20250114) (text "HEAD"))',
           afterText: '(kicad_sch (version 20250114) (text "WORKING"))'

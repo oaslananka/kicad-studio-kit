@@ -93,17 +93,6 @@
         "test/security/securityRegression.test.ts"
       ]
     },
-    "src/providers/diffEditorProvider.ts": {
-      "category": "integration-owned",
-      "owner": "Visual diff custom editor",
-      "strategy": "Extension-host registration and visual fixture coverage protect the custom-editor boundary and rendered states.",
-      "rationale": "The provider is primarily VS Code custom-editor lifecycle glue around separately tested diff and viewer helpers.",
-      "evidence": [
-        "test/integration/extension.test.ts",
-        "test/unit/diffViewerAssets.test.ts",
-        "test/visual/visualFixtureData.ts"
-      ]
-    },
     "src/providers/netlistViewProvider.ts": {
       "category": "explicitly-justified",
       "coverageMode": "targeted-ratchet",
