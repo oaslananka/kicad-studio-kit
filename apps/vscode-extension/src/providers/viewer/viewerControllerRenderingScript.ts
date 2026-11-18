@@ -493,8 +493,9 @@ export function createViewerControllerRenderingScript(): string {
           }))
           .filter((sheet) => sheet.id && sheet.name)
       ];
-      const currentSheet = localState.selectedSheet || 'root';
-      const values = new Set(options.map((sheet) => sheet.id));
+      // A viewer embeds only the current source schematic. Switching a
+      // nominal "sheet" attribute cannot load child .kicad_sch sources.
+      // Child sheets open as actual read-only Studio editor tabs.
       sheetSelectEl.replaceChildren(
         ...options.map((sheet) => {
           const option = document.createElement('option');
@@ -503,12 +504,12 @@ export function createViewerControllerRenderingScript(): string {
           return option;
         })
       );
-      if (values.has(currentSheet)) {
-        sheetSelectEl.value = currentSheet;
-        return;
-      }
       localState = { ...localState, selectedSheet: 'root' };
       sheetSelectEl.value = 'root';
+      sheetSelectEl.disabled = payload.fileType !== 'schematic' || options.length <= 1;
+      sheetSelectEl.title = sheetSelectEl.disabled
+        ? 'No child schematic sheets available'
+        : 'Open a child schematic sheet in another Studio tab';
     }
 
     function updateZoomLevel() {
@@ -522,18 +523,73 @@ export function createViewerControllerRenderingScript(): string {
 
     function updateGridToggle() {
       const viewer = viewerMount.querySelector('kicanvas-embed');
-      document.body.classList.toggle('grid-visible', Boolean(localState.grid) && !viewer);
       gridToggleBtn.setAttribute('aria-pressed', localState.grid ? 'true' : 'false');
       gridToggleBtn.classList.toggle('is-active', Boolean(localState.grid));
       applyViewerGridState(viewer);
+      updateSchematicGridOverlay();
     }
 
+    // KiCanvas' PCB viewer exposes grid_opacity, but its schematic viewer
+    // does not. Align a display-only 50 mil dot grid to the *actual* camera,
+    // instead of showing the old fixed 20px decoration or a fake pressed state.
+    function updateSchematicGridOverlay() {
+      const embed = viewerMount.querySelector('kicanvas-embed');
+      const camera = getKiCanvasViewer(embed)?.viewport?.camera;
+      const host = embed?.shadowRoot?.querySelector('kc-schematic-app')
+        ?.shadowRoot?.querySelector('kc-schematic-viewer');
+      const canvas = host?.shadowRoot?.querySelector('canvas');
+      const active = payload.fileType === 'schematic' && Boolean(localState.grid) &&
+        localState.engine?.kind === 'kicanvas' && camera && canvas &&
+        Number.isFinite(camera.zoom) && camera.zoom > 0 &&
+        typeof camera.world_to_screen === 'function';
+      document.body.classList.toggle('grid-visible', Boolean(active));
+      if (!active) return;
+
+      // The native Eeschema default is 50 mil = 1.27 mm. At wide zoom,
+      // skip some dots until adjacent ones are distinguishable on screen.
+      let step = camera.zoom * 1.27;
+      while (step < 10) step *= 2;
+      if (!Number.isFinite(step) || step > 8000) return;
+      const zero = camera.world_to_screen({ x: 0, y: 0 });
+      const canvasBounds = canvas.getBoundingClientRect();
+      const mountBounds = viewerMount.getBoundingClientRect();
+      if (!Number.isFinite(zero.x) || !Number.isFinite(zero.y)) return;
+      const position = (value) => ((value % step) + step) % step;
+      viewerMount.style.setProperty('--schematic-grid-step', step + 'px');
+      viewerMount.style.setProperty('--schematic-grid-x',
+        position(zero.x + canvasBounds.left - mountBounds.left) + 'px');
+      viewerMount.style.setProperty('--schematic-grid-y',
+        position(zero.y + canvasBounds.top - mountBounds.top) + 'px');
+    }
+    let gridUpdateScheduled = false;
+    function scheduleSchematicGridUpdate() {
+      if (!localState.grid || payload.fileType !== 'schematic' || gridUpdateScheduled) return;
+      gridUpdateScheduled = true;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        gridUpdateScheduled = false;
+        updateSchematicGridOverlay();
+      }));
+    }
+    viewerMount.addEventListener('wheel', scheduleSchematicGridUpdate, true);
+    viewerMount.addEventListener('pointermove', scheduleSchematicGridUpdate, true);
+    viewerMount.addEventListener('pointerup', scheduleSchematicGridUpdate, true);
+    window.addEventListener('resize', scheduleSchematicGridUpdate);
+
     function updateThemeToggle() {
-      const light = localState.theme === 'light';
-      document.body.dataset.viewerTheme = light ? 'light' : 'kicad';
-      themeToggleBtn.setAttribute('aria-pressed', light ? 'true' : 'false');
-      themeToggleBtn.classList.toggle('is-active', light);
-      themeToggleBtn.textContent = light ? t('Light') : t('Dark');
+      // The shipped native schematic KiCanvas maps "light" to its dark
+      // contrast palette; the board renderer and SVG fallback do not.
+      // Report the actual visible color scheme for the active engine,
+      // without changing its existing theme token or pressed-state API.
+      const lightToken = localState.theme === 'light';
+      const nativeSchematic = payload.fileType === 'schematic' &&
+        localState.engine?.kind === 'kicanvas';
+      const visualDark = nativeSchematic ? lightToken : !lightToken;
+      document.body.dataset.viewerTheme = lightToken ? 'light' : 'kicad';
+      themeToggleBtn.setAttribute('aria-pressed', lightToken ? 'true' : 'false');
+      themeToggleBtn.classList.toggle('is-active', lightToken);
+      themeToggleBtn.textContent = visualDark ? t('Dark') : t('Light');
+      themeToggleBtn.title = visualDark
+        ? 'Switch drawing to light theme' : 'Switch drawing to dark theme';
     }
 
     function updateFallbackTheme() {
@@ -669,12 +725,10 @@ export function createViewerControllerRenderingScript(): string {
       if (!viewer) {
         return;
       }
-      const selectedSheet = String(localState.selectedSheet || 'root');
-      if (selectedSheet && selectedSheet !== 'root') {
-        viewer.setAttribute('sheet', selectedSheet);
-      } else {
-        viewer.removeAttribute('sheet');
-      }
+      // The currently embedded source is the root of this Studio editor.
+      // A child sheet is a separate document, not an unsupported embed
+      // attribute that pretends to navigate.
+      viewer.removeAttribute('sheet');
       const reference = String(localState.selectedReference || '').trim();
       if (reference) {
         viewer.setAttribute('selected-reference', reference);
@@ -711,13 +765,14 @@ export function createViewerControllerRenderingScript(): string {
 
     function applyRendererTheme(embed, theme) {
       try {
-        // The published embed's theme attribute is not forwarded to its nested
-        // kc-board-viewer. Update the actual drawing host and repaint safely.
+        // Both shipped KiCanvas apps own their drawing themes inside
+        // kc-*-viewer, not on kicanvas-embed. Repaint the actual canvas.
         const surface = findRenderSurfaces(embed).find(
           (entry) => entry instanceof HTMLCanvasElement
         );
         const renderHost = surface?.getRootNode()?.host;
-        if (renderHost?.tagName?.toLowerCase() !== 'kc-board-viewer') return;
+        const hostTag = renderHost?.tagName?.toLowerCase();
+        if (hostTag !== 'kc-board-viewer' && hostTag !== 'kc-schematic-viewer') return;
         if (renderHost.theme === theme && renderHost.viewer?.loaded) return;
         renderHost.theme = theme;
         if (renderHost.viewer?.loaded && typeof renderHost.update_theme === 'function') {
@@ -726,7 +781,7 @@ export function createViewerControllerRenderingScript(): string {
           renderHost.viewer.draw?.();
         }
       } catch {
-        // Theme changes must never break the board viewer or its file data.
+        // A theme failure must not break rendering or alter the KiCad source.
       }
     }
 

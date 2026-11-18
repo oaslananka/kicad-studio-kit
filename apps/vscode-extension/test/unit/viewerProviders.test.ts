@@ -136,6 +136,139 @@ describe.each([
   });
 
   if (_label === 'schematic') {
+    it('opens only a child sheet verified against fresh source and within its workspace', async () => {
+      const sandbox = fs.mkdtempSync(
+        path.join(os.tmpdir(), 'studio-sheet-nav-')
+      );
+      const root = path.join(sandbox, 'main.kicad_sch');
+      const sub = path.join(sandbox, 'sch', 'child.kicad_sch');
+      fs.mkdirSync(path.dirname(sub), { recursive: true });
+      const sheetSource = (sheetFile: string) =>
+        '(kicad_sch\n  (sheet (uuid "de01c523-a2a3-4c2e-a90f-e2a38c0e8310") ' +
+        '(property "Sheetname" "Child") (property "Sheetfile" "' +
+        sheetFile +
+        '"))\n)';
+      fs.writeFileSync(root, sheetSource('sch/child.kicad_sch'), 'utf8');
+      fs.writeFileSync(sub, '(kicad_sch)', 'utf8');
+      const folderSpy = jest
+        .spyOn(vscode.workspace, 'getWorkspaceFolder')
+        .mockReturnValue({
+          uri: vscode.Uri.file(sandbox)
+        } as vscode.WorkspaceFolder);
+      const provider = new ContextProvider(
+        createExtensionContextMock() as unknown as vscode.ExtensionContext
+      );
+      const panel = createPanel();
+      try {
+        await provider.resolveCustomEditor(
+          { uri: vscode.Uri.file(root) } as vscode.CustomDocument,
+          panel as unknown as vscode.WebviewPanel
+        );
+        (vscode.commands.executeCommand as jest.Mock).mockClear();
+        await panel.fireMessage({
+          type: 'openSchematicSheet',
+          payload: { id: 'sch/child.kicad_sch' }
+        });
+        expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
+          'vscode.openWith',
+          expect.objectContaining({ fsPath: await fs.promises.realpath(sub) }),
+          'kicadstudio.schematicViewer'
+        );
+        expect(panel.webview.postMessage).toHaveBeenCalledWith({
+          type: 'sheetOpenResult',
+          payload: expect.objectContaining({ ok: true })
+        });
+        (vscode.commands.executeCommand as jest.Mock).mockClear();
+        await panel.fireMessage({
+          type: 'openSchematicSheet',
+          payload: { id: '../outside.kicad_sch' }
+        });
+        expect(vscode.commands.executeCommand).not.toHaveBeenCalled();
+        expect(panel.webview.postMessage).toHaveBeenCalledWith({
+          type: 'sheetOpenResult',
+          payload: expect.objectContaining({ ok: false })
+        });
+        fs.unlinkSync(sub);
+        await panel.fireMessage({
+          type: 'openSchematicSheet',
+          payload: { id: 'sch/child.kicad_sch' }
+        });
+        expect(vscode.commands.executeCommand).not.toHaveBeenCalled();
+        expect(panel.webview.postMessage).toHaveBeenCalledWith({
+          type: 'sheetOpenResult',
+          payload: expect.objectContaining({ ok: false })
+        });
+
+        // Negative cases prove the view cannot request arbitrary files
+        // even with a hand-crafted webview message.
+        await panel.fireMessage({ type: 'openSchematicSheet', payload: {} });
+        await panel.fireMessage({
+          type: 'openSchematicSheet',
+          payload: { id: 'x'.repeat(257) }
+        });
+        await panel.fireMessage({
+          type: 'openSchematicSheet',
+          payload: { id: 'sch/missing.kicad_sch' }
+        });
+        expect(vscode.commands.executeCommand).not.toHaveBeenCalled();
+
+        fs.writeFileSync(root, sheetSource('sch/unexpected.txt'), 'utf8');
+        await panel.fireMessage({
+          type: 'openSchematicSheet',
+          payload: { id: 'sch/unexpected.txt' }
+        });
+        expect(vscode.commands.executeCommand).not.toHaveBeenCalled();
+
+        const outside = path.join(
+          path.dirname(sandbox),
+          path.basename(sandbox) + '-outside.kicad_sch'
+        );
+        try {
+          fs.writeFileSync(outside, '(kicad_sch)', 'utf8');
+          fs.writeFileSync(
+            root,
+            sheetSource('../' + path.basename(outside)),
+            'utf8'
+          );
+          await panel.fireMessage({
+            type: 'openSchematicSheet',
+            payload: { id: '../' + path.basename(outside) }
+          });
+          expect(vscode.commands.executeCommand).not.toHaveBeenCalled();
+        } finally {
+          fs.rmSync(outside, { force: true });
+        }
+
+        fs.writeFileSync(root, sheetSource('sch/folder.kicad_sch'), 'utf8');
+        fs.mkdirSync(path.join(sandbox, 'sch', 'folder.kicad_sch'));
+        await panel.fireMessage({
+          type: 'openSchematicSheet',
+          payload: { id: 'sch/folder.kicad_sch' }
+        });
+        expect(vscode.commands.executeCommand).not.toHaveBeenCalled();
+
+        // No workspace folder is a valid standalone editor context.
+        fs.writeFileSync(root, sheetSource('sch/child.kicad_sch'), 'utf8');
+        fs.writeFileSync(sub, '(kicad_sch)', 'utf8');
+        folderSpy.mockReturnValue(undefined);
+        await panel.fireMessage({
+          type: 'openSchematicSheet',
+          payload: { id: 'sch/child.kicad_sch' }
+        });
+        expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
+          'vscode.openWith',
+          expect.objectContaining({ fsPath: await fs.promises.realpath(sub) }),
+          'kicadstudio.schematicViewer'
+        );
+      } finally {
+        provider.dispose();
+        folderSpy.mockRestore();
+        fs.rmSync(sandbox, { force: true, recursive: true });
+      }
+    });
+  }
+
+  if (_label === 'schematic') {
     it('routes BOM reference focusing to the graphical viewer after it is ready', async () => {
       const provider = new ContextProvider(
         createExtensionContextMock() as unknown as vscode.ExtensionContext

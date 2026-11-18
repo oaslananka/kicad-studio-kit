@@ -367,7 +367,8 @@ describe('createKiCanvasViewerHtml', () => {
     expect(html).toContain(
       "viewer.setAttribute('selected-reference', reference);"
     );
-    expect(html).toContain("viewer.setAttribute('sheet', selectedSheet);");
+    expect(html).toContain("viewer.removeAttribute('sheet');");
+    expect(html).toContain("type: 'openSchematicSheet'");
     expect(html).toContain('postViewerState();');
     expect(html).toContain('function closeExportMenu()');
     expect(html).toContain('closeExportMenu();');

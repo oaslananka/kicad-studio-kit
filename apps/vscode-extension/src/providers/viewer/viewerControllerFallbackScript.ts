@@ -59,6 +59,7 @@ export function createViewerControllerFallbackScript(): string {
         if (Number.isFinite(cameraZoom) && cameraZoom > 0) fittedCameraZoom = cameraZoom;
         localState = { ...localState, zoom: 1 };
         updateZoomLevel();
+        updateSchematicGridOverlay();
         postViewerState();
         return;
       }
@@ -102,6 +103,7 @@ export function createViewerControllerFallbackScript(): string {
           return;
         }
         updateZoomLevel();
+        updateSchematicGridOverlay();
         postViewerState();
         return;
       }
@@ -372,11 +374,11 @@ export function createViewerControllerFallbackScript(): string {
         return getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#001023';
       }
 
-      if (localState.theme === 'light') {
+      if (localState.theme !== 'light') {
         return '#f8fafc';
       }
 
-      return getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#f8fafc';
+      return getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#131218';
     }
 
     async function exportFallbackSvgAsPng() {

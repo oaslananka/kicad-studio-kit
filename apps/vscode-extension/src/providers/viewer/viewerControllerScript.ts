@@ -200,9 +200,16 @@ export function createViewerControllerScript(): string {
       postViewerState();
     });
     sheetSelectEl.addEventListener('change', () => {
-      localState = { ...localState, selectedSheet: sheetSelectEl.value };
-      applyViewerSelectionState(viewerMount.querySelector('kicanvas-embed'));
-      postViewerState();
+      const id = sheetSelectEl.value;
+      sheetSelectEl.value = 'root';
+      if (payload.fileType !== 'schematic' || id === 'root') return;
+      const sheet = (payload.metadata?.sheets || []).find((item) => item.id === id);
+      if (!sheet?.file) {
+        setStatus('This sheet has no resolvable source file. Open in KiCad.');
+        return;
+      }
+      setStatus('Opening ' + sheet.name + ' in a Studio editor…');
+      vscode.postMessage({ type: 'openSchematicSheet', payload: { id } });
     });
     gridToggleBtn.addEventListener('click', () => {
       const nextGrid = !localState.grid;
@@ -366,6 +373,13 @@ export function createViewerControllerScript(): string {
           updateThemeToggle();
         }
         void initViewer(msg.type === 'refresh');
+      }
+      if (msg.type === 'sheetOpenResult') {
+        if (payload.fileType === 'schematic') {
+          setStatus(msg.payload?.ok
+            ? 'Child schematic sheet opened in a separate editor.'
+            : String(msg.payload?.message || 'Unable to open that child sheet. Open in KiCad.'));
+        }
       }
       if (msg.type === 'focusReference' && payload.fileType === 'schematic') {
         const reference = msg.payload?.reference;
