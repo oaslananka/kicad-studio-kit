@@ -124,6 +124,22 @@ test("#623 BoardReadyOps support-matrix evidence matches compatibility metadata"
   assert.equal(documentedVersion, testedVersion);
 });
 
+test("#1004 published and verified KiCad versions remain in one valid runtime table", () => {
+  const supportMatrix = fs.readFileSync("docs/support-matrix.md", "utf8");
+  const runtimeSection = supportMatrix
+    .split("### Runtime Baseline\n")[1]
+    ?.split("\n### KiCad Support")[0]
+    ?.trimStart();
+
+  assert.ok(runtimeSection, "generated runtime baseline section must exist");
+  assert.match(
+    runtimeSection,
+    /^\| Runtime \| Policy \|\n\| --- \| --- \|\n(?:\|[^\n]+\|\n)+\nLatest published release:/u,
+  );
+  assert.match(runtimeSection, /^\| Published stable \| `10\.0\.8` \|$/mu);
+  assert.match(runtimeSection, /^\| Verified baseline \| `10\.0\.7` \|$/mu);
+});
+
 test("Marketplace MCP requirement matches the canonical supported server range", () => {
   const marketplace = fs.readFileSync(
     "apps/vscode-extension/MARKETPLACE.md",
@@ -373,6 +389,63 @@ test("#494 compatibility contract rejects malformed runtime policy metadata", ()
       runtimePolicyExtensionPackage: extensionPackage,
     }).join("\n"),
     /runtimePolicy\.enforcement\.vscode/u,
+  );
+});
+
+test("latest published KiCad stable release is distinct from the full verified canary baseline", () => {
+  assert.equal(compatibility.kicad.latestPublished, "10.0.8");
+  assert.equal(
+    compatibility.kicad.latestPublishedSources.releaseNotes,
+    "https://www.kicad.org/blog/2026/10/KiCad-10.0.8-Release/",
+  );
+  assert.equal(
+    compatibility.kicad.latestPublishedSources.releaseTag,
+    "https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.8",
+  );
+  assert.equal(compatibility.kicad.latestVerified, "10.0.7");
+  assert.equal(compatibility.kicad10FeatureParity.baseline, "10.0.7");
+  assert.deepEqual(validateKiCadPatchBaseline({ compatibility }), []);
+});
+
+test("latest published stable metadata rejects older versions and mismatched upstream sources", () => {
+  const older = structuredClone(compatibility);
+  older.kicad.latestPublished = "10.0.6";
+  older.kicad.latestPublishedSources.releaseNotes =
+    "https://www.kicad.org/blog/2026/08/KiCad-10.0.6-Release/";
+  older.kicad.latestPublishedSources.releaseTag =
+    "https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.6";
+  assert.match(
+    validateKiCadPatchBaseline({ compatibility: older }).join("\n"),
+    /latestPublished must not be older than kicad\.latestVerified/u,
+  );
+
+  const mismatched = structuredClone(compatibility);
+  mismatched.kicad.latestPublishedSources.releaseTag =
+    "https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.7";
+  assert.match(
+    validateKiCadPatchBaseline({ compatibility: mismatched }).join("\n"),
+    /latestPublishedSources\.releaseTag/u,
+  );
+});
+
+test("latest published release metadata rejects prereleases and untrusted release notes", () => {
+  const prerelease = structuredClone(compatibility);
+  prerelease.kicad.latestPublished = "10.0.9-rc1";
+  prerelease.kicad.latestPublishedSources.releaseNotes =
+    "https://www.kicad.org/blog/2026/11/KiCad-10.0.9-rc1/";
+  prerelease.kicad.latestPublishedSources.releaseTag =
+    "https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.9-rc1";
+  assert.match(
+    validateKiCadPatchBaseline({ compatibility: prerelease }).join("\n"),
+    /latestPublished must be a stable major\.minor\.patch version/u,
+  );
+
+  const untrusted = structuredClone(compatibility);
+  untrusted.kicad.latestPublishedSources.releaseNotes =
+    "https://example.com/KiCad-10.0.8-Release/";
+  assert.match(
+    validateKiCadPatchBaseline({ compatibility: untrusted }).join("\n"),
+    /latestPublishedSources\.releaseNotes/u,
   );
 });
 
