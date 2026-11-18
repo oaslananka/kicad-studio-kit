@@ -16,6 +16,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.1](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.0...vscode-extension-v2.7.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* **kicad-studio:** make schematic viewer controls functional ([#1001](https://github.com/oaslananka/kicad-studio-kit/issues/1001)) ([19ce6f4](https://github.com/oaslananka/kicad-studio-kit/commit/19ce6f41a5cb154aa3769ef0aed3da8773c4039c))
+
 ## [2.7.0](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.6.3...vscode-extension-v2.7.0) (2026-11-18)
 
 
