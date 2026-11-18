@@ -220,6 +220,25 @@ describe('buildExportCommands', () => {
       'MountingHole 2.5mm',
       '/project/Custom parts'
     ]);
+
+    // Preserve Unicode project and footprint names as literal CLI arguments.
+    expect(
+      buildExportCommands(
+        'export-fp-svg',
+        '/project/Örnek kartlar.pretty/Direnç_0603.kicad_mod',
+        OUT,
+        OPTIONS
+      )[0]
+    ).toEqual([
+      'fp',
+      'export',
+      'svg',
+      '--output',
+      OUT,
+      '--footprint',
+      'Direnç_0603',
+      '/project/Örnek kartlar.pretty'
+    ]);
   });
 
   it('rejects export formats before their supported KiCad release', () => {
