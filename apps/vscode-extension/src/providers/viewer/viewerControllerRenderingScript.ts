@@ -576,15 +576,20 @@ export function createViewerControllerRenderingScript(): string {
     window.addEventListener('resize', scheduleSchematicGridUpdate);
 
     function updateThemeToggle() {
-      // Bundled KiCanvas uses "kicad" for its pale KiCad schematic palette
-      // and "light" for a dark contrast palette. Reflect the actual drawing,
-      // not the historic internal theme token.
-      const dark = localState.theme === 'light';
-      document.body.dataset.viewerTheme = dark ? 'light' : 'kicad';
-      themeToggleBtn.setAttribute('aria-pressed', dark ? 'true' : 'false');
-      themeToggleBtn.classList.toggle('is-active', dark);
-      themeToggleBtn.textContent = dark ? t('Dark') : t('Light');
-      themeToggleBtn.title = dark ? 'Switch drawing to light theme' : 'Switch drawing to dark theme';
+      // The shipped native schematic KiCanvas maps "light" to its dark
+      // contrast palette; the board renderer and SVG fallback do not.
+      // Report the actual visible color scheme for the active engine,
+      // without changing its existing theme token or pressed-state API.
+      const lightToken = localState.theme === 'light';
+      const nativeSchematic = payload.fileType === 'schematic' &&
+        localState.engine?.kind === 'kicanvas';
+      const visualDark = nativeSchematic ? lightToken : !lightToken;
+      document.body.dataset.viewerTheme = lightToken ? 'light' : 'kicad';
+      themeToggleBtn.setAttribute('aria-pressed', lightToken ? 'true' : 'false');
+      themeToggleBtn.classList.toggle('is-active', lightToken);
+      themeToggleBtn.textContent = visualDark ? t('Dark') : t('Light');
+      themeToggleBtn.title = visualDark
+        ? 'Switch drawing to light theme' : 'Switch drawing to dark theme';
     }
 
     function updateFallbackTheme() {

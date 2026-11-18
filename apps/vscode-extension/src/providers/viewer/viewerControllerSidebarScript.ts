@@ -18,6 +18,7 @@ export function createViewerControllerSidebarScript(): string {
       const engine = createEngineState(kind, reason);
       localState = { ...localState, engine };
       updateEngineUi(engine);
+      updateThemeToggle();
       if (engine.kind !== 'kicanvas') resetNetInspector();
     }
 
