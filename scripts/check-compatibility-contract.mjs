@@ -414,6 +414,46 @@ export function validateKiCadPatchBaseline({
   repoRoot = REPO_ROOT,
 } = {}) {
   const errors = [];
+  const kicad = compatibility?.kicad;
+  const published = kicad?.latestPublished;
+  const publishedVersion = parseKiCadPatchVersion(published);
+  const verifiedVersion = parseKiCadPatchVersion(kicad?.latestVerified);
+  const publishedSources = kicad?.latestPublishedSources;
+
+  if (!publishedVersion || publishedVersion.rc !== undefined) {
+    errors.push(
+      "kicad.latestPublished must be a stable major.minor.patch version",
+    );
+  } else if (
+    verifiedVersion &&
+    comparePatchVersions(publishedVersion, verifiedVersion) < 0
+  ) {
+    errors.push(
+      "kicad.latestPublished must not be older than kicad.latestVerified",
+    );
+  }
+
+  if (
+    typeof publishedSources?.releaseNotes !== "string" ||
+    !publishedSources.releaseNotes.startsWith("https://www.kicad.org/blog/") ||
+    !publishedSources.releaseNotes.includes(String(published ?? ""))
+  ) {
+    errors.push(
+      "kicad.latestPublishedSources.releaseNotes must link to the official release notes for latestPublished",
+    );
+  }
+
+  if (
+    typeof publishedSources?.releaseTag !== "string" ||
+    publishedSources.releaseTag !==
+      "https://github.com/KiCad/kicad-source-mirror/releases/tag/" +
+        String(published ?? "")
+  ) {
+    errors.push(
+      "kicad.latestPublishedSources.releaseTag must match the official source-mirror tag for latestPublished",
+    );
+  }
+
   const stable = compatibility?.kicad?.latestVerified;
   const parity = compatibility?.kicad10FeatureParity;
   const baseline = parity?.baseline;
