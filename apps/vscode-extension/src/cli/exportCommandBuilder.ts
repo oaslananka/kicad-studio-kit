@@ -620,7 +620,20 @@ function buildExportPos(context: ExportCommandBuildContext): string[][] {
 
 function buildExportFpSvg(context: ExportCommandBuildContext): string[][] {
   const { file, outputDir } = context;
-  return [['fp', 'export', 'svg', '--output', outputDir, file]];
+  // KiCad CLI exports footprints from a library directory, not a .kicad_mod file.
+  // Select only the requested footprint so neighboring library items are not exported.
+  return [
+    [
+      'fp',
+      'export',
+      'svg',
+      '--output',
+      outputDir,
+      '--footprint',
+      path.parse(file).name,
+      path.dirname(file)
+    ]
+  ];
 }
 
 function buildExportSymSvg(context: ExportCommandBuildContext): string[][] {

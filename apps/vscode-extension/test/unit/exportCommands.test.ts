@@ -628,7 +628,9 @@ describe('buildCliExportCommands', () => {
       'svg',
       '--output',
       '/project/fab',
-      '/project/R_0603.kicad_mod'
+      '--footprint',
+      'R_0603',
+      '/project'
     ]);
     expect(
       buildCliExportCommands(

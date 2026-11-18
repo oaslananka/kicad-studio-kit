@@ -183,6 +183,45 @@ describe('buildExportCommands', () => {
     expect(pdf3d).not.toContain(path.join(OUT, 'board-pcb.pdf'));
   });
 
+  it('exports a selected footprint from its parent KiCad library', () => {
+    expect(
+      buildExportCommands(
+        'export-fp-svg',
+        '/project/Libraries.pretty/R_0603.kicad_mod',
+        OUT,
+        OPTIONS
+      )[0]
+    ).toEqual([
+      'fp',
+      'export',
+      'svg',
+      '--output',
+      OUT,
+      '--footprint',
+      'R_0603',
+      '/project/Libraries.pretty'
+    ]);
+
+    // KiCad CLI accepts an ordinary directory containing .kicad_mod files.
+    expect(
+      buildExportCommands(
+        'export-fp-svg',
+        '/project/Custom parts/MountingHole 2.5mm.kicad_mod',
+        OUT,
+        OPTIONS
+      )[0]
+    ).toEqual([
+      'fp',
+      'export',
+      'svg',
+      '--output',
+      OUT,
+      '--footprint',
+      'MountingHole 2.5mm',
+      '/project/Custom parts'
+    ]);
+  });
+
   it('rejects export formats before their supported KiCad release', () => {
     for (const kind of [
       'export-step',
