@@ -23,7 +23,7 @@ function fingerprint(file: string): string {
   return createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 }
 
-test('native Windows ERC command is visible from a real schematic custom tab and opens Problems', async () => {
+test('native Windows ERC command is visible from a real schematic custom tab and opens Problems (#1006)', async () => {
   test.skip(
     process.platform !== 'win32' ||
       process.env.KICADSTUDIO_LOCAL_WINDOWS_ACCEPTANCE !== '1' ||
@@ -112,7 +112,7 @@ test('native Windows ERC command is visible from a real schematic custom tab and
         timeout: 12000,
         intervals: [300, 1000, 2000]
       })
-      .toContain('KICAD STUDIO');
+      .toContain('KiCad Studio');
     const sidebar = session.page.locator('.sidebar');
     await expect
       .poll(async () => await sidebar.innerText(), {
