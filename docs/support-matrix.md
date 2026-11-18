@@ -14,12 +14,15 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 | Runtime | Policy |
 | --- | --- |
 | KiCad primary | `10.0.x` |
-| KiCad latest verified | `10.0.7` |
+| Published stable | `10.0.8` |
+| Verified baseline | `10.0.7` |
+
 | VS Code minimum | `1.101.0` |
 | Node | `>=24.11.0 <25` |
 | pnpm | `>=11.0.0 <12` |
 | Python | `>=3.13` |
 | MCP protocol | `2026-07-28` |
+Latest published release: [KiCad 10.0.8 release notes](https://www.kicad.org/blog/2026/10/KiCad-10.0.8-Release/) · [source-mirror tag](https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.8).
 
 ### KiCad Support
 
@@ -134,8 +137,17 @@ Allegro `.brd` import, while current stable CLI help does not advertise
 
 ## KiCad 10.0.7 Feature-Parity Matrix
 
-The current verified primary patch is **10.0.7**. The feature-status
-contract is maintained in `compatibility.yaml` under `kicad10FeatureParity`,
+The latest published stable KiCad patch is **10.0.8**, confirmed by the
+[official release notes](https://www.kicad.org/blog/2026/10/KiCad-10.0.8-Release/)
+and [source-mirror release tag](https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.8).
+The local Windows acceptance host also reports `kicad-cli version` **10.0.8**.
+The [KiCad 10.0.8 Schematic Editor manual](https://docs.kicad.org/10.0/en/eeschema/eeschema.html)
+is the current reference for native view, hierarchy, grid and export behavior.
+The latest complete compatibility canary and feature-parity baseline remains
+**10.0.7** until a full 10.0.8 canary has run; publication and a local version
+probe alone do not prove complete feature parity.
+
+The feature-status contract is maintained in `compatibility.yaml` under `kicad10FeatureParity`,
 with [current 10.0.7 parity notes](compatibility/kicad-10-0-7-feature-parity.md)
 and [live acceptance evidence](evidence/kicad-10-0-7/2026-10-20/summary.md).
 The [10.0.5 feature matrix](compatibility/kicad-10-0-5-feature-parity.md)

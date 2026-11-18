@@ -1,12 +1,19 @@
 schemaVersion: 1
-updated: "2026-09-30"
+updated: "2026-11-18"
 source: "https://github.com/oaslananka/kicad-studio-kit"
 
 kicad:
-  # latestVerified must point to a published KiCad stable release confirmed by
-  # the official KiCad release notes and the KiCad/kicad-source-mirror release
-  # tag. Do not forward-reference patch numbers before both sources exist.
+  # latestPublished records the newest upstream stable patch and its official
+  # release sources. latestVerified remains the newest patch with a complete
+  # compatibility canary and feature-parity evidence; do not forward-reference
+  # either value before its required upstream and local evidence exists.
   primary: "10.0.x"
+  # Published upstream stable release is tracked separately from the last
+  # complete, blocking compatibility canary below.
+  latestPublished: "10.0.8"
+  latestPublishedSources:
+    releaseNotes: "https://www.kicad.org/blog/2026/10/KiCad-10.0.8-Release/"
+    releaseTag: "https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.8"
   latestVerified: "10.0.7"
   supported:
     - range: "10.0.x"
