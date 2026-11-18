@@ -582,7 +582,8 @@ function hashFiles(root: string, relativePaths: string[]): string {
       delete packageMetadata['version'];
       hash.update(JSON.stringify(packageMetadata));
     } else {
-      hash.update(content);
+      // Fingerprint canonical text, not Windows CRLF vs Unix LF checkout bytes.
+      hash.update(content.toString('utf8').replace(/\r\n/gu, '\n'));
     }
     hash.update('\0');
   }

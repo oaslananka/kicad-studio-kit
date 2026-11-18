@@ -171,7 +171,7 @@ describe.each([
         });
         expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
           'vscode.openWith',
-          expect.objectContaining({ fsPath: sub }),
+          expect.objectContaining({ fsPath: fs.realpathSync(sub) }),
           'kicadstudio.schematicViewer'
         );
         expect(panel.webview.postMessage).toHaveBeenCalledWith({
@@ -257,7 +257,7 @@ describe.each([
         });
         expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
           'vscode.openWith',
-          expect.objectContaining({ fsPath: sub }),
+          expect.objectContaining({ fsPath: fs.realpathSync(sub) }),
           'kicadstudio.schematicViewer'
         );
       } finally {
