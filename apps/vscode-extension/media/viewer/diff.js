@@ -1,4 +1,4 @@
-/* global acquireVsCodeApi, atob, customElements, document, TextDecoder, window */
+/* global atob, customElements, TextDecoder */
 (function () {
   const vscode = acquireVsCodeApi();
   const leftContainer = document.getElementById('viewer-left-container');
@@ -63,7 +63,14 @@
     container.appendChild(empty);
   }
 
-  async function renderKiCanvas(container, base64, fileName, fileType, label) {
+  async function renderKiCanvas(
+    container,
+    base64,
+    fileName,
+    fileType,
+    label,
+    subSheets = []
+  ) {
     if (!base64) {
       setEmpty(container, `${label} has no file content for this revision.`);
       return undefined;
@@ -90,6 +97,14 @@
     source.setAttribute('type', fileType === 'board' ? 'board' : 'schematic');
     source.textContent = sourceText;
     viewer.appendChild(source);
+    // KiCanvas uses named sources to resolve hierarchical sheet paths.
+    for (const sheet of subSheets) {
+      const child = document.createElement('kicanvas-source');
+      child.setAttribute('name', sheet.name);
+      child.setAttribute('type', 'schematic');
+      child.textContent = decodeBase64Utf8(sheet.base64);
+      viewer.appendChild(child);
+    }
 
     container.replaceChildren(viewer);
     return viewer;
@@ -206,16 +221,18 @@
       leftViewer = await renderKiCanvas(
         leftContainer,
         payload.beforeBase64,
-        `HEAD:${payload.fileName || 'diff.kicad'}`,
+        payload.fileName || 'diff.kicad',
         fileType,
-        'HEAD'
+        'HEAD',
+        payload.subSheets?.before || []
       );
       rightViewer = await renderKiCanvas(
         rightContainer,
         payload.afterBase64,
-        `Working Tree:${payload.fileName || 'diff.kicad'}`,
+        payload.fileName || 'diff.kicad',
         fileType,
-        'Working Tree'
+        'Working Tree',
+        payload.subSheets?.after || []
       );
       await Promise.all([
         waitForViewer(leftViewer, 'HEAD'),
@@ -282,4 +299,7 @@
 
     showError('Diff viewer runtime error.', reason);
   });
+
+  // Host messages are safe only after the listener above has been installed.
+  vscode.postMessage({ type: 'ready' });
 })();

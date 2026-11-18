@@ -20,6 +20,17 @@ describe('diff viewer assets', () => {
     expect(script).not.toContain("setAttribute('src'");
   });
 
+  it('announces readiness only after the visual diff message listener exists', () => {
+    const script = fs.readFileSync(
+      path.join(root, 'media', 'viewer', 'diff.js'),
+      'utf8'
+    );
+    const listener = script.indexOf("window.addEventListener('message'");
+    const ready = script.indexOf("vscode.postMessage({ type: 'ready' })");
+    expect(listener).toBeGreaterThanOrEqual(0);
+    expect(ready).toBeGreaterThan(listener);
+  });
+
   it('allows KiCanvas blob/worker resources in the diff webview CSP', () => {
     const html = fs.readFileSync(
       path.join(root, 'media', 'viewer', 'diff.html'),
