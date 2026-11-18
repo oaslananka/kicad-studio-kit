@@ -5,6 +5,8 @@ import { bufferToBase64 } from '../utils/fileUtils';
 import { GitDiffDetector } from '../git/gitDiffDetector';
 import { asRecord, asString, hasType } from '../utils/webviewMessages';
 import { createNonce } from '../utils/nonce';
+import { getActiveResourceUri } from '../utils/workspaceUtils';
+import { collectDiffSchematicSheets } from './diffSchematicSources';
 import { injectWebviewLocalization } from '../webviewI18n';
 
 /**
@@ -26,8 +28,8 @@ export class DiffEditorProvider {
 
   /**
    * Open (or reveal) the visual diff panel for the given URI.
-   * Falls back to the active text editor or the first .kicad_sch in the
-   * workspace when no URI is supplied.
+   * Uses the visible KiCad editor tab, then falls back to the first
+   * workspace schematic when no resource is available.
    */
   async show(resource?: vscode.Uri): Promise<void> {
     const filePath = await this.resolveTarget(resource);
@@ -56,25 +58,40 @@ export class DiffEditorProvider {
     );
 
     this.configureWebview(panel.webview);
-    panel.webview.html = this.buildHtml(panel.webview);
     this.panels.set(key, panel);
     panel.onDidDispose(() => this.panels.delete(key));
 
-    panel.webview.onDidReceiveMessage((message: unknown) => {
-      if (!hasType(message, ['navigate', 'refresh', 'copyToClipboard'])) {
+    // Webviews can take longer to initialize when loaded from an installed
+    // VSIX. Posting content before their message handler exists silently
+    // loses the payload, leaving users on "Preparing diff..." forever.
+    let ready = false;
+    panel.webview.onDidReceiveMessage(async (message: unknown) => {
+      if (
+        !hasType(message, ['ready', 'navigate', 'refresh', 'copyToClipboard'])
+      ) {
+        return;
+      }
+      if (message.type === 'ready') {
+        if (!ready) {
+          ready = true;
+          await this.postDiffContent(panel.webview, filePath);
+        }
         return;
       }
       this.handleMessage(message, uri);
     });
 
-    // Toolbar refresh button
+    // Only refresh an already initialized viewer; initial content is sent
+    // after its explicit ready message, not before scripts have booted.
     panel.onDidChangeViewState(async (e) => {
-      if (e.webviewPanel.visible) {
+      if (e.webviewPanel.visible && ready) {
         await this.postDiffContent(panel.webview, filePath);
       }
     });
 
-    await this.postDiffContent(panel.webview, filePath);
+    // Register handlers BEFORE assigning HTML, so a fast ready signal is
+    // never lost either.
+    panel.webview.html = this.buildHtml(panel.webview);
   }
 
   // ─── Internal helpers ─────────────────────────────────────────────────────
@@ -104,6 +121,23 @@ export class DiffEditorProvider {
       const versions = this.detector.readFileVersions(filePath);
       const components = await this.detector.getChangedComponents(filePath);
 
+      const subSheets = filePath.endsWith('.kicad_sch')
+        ? {
+            before: collectDiffSchematicSheets(
+              filePath,
+              versions.beforeText,
+              'beforeText',
+              (file) => this.detector.readFileVersions(file)
+            ),
+            after: collectDiffSchematicSheets(
+              filePath,
+              versions.afterText,
+              'afterText',
+              (file) => this.detector.readFileVersions(file)
+            )
+          }
+        : { before: [], after: [] };
+
       const added = components.filter((c) => c.type === 'added').length;
       const removed = components.filter((c) => c.type === 'removed').length;
       const changed = components.filter((c) => c.type === 'changed').length;
@@ -116,6 +150,16 @@ export class DiffEditorProvider {
           ),
           afterBase64: bufferToBase64(Buffer.from(versions.afterText, 'utf8')),
           components,
+          subSheets: {
+            before: subSheets.before.map((sheet) => ({
+              name: sheet.name,
+              base64: bufferToBase64(Buffer.from(sheet.text, 'utf8'))
+            })),
+            after: subSheets.after.map((sheet) => ({
+              name: sheet.name,
+              base64: bufferToBase64(Buffer.from(sheet.text, 'utf8'))
+            }))
+          },
           summary: `Showing diff: HEAD vs Working Tree — ${added} added, ${removed} removed, ${changed} changed`,
           fileName: path.basename(filePath),
           fileType: filePath.endsWith('.kicad_pcb') ? 'board' : 'schematic'
@@ -269,6 +313,7 @@ export class DiffEditorProvider {
         ).join('');
       }
     });
+    vscode.postMessage({ type: 'ready' });
   </script>
 </body>
 </html>`,
@@ -286,7 +331,10 @@ export class DiffEditorProvider {
     ) {
       return resource.fsPath;
     }
-    const active = vscode.window.activeTextEditor?.document.fileName;
+    // Custom KiCad viewers use webview tabs, not activeTextEditor. Treat the
+    // visible tab as authoritative; an old schematic editor may still be
+    // retained behind the active PCB tab.
+    const active = getActiveResourceUri()?.fsPath;
     if (
       active &&
       (active.endsWith('.kicad_sch') || active.endsWith('.kicad_pcb'))
