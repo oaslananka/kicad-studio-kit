@@ -124,6 +124,22 @@ test("#623 BoardReadyOps support-matrix evidence matches compatibility metadata"
   assert.equal(documentedVersion, testedVersion);
 });
 
+test("published and verified KiCad versions remain in one valid runtime table", () => {
+  const supportMatrix = fs.readFileSync("docs/support-matrix.md", "utf8");
+  const runtimeSection = supportMatrix
+    .split("### Runtime Baseline\n")[1]
+    ?.split("\n### KiCad Support")[0]
+    ?.trimStart();
+
+  assert.ok(runtimeSection, "generated runtime baseline section must exist");
+  assert.match(
+    runtimeSection,
+    /^\| Runtime \| Policy \|\n\| --- \| --- \|\n(?:\|[^\n]+\|\n)+\nLatest published release:/u,
+  );
+  assert.match(runtimeSection, /^\| Published stable \| `10\.0\.8` \|$/mu);
+  assert.match(runtimeSection, /^\| Verified baseline \| `10\.0\.7` \|$/mu);
+});
+
 test("Marketplace MCP requirement matches the canonical supported server range", () => {
   const marketplace = fs.readFileSync(
     "apps/vscode-extension/MARKETPLACE.md",

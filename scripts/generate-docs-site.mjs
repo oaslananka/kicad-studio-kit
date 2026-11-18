@@ -286,7 +286,6 @@ Machine-maintained from \`compatibility.yaml\`. Refresh with
 | KiCad primary | \`${compatibility.kicad.primary}\` |
 | Published stable | \`${compatibility.kicad.latestPublished}\` |
 | Verified baseline | \`${compatibility.kicad.latestVerified}\` |
-
 | VS Code minimum | \`${compatibility.vscode.minimum}\` |
 | Node | \`${compatibility.node.range}\` |
 | pnpm | \`${compatibility.pnpm.range}\` |
@@ -296,6 +295,7 @@ Machine-maintained from \`compatibility.yaml\`. Refresh with
       ? `\n| MCP protocol (next) | \`${compatibility.mcp.nextProtocolVersion}\` |`
       : ""
   }
+
 Latest published release: [KiCad ${compatibility.kicad.latestPublished} release notes](${compatibility.kicad.latestPublishedSources.releaseNotes}) · [source-mirror tag](${compatibility.kicad.latestPublishedSources.releaseTag}).
 
 ### KiCad Support

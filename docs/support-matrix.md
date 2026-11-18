@@ -16,12 +16,12 @@ Machine-maintained from `compatibility.yaml`. Refresh with
 | KiCad primary | `10.0.x` |
 | Published stable | `10.0.8` |
 | Verified baseline | `10.0.7` |
-
 | VS Code minimum | `1.101.0` |
 | Node | `>=24.11.0 <25` |
 | pnpm | `>=11.0.0 <12` |
 | Python | `>=3.13` |
 | MCP protocol | `2026-07-28` |
+
 Latest published release: [KiCad 10.0.8 release notes](https://www.kicad.org/blog/2026/10/KiCad-10.0.8-Release/) · [source-mirror tag](https://github.com/KiCad/kicad-source-mirror/releases/tag/10.0.8).
 
 ### KiCad Support
