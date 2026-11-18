@@ -258,11 +258,10 @@ test.describe('KiCad Studio webview DOM', () => {
       'F.Cu,B.Cu,Edge.Cuts'
     );
 
-    await page.locator('#sheet-select').selectOption('assembly');
-    await expect(page.locator('kicanvas-embed')).toHaveAttribute(
-      'sheet',
-      'assembly'
-    );
+    // A PCB has no child schematic pages. Old mock tests accepted a fake
+    // sheet attribute that the shipped KiCanvas never used.
+    await expect(page.locator('#sheet-select')).toBeDisabled();
+    await expect(page.locator('kicanvas-embed')).not.toHaveAttribute('sheet');
 
     await page.locator('#grid-toggle').click();
     await expect(page.locator('#grid-toggle')).toHaveAttribute(

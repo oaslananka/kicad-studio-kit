@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 import {
   COMMANDS,
+  SCHEMATIC_EDITOR_VIEW_TYPE,
   SETTINGS,
   VIEWER_DEFAULT_LARGE_FILE_THRESHOLD_BYTES,
   VIEWER_HIDDEN_CACHE_RELEASE_MS,
@@ -305,6 +306,79 @@ export abstract class BaseKiCanvasEditorProvider
               COMMANDS.openInKiCad,
               document.uri
             );
+          }
+          if (message.type === 'openSchematicSheet') {
+            const request = asRecord(message.payload);
+            const id = asString(request?.['id']);
+            const respond = async (ok: boolean, message: string) => {
+              await webviewPanel.webview.postMessage({
+                type: 'sheetOpenResult',
+                payload: { ok, message }
+              });
+            };
+            if (this.fileType !== 'schematic' || !id || id.length > 256) {
+              await respond(false, 'Invalid schematic sheet selection.');
+              return;
+            }
+            try {
+              // Resolve against freshly parsed source; a webview-provided
+              // path is never accepted as an authority or opened directly.
+              const stat = await fs.promises.stat(document.uri.fsPath);
+              if (!stat.isFile() || stat.size > 8 * 1024 * 1024) {
+                throw new Error(
+                  'Schematic source is too large for sheet lookup.'
+                );
+              }
+              const sourceText = await fs.promises.readFile(
+                document.uri.fsPath,
+                'utf8'
+              );
+              const sheet = this.buildViewerMetadata(
+                document.uri,
+                sourceText
+              )?.sheets?.find((entry) => entry.id === id);
+              if (
+                !sheet?.file ||
+                path.extname(sheet.file).toLowerCase() !== '.kicad_sch'
+              ) {
+                throw new Error(
+                  'The selected sheet has no valid schematic file.'
+                );
+              }
+              const basePath =
+                vscode.workspace.getWorkspaceFolder(document.uri)?.uri.fsPath ??
+                path.dirname(document.uri.fsPath);
+              const root = await fs.promises.realpath(basePath);
+              const destination = await fs.promises.realpath(
+                path.resolve(path.dirname(document.uri.fsPath), sheet.file)
+              );
+              const relative = path.relative(root, destination);
+              if (
+                !relative ||
+                relative === '..' ||
+                relative.startsWith('..' + path.sep) ||
+                path.isAbsolute(relative)
+              ) {
+                throw new Error(
+                  'The selected sheet is outside the current project.'
+                );
+              }
+              if (!(await fs.promises.stat(destination)).isFile()) {
+                throw new Error('The selected sheet is not a schematic file.');
+              }
+              await vscode.commands.executeCommand(
+                'vscode.openWith',
+                vscode.Uri.file(destination),
+                SCHEMATIC_EDITOR_VIEW_TYPE
+              );
+              await respond(true, 'Opened the selected schematic sheet.');
+            } catch {
+              await respond(
+                false,
+                'Unable to open the selected child schematic. Check its file in KiCad.'
+              );
+            }
+            return;
           }
           if (message.type === 'requestPartialPreview') {
             await this.requestPartialPreview(
@@ -1482,6 +1556,7 @@ const VIEWER_OUTBOUND_MESSAGE_TYPES = [
   'ready',
   'openInKiCad',
   'requestRefresh',
+  'openSchematicSheet',
   'viewerState',
   'selectionChanged',
   'exportPng',

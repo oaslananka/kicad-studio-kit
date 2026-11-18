@@ -538,13 +538,28 @@ function getCaptureVsCodeVersion(): string {
   if (!localExecutable) {
     return '1.122.0';
   }
-  const version =
-    execFileSync(localExecutable, ['--version'], {
-      encoding: 'utf8',
-      timeout: 10000
-    })
-      .trim()
-      .split(/\r?\n/u)[0] ?? '';
+  // Live Windows Extension Development Hosts may hold the VS Code
+  // single-instance mutex. Code.exe --version can then hang despite
+  // being an installed binary. Read its actual Windows VERSIONINFO.
+  const versionOutput =
+    process.platform === 'win32'
+      ? execFileSync(
+          'powershell.exe',
+          [
+            '-NoProfile',
+            '-NonInteractive',
+            '-Command',
+            "(Get-Item -LiteralPath '" +
+              localExecutable.replaceAll("'", "''") +
+              "').VersionInfo.ProductVersion"
+          ],
+          { encoding: 'utf8', timeout: 10000 }
+        )
+      : execFileSync(localExecutable, ['--version'], {
+          encoding: 'utf8',
+          timeout: 10000
+        });
+  const version = versionOutput.trim().split(/\r?\n/u)[0] ?? '';
   if (!/^\d+\.\d+\.\d+$/u.test(version)) {
     throw new Error('Cannot confirm local VS Code capture host version.');
   }

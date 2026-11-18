@@ -372,10 +372,15 @@ export function createViewerControllerSidebarScript(): string {
     }
 
     function getKiCanvasViewer(embed) {
-      // The shipped KiCanvas exposes its board viewer through the shadow-root
-      // app. Keep the mock/older direct shape as a compatibility fallback.
-      // Schematic selection resolves its renderer separately only on demand.
-      return embed?.viewer || embed?.shadowRoot?.querySelector('kc-board-app')?.viewer;
+      // KiCanvas exposes two different app hosts. The embed itself has no
+      // viewer in the shipped build: schematic navigation was silently
+      // targeting the PCB-only host and never reached the visible drawing.
+      return embed?.viewer ||
+        embed?.shadowRoot?.querySelector(
+          payload.fileType === 'schematic' ? 'kc-schematic-app' : 'kc-board-app'
+        )?.viewer ||
+        embed?.shadowRoot?.querySelector('kc-schematic-app')
+          ?.shadowRoot?.querySelector('kc-schematic-viewer')?.viewer;
     }
 
     function repairSchematicCanvasLayout(embed) {
