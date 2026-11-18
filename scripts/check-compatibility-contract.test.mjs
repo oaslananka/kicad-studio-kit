@@ -124,7 +124,7 @@ test("#623 BoardReadyOps support-matrix evidence matches compatibility metadata"
   assert.equal(documentedVersion, testedVersion);
 });
 
-test("published and verified KiCad versions remain in one valid runtime table", () => {
+test("#1004 published and verified KiCad versions remain in one valid runtime table", () => {
   const supportMatrix = fs.readFileSync("docs/support-matrix.md", "utf8");
   const runtimeSection = supportMatrix
     .split("### Runtime Baseline\n")[1]
