@@ -46,7 +46,7 @@ test('native A4: Settings UI CLI correction refreshes status bar and BOM in the 
       await page.keyboard.press('Control+Shift+P');
       const picker = page.locator('.quick-input-widget');
       await expect(picker).toBeVisible();
-      await picker.locator('input').fill('>Bill of Materials');
+      await picker.locator('input').fill('>Export');
       await picker.getByText('Export Bill of Materials (CSV)').first().click();
     };
     await exportBom();

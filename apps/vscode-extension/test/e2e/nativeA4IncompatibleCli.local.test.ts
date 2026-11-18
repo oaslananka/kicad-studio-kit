@@ -44,7 +44,7 @@ test('native A4: incompatible BOM CLI fails with actionable install/config guida
     await session.page.keyboard.press('Control+Shift+P');
     const picker = session.page.locator('.quick-input-widget');
     await expect(picker).toBeVisible();
-    await picker.locator('input').fill('>Bill of Materials');
+    await picker.locator('input').fill('>Export');
     await expect(picker).toContainText('Export Bill of Materials (CSV)', {
       timeout: 6000
     });

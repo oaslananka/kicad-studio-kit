@@ -158,7 +158,7 @@ test('keeps exactly four task-oriented primary views without removing advanced v
   );
 });
 
-test('makes core schematic exports discoverable immediately using native workspace/trust contexts', () => {
+test('makes core schematic exports discoverable with the verified extension trust context', () => {
   const palette = paletteMap();
   for (const command of [
     'kicadstudio.exportPDF',
@@ -170,7 +170,7 @@ test('makes core schematic exports discoverable immediately using native workspa
   ]) {
     assert.equal(
       palette.get(command),
-      'isWorkspaceTrusted && workspaceFolderCount > 0',
+      'kicadstudio.workspaceTrusted && workspaceFolderCount > 0',
       `${command} must be discoverable when a trusted folder is open`
     );
   }

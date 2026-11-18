@@ -142,3 +142,36 @@ function createPcmPackage(): PcmPackage {
     state: 'available'
   };
 }
+
+describe('CLI detection walkthrough truthfulness', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    workspace.isTrusted = true;
+  });
+
+  afterEach(() => {
+    workspace.isTrusted = true;
+  });
+
+  for (const available of [true, false]) {
+    it(`reflects CLI detection result ${available} rather than command invocation`, async () => {
+      const cli = available ? { version: '10.0.8' } : undefined;
+      const detect = jest.fn().mockResolvedValue(cli);
+      const update = jest.fn();
+      registerViewerCommands({
+        cliDetector: { detect },
+        statusBar: { update }
+      } as never);
+      const handler = handlerFor(COMMANDS.detectCli);
+      expect(handler).toEqual(expect.any(Function));
+      await handler?.();
+      expect(detect).toHaveBeenCalledWith(true);
+      expect(update).toHaveBeenCalledWith({ cli });
+      expect(commands.executeCommand).toHaveBeenCalledWith(
+        'setContext',
+        'kicadstudio.cliDetected',
+        available
+      );
+    });
+  }
+});

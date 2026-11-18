@@ -170,6 +170,7 @@
       "test/unit/activationControllers.test.ts",
       "test/unit/saveCheckController.test.ts",
       "test/unit/contextRefreshPerf.test.ts",
+      "test/unit/workspaceWalkthroughContext.test.ts",
       "test/unit/exportCommands.test.ts",
       "test/unit/nativeInnerCopperService.test.ts",
       "test/unit/viewerProviders.test.ts",

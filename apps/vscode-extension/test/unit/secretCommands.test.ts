@@ -25,6 +25,7 @@ describe('registerSecretCommands', () => {
     ctx = createExtensionContextMock();
     services = {
       context: ctx,
+      refreshContexts: jest.fn().mockResolvedValue(undefined),
       aiProviders: {
         setApiKey: jest.fn(),
         clearApiKey: jest.fn(),
@@ -79,6 +80,7 @@ describe('registerSecretCommands', () => {
         'openai',
         'sk-test-123'
       );
+      expect(services.refreshContexts).toHaveBeenCalledTimes(1);
     });
 
     it('uses the configured provider without prompting when already set', async () => {
@@ -99,6 +101,7 @@ describe('registerSecretCommands', () => {
       await handler(COMMANDS.setAiApiKey)();
 
       expect(services.aiProviders.setApiKey).not.toHaveBeenCalled();
+      expect(services.refreshContexts).not.toHaveBeenCalled();
     });
   });
 
@@ -112,6 +115,7 @@ describe('registerSecretCommands', () => {
       await handler(COMMANDS.clearAiKey)();
 
       expect(services.aiProviders.clearApiKey).toHaveBeenCalledWith('claude');
+      expect(services.refreshContexts).toHaveBeenCalledTimes(1);
     });
   });
 

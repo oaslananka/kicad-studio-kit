@@ -15,7 +15,7 @@ import {
 import { BomParser } from '../../src/bom/bomParser';
 import { SExpressionParser } from '../../src/language/sExpressionParser';
 import { zipDirectory } from '../../src/utils/zipUtils';
-import { __setConfiguration } from './vscodeMock';
+import { __setConfiguration, commands, window } from './vscodeMock';
 
 describe('buildCliExportCommands', () => {
   beforeEach(() => {
@@ -1955,6 +1955,124 @@ describe('KiCadExportService vanished CLI after successful detection', () => {
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
       __setConfiguration({});
+    }
+  });
+});
+
+describe('KiCadExportService manufacturing walkthrough progress', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  async function setup() {
+    const root = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'kicadstudio-walkthrough-package-')
+    );
+    const pcb = path.join(root, 'source.kicad_pcb');
+    const output = path.join(root, 'fab');
+    fs.writeFileSync(pcb, '(kicad_pcb (version 20240108))', 'utf8');
+    const detector = { hasCapability: jest.fn().mockResolvedValue(false) };
+    const logger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn()
+    };
+    const service = new KiCadExportService(
+      {} as never,
+      detector as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      logger as never
+    );
+    const runner = jest.fn(async () => {
+      // KiCad CLI supplies Gerbers and drill output before successful archive creation.
+      const stage = path.join(output, 'source-generic-manufacturing');
+      fs.mkdirSync(stage, { recursive: true });
+      fs.writeFileSync(
+        path.join(stage, 'source-F_Cu.gbr'),
+        'G04 KiCad fixture*',
+        'utf8'
+      );
+      return true;
+    });
+    Object.assign(service, {
+      runCommandSequence: runner,
+      getBuildOptions: jest.fn().mockResolvedValue({
+        versionMajor: 10,
+        gerberLayers: ['F.Cu', 'B.Cu']
+      }),
+      findSiblingSchematic: jest.fn().mockResolvedValue(undefined),
+      tryResolveOutputDir: jest.fn().mockReturnValue(output),
+      showOutputFolder: jest.fn().mockResolvedValue(undefined)
+    });
+    return { root, pcb, output, service, runner };
+  }
+
+  it('marks completed only after real nonempty ZIP output', async () => {
+    const state = await setup();
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce({
+      label: 'generic'
+    });
+    try {
+      await state.service.exportManufacturingPackage(
+        vscode.Uri.file(state.pcb)
+      );
+      const zip = path.join(state.output, 'source-generic-manufacturing.zip');
+      expect(fs.existsSync(zip)).toBe(true);
+      expect(fs.statSync(zip).size).toBeGreaterThan(0);
+      expect(state.runner).toHaveBeenCalledTimes(1);
+      expect(commands.executeCommand).toHaveBeenCalledWith(
+        'setContext',
+        'kicadstudio.walkthroughManufacturingExported',
+        true
+      );
+    } finally {
+      fs.rmSync(state.root, { recursive: true, force: true });
+    }
+  });
+
+  it('does not advance walkthrough if KiCad CLI output fails', async () => {
+    const state = await setup();
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce({
+      label: 'generic'
+    });
+    state.runner.mockResolvedValueOnce(false);
+    try {
+      await state.service.exportManufacturingPackage(
+        vscode.Uri.file(state.pcb)
+      );
+      expect(commands.executeCommand).not.toHaveBeenCalledWith(
+        'setContext',
+        'kicadstudio.walkthroughManufacturingExported',
+        true
+      );
+      expect(
+        fs.existsSync(
+          path.join(state.output, 'source-generic-manufacturing.zip')
+        )
+      ).toBe(false);
+    } finally {
+      fs.rmSync(state.root, { recursive: true, force: true });
+    }
+  });
+
+  it('does not advance walkthrough when user cancels the manufacturing profile picker', async () => {
+    const state = await setup();
+    (window.showQuickPick as jest.Mock).mockResolvedValueOnce(undefined);
+    try {
+      await state.service.exportManufacturingPackage(
+        vscode.Uri.file(state.pcb)
+      );
+      expect(state.runner).not.toHaveBeenCalled();
+      expect(commands.executeCommand).not.toHaveBeenCalledWith(
+        'setContext',
+        'kicadstudio.walkthroughManufacturingExported',
+        true
+      );
+    } finally {
+      fs.rmSync(state.root, { recursive: true, force: true });
     }
   });
 });

@@ -52,6 +52,7 @@ export function registerSecretCommands(
         return;
       }
       await services.aiProviders.setApiKey(provider, value);
+      await services.refreshContexts();
       void vscode.window.showInformationMessage(
         `${formatProviderName(provider)} API key stored securely.`
       );
@@ -63,6 +64,7 @@ export function registerSecretCommands(
         return;
       }
       await services.aiProviders.clearApiKey(provider);
+      await services.refreshContexts();
       void vscode.window.showInformationMessage(
         `${formatProviderName(provider)} API key cleared.`
       );

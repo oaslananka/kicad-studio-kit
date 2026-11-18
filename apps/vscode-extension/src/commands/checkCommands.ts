@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { COMMANDS } from '../constants';
+import { COMMANDS, CONTEXT_KEYS } from '../constants';
 import { resolveTargetFile } from '../utils/workspaceUtils';
 import { registerTrustedCommand } from '../utils/workspaceTrust';
 import type { CommandServices } from './types';
@@ -27,6 +27,11 @@ export function registerCheckCommands(
         try {
           const result = await services.checkService.runDRC(file);
           applyValidationResult(services, file, result);
+          await vscode.commands.executeCommand(
+            'setContext',
+            CONTEXT_KEYS.walkthroughValidationComplete,
+            true
+          );
           services.setLatestDrcRun({
             file,
             diagnostics: result.diagnostics,
@@ -78,6 +83,11 @@ export function registerCheckCommands(
         try {
           const result = await services.checkService.runERC(file);
           applyValidationResult(services, file, result);
+          await vscode.commands.executeCommand(
+            'setContext',
+            CONTEXT_KEYS.walkthroughValidationComplete,
+            true
+          );
           if (result.diagnostics.length > 0) {
             await vscode.commands.executeCommand(
               'workbench.action.problems.focus'
