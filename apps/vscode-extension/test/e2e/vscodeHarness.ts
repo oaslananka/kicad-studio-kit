@@ -1,8 +1,13 @@
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import {
+  execFile,
+  spawn,
+  type ChildProcessWithoutNullStreams
+} from 'node:child_process';
 import * as fs from 'node:fs';
 import * as net from 'node:net';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import { promisify } from 'node:util';
 import { downloadAndUnzipVSCode } from '@vscode/test-electron';
 import {
   chromium,
@@ -15,6 +20,7 @@ import { downloadVsCodeWithRetry } from '../vscodeTestRuntime';
 import { installFakeKiCadCli } from './fakeKiCadCli';
 
 const VSCODE_VERSION = '1.122.0';
+const execFileAsync = promisify(execFile);
 
 export interface VsCodeSession {
   browser: Browser;
@@ -110,6 +116,9 @@ export async function launchVsCodeWithFixtures(
     {
       cwd: rootDir,
       env,
+      // An isolated process group lets teardown terminate VS Code's Electron
+      // helpers even when its launcher exits and the children are reparented.
+      detached: process.platform !== 'win32',
       stdio: ['ignore', 'pipe', 'pipe']
     }
   );
@@ -156,10 +165,13 @@ export async function launchVsCodeWithFixtures(
     };
   } catch (error) {
     if (browser) {
-      await browser.close().catch(() => undefined);
+      await closeBrowserBounded(browser);
     }
-    await killProcess(child);
-    await cleanupDirectories([workspaceRoot, userDataDir, extensionsDir]);
+    try {
+      await cleanupTestProcess(child, userDataDir);
+    } finally {
+      await cleanupDirectories([workspaceRoot, userDataDir, extensionsDir]);
+    }
     throw error;
   }
 }
@@ -192,26 +204,148 @@ async function closeSession(
   child: ChildProcessWithoutNullStreams,
   directories: string[]
 ): Promise<void> {
-  await browser.close().catch(() => undefined);
-  await killProcess(child);
-  await cleanupDirectories(directories);
+  await closeBrowserBounded(browser);
+  try {
+    await cleanupTestProcess(child, directories[1]!);
+  } finally {
+    await cleanupDirectories(directories);
+  }
+}
+
+async function closeBrowserBounded(browser: Browser): Promise<void> {
+  await Promise.race([
+    browser.close().catch(() => undefined),
+    new Promise<void>((resolve) => setTimeout(resolve, 2000))
+  ]);
+}
+
+async function cleanupTestProcess(
+  child: ChildProcessWithoutNullStreams,
+  userDataDir: string
+): Promise<void> {
+  try {
+    await killProcess(child);
+  } finally {
+    // The VS Code launcher can detach and reparent a second Electron process
+    // after its original PID has exited. Isolated process-group teardown alone
+    // cannot see that process. Sweep by this session's unique user-data-dir.
+    await terminateSessionByProfile(userDataDir);
+  }
+}
+
+async function terminateSessionByProfile(userDataDir: string): Promise<void> {
+  if (process.platform === 'win32') {
+    const script =
+      '$profilePath = $env:KICADSTUDIO_TEST_PROFILE; ' +
+      'Get-CimInstance Win32_Process | Where-Object { ' +
+      '$_.CommandLine -and $_.CommandLine.Contains($profilePath) -and ' +
+      '$_.CommandLine.Contains("--user-data-dir") ' +
+      '} | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }';
+    await execFileAsync(
+      'powershell.exe',
+      ['-NoProfile', '-NonInteractive', '-Command', script],
+      {
+        windowsHide: true,
+        timeout: 10000,
+        env: { ...process.env, KICADSTUDIO_TEST_PROFILE: userDataDir }
+      }
+    );
+    return;
+  }
+  if (process.platform !== 'linux') return;
+
+  const findSessionPids = (): number[] => {
+    const expected = Buffer.from(`--user-data-dir=${userDataDir}`);
+    const crashpad = Buffer.from(`${userDataDir}/Crashpad`);
+    const pids: number[] = [];
+    for (const item of fs.readdirSync('/proc', { withFileTypes: true })) {
+      if (!item.isDirectory() || !/^\d+$/u.test(item.name)) continue;
+      const pid = Number(item.name);
+      if (pid === process.pid || pid === process.ppid) continue;
+      try {
+        const commandLine = fs.readFileSync(`/proc/${pid}/cmdline`);
+        if (
+          !commandLine.includes(expected) &&
+          !commandLine.includes(crashpad)
+        ) {
+          continue;
+        }
+        const executable = path.basename(fs.readlinkSync(`/proc/${pid}/exe`));
+        if (
+          executable === 'code' ||
+          executable === 'code-insiders' ||
+          executable === 'chrome_crashpad_handler'
+        ) {
+          pids.push(pid);
+        }
+      } catch {
+        // Processes can exit while /proc is being enumerated.
+      }
+    }
+    return pids;
+  };
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const pids = findSessionPids();
+    if (!pids.length) return;
+    for (const pid of pids) {
+      try {
+        process.kill(pid, attempt === 0 ? 'SIGTERM' : 'SIGKILL');
+      } catch (error) {
+        if (!isMissingProcess(error)) throw error;
+      }
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 300));
+  }
+  const remaining = findSessionPids();
+  if (remaining.length) {
+    throw new Error(
+      `VS Code test profile still has running processes: ${remaining.join(', ')}`
+    );
+  }
 }
 
 async function killProcess(
   child: ChildProcessWithoutNullStreams
 ): Promise<void> {
-  if (child.killed || child.exitCode !== null) {
+  const pid = child.pid;
+  if (!pid) return;
+
+  if (process.platform === 'win32') {
+    // Unlike child.kill(), taskkill /T also terminates VS Code's Electron
+    // helpers. The PID is from this session's own spawned process only.
+    await execFileAsync('taskkill', ['/PID', String(pid), '/T', '/F'], {
+      windowsHide: true,
+      timeout: 5000
+    }).catch(() => undefined);
     return;
   }
 
-  child.kill();
-  await new Promise<void>((resolve) => {
-    const timer = setTimeout(() => resolve(), 5000);
-    child.once('exit', () => {
-      clearTimeout(timer);
-      resolve();
-    });
-  });
+  // Even if the launcher has already exited, its reparented Electron workers
+  // can remain in the isolated process group. Never return just because the
+  // child exited; close the entire group owned by this session.
+  try {
+    process.kill(-pid, 'SIGTERM');
+  } catch (error) {
+    if (!isMissingProcess(error)) throw error;
+    return;
+  }
+
+  await new Promise<void>((resolve) => setTimeout(resolve, 500));
+  try {
+    process.kill(-pid, 'SIGKILL');
+  } catch (error) {
+    if (!isMissingProcess(error)) throw error;
+  }
+}
+
+function isMissingProcess(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === 'ESRCH'
+  );
 }
 
 async function cleanupDirectories(directories: string[]): Promise<void> {
