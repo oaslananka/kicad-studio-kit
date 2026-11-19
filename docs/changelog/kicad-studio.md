@@ -16,6 +16,14 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.4](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.3...vscode-extension-v2.7.4) (2026-11-19)
+
+
+### Bug Fixes
+
+* honor KiCad jobset destinations and stop-on-error ([3611783](https://github.com/oaslananka/kicad-studio-kit/commit/361178369550d92e1e54be8c5aefc386522bfe0e))
+* **kicad-studio:** run jobsets using configured destinations ([#1017](https://github.com/oaslananka/kicad-studio-kit/issues/1017)) ([3611783](https://github.com/oaslananka/kicad-studio-kit/commit/361178369550d92e1e54be8c5aefc386522bfe0e))
+
 ## [2.7.3](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.2...vscode-extension-v2.7.3) (2026-11-19)
 
 
