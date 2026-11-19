@@ -16,6 +16,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.8](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.7...vscode-extension-v2.7.8) (2026-11-19)
+
+
+### Bug Fixes
+
+* **import:** surface KiCad source-layer warnings after conversion ([#1030](https://github.com/oaslananka/kicad-studio-kit/issues/1030)) ([d383318](https://github.com/oaslananka/kicad-studio-kit/commit/d383318ae5085e81ccc3068adea1b4d96549c515)), closes [#1029](https://github.com/oaslananka/kicad-studio-kit/issues/1029)
+
 ## [2.7.7](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.6...vscode-extension-v2.7.7) (2026-11-19)
 
 
