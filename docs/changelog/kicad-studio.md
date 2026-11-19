@@ -16,6 +16,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.5](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.4...vscode-extension-v2.7.5) (2026-11-19)
+
+
+### Bug Fixes
+
+* **kicad-studio:** validate Eagle imports and repair undefined drawing layers ([3b5a236](https://github.com/oaslananka/kicad-studio-kit/commit/3b5a23684168d6a2294e317abb2dd4553d474f20))
+
 ## [2.7.4](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.3...vscode-extension-v2.7.4) (2026-11-19)
 
 
