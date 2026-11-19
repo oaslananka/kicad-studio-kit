@@ -79,36 +79,45 @@ function readListTag(text: string, openParenIndex: number): string {
   return text.slice(start, cursor);
 }
 
+function skipQuotedValue(
+  text: string,
+  openingQuote: number
+): number | undefined {
+  for (let index = openingQuote + 1; index < text.length; index++) {
+    if (text[index] === '\\') {
+      index++;
+      continue;
+    }
+    if (text[index] === '"') {
+      return index;
+    }
+  }
+  return undefined;
+}
+
 function scanDrawingLayerContexts(text: string): {
   safeCount: number;
   complete: boolean;
 } {
   const stack: string[] = [];
-  let inString = false;
   let invalidNesting = false;
   let safeCount = 0;
 
-  // Track enclosing S-expressions. Never inspect layer-looking text inside
-  // quoted property values or reinterpret copper/milling attributes.
+  // Track enclosing S-expressions. Skip quoted values entirely so their
+  // parentheses and layer-looking text can never affect parent matching.
   for (let index = 0; index < text.length; index++) {
     const char = text[index];
-    if (inString) {
-      if (char === '\\') {
-        index++;
-      } else if (char === '"') {
-        inString = false;
-      }
-      continue;
-    }
     if (char === '"') {
-      inString = true;
+      const closingQuote = skipQuotedValue(text, index);
+      if (closingQuote === undefined) {
+        return { safeCount, complete: false };
+      }
+      index = closingQuote;
       continue;
     }
     if (char === ')') {
-      if (stack.length === 0) {
+      if (stack.pop() === undefined) {
         invalidNesting = true;
-      } else {
-        stack.pop();
       }
       continue;
     }
@@ -124,8 +133,5 @@ function scanDrawingLayerContexts(text: string): {
     stack.push(readListTag(text, index));
   }
 
-  return {
-    safeCount,
-    complete: !inString && !invalidNesting && stack.length === 0
-  };
+  return { safeCount, complete: !invalidNesting && stack.length === 0 };
 }
