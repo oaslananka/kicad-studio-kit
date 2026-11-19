@@ -26,7 +26,25 @@ describe('KiCadImportService', () => {
     } = {}
   ) {
     const runner = {
-      runWithProgress: jest.fn().mockResolvedValue('ok'),
+      // Stub an actual output file: a successful process alone is not a
+      // successful import if the expected KiCad artifact was never written.
+      runWithProgress: jest
+        .fn()
+        .mockImplementation(async ({ command }: { command: string[] }) => {
+          const outputIndex = command.indexOf('--output');
+          if (outputIndex >= 0) {
+            const target = command[outputIndex + 1];
+            if (target) {
+              fs.writeFileSync(
+                target,
+                command[1] === 'import'
+                  ? '(kicad_pcb (layers (0 "F.Cu" signal)))'
+                  : '<svg xmlns="http://www.w3.org/2000/svg"><rect width="200" height="200"/></svg>'
+              );
+            }
+          }
+          return 'ok';
+        }),
       ...overrides.runner
     };
     const detector = {
@@ -113,7 +131,9 @@ describe('KiCadImportService', () => {
       expect.stringContaining('does not advertise Allegro PCB import support')
     );
     expect(window.showWarningMessage).toHaveBeenCalledWith(
-      expect.stringContaining('KiCad 10 PCB Editor supports Allegro .brd import')
+      expect.stringContaining(
+        'KiCad 10 PCB Editor supports Allegro .brd import'
+      )
     );
     expect(window.showOpenDialog).not.toHaveBeenCalled();
     expect(runner.runWithProgress).not.toHaveBeenCalled();
@@ -292,5 +312,154 @@ describe('KiCadImportService', () => {
     expect(window.showErrorMessage).toHaveBeenCalledTimes(1);
     expect(commands.executeCommand).not.toHaveBeenCalled();
     expect(window.showInformationMessage).not.toHaveBeenCalled();
+  });
+
+  const undefinedGraphics =
+    '(kicad_pcb (footprint "A" (fp_line (start 1 2) (end 3 4) (layer "UNDEFINED"))))';
+
+  function prepareEagleImport(contents: string) {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kicad-eagle-repair-'));
+    const input = path.join(tempDir, 'prototype.brd');
+    const output = path.join(tempDir, 'prototype.kicad_pcb');
+    fs.writeFileSync(input, '<eagle/>');
+    const runWithProgress = jest
+      .fn()
+      .mockImplementation(async ({ command }: { command: string[] }) => {
+        if (command[1] === 'import') {
+          fs.writeFileSync(output, contents);
+        } else if (command[1] === 'export') {
+          const file = command[command.indexOf('--output') + 1];
+          if (!file) throw new Error('Missing expected SVG output path');
+          fs.writeFileSync(file, '<svg>' + ' '.repeat(180) + '</svg>');
+        }
+        return 'ok';
+      });
+    const { service } = createService({
+      runner: { runWithProgress },
+      detector: {
+        hasCapability: jest.fn().mockResolvedValue(true),
+        getCommandHelp: jest
+          .fn()
+          .mockResolvedValue('Usage: pcb import --format pads|eagle')
+      }
+    });
+    (window.showOpenDialog as jest.Mock).mockResolvedValue([Uri.file(input)]);
+    return { service, input, output, runWithProgress };
+  }
+
+  it('offers optional graphic-only repair, preserves the original import and verifies using KiCad CLI', async () => {
+    const { service, output, runWithProgress } =
+      prepareEagleImport(undefinedGraphics);
+    (window.showWarningMessage as jest.Mock).mockResolvedValue(
+      'Repair drawing layers'
+    );
+
+    await service.importBoard('eagle');
+
+    expect(runWithProgress).toHaveBeenCalledTimes(2);
+    expect(runWithProgress).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        command: expect.arrayContaining(['pcb', 'export', 'svg']),
+        progressTitle: 'Validating imported PCB drawings'
+      })
+    );
+    expect(fs.readFileSync(output, 'utf8')).toContain('(layer "Dwgs.User")');
+    expect(fs.readFileSync(output + '.unmapped-original', 'utf8')).toBe(
+      undefinedGraphics
+    );
+    expect(commands.executeCommand).toHaveBeenCalledWith(
+      'vscode.open',
+      expect.objectContaining({
+        fsPath: path.join(tempDir!, 'prototype.kicad_pro')
+      })
+    );
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Review the layers and run DRC')
+    );
+  });
+
+  it('does not modify unmapped graphic imports when the user declines repair', async () => {
+    const { service, output, runWithProgress } =
+      prepareEagleImport(undefinedGraphics);
+    (window.showWarningMessage as jest.Mock).mockResolvedValue(undefined);
+
+    await service.importBoard('eagle');
+
+    expect(fs.readFileSync(output, 'utf8')).toBe(undefinedGraphics);
+    expect(fs.existsSync(output + '.unmapped-original')).toBe(false);
+    expect(runWithProgress).toHaveBeenCalledTimes(1);
+    expect(commands.executeCommand).not.toHaveBeenCalled();
+    expect(window.showInformationMessage).not.toHaveBeenCalled();
+  });
+
+  it('refuses automatic repair for undefined copper or unknown layer contexts', async () => {
+    const dangerous = '(kicad_pcb (segment (start 1 2) (layer "UNDEFINED")))';
+    const { service, output, runWithProgress } = prepareEagleImport(dangerous);
+    await service.importBoard('eagle');
+    expect(fs.readFileSync(output, 'utf8')).toBe(dangerous);
+    expect(runWithProgress).toHaveBeenCalledTimes(1);
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('cannot safely be remapped')
+    );
+    expect(commands.executeCommand).not.toHaveBeenCalled();
+    expect(window.showInformationMessage).not.toHaveBeenCalled();
+  });
+
+  it('leaves the imported bytes unchanged when repaired-board CLI validation fails', async () => {
+    const { service, output, runWithProgress } =
+      prepareEagleImport(undefinedGraphics);
+    runWithProgress.mockImplementation(
+      async ({ command }: { command: string[] }) => {
+        if (command[1] === 'import') {
+          fs.writeFileSync(output, undefinedGraphics);
+          return 'ok';
+        }
+        throw new Error('KiCad validation failed');
+      }
+    );
+    (window.showWarningMessage as jest.Mock).mockResolvedValue(
+      'Repair drawing layers'
+    );
+
+    await service.importBoard('eagle');
+
+    expect(fs.readFileSync(output, 'utf8')).toBe(undefinedGraphics);
+    expect(fs.existsSync(output + '.unmapped-original')).toBe(false);
+    expect(commands.executeCommand).not.toHaveBeenCalled();
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'KiCad validation failed'
+    );
+  });
+
+  it('does not misreport success when the CLI process created no output', async () => {
+    const { service } = prepareEagleImport('(kicad_pcb)');
+    (
+      service as unknown as { runner: { runWithProgress: jest.Mock } }
+    ).runner.runWithProgress.mockResolvedValue('ok');
+
+    await service.importBoard('eagle');
+
+    expect(commands.executeCommand).not.toHaveBeenCalled();
+    expect(window.showInformationMessage).not.toHaveBeenCalled();
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'KiCad reported an import, but no nonempty PCB file was created.'
+    );
+  });
+
+  it('protects an existing KiCad PCB against a new import overwrite', async () => {
+    const { service, output, runWithProgress } =
+      prepareEagleImport('(kicad_pcb)');
+    const previous = '(kicad_pcb (board_original yes))';
+    fs.writeFileSync(output, previous, 'utf8');
+
+    await service.importBoard('eagle');
+
+    expect(fs.readFileSync(output, 'utf8')).toBe(previous);
+    expect(runWithProgress).not.toHaveBeenCalled();
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('already exists')
+    );
+    expect(commands.executeCommand).not.toHaveBeenCalled();
   });
 });
