@@ -2078,3 +2078,106 @@ describe('KiCadExportService manufacturing walkthrough progress', () => {
     }
   });
 });
+
+describe('KiCad jobset execution', () => {
+  it.each([true, false])(
+    'runs every configured jobset destination without treating its output as a directory (stopOnError=%s)',
+    async (stopOnError) => {
+      jest.clearAllMocks();
+      __setConfiguration({ 'kicadstudio.jobset.stopOnError': stopOnError });
+      const root = fs.mkdtempSync(
+        path.join(os.tmpdir(), 'kicad-jobset-contract-')
+      );
+      const jobset = path.join(root, 'release.kicad_jobset');
+      const project = path.join(root, 'release.kicad_pro');
+      fs.writeFileSync(
+        jobset,
+        '{"meta":{"version":1},"jobs":[],"outputs":[]}',
+        'utf8'
+      );
+      fs.writeFileSync(project, '{}', 'utf8');
+      const runner = { runWithProgress: jest.fn().mockResolvedValue('Done.') };
+      const detector = { hasCapability: jest.fn().mockResolvedValue(true) };
+      const logger = {
+        debug: jest.fn(),
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn()
+      };
+      const service = new KiCadExportService(
+        runner as never,
+        detector as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        logger as never
+      );
+      try {
+        await service.runJobset(vscode.Uri.file(jobset));
+
+        expect(detector.hasCapability).toHaveBeenCalledWith('jobset');
+        expect(runner.runWithProgress).toHaveBeenCalledWith({
+          command: [
+            'jobset',
+            'run',
+            ...(stopOnError ? ['--stop-on-error'] : []),
+            '--file',
+            jobset,
+            project
+          ],
+          cwd: root,
+          progressTitle: 'Running jobset release.kicad_jobset'
+        });
+        expect(window.showQuickPick).not.toHaveBeenCalled();
+        expect(window.showOpenDialog).not.toHaveBeenCalled();
+        expect(window.showInformationMessage).toHaveBeenCalledWith(
+          'Jobset "release.kicad_jobset" completed. Outputs were saved to the destinations configured in the jobset.'
+        );
+      } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+        __setConfiguration({});
+      }
+    }
+  );
+
+  it('reports CLI failures without claiming the jobset completed', async () => {
+    jest.clearAllMocks();
+    __setConfiguration({});
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kicad-jobset-error-'));
+    const jobset = path.join(root, 'release.kicad_jobset');
+    const project = path.join(root, 'release.kicad_pro');
+    fs.writeFileSync(
+      jobset,
+      '{"meta":{"version":1},"jobs":[],"outputs":[]}',
+      'utf8'
+    );
+    fs.writeFileSync(project, '{}', 'utf8');
+    const runner = {
+      runWithProgress: jest.fn().mockRejectedValue(new Error('jobset failed'))
+    };
+    const logger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn()
+    };
+    const service = new KiCadExportService(
+      runner as never,
+      { hasCapability: jest.fn().mockResolvedValue(true) } as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      logger as never
+    );
+    try {
+      await service.runJobset(vscode.Uri.file(jobset));
+      expect(window.showErrorMessage).toHaveBeenCalledWith(
+        expect.stringContaining('jobset execution failed')
+      );
+      expect(window.showInformationMessage).not.toHaveBeenCalled();
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+      __setConfiguration({});
+    }
+  });
+});

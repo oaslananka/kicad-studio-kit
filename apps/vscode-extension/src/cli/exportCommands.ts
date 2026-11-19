@@ -697,40 +697,13 @@ export class KiCadExportService {
       return;
     }
 
-    const config = vscode.workspace.getConfiguration();
-    const stopOnError = config.get<boolean>(SETTINGS.jobsetStopOnError, true);
+    const stopOnError = vscode.workspace
+      .getConfiguration()
+      .get<boolean>(SETTINGS.jobsetStopOnError, true);
 
-    let outputDir = this.tryResolveOutputDir(projectFile);
-    if (!outputDir) {
-      return;
-    }
-
-    const pickDir = await vscode.window.showQuickPick(
-      [
-        {
-          label: `$(folder) Use default output: ${path.basename(outputDir)}`,
-          dir: outputDir
-        },
-        { label: '$(file-directory) Choose custom output directory', dir: '' }
-      ],
-      { title: 'Jobset output directory' }
-    );
-    if (!pickDir) {
-      return;
-    }
-    if (!pickDir.dir) {
-      const chosen = await vscode.window.showOpenDialog({
-        title: 'Select output directory for jobset',
-        canSelectFiles: false,
-        canSelectFolders: true,
-        canSelectMany: false
-      });
-      if (!chosen?.[0]) {
-        return;
-      }
-      outputDir = chosen[0].fsPath;
-    }
-
+    // KiCad jobsets define their own output destinations. For "jobset run",
+    // --output selects a destination *ID or description*, not a directory.
+    // Running without --output executes every destination in the jobset.
     try {
       this.logger.info(
         `Running jobset ${path.basename(jobsetFile)} with project ${path.basename(projectFile)}`
@@ -740,26 +713,18 @@ export class KiCadExportService {
         command: [
           'jobset',
           'run',
+          ...(stopOnError ? ['--stop-on-error'] : []),
           '--file',
           jobsetFile,
-          '--output',
-          outputDir,
           projectFile
         ],
         cwd: path.dirname(projectFile),
         progressTitle: `Running jobset ${path.basename(jobsetFile)}`
       });
 
-      void vscode.window
-        .showInformationMessage(
-          `Jobset "${path.basename(jobsetFile)}" completed.`,
-          'Open Output Folder'
-        )
-        .then((action) => {
-          if (action === 'Open Output Folder') {
-            void vscode.env.openExternal(vscode.Uri.file(outputDir));
-          }
-        });
+      void vscode.window.showInformationMessage(
+        `Jobset "${path.basename(jobsetFile)}" completed. Outputs were saved to the destinations configured in the jobset.`
+      );
     } catch (error) {
       this.logger.error(`Jobset ${path.basename(jobsetFile)} failed`, error);
       const message =
@@ -767,9 +732,6 @@ export class KiCadExportService {
           ? `${error.message}\nWhat happened: jobset execution failed.\nHow to fix: validate the jobset file and verify kicad-cli is functional.`
           : 'Jobset execution failed. Validate the jobset file and verify kicad-cli is functional.';
       void vscode.window.showErrorMessage(message);
-      if (stopOnError) {
-        return;
-      }
     }
   }
 
