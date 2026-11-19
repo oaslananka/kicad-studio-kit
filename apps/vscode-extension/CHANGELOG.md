@@ -10,6 +10,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.9](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.8...vscode-extension-v2.7.9) (2026-11-19)
+
+
+### Bug Fixes
+
+* **import:** disclose nonfatal KiCad diagnostics ([#1033](https://github.com/oaslananka/kicad-studio-kit/issues/1033)) ([2e2e3d3](https://github.com/oaslananka/kicad-studio-kit/commit/2e2e3d35722478cabdbf3e7c69d51e724e1aa388)), closes [#1032](https://github.com/oaslananka/kicad-studio-kit/issues/1032)
+
 ## [2.7.8](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.7...vscode-extension-v2.7.8) (2026-11-19)
 
 
