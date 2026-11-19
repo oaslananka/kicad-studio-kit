@@ -129,12 +129,13 @@ claiming GUI-only importers as CLI-backed workflows.
 | P-CAD          | `kicadstudio.importPcad`       | Supported          | Command remains available and validates `--format pcad` before opening the picker.                                                                                    |
 | SolidWorks PCB | `kicadstudio.importSolidworks` | Supported          | Command remains available and validates `--format solidworks` before opening the picker.                                                                              |
 
-Successful PCB imports can still include KiCad CLI warnings, such as
-unmapped source layers in Fabmaster designs. KiCad Studio displays a warning
-summary with a **View Import Log** action rather than silently reporting a
-clean conversion. Review layer mapping and run DRC before using imported
-boards for manufacturing. The importer does not automatically remap unknown
-layers.
+A successful KiCad CLI exit does **not** prove full PCB conversion. KiCad can
+report unmapped layers, failed section reads (`Error:`) or source design
+constraints marked `not imported` while still generating a PCB. KiCad Studio
+displays those diagnostics in a warning with **View Import Log** so users can
+inspect the omitted information rather than trusting a clean-looking success.
+Review layer mapping and run DRC before manufacturing; the importer does not
+automatically repair source engineering data.
 
 Allegro fixture coverage is tracked by
 [`kicad-10-0-3-regressions`](kicad-fixture-corpus.md#fixture-coverage). The
