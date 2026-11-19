@@ -16,6 +16,14 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.6](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.5...vscode-extension-v2.7.6) (2026-11-19)
+
+
+### Bug Fixes
+
+* **mcp:** complete quality gates without replaying tool calls ([#1024](https://github.com/oaslananka/kicad-studio-kit/issues/1024)) ([6d4432c](https://github.com/oaslananka/kicad-studio-kit/commit/6d4432c29f1bc3bddc2818fa97fd23c9a7de21df))
+* **mcp:** keep quality gates alive without replaying tool calls ([6d4432c](https://github.com/oaslananka/kicad-studio-kit/commit/6d4432c29f1bc3bddc2818fa97fd23c9a7de21df))
+
 ## [2.7.5](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.4...vscode-extension-v2.7.5) (2026-11-19)
 
 
