@@ -10,6 +10,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.7](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.6...vscode-extension-v2.7.7) (2026-11-19)
+
+
+### Bug Fixes
+
+* **mcp:** finish expensive Fix Queue refresh safely ([#1027](https://github.com/oaslananka/kicad-studio-kit/issues/1027)) ([6e0c6ab](https://github.com/oaslananka/kicad-studio-kit/commit/6e0c6abf4eaea438794ecabf954c27f503720273))
+
 ## [2.7.6](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.5...vscode-extension-v2.7.6) (2026-11-19)
 
 
