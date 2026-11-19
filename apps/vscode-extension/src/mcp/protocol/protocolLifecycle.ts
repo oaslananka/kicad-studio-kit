@@ -10,6 +10,10 @@ import type {
   McpRpcTransport
 } from '../transport/httpJsonRpcTransport';
 
+// Real KiCad quality and export tools can exceed the 15s discovery deadline.
+const MCP_TOOL_REQUEST_TIMEOUT_MS = 120_000;
+const MCP_PROJECT_QUALITY_GATE_TIMEOUT_MS = 300_000;
+
 export interface McpProtocolRuntime {
   baseEndpoint: string;
   allowLegacySse: boolean;
@@ -149,7 +153,15 @@ export class McpProtocolLifecycle {
       allowLegacySse:
         this.adapter.lifecycle === 'initialize-session' &&
         runtime.allowLegacySse,
-      timeoutMs: runtime.timeoutMs
+      timeoutMs:
+        method === 'tools/call'
+          ? Math.max(
+              runtime.timeoutMs,
+              params['name'] === 'project_quality_gate_report'
+                ? MCP_PROJECT_QUALITY_GATE_TIMEOUT_MS
+                : MCP_TOOL_REQUEST_TIMEOUT_MS
+            )
+          : runtime.timeoutMs
     };
   }
 

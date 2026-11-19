@@ -160,6 +160,12 @@ describe('runManufacturingReleaseWizard', () => {
 
     await runManufacturingReleaseWizard(services as never);
 
+    expect(window.withProgress).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Checking project quality before manufacturing release'
+      }),
+      expect.any(Function)
+    );
     expect(window.showWarningMessage).toHaveBeenCalledWith(
       expect.stringContaining('blocked by quality gates')
     );

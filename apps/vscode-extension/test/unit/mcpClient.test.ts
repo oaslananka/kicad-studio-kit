@@ -992,7 +992,7 @@ describe('McpClient', () => {
     );
   });
 
-  it('retries transient MCP failures with exponential backoff', async () => {
+  it('retries discovery but does not replay a failed tool call (#1023)', async () => {
     const fetchMock = jest
       .fn()
       .mockResolvedValueOnce(
@@ -1020,8 +1020,10 @@ describe('McpClient', () => {
       createClient(createExtensionContextMock(), {
         retryBaseDelayMs: 1
       }).callTool('project_ping', {})
-    ).resolves.toEqual({ ok: true });
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    ).rejects.toThrow('HTTP 503');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(JSON.parse(String(fetchMock.mock.calls[2]?.[1]?.body)).method)
+      .toBe('tools/call');
   });
 
   it('reports VsCodeStdio state when HTTP fails but .vscode/mcp.json has kicad-mcp-pro (command field)', async () => {

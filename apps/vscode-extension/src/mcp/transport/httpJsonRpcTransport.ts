@@ -91,8 +91,11 @@ export class HttpJsonRpcTransport implements McpRpcTransport {
 
   async execute<T>(request: HttpJsonRpcRequest): Promise<HttpJsonRpcResult<T>> {
     let lastError: unknown;
+    // Tools may mutate design files or export artifacts. A timeout/503 does
+    // not prove the server abandoned the operation: never replay tools/call.
+    const maxAttempts = request.method === 'tools/call' ? 1 : this.maxRetries;
 
-    for (let attempt = 0; attempt < this.maxRetries; attempt += 1) {
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       try {
         return await this.executeOnce<T>(request);
       } catch (error) {
@@ -102,7 +105,7 @@ export class HttpJsonRpcTransport implements McpRpcTransport {
           error instanceof Error ? error.message : String(error)
         );
 
-        if (attempt === this.maxRetries - 1 || !isTransientMcpError(error)) {
+        if (attempt === maxAttempts - 1 || !isTransientMcpError(error)) {
           throw error;
         }
 

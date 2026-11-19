@@ -247,6 +247,31 @@ describe('HTTP JSON-RPC transport boundary (#492)', () => {
     }
   );
 
+  it('does not replay tools/call after a transient error because tools can mutate state (#1023)', async () => {
+    const fetchFn = jest.fn()
+      .mockResolvedValueOnce(jsonResponse({}, { status: 503 }))
+      .mockResolvedValueOnce(jsonResponse({ result: { ok: true } }));
+    const logger = createLogger();
+    const transport = new HttpJsonRpcTransport({
+      fetchFn,
+      logger,
+      maxRetries: 3,
+      retryBaseDelayMs: 1
+    });
+
+    await expect(transport.execute({
+      baseEndpoint: 'http://127.0.0.1:27185',
+      id: 19,
+      method: 'tools/call',
+      params: { name: 'export_manufacturing_package', arguments: {} },
+      headers: {},
+      allowLegacySse: false,
+      timeoutMs: 1000
+    })).rejects.toMatchObject({ status: 503 });
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    expect(logger.debug).not.toHaveBeenCalled();
+  });
+
   it('retries transient failures with exponential backoff and traffic evidence (#492)', async () => {
     const fetchFn = jest
       .fn()
@@ -269,8 +294,8 @@ describe('HTTP JSON-RPC transport boundary (#492)', () => {
       transport.execute<{ ok: boolean }>({
         baseEndpoint: 'http://127.0.0.1:27185',
         id: 3,
-        method: 'tools/call',
-        params: { name: 'project_ping' },
+        method: 'tools/list',
+        params: {},
         headers: {},
         allowLegacySse: false,
         timeoutMs: 1000

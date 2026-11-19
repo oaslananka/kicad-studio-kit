@@ -97,6 +97,27 @@ function result<T>(
 }
 
 describe('MCP protocol lifecycle boundary (#492)', () => {
+  it('gives tools/call a long deadline without slowing discovery (#1023)', async () => {
+    const transport = createTransport([result({ tools: [] }), result({ ok: true }), result({ ok: true })]);
+    const lifecycle = new McpProtocolLifecycle({
+      adapter: createAdapter(),
+      transport,
+      clientInfo: { name: 'kicad-studio', version: '2.7.5' },
+      sessionStore: new MemorySessionStore(undefined)
+    });
+
+    await lifecycle.execute('tools/list', {}, runtime());
+    await lifecycle.execute('tools/call', {
+      name: 'project_ping',
+      arguments: {}
+    }, runtime());
+
+    expect(transport.requests.map((request) => request.timeoutMs))
+      .toEqual([15_000, 120_000]);
+    await lifecycle.execute('tools/call', { name: 'project_quality_gate_report', arguments: {} }, runtime());
+    expect(transport.requests.at(-1)?.timeoutMs).toBe(300_000);
+  });
+
   it('coalesces concurrent discovery and allocates deterministic request IDs (#492)', async () => {
     let releaseDiscovery: (() => void) | undefined;
     const discoveryResult = new Promise<HttpJsonRpcResult<unknown>>(
