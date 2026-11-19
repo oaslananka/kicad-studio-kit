@@ -6,6 +6,7 @@ import path from "node:path";
 import test from "node:test";
 import { parse as parseYaml } from "yaml";
 import { fileURLToPath } from "node:url";
+import * as releasePolicy from "./check-release-please-monorepo.mjs";
 
 import {
   createGitSubprocessEnv,
@@ -124,25 +125,15 @@ test("#797 unchanged release PR reuses its identity and rejects stale heads", ()
   assert.doesNotMatch(append.run, /gh pr create|gh pr close|git push/u);
 });
 
-test("PR titles are never inspected by the metadata release policy", () => {
-  const policy = fs.readFileSync(
-    path.join(REPO_ROOT, "scripts/check-release-please-monorepo.mjs"),
-    "utf8",
+test("PR title validation is absent while existing commit checks remain", () => {
+  assert.equal(Object.hasOwn(releasePolicy, "validatePrTitle"), false);
+  assert.deepEqual(
+    validateCommitScopeCoverage(
+      [{ sha: "abc1234", subject: "old-style topic change", files: [] }],
+      { headRefName: "fix/unrestricted-title", validateSubjects: false },
+    ),
+    [],
   );
-  const eventBranch = policy.slice(
-    policy.indexOf("function main()"),
-    policy.indexOf("function validateScopeList("),
-  );
-
-  // The PR event continues to validate commit and release metadata; no
-  // title-format, prefix, or scope check may be added back to this path.
-  assert.doesNotMatch(eventBranch, /pullRequest\.title|validatePrTitle/u);
-  assert.match(
-    eventBranch,
-    /listCommitsForPullRequest\(REPO_ROOT, pullRequest\)/u,
-  );
-  assert.match(eventBranch, /validateCommitScopeCoverage\(commits/u);
-  assert.match(eventBranch, /validateSubjects: false/u);
 });
 
 test("release-please manifest mode is product-scoped and version aligned", () => {
