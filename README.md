@@ -92,7 +92,7 @@ controls remain independently enforced.
 
 This repository's local release surface is:
 
-- VS Code extension: `oaslananka.kicadstudiokit` (`2.7.2`)
+- VS Code extension: `oaslananka.kicadstudiokit` (`2.7.3`)
 
 The Python package `kicad-mcp-pro`, container image, and MCP Registry listing
 are released from [KiCad MCP Pro](https://oaslananka.github.io/kicad-mcp-pro/).
