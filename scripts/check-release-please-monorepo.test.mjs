@@ -6,6 +6,7 @@ import path from "node:path";
 import test from "node:test";
 import { parse as parseYaml } from "yaml";
 import { fileURLToPath } from "node:url";
+import * as releasePolicy from "./check-release-please-monorepo.mjs";
 
 import {
   createGitSubprocessEnv,
@@ -18,7 +19,6 @@ import {
   validateCommitScopeCoverage,
   validateLinkedVersionGroups,
   validateLocalBranchCommitScopes,
-  validatePrTitle,
   validateRenovateCommitScopes,
   validateRepositoryPolicy,
 } from "./check-release-please-monorepo.mjs";
@@ -125,6 +125,17 @@ test("#797 unchanged release PR reuses its identity and rejects stale heads", ()
   assert.doesNotMatch(append.run, /gh pr create|gh pr close|git push/u);
 });
 
+test("PR title validation is absent while existing commit checks remain", () => {
+  assert.equal(Object.hasOwn(releasePolicy, "validatePrTitle"), false);
+  assert.deepEqual(
+    validateCommitScopeCoverage(
+      [{ sha: "abc1234", subject: "old-style topic change", files: [] }],
+      { headRefName: "fix/unrestricted-title", validateSubjects: false },
+    ),
+    [],
+  );
+});
+
 test("release-please manifest mode is product-scoped and version aligned", () => {
   const result = validateRepositoryPolicy(REPO_ROOT);
 
@@ -159,36 +170,6 @@ test("Renovate semantic commit scopes stay inside the repository contract", () =
       'renovate.json packageRules[0] semanticCommitScope "node-runtime" is not allowed; use kicad-studio, kicad-mcp-pro, repo, config, deps, docs, superpowers, .gitignore',
       'renovate.json packageRules[1] semanticCommitScope "root-tooling" is not allowed; use kicad-studio, kicad-mcp-pro, repo, config, deps, docs, superpowers, .gitignore',
     ],
-  );
-});
-
-test("PR title lint accepts only documented product release scopes", () => {
-  assert.deepEqual(validatePrTitle("ci(repo): enforce release split"), []);
-  assert.deepEqual(
-    validatePrTitle("chore(config): migrate Renovate config"),
-    [],
-  );
-  assert.deepEqual(
-    validatePrTitle("feat(kicad-studio): add viewer export"),
-    [],
-  );
-  assert.deepEqual(
-    validatePrTitle("fix(kicad-mcp-pro): harden server info"),
-    [],
-  );
-  assert.deepEqual(validatePrTitle("chore(deps): update release tools"), []);
-  assert.deepEqual(
-    validatePrTitle("feat(kicad-studio/kicad-mcp-pro): update handshake"),
-    [],
-  );
-
-  assert.match(
-    validatePrTitle("feat(studio): add viewer export").join("\n"),
-    /scope "studio" is not allowed/,
-  );
-  assert.match(
-    validatePrTitle("fix: missing scope").join("\n"),
-    /must include a scope/,
   );
 });
 
@@ -254,10 +235,6 @@ test("commit scope gate ignores normal merge commit subjects", () => {
 
 test("squash-only PR metadata accepts legacy intermediate commit subjects", () => {
   assert.deepEqual(
-    validatePrTitle("chore(repo): converge dependency automation with Mergify"),
-    [],
-  );
-  assert.deepEqual(
     validateCommitScopeCoverage(
       [
         {
@@ -284,16 +261,6 @@ test("default-branch commit subject validation remains strict", () => {
     [
       "abcdef2 subject must include a scope: kicad-studio, kicad-mcp-pro, repo, config, deps, docs, superpowers, .gitignore",
     ],
-  );
-});
-
-test("Release Please generated PR title exemption remains unchanged", () => {
-  assert.deepEqual(
-    validatePrTitle("chore(main): release vscode-extension", {
-      headRefName:
-        "release-please--branches--main--components--vscode-extension",
-    }),
-    [],
   );
 });
 
