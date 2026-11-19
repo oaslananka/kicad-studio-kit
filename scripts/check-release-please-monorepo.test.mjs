@@ -18,6 +18,7 @@ import {
   validateCommitScopeCoverage,
   validateLinkedVersionGroups,
   validateLocalBranchCommitScopes,
+  validatePullRequestPolicy,
   validateRenovateCommitScopes,
   validateRepositoryPolicy,
 } from "./check-release-please-monorepo.mjs";
@@ -124,57 +125,42 @@ test("#797 unchanged release PR reuses its identity and rejects stale heads", ()
   assert.doesNotMatch(append.run, /gh pr create|gh pr close|git push/u);
 });
 
-test("PR-event metadata permits human-readable titles without a forced scope", () => {
-  const head = spawnSync("git", ["rev-parse", "HEAD"], {
-    cwd: REPO_ROOT,
-    encoding: "utf8",
-  });
-  assert.equal(head.status, 0, head.stderr);
-  const sha = head.stdout.trim();
-  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "kicad-pr-title-"));
-  const eventPath = path.join(temp, "event.json");
-  try {
-    for (const title of [
-      "Restore Eagle PCB import without losing drawings",
-      "fix: readable title without a scope",
-      "feat(anything): PR labels are not release metadata",
-    ]) {
-      fs.writeFileSync(
-        eventPath,
-        JSON.stringify({
-          pull_request: {
-            title,
-            number: 1020,
-            head: { ref: "fix/unrestricted-title", sha },
-            base: { ref: "main", sha },
-          },
-        }),
-      );
-      const result = spawnSync(
-        process.execPath,
-        ["scripts/check-release-please-monorepo.mjs"],
-        {
-          cwd: REPO_ROOT,
-          encoding: "utf8",
-          timeout: 15_000,
-          env: {
-            ...process.env,
-            GITHUB_EVENT_NAME: "pull_request",
-            GITHUB_EVENT_PATH: eventPath,
-            GITHUB_HEAD_REF: "fix/unrestricted-title",
-          },
-        },
-      );
-      assert.equal(
-        result.status,
-        0,
-        `${title}\n${result.stdout}\n${result.stderr}`,
-      );
-      assert.match(result.stdout, /Release Please monorepo policy is valid/u);
-    }
-  } finally {
-    fs.rmSync(temp, { recursive: true, force: true });
+test("PR metadata permits arbitrary human titles without writing dynamic fixtures", () => {
+  const commits = [
+    {
+      sha: "abcdef1",
+      subject: "Legacy topic branch commit",
+      files: ["apps/vscode-extension/src/cli/importCommands.ts"],
+    },
+  ];
+  for (const title of [
+    "Restore Eagle PCB import without losing drawings",
+    "fix: readable title without a scope",
+    "feat(anything): PR labels are not release metadata",
+  ]) {
+    assert.deepEqual(
+      validatePullRequestPolicy(
+        { title, head: { ref: "fix/unrestricted-title" } },
+        commits,
+      ),
+      [],
+      title,
+    );
   }
+
+  // Release Please generated branch handling remains independent of titles.
+  assert.deepEqual(
+    validatePullRequestPolicy(
+      {
+        title: "Release extension",
+        head: {
+          ref: "release-please--branches--main--components--vscode-extension",
+        },
+      },
+      commits,
+    ),
+    [],
+  );
 });
 
 test("release-please manifest mode is product-scoped and version aligned", () => {
