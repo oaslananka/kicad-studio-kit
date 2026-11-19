@@ -268,7 +268,14 @@ export function registerMcpCommands(
     ),
 
     vscode.commands.registerCommand(COMMANDS.refreshFixQueue, () =>
-      services.fixQueueProvider.refresh()
+      vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: 'Refreshing AI fix queue',
+          cancellable: false
+        },
+        () => services.fixQueueProvider.refresh()
+      )
     ),
 
     registerTrustedCommand(

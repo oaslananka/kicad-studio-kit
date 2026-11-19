@@ -154,14 +154,17 @@ export class McpProtocolLifecycle {
         this.adapter.lifecycle === 'initialize-session' &&
         runtime.allowLegacySse,
       timeoutMs:
-        method === 'tools/call'
-          ? Math.max(
-              runtime.timeoutMs,
-              params['name'] === 'project_quality_gate_report'
-                ? MCP_PROJECT_QUALITY_GATE_TIMEOUT_MS
-                : MCP_TOOL_REQUEST_TIMEOUT_MS
-            )
-          : runtime.timeoutMs
+        method === 'resources/read' &&
+        params['uri'] === 'kicad://project/fix_queue'
+          ? Math.max(runtime.timeoutMs, MCP_PROJECT_QUALITY_GATE_TIMEOUT_MS)
+          : method === 'tools/call'
+            ? Math.max(
+                runtime.timeoutMs,
+                params['name'] === 'project_quality_gate_report'
+                  ? MCP_PROJECT_QUALITY_GATE_TIMEOUT_MS
+                  : MCP_TOOL_REQUEST_TIMEOUT_MS
+              )
+            : runtime.timeoutMs
     };
   }
 
