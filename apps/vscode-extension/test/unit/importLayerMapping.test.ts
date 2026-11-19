@@ -84,4 +84,12 @@ describe('undefined KiCad import layer repair safety', () => {
     expect(a).toMatchObject({ count: 2, safeDrawingCount: 1 });
     expect(a.repairedText).toBeUndefined();
   });
+
+  it('refuses an otherwise safe drawing when an extra closing parenthesis corrupts the board', () => {
+    const source = '(kicad_pcb (footprint "A" (fp_line (layer "UNDEFINED")))))';
+    const assessment = assessUndefinedImportLayers(source);
+    expect(assessment.count).toBe(1);
+    expect(assessment.safeDrawingCount).toBe(1);
+    expect(assessment.repairedText).toBeUndefined();
+  });
 });

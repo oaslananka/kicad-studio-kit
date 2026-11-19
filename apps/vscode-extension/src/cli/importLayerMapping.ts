@@ -5,13 +5,13 @@
  * the pseudo-layer UNDEFINED. Such a board cannot be parsed by subsequent
  * KiCad CLI commands. Do not infer copper/pad/zone mappings from their name.
  *
- * Only explicit drawing-only shapes and dimension annotations may be relocated to the non-production
- * Dwgs.User layer, and only with an explicit user decision and backup.
+ * Only known drawing-only shapes and dimension annotations can be moved to
+ * Dwgs.User with explicit user approval and an unmodified backup.
  */
 export interface UndefinedImportLayerAssessment {
   count: number;
   safeDrawingCount: number;
-  /** Available only when all unresolved layers belong to known drawing-only shapes. */
+  /** Available only when every unresolved reference is a drawing-only shape. */
   repairedText?: string;
 }
 
@@ -34,12 +34,62 @@ export function assessUndefinedImportLayers(
     return { count: 0, safeDrawingCount: 0 };
   }
 
-  let safeDrawingCount = 0;
-  let inString = false;
-  const stack: string[] = [];
+  const scan = scanDrawingLayerContexts(text);
+  const result = {
+    count: unknownReferences.length,
+    safeDrawingCount: scan.safeCount
+  };
+  if (!scan.complete || scan.safeCount !== unknownReferences.length) {
+    return result;
+  }
 
-  // A lightweight lexical walk tracks immediate S-expression parents without
-  // interpreting coordinates/nets. Quoted text may contain parentheses.
+  return {
+    ...result,
+    repairedText: text.replaceAll(UNDEFINED_LAYER, '(layer "Dwgs.User")')
+  };
+}
+
+function isDrawingOnlyContext(stack: readonly string[]): boolean {
+  const parent = stack.at(-1);
+  const container = stack.at(-2);
+  const ancestor = stack.at(-3);
+
+  if (container === 'footprint' && SAFE_FOOTPRINT_DRAWINGS.has(parent ?? '')) {
+    return true;
+  }
+  if (container === 'kicad_pcb') {
+    return parent === 'gr_text' || parent === 'dimension';
+  }
+  return (
+    parent === 'gr_text' &&
+    container === 'dimension' &&
+    ancestor === 'kicad_pcb'
+  );
+}
+
+function readListTag(text: string, openParenIndex: number): string {
+  let cursor = openParenIndex + 1;
+  while (/\s/.test(text[cursor] ?? '')) {
+    cursor++;
+  }
+  const start = cursor;
+  while (/[a-zA-Z0-9_.-]/.test(text[cursor] ?? '')) {
+    cursor++;
+  }
+  return text.slice(start, cursor);
+}
+
+function scanDrawingLayerContexts(text: string): {
+  safeCount: number;
+  complete: boolean;
+} {
+  const stack: string[] = [];
+  let inString = false;
+  let invalidNesting = false;
+  let safeCount = 0;
+
+  // Track enclosing S-expressions. Never inspect layer-looking text inside
+  // quoted property values or reinterpret copper/milling attributes.
   for (let index = 0; index < text.length; index++) {
     const char = text[index];
     if (inString) {
@@ -55,53 +105,27 @@ export function assessUndefinedImportLayers(
       continue;
     }
     if (char === ')') {
-      stack.pop();
+      if (stack.length === 0) {
+        invalidNesting = true;
+      } else {
+        stack.pop();
+      }
       continue;
     }
     if (char !== '(') {
       continue;
     }
-    let cursor = index + 1;
-    while (/\s/.test(text[cursor] ?? '')) {
-      cursor++;
+    if (
+      text.startsWith(UNDEFINED_LAYER, index) &&
+      isDrawingOnlyContext(stack)
+    ) {
+      safeCount++;
     }
-    const nameStart = cursor;
-    while (/[a-zA-Z0-9_.-]/.test(text[cursor] ?? '')) {
-      cursor++;
-    }
-    const name = text.slice(nameStart, cursor);
-    if (name === 'layer' && text.startsWith(UNDEFINED_LAYER, index)) {
-      const parent = stack[stack.length - 1];
-      const grandparent = stack[stack.length - 2];
-      const ancestor = stack[stack.length - 3];
-      const footprintDrawing =
-        SAFE_FOOTPRINT_DRAWINGS.has(parent ?? '') &&
-        grandparent === 'footprint';
-      const boardAnnotation =
-        (parent === 'gr_text' && grandparent === 'kicad_pcb') ||
-        (parent === 'dimension' && grandparent === 'kicad_pcb') ||
-        (parent === 'gr_text' &&
-          grandparent === 'dimension' &&
-          ancestor === 'kicad_pcb');
-      if (footprintDrawing || boardAnnotation) {
-        safeDrawingCount++;
-      }
-    }
-    stack.push(name);
+    stack.push(readListTag(text, index));
   }
 
-  const canRepair =
-    safeDrawingCount === unknownReferences.length &&
-    !inString &&
-    stack.length === 0;
-
   return {
-    count: unknownReferences.length,
-    safeDrawingCount,
-    ...(canRepair
-      ? {
-          repairedText: text.replaceAll(UNDEFINED_LAYER, '(layer "Dwgs.User")')
-        }
-      : {})
+    safeCount,
+    complete: !inString && !invalidNesting && stack.length === 0
   };
 }
