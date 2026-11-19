@@ -10,6 +10,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.3](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.2...vscode-extension-v2.7.3) (2026-11-19)
+
+
+### Bug Fixes
+
+* **kicad-studio:** export footprint SVG from its library directory ([#1014](https://github.com/oaslananka/kicad-studio-kit/issues/1014)) ([447601d](https://github.com/oaslananka/kicad-studio-kit/commit/447601d88854dd7649b23d36f81ab307ffdc4e45))
+
 ## [2.7.2](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.1...vscode-extension-v2.7.2) (2026-11-18)
 
 
