@@ -332,6 +332,76 @@ describe('KiCadImportService', () => {
     );
   });
 
+  it.each([
+    {
+      scenario: 'missing Altium design constraint without a Warning prefix',
+      diagnostic:
+        "01:50:17 AM: Altium rule 'PWR' applies to netclass 'PWR', which this board does not define. Its constraint is not imported.\n",
+      expected: /1 design constraint not imported.*verify the board/i
+    },
+    {
+      scenario: 'nonfatal Altium directory read errors after exit zero',
+      diagnostic:
+        "01:50:17 AM: Error: File not found: 'Nets6\\Data' for directory 'NETS6'.\n" +
+        "01:50:17 AM: Error: File not found: 'Tracks6\\Data' for directory 'TRACKS6'.\n",
+      expected: /2 import errors.*verify the board/i
+    }
+  ])(
+    'reports $scenario to the user instead of false success (#1032)',
+    async ({ diagnostic, expected }) => {
+      tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kicad-import-'));
+      const original = path.join(tempDir, 'altium-board.PcbDoc');
+      const board = path.join(tempDir, 'altium-board.kicad_pcb');
+      fs.writeFileSync(original, 'Altium fixture unchanged', 'utf8');
+      const { service, logger } = createService({
+        runner: {
+          runWithProgress: jest
+            .fn()
+            .mockImplementation(
+              async ({
+                command,
+                onProgress
+              }: {
+                command: string[];
+                onProgress?: (text: string) => void;
+              }) => {
+                fs.writeFileSync(
+                  command[command.indexOf('--output') + 1]!,
+                  '(kicad_pcb (version 20240108))',
+                  'utf8'
+                );
+                onProgress?.(diagnostic);
+                return 'Successfully saved imported board';
+              }
+            )
+        }
+      });
+      (window.showOpenDialog as jest.Mock).mockResolvedValue([
+        Uri.file(original)
+      ]);
+      (window.showWarningMessage as jest.Mock).mockResolvedValue(
+        'View Import Log'
+      );
+
+      await service.importBoard('altium');
+      await Promise.resolve();
+
+      expect(fs.readFileSync(original, 'utf8')).toBe(
+        'Altium fixture unchanged'
+      );
+      expect(fs.existsSync(board)).toBe(true);
+      expect(fs.existsSync(path.join(tempDir, 'altium-board.kicad_pro'))).toBe(
+        true
+      );
+      expect(window.showInformationMessage).not.toHaveBeenCalled();
+      expect(window.showWarningMessage).toHaveBeenCalledWith(
+        expect.stringMatching(expected),
+        'View Import Log'
+      );
+      expect(logger.show).toHaveBeenCalledTimes(1);
+    }
+  );
+
   it('keeps an existing generated project file intact during import', async () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kicad-import-'));
     const inputFile = path.join(tempDir, 'legacy-board.asc');

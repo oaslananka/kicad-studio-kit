@@ -295,21 +295,46 @@ async function validateImportedBoardOrOfferRepair(
 
 function summarizeImportWarnings(progressOutput: string): string | undefined {
   const warningCount = (progressOutput.match(/\bwarning\s*:/gi) ?? []).length;
-  if (warningCount === 0) {
+  const errorCount = (progressOutput.match(/\berror\s*:/gi) ?? []).length;
+  const omittedLines = progressOutput
+    .split(/\r?\n/)
+    .filter(
+      (line) =>
+        /\bnot imported\b/i.test(line) && !/\b(?:warning|error)\s*:/i.test(line)
+    );
+  if (warningCount === 0 && errorCount === 0 && omittedLines.length === 0) {
     return undefined;
   }
 
   const unmappedCount = (
     progressOutput.match(/No user layer to put layer/gi) ?? []
   ).length;
-  const description =
-    unmappedCount > 0
-      ? `${unmappedCount} unmapped source layers` +
-        (warningCount > unmappedCount
-          ? ` and ${warningCount - unmappedCount} other warnings`
-          : '')
-      : `${warningCount} warning${warningCount === 1 ? '' : 's'}`;
-  return `KiCad reported ${description}; source data may be missing. Please verify the board before manufacturing.`;
+  const otherWarnings = Math.max(warningCount - unmappedCount, 0);
+  const omittedConstraints = omittedLines.filter((line) =>
+    /\bconstraint\b/i.test(line)
+  ).length;
+  const otherOmissions = omittedLines.length - omittedConstraints;
+  const parts: string[] = [];
+  if (errorCount > 0) {
+    parts.push(`${errorCount} import error${errorCount === 1 ? '' : 's'}`);
+  }
+  if (unmappedCount > 0) {
+    parts.push(`${unmappedCount} unmapped source layers`);
+  }
+  if (otherWarnings > 0) {
+    parts.push(`${otherWarnings} warning${otherWarnings === 1 ? '' : 's'}`);
+  }
+  if (omittedConstraints > 0) {
+    parts.push(
+      `${omittedConstraints} design constraint${omittedConstraints === 1 ? '' : 's'} not imported`
+    );
+  }
+  if (otherOmissions > 0) {
+    parts.push(
+      `${otherOmissions} source item${otherOmissions === 1 ? '' : 's'} not imported`
+    );
+  }
+  return `KiCad reported ${parts.join(', ')}; source data may be missing. Please verify the board before manufacturing.`;
 }
 
 function unsupportedImportMessage(format: SupportedPcbImportFormat): string {
