@@ -96,6 +96,10 @@ export class KiCadImportService {
     }
 
     const formatArgs = format === 'auto' ? [] : ['--format', format];
+    // The CLI runner already redacts and logs its output. Retain only enough
+    // progress text to summarize import warnings after the dialog closes.
+    let progressOutput = '';
+    const progressCaptureLimit = 64 * 1024;
 
     try {
       await this.runner.runWithProgress<string>({
@@ -108,7 +112,14 @@ export class KiCadImportService {
           inputFile
         ],
         cwd: path.dirname(inputFile),
-        progressTitle: `Importing ${label} board`
+        progressTitle: `Importing ${label} board`,
+        onProgress: (message) => {
+          if (progressOutput.length < progressCaptureLimit) {
+            progressOutput +=
+              '\n' +
+              message.slice(0, progressCaptureLimit - progressOutput.length);
+          }
+        }
       });
 
       const repaired = await validateImportedBoardOrOfferRepair(
@@ -128,7 +139,22 @@ export class KiCadImportService {
         repaired === null
           ? `Imported ${path.basename(inputFile)} as ${path.basename(outputFile)}.`
           : `Imported ${path.basename(inputFile)} after mapping ${repaired.count} drawing-only objects to Dwgs.User. The unmodified KiCad import was saved as ${repaired.backupName}. Review the layers and run DRC before manufacturing.`;
-      void vscode.window.showInformationMessage(message);
+      const warningSummary = summarizeImportWarnings(progressOutput);
+      if (warningSummary) {
+        const action = 'View Import Log';
+        void Promise.resolve(
+          vscode.window.showWarningMessage(
+            `${message} ${warningSummary}`,
+            action
+          )
+        ).then((selected) => {
+          if (selected === action) {
+            this.logger.show();
+          }
+        });
+      } else {
+        void vscode.window.showInformationMessage(message);
+      }
     } catch (error) {
       this.logger.error(`Import ${format} failed`, error);
       void vscode.window.showErrorMessage(
@@ -265,6 +291,25 @@ async function validateImportedBoardOrOfferRepair(
     }
     await fs.promises.rm(tempDir, { recursive: true, force: true });
   }
+}
+
+function summarizeImportWarnings(progressOutput: string): string | undefined {
+  const warningCount = (progressOutput.match(/\bwarning\s*:/gi) ?? []).length;
+  if (warningCount === 0) {
+    return undefined;
+  }
+
+  const unmappedCount = (
+    progressOutput.match(/No user layer to put layer/gi) ?? []
+  ).length;
+  const description =
+    unmappedCount > 0
+      ? `${unmappedCount} unmapped source layers` +
+        (warningCount > unmappedCount
+          ? ` and ${warningCount - unmappedCount} other warnings`
+          : '')
+      : `${warningCount} warning${warningCount === 1 ? '' : 's'}`;
+  return `KiCad reported ${description}; source data may be missing. Please verify the board before manufacturing.`;
 }
 
 function unsupportedImportMessage(format: SupportedPcbImportFormat): string {
