@@ -123,7 +123,7 @@ Update [docs/support-matrix.md](support-matrix.md) and release notes whenever Ki
 
 ## Conventional Commit Scopes
 
-Release Please derives product changelogs from Conventional Commits on `main`. Pull request titles are **not** restricted by the metadata CI job; authors can use clear, human-friendly titles without a fixed scope or prefix. Because `main` is squash-only, ensure the **squash commit subject** uses a supported Conventional Commit scope when merging release-relevant changes. The supported commit scopes are:
+Release Please derives product changelogs from Conventional Commits. Because the protected default branch is squash-only, ordinary pull requests use the validated PR title as the authoritative Conventional Commit subject for the durable squash commit on `main`. The PR title must use one of these scopes:
 
 - `kicad-studio` for `apps/vscode-extension`.
 - `kicad-mcp-pro` for KiCad MCP Pro (source in separate repository).
@@ -134,7 +134,9 @@ Release Please derives product changelogs from Conventional Commits on `main`. P
 - `.gitignore` for `.gitignore` file changes (single-file repo governance).
 - `deps` for dependency and tooling updates.
 
-Intermediate PR commits should remain readable and well formed; CI does not force PR authors to amend/rebase/force-push existing branch history or rename a PR to meet release metadata policy. Durable/default-branch commit validation and release configuration/version checks remain strict. Release Please generated PRs may retain their upstream `chore(main): release ...` titles.
+Intermediate PR commits should remain readable and well formed, but CI does not require their published subjects to be rewritten solely to satisfy release metadata policy. Existing PRs with legacy subjects should repair the PR title instead of amend/rebase/force-push history. Durable/default-branch commit validation remains strict.
+
+Release Please generated PRs retain their upstream `chore(main): release ...` title format and are exempt from the human PR title scope gate.
 
 Run product dry-runs before merging release-related changes:
 

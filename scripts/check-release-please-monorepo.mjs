@@ -181,6 +181,19 @@ export function validateRenovateCommitScopes(renovate) {
   return errors;
 }
 
+export function validatePrTitle(title, options = {}) {
+  if (isReleasePlease(options.headRefName, title)) {
+    return [];
+  }
+  const parsed = parseConventionalSubject(title);
+  if (!parsed) {
+    return [
+      `PR title must use Conventional Commits format: type(scope): subject`,
+    ];
+  }
+  return validateScopeList(parsed.scopes, "PR title");
+}
+
 export function validateCommitScopeCoverage(commits, options = {}) {
   if (isReleasePlease(options.headRefName)) {
     return [];
@@ -387,9 +400,8 @@ export function parseReleasePleaseDryRun(output) {
   };
 }
 
-// Topic-branch commit subjects are not a blocking release-metadata gate;
-// default-branch and detached-head commit validation remain strict.
-// Pull request titles are deliberately unrestricted.
+// The squash PR title is authoritative for topic branches; default-branch
+// and detached-head validation remain strict.
 export function requiresLocalCommitSubjectValidation(branch) {
   return branch === "main" || branch === "";
 }
@@ -416,6 +428,7 @@ function main() {
   if (pullRequest) {
     const headRefName =
       pullRequest.head?.ref ?? process.env.GITHUB_HEAD_REF ?? "";
+    errors.push(...validatePrTitle(pullRequest.title ?? "", { headRefName }));
     const commits = listCommitsForPullRequest(REPO_ROOT, pullRequest);
     errors.push(
       ...validateCommitScopeCoverage(commits, {
@@ -719,8 +732,11 @@ function shortSha(sha) {
   return String(sha).slice(0, 7);
 }
 
-function isReleasePlease(headRefName = "") {
-  return headRefName.startsWith("release-please--");
+function isReleasePlease(headRefName = "", title = "") {
+  return (
+    headRefName.startsWith("release-please--") ||
+    /^chore\(main\): release /.test(title)
+  );
 }
 
 function isMergeCommitSubject(subject) {

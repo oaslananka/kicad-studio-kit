@@ -34,9 +34,9 @@ Use one of the release-policy scopes that matches the changed surface:
 
 ## Pull request titles and squash history
 
-`main` is squash-only. Pull request titles are unrestricted: the metadata CI job does not require a Conventional Commit prefix or scope in the **PR title**. Write a clear title for people. When a change is merged, use an appropriate Conventional Commit subject for the **squash commit** so the default-branch history remains useful to Release Please.
+`main` is squash-only. For ordinary pull requests, the scoped PR title is the authoritative Conventional Commit subject that becomes the squash commit title on `main`. Intermediate branch commits should still be clear and useful, but CI does not require published PR history to be amended or rebased solely to repair their subjects.
 
-Intermediate branch commit subjects should still be readable, but CI does not require rewriting PR history solely to satisfy metadata policy. Do not force-push or amend a published PR just to rename its title. Durable/default-branch commit validation and release metadata checks remain strict.
+If an existing PR has legacy commit subjects, fix the PR title and repository files through normal non-destructive updates. Do not force-push or rewrite existing PR history just to satisfy metadata policy. Durable/default-branch commit validation remains strict.
 
 ## PR evidence
 
