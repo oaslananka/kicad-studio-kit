@@ -36,7 +36,7 @@ Latest published release: [KiCad 10.0.8 release notes](https://www.kicad.org/blo
 
 | Product | Version | Manifest | Compatibility range |
 | --- | --- | --- | --- |
-| kicad-studio | 2.7.2 | apps/vscode-extension/package.json | &gt;=4.3.0 &lt;5.0.0 |
+| kicad-studio | 2.7.3 | apps/vscode-extension/package.json | &gt;=4.3.0 &lt;5.0.0 |
 
 ### Release Gate Inputs
 
