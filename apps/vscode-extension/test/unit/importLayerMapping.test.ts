@@ -25,6 +25,15 @@ describe('undefined KiCad import layer repair safety', () => {
     expect(source).toContain('(layer "UNDEFINED")');
   });
 
+  it('recognizes bounded list tags separated by diverse whitespace', () => {
+    const source =
+      '(kicad_pcb (\n\tfootprint "U1" (\u00a0fp_line (layer "UNDEFINED"))))';
+    const result = assessUndefinedImportLayers(source);
+    expect(result.count).toBe(1);
+    expect(result.safeDrawingCount).toBe(1);
+    expect(result.repairedText).toContain('(layer "Dwgs.User")');
+  });
+
   it('refuses copper track layers rather than repairing them', () => {
     const source = '(kicad_pcb (segment (start 1 2) (layer "UNDEFINED")))';
     expect(assessUndefinedImportLayers(source)).toEqual({

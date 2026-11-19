@@ -17,6 +17,8 @@ export interface UndefinedImportLayerAssessment {
 
 const UNDEFINED_LAYER = '(layer "UNDEFINED")';
 const UNDEFINED_LAYER_PATTERN = /\(\s*layers?\s+"UNDEFINED"\s*\)/g;
+const LIST_TAG_CHARACTERS =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-';
 const SAFE_FOOTPRINT_DRAWINGS = new Set([
   'fp_line',
   'fp_arc',
@@ -69,11 +71,13 @@ function isDrawingOnlyContext(stack: readonly string[]): boolean {
 
 function readListTag(text: string, openParenIndex: number): string {
   let cursor = openParenIndex + 1;
-  while (/\s/.test(text[cursor] ?? '')) {
+  // Each character is inspected once; avoid regex matching over imported
+  // user-controlled PCB text while preserving Unicode whitespace handling.
+  while (cursor < text.length && text[cursor]!.trim().length === 0) {
     cursor++;
   }
   const start = cursor;
-  while (/[a-zA-Z0-9_.-]/.test(text[cursor] ?? '')) {
+  while (cursor < text.length && LIST_TAG_CHARACTERS.includes(text[cursor]!)) {
     cursor++;
   }
   return text.slice(start, cursor);
