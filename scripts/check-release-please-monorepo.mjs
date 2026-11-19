@@ -387,22 +387,6 @@ export function parseReleasePleaseDryRun(output) {
   };
 }
 
-/**
- * PR metadata validates the release-relevant commits, never the human-facing
- * PR title. A separate default-branch guard still checks final commit subjects.
- */
-export function validatePullRequestPolicy(
-  pullRequest,
-  commits,
-  fallbackHeadRefName = "",
-) {
-  const headRefName = pullRequest.head?.ref ?? fallbackHeadRefName;
-  return validateCommitScopeCoverage(commits, {
-    headRefName,
-    validateSubjects: false,
-  });
-}
-
 // Topic-branch commit subjects are not a blocking release-metadata gate;
 // default-branch and detached-head commit validation remain strict.
 // Pull request titles are deliberately unrestricted.
@@ -430,13 +414,14 @@ function main() {
 
   const pullRequest = readPullRequestEvent();
   if (pullRequest) {
+    const headRefName =
+      pullRequest.head?.ref ?? process.env.GITHUB_HEAD_REF ?? "";
     const commits = listCommitsForPullRequest(REPO_ROOT, pullRequest);
     errors.push(
-      ...validatePullRequestPolicy(
-        pullRequest,
-        commits,
-        process.env.GITHUB_HEAD_REF ?? "",
-      ),
+      ...validateCommitScopeCoverage(commits, {
+        headRefName,
+        validateSubjects: false,
+      }),
     );
   } else {
     errors.push(...validateLocalBranchCommitScopes(REPO_ROOT));

@@ -18,7 +18,6 @@ import {
   validateCommitScopeCoverage,
   validateLinkedVersionGroups,
   validateLocalBranchCommitScopes,
-  validatePullRequestPolicy,
   validateRenovateCommitScopes,
   validateRepositoryPolicy,
 } from "./check-release-please-monorepo.mjs";
@@ -125,42 +124,25 @@ test("#797 unchanged release PR reuses its identity and rejects stale heads", ()
   assert.doesNotMatch(append.run, /gh pr create|gh pr close|git push/u);
 });
 
-test("PR metadata permits arbitrary human titles without writing dynamic fixtures", () => {
-  const commits = [
-    {
-      sha: "abcdef1",
-      subject: "Legacy topic branch commit",
-      files: ["apps/vscode-extension/src/cli/importCommands.ts"],
-    },
-  ];
-  for (const title of [
-    "Restore Eagle PCB import without losing drawings",
-    "fix: readable title without a scope",
-    "feat(anything): PR labels are not release metadata",
-  ]) {
-    assert.deepEqual(
-      validatePullRequestPolicy(
-        { title, head: { ref: "fix/unrestricted-title" } },
-        commits,
-      ),
-      [],
-      title,
-    );
-  }
-
-  // Release Please generated branch handling remains independent of titles.
-  assert.deepEqual(
-    validatePullRequestPolicy(
-      {
-        title: "Release extension",
-        head: {
-          ref: "release-please--branches--main--components--vscode-extension",
-        },
-      },
-      commits,
-    ),
-    [],
+test("PR titles are never inspected by the metadata release policy", () => {
+  const policy = fs.readFileSync(
+    path.join(REPO_ROOT, "scripts/check-release-please-monorepo.mjs"),
+    "utf8",
   );
+  const eventBranch = policy.slice(
+    policy.indexOf("function main()"),
+    policy.indexOf("function validateScopeList("),
+  );
+
+  // The PR event continues to validate commit and release metadata; no
+  // title-format, prefix, or scope check may be added back to this path.
+  assert.doesNotMatch(eventBranch, /pullRequest\.title|validatePrTitle/u);
+  assert.match(
+    eventBranch,
+    /listCommitsForPullRequest\(REPO_ROOT, pullRequest\)/u,
+  );
+  assert.match(eventBranch, /validateCommitScopeCoverage\(commits/u);
+  assert.match(eventBranch, /validateSubjects: false/u);
 });
 
 test("release-please manifest mode is product-scoped and version aligned", () => {
