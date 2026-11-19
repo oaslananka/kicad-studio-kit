@@ -44,7 +44,14 @@ export async function runManufacturingReleaseWizard(
     // trust through the centralized guard rather than menu visibility alone.
     assertWorkspaceTrusted('Manufacturing release');
     const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    const gates = await services.mcpAdapter.runProjectQualityGate();
+    const gates = await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: 'Checking project quality before manufacturing release',
+        cancellable: false
+      },
+      () => services.mcpAdapter.runProjectQualityGate()
+    );
     const blocking = gates.filter((gate) =>
       ['FAIL', 'BLOCKED'].includes(gate.status)
     );
