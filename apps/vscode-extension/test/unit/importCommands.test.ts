@@ -57,6 +57,7 @@ describe('KiCadImportService', () => {
       ...overrides.detector
     };
     const logger = {
+      show: jest.fn(),
       error: jest.fn(),
       ...overrides.logger
     };
@@ -214,7 +215,8 @@ describe('KiCadImportService', () => {
         inputFile
       ],
       cwd: tempDir,
-      progressTitle: 'Importing PADS board'
+      progressTitle: 'Importing PADS board',
+      onProgress: expect.any(Function)
     });
     expect(JSON.parse(fs.readFileSync(projectFile, 'utf8'))).toEqual({
       meta: {
@@ -231,6 +233,102 @@ describe('KiCadImportService', () => {
     );
     expect(window.showInformationMessage).toHaveBeenCalledWith(
       'Imported legacy-board.asc as legacy-board.kicad_pcb.'
+    );
+  });
+
+  it('warns about missing source-layer mappings after a successful Fabmaster import (#1029)', async () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kicad-import-'));
+    const source = path.join(tempDir, 'real-fabmaster.txt');
+    const project = path.join(tempDir, 'real-fabmaster.kicad_pro');
+    fs.writeFileSync(source, 'Fabmaster fixture', 'utf8');
+    const { service, runner, logger } = createService({
+      detector: {
+        hasCapability: jest.fn().mockResolvedValue(true),
+        getCommandHelp: jest
+          .fn()
+          .mockResolvedValue('Usage: kicad-cli pcb import --format fabmaster')
+      },
+      runner: {
+        runWithProgress: jest
+          .fn()
+          .mockImplementation(
+            async ({
+              command,
+              onProgress
+            }: {
+              command: string[];
+              onProgress?: (output: string) => void;
+            }) => {
+              fs.writeFileSync(
+                command[command.indexOf('--output') + 1]!,
+                '(kicad_pcb (version 20240108))'
+              );
+              onProgress?.('Warning: No user layer to put layer SIG1_IN3\n');
+              onProgress?.('Warning: No user layer to put layer GND_IN2\n');
+              return 'Successfully saved imported board';
+            }
+          )
+      }
+    });
+    (window.showOpenDialog as jest.Mock).mockResolvedValue([Uri.file(source)]);
+    (window.showWarningMessage as jest.Mock).mockResolvedValue(
+      'View Import Log'
+    );
+
+    await service.importBoard('fabmaster');
+    await Promise.resolve();
+
+    expect(runner.runWithProgress).toHaveBeenCalledWith(
+      expect.objectContaining({
+        command: expect.arrayContaining(['--format', 'fabmaster']),
+        onProgress: expect.any(Function)
+      })
+    );
+    expect(fs.existsSync(project)).toBe(true);
+    expect(fs.readFileSync(source, 'utf8')).toBe('Fabmaster fixture');
+    expect(window.showInformationMessage).not.toHaveBeenCalled();
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringMatching(/2 unmapped source layers.*verify the board/i),
+      'View Import Log'
+    );
+    expect(logger.show).toHaveBeenCalled();
+  });
+
+  it('shows other CLI warnings without mislabeling them as unmapped layers (#1029)', async () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kicad-import-'));
+    const source = path.join(tempDir, 'pcb.asc');
+    fs.writeFileSync(source, 'PADS test', 'utf8');
+    const { service, runner } = createService({
+      runner: {
+        runWithProgress: jest
+          .fn()
+          .mockImplementation(
+            async ({
+              command,
+              onProgress
+            }: {
+              command: string[];
+              onProgress?: (output: string) => void;
+            }) => {
+              fs.writeFileSync(
+                command[command.indexOf('--output') + 1]!,
+                '(kicad_pcb (version 20240108))'
+              );
+              onProgress?.('Warning: unknown component attribute\n');
+              return 'ok';
+            }
+          )
+      }
+    });
+    (window.showOpenDialog as jest.Mock).mockResolvedValue([Uri.file(source)]);
+
+    await service.importBoard('pads');
+
+    expect(runner.runWithProgress).toHaveBeenCalled();
+    expect(window.showInformationMessage).not.toHaveBeenCalled();
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringMatching(/1 warning.*verify the board/i),
+      'View Import Log'
     );
   });
 
