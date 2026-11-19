@@ -97,6 +97,42 @@ describe('FixQueueProvider', () => {
   });
 
   describe('refresh', () => {
+    it('coalesces concurrent queue requests to avoid repeated project scans (#1026)', async () => {
+      let finish: (value: FixItem[]) => void = () => undefined;
+      const pending = new Promise<FixItem[]>((resolve) => {
+        finish = resolve;
+      });
+      adapter.fetchFixQueue.mockReturnValue(pending);
+      const provider = new FixQueueProvider(adapter);
+
+      const first = provider.refresh();
+      const second = provider.refresh();
+      expect(adapter.fetchFixQueue).toHaveBeenCalledTimes(1);
+      finish([makeItem()]);
+      await Promise.all([first, second]);
+      expect((provider.getChildren()[0] as FixItem).id).toBe('fix-1');
+    });
+
+    it('shows pending quality checks rather than a false empty state (#1026)', async () => {
+      let finish: (value: FixItem[]) => void = () => undefined;
+      const pending = new Promise<FixItem[]>((resolve) => {
+        finish = resolve;
+      });
+      adapter.fetchFixQueue.mockReturnValue(pending);
+      const provider = new FixQueueProvider(adapter);
+
+      const refresh = provider.refresh();
+      const [node] = provider.getChildren();
+      const waiting = provider.getTreeItem(node as never);
+      expect(waiting.label).toBe('Checking AI Fix Queue');
+      expect(waiting.contextValue).toBe('sidebar-state-loading');
+
+      finish([makeItem()]);
+      await refresh;
+      const [fixed] = provider.getChildren() as FixItem[];
+      expect(fixed?.id).toBe('fix-1');
+    });
+
     it('fetches fixes from the adapter on refresh', async () => {
       adapter.fetchFixQueue.mockResolvedValue([makeItem()]);
       const provider = new FixQueueProvider(adapter);

@@ -49,6 +49,7 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixQueueNode> {
   readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
   private items: FixItem[] = [];
   private state: SidebarWorkflowState | undefined;
+  private refreshInFlight: Promise<void> | undefined;
 
   constructor(
     private readonly adapter: FixQueueMcpAdapter,
@@ -133,7 +134,17 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixQueueNode> {
     });
   }
 
-  async refresh(): Promise<void> {
+  refresh(): Promise<void> {
+    if (this.refreshInFlight) {
+      return this.refreshInFlight;
+    }
+    this.refreshInFlight = this.refreshFromServer().finally(() => {
+      this.refreshInFlight = undefined;
+    });
+    return this.refreshInFlight;
+  }
+
+  private async refreshFromServer(): Promise<void> {
     const state = this.mcpState?.getState();
     if (state && !supportsHttpFixQueue(state)) {
       this.items = [];
@@ -141,6 +152,15 @@ export class FixQueueProvider implements vscode.TreeDataProvider<FixQueueNode> {
       this.onDidChangeTreeDataEmitter.fire(undefined);
       return;
     }
+    this.items = [];
+    this.state = sidebarState(
+      'loading',
+      'Checking AI Fix Queue',
+      'Running project quality checks',
+      'The connected MCP server is evaluating the project; this may take a few minutes.',
+      'sync~spin'
+    );
+    this.onDidChangeTreeDataEmitter.fire(undefined);
     try {
       this.items = await this.adapter.fetchFixQueue();
       this.state = this.items.length

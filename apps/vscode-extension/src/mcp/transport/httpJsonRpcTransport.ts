@@ -91,9 +91,15 @@ export class HttpJsonRpcTransport implements McpRpcTransport {
 
   async execute<T>(request: HttpJsonRpcRequest): Promise<HttpJsonRpcResult<T>> {
     let lastError: unknown;
-    // Tools may mutate design files or export artifacts. A timeout/503 does
-    // not prove the server abandoned the operation: never replay tools/call.
-    const maxAttempts = request.method === 'tools/call' ? 1 : this.maxRetries;
+    // Tool calls can mutate files. Fix Queue reads evaluate expensive project
+    // quality gates. Neither may be replayed on uncertain server completion.
+    const isExpensiveResource =
+      request.method === 'resources/read' &&
+      request.params['uri'] === 'kicad://project/fix_queue';
+    const maxAttempts =
+      request.method === 'tools/call' || isExpensiveResource
+        ? 1
+        : this.maxRetries;
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       try {

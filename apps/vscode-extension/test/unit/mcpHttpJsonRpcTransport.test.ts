@@ -247,8 +247,35 @@ describe('HTTP JSON-RPC transport boundary (#492)', () => {
     }
   );
 
+  it('does not restart an expensive Fix Queue resource evaluation after a transient error (#1026)', async () => {
+    const fetchFn = jest
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({}, { status: 503 }))
+      .mockResolvedValueOnce(jsonResponse({ result: { contents: [] } }));
+    const transport = new HttpJsonRpcTransport({
+      fetchFn,
+      logger: createLogger(),
+      maxRetries: 3,
+      retryBaseDelayMs: 1
+    });
+
+    await expect(
+      transport.execute({
+        baseEndpoint: 'http://127.0.0.1:27185',
+        id: 61,
+        method: 'resources/read',
+        params: { uri: 'kicad://project/fix_queue' },
+        headers: {},
+        allowLegacySse: false,
+        timeoutMs: 300_000
+      })
+    ).rejects.toMatchObject({ status: 503 });
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
   it('does not replay tools/call after a transient error because tools can mutate state (#1023)', async () => {
-    const fetchFn = jest.fn()
+    const fetchFn = jest
+      .fn()
       .mockResolvedValueOnce(jsonResponse({}, { status: 503 }))
       .mockResolvedValueOnce(jsonResponse({ result: { ok: true } }));
     const logger = createLogger();
@@ -259,15 +286,17 @@ describe('HTTP JSON-RPC transport boundary (#492)', () => {
       retryBaseDelayMs: 1
     });
 
-    await expect(transport.execute({
-      baseEndpoint: 'http://127.0.0.1:27185',
-      id: 19,
-      method: 'tools/call',
-      params: { name: 'export_manufacturing_package', arguments: {} },
-      headers: {},
-      allowLegacySse: false,
-      timeoutMs: 1000
-    })).rejects.toMatchObject({ status: 503 });
+    await expect(
+      transport.execute({
+        baseEndpoint: 'http://127.0.0.1:27185',
+        id: 19,
+        method: 'tools/call',
+        params: { name: 'export_manufacturing_package', arguments: {} },
+        headers: {},
+        allowLegacySse: false,
+        timeoutMs: 1000
+      })
+    ).rejects.toMatchObject({ status: 503 });
     expect(fetchFn).toHaveBeenCalledTimes(1);
     expect(logger.debug).not.toHaveBeenCalled();
   });

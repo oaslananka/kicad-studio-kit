@@ -97,8 +97,44 @@ function result<T>(
 }
 
 describe('MCP protocol lifecycle boundary (#492)', () => {
+  it('waits for the full Fix Queue gate without slowing ordinary resource reads (#1026)', async () => {
+    const transport = createTransport([
+      result({ contents: [] }),
+      result({ contents: [] })
+    ]);
+    const lifecycle = new McpProtocolLifecycle({
+      adapter: createAdapter(),
+      transport,
+      clientInfo: { name: 'kicad-studio', version: '2.7.6' },
+      sessionStore: new MemorySessionStore(undefined)
+    });
+
+    await lifecycle.execute(
+      'resources/read',
+      {
+        uri: 'kicad://project/info'
+      },
+      runtime()
+    );
+    await lifecycle.execute(
+      'resources/read',
+      {
+        uri: 'kicad://project/fix_queue'
+      },
+      runtime()
+    );
+
+    expect(transport.requests.map((r) => r.timeoutMs)).toEqual([
+      15_000, 300_000
+    ]);
+  });
+
   it('gives tools/call a long deadline without slowing discovery (#1023)', async () => {
-    const transport = createTransport([result({ tools: [] }), result({ ok: true }), result({ ok: true })]);
+    const transport = createTransport([
+      result({ tools: [] }),
+      result({ ok: true }),
+      result({ ok: true })
+    ]);
     const lifecycle = new McpProtocolLifecycle({
       adapter: createAdapter(),
       transport,
@@ -107,14 +143,23 @@ describe('MCP protocol lifecycle boundary (#492)', () => {
     });
 
     await lifecycle.execute('tools/list', {}, runtime());
-    await lifecycle.execute('tools/call', {
-      name: 'project_ping',
-      arguments: {}
-    }, runtime());
+    await lifecycle.execute(
+      'tools/call',
+      {
+        name: 'project_ping',
+        arguments: {}
+      },
+      runtime()
+    );
 
-    expect(transport.requests.map((request) => request.timeoutMs))
-      .toEqual([15_000, 120_000]);
-    await lifecycle.execute('tools/call', { name: 'project_quality_gate_report', arguments: {} }, runtime());
+    expect(transport.requests.map((request) => request.timeoutMs)).toEqual([
+      15_000, 120_000
+    ]);
+    await lifecycle.execute(
+      'tools/call',
+      { name: 'project_quality_gate_report', arguments: {} },
+      runtime()
+    );
     expect(transport.requests.at(-1)?.timeoutMs).toBe(300_000);
   });
 

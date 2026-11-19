@@ -139,6 +139,13 @@ describe('MCP command workspace trust guards', () => {
     await registeredHandler(COMMANDS.retryMcp)();
 
     expect(services.fixQueueProvider.refresh).toHaveBeenCalled();
+    expect(window.withProgress).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Refreshing AI fix queue',
+        cancellable: false
+      }),
+      expect.any(Function)
+    );
     expect(services.mcpClient.retryNow).toHaveBeenCalled();
     expect(services.refreshMcpState).toHaveBeenCalled();
   });

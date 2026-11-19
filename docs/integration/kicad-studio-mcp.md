@@ -59,13 +59,16 @@ The extension keeps protocol-version behavior separate from HTTP execution:
   parsing, the opt-in legacy `/sse` fallback, and traffic-log evidence. The
   transport returns raw response headers and must not interpret protocol
   sessions.
-- Discovery and connection checks use the configured MCP request deadline
-  (15 seconds by default). Tool invocations have at least 120 seconds, and
-  project-wide quality gate reports up to 300 seconds, for real KiCad work.
-  A timed-out or failed `tools/call`
-  is never retried automatically because the server might have completed
-  a state-changing operation before the response was lost. Inspect the
-  operation status and retry explicitly rather than assuming it did nothing.
+- Discovery, connection checks and ordinary resource reads use the configured
+  MCP request deadline (15 seconds by default). Tool invocations have at least
+  120 seconds, and project-wide quality gate reports up to 300 seconds.
+  The `kicad://project/fix_queue` resource also evaluates project-wide quality
+  gates, so it gets the same 300-second deadline. An explicit Fix Queue refresh
+  displays progress and coalesces overlapping reads rather than reporting
+  `No pending AI fixes` before a scan finishes. An uncertain `tools/call`
+  or Fix Queue resource read is not replayed automatically, since a response
+  may be lost after the server has already performed expensive work or a
+  state change. Inspect status and retry explicitly instead.
 - `apps/vscode-extension/src/mcp/mcpClient.ts` owns endpoint configuration,
   VS Code connection state, server compatibility cards, diagnostics, and domain
   result normalization. It selects the adapter named by
