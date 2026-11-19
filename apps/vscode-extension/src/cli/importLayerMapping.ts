@@ -105,32 +105,32 @@ function scanDrawingLayerContexts(text: string): {
 
   // Track enclosing S-expressions. Skip quoted values entirely so their
   // parentheses and layer-looking text can never affect parent matching.
-  for (let index = 0; index < text.length; index++) {
+  let index = 0;
+  while (index < text.length) {
     const char = text[index];
     if (char === '"') {
       const closingQuote = skipQuotedValue(text, index);
       if (closingQuote === undefined) {
         return { safeCount, complete: false };
       }
-      index = closingQuote;
+      index = closingQuote + 1;
       continue;
     }
+    const position = index++;
     if (char === ')') {
-      if (stack.pop() === undefined) {
-        invalidNesting = true;
-      }
+      invalidNesting = stack.pop() === undefined || invalidNesting;
       continue;
     }
     if (char !== '(') {
       continue;
     }
     if (
-      text.startsWith(UNDEFINED_LAYER, index) &&
+      text.startsWith(UNDEFINED_LAYER, position) &&
       isDrawingOnlyContext(stack)
     ) {
       safeCount++;
     }
-    stack.push(readListTag(text, index));
+    stack.push(readListTag(text, position));
   }
 
   return { safeCount, complete: !invalidNesting && stack.length === 0 };
