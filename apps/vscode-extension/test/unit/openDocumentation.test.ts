@@ -9,6 +9,10 @@ jest.mock('node:child_process', () => ({
 const docsUrl =
   'https://oaslananka.github.io/kicad-studio-kit/workflows/manufacturing-export.html';
 const systemOpener = execFile as unknown as jest.Mock;
+const initialPlatformDescriptor = Object.getOwnPropertyDescriptor(
+  process,
+  'platform'
+);
 const initialDisplay = process.env['DISPLAY'];
 const initialDesktop = process.env['XDG_CURRENT_DESKTOP'];
 const initialWayland = process.env['WAYLAND_DISPLAY'];
@@ -24,6 +28,10 @@ function restoreEnv(key: string, original: string | undefined): void {
 describe('documentation browser opening', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    Object.defineProperty(process, 'platform', {
+      configurable: true,
+      value: 'linux'
+    });
     process.env['DISPLAY'] = ':93';
     process.env['XDG_CURRENT_DESKTOP'] = 'GNOME';
     delete process.env['WAYLAND_DISPLAY'];
@@ -43,6 +51,9 @@ describe('documentation browser opening', () => {
   });
 
   afterEach(() => {
+    if (initialPlatformDescriptor) {
+      Object.defineProperty(process, 'platform', initialPlatformDescriptor);
+    }
     restoreEnv('DISPLAY', initialDisplay);
     restoreEnv('XDG_CURRENT_DESKTOP', initialDesktop);
     restoreEnv('WAYLAND_DISPLAY', initialWayland);
@@ -53,7 +64,7 @@ describe('documentation browser opening', () => {
     await openDocumentationWithRecovery(docsUrl, 'quality gate documentation');
 
     expect(systemOpener).toHaveBeenCalledWith(
-      'xdg-open',
+      '/usr/bin/xdg-open',
       [docsUrl],
       expect.objectContaining({ timeout: 4_000 }),
       expect.any(Function)
@@ -111,6 +122,24 @@ describe('documentation browser opening', () => {
     expect(systemOpener).toHaveBeenCalledTimes(1);
     expect(env.openExternal).not.toHaveBeenCalled();
   });
+
+  it.each(['win32', 'darwin'])(
+    'uses the VS Code opener on %s rather than spawning Linux processes',
+    async (platform) => {
+      Object.defineProperty(process, 'platform', {
+        configurable: true,
+        value: platform
+      });
+
+      await openDocumentationWithRecovery(
+        docsUrl,
+        'quality gate documentation'
+      );
+
+      expect(systemOpener).not.toHaveBeenCalled();
+      expect(env.openExternal).toHaveBeenCalledTimes(1);
+    }
+  );
 
   it('keeps remote VS Code sessions on the VS Code opener', async () => {
     (env as typeof env & { remoteName?: string }).remoteName = 'ssh-remote';

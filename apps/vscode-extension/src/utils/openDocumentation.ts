@@ -26,7 +26,7 @@ async function openWithLocalLinuxBrowser(url: string): Promise<boolean> {
 
   return new Promise<boolean>((resolve) => {
     execFile(
-      'xdg-open',
+      '/usr/bin/xdg-open',
       [url],
       { timeout: 4_000, windowsHide: true },
       (error) => resolve(error === null)
