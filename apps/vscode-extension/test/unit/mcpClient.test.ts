@@ -462,6 +462,32 @@ describe('McpClient', () => {
     });
   });
 
+  it('rejects MCP tool results marked isError instead of reporting success', async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse(
+          { result: {} },
+          { headers: { 'MCP-Session-Id': 'session-tool-error' } }
+        )
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          result: {
+            isError: true,
+            content: [
+              { text: 'TOOL_EXECUTION_FAILED: Unknown tool: drc_rule_upsert' }
+            ]
+          }
+        })
+      );
+    global.fetch = fetchMock as typeof fetch;
+
+    await expect(
+      createClient().callTool('drc_rule_upsert', {})
+    ).rejects.toThrow('Unknown tool: drc_rule_upsert');
+  });
+
   it('parses JSON-RPC payloads returned over text/event-stream', async () => {
     const fetchMock = jest
       .fn()
@@ -1022,8 +1048,9 @@ describe('McpClient', () => {
       }).callTool('project_ping', {})
     ).rejects.toThrow('HTTP 503');
     expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(JSON.parse(String(fetchMock.mock.calls[2]?.[1]?.body)).method)
-      .toBe('tools/call');
+    expect(JSON.parse(String(fetchMock.mock.calls[2]?.[1]?.body)).method).toBe(
+      'tools/call'
+    );
   });
 
   it('reports VsCodeStdio state when HTTP fails but .vscode/mcp.json has kicad-mcp-pro (command field)', async () => {

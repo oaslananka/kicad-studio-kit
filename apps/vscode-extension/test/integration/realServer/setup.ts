@@ -105,6 +105,11 @@ export async function withPublishedStatelessServer(
 ): Promise<void> {
   const version = requirePublishedVersion();
   const port = await findFreePort();
+  const tempRoot = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'kicadstudio-stateless-mcp-')
+  );
+  const projectDir = path.join(tempRoot, 'project');
+  copyDirectory(defaultFixtureProject(), projectDir);
   const child = spawn(
     'uv',
     [
@@ -122,6 +127,8 @@ export async function withPublishedStatelessServer(
         KICAD_MCP_OPERATING_MODE: 'readonly',
         KICAD_MCP_PROTOCOL_LANE: '2026-07-28-rc',
         KICAD_MCP_TRANSPORT: 'streamable-http',
+        KICAD_MCP_PROJECT_DIR: projectDir,
+        KICAD_MCP_PCB_FILE: path.join(projectDir, 'demo.kicad_pcb'),
         KICAD_MCP_STATEFUL_HTTP: '0',
         KICAD_MCP_LEGACY_SSE: '0',
         KICAD_MCP_HOST: '127.0.0.1',
@@ -165,6 +172,7 @@ export async function withPublishedStatelessServer(
     await testBody(`http://127.0.0.1:${port}`);
   } finally {
     await stopServer(child);
+    fs.rmSync(tempRoot, { recursive: true, force: true });
   }
 }
 
@@ -188,6 +196,9 @@ async function startRealServer(): Promise<RealServerHarness> {
       KICAD_MCP_HOST: '127.0.0.1',
       KICAD_MCP_PORT: String(port),
       KICAD_MCP_PROJECT_DIR: projectDir,
+      // The published server requires an explicit active PCB for PCB gate tools.
+      // This is a copied, disposable fixture—not a user's project.
+      KICAD_MCP_PCB_FILE: path.join(projectDir, 'demo.kicad_pcb'),
       KICAD_MCP_PROFILE: 'full',
       KICAD_MCP_LOG_LEVEL: 'ERROR',
       ...(process.env['REAL_SERVER_PYPI_VERSION']
