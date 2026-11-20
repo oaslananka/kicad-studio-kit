@@ -268,6 +268,7 @@ export class McpClient {
     args: Record<string, unknown>
   ): Promise<Record<string, unknown> | undefined> {
     const result = await this.rpc<{
+      isError?: boolean;
       content?: Array<{ text?: string }>;
       structuredContent?: Record<string, unknown>;
     }>('tools/call', {
@@ -278,6 +279,14 @@ export class McpClient {
     const structuredError = normalizeStructuredError(result?.structuredContent);
     if (structuredError) {
       throw new McpStructuredError(structuredError);
+    }
+    if (result?.isError === true) {
+      const detail = result.content?.find(
+        (item) => typeof item.text === 'string' && item.text.trim()
+      )?.text;
+      throw new Error(
+        detail?.trim().slice(0, 800) || `MCP tool ${name} failed.`
+      );
     }
 
     if (

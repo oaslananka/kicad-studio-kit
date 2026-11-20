@@ -94,6 +94,38 @@ describe('McpToolAdapter', () => {
     expect(client.runManufacturingQualityGate).toHaveBeenCalled();
   });
 
+  it('sends the exact optional DRC bounds schema without Studio context metadata', async () => {
+    const client = {
+      callTool: jest.fn().mockResolvedValue({ text: 'created' })
+    };
+    const adapter = new McpToolAdapter(
+      client as never,
+      () =>
+        ({
+          id: 'test',
+          name: 'Disposable project',
+          rootPath: '/tmp/disposable',
+          projectFile: '/tmp/disposable/test.kicad_pro'
+        }) as never
+    );
+
+    await adapter.upsertDrcRule({
+      name: 'QA_WIDTH',
+      constraintType: 'track_width',
+      minValue: '0.25mm',
+      maxValue: '0.50mm',
+      severity: 'warning'
+    });
+
+    expect(client.callTool).toHaveBeenCalledWith('drc_rule_create', {
+      name: 'QA_WIDTH',
+      constraint_type: 'track_width',
+      min_value: '0.25mm',
+      max_value: '0.50mm',
+      severity: 'warning'
+    });
+  });
+
   it('exposes typed tool workflows for UI and commands', async () => {
     const client = {
       callTool: jest.fn().mockResolvedValue({ ok: true }),
@@ -113,8 +145,10 @@ describe('McpToolAdapter', () => {
     await adapter.setActiveVariant('Assembly-A');
     await adapter.upsertDrcRule({
       name: 'power_clearance',
+      constraintType: 'clearance',
+      minValue: '0.35mm',
       condition: "A.NetClass == 'POWER'",
-      constraint: 'clearance min 0.35mm'
+      severity: 'error'
     });
     await adapter.deleteDrcRule('power_clearance');
     await adapter.runDrc({ save_report: true });
@@ -133,13 +167,15 @@ describe('McpToolAdapter', () => {
     expect(client.callTool).toHaveBeenCalledWith('variant_set_active', {
       name: 'Assembly-A'
     });
-    expect(client.callTool).toHaveBeenCalledWith('drc_rule_upsert', {
+    expect(client.callTool).toHaveBeenCalledWith('drc_rule_create', {
       name: 'power_clearance',
+      constraint_type: 'clearance',
+      min_value: '0.35mm',
       condition: "A.NetClass == 'POWER'",
-      constraint: 'clearance min 0.35mm'
+      severity: 'error'
     });
     expect(client.callTool).toHaveBeenCalledWith('drc_rule_delete', {
-      name: 'power_clearance'
+      rule_name: 'power_clearance'
     });
     expect(client.callTool).toHaveBeenCalledWith('run_drc', {
       save_report: true

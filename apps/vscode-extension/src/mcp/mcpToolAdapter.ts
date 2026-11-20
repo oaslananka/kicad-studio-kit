@@ -62,8 +62,11 @@ export interface VariantMcpAdapter {
 
 export interface DrcRuleUpdate {
   name: string;
-  condition: string;
-  constraint: string;
+  constraintType: string;
+  minValue: string;
+  maxValue?: string;
+  condition?: string;
+  severity: 'error' | 'warning';
 }
 
 export interface DrcRulesMcpAdapter {
@@ -219,17 +222,20 @@ export class McpToolAdapter implements StudioMcpAdapter {
   }
 
   async upsertDrcRule(rule: DrcRuleUpdate): Promise<void> {
-    await this.client.callTool(
-      'drc_rule_upsert',
-      this.withProjectContext({ ...rule })
-    );
+    // These file-backed MCP tools use the server's configured project and
+    // exact upstream input schema, not the Studio workspace context object.
+    await this.client.callTool('drc_rule_create', {
+      name: rule.name,
+      constraint_type: rule.constraintType,
+      min_value: rule.minValue,
+      ...(rule.maxValue ? { max_value: rule.maxValue } : {}),
+      ...(rule.condition ? { condition: rule.condition } : {}),
+      severity: rule.severity
+    });
   }
 
   async deleteDrcRule(name: string): Promise<void> {
-    await this.client.callTool(
-      'drc_rule_delete',
-      this.withProjectContext({ name })
-    );
+    await this.client.callTool('drc_rule_delete', { rule_name: name });
   }
 
   runDrc(
@@ -267,7 +273,10 @@ export class McpToolAdapter implements StudioMcpAdapter {
   exportNetlist(
     args: Record<string, unknown> = {}
   ): Promise<Record<string, unknown> | undefined> {
-    return this.client.callTool('export_netlist', this.withProjectContext(args));
+    return this.client.callTool(
+      'export_netlist',
+      this.withProjectContext(args)
+    );
   }
 
   exportSpiceNetlist(

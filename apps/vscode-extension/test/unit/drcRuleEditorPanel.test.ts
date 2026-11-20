@@ -108,10 +108,15 @@ describe('DrcRuleEditorPanel', () => {
       type: 'upsert',
       payload: {
         name: 'power_clearance',
+        constraintType: 'clearance',
+        minValue: '0.35mm',
         condition: "A.NetClass == 'POWER'",
-        constraint: 'clearance min 0.35mm'
+        severity: 'error'
       }
     });
+    (window.showWarningMessage as jest.Mock).mockResolvedValueOnce(
+      'Delete rule'
+    );
     await panelMock.post({
       type: 'delete',
       payload: {
@@ -121,11 +126,95 @@ describe('DrcRuleEditorPanel', () => {
 
     expect(mcpClient.upsertDrcRule).toHaveBeenCalledWith({
       name: 'power_clearance',
+      constraintType: 'clearance',
+      minValue: '0.35mm',
       condition: "A.NetClass == 'POWER'",
-      constraint: 'clearance min 0.35mm'
+      severity: 'error'
     });
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      'DRC rule "power_clearance" saved to the connected MCP project.'
+    );
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      'Delete DRC rule "power_clearance" from the connected MCP project?',
+      { modal: true },
+      'Delete rule'
+    );
     expect(mcpClient.deleteDrcRule).toHaveBeenCalledWith('power_clearance');
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      'DRC rule "power_clearance" deleted from the connected MCP project.'
+    );
     expect(panelMock.panel.webview.html).toContain('KiCad DRC Rule Editor');
+    expect(panelMock.panel.webview.html).toContain('id="constraint-type"');
+    expect(panelMock.panel.webview.html).toContain('id="min-value"');
+    expect(panelMock.panel.webview.html).toContain('id="max-value"');
+  });
+
+  it('rejects malformed DRC bounds and unsupported constraint types', async () => {
+    const panelMock = createPanelMock();
+    (window.createWebviewPanel as jest.Mock).mockReturnValue(panelMock.panel);
+    const mcpClient = {
+      testConnection: jest.fn().mockResolvedValue({ connected: true }),
+      upsertDrcRule: jest.fn()
+    };
+    await DrcRuleEditorPanel.createOrShow(
+      {
+        extensionUri: vscode.Uri.file('/extension')
+      } as vscode.ExtensionContext,
+      mcpClient as never
+    );
+
+    for (const payload of [
+      {
+        name: 'A',
+        constraintType: 'clearance',
+        minValue: 'nope',
+        severity: 'error'
+      },
+      {
+        name: 'A',
+        constraintType: 'unknown',
+        minValue: '0.2mm',
+        severity: 'error'
+      },
+      {
+        name: 'A',
+        constraintType: 'clearance',
+        minValue: '0.2mm',
+        maxValue: 'oops',
+        severity: 'warning'
+      },
+      {
+        name: 'A',
+        constraintType: 'track_width',
+        minValue: '0.2mm',
+        severity: 'fatal'
+      }
+    ]) {
+      await panelMock.post({ type: 'upsert', payload });
+    }
+
+    expect(mcpClient.upsertDrcRule).not.toHaveBeenCalled();
+    expect(window.showErrorMessage).toHaveBeenCalledTimes(4);
+  });
+
+  it('does not delete a rule when the confirmation is cancelled', async () => {
+    const panelMock = createPanelMock();
+    (window.createWebviewPanel as jest.Mock).mockReturnValue(panelMock.panel);
+    const mcpClient = {
+      testConnection: jest.fn().mockResolvedValue({ connected: true }),
+      deleteDrcRule: jest.fn()
+    };
+    await DrcRuleEditorPanel.createOrShow(
+      {
+        extensionUri: vscode.Uri.file('/extension')
+      } as vscode.ExtensionContext,
+      mcpClient as never
+    );
+    (window.showWarningMessage as jest.Mock).mockResolvedValueOnce(undefined);
+
+    await panelMock.post({ type: 'delete', payload: { name: 'QA_RULE' } });
+
+    expect(mcpClient.deleteDrcRule).not.toHaveBeenCalled();
   });
 
   it('reports DRC rule edit failures from webview messages', async () => {
@@ -149,8 +238,10 @@ describe('DrcRuleEditorPanel', () => {
         type: 'upsert',
         payload: {
           name: 'power_clearance',
+          constraintType: 'clearance',
+          minValue: '0.35mm',
           condition: "A.NetClass == 'POWER'",
-          constraint: 'clearance min 0.35mm'
+          severity: 'error'
         }
       })
     ).resolves.toBeUndefined();
@@ -158,6 +249,9 @@ describe('DrcRuleEditorPanel', () => {
       'Unable to save DRC rule power_clearance: upsert failed'
     );
 
+    (window.showWarningMessage as jest.Mock).mockResolvedValueOnce(
+      'Delete rule'
+    );
     await expect(
       panelMock.post({
         type: 'delete',

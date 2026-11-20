@@ -84,20 +84,59 @@ export class DrcRuleEditorPanel {
     }
 
     if (message.type === 'upsert') {
+      const constraintType = asString(payload['constraintType'])?.trim();
+      const minValue = asString(payload['minValue'])?.trim();
+      const maxValue = asString(payload['maxValue'])?.trim();
+      const condition = asString(payload['condition'])?.trim();
+      const severity = asString(payload['severity']);
+      const units = /^(?:\d+(?:\.\d*)?|\.\d+)(?:mm|mil|in)$/i;
+
+      if (
+        !constraintType ||
+        !['clearance', 'track_width', 'via_diameter', 'hole_to_hole'].includes(
+          constraintType
+        ) ||
+        !minValue ||
+        !units.test(minValue) ||
+        (maxValue && !units.test(maxValue)) ||
+        (severity !== 'error' && severity !== 'warning')
+      ) {
+        await vscode.window.showErrorMessage(
+          'Choose a supported constraint and enter a minimum value with units (for example, 0.35mm).'
+        );
+        return;
+      }
       try {
         await this.mcpAdapter.upsertDrcRule({
           name,
-          condition: asString(payload['condition']) ?? '',
-          constraint: asString(payload['constraint']) ?? ''
+          constraintType,
+          minValue,
+          ...(maxValue ? { maxValue } : {}),
+          ...(condition ? { condition } : {}),
+          severity
         });
+        void vscode.window.showInformationMessage(
+          `DRC rule "${name}" saved to the connected MCP project.`
+        );
       } catch (error) {
         await showDrcRuleEditorError(`Unable to save DRC rule ${name}`, error);
       }
       return;
     }
 
+    const confirmed = await vscode.window.showWarningMessage(
+      `Delete DRC rule "${name}" from the connected MCP project?`,
+      { modal: true },
+      'Delete rule'
+    );
+    if (confirmed !== 'Delete rule') {
+      return;
+    }
     try {
       await this.mcpAdapter.deleteDrcRule(name);
+      void vscode.window.showInformationMessage(
+        `DRC rule "${name}" deleted from the connected MCP project.`
+      );
     } catch (error) {
       await showDrcRuleEditorError(`Unable to delete DRC rule ${name}`, error);
     }
@@ -121,8 +160,9 @@ export function buildDrcRuleEditorHtml(): string {
     body { margin: 0; padding: 18px; color: var(--vscode-foreground); background: var(--vscode-editor-background); font-family: var(--vscode-font-family); }
     form { display: grid; gap: 12px; max-width: 720px; }
     label { display: grid; gap: 6px; font-weight: 600; }
-    input, textarea { width: 100%; box-sizing: border-box; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border, transparent); padding: 8px; font: inherit; }
+    input, textarea, select { width: 100%; box-sizing: border-box; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border, transparent); padding: 8px; font: inherit; }
     textarea { min-height: 92px; resize: vertical; }
+    .help { opacity: .85; line-height: 1.5; }
     .actions { display: flex; gap: 8px; }
     button { color: var(--vscode-button-foreground); background: var(--vscode-button-background); border: 0; padding: 8px 12px; font: inherit; cursor: pointer; }
     button.secondary { color: var(--vscode-button-secondaryForeground); background: var(--vscode-button-secondaryBackground); }
@@ -134,10 +174,26 @@ export function buildDrcRuleEditorHtml(): string {
 </head>
 <body>
   <h1>KiCad DRC Rule Editor</h1>
+  <p class="help">Rules are saved in the project configured in your connected kicad-mcp-pro server. Verify the MCP project before saving.</p>
   <form id="rule-form">
-    <label>Name<input id="name" autocomplete="off" required></label>
-    <label>Condition<textarea id="condition"></textarea></label>
-    <label>Constraint<textarea id="constraint"></textarea></label>
+    <label>Rule name<input id="name" autocomplete="off" required></label>
+    <label>Constraint type
+      <select id="constraint-type">
+        <option value="clearance">Copper clearance</option>
+        <option value="track_width">Track width</option>
+        <option value="via_diameter">Via diameter</option>
+        <option value="hole_to_hole">Hole-to-hole clearance</option>
+      </select>
+    </label>
+    <label>Minimum value (with units)<input id="min-value" placeholder="0.35mm" required></label>
+    <label>Maximum value (optional)<input id="max-value" placeholder="0.60mm"></label>
+    <label>Condition (optional)<textarea id="condition" placeholder="A.NetClass == 'POWER'"></textarea></label>
+    <label>Severity
+      <select id="severity">
+        <option value="error">Error</option>
+        <option value="warning">Warning</option>
+      </select>
+    </label>
     <div class="actions">
       <button type="submit">Save Rule</button>
       <button class="secondary" id="delete-rule" type="button">Delete Rule</button>
@@ -147,8 +203,11 @@ export function buildDrcRuleEditorHtml(): string {
     const vscode = acquireVsCodeApi();
     const readPayload = () => ({
       name: document.getElementById('name').value,
+      constraintType: document.getElementById('constraint-type').value,
+      minValue: document.getElementById('min-value').value,
+      maxValue: document.getElementById('max-value').value,
       condition: document.getElementById('condition').value,
-      constraint: document.getElementById('constraint').value
+      severity: document.getElementById('severity').value
     });
     document.getElementById('rule-form').addEventListener('submit', (event) => {
       event.preventDefault();
