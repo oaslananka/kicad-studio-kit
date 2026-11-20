@@ -285,6 +285,14 @@ export function createViewerControllerScript(): string {
       if (collapsed) closeExportMenu();
     }
 
+    // Format displayed bounds only; retain original coordinates for the
+    // partial renderer so UI rounding cannot change the selected region.
+    function formatPartialCoordinate(value) {
+      return typeof value === 'number' && Number.isFinite(value)
+        ? value.toFixed(2)
+        : '—';
+    }
+
     function updatePartialPreviewUi() {
       if (!partialSection) return;
       const summary = payload.partialPreview;
@@ -299,8 +307,9 @@ export function createViewerControllerScript(): string {
       if (partialStatus && summary) {
         const missing = summary.remaining || {};
         const bounds = summary.viewport || {};
-        partialStatus.textContent = 'PARTIAL — X ' + bounds.minX + '–' + bounds.maxX +
-          ', Y ' + bounds.minY + '–' + bounds.maxY +
+        partialStatus.textContent = 'PARTIAL — X ' +
+          formatPartialCoordinate(bounds.minX) + '–' + formatPartialCoordinate(bounds.maxX) +
+          ', Y ' + formatPartialCoordinate(bounds.minY) + '–' + formatPartialCoordinate(bounds.maxY) +
           ' mm. Not loaded in this region: ' +
           (missing.segment || 0) + ' segments, ' +
           (missing.via || 0) + ' vias, ' +
