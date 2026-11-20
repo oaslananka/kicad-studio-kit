@@ -180,6 +180,97 @@ describe('QualityGateProvider', () => {
     );
   });
 
+  it('offers a copy link when Quality Gate documentation cannot open', async () => {
+    (env.openExternal as jest.Mock).mockResolvedValueOnce(false);
+    (window.showWarningMessage as jest.Mock).mockResolvedValueOnce('Copy link');
+    const provider = new QualityGateProvider(
+      createExtensionContextMock() as never,
+      {} as never
+    );
+
+    await provider.openDocs();
+
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('quality gate documentation could not be opened'),
+      'Copy link'
+    );
+    expect(env.clipboard.writeText).toHaveBeenCalledWith(
+      'https://oaslananka.github.io/kicad-studio-kit/workflows/manufacturing-export.html'
+    );
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      'Quality gate documentation link copied.'
+    );
+  });
+
+  it('recovers from an indefinitely pending Quality Gate documentation URL handler', async () => {
+    jest.useFakeTimers();
+    try {
+      (env.openExternal as jest.Mock).mockImplementationOnce(
+        () => new Promise<boolean>(() => {})
+      );
+      (window.showWarningMessage as jest.Mock).mockResolvedValueOnce(
+        'Copy link'
+      );
+      const provider = new QualityGateProvider(
+        createExtensionContextMock() as never,
+        {} as never
+      );
+
+      const operation = provider.openDocs();
+      await jest.advanceTimersByTimeAsync(7_999);
+      expect(window.showWarningMessage).not.toHaveBeenCalled();
+      await jest.advanceTimersByTimeAsync(1);
+      await operation;
+
+      expect(window.showWarningMessage).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'quality gate documentation is taking too long'
+        ),
+        'Copy link'
+      );
+      expect(env.clipboard.writeText).toHaveBeenCalledWith(
+        'https://oaslananka.github.io/kicad-studio-kit/workflows/manufacturing-export.html'
+      );
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('keeps successful Quality Gate browser handoff free of recovery warnings', async () => {
+    (env.openExternal as jest.Mock).mockResolvedValueOnce(true);
+    const provider = new QualityGateProvider(
+      createExtensionContextMock() as never,
+      {} as never
+    );
+
+    await provider.openDocs();
+
+    expect(window.showWarningMessage).not.toHaveBeenCalled();
+    expect(env.clipboard.writeText).not.toHaveBeenCalled();
+  });
+
+  it('still exposes the actual Quality Gate URL when clipboard access fails', async () => {
+    (env.openExternal as jest.Mock).mockRejectedValueOnce(
+      new Error('URL handler unavailable')
+    );
+    (window.showWarningMessage as jest.Mock).mockResolvedValueOnce('Copy link');
+    (env.clipboard.writeText as jest.Mock).mockRejectedValueOnce(
+      new Error('Clipboard unavailable')
+    );
+    const provider = new QualityGateProvider(
+      createExtensionContextMock() as never,
+      {} as never
+    );
+
+    await provider.openDocs();
+
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'https://oaslananka.github.io/kicad-studio-kit/workflows/manufacturing-export.html'
+      )
+    );
+  });
+
   it('renders violation children with navigation commands', async () => {
     const provider = new QualityGateProvider(
       createExtensionContextMock() as never,

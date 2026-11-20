@@ -10,6 +10,7 @@ import type {
 import type { QualityGateMcpAdapter } from '../mcp/mcpToolAdapter';
 import type { McpStateStore } from '../state/stateStores';
 import { localize } from '../i18n';
+import { openDocumentationWithRecovery } from '../utils/openDocumentation';
 
 type QualityGateElement =
   | {
@@ -237,7 +238,10 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
   }
 
   async openDocs(gate?: QualityGateResult): Promise<void> {
-    await vscode.env.openExternal(vscode.Uri.parse(qualityGateDocsUrl(gate)));
+    await openDocumentationWithRecovery(
+      qualityGateDocsUrl(gate),
+      'quality gate documentation'
+    );
   }
 
   private async persist(): Promise<void> {
