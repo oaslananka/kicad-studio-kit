@@ -10,6 +10,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.16](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.15...vscode-extension-v2.7.16) (2026-11-20)
+
+
+### Bug Fixes
+
+* **vscode:** retain Quality Gate results when manufacturing mode is denied ([#1054](https://github.com/oaslananka/kicad-studio-kit/issues/1054)) ([3cbce71](https://github.com/oaslananka/kicad-studio-kit/commit/3cbce715c75e3ced6d199575933e2636ee8c27fc))
+
 ## [2.7.15](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.14...vscode-extension-v2.7.15) (2026-11-20)
 
 
