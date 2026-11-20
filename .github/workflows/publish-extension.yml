@@ -186,6 +186,7 @@ jobs:
         shell: bash
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          IS_PRERELEASE: ${{ needs.package.outputs.is_prerelease }}
         run: |
           set -euo pipefail
           VSIX_DIR="$GITHUB_WORKSPACE/release-assets/vscode-extension"
@@ -200,7 +201,7 @@ jobs:
             --pat
             "$VSCE_PAT"
           )
-          if [[ "${{ needs.package.outputs.is_prerelease }}" == "true" ]]; then
+          if [[ "$IS_PRERELEASE" == "true" ]]; then
             publish_args+=(--pre-release)
           fi
 
@@ -344,6 +345,7 @@ jobs:
             --pat
             "$OVSX_PAT"
             publish
+            --skip-duplicate
             --packagePath
             "$VSIX_PATH"
             --baseContentUrl
@@ -364,7 +366,10 @@ jobs:
           OPENVSX_VERIFY_DIR="$GITHUB_WORKSPACE/release-assets/openvsx-verify"
           mkdir -p "$OPENVSX_VERIFY_DIR"
           indexed=false
-          for attempt in $(seq 1 10); do
+          # Open VSX is eventually consistent: a published version can become
+          # downloadable after the previous five-minute window expires.
+          # Keep a bounded retry, but never accept a missing/incorrect VSIX.
+          for attempt in $(seq 1 20); do
             if corepack pnpm --filter kicadstudiokit exec ovsx get oaslananka.kicadstudiokit --metadata --versionRange "$version" > "$OPENVSX_VERIFY_DIR/metadata.json" 2>/dev/null; then
               if grep -q "\"$version\"" "$OPENVSX_VERIFY_DIR/metadata.json"; then
                 echo "Open VSX indexed version $version on attempt $attempt"
@@ -372,11 +377,13 @@ jobs:
                 break
               fi
             fi
-            echo "Open VSX index not updated yet (attempt $attempt/10), waiting 30s…"
-            sleep 30
+            echo "Open VSX index not updated yet (attempt $attempt/20), waiting 30s…"
+            if [ "$attempt" -lt 20 ]; then
+              sleep 30
+            fi
           done
           if [ "$indexed" = "false" ]; then
-            echo "::error::Open VSX version $version not visible after 10 attempts"
+            echo "::error::Open VSX version $version not visible after 20 attempts"
             exit 1
           fi
           corepack pnpm --filter kicadstudiokit exec ovsx get oaslananka.kicadstudiokit --versionRange "$version" --output "$OPENVSX_VERIFY_DIR"

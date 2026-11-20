@@ -65,6 +65,9 @@ function checkWorkflowEvidence(failures) {
   const openvsxNeeds = Array.isArray(publishOpenvsx?.needs)
     ? publishOpenvsx.needs
     : [publishOpenvsx?.needs].filter(Boolean);
+  const marketplacePublish = publishVscode?.steps?.find(
+    (step) => step.name === "Publish Visual Studio Marketplace",
+  );
 
   expectIncludes(
     extension,
@@ -151,6 +154,23 @@ function checkWorkflowEvidence(failures) {
     "extension workflow",
     failures,
   );
+  expect(
+    marketplacePublish?.env?.IS_PRERELEASE ===
+      "${{ needs.package.outputs.is_prerelease }}",
+    "Marketplace pre-release flag must be passed through a validated environment variable",
+    failures,
+  );
+  expectIncludes(
+    marketplacePublish?.run ?? "",
+    'if [[ "$IS_PRERELEASE" == "true" ]]',
+    "Marketplace environment-controlled pre-release flag",
+    failures,
+  );
+  expect(
+    !(marketplacePublish?.run ?? "").includes("${{"),
+    "Marketplace publish script must not interpolate workflow expressions into shell code",
+    failures,
+  );
   expectIncludes(
     extension,
     "ovsx get oaslananka.kicadstudiokit",
@@ -186,6 +206,34 @@ function checkWorkflowEvidence(failures) {
     "Open VSX publish must wait for Visual Studio Marketplace",
     failures,
   );
+  // A successful upload can take longer than five minutes to appear in the
+  // Open VSX index. Replays must also be safe for an already-published VSIX.
+  const openvsxSteps = publishOpenvsx?.steps ?? [];
+  const openvsxPublish =
+    openvsxSteps.find((step) => step.name === "Publish Open VSX")?.run ?? "";
+  const openvsxVerify =
+    openvsxSteps.find(
+      (step) => step.name === "Verify Open VSX published content",
+    )?.run ?? "";
+  expectIncludes(
+    openvsxPublish,
+    "--skip-duplicate",
+    "Open VSX duplicate-safe publish",
+    failures,
+  );
+  expectIncludes(
+    openvsxVerify,
+    "seq 1 20",
+    "Open VSX bounded delayed indexing",
+    failures,
+  );
+  expectIncludes(
+    openvsxVerify,
+    '--compare-content "$VSIX_PATH" "$downloaded"',
+    "Open VSX published payload verification",
+    failures,
+  );
+
   expect(
     !extension.includes("publish likely succeeded but indexing is delayed"),
     "post-publish verification must fail closed instead of masking missing registry versions",
