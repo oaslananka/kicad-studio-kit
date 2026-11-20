@@ -10,6 +10,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.17](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.16...vscode-extension-v2.7.17) (2026-11-20)
+
+
+### Bug Fixes
+
+* **vscode:** open documentation in the local Linux browser ([#1057](https://github.com/oaslananka/kicad-studio-kit/issues/1057)) ([92eb169](https://github.com/oaslananka/kicad-studio-kit/commit/92eb16988bd89cc59a9a78d24ad2637c6770211a))
+
 ## [2.7.16](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.15...vscode-extension-v2.7.16) (2026-11-20)
 
 
