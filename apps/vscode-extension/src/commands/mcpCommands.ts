@@ -244,11 +244,35 @@ export function registerMcpCommands(
       await services.refreshMcpState();
     }),
 
-    vscode.commands.registerCommand(COMMANDS.openMcpUpgradeGuide, () =>
-      vscode.env.openExternal(
-        vscode.Uri.parse(DOCUMENTATION_URLS.mcpServerInstallation)
-      )
-    ),
+    vscode.commands.registerCommand(COMMANDS.openMcpUpgradeGuide, async () => {
+      const url = DOCUMENTATION_URLS.mcpServerInstallation;
+      let opened = false;
+      try {
+        opened = await vscode.env.openExternal(vscode.Uri.parse(url));
+      } catch {
+        // An unavailable system URL handler should not leave users stranded.
+      }
+      if (opened) {
+        return;
+      }
+
+      const action = await vscode.window.showWarningMessage(
+        'The MCP installation guide could not be opened in your browser.',
+        'Copy link'
+      );
+      if (action === 'Copy link') {
+        try {
+          await vscode.env.clipboard.writeText(url);
+          void vscode.window.showInformationMessage(
+            'MCP installation guide link copied.'
+          );
+        } catch {
+          void vscode.window.showErrorMessage(
+            'Could not copy the MCP installation guide link: ' + url
+          );
+        }
+      }
+    }),
 
     registerTrustedCommand(
       COMMANDS.pickMcpProfile,

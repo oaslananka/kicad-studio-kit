@@ -170,6 +170,81 @@ describe('MCP command workspace trust guards', () => {
     expect(services.refreshMcpState).not.toHaveBeenCalled();
   });
 
+  it('opens the MCP installation guide through the configured browser handler', async () => {
+    (env.openExternal as jest.Mock).mockResolvedValueOnce(true);
+    registerWithServices();
+
+    await registeredHandler(COMMANDS.openMcpUpgradeGuide)();
+
+    expect(env.openExternal).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fsPath:
+          'https://oaslananka.github.io/kicad-mcp-pro/tutorials/getting-started/'
+      })
+    );
+    expect(window.showWarningMessage).not.toHaveBeenCalled();
+  });
+
+  it('offers a copyable link if the system cannot open MCP installation docs', async () => {
+    (env.openExternal as jest.Mock).mockResolvedValueOnce(false);
+    (window.showWarningMessage as jest.Mock).mockResolvedValueOnce('Copy link');
+    registerWithServices();
+
+    await registeredHandler(COMMANDS.openMcpUpgradeGuide)();
+
+    expect(window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('could not be opened'),
+      'Copy link'
+    );
+    expect(env.clipboard.writeText).toHaveBeenCalledWith(
+      'https://oaslananka.github.io/kicad-mcp-pro/tutorials/getting-started/'
+    );
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      'MCP installation guide link copied.'
+    );
+  });
+
+  it('keeps the clipboard untouched if the user dismisses browser recovery', async () => {
+    (env.openExternal as jest.Mock).mockResolvedValueOnce(false);
+    (window.showWarningMessage as jest.Mock).mockResolvedValueOnce(undefined);
+    registerWithServices();
+
+    await registeredHandler(COMMANDS.openMcpUpgradeGuide)();
+
+    expect(env.clipboard.writeText).not.toHaveBeenCalled();
+  });
+
+  it('also offers the MCP link when the system URL handler throws', async () => {
+    (env.openExternal as jest.Mock).mockRejectedValueOnce(
+      new Error('No system browser configured')
+    );
+    (window.showWarningMessage as jest.Mock).mockResolvedValueOnce('Copy link');
+    registerWithServices();
+
+    await registeredHandler(COMMANDS.openMcpUpgradeGuide)();
+
+    expect(env.clipboard.writeText).toHaveBeenCalledWith(
+      'https://oaslananka.github.io/kicad-mcp-pro/tutorials/getting-started/'
+    );
+  });
+
+  it('shows the official MCP URL if clipboard copying is unavailable', async () => {
+    (env.openExternal as jest.Mock).mockResolvedValueOnce(false);
+    (env.clipboard.writeText as jest.Mock).mockRejectedValueOnce(
+      new Error('Clipboard unavailable')
+    );
+    (window.showWarningMessage as jest.Mock).mockResolvedValueOnce('Copy link');
+    registerWithServices();
+
+    await registeredHandler(COMMANDS.openMcpUpgradeGuide)();
+
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'https://oaslananka.github.io/kicad-mcp-pro/tutorials/getting-started/'
+      )
+    );
+  });
+
   it('starts MCP installation from setup when the user chooses Install', async () => {
     registerWithServices({
       mcpClient: {
