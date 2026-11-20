@@ -729,7 +729,7 @@ mcp:
 products:
   kicad-studio:
     packagePath: "apps/vscode-extension/package.json"
-    version: "2.7.11"
+    version: "2.7.12"
     compatibleMcpPro:
       required: ">=4.3.0 <5.0.0"
       recommended: ">=4.3.0 <5.0.0"
