@@ -275,3 +275,57 @@ test('focuses the authentic original copper plot on its selected source region',
     0
   );
 });
+
+test('formats large-board partial coordinates without exposing floating-point artifacts', async ({
+  page
+}) => {
+  await installVsCodeApiMock(page);
+  await setViewerContent(page, {
+    fileType: 'board',
+    fileName: 'sample.kicad_pcb',
+    base64: boardBase64,
+    metadata
+  });
+
+  await page.evaluate(
+    ({ base64, layers }) =>
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: {
+            type: 'refresh',
+            payload: {
+              fileName: 'sample.kicad_pcb',
+              base64,
+              metadata: layers,
+              partialPreview: {
+                viewport: {
+                  minX: 120.308325,
+                  maxX: 210.308325,
+                  minY: 221.53485999999998,
+                  maxY: 316.53486
+                },
+                included: { segment: 400 },
+                remaining: { segment: 6286, via: 1229, footprint: 268 },
+                hasNextPage: true
+              }
+            }
+          }
+        })
+      ),
+    { base64: boardBase64, layers: metadata }
+  );
+
+  await page.locator('#side-panel-toggle').click();
+  const summary = page.locator('#partial-preview-status');
+  await expect(summary).toBeVisible();
+  await expect(summary).toContainText(
+    'PARTIAL — X 120.31–210.31, Y 221.53–316.53 mm.'
+  );
+  await expect(summary).not.toContainText('221.53485999999998');
+  await expect(summary).toContainText('6286 segments');
+  await expect(summary).toContainText('1229 vias');
+  await expect(summary).toContainText('Net continuity unverified');
+  await expect(page.locator('#partial-preview-banner')).toContainText(
+    'Not for DRC, exports or manufacturing'
+  );
+});
