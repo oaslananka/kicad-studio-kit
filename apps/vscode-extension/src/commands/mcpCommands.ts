@@ -247,17 +247,33 @@ export function registerMcpCommands(
     vscode.commands.registerCommand(COMMANDS.openMcpUpgradeGuide, async () => {
       const url = DOCUMENTATION_URLS.mcpServerInstallation;
       let opened = false;
+      let timedOut = false;
+      let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
       try {
-        opened = await vscode.env.openExternal(vscode.Uri.parse(url));
+        opened = await Promise.race([
+          vscode.env.openExternal(vscode.Uri.parse(url)),
+          new Promise<boolean>((resolve) => {
+            timeoutHandle = setTimeout(() => {
+              timedOut = true;
+              resolve(false);
+            }, 8_000);
+          })
+        ]);
       } catch {
         // An unavailable system URL handler should not leave users stranded.
+      } finally {
+        if (timeoutHandle !== undefined) {
+          clearTimeout(timeoutHandle);
+        }
       }
       if (opened) {
         return;
       }
 
       const action = await vscode.window.showWarningMessage(
-        'The MCP installation guide could not be opened in your browser.',
+        timedOut
+          ? 'The MCP installation guide is taking too long to open. You can copy its link.'
+          : 'The MCP installation guide could not be opened in your browser.',
         'Copy link'
       );
       if (action === 'Copy link') {

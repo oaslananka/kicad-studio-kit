@@ -204,6 +204,58 @@ describe('MCP command workspace trust guards', () => {
     );
   });
 
+  it('offers a copy link if the browser handler never responds', async () => {
+    jest.useFakeTimers();
+    try {
+      (env.openExternal as jest.Mock).mockImplementationOnce(
+        () => new Promise<boolean>(() => {})
+      );
+      (window.showWarningMessage as jest.Mock).mockResolvedValueOnce(
+        'Copy link'
+      );
+      registerWithServices();
+
+      const attempt = registeredHandler(COMMANDS.openMcpUpgradeGuide)();
+      await jest.advanceTimersByTimeAsync(7_999);
+      expect(window.showWarningMessage).not.toHaveBeenCalled();
+      await jest.advanceTimersByTimeAsync(1);
+      await attempt;
+
+      expect(window.showWarningMessage).toHaveBeenCalledWith(
+        expect.stringContaining('taking too long'),
+        'Copy link'
+      );
+      expect(env.clipboard.writeText).toHaveBeenCalledWith(
+        'https://oaslananka.github.io/kicad-mcp-pro/tutorials/getting-started/'
+      );
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('does not show recovery when the browser handler resolves before the deadline', async () => {
+    jest.useFakeTimers();
+    try {
+      (env.openExternal as jest.Mock).mockImplementationOnce(
+        () =>
+          new Promise<boolean>((resolve) =>
+            setTimeout(() => resolve(true), 2_000)
+          )
+      );
+      registerWithServices();
+
+      const attempt = registeredHandler(COMMANDS.openMcpUpgradeGuide)();
+      await jest.advanceTimersByTimeAsync(2_000);
+      await attempt;
+      await jest.advanceTimersByTimeAsync(8_000);
+
+      expect(window.showWarningMessage).not.toHaveBeenCalled();
+      expect(env.clipboard.writeText).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('keeps the clipboard untouched if the user dismisses browser recovery', async () => {
     (env.openExternal as jest.Mock).mockResolvedValueOnce(false);
     (window.showWarningMessage as jest.Mock).mockResolvedValueOnce(undefined);
