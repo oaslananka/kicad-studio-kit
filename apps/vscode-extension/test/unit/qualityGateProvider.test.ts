@@ -408,19 +408,34 @@ describe('QualityGateProvider', () => {
       details: [],
       violations: []
     });
+    await provider.openDocs({
+      id: 'manufacturing',
+      label: 'Manufacturing',
+      status: 'PENDING',
+      summary: '',
+      details: [],
+      violations: []
+    });
 
     expect(client.runPlacementQualityGate).toHaveBeenCalledTimes(1);
     expect(env.openExternal).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
         fsPath:
-          'https://oaslananka.github.io/kicad-studio-kit/workflows/manufacturing-export/'
+          'https://oaslananka.github.io/kicad-studio-kit/workflows/manufacturing-export.html'
       })
     );
     expect(env.openExternal).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         fsPath: 'https://oaslananka.github.io/kicad-studio-kit/extension/'
+      })
+    );
+    expect(env.openExternal).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        fsPath:
+          'https://oaslananka.github.io/kicad-studio-kit/workflows/manufacturing-export.html'
       })
     );
     jest.useRealTimers();
