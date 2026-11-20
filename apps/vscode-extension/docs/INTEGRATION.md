@@ -4,18 +4,24 @@ KiCad Studio integrates with `kicad-mcp-pro` as an optional capability for AI-as
 
 ## Compatibility
 
-KiCad Studio 1.8.0 requires and recommends `kicad-mcp-pro >=3.5.2 <4.0.0`. The extension was tested against `3.9.2`.
+For supported KiCad, MCP protocol, and `kicad-mcp-pro` versions, consult the [current support matrix](https://oaslananka.github.io/kicad-studio-kit/support-matrix.html) and [extension guide](https://oaslananka.github.io/kicad-studio-kit/extension/). These are updated with the released extension rather than pinning a historical compatibility range in this bundled guide.
+
+An incompatible MCP server disables MCP-dependent commands without disabling KiCad-only workflows.
 
 ## Discovery
 
-The extension checks:
+KiCad Studio checks for **existing installations** without downloading or installing a server:
 
-- `uvx kicad-mcp-pro --version`
-- `kicad-mcp-pro --version`
-- `pip show kicad-mcp-pro`
+- Installed `uv` tools (`uv tool list`) and the corresponding `kicad-mcp-pro version` executable.
+- `kicad-mcp-pro version` on the executable path or in supported user-local installation paths.
+- Python package metadata (`pip show kicad-mcp-pro` or `python -m pip show kicad-mcp-pro`).
+- `pipx list`.
+
+Detection does not run `uvx`, because it could download a package instead of reporting the actual installed version.
 
 ## Canonical Links
 
 - Repository: https://github.com/oaslananka/kicad-studio-kit/tree/main/apps/vscode-extension
 - MCP server: https://oaslananka.github.io/kicad-mcp-pro/
-- Manufacturing export docs: https://oaslananka.github.io/kicad-studio-kit/workflows/manufacturing-export/
+- Support matrix: https://oaslananka.github.io/kicad-studio-kit/support-matrix.html
+- Manufacturing export docs: https://oaslananka.github.io/kicad-studio-kit/workflows/manufacturing-export.html
