@@ -1,4 +1,5 @@
 import * as assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import * as vscode from 'vscode';
 import { COMMANDS, EXTENSION_ID, SETTINGS } from '../../../src/constants';
 import { isMcpVersionSupported } from '../../../src/mcp/compat';
@@ -563,15 +564,36 @@ async function assertPublishedActive2026ExtensionHost(): Promise<void> {
             `Missing 2025 rollback tool ${tool}`
           );
         }
-        const rollbackGate = await rollback.callTool(
-          'project_quality_gate_report',
-          {}
+        const cli = spawnSync(
+          process.env['KICAD_MCP_KICAD_CLI'] || 'kicad-cli',
+          ['version'],
+          { encoding: 'utf8' }
         );
-        assert.ok(rollbackGate, '2025 rollback quality gate must return data');
+        const cliAvailable = !cli.error && cli.status === 0;
+        if (cliAvailable) {
+          const rollbackGate = await rollback.callTool(
+            'project_quality_gate_report',
+            {}
+          );
+          assert.ok(
+            rollbackGate,
+            '2025 rollback quality gate must return data'
+          );
+        } else {
+          await assert.rejects(
+            rollback.callTool('project_quality_gate_report', {}),
+            /kicad-cli is not available/u,
+            'Unavailable KiCad CLI must surface a tool error, not a passed gate.'
+          );
+        }
         const rollbackResource = await legacy.readResource(
           'kicad://project/quality_gate'
         );
         assert.match(rollbackResource, /Project quality gate:/u);
+        if (!cliAvailable) {
+          assert.match(rollbackResource, /Project quality gate: BLOCKED/u);
+          assert.match(rollbackResource, /kicad-cli is not available/u);
+        }
         const unsupported = new McpClient(
           {
             ...context,
