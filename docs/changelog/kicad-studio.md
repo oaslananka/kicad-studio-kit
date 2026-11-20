@@ -16,6 +16,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.14](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.13...vscode-extension-v2.7.14) (2026-11-20)
+
+
+### Bug Fixes
+
+* **vscode:** recover stalled quality gate documentation links ([#1048](https://github.com/oaslananka/kicad-studio-kit/issues/1048)) ([9ef410a](https://github.com/oaslananka/kicad-studio-kit/commit/9ef410af659a543794d0503b122f01eb8c09c6db))
+
 ## [2.7.13](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.12...vscode-extension-v2.7.13) (2026-11-20)
 
 
