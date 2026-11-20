@@ -16,6 +16,15 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.12](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.11...vscode-extension-v2.7.12) (2026-11-20)
+
+
+### Bug Fixes
+
+* **vscode:** format bounded PCB preview coordinates ([f3a138e](https://github.com/oaslananka/kicad-studio-kit/commit/f3a138e9bc0a3a19d51b6357e21536eb20bba256))
+* **vscode:** format partial PCB viewport coordinates ([#1043](https://github.com/oaslananka/kicad-studio-kit/issues/1043)) ([f3a138e](https://github.com/oaslananka/kicad-studio-kit/commit/f3a138e9bc0a3a19d51b6357e21536eb20bba256))
+* **vscode:** recover when MCP upgrade docs cannot open ([#1045](https://github.com/oaslananka/kicad-studio-kit/issues/1045)) ([1fc70c0](https://github.com/oaslananka/kicad-studio-kit/commit/1fc70c0b7daa069b9ac94b5598958a148cceb220))
+
 ## [2.7.11](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.10...vscode-extension-v2.7.11) (2026-11-20)
 
 
