@@ -16,6 +16,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.13](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.12...vscode-extension-v2.7.13) (2026-11-20)
+
+
+### Bug Fixes
+
+* **vscode:** recover from stalled MCP docs browser requests ([#1046](https://github.com/oaslananka/kicad-studio-kit/issues/1046)) ([702335d](https://github.com/oaslananka/kicad-studio-kit/commit/702335daac01af0f482e5927847aaddb629aaad7))
+
 ## [2.7.12](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.11...vscode-extension-v2.7.12) (2026-11-20)
 
 
