@@ -339,7 +339,7 @@ function tooltipForGate(gate: QualityGateResult): string {
 function qualityGateDocsUrl(gate: QualityGateResult | undefined): string {
   const base = 'https://oaslananka.github.io/kicad-studio-kit';
   if (!gate || gate.id.includes('manufacturing')) {
-    return `${base}/workflows/manufacturing-export/`;
+    return `${base}/workflows/manufacturing-export.html`;
   }
   return `${base}/extension/`;
 }
