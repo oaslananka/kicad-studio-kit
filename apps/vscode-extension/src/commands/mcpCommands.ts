@@ -6,6 +6,7 @@ import { DesignIntentPanel } from '../mcp/designIntentPanel';
 import { DrcRuleEditorPanel } from '../drc/drcRuleEditorPanel';
 import { registerTrustedCommand } from '../utils/workspaceTrust';
 import { DOCUMENTATION_URLS } from '../documentation/documentationUrls';
+import { openDocumentationWithRecovery } from '../utils/openDocumentation';
 import {
   showStructuredError,
   structuredErrorFromUnknown,
@@ -244,51 +245,12 @@ export function registerMcpCommands(
       await services.refreshMcpState();
     }),
 
-    vscode.commands.registerCommand(COMMANDS.openMcpUpgradeGuide, async () => {
-      const url = DOCUMENTATION_URLS.mcpServerInstallation;
-      let opened = false;
-      let timedOut = false;
-      let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
-      try {
-        opened = await Promise.race([
-          vscode.env.openExternal(vscode.Uri.parse(url)),
-          new Promise<boolean>((resolve) => {
-            timeoutHandle = setTimeout(() => {
-              timedOut = true;
-              resolve(false);
-            }, 8_000);
-          })
-        ]);
-      } catch {
-        // An unavailable system URL handler should not leave users stranded.
-      } finally {
-        if (timeoutHandle !== undefined) {
-          clearTimeout(timeoutHandle);
-        }
-      }
-      if (opened) {
-        return;
-      }
-
-      const action = await vscode.window.showWarningMessage(
-        timedOut
-          ? 'The MCP installation guide is taking too long to open. You can copy its link.'
-          : 'The MCP installation guide could not be opened in your browser.',
-        'Copy link'
-      );
-      if (action === 'Copy link') {
-        try {
-          await vscode.env.clipboard.writeText(url);
-          void vscode.window.showInformationMessage(
-            'MCP installation guide link copied.'
-          );
-        } catch {
-          void vscode.window.showErrorMessage(
-            'Could not copy the MCP installation guide link: ' + url
-          );
-        }
-      }
-    }),
+    vscode.commands.registerCommand(COMMANDS.openMcpUpgradeGuide, () =>
+      openDocumentationWithRecovery(
+        DOCUMENTATION_URLS.mcpServerInstallation,
+        'MCP installation guide'
+      )
+    ),
 
     registerTrustedCommand(
       COMMANDS.pickMcpProfile,
