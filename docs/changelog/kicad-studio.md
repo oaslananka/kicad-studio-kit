@@ -16,6 +16,14 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.10](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.9...vscode-extension-v2.7.10) (2026-11-20)
+
+
+### Bug Fixes
+
+* **docs:** open published manufacturing quality-gate guide ([33e4366](https://github.com/oaslananka/kicad-studio-kit/commit/33e4366df18f5cfaf28f3fc39b412a65871570d2))
+* **docs:** open the published quality-gate guide ([#1038](https://github.com/oaslananka/kicad-studio-kit/issues/1038)) ([33e4366](https://github.com/oaslananka/kicad-studio-kit/commit/33e4366df18f5cfaf28f3fc39b412a65871570d2))
+
 ## [2.7.9](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.8...vscode-extension-v2.7.9) (2026-11-19)
 
 
