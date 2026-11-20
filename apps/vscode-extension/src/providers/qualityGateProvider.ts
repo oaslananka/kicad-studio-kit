@@ -139,7 +139,7 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
               this.mcpAdapter.runProjectQualityGate(),
               this.mcpAdapter.runPlacementQualityGate(),
               this.mcpAdapter.runTransferQualityGate(),
-              this.mcpAdapter.runManufacturingQualityGate()
+              this.runManufacturingGate()
             ]);
           this.gates = markRunTime(
             mergeGates([...project, placement, transfer, manufacturing])
@@ -177,7 +177,7 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
             : gate.id.includes('transfer')
               ? await this.mcpAdapter.runTransferQualityGate()
               : gate.id.includes('manufacturing')
-                ? await this.mcpAdapter.runManufacturingQualityGate()
+                ? await this.runManufacturingGate()
                 : ((await this.mcpAdapter.runProjectQualityGate())[0] ?? gate);
           this.gates = markRunTime(
             mergeGates(
@@ -198,6 +198,34 @@ export class QualityGateProvider implements vscode.TreeDataProvider<QualityGateE
       }
     );
     this.onDidChangeTreeDataEmitter.fire(undefined);
+  }
+
+  private async runManufacturingGate(): Promise<QualityGateResult> {
+    try {
+      return await this.mcpAdapter.runManufacturingQualityGate();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (
+        !message.includes('MODE_FORBIDDEN') ||
+        !message.includes('manufacturing_quality_gate')
+      ) {
+        throw error;
+      }
+
+      // Manufacturing checks require their own server operating mode. Keep
+      // project, placement and transfer results visible without escalating
+      // the user's connected MCP permissions or presenting a false PASS.
+      return {
+        id: 'manufacturing',
+        label: 'Manufacturing',
+        status: 'BLOCKED',
+        summary: 'Manufacturing checks require the MCP manufacturing mode.',
+        details: [
+          'The connected MCP server does not permit manufacturing checks in its current operating mode.'
+        ],
+        violations: []
+      };
+    }
   }
 
   scheduleDrcRefresh(): void {

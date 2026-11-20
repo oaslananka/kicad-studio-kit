@@ -159,6 +159,118 @@ describe('QualityGateProvider', () => {
     expect(provider.getChildren(transfer as never)).toHaveLength(1);
   });
 
+  it('retains available gate results when manufacturing mode is forbidden', async () => {
+    const context = createExtensionContextMock();
+    const provider = new QualityGateProvider(
+      context as never,
+      {
+        runProjectQualityGate: jest.fn().mockResolvedValue([
+          {
+            id: 'schematic',
+            label: 'Schematic',
+            status: 'PASS',
+            summary: 'Schematic check complete',
+            details: [],
+            violations: []
+          }
+        ]),
+        runPlacementQualityGate: jest.fn().mockResolvedValue({
+          id: 'placement',
+          label: 'Placement',
+          status: 'WARN',
+          summary: 'Placement review needed',
+          details: [],
+          violations: []
+        }),
+        runTransferQualityGate: jest.fn().mockResolvedValue({
+          id: 'transfer',
+          label: 'PCB Transfer',
+          status: 'PASS',
+          summary: 'Transfer check complete',
+          details: [],
+          violations: []
+        }),
+        runManufacturingQualityGate: jest
+          .fn()
+          .mockRejectedValue(
+            new Error(
+              "MODE_FORBIDDEN: Tool 'manufacturing_quality_gate' requires manufacturing operating mode; active mode is write."
+            )
+          )
+      } as never
+    );
+
+    await provider.runAll();
+
+    const byId = new Map(
+      provider.getChildren().map(({ gate }) => [gate.id, gate])
+    );
+    expect(byId.get('schematic')).toMatchObject({ status: 'PASS' });
+    expect(byId.get('placement')).toMatchObject({ status: 'WARN' });
+    expect(byId.get('transfer')).toMatchObject({ status: 'PASS' });
+    expect(byId.get('manufacturing')).toMatchObject({
+      status: 'BLOCKED',
+      label: 'Manufacturing',
+      violations: []
+    });
+    expect(byId.get('manufacturing')?.summary).toContain('manufacturing mode');
+    expect(byId.get('manufacturing')?.lastRun).toBeDefined();
+    expect(context.workspaceState.update).toHaveBeenCalledWith(
+      expect.stringContaining('kicadstudio.qualityGate.'),
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'manufacturing', status: 'BLOCKED' })
+      ])
+    );
+  });
+
+  it('shows a blocked manufacturing row when that gate is run individually', async () => {
+    const provider = new QualityGateProvider(
+      createExtensionContextMock() as never,
+      {
+        runManufacturingQualityGate: jest
+          .fn()
+          .mockRejectedValue(
+            new Error(
+              "MODE_FORBIDDEN: Tool 'manufacturing_quality_gate' requires manufacturing operating mode."
+            )
+          )
+      } as never
+    );
+
+    await provider.runGate({
+      id: 'manufacturing',
+      label: 'Manufacturing',
+      status: 'PENDING',
+      summary: 'Run checks',
+      details: [],
+      violations: []
+    });
+
+    const manufacturing = provider
+      .getChildren()
+      .find(({ gate }) => gate.id === 'manufacturing');
+    expect(manufacturing?.gate.status).toBe('BLOCKED');
+    expect(manufacturing?.gate.summary).toContain('manufacturing mode');
+  });
+
+  it('still propagates manufacturing failures unrelated to operating mode', async () => {
+    const provider = new QualityGateProvider(
+      createExtensionContextMock() as never,
+      {
+        runProjectQualityGate: jest.fn().mockResolvedValue([]),
+        runPlacementQualityGate: jest.fn().mockResolvedValue({}),
+        runTransferQualityGate: jest.fn().mockResolvedValue({}),
+        runManufacturingQualityGate: jest
+          .fn()
+          .mockRejectedValue(new Error('Manufacturing service timed out'))
+      } as never
+    );
+
+    await expect(provider.runAll()).rejects.toThrow(
+      'Manufacturing service timed out'
+    );
+  });
+
   it('shows raw output through a virtual document command', async () => {
     const provider = new QualityGateProvider(
       createExtensionContextMock() as never,
