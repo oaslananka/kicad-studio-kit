@@ -16,6 +16,13 @@ and this extension adheres to
 Comparison links will be added after the first public component tags are
 published.
 
+## [2.7.15](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.14...vscode-extension-v2.7.15) (2026-11-20)
+
+
+### Bug Fixes
+
+* **vscode:** align DRC rule editing with MCP tool contracts ([#1051](https://github.com/oaslananka/kicad-studio-kit/issues/1051)) ([c93555d](https://github.com/oaslananka/kicad-studio-kit/commit/c93555d193c473cd311b85d70e45c555b5387ae4))
+
 ## [2.7.14](https://github.com/oaslananka/kicad-studio-kit/compare/vscode-extension-v2.7.13...vscode-extension-v2.7.14) (2026-11-20)
 
 
