@@ -495,8 +495,11 @@ function webviewSurfaces(): WebviewSurface[] {
       html: buildDrcRuleEditorHtml(),
       expectedFocusOrder: [
         '#name',
+        '#constraint-type',
+        '#min-value',
+        '#max-value',
         '#condition',
-        '#constraint',
+        '#severity',
         'Save Rule',
         '#delete-rule'
       ]
