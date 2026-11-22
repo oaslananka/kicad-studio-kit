@@ -61,8 +61,8 @@ importers:
         specifier: 21.2.3
         version: 21.2.3
       '@oaslananka/kicad-protocol-schemas':
-        specifier: 2.0.0
-        version: 2.0.0
+        specifier: 2.1.0
+        version: 2.1.0
       husky:
         specifier: 9.1.7
         version: 9.1.7
@@ -85,8 +85,8 @@ importers:
   apps/vscode-extension:
     dependencies:
       '@oaslananka/kicad-protocol-schemas':
-        specifier: 2.0.0
-        version: 2.0.0
+        specifier: 2.1.0
+        version: 2.1.0
       exceljs:
         specifier: 4.4.0
         version: 4.4.0
@@ -1584,9 +1584,9 @@ packages:
     resolution: {integrity: sha512-gOYKFwkojSdWrSmreCcGocRcAXSpRkNZYxv6nscmtddSWBKVGypdMbfLxu5qgmymdaCNApajuwZblYEfs7HswA==}
     engines: {node: '>= 10'}
 
-  '@oaslananka/kicad-protocol-schemas@2.0.0':
-    resolution: {integrity: sha512-EKgOeAwMsyx/murvs3gVWZNY1lhsTeDdeIrBf/lkrys3UOWZ/eaQr7Dg0CD0VrwJW1D//3Z/zXmAx0qo3ZLTJA==}
-    engines: {node: '>=24.11.0 <25', pnpm: '>=11.0.0 <12'}
+  '@oaslananka/kicad-protocol-schemas@2.1.0':
+    resolution: {integrity: sha512-x9yk6FjF8HQDxoCfTyvj7JIutcR9VK91N1g87RXv4tM87syztupzk3Yf72C43SXtn+RZX4sJ2HR1HnQbHDPPLA==}
+    engines: {node: '>=24.22.1 <25', pnpm: '>=11.0.0 <12'}
 
   '@octokit/auth-token@4.0.0':
     resolution: {integrity: sha512-tY/msAuJo6ARbK6SPIxZrPBms3xPbfwBrulZe0Wtr/DIY9lje2HeV1uoebShn6mx7SjCHif6EjMvoREj+gZ+SA==}
@@ -7028,7 +7028,7 @@ snapshots:
       '@node-rs/crc32-win32-ia32-msvc': 1.10.8
       '@node-rs/crc32-win32-x64-msvc': 1.10.8
 
-  '@oaslananka/kicad-protocol-schemas@2.0.0':
+  '@oaslananka/kicad-protocol-schemas@2.1.0':
     dependencies:
       ajv: 8.20.0
 

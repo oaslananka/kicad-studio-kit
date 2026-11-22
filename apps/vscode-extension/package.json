@@ -2743,7 +2743,7 @@
     "webpack-cli": "7.2.3"
   },
   "dependencies": {
-    "@oaslananka/kicad-protocol-schemas": "2.0.0",
+    "@oaslananka/kicad-protocol-schemas": "2.1.0",
     "exceljs": "4.4.0",
     "semver": "7.8.5"
   },
